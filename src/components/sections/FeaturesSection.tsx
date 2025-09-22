@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { motion } from 'motion/react';
 import {
   FileText,
@@ -26,7 +27,6 @@ interface Feature {
   description: string;
   benefits: string[];
   icon: React.ComponentType<{ className?: string }>;
-  category: 'core' | 'premium' | 'enterprise';
   comingSoon?: boolean;
 }
 
@@ -43,7 +43,6 @@ const features: Feature[] = [
       'Real-time error detection',
     ],
     icon: FileText,
-    category: 'core',
   },
   {
     id: 'e-saln',
@@ -57,7 +56,6 @@ const features: Feature[] = [
       'Audit-ready documentation',
     ],
     icon: FileCheck,
-    category: 'core',
   },
   {
     id: 'ai-assistant',
@@ -71,7 +69,6 @@ const features: Feature[] = [
       'Contextual recommendations',
     ],
     icon: Brain,
-    category: 'premium',
   },
   {
     id: 'workflows',
@@ -85,7 +82,6 @@ const features: Feature[] = [
       'Progress tracking dashboards',
     ],
     icon: Settings,
-    category: 'premium',
   },
   {
     id: 'security',
@@ -99,7 +95,6 @@ const features: Feature[] = [
       'Role-based access control',
     ],
     icon: Shield,
-    category: 'enterprise',
   },
   {
     id: 'analytics',
@@ -113,33 +108,26 @@ const features: Feature[] = [
       'Executive dashboards',
     ],
     icon: BarChart3,
-    category: 'enterprise',
   },
 ];
 
-const categoryColors = {
-  core: {
-    badge: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-    gradient: { firstColor: '#093FB4', secondColor: '#1E40AF' },
-  },
-  premium: {
-    badge:
-      'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-    gradient: { firstColor: '#7C3AED', secondColor: '#A855F7' },
-  },
-  enterprise: {
-    badge:
-      'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
-    gradient: { firstColor: '#D97706', secondColor: '#F59E0B' },
-  },
+
+// Feature ID to URL mapping
+const featureRoutes: Record<string, string> = {
+  'e-pds': '/features/pds',
+  'e-saln': '/features/saln',
+  'ai-assistant': '/features/ai-compliance',
+  'workflows': '/features/automated-workflows',
+  'security': '/features/security-compliance',
+  'analytics': '/features/dashboard-analytics',
 };
 
 const FeatureCard: React.FC<{ feature: Feature; index: number }> = ({
   feature,
   index,
 }) => {
-  const { badge, gradient } = categoryColors[feature.category];
   const IconComponent = feature.icon;
+  const gradient = { firstColor: '#093FB4', secondColor: '#1E40AF' };
 
   return (
     <motion.div
@@ -167,10 +155,6 @@ const FeatureCard: React.FC<{ feature: Feature; index: number }> = ({
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                   {feature.title}
                 </h3>
-                <Badge className={cn('mt-1 text-xs', badge)}>
-                  {feature.category.charAt(0).toUpperCase() +
-                    feature.category.slice(1)}
-                </Badge>
               </div>
             </div>
             {feature.comingSoon && (
@@ -207,12 +191,14 @@ const FeatureCard: React.FC<{ feature: Feature; index: number }> = ({
           </div>
 
           {/* CTA */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="group-hover:bg-[#093FB4] group-hover:text-white transition-all duration-300">
-            Learn More
-          </Button>
+          <Link href={featureRoutes[feature.id] || '#'} className="block">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full group-hover:bg-[#093FB4] group-hover:text-white transition-all duration-300">
+              Learn More
+            </Button>
+          </Link>
         </div>
       </NeonGradientCard>
     </motion.div>

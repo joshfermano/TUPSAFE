@@ -3,13 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  Menu,
-  Shield,
-  FileText,
-  Users,
-  X,
-} from 'lucide-react';
+import { Menu, Shield, FileText, Users, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // UI Components
@@ -21,7 +15,6 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu';
 import {
   Sheet,
@@ -75,7 +68,7 @@ const navigationItems: NavigationItem[] = [
       },
       {
         name: 'AI Assistant',
-        href: '/features/ai-assistant',
+        href: '/features/ai-compliance',
         description: 'Get help with compliance questions',
         icon: Users,
       },
@@ -186,13 +179,13 @@ const MobileNavigation: React.FC<{
               asChild
               variant="ghost"
               className="btn-government-ghost w-full justify-center h-12 text-base font-medium">
-              <Link href="/auth/signin">Sign In</Link>
+              <Link href="/auth/login">Sign In</Link>
             </Button>
             <Button
               asChild
               variant="default"
               className="btn-government w-full justify-center h-12 text-base font-medium shadow-lg">
-              <Link href="/auth/signup">Get Started</Link>
+              <Link href="/auth/register">Get Started</Link>
             </Button>
             <p className="text-xs text-muted-foreground text-center mt-2 px-4">
               Secure government employee portal
@@ -431,13 +424,13 @@ export const Header: React.FC = () => {
                 variant="ghost"
                 size="sm"
                 className="btn-government-ghost rounded-full h-8 px-3 text-xs font-medium">
-                <Link href="/auth/signin">Sign In</Link>
+                <Link href="/auth/login">Sign In</Link>
               </Button>
               <Button
                 asChild
                 size="sm"
                 className="btn-government rounded-full h-8 px-3 text-xs font-medium">
-                <Link href="/auth/signup">Sign Up</Link>
+                <Link href="/auth/register">Sign Up</Link>
               </Button>
             </div>
 

@@ -14,7 +14,10 @@
       "mcp__filesystem__edit_file",
       "Bash(npx tsc:*)",
       "Bash(npm run lint)",
-      "Read(//home/joshfermano/Pictures/Screenshots/**)"
+      "Read(//home/joshfermano/Pictures/Screenshots/**)",
+      "mcp__filesystem__read_multiple_files",
+      "mcp__serena__list_dir",
+      "Bash(npm run lint:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
