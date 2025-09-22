@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ShieldCheck, ArrowLeft, Construction, UserPlus } from 'lucide-react';
+import { ShieldCheck, ArrowLeft, UserPlus } from 'lucide-react';
 
 export const metadata = {
   title: 'Sign Up | SmartGov - Government Compliance System',

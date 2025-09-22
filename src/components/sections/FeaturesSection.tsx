@@ -19,7 +19,6 @@ import { MagicCard } from '@/components/ui/magic-card';
 import { NeonGradientCard } from '@/components/ui/neon-gradient-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 
 interface Feature {
   id: string;

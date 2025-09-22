@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, Shield, FileText, Users, X } from 'lucide-react';
+import { Menu, Shield, FileText, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // UI Components
