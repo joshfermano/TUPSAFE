@@ -1,10 +1,28 @@
 {
+  "permissions": {
+    "allow": [
+      "mcp__filesystem__read_text_file",
+      "mcp__filesystem__list_directory",
+      "mcp__shadcn__get_project_registries",
+      "mcp__shadcn__search_items_in_registries",
+      "mcp__shadcn__list_items_in_registries",
+      "mcp__filesystem__write_file",
+      "mcp__sequential-thinking__sequentialthinking",
+      "mcp__filesystem__create_directory",
+      "mcp__shadcn__get_add_command_for_items",
+      "Bash(npx shadcn@latest add:*)",
+      "mcp__filesystem__edit_file",
+      "Bash(npx tsc:*)",
+      "Bash(npm run lint)",
+      "Read(//home/joshfermano/Pictures/Screenshots/**)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "shadcn",
     "filesystem",
     "github",
     "memory",
     "sequential-thinking"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }
