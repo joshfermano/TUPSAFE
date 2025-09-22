@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-SmartGov is a secure web-based system designed for Philippine government employees to submit and manage Personal Data Sheets (e-PDS) and Statements of Assets, Liabilities, and Net Worth (e-SALN). The system replaces traditional paper workflows with a modern, trackable, and auditable digital platform.
+Thesis Project: SmartGov is a secure web-based system designed for Philippine government employees to submit and manage Personal Data Sheets (e-PDS) and Statements of Assets, Liabilities, and Net Worth (e-SALN). The system replaces traditional paper workflows with a modern, trackable, and auditable digital platform.
 
 ### Core Objectives
 
