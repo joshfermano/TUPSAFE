@@ -1,8 +1,16 @@
+<<<<<<< HEAD
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 # IDE
 .cursor/
 .vscode/
 .idea/
+=======
+# IDE
+.cursor/
+.vscode/
+
+# Serena
+>>>>>>> acea0c6cde4b0883e31f1f4033f97264a9c857bd
 .serena/
 
 # dependencies
