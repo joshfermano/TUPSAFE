@@ -17,7 +17,9 @@
       "Read(//home/joshfermano/Pictures/Screenshots/**)",
       "mcp__filesystem__read_multiple_files",
       "mcp__serena__list_dir",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "mcp__shadcn__view_items_in_registries",
+      "Bash(npm run build:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
