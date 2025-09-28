@@ -1,0 +1,36 @@
+{
+  "name": "@smartgov/auth",
+  "version": "0.1.0",
+  "private": true,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src/",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "react-hook-form": "^7.63.0",
+    "zod": "^3.25.76",
+    "lucide-react": "^0.544.0",
+    "@smartgov/types": "*",
+    "@smartgov/database": "*",
+    "@supabase/supabase-js": "^2.45.0",
+    "@supabase/ssr": "^0.5.2"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "typescript": "^5"
+  },
+  "peerDependencies": {
+    "react": "19.1.0"
+  }
+}
