@@ -1,255 +1,189 @@
-# SmartGov: Streamlined e-PDS and e-SALN Compliance System
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+# SmartGov: e-PDS and e-SALN Compliance System
 
 ## Project Overview
 
-Thesis Project: SmartGov is a secure web-based system designed for Philippine government employees to submit and manage Personal Data Sheets (e-PDS) and Statements of Assets, Liabilities, and Net Worth (e-SALN). The system replaces traditional paper workflows with a modern, trackable, and auditable digital platform.
-
-### Core Objectives
-
-- Automate PDS and SALN submissions with validation
-- Implement review workflows for supervisors/HR
-- Archive records older than 5 years automatically
-- Provide integrated AI assistant for compliance questions
-- Ensure full audit trails and regulatory compliance
+Thesis project for a secure web-based system enabling Philippine government employees to submit and manage Personal Data Sheets (e-PDS) and Statements of Assets, Liabilities, and Net Worth (e-SALN). Replaces paper workflows with a modern, auditable digital platform.
 
 ### Target Users
 
-- **Government Employees**: Submit and update PDS/SALN forms
-- **HR Personnel**: Review submissions, manage deadlines
-- **Administrators**: System configuration, user management, compliance reporting
+- **Government Employees**: Submit and update PDS/SALN forms (employee portal)
+- **HR Personnel/Administrators**: Review submissions, manage users, compliance reporting (admin portal)
 
-## Technical Architecture
+## Monorepo Architecture
 
-### Technology Stack
+This is a Turbo-managed monorepo with separate applications and shared packages:
 
-- **Frontend**: Next.js 15.5.3 with TypeScript, React 19.1.0, Server-Side Rendering
-- **Build Tool**: Turbopack for faster development and builds
-- **Styling**: Tailwind CSS 4 with shadcn/ui components
-- **Database**: PostgreSQL via Supabase with Row Level Security (RLS)
-- **ORM**: Drizzle ORM for type-safe SQL operations
-- **Forms**: React Hook Form + Zod for schema-driven validation
-- **Storage**: Supabase Storage with lifecycle policies
-- **AI Integration**: Gemini/OpenAI APIs with RAG over policy documents
+### Apps (apps/*)
 
-### Project Structure
+- **employee**: Employee-facing portal (port 3000) for PDS/SALN submissions
+- **admin**: HR/Admin portal (port 3001) for reviewing and managing submissions
 
-```
-src/
-├── app/                    # Next.js App Router pages
-├── components/
-│   ├── ui/                # shadcn/ui components
-│   ├── forms/             # PDS/SALN form components
-│   └── dashboard/         # Dashboard components
-├── lib/
-│   ├── db/                # Drizzle schema and migrations
-│   ├── validation/        # Zod schemas
-│   └── utils/             # Utility functions
-└── types/                 # TypeScript type definitions
-```
+### Shared Packages (packages/*)
 
-## Database Schema
+- **@smartgov/database**: Drizzle ORM schemas, migrations, and database utilities
+- **@smartgov/auth**: Authentication utilities and middleware
+- **@smartgov/types**: Shared TypeScript type definitions
+- **@smartgov/shared-ui**: Shared UI components
 
-### Core Tables
+Both apps are Next.js 15.5.3 applications using App Router with Turbopack. They consume shared packages via workspace dependencies.
 
-- **users**: Authentication and basic user info
-- **profiles**: Extended user profiles with government employee data
-- **roles**: Role-based access control (Admin, HR, Employee)
-- **pds_submissions**: Personal Data Sheet submissions
-- **saln_submissions**: SALN submissions
-- **submission_versions**: Immutable version history
-- **archives**: Long-term storage for 5+ year old records
-- **audit_logs**: Complete audit trail of all operations
-- **notifications**: System notifications and deadlines
-- **settings**: System configuration
+## Technology Stack
 
-### Key Features
+- **Frontend**: Next.js 15.5.3, React 19.1.0, TypeScript 5
+- **Build Tool**: Turbopack (via `--turbopack` flag) for fast development
+- **Monorepo**: Turbo for task orchestration
+- **Styling**: Tailwind CSS 4, shadcn/ui, Magic UI components
+- **Database**: PostgreSQL via Supabase with Drizzle ORM
+- **Forms**: React Hook Form + Zod validation
+- **Authentication**: Custom auth package with MFA (input-otp)
+- **Animation**: Framer Motion (motion package)
 
-- Row Level Security (RLS) for data isolation
-- Immutable versioning for compliance
-- Automated archival policies
-- Full-text search capabilities
-- Audit logging on all CRUD operations
+## Essential Commands
 
-## Development Guidelines
-
-### IMPORTANT: Always Use MCP Servers
-
-This project is configured with MCP (Model Context Protocol) servers that must be utilized for all development operations:
-
-#### Available MCP Servers (.mcp.json):
-
-- **shadcn**: Use for UI component management and installation
-- **filesystem**: Use for file operations and directory management
-- **github**: Use for repository operations and version control
-- **memory**: Use for maintaining context across sessions
-- **sequential-thinking**: Use for complex problem-solving workflows
-
-#### MCP Usage Rules:
-
-1. **Always use MCP filesystem server** for file operations instead of direct file commands
-2. **Use shadcn MCP server** for component installations and UI development
-3. **Use github MCP server** for all git operations and repository management
-4. **Use memory MCP server** to track project context and decisions
-5. **Use sequential-thinking MCP server** for complex architectural decisions
-
-### Scripts and Commands
+### Development
 
 ```bash
-npm run dev          # Development server with Turbopack
-npm run build        # Production build with Turbopack
-npm run start        # Start production server
-npm run lint         # ESLint code quality checks
+# Start all apps
+npm run dev
+
+# Start specific app
+npm run dev:employee    # Starts employee portal on port 3000
+npm run dev:admin       # Starts admin portal on port 3001
+
+# Build all apps
+npm run build
+
+# Build specific app
+npm run build:employee
+npm run build:admin
 ```
 
 ### Code Quality
 
-- Always run `npm run lint` before committing
-- Use TypeScript strict mode for type safety
-- Follow established shadcn/ui component patterns
-- Implement comprehensive error handling
-- Write type-safe database queries with Drizzle
+```bash
+npm run lint          # Lint all packages/apps
+npm run type-check    # TypeScript type checking across monorepo
+npm run clean         # Clean build artifacts
+```
 
-### Security Requirements
+### Database Operations
 
-- Implement Multi-Factor Authentication (MFA)
-- Use Row Level Security for all database access
-- Apply least-privilege role assignments
-- Log all operations for audit compliance
-- Validate all inputs with Zod schemas
-- Protect against CSRF/XSS attacks
-- Rate limit API endpoints
+Navigate to `packages/database` or use these commands:
+
+```bash
+npx drizzle-kit generate    # Generate migrations from schema
+npx drizzle-kit migrate     # Run pending migrations
+npx drizzle-kit studio      # Open Drizzle Studio GUI
+```
+
+## Development Guidelines
+
+### Working with the Monorepo
+
+- **Apps are independent**: Each app has its own Next.js config, middleware, and routes
+- **Shared packages are internal**: Import from `@smartgov/*` namespaces
+- **Turbo orchestrates tasks**: Build/lint/type-check tasks run in dependency order
+- **Package changes rebuild dependent apps**: Turbo handles cache invalidation
+
+### Code Organization
+
+**Apps Structure (apps/employee or apps/admin):**
+```
+apps/[employee|admin]/
+├── src/
+│   ├── app/              # Next.js App Router pages and layouts
+│   ├── components/       # App-specific components
+│   └── lib/              # App-specific utilities
+├── public/               # Static assets
+├── middleware.ts         # Next.js middleware for auth/routing
+├── next.config.ts        # Next.js configuration
+└── components.json       # shadcn/ui configuration
+```
+
+**Database Package (packages/database):**
+```
+packages/database/
+├── src/
+│   ├── schema/           # Drizzle table schemas
+│   ├── migrations/       # SQL migration files
+│   └── index.ts          # Exports schemas and utilities
+├── drizzle.config.ts     # Drizzle Kit configuration
+└── package.json
+```
+
+### Key Architectural Patterns
+
+1. **Shared database layer**: All database schemas and queries centralized in `@smartgov/database`
+2. **Type safety**: TypeScript strict mode with Drizzle-generated types
+3. **Authentication middleware**: Applied at the Next.js middleware level in each app
+4. **Row Level Security (RLS)**: Implemented at the Supabase database level
+5. **Form validation**: Zod schemas for runtime validation, shared via `@smartgov/types`
+
+### Security Considerations
+
+- All inputs must be validated with Zod schemas
+- Use Row Level Security for database access control
+- Implement audit logging for all PDS/SALN operations
+- Apply rate limiting on API routes
+- This system handles sensitive government data - security is paramount
+
+### Component Development
+
+- Use shadcn/ui components from each app's local installation
+- Check `components.json` in each app for shadcn configuration
+- Magic UI components are available for enhanced visual effects
+- Follow Tailwind CSS 4 conventions for styling
+- Use `cn()` utility for conditional class merging
 
 ## Form Specifications
 
 ### PDS (Personal Data Sheet)
 
-Must comply with CSC (Civil Service Commission) PDS format:
-
-- Personal Information (4 pages)
+Complies with CSC (Civil Service Commission) format:
+- Personal Information (4 sections)
 - Educational Background
 - Work Experience
 - Voluntary Work/Training
-- Other Information
-- Digital signature readiness
+- Digital signature support
 
 ### SALN (Statement of Assets, Liabilities, and Net Worth)
 
 Annual financial disclosure requirements:
-
-- Assets (Real Properties, Personal Properties, Cash/Investments)
+- Assets (Real Property, Personal Property, Cash/Investments)
 - Liabilities
-- Net Worth calculation
-- Business Interests and Financial Connections
-- Relatives in Government Service
+- Net Worth auto-calculation
+- Business Interests tracking
 
-### Form Features
+Both forms require:
+- Real-time Zod validation
+- Auto-save for draft data
+- Version control with timestamps
+- Audit trail logging
 
-- **Dynamic validation**: Real-time field validation with Zod
-- **Auto-save**: Periodic saving of draft data
-- **Version control**: Track all changes with timestamps
-- **Digital signatures**: Cryptographic signing capability
-- **PDF export**: Generate official PDF reports
+## Compliance Requirements
 
-## AI Assistant Integration
-
-### Capabilities
-
-- Answer compliance questions about PDS/SALN requirements
-- Provide guidance on form completion
-- Explain CSC policies and deadlines
-- Help with error resolution
-- Citation of relevant policy documents
-
-### Implementation
-
-- RAG (Retrieval Augmented Generation) over policy database
-- Scoped responses with redaction of sensitive information
-- Integration with Gemini or OpenAI APIs
-- Context-aware responses based on user role
-
-## Compliance and Audit
-
-### Regulatory Requirements
-
-- **Immutable Records**: All submissions stored permanently
-- **Audit Trails**: Complete logging of who, what, when for all actions
-- **Deadline Tracking**: Automated reminders for submission deadlines
-- **Access Controls**: Role-based permissions with approval workflows
-- **Data Retention**: 5+ year archival with retrieval capabilities
-
-### Accessibility
-
-- WCAG 2.1 AA compliance
-- Screen reader compatibility
-- Keyboard navigation support
-- High contrast mode
-- Responsive design for mobile devices
-
-## Performance and Scalability
-
-### Optimization Strategies
-
-- Edge caching for static assets
-- API caching for read-heavy endpoints
-- Background job queues for PDF generation
-- Database indexing for search operations
-- Lazy loading for large datasets
-
-### Monitoring
-
-- Error tracking and alerting
-- Performance monitoring
-- Database query optimization
-- User activity analytics
-- System health dashboards
+- **Immutable Records**: All submissions permanently stored with version history
+- **Audit Trails**: Complete logging (who, what, when) for regulatory compliance
+- **Deadline Tracking**: Automated notifications for submission deadlines
+- **Archival**: Records older than 5 years auto-archived with retrieval capability
+- **Accessibility**: WCAG 2.1 AA compliance for all interfaces
 
 ## Deployment
 
-### Environment Configuration
+- **Platform**: Vercel with Turbo integration
+- **Database**: Supabase production instance
+- **Environment Variables**: Configured per app (check `.env.local` in each app)
+- **Staging**: Vercel preview deployments per PR
+- **Production**: Vercel production from `main` branch
 
-- **Development**: Local development with Supabase local instance
-- **Staging**: Vercel preview deployments
-- **Production**: Vercel with Supabase production database
+## Important Notes
 
-### Environment Variables
-
-- Database connection strings
-- API keys for AI services
-- Authentication secrets
-- Storage bucket configurations
-- Feature flags
-
-## Getting Started
-
-1. **Setup Environment**:
-
-   ```bash
-   npm install
-   cp .env.example .env
-   # Configure environment variables
-   ```
-
-2. **Database Setup**:
-
-   ```bash
-   npx drizzle-kit generate
-   npx drizzle-kit migrate
-   ```
-
-3. **Development**:
-   ```bash
-   npm run dev
-   ```
-
-## Important Notes for Claude Code
-
-- **Always prioritize MCP server usage** for all operations
-- Check existing components before creating new ones
-- Follow the established TypeScript patterns
-- Maintain security best practices
-- Test all form validations thoroughly
-- Ensure accessibility compliance
-- Document any new features or changes
-- Run linting before any commits
-
-This system handles sensitive government data - security and compliance are paramount in all development decisions.
+- Always run `npm run lint` before committing
+- Use `npm run type-check` to verify TypeScript before pushing
+- Database schema changes require migration generation in `packages/database`
+- Each app can be developed independently but builds depend on shared packages
+- MCP servers are configured in `.mcp.json` - use filesystem, shadcn, github, memory, and sequential-thinking servers as appropriate
