@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  ShieldCheck,
   User,
   Mail,
   Phone,
@@ -204,7 +203,7 @@ export default function RegisterPage() {
         />
         <div className="absolute inset-0 bg-gradient-to-br from-background/95 via-background/80 to-background/95" />
 
-        <div className="relative z-10 min-h-screen flex items-center justify-center p-4 pt-24">
+        <div className="relative z-10 min-h-screen flex items-center justify-center p-4 pt-28 pb-8">
           <div className="w-full max-w-md space-y-8 animate-fade-in">
             <Card className="text-center space-y-6 border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-900/20 relative overflow-hidden">
               <BorderBeam
@@ -267,7 +266,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 py-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
+    <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 pt-24 pb-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
       {/* Animated Background Grid Pattern */}
       <AnimatedGridPattern
         numSquares={50}
@@ -281,10 +280,10 @@ export default function RegisterPage() {
       />
 
       {/* Main Content Container */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
+      <div className="relative z-10 w-full max-w-7xl mx-auto grid lg:grid-cols-2 gap-8 lg:gap-12 items-start lg:items-center">
 
         {/* Hero Section - Left Side */}
-        <div className="space-y-8 text-center lg:text-left">
+        <div className="space-y-4 sm:space-y-6 lg:space-y-8 text-center lg:text-left order-2 lg:order-1">
           {/* Badge */}
           <div className="flex justify-center lg:justify-start">
             <Badge
@@ -297,22 +296,22 @@ export default function RegisterPage() {
           </div>
 
           {/* Main Title */}
-          <div className="space-y-4">
-            <AnimatedGradientText className="text-4xl lg:text-6xl font-bold">
+          <div className="space-y-3 sm:space-y-4">
+            <AnimatedGradientText className="text-3xl sm:text-4xl lg:text-6xl font-bold">
               <span className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-600 bg-clip-text text-transparent">
                 SmartGov
               </span>
             </AnimatedGradientText>
-            <h2 className="text-2xl lg:text-3xl font-semibold text-slate-700 dark:text-slate-300">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-slate-700 dark:text-slate-300">
               Employee Registration
             </h2>
-            <p className="text-lg text-slate-600 dark:text-slate-400 max-w-lg mx-auto lg:mx-0">
+            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 max-w-lg mx-auto lg:mx-0">
               Join the secure digital platform for PDS and SALN submissions with complete audit trails and compliance management.
             </p>
           </div>
 
           {/* Feature Highlights */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto lg:mx-0">
+          <div className="hidden sm:grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto lg:mx-0">
             <div className="flex items-center space-x-3 p-4 rounded-lg bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border border-blue-100 dark:border-slate-700">
               <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               <span className="text-sm font-medium text-slate-700 dark:text-slate-300">e-PDS Management</span>
@@ -324,14 +323,14 @@ export default function RegisterPage() {
           </div>
 
           {/* Progress Steps */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto lg:mx-0">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 max-w-2xl mx-auto lg:mx-0">
             {STEPS.map((step) => (
               <div
                 key={step.id}
                 className="flex flex-col items-center space-y-2">
                 <div
                   className={`
-                  w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 relative
+                  w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 relative
                   ${
                     currentStep >= step.id
                       ? 'bg-blue-600 border-blue-600 text-white shadow-lg scale-110'
@@ -339,9 +338,9 @@ export default function RegisterPage() {
                   }
                 `}>
                   {currentStep > step.id ? (
-                    <Check className="h-4 w-4" />
+                    <Check className="h-3 w-3 sm:h-4 sm:w-4" />
                   ) : (
-                    <step.icon className="h-4 w-4" />
+                    <step.icon className="h-3 w-3 sm:h-4 sm:w-4" />
                   )}
                   {currentStep >= step.id && (
                     <BorderBeam size={40} duration={12} delay={9} />
@@ -349,7 +348,7 @@ export default function RegisterPage() {
                 </div>
                 <div className="text-center">
                   <div
-                    className={`text-xs font-medium transition-colors ${
+                    className={`text-[10px] sm:text-xs font-medium transition-colors leading-tight ${
                       currentStep >= step.id
                         ? 'text-blue-600 dark:text-blue-400'
                         : 'text-slate-500 dark:text-slate-400'
@@ -362,7 +361,7 @@ export default function RegisterPage() {
           </div>
 
           {/* Status Indicator */}
-          <div className="flex justify-center lg:justify-start">
+          <div className="hidden md:flex justify-center lg:justify-start">
             <AnimatedShinyText className="inline-flex items-center justify-center px-4 py-2 transition ease-out hover:text-neutral-600 hover:duration-300 hover:dark:text-neutral-400">
               <Users className="w-4 h-4 mr-2" />
               <span>Join Philippine Government Employees</span>
@@ -372,15 +371,15 @@ export default function RegisterPage() {
         </div>
 
         {/* Registration Form - Right Side */}
-        <div className="flex justify-center lg:justify-end">
+        <div className="flex justify-center lg:justify-end order-1 lg:order-2">
           <div className="w-full max-w-md">
             <MagicCard className="relative overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-blue-200/50 dark:border-slate-700/50 shadow-2xl">
               <BorderBeam size={280} duration={12} delay={9} />
 
-              <div className="p-8 space-y-6">
+              <div className="p-6 sm:p-8 space-y-5 sm:space-y-6">
                 {/* Form Header */}
                 <div className="text-center space-y-2">
-                  <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                  <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
                     {STEPS[currentStep - 1].title}
                   </h3>
                   <p className="text-slate-600 dark:text-slate-400">
@@ -393,11 +392,11 @@ export default function RegisterPage() {
                   <Form {...form}>
                     <form
                       onSubmit={form.handleSubmit(onSubmit)}
-                      className="space-y-6">
+                      className="space-y-5 sm:space-y-6">
                   {/* Step 1: Personal Information */}
                   {currentStep === 1 && (
-                    <div className="space-y-5">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-4 sm:space-y-5">
+                      <div className="grid grid-cols-1 gap-4">
                         <FormField
                           control={form.control}
                           name="firstName"
@@ -509,7 +508,7 @@ export default function RegisterPage() {
 
                   {/* Step 2: Employment Details */}
                   {currentStep === 2 && (
-                    <div className="space-y-5">
+                    <div className="space-y-4 sm:space-y-5">
                       <FormField
                         control={form.control}
                         name="department"
@@ -558,7 +557,7 @@ export default function RegisterPage() {
                         )}
                       />
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 gap-4">
                         <FormField
                           control={form.control}
                           name="employeeId"
@@ -617,7 +616,7 @@ export default function RegisterPage() {
 
                   {/* Step 3: Security Setup */}
                   {currentStep === 3 && (
-                    <div className="space-y-5">
+                    <div className="space-y-4 sm:space-y-5">
                       <FormField
                         control={form.control}
                         name="password"
@@ -712,7 +711,7 @@ export default function RegisterPage() {
 
                   {/* Step 4: Terms and Verification */}
                   {currentStep === 4 && (
-                    <div className="space-y-6">
+                    <div className="space-y-5 sm:space-y-6">
                       <div className="space-y-4">
                         <FormField
                           control={form.control}
@@ -829,7 +828,7 @@ export default function RegisterPage() {
                   )}
 
                       {/* Navigation Buttons */}
-                      <div className="flex flex-col sm:flex-row justify-between gap-4 pt-6 border-t border-slate-200 dark:border-slate-700">
+                      <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-4 pt-5 sm:pt-6 border-t border-slate-200 dark:border-slate-700">
                         <Button
                           type="button"
                           variant="outline"

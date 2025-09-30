@@ -46,7 +46,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 py-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
+    <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 pt-24 pb-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
       {/* Animated Background Grid Pattern */}
       <AnimatedGridPattern
         numSquares={50}
@@ -60,10 +60,10 @@ export default function LoginPage() {
       />
 
       {/* Main Content Container */}
-      <div className="relative z-10 w-full max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
+      <div className="relative z-10 w-full max-w-6xl mx-auto grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
 
         {/* Hero Section - Left Side */}
-        <div className="space-y-8 text-center lg:text-left">
+        <div className="space-y-6 sm:space-y-8 text-center lg:text-left order-2 lg:order-1">
           {/* Badge */}
           <div className="flex justify-center lg:justify-start">
             <Badge
@@ -76,22 +76,22 @@ export default function LoginPage() {
           </div>
 
           {/* Main Title */}
-          <div className="space-y-4">
-            <AnimatedGradientText className="text-4xl lg:text-6xl font-bold">
+          <div className="space-y-3 sm:space-y-4">
+            <AnimatedGradientText className="text-3xl sm:text-4xl lg:text-6xl font-bold">
               <span className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-600 bg-clip-text text-transparent">
                 SmartGov
               </span>
             </AnimatedGradientText>
-            <h2 className="text-2xl lg:text-3xl font-semibold text-slate-700 dark:text-slate-300">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-slate-700 dark:text-slate-300">
               Employee Portal
             </h2>
-            <p className="text-lg text-slate-600 dark:text-slate-400 max-w-lg mx-auto lg:mx-0">
+            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 max-w-lg mx-auto lg:mx-0">
               Streamlined digital platform for PDS and SALN submissions with complete audit trails and compliance management.
             </p>
           </div>
 
           {/* Feature Highlights */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto lg:mx-0">
+          <div className="hidden sm:grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto lg:mx-0">
             <div className="flex items-center space-x-3 p-4 rounded-lg bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border border-blue-100 dark:border-slate-700">
               <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               <span className="text-sm font-medium text-slate-700 dark:text-slate-300">e-PDS Management</span>
@@ -103,7 +103,7 @@ export default function LoginPage() {
           </div>
 
           {/* Status Indicator */}
-          <div className="flex justify-center lg:justify-start">
+          <div className="hidden md:flex justify-center lg:justify-start">
             <AnimatedShinyText className="inline-flex items-center justify-center px-4 py-2 transition ease-out hover:text-neutral-600 hover:duration-300 hover:dark:text-neutral-400">
               <Users className="w-4 h-4 mr-2" />
               <span>Trusted by Philippine Government Employees</span>
@@ -113,15 +113,15 @@ export default function LoginPage() {
         </div>
 
         {/* Login Form - Right Side */}
-        <div className="flex justify-center lg:justify-end">
+        <div className="flex justify-center lg:justify-end order-1 lg:order-2">
           <div className="w-full max-w-md">
             <MagicCard className="relative overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-blue-200/50 dark:border-slate-700/50 shadow-2xl">
               <BorderBeam size={280} duration={12} delay={9} />
 
-              <div className="p-8 space-y-6">
+              <div className="p-6 sm:p-8 space-y-5 sm:space-y-6">
                 {/* Form Header */}
                 <div className="text-center space-y-2">
-                  <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                  <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
                     Welcome Back
                   </h3>
                   <p className="text-slate-600 dark:text-slate-400">
@@ -136,7 +136,7 @@ export default function LoginPage() {
                     onSuccess={() => {
                       router.push(redirectTo);
                     }}
-                    onError={(error: any) => {
+                    onError={(error: Error) => {
                       console.error('Login error:', error);
                     }}
                   />
