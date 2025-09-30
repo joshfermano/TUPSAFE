@@ -32,7 +32,8 @@
       "mcp__serena__write_memory",
       "mcp__puppeteer__puppeteer_screenshot",
       "mcp__puppeteer__puppeteer_navigate",
-      "mcp__serena__find_symbol"
+      "mcp__serena__find_symbol",
+      "mcp__serena__read_memory"
     ]
   },
   "enableAllProjectMcpServers": true,
