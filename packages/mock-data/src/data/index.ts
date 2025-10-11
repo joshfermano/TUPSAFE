@@ -2,19 +2,33 @@
 // This file centralizes all mock data for frontend development before implementing real authentication and database connections
 
 // Authentication Mock Data
-export * from './mock-auth';
+export * from './auth';
 
 // User Profiles and Organization Mock Data
-export * from './mock-users';
+export * from './users';
 
 // PDS (Personal Data Sheet) Mock Data
-export * from './mock-pds';
+export * from './pds';
 
 // SALN (Statement of Assets, Liabilities, Net Worth) Mock Data
-export * from './mock-saln';
+export {
+  mockSalnSubmissions,
+  mockSalnRealProperties,
+  mockSalnPersonalProperties,
+  mockSalnLiabilities,
+  mockSalnBusinessInterests,
+  mockSalnRelativesInGov,
+  mockSalnDataSummary,
+  getCompleteSalnSubmission,
+  getSalnSubmissionsByUserId,
+  getSalnSubmissionsByYear,
+} from './saln';
+
+// Re-export common types that hooks need
+export type { SalnSubmission, PdsSubmission } from '@smartgov/database';
 
 // Re-export specific collections for easy access
-import { mockAuthUsers, MockAuth } from './mock-auth';
+import { mockAuthUsers, MockAuth } from './auth';
 import {
   mockDepartments,
   mockPositions,
@@ -25,7 +39,7 @@ import {
   getProfileById,
   getProfilesByDepartment,
   getProfilesByRole,
-} from './mock-users';
+} from './users';
 import {
   mockPdsSubmissions,
   mockPdsPersonalInfo,
@@ -40,7 +54,7 @@ import {
   mockPdsDataSummary,
   getCompletePdsSubmission,
   getPdsSubmissionsByUserId,
-} from './mock-pds';
+} from './pds';
 import {
   mockSalnSubmissions,
   mockSalnRealProperties,
@@ -52,7 +66,7 @@ import {
   getCompleteSalnSubmission,
   getSalnSubmissionsByUserId,
   getSalnSubmissionsByYear,
-} from './mock-saln';
+} from './saln';
 
 // Consolidated Mock Database Interface
 export class MockDatabase {

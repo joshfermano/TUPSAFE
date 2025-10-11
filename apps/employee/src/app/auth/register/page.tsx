@@ -362,7 +362,7 @@ export default function RegisterPage() {
 
           {/* Status Indicator */}
           <div className="hidden md:flex justify-center lg:justify-start">
-            <AnimatedShinyText className="inline-flex items-center justify-center px-4 py-2 transition ease-out hover:text-neutral-600 hover:duration-300 hover:dark:text-neutral-400">
+            <AnimatedShinyText className="inline-flex items-center justify-center px-4 py-2 transition ease-out hover:text-blue-600 hover:duration-300 hover:dark:text-blue-400">
               <Users className="w-4 h-4 mr-2" />
               <span>Join Philippine Government Employees</span>
               <ChevronRight className="ml-1 size-3 transition-transform duration-300 ease-in-out group-hover:translate-x-0.5" />
@@ -373,7 +373,11 @@ export default function RegisterPage() {
         {/* Registration Form - Right Side */}
         <div className="flex justify-center lg:justify-end order-1 lg:order-2">
           <div className="w-full max-w-md">
-            <MagicCard className="relative overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-blue-200/50 dark:border-slate-700/50 shadow-2xl">
+            <MagicCard
+              className="relative overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-blue-200/50 dark:border-slate-700/50 shadow-2xl"
+              gradientColor="rgba(59, 130, 246, 0.08)"
+              gradientOpacity={0.3}
+            >
               <BorderBeam size={280} duration={12} delay={9} />
 
               <div className="p-6 sm:p-8 space-y-5 sm:space-y-6">
@@ -407,7 +411,7 @@ export default function RegisterPage() {
                                 <Input
                                   {...field}
                                   placeholder="Juan"
-                                  className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 transition-all duration-300 hover:border-blue-400"
+                                  className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-blue-400 dark:hover:bg-slate-700/80 dark:hover:border-blue-500"
                                   aria-describedby="firstName-description"
                                 />
                               </FormControl>
@@ -426,7 +430,7 @@ export default function RegisterPage() {
                                 <Input
                                   {...field}
                                   placeholder="Dela Cruz"
-                                  className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 transition-all duration-300 hover:border-blue-400"
+                                  className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-blue-400 dark:hover:bg-slate-700/80 dark:hover:border-blue-500"
                                   aria-describedby="lastName-description"
                                 />
                               </FormControl>
@@ -446,7 +450,7 @@ export default function RegisterPage() {
                               <Input
                                 {...field}
                                 placeholder="Santos (optional)"
-                                className="focus-government transition-all duration-300 hover:border-primary/50"
+                                className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-blue-400 dark:hover:bg-slate-700/80 dark:hover:border-blue-500"
                                 aria-describedby="middleName-description"
                               />
                             </FormControl>
@@ -468,7 +472,7 @@ export default function RegisterPage() {
                                   {...field}
                                   type="email"
                                   placeholder="juan.delacruz@gov.ph"
-                                  className="pl-10 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 transition-all duration-300 hover:border-blue-400"
+                                  className="pl-10 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-blue-400 dark:hover:bg-slate-700/80 dark:hover:border-blue-500"
                                   aria-describedby="email-description"
                                 />
                               </div>
@@ -494,7 +498,7 @@ export default function RegisterPage() {
                                   {...field}
                                   type="tel"
                                   placeholder="+639123456789 or 09123456789"
-                                  className="pl-10 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 transition-all duration-300 hover:border-blue-400"
+                                  className="pl-10 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-blue-400 dark:hover:bg-slate-700/80 dark:hover:border-blue-500"
                                   aria-describedby="phone-description"
                                 />
                               </div>
@@ -519,7 +523,7 @@ export default function RegisterPage() {
                               onValueChange={field.onChange}
                               defaultValue={field.value}>
                               <FormControl>
-                                <SelectTrigger className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 transition-all duration-300 hover:border-blue-400">
+                                <SelectTrigger className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 transition-all duration-300 hover:bg-white hover:border-blue-400 dark:hover:bg-slate-700/80 dark:hover:border-blue-500">
                                   <SelectValue placeholder="Select your department" />
                                 </SelectTrigger>
                               </FormControl>
@@ -548,7 +552,7 @@ export default function RegisterPage() {
                                 <Input
                                   {...field}
                                   placeholder="e.g., Administrative Officer III"
-                                  className="pl-10 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 transition-all duration-300 hover:border-blue-400"
+                                  className="pl-10 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-blue-400 dark:hover:bg-slate-700/80 dark:hover:border-blue-500"
                                 />
                               </div>
                             </FormControl>
@@ -568,7 +572,7 @@ export default function RegisterPage() {
                                 <Input
                                   {...field}
                                   placeholder="EMP001234"
-                                  className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 transition-all duration-300 hover:border-blue-400"
+                                  className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-blue-400 dark:hover:bg-slate-700/80 dark:hover:border-blue-500"
                                   onChange={(e) =>
                                     field.onChange(e.target.value.toUpperCase())
                                   }
@@ -593,7 +597,7 @@ export default function RegisterPage() {
                                   {...field}
                                   type="number"
                                   placeholder="0"
-                                  className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 transition-all duration-300 hover:border-blue-400"
+                                  className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-blue-400 dark:hover:bg-slate-700/80 dark:hover:border-blue-500"
                                   onChange={(e) =>
                                     field.onChange(
                                       e.target.value
@@ -630,7 +634,7 @@ export default function RegisterPage() {
                                   {...field}
                                   type={showPassword ? 'text' : 'password'}
                                   placeholder="Create a strong password"
-                                  className="pl-10 pr-10 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 transition-all duration-300 hover:border-blue-400"
+                                  className="pl-10 pr-10 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-blue-400 dark:hover:bg-slate-700/80 dark:hover:border-blue-500"
                                   aria-describedby="password-requirements"
                                 />
                                 <button
@@ -681,7 +685,7 @@ export default function RegisterPage() {
                                     showConfirmPassword ? 'text' : 'password'
                                   }
                                   placeholder="Confirm your password"
-                                  className="pl-10 pr-10 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 transition-all duration-300 hover:border-blue-400"
+                                  className="pl-10 pr-10 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-blue-400 dark:hover:bg-slate-700/80 dark:hover:border-blue-500"
                                 />
                                 <button
                                   type="button"
@@ -834,7 +838,7 @@ export default function RegisterPage() {
                           variant="outline"
                           onClick={prevStep}
                           disabled={currentStep === 1 || isLoading}
-                          className="flex items-center gap-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:border-blue-400 transition-colors order-2 sm:order-1">
+                          className="flex items-center gap-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:border-blue-300 transition-colors order-2 sm:order-1">
                           <ArrowLeft className="h-4 w-4" />
                           Previous
                         </Button>

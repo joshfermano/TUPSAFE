@@ -35,8 +35,8 @@
     "tailwind-merge": "^3.3.1",
     "zod": "^3.25.76",
     "@smartgov/database": "*",
-    "@smartgov/auth": "*",
-    "@smartgov/types": "*"
+    "@smartgov/types": "*",
+    "@smartgov/mock-data": "*"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
