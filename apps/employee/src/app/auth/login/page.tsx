@@ -2,7 +2,8 @@
 
 import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth, LoginForm } from '@smartgov/auth';
+import { useAuth } from '@smartgov/mock-data/api';
+import { MockLoginForm } from '@/components/auth/MockLoginForm';
 import { Badge } from '@/components/ui/badge';
 import { MagicCard } from '@/components/ui/magic-card';
 import { BorderBeam } from '@/components/ui/border-beam';
@@ -16,7 +17,7 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading } = useAuth();
-  const redirectTo = searchParams.get('redirectTo') || '/dashboard';
+  const redirectTo = searchParams.get('redirectTo') || '/dashboard/profile';
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -104,7 +105,7 @@ export default function LoginPage() {
 
           {/* Status Indicator */}
           <div className="hidden md:flex justify-center lg:justify-start">
-            <AnimatedShinyText className="inline-flex items-center justify-center px-4 py-2 transition ease-out hover:text-neutral-600 hover:duration-300 hover:dark:text-neutral-400">
+            <AnimatedShinyText className="inline-flex items-center justify-center px-4 py-2 transition ease-out hover:text-blue-600 hover:duration-300 hover:dark:text-blue-400">
               <Users className="w-4 h-4 mr-2" />
               <span>Trusted by Philippine Government Employees</span>
               <ChevronRight className="ml-1 size-3 transition-transform duration-300 ease-in-out group-hover:translate-x-0.5" />
@@ -115,7 +116,11 @@ export default function LoginPage() {
         {/* Login Form - Right Side */}
         <div className="flex justify-center lg:justify-end order-1 lg:order-2">
           <div className="w-full max-w-md">
-            <MagicCard className="relative overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-blue-200/50 dark:border-slate-700/50 shadow-2xl">
+            <MagicCard
+              className="relative overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-blue-200/50 dark:border-slate-700/50 shadow-2xl"
+              gradientColor="rgba(59, 130, 246, 0.08)"
+              gradientOpacity={0.3}
+            >
               <BorderBeam size={280} duration={12} delay={9} />
 
               <div className="p-6 sm:p-8 space-y-5 sm:space-y-6">
@@ -131,7 +136,7 @@ export default function LoginPage() {
 
                 {/* Login Form Component */}
                 <div className="space-y-4">
-                  <LoginForm
+                  <MockLoginForm
                     redirectTo={redirectTo}
                     onSuccess={() => {
                       router.push(redirectTo);

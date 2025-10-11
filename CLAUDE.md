@@ -17,12 +17,12 @@ Thesis project for a secure web-based system enabling Philippine government empl
 
 This is a Turbo-managed monorepo with separate applications and shared packages:
 
-### Apps (apps/*)
+### Apps (apps/\*)
 
 - **employee**: Employee-facing portal (port 3000) for PDS/SALN submissions
 - **admin**: HR/Admin portal (port 3001) for reviewing and managing submissions
 
-### Shared Packages (packages/*)
+### Shared Packages (packages/\*)
 
 - **@smartgov/database**: Drizzle ORM schemas, migrations, and database utilities
 - **@smartgov/auth**: Authentication utilities and middleware
@@ -92,6 +92,7 @@ npx drizzle-kit studio      # Open Drizzle Studio GUI
 ### Code Organization
 
 **Apps Structure (apps/employee or apps/admin):**
+
 ```
 apps/[employee|admin]/
 ├── src/
@@ -105,6 +106,7 @@ apps/[employee|admin]/
 ```
 
 **Database Package (packages/database):**
+
 ```
 packages/database/
 ├── src/
@@ -144,6 +146,7 @@ packages/database/
 ### PDS (Personal Data Sheet)
 
 Complies with CSC (Civil Service Commission) format:
+
 - Personal Information (4 sections)
 - Educational Background
 - Work Experience
@@ -153,12 +156,14 @@ Complies with CSC (Civil Service Commission) format:
 ### SALN (Statement of Assets, Liabilities, and Net Worth)
 
 Annual financial disclosure requirements:
+
 - Assets (Real Property, Personal Property, Cash/Investments)
 - Liabilities
 - Net Worth auto-calculation
 - Business Interests tracking
 
 Both forms require:
+
 - Real-time Zod validation
 - Auto-save for draft data
 - Version control with timestamps

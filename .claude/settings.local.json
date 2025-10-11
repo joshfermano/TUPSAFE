@@ -34,7 +34,16 @@
       "mcp__puppeteer__puppeteer_navigate",
       "mcp__serena__find_symbol",
       "mcp__serena__read_memory",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "mcp__serena__get_symbols_overview",
+      "Bash(rm:*)",
+      "Bash(for pkg in database types shared-ui auth)",
+      "Bash(do echo \"=== $pkg ===\")",
+      "Bash(ls:*)",
+      "Bash(done)",
+      "Bash(cat:*)",
+      "mcp__magicui__getComponents",
+      "mcp__magicui__getSpecialEffects"
     ]
   },
   "enableAllProjectMcpServers": true,

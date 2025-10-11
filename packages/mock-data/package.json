@@ -1,0 +1,39 @@
+{
+  "name": "@smartgov/mock-data",
+  "version": "0.1.0",
+  "private": true,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./api": {
+      "types": "./dist/api/index.d.ts",
+      "default": "./dist/api/index.js"
+    },
+    "./providers": {
+      "types": "./dist/providers/index.d.ts",
+      "default": "./dist/providers/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src/",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "uuid": "^11.0.3",
+    "@smartgov/database": "*",
+    "@smartgov/types": "*"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/uuid": "^10.0.0",
+    "eslint": "^9",
+    "typescript": "^5"
+  },
+  "peerDependencies": {
+    "react": "19.1.0"
+  }
+}

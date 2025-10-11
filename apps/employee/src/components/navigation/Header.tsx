@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Menu, Shield, FileText, Users } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Menu, Shield, FileText, Users, LogOut, User as UserIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@smartgov/mock-data/api';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -46,7 +47,7 @@ interface NavigationSubItem {
 const navigationItems: NavigationItem[] = [
   {
     name: 'Home',
-    href: '#hero',
+    href: '/',
   },
   {
     name: 'Features',
@@ -80,22 +81,44 @@ const navigationItems: NavigationItem[] = [
   },
 ];
 
-// Smooth scroll handler
-const handleSmoothScroll = (href: string) => {
+// Smooth scroll handler with router awareness
+const handleNavClick = (
+  e: React.MouseEvent<HTMLAnchorElement>,
+  href: string,
+  pathname: string,
+  router?: ReturnType<typeof useRouter>
+) => {
+  // For hash links (like #features), handle scroll only if on homepage
   if (href.startsWith('#')) {
-    const element = document.querySelector(href);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+    if (pathname === '/') {
+      // Already on homepage, just scroll
+      e.preventDefault();
+      const element = document.querySelector(href);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      // Navigate to homepage first, then scroll
+      e.preventDefault();
+      if (router) {
+        router.push('/' + href);
+      } else {
+        window.location.href = '/' + href;
+      }
     }
   }
+  // For regular links, let Next.js Link component handle navigation
 };
 
 // Mobile Navigation Component
 const MobileNavigation: React.FC<{
   isOpen: boolean;
   onClose: () => void;
-}> = ({ isOpen, onClose }) => {
+  user: any;
+  onLogout: () => void;
+}> = ({ isOpen, onClose, user, onLogout }) => {
   const pathname = usePathname();
+  const router = useRouter();
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
@@ -118,10 +141,7 @@ const MobileNavigation: React.FC<{
               <Link
                 href={item.href}
                 onClick={(e) => {
-                  if (item.href.startsWith('#')) {
-                    e.preventDefault();
-                    handleSmoothScroll(item.href);
-                  }
+                  handleNavClick(e, item.href, pathname, router);
                   onClose();
                 }}
                 className={cn(
@@ -175,21 +195,49 @@ const MobileNavigation: React.FC<{
 
         <div className="mt-auto pt-6 border-t border-border/30">
           <div className="flex flex-col gap-3 px-1">
-            <Button
-              asChild
-              variant="ghost"
-              className="btn-government-ghost w-full justify-center h-12 text-base font-medium">
-              <Link href="/auth/login">Sign In</Link>
-            </Button>
-            <Button
-              asChild
-              variant="default"
-              className="btn-government w-full justify-center h-12 text-base font-medium shadow-lg">
-              <Link href="/auth/register">Get Started</Link>
-            </Button>
-            <p className="text-xs text-muted-foreground text-center mt-2 px-4">
-              Secure government employee portal
-            </p>
+            {user ? (
+              <>
+                <div className="px-4 py-3 rounded-xl bg-primary/5 border border-primary/20">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <UserIcon className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{user.email}</p>
+                      <p className="text-xs text-muted-foreground">Signed in</p>
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    onLogout();
+                    onClose();
+                  }}
+                  className="btn-government-ghost w-full justify-center h-12 text-base font-medium">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="btn-government-ghost w-full justify-center h-12 text-base font-medium">
+                  <Link href="/auth/login">Sign In</Link>
+                </Button>
+                <Button
+                  asChild
+                  variant="default"
+                  className="btn-government w-full justify-center h-12 text-base font-medium shadow-lg">
+                  <Link href="/auth/register">Get Started</Link>
+                </Button>
+                <p className="text-xs text-muted-foreground text-center mt-2 px-4">
+                  Secure government employee portal
+                </p>
+              </>
+            )}
           </div>
         </div>
       </SheetContent>
@@ -200,6 +248,7 @@ const MobileNavigation: React.FC<{
 // Desktop Navigation Component
 const DesktopNavigation: React.FC = () => {
   const pathname = usePathname();
+  const router = useRouter();
 
   return (
     <NavigationMenu className="hidden lg:flex">
@@ -228,6 +277,7 @@ const DesktopNavigation: React.FC = () => {
                       <NavigationMenuLink asChild>
                         <Link
                           href={item.href}
+                          onClick={(e) => handleNavClick(e, item.href, pathname, router)}
                           className="flex h-full w-full select-none flex-col justify-end rounded-xl bg-gradient-government-soft p-6 no-underline outline-none focus:shadow-md hover:shadow-lg transition-all duration-300">
                           {item.icon && (
                             <item.icon className="h-6 w-6 text-government" />
@@ -269,12 +319,7 @@ const DesktopNavigation: React.FC = () => {
               <NavigationMenuLink asChild>
                 <Link
                   href={item.href}
-                  onClick={(e) => {
-                    if (item.href.startsWith('#')) {
-                      e.preventDefault();
-                      handleSmoothScroll(item.href);
-                    }
-                  }}
+                  onClick={(e) => handleNavClick(e, item.href, pathname, router)}
                   className={cn(
                     'inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium',
                     'transition-all duration-300 focus-government',
@@ -300,6 +345,7 @@ const DesktopNavigation: React.FC = () => {
 // Tablet Navigation Component (condensed version for medium screens)
 const TabletNavigation: React.FC = () => {
   const pathname = usePathname();
+  const router = useRouter();
   const essentialItems = navigationItems.filter((item) =>
     ['Home', 'Features', 'About'].includes(item.name)
   );
@@ -312,12 +358,7 @@ const TabletNavigation: React.FC = () => {
             <NavigationMenuLink asChild>
               <Link
                 href={item.href}
-                onClick={(e) => {
-                  if (item.href.startsWith('#')) {
-                    e.preventDefault();
-                    handleSmoothScroll(item.href);
-                  }
-                }}
+                onClick={(e) => handleNavClick(e, item.href, pathname, router)}
                 className={cn(
                   'inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium',
                   'transition-all duration-300 focus-government',
@@ -344,6 +385,19 @@ export const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const { user, signOut } = useAuth();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  // Hide header on dashboard routes
+  const shouldHideHeader = pathname.startsWith('/dashboard');
+
+  // Handle logout with navigation
+  const handleLogout = async () => {
+    await signOut();
+    // Use hard redirect to ensure complete state reset
+    window.location.href = '/';
+  };
 
   // Handle scroll effect
   useEffect(() => {
@@ -362,6 +416,11 @@ export const Header: React.FC = () => {
     }, 100);
     return () => clearTimeout(timer);
   }, []);
+
+  // Don't render header on dashboard pages
+  if (shouldHideHeader) {
+    return null;
+  }
 
   return (
     <>
@@ -391,7 +450,7 @@ export const Header: React.FC = () => {
           {/* Logo Section - Left */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <Link
-              href="/"
+              href={user ? "/dashboard/profile" : "/"}
               className="group flex items-center gap-2 transition-all duration-300 hover:scale-105 focus-government rounded-full p-1">
               <div className="relative">
                 <Shield className="h-6 w-6 sm:h-7 sm:w-7 text-primary transition-all duration-300 group-hover:rotate-12" />
@@ -419,19 +478,40 @@ export const Header: React.FC = () => {
 
             {/* Auth Buttons - Desktop & Tablet */}
             <div className="hidden md:flex items-center gap-2">
-              <Button
-                asChild
-                variant="ghost"
-                size="sm"
-                className="btn-government-ghost rounded-full h-8 px-3 text-xs font-medium">
-                <Link href="/auth/login">Sign In</Link>
-              </Button>
-              <Button
-                asChild
-                size="sm"
-                className="btn-government rounded-full h-8 px-3 text-xs font-medium">
-                <Link href="/auth/register">Sign Up</Link>
-              </Button>
+              {user ? (
+                <>
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/5 border border-primary/20">
+                    <UserIcon className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-xs font-medium text-foreground max-w-[120px] truncate">
+                      {user.email}
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleLogout}
+                    className="btn-government-ghost rounded-full h-8 px-3 text-xs font-medium">
+                    <LogOut className="h-3.5 w-3.5 mr-1.5" />
+                    Sign Out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="sm"
+                    className="btn-government-ghost rounded-full h-8 px-3 text-xs font-medium">
+                    <Link href="/auth/login">Sign In</Link>
+                  </Button>
+                  <Button
+                    asChild
+                    size="sm"
+                    className="btn-government rounded-full h-8 px-3 text-xs font-medium">
+                    <Link href="/auth/register">Sign Up</Link>
+                  </Button>
+                </>
+              )}
             </div>
 
             {/* Mobile Menu Button */}
@@ -456,6 +536,8 @@ export const Header: React.FC = () => {
       <MobileNavigation
         isOpen={isMobileMenuOpen}
         onClose={() => setIsMobileMenuOpen(false)}
+        user={user}
+        onLogout={handleLogout}
       />
     </>
   );

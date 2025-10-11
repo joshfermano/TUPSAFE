@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@smartgov/auth';
+import { useAuth } from '@smartgov/mock-data/api';
 import HeroSection from '@/components/sections/HeroSection';
 import FeaturesSection from '@/components/sections/FeaturesSection';
 
@@ -13,7 +13,7 @@ export default function Home() {
   // Redirect authenticated users to dashboard
   useEffect(() => {
     if (!loading && user) {
-      router.push('/dashboard');
+      router.push('/dashboard/profile');
     }
   }, [user, loading, router]);
 
