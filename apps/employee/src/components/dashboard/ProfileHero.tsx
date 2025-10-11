@@ -39,8 +39,7 @@ export function ProfileHero({ profile, department, position }: ProfileHeroProps)
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-600 p-8 sm:p-10 text-white shadow-2xl">
       <BorderBeam size={250} duration={12} delay={9} colorFrom="#60a5fa" colorTo="#818cf8" />
 
-      {/* Background Pattern */}
-      <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-10"></div>
+      {/* Background Effects */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
       <div className="absolute bottom-0 left-0 w-48 h-48 bg-indigo-400/20 rounded-full blur-3xl"></div>
 

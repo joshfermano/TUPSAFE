@@ -49,7 +49,10 @@ function DashboardSidebar({ className }: { className?: string }) {
 
   const handleSignOut = async () => {
     await signOut();
-    router.push('/auth/login');
+    // Small delay to ensure all state cleanup completes before page reload
+    await new Promise(resolve => setTimeout(resolve, 50));
+    // Force complete page reload to clear all state and go to homepage
+    window.location.href = '/';
   };
 
   const getInitials = () => {

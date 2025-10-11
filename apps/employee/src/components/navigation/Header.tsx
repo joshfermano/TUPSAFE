@@ -395,7 +395,11 @@ export const Header: React.FC = () => {
   // Handle logout with navigation
   const handleLogout = async () => {
     await signOut();
-    // Use hard redirect to ensure complete state reset
+    // Small delay to ensure all state cleanup (localStorage removal, React state updates)
+    // completes before the browser navigation starts. This prevents a race condition where
+    // the page reload interrupts the async cleanup process, leaving stale user state.
+    await new Promise(resolve => setTimeout(resolve, 50));
+    // Force complete page reload to clear all state
     window.location.href = '/';
   };
 
