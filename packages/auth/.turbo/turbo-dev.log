@@ -1,0 +1,18 @@
+
+> @smartgov/auth@0.1.0 dev
+> tsc --watch
+
+[2J[3J[H6:33:59 PM - Starting compilation in watch mode...
+
+src/components/ProtectedRoute.tsx(5,27): error TS2307: Cannot find module '@smartgov/database' or its corresponding type declarations.
+src/middleware.ts(4,29): error TS2307: Cannot find module '@smartgov/database' or its corresponding type declarations.
+
+6:34:04 PM - Found 2 errors. Watching for file changes.
+error TS5083: Cannot read file 'C:/Users/justi/OneDrive/Desktop/thesis/SmartGov/packages/auth/tsconfig.json'.
+npm error Lifecycle script `dev` failed with error:
+npm error code 1
+npm error path C:\Users\justi\OneDrive\Desktop\thesis\SmartGov\packages\auth
+npm error workspace @smartgov/auth@0.1.0
+npm error location C:\Users\justi\OneDrive\Desktop\thesis\SmartGov\packages\auth
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c tsc --watch
