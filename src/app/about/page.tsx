@@ -148,7 +148,7 @@ export default function AboutPage() {
       icon: GraduationCap,
       title: 'Thesis Research',
       description:
-        'Master&apos;s thesis focusing on digital transformation in Philippine government institutions.',
+        'This Thesis are focusing on digital transformation in Philippine government institutions.',
     },
     {
       icon: BookOpen,

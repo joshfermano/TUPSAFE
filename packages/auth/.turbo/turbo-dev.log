@@ -1,0 +1,13 @@
+
+> @smartgov/auth@0.1.0 dev
+> tsc --watch
+
+[2J[3J[H3:18:21 PM - Starting compilation in watch mode...
+
+src/components/ProtectedRoute.tsx(5,27): error TS2307: Cannot find module '@smartgov/database' or its corresponding type declarations.
+src/middleware.ts(4,29): error TS2307: Cannot find module '@smartgov/database' or its corresponding type declarations.
+
+3:18:31 PM - Found 2 errors. Watching for file changes.
+[2J[3J[H3:18:32 PM - File change detected. Starting incremental compilation...
+
+
