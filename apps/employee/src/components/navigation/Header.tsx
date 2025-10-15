@@ -114,7 +114,7 @@ const handleNavClick = (
 const MobileNavigation: React.FC<{
   isOpen: boolean;
   onClose: () => void;
-  user: any;
+  user: { email: string } | null;
   onLogout: () => void;
 }> = ({ isOpen, onClose, user, onLogout }) => {
   const pathname = usePathname();

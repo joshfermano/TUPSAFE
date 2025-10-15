@@ -43,7 +43,8 @@
       "Bash(done)",
       "Bash(cat:*)",
       "mcp__magicui__getComponents",
-      "mcp__magicui__getSpecialEffects"
+      "mcp__magicui__getSpecialEffects",
+      "Bash(find:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
