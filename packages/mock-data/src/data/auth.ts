@@ -4,7 +4,7 @@ import { v7 as uuidv7 } from 'uuid';
 export interface MockUser {
   id: string;
   email: string;
-  password: string; // In real app, this would be hashed
+  password: string;
   emailConfirmed: boolean;
   lastSignIn: Date | null;
   createdAt: Date;
