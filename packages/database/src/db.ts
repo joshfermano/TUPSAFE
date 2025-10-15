@@ -13,11 +13,7 @@ if (!connectionString) {
 export const client = postgres(connectionString, {
   prepare: false,
   max: 10,
-<<<<<<< HEAD
-  onnotice: () => {},
-=======
   onnotice: () => {}, // Suppress notices
->>>>>>> 34c02645688c8399daf060fa7be48625f2af4a8a
 });
 
 export const db = drizzle(client, { schema });

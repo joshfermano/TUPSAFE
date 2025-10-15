@@ -2,75 +2,41 @@
 > employee@0.1.0 dev
 > next dev --turbopack --port 3000
 
-[1G[0K
-[31m✘[39m node v22.19.0, and next.js v15.5.3 are [31mnot yet supported[39m in the Community edition of [33mConsole Ninja[39m.
-We are working hard on it for you [36mhttps://tinyurl.com/3h9mtwra[39m.
+
+✘ node v22.19.0, and next.js v15.5.3 are not yet supported in the Community edition of Console Ninja.
+We are working hard on it for you https://tinyurl.com/3h9mtwra.
 
 Estimated release dates:
-  - Community users: [36maround 10th November, 2025 [1m(subject to team availability)[22m[39m
-[33m  - PRO users[39m:       [1m[32mpriority access is available now[39m[22m
+  - Community users: around 10th November, 2025 (subject to team availability)
+  - PRO users:       priority access is available now
+
+ ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of /home/joshfermano/package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * /home/joshfermano/Thesis/smart-gov/package-lock.json
+   * /home/joshfermano/Thesis/package-lock.json
 
 
-[31m✘[39m node v22.19.0, and next.js v15.5.3 are [31mnot yet supported[39m in the Community edition of [33mConsole Ninja[39m.
-We are working hard on it for you [36mhttps://tinyurl.com/3h9mtwra[39m.
+✘ node v22.19.0, and next.js v15.5.3 are not yet supported in the Community edition of Console Ninja.
+We are working hard on it for you https://tinyurl.com/3h9mtwra.
 
 Estimated release dates:
-  - Community users: [36maround 10th November, 2025 [1m(subject to team availability)[22m[39m
-[33m  - PRO users[39m:       [1m[32mpriority access is available now[39m[22m
+  - Community users: around 10th November, 2025 (subject to team availability)
+  - PRO users:       priority access is available now
 
-   [1m[38;2;173;127;168m▲ Next.js 15.5.3[39m[22m (Turbopack)
+   ▲ Next.js 15.5.3 (Turbopack)
    - Local:        http://localhost:3000
-   - Network:      http://192.168.1.17:3000
+   - Network:      http://10.22.207.42:3000
    - Environments: .env.local
 
- [32m[1m✓[22m[39m Starting...
- [32m[1m✓[22m[39m Compiled middleware in 129ms
- [32m[1m✓[22m[39m Ready in 1004ms
- [37m[1m○[22m[39m Compiling / ...
- [32m[1m✓[22m[39m Compiled / in 3.2s
- GET / [32m200[39m in 3582ms
- GET / [32m200[39m in 118ms
- [37m[1m○[22m[39m Compiling /auth/login ...
- [32m[1m✓[22m[39m Compiled /auth/login in 544ms
- GET /auth/login [32m200[39m in 605ms
- [37m[1m○[22m[39m Compiling /dashboard/profile ...
- [32m[1m✓[22m[39m Compiled /dashboard/profile in 526ms
- GET /dashboard/profile [32m200[39m in 638ms
- GET /dashboard/profile [32m200[39m in 534ms
- [32m[1m✓[22m[39m Compiled /dashboard/pds in 293ms
- GET /dashboard/pds [32m200[39m in 334ms
- [32m[1m✓[22m[39m Compiled /dashboard/saln in 257ms
- GET /dashboard/saln [32m200[39m in 316ms
- [32m[1m✓[22m[39m Compiled /dashboard/settings in 264ms
- GET /dashboard/settings [32m200[39m in 305ms
- GET /dashboard/profile [32m200[39m in 35ms
- GET /dashboard/pds [32m200[39m in 37ms
- GET /dashboard/saln [32m200[39m in 31ms
- GET /dashboard/profile [32m200[39m in 45ms
- GET /dashboard/settings [32m200[39m in 32ms
- GET /dashboard/settings [32m200[39m in 31ms
- GET /dashboard/saln [32m200[39m in 36ms
- GET /dashboard/pds [32m200[39m in 33ms
- GET /dashboard/profile [32m200[39m in 28ms
- GET /dashboard/settings [32m200[39m in 35ms
- GET /dashboard/profile [32m200[39m in 38ms
- GET /dashboard/pds [32m200[39m in 34ms
- GET /dashboard/profile [32m200[39m in 29ms
- GET /dashboard/pds [32m200[39m in 32ms
- GET /dashboard/settings [32m200[39m in 28ms
- GET /dashboard/profile [32m200[39m in 34ms
- GET /dashboard/settings [32m200[39m in 35ms
- GET /dashboard/saln [32m200[39m in 29ms
- GET /dashboard/pds [32m200[39m in 33ms
- GET /dashboard/profile [32m200[39m in 28ms
- GET /dashboard/pds [32m200[39m in 38ms
- GET /dashboard/saln [32m200[39m in 35ms
- GET /dashboard/pds [32m200[39m in 34ms
- GET /dashboard/profile [32m200[39m in 30ms
- GET / [32m200[39m in 127ms
- [32m[1m✓[22m[39m Compiled /features/saln in 477ms
- GET /features/saln [32m200[39m in 535ms
- [32m[1m✓[22m[39m Compiled /features/ai-compliance in 399ms
- GET /features/ai-compliance [32m200[39m in 446ms
+ ✓ Starting...
+ ✓ Compiled middleware in 180ms
+ ✓ Ready in 950ms
+ ○ Compiling / ...
+ ✓ Compiled / in 4.8s
+ GET / 200 in 5190ms
+ ✓ Compiled /auth/login in 390ms
+ GET /auth/login 200 in 506ms
 [?25h
-[1G[0K⠙[1G[0K
