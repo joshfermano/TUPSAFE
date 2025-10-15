@@ -16,6 +16,7 @@ import {
   Award,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 const TypewriterText = ({ words }: { words: string[] }) => {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
@@ -96,7 +97,7 @@ const TypewriterText = ({ words }: { words: string[] }) => {
 
 export default function HeroSection() {
   const [isVisible, setIsVisible] = useState(false);
-
+  const router = useRouter();
   useEffect(() => {
     setIsVisible(true);
   }, []);
@@ -175,6 +176,9 @@ export default function HeroSection() {
             {/* CTA Button */}
             <div className="flex justify-center items-center mb-12">
               <Button
+                onClick={() => {
+                  router.push('/auth/login');
+                }}
                 size="lg"
                 className="btn-government text-lg px-8 py-6 shadow-xl hover:shadow-2xl transition-all duration-300 group"
                 aria-label="Get started with SmartGov platform"
@@ -221,7 +225,9 @@ export default function HeroSection() {
             <div className="w-2 h-4 bg-government rounded-full mt-2 animate-pulse shadow-lg"></div>
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-government/10 to-government/20 rounded-full"></div>
           </div>
-          <span className="text-xs font-medium text-government">Scroll to explore</span>
+          <span className="text-xs font-medium text-government">
+            Scroll to explore
+          </span>
         </div>
       </div>
     </section>
