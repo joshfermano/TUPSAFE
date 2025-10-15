@@ -1,7 +1,8 @@
 import { createAuthMiddleware } from '@smartgov/auth';
-import type { NextRequest } from 'next/server';
+import type { NextRequest, NextResponse } from 'next/server';
 
-let middlewarePromise: Promise<any> | null = null;
+type MiddlewareFunction = (req: NextRequest) => Promise<NextResponse>;
+let middlewarePromise: Promise<MiddlewareFunction> | null = null;
 
 export default async function middleware(request: NextRequest) {
   if (!middlewarePromise) {
