@@ -1,0 +1,34 @@
+{
+  "name": "@smartgov/database",
+  "version": "0.1.0",
+  "private": true,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src/",
+    "type-check": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.44.5",
+    "postgres": "^3.4.7",
+    "uuid": "^11.0.3",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.15",
+    "@types/uuid": "^10.0.0",
+    "drizzle-kit": "^0.31.4",
+    "eslint": "^9",
+    "typescript": "^5"
+  }
+}

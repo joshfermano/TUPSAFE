@@ -1,10 +1,1 @@
-{
-  "/auth/login/page": "app/auth/login/page.js",
-  "/dashboard/pds/page": "app/dashboard/pds/page.js",
-  "/dashboard/profile/page": "app/dashboard/profile/page.js",
-  "/dashboard/saln/page": "app/dashboard/saln/page.js",
-  "/dashboard/settings/page": "app/dashboard/settings/page.js",
-  "/features/ai-compliance/page": "app/features/ai-compliance/page.js",
-  "/features/saln/page": "app/features/saln/page.js",
-  "/page": "app/page.js"
-}
+{}
