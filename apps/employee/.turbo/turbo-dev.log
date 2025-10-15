@@ -2,15 +2,15 @@
 > employee@0.1.0 dev
 > next dev --turbopack --port 3000
 
-
-✘ node v22.19.0, and next.js v15.5.3 are not yet supported in the Community edition of Console Ninja.
-We are working hard on it for you https://tinyurl.com/3h9mtwra.
+[1G[0K
+[31m✘[39m node v22.19.0, and next.js v15.5.3 are [31mnot yet supported[39m in the Community edition of [33mConsole Ninja[39m.
+We are working hard on it for you [36mhttps://tinyurl.com/3h9mtwra[39m.
 
 Estimated release dates:
-  - Community users: around 10th November, 2025 (subject to team availability)
-  - PRO users:       priority access is available now
+  - Community users: [36maround 10th November, 2025 [1m(subject to team availability)[22m[39m
+[33m  - PRO users[39m:       [1m[32mpriority access is available now[39m[22m
 
- ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ [33m[1m⚠[22m[39m Warning: Next.js inferred your workspace root, but it may not be correct.
  We detected multiple lockfiles and selected the directory of /home/joshfermano/package-lock.json as the root directory.
  To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
    See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
@@ -19,24 +19,46 @@ Estimated release dates:
    * /home/joshfermano/Thesis/package-lock.json
 
 
-✘ node v22.19.0, and next.js v15.5.3 are not yet supported in the Community edition of Console Ninja.
-We are working hard on it for you https://tinyurl.com/3h9mtwra.
+[31m✘[39m node v22.19.0, and next.js v15.5.3 are [31mnot yet supported[39m in the Community edition of [33mConsole Ninja[39m.
+We are working hard on it for you [36mhttps://tinyurl.com/3h9mtwra[39m.
 
 Estimated release dates:
-  - Community users: around 10th November, 2025 (subject to team availability)
-  - PRO users:       priority access is available now
+  - Community users: [36maround 10th November, 2025 [1m(subject to team availability)[22m[39m
+[33m  - PRO users[39m:       [1m[32mpriority access is available now[39m[22m
 
-   ▲ Next.js 15.5.3 (Turbopack)
+   [1m[38;2;173;127;168m▲ Next.js 15.5.3[39m[22m (Turbopack)
    - Local:        http://localhost:3000
    - Network:      http://10.22.207.42:3000
    - Environments: .env.local
 
- ✓ Starting...
- ✓ Compiled middleware in 180ms
- ✓ Ready in 950ms
- ○ Compiling / ...
- ✓ Compiled / in 4.8s
- GET / 200 in 5190ms
- ✓ Compiled /auth/login in 390ms
- GET /auth/login 200 in 506ms
+ [32m[1m✓[22m[39m Starting...
+ [32m[1m✓[22m[39m Compiled middleware in 120ms
+ [32m[1m✓[22m[39m Ready in 799ms
+ [37m[1m○[22m[39m Compiling / ...
+ [32m[1m✓[22m[39m Compiled / in 4.1s
+ GET / [32m200[39m in 4503ms
+ [32m[1m✓[22m[39m Compiled /auth/login in 372ms
+ GET /auth/login [32m200[39m in 418ms
+ GET /auth/login [32m200[39m in 34ms
+ [32m[1m✓[22m[39m Compiled /dashboard/profile in 445ms
+ GET /dashboard/profile [32m200[39m in 558ms
+ GET /dashboard/profile [32m200[39m in 435ms
+ [32m[1m✓[22m[39m Compiled /dashboard/pds in 253ms
+ GET /dashboard/pds [32m200[39m in 298ms
+ GET /dashboard/pds [32m200[39m in 29ms
+ GET /dashboard/profile [32m200[39m in 30ms
+ GET /dashboard/pds [32m200[39m in 37ms
+ [32m[1m✓[22m[39m Compiled /dashboard/saln in 232ms
+ GET /dashboard/saln [32m200[39m in 264ms
+ [32m[1m✓[22m[39m Compiled /dashboard/settings in 231ms
+ GET /dashboard/settings [32m200[39m in 265ms
+ GET /dashboard/profile [32m200[39m in 36ms
+ GET / [32m200[39m in 92ms
+ GET /dashboard/profile [32m200[39m in 34ms
+ GET /dashboard/pds [32m200[39m in 28ms
+ GET /dashboard/saln [32m200[39m in 30ms
+ GET /dashboard/settings [32m200[39m in 25ms
+ GET /dashboard/profile [32m200[39m in 30ms
+ GET /dashboard/settings [32m200[39m in 31ms
 [?25h
+[1G[0K⠙[1G[0K

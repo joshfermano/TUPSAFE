@@ -11,6 +11,9 @@
 # Claude Code
 .claude/
 
+# MD Files
+QWEN.md
+
 # Documentation
 .documentation/
 
