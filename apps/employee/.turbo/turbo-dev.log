@@ -92,3 +92,354 @@ Estimated release dates:
  GET /dashboard/saln [32m200[39m in 111ms
  GET /dashboard/settings [32m200[39m in 33ms
  [32m[1m✓[22m[39m Compiled in 253ms
+ GET /dashboard/pds [32m200[39m in 99ms
+ GET /dashboard/profile [32m200[39m in 45ms
+ GET / [32m200[39m in 105ms
+ [32m[1m✓[22m[39m Compiled /auth/login in 372ms
+ GET /auth/login [32m200[39m in 414ms
+ GET /auth/login [32m200[39m in 250ms
+ GET /favicon.ico?favicon.0b3bf435.ico [32m200[39m in 254ms
+ GET /dashboard/profile [32m200[39m in 40ms
+ GET /dashboard/profile [32m200[39m in 77ms
+ [31m[1m⨯[22m[39m ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx:10:1
+[1m[31mModule not found[39m[22m: Can't resolve [32m'@smartgov/mock-data/data/auth'[39m
+[0m [90m  8 |[39m [36mimport[39m { [33mAlert[39m[33m,[39m [33mAlertDescription[39m } [36mfrom[39m [32m'@/components/ui/alert'[39m[33m;[39m
+ [90m  9 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m'@smartgov/mock-data/api'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 10 |[39m [36mimport[39m { mockAuthUsers } [36mfrom[39m [32m'@smartgov/mock-data/data/auth'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 11 |[39m [36mimport[39m { [33mLoader2[39m[33m,[39m [33mMail[39m[33m,[39m [33mLock[39m[33m,[39m [33mEye[39m[33m,[39m [33mEyeOff[39m[33m,[39m [33mChevronDown[39m[33m,[39m [33mChevronUp[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 12 |[39m
+ [90m 13 |[39m [36minterface[39m [33mMockLoginFormProps[39m {[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx [Client Component Browser]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Client Component Browser]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx [Client Component SSR]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Client Component SSR]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ [31m[1m⨯[22m[39m ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx:10:1
+[1m[31mModule not found[39m[22m: Can't resolve [32m'@smartgov/mock-data/data/auth'[39m
+[0m [90m  8 |[39m [36mimport[39m { [33mAlert[39m[33m,[39m [33mAlertDescription[39m } [36mfrom[39m [32m'@/components/ui/alert'[39m[33m;[39m
+ [90m  9 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m'@smartgov/mock-data/api'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 10 |[39m [36mimport[39m { mockAuthUsers } [36mfrom[39m [32m'@smartgov/mock-data/data/auth'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 11 |[39m [36mimport[39m { [33mLoader2[39m[33m,[39m [33mMail[39m[33m,[39m [33mLock[39m[33m,[39m [33mEye[39m[33m,[39m [33mEyeOff[39m[33m,[39m [33mChevronDown[39m[33m,[39m [33mChevronUp[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 12 |[39m
+ [90m 13 |[39m [36minterface[39m [33mMockLoginFormProps[39m {[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx [Client Component Browser]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Client Component Browser]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx [Client Component SSR]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Client Component SSR]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ [31m[1m⨯[22m[39m ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx:10:1
+[1m[31mModule not found[39m[22m: Can't resolve [32m'@smartgov/mock-data/data/auth'[39m
+[0m [90m  8 |[39m [36mimport[39m { [33mAlert[39m[33m,[39m [33mAlertDescription[39m } [36mfrom[39m [32m'@/components/ui/alert'[39m[33m;[39m
+ [90m  9 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m'@smartgov/mock-data/api'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 10 |[39m [36mimport[39m { mockAuthUsers } [36mfrom[39m [32m'@smartgov/mock-data/data/auth'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 11 |[39m [36mimport[39m { [33mLoader2[39m[33m,[39m [33mMail[39m[33m,[39m [33mLock[39m[33m,[39m [33mEye[39m[33m,[39m [33mEyeOff[39m[33m,[39m [33mChevronDown[39m[33m,[39m [33mChevronUp[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 12 |[39m
+ [90m 13 |[39m [36minterface[39m [33mMockLoginFormProps[39m {[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx [Client Component Browser]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Client Component Browser]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx [Client Component SSR]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Client Component SSR]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ [31m[1m⨯[22m[39m ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx:10:1
+[1m[31mModule not found[39m[22m: Can't resolve [32m'@smartgov/mock-data/data/auth'[39m
+[0m [90m  8 |[39m [36mimport[39m { [33mAlert[39m[33m,[39m [33mAlertDescription[39m } [36mfrom[39m [32m'@/components/ui/alert'[39m[33m;[39m
+ [90m  9 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m'@smartgov/mock-data/api'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 10 |[39m [36mimport[39m { mockAuthUsers } [36mfrom[39m [32m'@smartgov/mock-data/data/auth'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 11 |[39m [36mimport[39m { [33mLoader2[39m[33m,[39m [33mMail[39m[33m,[39m [33mLock[39m[33m,[39m [33mEye[39m[33m,[39m [33mEyeOff[39m[33m,[39m [33mChevronDown[39m[33m,[39m [33mChevronUp[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 12 |[39m
+ [90m 13 |[39m [36minterface[39m [33mMockLoginFormProps[39m {[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx [Client Component Browser]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Client Component Browser]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx [Client Component SSR]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Client Component SSR]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ [32m[1m✓[22m[39m Compiled in 203ms
+ [31m[1m⨯[22m[39m ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx:10:1
+[1m[31mModule not found[39m[22m: Can't resolve [32m'@smartgov/mock-data/data/auth'[39m
+[0m [90m  8 |[39m [36mimport[39m { [33mAlert[39m[33m,[39m [33mAlertDescription[39m } [36mfrom[39m [32m'@/components/ui/alert'[39m[33m;[39m
+ [90m  9 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m'@smartgov/mock-data/api'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 10 |[39m [36mimport[39m { mockAuthUsers } [36mfrom[39m [32m'@smartgov/mock-data/data/auth'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 11 |[39m [36mimport[39m { [33mLoader2[39m[33m,[39m [33mMail[39m[33m,[39m [33mLock[39m[33m,[39m [33mEye[39m[33m,[39m [33mEyeOff[39m[33m,[39m [33mChevronDown[39m[33m,[39m [33mChevronUp[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 12 |[39m
+ [90m 13 |[39m [36minterface[39m [33mMockLoginFormProps[39m {[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx [Client Component Browser]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Client Component Browser]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx [Client Component SSR]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Client Component SSR]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ [31m[1m⨯[22m[39m ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx:10:1
+[1m[31mModule not found[39m[22m: Can't resolve [32m'@smartgov/mock-data/data/auth'[39m
+[0m [90m  8 |[39m [36mimport[39m { [33mAlert[39m[33m,[39m [33mAlertDescription[39m } [36mfrom[39m [32m'@/components/ui/alert'[39m[33m;[39m
+ [90m  9 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m'@smartgov/mock-data/api'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 10 |[39m [36mimport[39m { mockAuthUsers } [36mfrom[39m [32m'@smartgov/mock-data/data/auth'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 11 |[39m [36mimport[39m { [33mLoader2[39m[33m,[39m [33mMail[39m[33m,[39m [33mLock[39m[33m,[39m [33mEye[39m[33m,[39m [33mEyeOff[39m[33m,[39m [33mChevronDown[39m[33m,[39m [33mChevronUp[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 12 |[39m
+ [90m 13 |[39m [36minterface[39m [33mMockLoginFormProps[39m {[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx [Client Component Browser]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Client Component Browser]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx [Client Component SSR]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Client Component SSR]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ [31m[1m⨯[22m[39m ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx:10:1
+[1m[31mModule not found[39m[22m: Can't resolve [32m'@smartgov/mock-data/data/auth'[39m
+[0m [90m  8 |[39m [36mimport[39m { [33mAlert[39m[33m,[39m [33mAlertDescription[39m } [36mfrom[39m [32m'@/components/ui/alert'[39m[33m;[39m
+ [90m  9 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m'@smartgov/mock-data/api'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 10 |[39m [36mimport[39m { mockAuthUsers } [36mfrom[39m [32m'@smartgov/mock-data/data/auth'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 11 |[39m [36mimport[39m { [33mLoader2[39m[33m,[39m [33mMail[39m[33m,[39m [33mLock[39m[33m,[39m [33mEye[39m[33m,[39m [33mEyeOff[39m[33m,[39m [33mChevronDown[39m[33m,[39m [33mChevronUp[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 12 |[39m
+ [90m 13 |[39m [36minterface[39m [33mMockLoginFormProps[39m {[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx [Client Component Browser]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Client Component Browser]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx [Client Component SSR]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Client Component SSR]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ [31m[1m⨯[22m[39m ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx:10:1
+[1m[31mModule not found[39m[22m: Can't resolve [32m'@smartgov/mock-data/data/auth'[39m
+[0m [90m  8 |[39m [36mimport[39m { [33mAlert[39m[33m,[39m [33mAlertDescription[39m } [36mfrom[39m [32m'@/components/ui/alert'[39m[33m;[39m
+ [90m  9 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m'@smartgov/mock-data/api'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 10 |[39m [36mimport[39m { mockAuthUsers } [36mfrom[39m [32m'@smartgov/mock-data/data/auth'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 11 |[39m [36mimport[39m { [33mLoader2[39m[33m,[39m [33mMail[39m[33m,[39m [33mLock[39m[33m,[39m [33mEye[39m[33m,[39m [33mEyeOff[39m[33m,[39m [33mChevronDown[39m[33m,[39m [33mChevronUp[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 12 |[39m
+ [90m 13 |[39m [36minterface[39m [33mMockLoginFormProps[39m {[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx [Client Component Browser]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Client Component Browser]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx [Client Component SSR]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Client Component SSR]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ [32m[1m✓[22m[39m Compiled in 213ms
+ GET /dashboard/profile [32m200[39m in 70ms
+ GET /favicon.ico?favicon.0b3bf435.ico [31m500[39m in 31ms
+ [31m[1m⨯[22m[39m ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx:10:1
+[1m[31mModule not found[39m[22m: Can't resolve [32m'@smartgov/mock-data/data/auth'[39m
+[0m [90m  8 |[39m [36mimport[39m { [33mAlert[39m[33m,[39m [33mAlertDescription[39m } [36mfrom[39m [32m'@/components/ui/alert'[39m[33m;[39m
+ [90m  9 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m'@smartgov/mock-data/api'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 10 |[39m [36mimport[39m { mockAuthUsers } [36mfrom[39m [32m'@smartgov/mock-data/data/auth'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 11 |[39m [36mimport[39m {
+ [90m 12 |[39m   [33mLoader2[39m[33m,[39m
+ [90m 13 |[39m   [33mMail[39m[33m,[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx [Client Component Browser]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Client Component Browser]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx [Client Component SSR]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Client Component SSR]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ [31m[1m⨯[22m[39m ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx:10:1
+[1m[31mModule not found[39m[22m: Can't resolve [32m'@smartgov/mock-data/data/auth'[39m
+[0m [90m  8 |[39m [36mimport[39m { [33mAlert[39m[33m,[39m [33mAlertDescription[39m } [36mfrom[39m [32m'@/components/ui/alert'[39m[33m;[39m
+ [90m  9 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m'@smartgov/mock-data/api'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 10 |[39m [36mimport[39m { mockAuthUsers } [36mfrom[39m [32m'@smartgov/mock-data/data/auth'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 11 |[39m [36mimport[39m {
+ [90m 12 |[39m   [33mLoader2[39m[33m,[39m
+ [90m 13 |[39m   [33mMail[39m[33m,[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx [Client Component Browser]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Client Component Browser]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx [Client Component SSR]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Client Component SSR]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ [31m[1m⨯[22m[39m ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx:10:1
+[1m[31mModule not found[39m[22m: Can't resolve [32m'@smartgov/mock-data/data/auth'[39m
+[0m [90m  8 |[39m [36mimport[39m { [33mAlert[39m[33m,[39m [33mAlertDescription[39m } [36mfrom[39m [32m'@/components/ui/alert'[39m[33m;[39m
+ [90m  9 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m'@smartgov/mock-data/api'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 10 |[39m [36mimport[39m { mockAuthUsers } [36mfrom[39m [32m'@smartgov/mock-data/data/auth'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 11 |[39m [36mimport[39m {
+ [90m 12 |[39m   [33mLoader2[39m[33m,[39m
+ [90m 13 |[39m   [33mMail[39m[33m,[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx [Client Component Browser]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Client Component Browser]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx [Client Component SSR]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Client Component SSR]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ [31m[1m⨯[22m[39m ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx:10:1
+[1m[31mModule not found[39m[22m: Can't resolve [32m'@smartgov/mock-data/data/auth'[39m
+[0m [90m  8 |[39m [36mimport[39m { [33mAlert[39m[33m,[39m [33mAlertDescription[39m } [36mfrom[39m [32m'@/components/ui/alert'[39m[33m;[39m
+ [90m  9 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m'@smartgov/mock-data/api'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 10 |[39m [36mimport[39m { mockAuthUsers } [36mfrom[39m [32m'@smartgov/mock-data/data/auth'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 11 |[39m [36mimport[39m {
+ [90m 12 |[39m   [33mLoader2[39m[33m,[39m
+ [90m 13 |[39m   [33mMail[39m[33m,[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx [Client Component Browser]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Client Component Browser]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Thesis/smart-gov/apps/employee/src/components/auth/MockLoginForm.tsx [Client Component SSR]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Client Component SSR]
+    ./Thesis/smart-gov/apps/employee/src/app/auth/login/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET /dashboard/profile [32m200[39m in 44ms
+ [32m[1m✓[22m[39m Compiled in 182ms
+ GET /dashboard/profile [32m200[39m in 58ms
+ GET /favicon.ico?favicon.0b3bf435.ico [32m200[39m in 231ms
+ GET / [32m200[39m in 98ms
+ [32m[1m✓[22m[39m Compiled /auth/login in 18ms
+ GET /auth/login [32m200[39m in 101ms
+ GET /dashboard/profile [32m200[39m in 34ms
+ GET /dashboard/profile [32m200[39m in 52ms
+ GET /dashboard/pds [32m200[39m in 61ms
+ GET /dashboard/saln [32m200[39m in 102ms
+ GET /dashboard/profile [32m200[39m in 41ms
+ GET /dashboard/pds [32m200[39m in 28ms
+ GET /dashboard/settings [32m200[39m in 37ms
+ GET /dashboard/profile [32m200[39m in 29ms
+ GET / [32m200[39m in 91ms
+ GET /auth/login [32m200[39m in 28ms
+ [37m[1m○[22m[39m Compiling /auth/register ...
+ [32m[1m✓[22m[39m Compiled /auth/register in 584ms
+ GET /auth/register [32m200[39m in 620ms
+ GET /auth/login [32m200[39m in 38ms
+ [32m[1m✓[22m[39m Compiled in 202ms
+ [32m[1m✓[22m[39m Compiled in 225ms
+ [32m[1m✓[22m[39m Compiled in 211ms
+ [32m[1m✓[22m[39m Compiled in 218ms
+ [32m[1m✓[22m[39m Compiled in 179ms
