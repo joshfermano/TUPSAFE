@@ -28,37 +28,67 @@ Estimated release dates:
 
    [1m[38;2;173;127;168m▲ Next.js 15.5.3[39m[22m (Turbopack)
    - Local:        http://localhost:3000
-   - Network:      http://10.22.207.42:3000
+   - Network:      http://192.168.1.17:3000
    - Environments: .env.local
 
  [32m[1m✓[22m[39m Starting...
- [32m[1m✓[22m[39m Compiled middleware in 120ms
- [32m[1m✓[22m[39m Ready in 799ms
+ [37m[1m○[22m[39m Compiling middleware ...
+ [32m[1m✓[22m[39m Compiled middleware in 629ms
+ [32m[1m✓[22m[39m Ready in 3.4s
  [37m[1m○[22m[39m Compiling / ...
- [32m[1m✓[22m[39m Compiled / in 4.1s
- GET / [32m200[39m in 4503ms
- [32m[1m✓[22m[39m Compiled /auth/login in 372ms
- GET /auth/login [32m200[39m in 418ms
- GET /auth/login [32m200[39m in 34ms
- [32m[1m✓[22m[39m Compiled /dashboard/profile in 445ms
- GET /dashboard/profile [32m200[39m in 558ms
- GET /dashboard/profile [32m200[39m in 435ms
- [32m[1m✓[22m[39m Compiled /dashboard/pds in 253ms
- GET /dashboard/pds [32m200[39m in 298ms
- GET /dashboard/pds [32m200[39m in 29ms
- GET /dashboard/profile [32m200[39m in 30ms
- GET /dashboard/pds [32m200[39m in 37ms
- [32m[1m✓[22m[39m Compiled /dashboard/saln in 232ms
- GET /dashboard/saln [32m200[39m in 264ms
- [32m[1m✓[22m[39m Compiled /dashboard/settings in 231ms
- GET /dashboard/settings [32m200[39m in 265ms
- GET /dashboard/profile [32m200[39m in 36ms
- GET / [32m200[39m in 92ms
+ [32m[1m✓[22m[39m Compiled / in 8.9s
+ GET / [32m200[39m in 10802ms
+ [37m[1m○[22m[39m Compiling /dashboard/profile ...
+ [32m[1m✓[22m[39m Compiled /dashboard/profile in 2s
+ GET /dashboard/profile [32m200[39m in 2187ms
+ [32m[1m✓[22m[39m Compiled in 713ms
+ [32m[1m✓[22m[39m Compiled in 183ms
+ [32m[1m✓[22m[39m Compiled in 179ms
+ [32m[1m✓[22m[39m Compiled in 150ms
+ [32m[1m✓[22m[39m Compiled /dashboard/pds in 447ms
+ GET /dashboard/pds [32m200[39m in 494ms
+ [32m[1m✓[22m[39m Compiled /dashboard/saln in 434ms
+ GET /dashboard/saln [32m200[39m in 479ms
+ [32m[1m✓[22m[39m Compiled /dashboard/settings in 427ms
+ GET /dashboard/settings [32m200[39m in 467ms
+ GET /dashboard/settings [32m200[39m in 56ms
+ [32m[1m✓[22m[39m Compiled in 201ms
+ GET /dashboard/saln [32m200[39m in 39ms
+ GET /dashboard/pds [32m200[39m in 34ms
  GET /dashboard/profile [32m200[39m in 34ms
- GET /dashboard/pds [32m200[39m in 28ms
- GET /dashboard/saln [32m200[39m in 30ms
- GET /dashboard/settings [32m200[39m in 25ms
- GET /dashboard/profile [32m200[39m in 30ms
- GET /dashboard/settings [32m200[39m in 31ms
-[?25h
-[1G[0K⠙[1G[0K
+ GET /dashboard/pds [32m200[39m in 35ms
+ GET /dashboard/settings [32m200[39m in 114ms
+ [32m[1m✓[22m[39m Compiled in 196ms
+ [33m[1m⚠[22m[39m Fast Refresh had to perform a full reload due to a runtime error.
+ [32m[1m✓[22m[39m Compiled in 180ms
+ GET /dashboard/settings [32m200[39m in 268ms
+ [32m[1m✓[22m[39m Compiled /favicon.ico in 148ms
+ GET /favicon.ico?favicon.0b3bf435.ico [32m200[39m in 407ms
+ [33m[1m⚠[22m[39m Fast Refresh had to perform a full reload due to a runtime error.
+ [32m[1m✓[22m[39m Compiled in 196ms
+ GET /dashboard/settings [32m200[39m in 205ms
+ GET /favicon.ico?favicon.0b3bf435.ico [32m200[39m in 223ms
+ [32m[1m✓[22m[39m Compiled in 188ms
+ [32m[1m✓[22m[39m Compiled in 239ms
+ [32m[1m✓[22m[39m Compiled in 171ms
+ [33m[1m⚠[22m[39m Fast Refresh had to perform a full reload due to a runtime error.
+ [32m[1m✓[22m[39m Compiled /dashboard/settings in 14ms
+ GET /dashboard/settings [32m200[39m in 242ms
+ GET /favicon.ico?favicon.0b3bf435.ico [32m200[39m in 241ms
+ [33m[1m⚠[22m[39m Fast Refresh had to perform a full reload due to a runtime error.
+ [32m[1m✓[22m[39m Compiled in 214ms
+ GET /dashboard/settings [32m200[39m in 271ms
+ GET /favicon.ico?favicon.0b3bf435.ico [32m200[39m in 239ms
+ [32m[1m✓[22m[39m Compiled in 177ms
+ GET /dashboard/saln [32m200[39m in 35ms
+ GET /dashboard/pds [32m200[39m in 35ms
+ GET /dashboard/profile [32m200[39m in 33ms
+ GET /dashboard/pds [32m200[39m in 40ms
+ GET /dashboard/settings [32m200[39m in 95ms
+ GET /dashboard/profile [32m200[39m in 42ms
+ [32m[1m✓[22m[39m Compiled in 229ms
+ [32m[1m✓[22m[39m Compiled in 207ms
+ GET /dashboard/pds [32m200[39m in 101ms
+ GET /dashboard/saln [32m200[39m in 111ms
+ GET /dashboard/settings [32m200[39m in 33ms
+ [32m[1m✓[22m[39m Compiled in 253ms

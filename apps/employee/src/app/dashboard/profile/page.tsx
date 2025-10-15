@@ -7,7 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import AnimatedGridPattern from '@/components/ui/animated-grid-pattern';
 import { NeonGradientCard } from '@/components/ui/neon-gradient-card';
+import { ShimmerButton } from '@/components/ui/shimmer-button';
+import { Particles } from '@/components/ui/particles';
 import { cn } from '@/lib/utils';
+import { motion } from 'motion/react';
 import {
   User,
   Briefcase,
@@ -74,46 +77,93 @@ export default function ProfilePage() {
   });
 
   return (
-    <div className="relative space-y-8">
-      {/* Animated Background */}
+    <div className="relative space-y-8 pb-8">
+      {/* Animated Background with Particles */}
+      <Particles
+        className="absolute inset-0 -z-10"
+        quantity={60}
+        ease={80}
+        color="#3b82f6"
+        size={0.6}
+        staticity={40}
+        refresh={false}
+      />
       <AnimatedGridPattern
-        numSquares={40}
-        maxOpacity={0.08}
-        duration={3}
+        numSquares={50}
+        maxOpacity={0.06}
+        duration={4}
         repeatDelay={1}
         className={cn(
-          '[mask-image:radial-gradient(800px_circle_at_center,white,transparent)]',
+          '[mask-image:radial-gradient(900px_circle_at_center,white,transparent)]',
           'inset-x-0 inset-y-[-30%] h-[200%] -z-10'
         )}
       />
 
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100">
+      {/* Page Header with staggered animation */}
+      <motion.div
+        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+      >
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+        >
+          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 dark:from-slate-100 dark:via-slate-200 dark:to-slate-100 bg-clip-text">
             My Profile
           </h1>
           <p className="text-slate-600 dark:text-slate-400 mt-2">
             View and manage your employee information
           </p>
-        </div>
-        <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg">
-          <Edit className="h-4 w-4 mr-2" />
-          Edit Profile
-        </Button>
-      </div>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <ShimmerButton
+            className="shadow-lg hover:shadow-xl transition-shadow duration-300"
+            shimmerColor="#ffffff"
+            shimmerSize="0.1em"
+            shimmerDuration="2s"
+            borderRadius="0.5rem"
+            background="linear-gradient(135deg, #093FB4 0%, #3b82f6 50%, #6366f1 100%)"
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Edit Profile
+          </ShimmerButton>
+        </motion.div>
+      </motion.div>
 
       {/* Profile Hero */}
-      <ProfileHero
-        profile={profile}
-        department={department}
-        position={position}
-      />
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, delay: 0.3, ease: [0.4, 0, 0.2, 1] }}
+      >
+        <ProfileHero
+          profile={profile}
+          department={department}
+          position={position}
+        />
+      </motion.div>
 
-      {/* Information Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      {/* Information Grid with staggered animation */}
+      <motion.div
+        className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.4 }}
+      >
         {/* Personal Information */}
-        <InfoCard title="Personal Information" icon={User} gradient>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+        >
+          <InfoCard title="Personal Information" icon={User} gradient>
           <div className="space-y-3">
             <InfoItem
               label="Full Name"
@@ -133,9 +183,15 @@ export default function ProfilePage() {
             />
           </div>
         </InfoCard>
+        </motion.div>
 
         {/* Employment Details */}
-        <InfoCard title="Employment Details" icon={Briefcase}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+        >
+          <InfoCard title="Employment Details" icon={Briefcase}>
           <div className="space-y-3">
             <InfoItem
               label="Department"
@@ -153,9 +209,15 @@ export default function ProfilePage() {
             />
           </div>
         </InfoCard>
+        </motion.div>
 
         {/* Account Status */}
-        <InfoCard title="Account Status" icon={Shield}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.7 }}
+        >
+          <InfoCard title="Account Status" icon={Shield}>
           <div className="space-y-3">
             <InfoItem
               label="Status"
@@ -188,89 +250,135 @@ export default function ProfilePage() {
             />
           </div>
         </InfoCard>
-      </div>
+        </motion.div>
+      </motion.div>
 
-      {/* Quick Actions Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Quick Actions Grid with staggered animation */}
+      <motion.div
+        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.8 }}
+      >
         {/* PDS Quick Action */}
-        <NeonGradientCard
-          className="overflow-hidden"
-          borderSize={2}
-          borderRadius={16}>
-          <div className="p-6 sm:p-8">
-            <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-950/50">
-                <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                  Personal Data Sheet (e-PDS)
-                </h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                  View and update your Personal Data Sheet information
-                </p>
-                <Button variant="outline" className="w-full sm:w-auto">
-                  <Eye className="h-4 w-4 mr-2" />
-                  View e-PDS
-                </Button>
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        >
+          <NeonGradientCard
+            className="overflow-hidden hover:shadow-2xl transition-shadow duration-500"
+            borderSize={2}
+            borderRadius={16}
+            neonColors={{
+              firstColor: '#3b82f6',
+              secondColor: '#6366f1',
+            }}
+          >
+            <div className="p-6 sm:p-8">
+              <div className="flex items-start gap-4">
+                <motion.div
+                  className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-950/50 dark:to-indigo-950/50 shadow-lg"
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                >
+                  <FileText className="h-7 w-7 text-blue-600 dark:text-blue-400" />
+                </motion.div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                    Personal Data Sheet (e-PDS)
+                  </h3>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                    View and update your Personal Data Sheet information
+                  </p>
+                  <motion.div whileHover={{ x: 2 }} transition={{ duration: 0.2 }}>
+                    <Button variant="outline" className="w-full sm:w-auto group hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-all duration-300">
+                      <Eye className="h-4 w-4 mr-2 group-hover:text-blue-600 transition-colors" />
+                      View e-PDS
+                    </Button>
+                  </motion.div>
+                </div>
               </div>
             </div>
-          </div>
-        </NeonGradientCard>
+          </NeonGradientCard>
+        </motion.div>
 
         {/* SALN Quick Action */}
-        <NeonGradientCard
-          className="overflow-hidden"
-          borderSize={2}
-          borderRadius={16}>
-          <div className="p-6 sm:p-8">
-            <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-950/50">
-                <Award className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                  Statement of Assets (e-SALN)
-                </h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                  Manage your annual Statement of Assets, Liabilities, and Net
-                  Worth
-                </p>
-                <Button variant="outline" className="w-full sm:w-auto">
-                  <Eye className="h-4 w-4 mr-2" />
-                  View e-SALN
-                </Button>
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        >
+          <NeonGradientCard
+            className="overflow-hidden hover:shadow-2xl transition-shadow duration-500"
+            borderSize={2}
+            borderRadius={16}
+            neonColors={{
+              firstColor: '#6366f1',
+              secondColor: '#8b5cf6',
+            }}
+          >
+            <div className="p-6 sm:p-8">
+              <div className="flex items-start gap-4">
+                <motion.div
+                  className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-950/50 dark:to-purple-950/50 shadow-lg"
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                >
+                  <Award className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
+                </motion.div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                    Statement of Assets (e-SALN)
+                  </h3>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                    Manage your annual Statement of Assets, Liabilities, and Net
+                    Worth
+                  </p>
+                  <motion.div whileHover={{ x: 2 }} transition={{ duration: 0.2 }}>
+                    <Button variant="outline" className="w-full sm:w-auto group hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 transition-all duration-300">
+                      <Eye className="h-4 w-4 mr-2 group-hover:text-indigo-600 transition-colors" />
+                      View e-SALN
+                    </Button>
+                  </motion.div>
+                </div>
               </div>
             </div>
-          </div>
-        </NeonGradientCard>
-      </div>
+          </NeonGradientCard>
+        </motion.div>
+      </motion.div>
 
       {/* Department Information (Full Width) */}
       {department && (
-        <InfoCard
-          title="Department Information"
-          icon={Building2}
-          className="lg:col-span-2 xl:col-span-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            <InfoItem label="Department Name" value={department.name} />
-            <InfoItem label="Department Code" value={department.code} />
-            <InfoItem
-              label="Department Status"
-              value={
-                <Badge
-                  variant={department.isActive ? 'default' : 'secondary'}
-                  className={cn(
-                    department.isActive
-                      ? 'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400'
-                      : ''
-                  )}>
-                  {department.isActive ? 'Active' : 'Inactive'}
-                </Badge>
-              }
-            />
-          </div>
-        </InfoCard>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.9 }}
+        >
+          <InfoCard
+            title="Department Information"
+            icon={Building2}
+            className="lg:col-span-2 xl:col-span-3"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              <InfoItem label="Department Name" value={department.name} />
+              <InfoItem label="Department Code" value={department.code} />
+              <InfoItem
+                label="Department Status"
+                value={
+                  <Badge
+                    variant={department.isActive ? 'default' : 'secondary'}
+                    className={cn(
+                      department.isActive
+                        ? 'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400'
+                        : ''
+                    )}
+                  >
+                    {department.isActive ? 'Active' : 'Inactive'}
+                  </Badge>
+                }
+              />
+            </div>
+          </InfoCard>
+        </motion.div>
       )}
     </div>
   );
