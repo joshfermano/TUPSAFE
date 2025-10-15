@@ -1,4 +1,6 @@
 {
+  "/auth/login/page": "app/auth/login/page.js",
+  "/auth/register/page": "app/auth/register/page.js",
   "/dashboard/pds/page": "app/dashboard/pds/page.js",
   "/dashboard/profile/page": "app/dashboard/profile/page.js",
   "/dashboard/saln/page": "app/dashboard/saln/page.js",

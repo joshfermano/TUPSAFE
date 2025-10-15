@@ -35,8 +35,8 @@ function LoginContent() {
           duration={3}
           repeatDelay={1}
           className={cn(
-            "[mask-image:radial-gradient(500px_circle_at_center,white,transparent)]",
-            "inset-x-0 inset-y-[-30%] h-[200%] skew-y-12",
+            '[mask-image:radial-gradient(500px_circle_at_center,white,transparent)]',
+            'inset-x-0 inset-y-[-30%] h-[200%] skew-y-12'
           )}
         />
         <div className="relative z-10">
@@ -55,22 +55,20 @@ function LoginContent() {
         duration={3}
         repeatDelay={1}
         className={cn(
-          "[mask-image:radial-gradient(800px_circle_at_center,white,transparent)]",
-          "inset-x-0 inset-y-[-30%] h-[200%] skew-y-12",
+          '[mask-image:radial-gradient(800px_circle_at_center,white,transparent)]',
+          'inset-x-0 inset-y-[-30%] h-[200%] skew-y-12'
         )}
       />
 
       {/* Main Content Container */}
       <div className="relative z-10 w-full max-w-6xl mx-auto grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-
         {/* Hero Section - Left Side */}
         <div className="space-y-6 sm:space-y-8 text-center lg:text-left order-2 lg:order-1">
           {/* Badge */}
           <div className="flex justify-center lg:justify-start">
             <Badge
               variant="secondary"
-              className="bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 border-blue-200 dark:border-blue-800 px-4 py-2"
-            >
+              className="bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 border-blue-200 dark:border-blue-800 px-4 py-2">
               <Shield className="w-4 h-4 mr-2" />
               Secure Government Portal
             </Badge>
@@ -87,7 +85,8 @@ function LoginContent() {
               Employee Portal
             </h2>
             <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 max-w-lg mx-auto lg:mx-0">
-              Streamlined digital platform for PDS and SALN submissions with complete audit trails and compliance management.
+              Streamlined digital platform for PDS and SALN submissions with
+              complete audit trails and compliance management.
             </p>
           </div>
 
@@ -95,11 +94,15 @@ function LoginContent() {
           <div className="hidden sm:grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto lg:mx-0">
             <div className="flex items-center space-x-3 p-4 rounded-lg bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border border-blue-100 dark:border-slate-700">
               <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">e-PDS Management</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                e-PDS Management
+              </span>
             </div>
             <div className="flex items-center space-x-3 p-4 rounded-lg bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border border-blue-100 dark:border-slate-700">
               <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">e-SALN Compliance</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                e-SALN Compliance
+              </span>
             </div>
           </div>
 
@@ -117,39 +120,36 @@ function LoginContent() {
         <div className="flex justify-center lg:justify-end order-1 lg:order-2">
           <div className="w-full max-w-md">
             <MagicCard
-              className="relative overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-blue-200/50 dark:border-slate-700/50 shadow-2xl"
-              gradientColor="rgba(59, 130, 246, 0.08)"
-              gradientOpacity={0.3}
-            >
+              className="relative overflow-hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200/60 dark:border-slate-700/60 shadow-2xl"
+              gradientColor="rgba(59, 130, 246, 0.06)"
+              gradientOpacity={0.2}>
               <BorderBeam size={280} duration={12} delay={9} />
 
-              <div className="p-6 sm:p-8 space-y-5 sm:space-y-6">
+              <div className="p-7 sm:p-9 space-y-6">
                 {/* Form Header */}
-                <div className="text-center space-y-2">
-                  <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
+                <div className="text-center space-y-1.5">
+                  <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                     Welcome Back
                   </h3>
-                  <p className="text-slate-600 dark:text-slate-400">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
                     Enter your credentials to access your employee dashboard
                   </p>
                 </div>
 
                 {/* Login Form Component */}
-                <div className="space-y-4">
-                  <MockLoginForm
-                    redirectTo={redirectTo}
-                    onSuccess={() => {
-                      router.push(redirectTo);
-                    }}
-                    onError={(error: Error) => {
-                      console.error('Login error:', error);
-                    }}
-                  />
-                </div>
+                <MockLoginForm
+                  redirectTo={redirectTo}
+                  onSuccess={() => {
+                    router.push(redirectTo);
+                  }}
+                  onError={(error: Error) => {
+                    console.error('Login error:', error);
+                  }}
+                />
 
                 {/* Help Section */}
-                <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
-                  <p className="text-center text-sm text-slate-600 dark:text-slate-400">
+                <div className="pt-5 border-t border-slate-100 dark:border-slate-800/60">
+                  <p className="text-center text-xs text-slate-500 dark:text-slate-400">
                     Need help accessing your account?{' '}
                     <span className="text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 cursor-pointer transition-colors">
                       Contact your HR department
@@ -172,11 +172,12 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600"></div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600"></div>
+        </div>
+      }>
       <LoginContent />
     </Suspense>
   );
