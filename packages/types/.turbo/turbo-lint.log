@@ -1,0 +1,20 @@
+
+> @smartgov/types@0.1.0 lint
+> eslint src/
+
+Pages directory cannot be found at /home/joshfermano/Thesis/smart-gov/packages/types/pages or /home/joshfermano/Thesis/smart-gov/packages/types/src/pages. If using a custom path, please configure with the `no-html-link-for-pages` rule in your eslint config file.
+
+/home/joshfermano/Thesis/smart-gov/packages/types/src/index.ts
+  163:29  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  188:34  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  195:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 3 problems (3 errors, 0 warnings)
+
+npm error Lifecycle script `lint` failed with error:
+npm error code 1
+npm error path /home/joshfermano/Thesis/smart-gov/packages/types
+npm error workspace @smartgov/types@0.1.0
+npm error location /home/joshfermano/Thesis/smart-gov/packages/types
+npm error command failed
+npm error command sh -c eslint src/
