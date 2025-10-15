@@ -13,19 +13,33 @@ export type NewPosition = InferInsertModel<typeof schema.positions>;
 export type PdsSubmission = InferSelectModel<typeof schema.pdsSubmissions>;
 export type NewPdsSubmission = InferInsertModel<typeof schema.pdsSubmissions>;
 export type PdsPersonalInfo = InferSelectModel<typeof schema.pdsPersonalInfo>;
-export type NewPdsPersonalInfo = InferInsertModel<typeof schema.pdsPersonalInfo>;
-export type PdsFamilyBackground = InferSelectModel<typeof schema.pdsFamilyBackground>;
-export type NewPdsFamilyBackground = InferInsertModel<typeof schema.pdsFamilyBackground>;
+export type NewPdsPersonalInfo = InferInsertModel<
+  typeof schema.pdsPersonalInfo
+>;
+export type PdsFamilyBackground = InferSelectModel<
+  typeof schema.pdsFamilyBackground
+>;
+export type NewPdsFamilyBackground = InferInsertModel<
+  typeof schema.pdsFamilyBackground
+>;
 export type PdsChild = InferSelectModel<typeof schema.pdsChildren>;
 export type NewPdsChild = InferInsertModel<typeof schema.pdsChildren>;
 export type PdsEducation = InferSelectModel<typeof schema.pdsEducation>;
 export type NewPdsEducation = InferInsertModel<typeof schema.pdsEducation>;
 export type PdsCivilService = InferSelectModel<typeof schema.pdsCivilService>;
-export type NewPdsCivilService = InferInsertModel<typeof schema.pdsCivilService>;
-export type PdsWorkExperience = InferSelectModel<typeof schema.pdsWorkExperience>;
-export type NewPdsWorkExperience = InferInsertModel<typeof schema.pdsWorkExperience>;
+export type NewPdsCivilService = InferInsertModel<
+  typeof schema.pdsCivilService
+>;
+export type PdsWorkExperience = InferSelectModel<
+  typeof schema.pdsWorkExperience
+>;
+export type NewPdsWorkExperience = InferInsertModel<
+  typeof schema.pdsWorkExperience
+>;
 export type PdsVoluntaryWork = InferSelectModel<typeof schema.pdsVoluntaryWork>;
-export type NewPdsVoluntaryWork = InferInsertModel<typeof schema.pdsVoluntaryWork>;
+export type NewPdsVoluntaryWork = InferInsertModel<
+  typeof schema.pdsVoluntaryWork
+>;
 export type PdsTraining = InferSelectModel<typeof schema.pdsTraining>;
 export type NewPdsTraining = InferInsertModel<typeof schema.pdsTraining>;
 export type PdsOtherInfo = InferSelectModel<typeof schema.pdsOtherInfo>;
@@ -34,22 +48,46 @@ export type NewPdsOtherInfo = InferInsertModel<typeof schema.pdsOtherInfo>;
 // SALN Types
 export type SalnSubmission = InferSelectModel<typeof schema.salnSubmissions>;
 export type NewSalnSubmission = InferInsertModel<typeof schema.salnSubmissions>;
-export type SalnRealProperty = InferSelectModel<typeof schema.salnRealProperties>;
-export type NewSalnRealProperty = InferInsertModel<typeof schema.salnRealProperties>;
-export type SalnPersonalProperty = InferSelectModel<typeof schema.salnPersonalProperties>;
-export type NewSalnPersonalProperty = InferInsertModel<typeof schema.salnPersonalProperties>;
+export type SalnRealProperty = InferSelectModel<
+  typeof schema.salnRealProperties
+>;
+export type NewSalnRealProperty = InferInsertModel<
+  typeof schema.salnRealProperties
+>;
+export type SalnPersonalProperty = InferSelectModel<
+  typeof schema.salnPersonalProperties
+>;
+export type NewSalnPersonalProperty = InferInsertModel<
+  typeof schema.salnPersonalProperties
+>;
 export type SalnLiability = InferSelectModel<typeof schema.salnLiabilities>;
 export type NewSalnLiability = InferInsertModel<typeof schema.salnLiabilities>;
-export type SalnBusinessInterest = InferSelectModel<typeof schema.salnBusinessInterests>;
-export type NewSalnBusinessInterest = InferInsertModel<typeof schema.salnBusinessInterests>;
-export type SalnRelativeInGov = InferSelectModel<typeof schema.salnRelativesInGov>;
-export type NewSalnRelativeInGov = InferInsertModel<typeof schema.salnRelativesInGov>;
+export type SalnBusinessInterest = InferSelectModel<
+  typeof schema.salnBusinessInterests
+>;
+export type NewSalnBusinessInterest = InferInsertModel<
+  typeof schema.salnBusinessInterests
+>;
+export type SalnRelativeInGov = InferSelectModel<
+  typeof schema.salnRelativesInGov
+>;
+export type NewSalnRelativeInGov = InferInsertModel<
+  typeof schema.salnRelativesInGov
+>;
 
 // Administrative Types
-export type SubmissionDeadline = InferSelectModel<typeof schema.submissionDeadlines>;
-export type NewSubmissionDeadline = InferInsertModel<typeof schema.submissionDeadlines>;
-export type ApprovalWorkflow = InferSelectModel<typeof schema.approvalWorkflows>;
-export type NewApprovalWorkflow = InferInsertModel<typeof schema.approvalWorkflows>;
+export type SubmissionDeadline = InferSelectModel<
+  typeof schema.submissionDeadlines
+>;
+export type NewSubmissionDeadline = InferInsertModel<
+  typeof schema.submissionDeadlines
+>;
+export type ApprovalWorkflow = InferSelectModel<
+  typeof schema.approvalWorkflows
+>;
+export type NewApprovalWorkflow = InferInsertModel<
+  typeof schema.approvalWorkflows
+>;
 export type AuditLog = InferSelectModel<typeof schema.auditLogs>;
 export type NewAuditLog = InferInsertModel<typeof schema.auditLogs>;
 export type Notification = InferSelectModel<typeof schema.notifications>;
@@ -59,15 +97,39 @@ export type NewArchive = InferInsertModel<typeof schema.archives>;
 
 // Enum Types
 export type Role = 'employee' | 'hr' | 'admin' | 'supervisor' | 'auditor';
-export type SubmissionStatus = 'draft' | 'submitted' | 'reviewing' | 'approved' | 'rejected';
+export type SubmissionStatus =
+  | 'draft'
+  | 'submitted'
+  | 'reviewing'
+  | 'approved'
+  | 'rejected';
 export type Sex = 'male' | 'female';
-export type CivilStatus = 'single' | 'married' | 'widowed' | 'separated' | 'divorced';
-export type EducationLevel = 'elementary' | 'secondary' | 'vocational' | 'college' | 'graduate';
-export type PropertyKind = 'residential' | 'commercial' | 'industrial' | 'agricultural' | 'mixed';
+export type CivilStatus =
+  | 'single'
+  | 'married'
+  | 'widowed'
+  | 'separated'
+  | 'divorced';
+export type EducationLevel =
+  | 'elementary'
+  | 'secondary'
+  | 'vocational'
+  | 'college'
+  | 'graduate';
+export type PropertyKind =
+  | 'residential'
+  | 'commercial'
+  | 'industrial'
+  | 'agricultural'
+  | 'mixed';
 export type FormType = 'pds' | 'saln';
 export type FilingType = 'joint' | 'separate' | 'not_applicable';
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
-export type NotificationType = 'deadline_reminder' | 'submission_status' | 'approval_required' | 'system_update';
+export type NotificationType =
+  | 'deadline_reminder'
+  | 'submission_status'
+  | 'approval_required'
+  | 'system_update';
 
 // Complex Types for JSONB fields
 export interface Citizenship {
