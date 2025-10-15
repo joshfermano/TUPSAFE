@@ -1,0 +1,14 @@
+
+> admin@0.1.0 dev
+> next dev --turbopack --port 3001
+
+[1G[0K
+[31m✘[39m node v22.19.0, and next.js v15.5.3 are [31mnot yet supported[39m in the Community edition of [33mConsole Ninja[39m.
+We are working hard on it for you [36mhttps://tinyurl.com/3h9mtwra[39m.
+
+Estimated release dates:
+  - Community users: [36maround 10th November, 2025 [1m(subject to team availability)[22m[39m
+[33m  - PRO users[39m:       [1m[32mpriority access is available now[39m[22m
+
+[?25h
+[1G[0K⠙[1G[0K

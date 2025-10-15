@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///home/joshfermano/Thesis/smart-gov/apps/employee/src/app/dashboard/settings/page.tsx"],"sourcesContent":["'use client';\n\nimport { Settings } from 'lucide-react';\n\nexport default function SettingsPage() {\n  return (\n    <div className=\"flex min-h-[60vh] items-center justify-center\">\n      <div className=\"text-center space-y-4\">\n        <Settings className=\"h-16 w-16 text-slate-600 mx-auto\" />\n        <h2 className=\"text-2xl font-semibold text-slate-900 dark:text-slate-100\">\n          Settings\n        </h2>\n        <p className=\"text-slate-600 dark:text-slate-400\">\n          Account settings and preferences coming soon\n        </p>\n      </div>\n    </div>\n  );\n}\n"],"names":[],"mappings":";;;;;AAEA;AAFA;;;AAIe,SAAS;IACtB,qBACE,8OAAC;QAAI,WAAU;kBACb,cAAA,8OAAC;YAAI,WAAU;;8BACb,8OAAC,sNAAQ;oBAAC,WAAU;;;;;;8BACpB,8OAAC;oBAAG,WAAU;8BAA4D;;;;;;8BAG1E,8OAAC;oBAAE,WAAU;8BAAqC;;;;;;;;;;;;;;;;;AAM1D","debugId":null}}]
+}

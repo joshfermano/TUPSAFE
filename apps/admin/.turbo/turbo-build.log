@@ -1,0 +1,42 @@
+
+
+> admin@0.1.0 build
+> next build
+
+[1G[0K   [1m[38;2;173;127;168m▲ Next.js 15.5.3[39m[22m
+   - Environments: .env.local
+
+ [37m[1m [22m[39m Creating an optimized production build ...
+Failed to compile.
+
+../../packages/auth/dist/context.js
+Module not found: Can't resolve './utils/supabase/client'
+
+https://nextjs.org/docs/messages/module-not-found
+
+../../packages/auth/dist/index.js
+Module not found: Can't resolve './utils/supabase/client'
+
+https://nextjs.org/docs/messages/module-not-found
+
+Import trace for requested module:
+./src/app/page.tsx
+
+../../packages/auth/dist/index.js
+Module not found: Can't resolve './utils/supabase/client'
+
+https://nextjs.org/docs/messages/module-not-found
+
+Import trace for requested module:
+./src/app/layout.tsx
+
+
+> Build failed because of webpack errors
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m Lifecycle script `build` failed with error:
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mcode[39m [33m1[39m
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mpath[39m /home/joshfermano/Thesis/smart-gov/apps/admin
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mworkspace[39m admin@0.1.0
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mlocation[39m /home/joshfermano/Thesis/smart-gov/apps/admin
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m command failed
+[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mcommand[39m sh -c next build
+[1G[0K⠙[1G[0K
