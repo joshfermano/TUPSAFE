@@ -3,15 +3,123 @@
 > employee@0.1.0 build
 > next build
 
-[1G[0K   [1m[38;2;173;127;168m▲ Next.js 15.5.3[39m[22m
+[1G[0K [33m[1m⚠[22m[39m Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of /home/joshfermano/package-lock.json as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/o Detected additional lockfiles: 
+   * /home/joshfermano/Thesis/smart-gov/package-lock.json
+   * /home/joshfermano/Thesis/package-lock.json
+
+   ▲ Next.js 15.5.3
    - Environments: .env.local
 
- [37m[1m [22m[39m Creating an optimized production build ...
-[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m Lifecycle script `build` failed with error:
-[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mcode[39m [33m130[39m
-[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mpath[39m /home/joshfermano/Thesis/smart-gov/apps/employee
-[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mworkspace[39m employee@0.1.0
-[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mlocation[39m /home/joshfermano/Thesis/smart-gov/apps/employee
-[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m command failed
-[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mcommand[39m sh -c next build
-[1G[0K⠙[1G[0K
+   Creating an optimized production build ...
+
+
+Retrying 1/3...
+
+
+Retrying 1/3...
+ ✓ Compiled successfully in 14.9s
+   Linting and checking v [32m[1m✓[22m[39m Compiled successfully in 10.2s
+[?25l [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G[?25h
+./src/app/dashboard/layout.tsx
+8:10  Warning: 'Separator' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/features/ai-compliance/page.tsx
+99:24  Warning: 'index' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/features/dashboard-analytics/page.tsx
+99:24  Warning: 'index' is defined but never used.  @typescript-eslint/no-unused-vars
+313:26  Warning: 'index' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/features/pds/page.tsx
+11:3  Warning: 'Download' is defined but never used.  @typescript-eslint/no-unused-vars
+13:3  Warning: 'Eye' is defined but never used.  @typescript-eslint/no-unused-vars
+20:3  Warning: 'ChevronRight' is defined but never used.  @typescript-eslint/no-unused-vars
+27:10  Warning: 'Separator' is defined but never used.  @typescript-eslint/no-unused-vars
+28:10  Warning: 'cn' is defined but never used.  @typescript-eslint/no-unused-vars
+96:24  Warning: 'index' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/features/saln/page.tsx
+98:24  Warning: 'index' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/features/security-compliance/page.tsx
+100:24  Warning: 'index' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/auth/MockLoginForm.tsx
+27:9  Warning: 'router' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/dashboard/ProfileHero.tsx
+6:10  Warning: 'cn' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/navigation/Header.tsx
+390:9 89:49  Warning: Assignments to the 'phi' variable from inside React Hook useEffect will be lost after each render. To preserve the value over time, store it in a useRef Hook and keep the mutable value in the '.current' property. Otherwise, you can move this variable directly inside useEffect.  react-hooks/exhaustive-deps
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+   Collecting page data ...
+   Generating static pages (0/19) ...
+   Generating static pages (4/19) 
+   Generating static pages (9/19) 
+   Generating static pages (14/19) 
+ ✓ Generating static pages (19/19)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                    8.89 kB         172 kB
+├ ○ /_not-found                            986 B         103 kB
+├ ○ /about                               5.82 kB         158 kB
+├ ○ /auth/login                           7.5 kB         168 kB
+├ ○ /auth/register                       53.7 kB         218 kB
+├ ○ /dashboard                             477 B         103 kB
+├ ○ /dashboard/pds                       1.21 kB         103 kB
+├ ○ /dashboard/profile                   9.19 kB         169 kB
+├ ○ /dashboard/saln                      1.28 kB         103 kB
+├ ○ /dashboard/settings                  1.24 kB         103 kB
+├ ○ /features/ai-compliance              8.18 kB         160 kB
+├ ○ /features/automated-workflows        7.93 kB         160 kB
+├ ○ /features/dashboard-analytics        7.86 kB         160 kB
+├ ○ /features/pds                        7.12 kB         159 kB
+├ ○ /features/saln                       7.71 kB         160 kB
+└ ○ /features/security-compliance        5.25 kB         161 kB
++ First Load JS shared by all             102 kB
+  ├ chunks/637-d46eb182374b10a2.js       45.9 kB
+  ├ chunks/87c73c54-24122e7b92478d00.js  54.2 kB
+  └ other shared chunks (total)          1.94 kB
+
+
+○  (Static)  prerendered as static content
+
+[36m..[39m [2K[1G [36m...[39m [2K[1G [36m.[39m [2K[1G [36m..[39m [2K[1G [36m...[39m [2K[1G [36m.[39m [2K[1G [36m..[39m [2K[1G [36m...[39m [2K[1G [36m.[39m [2K[1G [36m..[39m [2K[1G [36m...[39m [2K[1G[?25h    [32m[1m✓[22m[39m Linting and checking validity of types 
+[?25l [37m[1m [22m[39m Collecting page data  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting page data  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting page data  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting page data  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting page data  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting page data  [36m...[39m[2K[1G[?25h [37m[1m [22m[39m Collecting page data     [32m[1m✓[22m[39m Collecting page data 
+[?25l [37m[1m [22m[39m Generating static pages (0/19)  [36m[    ][39m[2K[1G [37m[1m [22m[39m Generating static pages (0/19)  [36m[=   ][39m[2K[1G [37m[1m [22m[39m Generating static pages (0/19)  [36m[==  ][39m[2K[1G [37m[1m [22m[39m Generating static pages (16/19)  [36m[=== ][39m[2K[1G[?25h [32m[1m✓[22m[39m Generating static pages (19/19)
+[?25l [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[?25l [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G[?25h [37m[1m [22m[39m Collecting build traces     [32m[1m✓[22m[39m Collecting build traces 
+[2K[1G[?25h [37m[1m [22m[39m Finalizing page optimization     [32m[1m✓[22m[39m Finalizing page optimization 
+
+[4mRoute (app)[24m                                 [4mSize[24m  [4mFirst Load JS[24m  [4m[24m  [4m[24m
+┌ ○ /                                    8.89 kB         [37m[1m172 kB[22m[39m
+├ ○ /_not-found                            986 B         [37m[1m103 kB[22m[39m
+├ ○ /about                               5.82 kB         [37m[1m158 kB[22m[39m
+├ ○ /auth/login                           7.5 kB         [37m[1m168 kB[22m[39m
+├ ○ /auth/register                       53.7 kB         [37m[1m218 kB[22m[39m
+├ ○ /dashboard                             477 B         [37m[1m103 kB[22m[39m
+├ ○ /dashboard/pds                       1.21 kB         [37m[1m103 kB[22m[39m
+├ ○ /dashboard/profile                   9.19 kB         [37m[1m169 kB[22m[39m
+├ ○ /dashboard/saln                      1.28 kB         [37m[1m103 kB[22m[39m
+├ ○ /dashboard/settings                  1.24 kB         [37m[1m103 kB[22m[39m
+├ ○ /features/ai-compliance              8.18 kB         [37m[1m160 kB[22m[39m
+├ ○ /features/automated-workflows        7.93 kB         [37m[1m160 kB[22m[39m
+├ ○ /features/dashboard-analytics        7.86 kB         [37m[1m160 kB[22m[39m
+├ ○ /features/pds                        7.12 kB         [37m[1m159 kB[22m[39m
+├ ○ /features/saln                       7.71 kB         [37m[1m160 kB[22m[39m
+└ ○ /features/security-compliance        5.25 kB         [37m[1m161 kB[22m[39m
++ First Load JS shared by all             [37m[1m102 kB[22m[39m
+  ├ chunks/637-d46eb182374b10a2.js       45.9 kB
+  ├ chunks/87c73c54-24122e7b92478d00.js  54.2 kB
+  └ other shared chunks (total)          1.94 kB
+
+
+○  (Static)  prerendered as static content
+
+[?25h[1G[0K⠙[1G[0K
