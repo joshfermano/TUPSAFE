@@ -2,3 +2,13 @@
 > admin@0.1.0 type-check
 > tsc --noEmit
 
+../../packages/auth/dist/components/ProtectedRoute.d.ts(11,1): error TS1185: Merge conflict marker encountered.
+../../packages/auth/dist/components/ProtectedRoute.d.ts(13,1): error TS1185: Merge conflict marker encountered.
+../../packages/auth/dist/components/ProtectedRoute.d.ts(15,1): error TS1185: Merge conflict marker encountered.
+npm error Lifecycle script `type-check` failed with error:
+npm error code 2
+npm error path /home/joshfermano/Thesis/smart-gov/apps/admin
+npm error workspace admin@0.1.0
+npm error location /home/joshfermano/Thesis/smart-gov/apps/admin
+npm error command failed
+npm error command sh -c tsc --noEmit

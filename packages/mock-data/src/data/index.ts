@@ -3,9 +3,11 @@
 
 // Authentication Mock Data
 export * from './auth';
+export type { MockUser, MockSession } from './auth';
 
 // User Profiles and Organization Mock Data
 export * from './users';
+export type { Department, Position, Profile, Role } from './users';
 
 // PDS (Personal Data Sheet) Mock Data
 export * from './pds';
