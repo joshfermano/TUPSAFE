@@ -443,3 +443,8 @@ https://nextjs.org/docs/messages/module-not-found
  [32m[1m✓[22m[39m Compiled in 211ms
  [32m[1m✓[22m[39m Compiled in 218ms
  [32m[1m✓[22m[39m Compiled in 179ms
+ [32m[1m✓[22m[39m Compiled /about in 330ms
+ GET /about [32m200[39m in 372ms
+ GET / [32m200[39m in 39ms
+[?25h
+[1G[0K⠙[1G[0K
