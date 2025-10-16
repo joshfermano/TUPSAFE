@@ -1,7 +1,30 @@
 {
   "version": 4,
-<<<<<<< HEAD
   "routes": {
+    "/": {
+      "experimentalBypassFor": [
+        {
+          "type": "header",
+          "key": "next-action"
+        },
+        {
+          "type": "header",
+          "key": "content-type",
+          "value": "multipart/form-data;.*"
+        }
+      ],
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/",
+      "dataRoute": "/index.rsc",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
     "/_not-found": {
       "initialStatus": 404,
       "experimentalBypassFor": [
@@ -26,30 +49,6 @@
         "x-next-revalidated-tags",
         "x-next-revalidate-tag-token"
       ]
-    },
-    "/": {
-      "experimentalBypassFor": [
-        {
-          "type": "header",
-          "key": "next-action"
-        },
-        {
-          "type": "header",
-          "key": "content-type",
-          "value": "multipart/form-data;.*"
-        }
-      ],
-      "initialRevalidateSeconds": false,
-      "srcRoute": "/",
-      "dataRoute": "/index.rsc",
-      "allowHeader": [
-        "host",
-        "x-matched-path",
-        "x-prerender-revalidate",
-        "x-prerender-revalidate-if-generated",
-        "x-next-revalidated-tags",
-        "x-next-revalidate-tag-token"
-      ]
     }
   },
   "dynamicRoutes": {},
@@ -58,14 +57,5 @@
     "previewModeId": "132aaa436f932e3f59738155305da5a8",
     "previewModeSigningKey": "deaf47b78aa266bf254166d91ed0dccb715c18a038936e9f8bf5d8ff1e734803",
     "previewModeEncryptionKey": "44af4107e973ad3a09f1f1e52e228415d847a2dc1e0489fa8f04f199637ef1b6"
-=======
-  "routes": {},
-  "dynamicRoutes": {},
-  "notFoundRoutes": [],
-  "preview": {
-    "previewModeId": "28e07f5e2430da84028d4ae8ef0c2924",
-    "previewModeSigningKey": "ec3472f117838aba09222c16c5f6e70a9f749a6a0a2a8743ac1afeabe3c7e911",
-    "previewModeEncryptionKey": "00098a8a712e2824bd9c1153e1ae89cc956ca4ddb3e5068db354c7e5cf8586ba"
->>>>>>> 6c5a2a90b895fe799737953af84eabfa72051d69
   }
 }

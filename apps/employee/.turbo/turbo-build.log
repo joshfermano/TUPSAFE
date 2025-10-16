@@ -6,25 +6,37 @@
 [1G[0K [33m[1m⚠[22m[39m Warning: Next.js inferred your workspace root, but it may not be correct.
  We detected multiple lockfiles and selected the directory of /home/joshfermano/package-lock.json as the root directory.
  To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
-   See https://nextjs.org/docs/app/api-reference/config/next-config-js/o Detected additional lockfiles: 
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
    * /home/joshfermano/Thesis/smart-gov/package-lock.json
    * /home/joshfermano/Thesis/package-lock.json
 
-   ▲ Next.js 15.5.3
+   [1m[38;2;173;127;168m▲ Next.js 15.5.3[39m[22m
    - Environments: .env.local
 
-   Creating an optimized production build ...
+ [37m[1m [22m[39m Creating an optimized production build ...
+ [32m[1m✓[22m[39m Compiled successfully in 2.3s
+[?25l [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G[?25h
+./src/app/dashboard/pds/page.tsx
+5:20  Warning: 'InfoItem' is defined but never used.  @typescript-eslint/no-unused-vars
+9:3  Warning: 'Card' is defined but never used.  @typescript-eslint/no-unused-vars
+10:3  Warning: 'CardHeader' is defined but never used.  @typescript-eslint/no-unused-vars
+11:3  Warning: 'CardTitle' is defined but never used.  @typescript-eslint/no-unused-vars
+12:3  Warning: 'CardDescription' is defined but never used.  @typescript-eslint/no-unused-vars
+13:3  Warning: 'CardContent' is defined but never used.  @typescript-eslint/no-unused-vars
+16:10  Warning: 'ShinyButton' is defined but never used.  @typescript-eslint/no-unused-vars
 
-
-Retrying 1/3...
-
-
-Retrying 1/3...
- ✓ Compiled successfully in 14.9s
-   Linting and checking v [32m[1m✓[22m[39m Compiled successfully in 10.2s
-[?25l [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G[?25h
-./src/app/dashboard/layout.tsx
-8:10  Warning: 'Separator' is defined but never used.  @typescript-eslint/no-unused-vars
+./src/app/dashboard/saln/page.tsx
+5:20  Warning: 'InfoItem' is defined but never used.  @typescript-eslint/no-unused-vars
+9:3  Warning: 'Card' is defined but never used.  @typescript-eslint/no-unused-vars
+10:3  Warning: 'CardHeader' is defined but never used.  @typescript-eslint/no-unused-vars
+11:3  Warning: 'CardTitle' is defined but never used.  @typescript-eslint/no-unused-vars
+12:3  Warning: 'CardDescription' is defined but never used.  @typescript-eslint/no-unused-vars
+13:3  Warning: 'CardContent' is defined but never used.  @typescript-eslint/no-unused-vars
+16:10  Warning: 'ShinyButton' is defined but never used.  @typescript-eslint/no-unused-vars
+36:3  Warning: 'FileCheck' is defined but never used.  @typescript-eslint/no-unused-vars
+41:3  Warning: 'DollarSign' is defined but never used.  @typescript-eslint/no-unused-vars
+42:3  Warning: 'Percent' is defined but never used.  @typescript-eslint/no-unused-vars
 
 ./src/app/features/ai-compliance/page.tsx
 99:24  Warning: 'index' is defined but never used.  @typescript-eslint/no-unused-vars
@@ -48,72 +60,52 @@ Retrying 1/3...
 100:24  Warning: 'index' is defined but never used.  @typescript-eslint/no-unused-vars
 
 ./src/components/auth/MockLoginForm.tsx
-27:9  Warning: 'router' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+38:9  Warning: 'router' is assigned a value but never used.  @typescript-eslint/no-unused-vars
 
 ./src/components/dashboard/ProfileHero.tsx
 6:10  Warning: 'cn' is defined but never used.  @typescript-eslint/no-unused-vars
 
 ./src/components/navigation/Header.tsx
-390:9 89:49  Warning: Assignments to the 'phi' variable from inside React Hook useEffect will be lost after each render. To preserve the value over time, store it in a useRef Hook and keep the mutable value in the '.current' property. Otherwise, you can move this variable directly inside useEffect.  react-hooks/exhaustive-deps
+390:9  Warning: 'router' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/ui/animated-grid-pattern.tsx
+37:3  Warning: 'repeatDelay' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+79:6  Warning: React Hook useEffect has a missing dependency: 'generateSquares'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+98:47  Warning: The ref value 'containerRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'containerRef.current' to a variable inside the effect, and use that variable in the cleanup function.  react-hooks/exhaustive-deps
+
+./src/components/ui/globe.tsx
+77:17  Warning: Assignments to the 'width' variable from inside React Hook useEffect will be lost after each render. To preserve the value over time, store it in a useRef Hook and keep the mutable value in the '.current' property. Otherwise, you can move this variable directly inside useEffect.  react-hooks/exhaustive-deps
+89:49  Warning: Assignments to the 'phi' variable from inside React Hook useEffect will be lost after each render. To preserve the value over time, store it in a useRef Hook and keep the mutable value in the '.current' property. Otherwise, you can move this variable directly inside useEffect.  react-hooks/exhaustive-deps
+
+./src/components/ui/particles.tsx
+130:6  Warning: React Hook useEffect has missing dependencies: 'animate' and 'initCanvas'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+134:6  Warning: React Hook useEffect has a missing dependency: 'onMouseMove'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+138:6  Warning: React Hook useEffect has a missing dependency: 'initCanvas'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
 
 info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
-   Collecting page data ...
-   Generating static pages (0/19) ...
-   Generating static pages (4/19) 
-   Generating static pages (9/19) 
-   Generating static pages (14/19) 
- ✓ Generating static pages (19/19)
-   Finalizing page optimization ...
-   Collecting build traces ...
-
-Route (app)                                 Size  First Load JS
-┌ ○ /                                    8.89 kB         172 kB
-├ ○ /_not-found                            986 B         103 kB
-├ ○ /about                               5.82 kB         158 kB
-├ ○ /auth/login                           7.5 kB         168 kB
-├ ○ /auth/register                       53.7 kB         218 kB
-├ ○ /dashboard                             477 B         103 kB
-├ ○ /dashboard/pds                       1.21 kB         103 kB
-├ ○ /dashboard/profile                   9.19 kB         169 kB
-├ ○ /dashboard/saln                      1.28 kB         103 kB
-├ ○ /dashboard/settings                  1.24 kB         103 kB
-├ ○ /features/ai-compliance              8.18 kB         160 kB
-├ ○ /features/automated-workflows        7.93 kB         160 kB
-├ ○ /features/dashboard-analytics        7.86 kB         160 kB
-├ ○ /features/pds                        7.12 kB         159 kB
-├ ○ /features/saln                       7.71 kB         160 kB
-└ ○ /features/security-compliance        5.25 kB         161 kB
-+ First Load JS shared by all             102 kB
-  ├ chunks/637-d46eb182374b10a2.js       45.9 kB
-  ├ chunks/87c73c54-24122e7b92478d00.js  54.2 kB
-  └ other shared chunks (total)          1.94 kB
-
-
-○  (Static)  prerendered as static content
-
-[36m..[39m [2K[1G [36m...[39m [2K[1G [36m.[39m [2K[1G [36m..[39m [2K[1G [36m...[39m [2K[1G [36m.[39m [2K[1G [36m..[39m [2K[1G [36m...[39m [2K[1G [36m.[39m [2K[1G [36m..[39m [2K[1G [36m...[39m [2K[1G[?25h    [32m[1m✓[22m[39m Linting and checking validity of types 
-[?25l [37m[1m [22m[39m Collecting page data  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting page data  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting page data  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting page data  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting page data  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting page data  [36m...[39m[2K[1G[?25h [37m[1m [22m[39m Collecting page data     [32m[1m✓[22m[39m Collecting page data 
+[?25l [36m.[39m [2K[1G [36m..[39m [2K[1G [36m...[39m [2K[1G [36m.[39m [2K[1G [36m..[39m [2K[1G [36m...[39m [2K[1G [36m.[39m [2K[1G [36m..[39m [2K[1G [36m...[39m [2K[1G [36m.[39m [2K[1G [36m..[39m [2K[1G [36m...[39m [2K[1G [36m.[39m [2K[1G [36m..[39m [2K[1G [36m...[39m [2K[1G [36m.[39m [2K[1G [36m..[39m [2K[1G[?25h    [32m[1m✓[22m[39m Linting and checking validity of types 
+[?25l [37m[1m [22m[39m Collecting page data  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting page data  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting page data  [36m...[39m[2K[1G[?25h [37m[1m [22m[39m Collecting page data     [32m[1m✓[22m[39m Collecting page data 
 [?25l [37m[1m [22m[39m Generating static pages (0/19)  [36m[    ][39m[2K[1G [37m[1m [22m[39m Generating static pages (0/19)  [36m[=   ][39m[2K[1G [37m[1m [22m[39m Generating static pages (0/19)  [36m[==  ][39m[2K[1G [37m[1m [22m[39m Generating static pages (16/19)  [36m[=== ][39m[2K[1G[?25h [32m[1m✓[22m[39m Generating static pages (19/19)
-[?25l [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[?25l [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G[?25h [37m[1m [22m[39m Collecting build traces     [32m[1m✓[22m[39m Collecting build traces 
+[?25l [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[?25l [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G[?25h [37m[1m [22m[39m Collecting build traces     [32m[1m✓[22m[39m Collecting build traces 
 [2K[1G[?25h [37m[1m [22m[39m Finalizing page optimization     [32m[1m✓[22m[39m Finalizing page optimization 
 
 [4mRoute (app)[24m                                 [4mSize[24m  [4mFirst Load JS[24m  [4m[24m  [4m[24m
-┌ ○ /                                    8.89 kB         [37m[1m172 kB[22m[39m
+┌ ○ /                                    9.32 kB         [37m[1m174 kB[22m[39m
 ├ ○ /_not-found                            986 B         [37m[1m103 kB[22m[39m
-├ ○ /about                               5.82 kB         [37m[1m158 kB[22m[39m
-├ ○ /auth/login                           7.5 kB         [37m[1m168 kB[22m[39m
-├ ○ /auth/register                       53.7 kB         [37m[1m218 kB[22m[39m
-├ ○ /dashboard                             477 B         [37m[1m103 kB[22m[39m
-├ ○ /dashboard/pds                       1.21 kB         [37m[1m103 kB[22m[39m
-├ ○ /dashboard/profile                   9.19 kB         [37m[1m169 kB[22m[39m
-├ ○ /dashboard/saln                      1.28 kB         [37m[1m103 kB[22m[39m
-├ ○ /dashboard/settings                  1.24 kB         [37m[1m103 kB[22m[39m
-├ ○ /features/ai-compliance              8.18 kB         [37m[1m160 kB[22m[39m
-├ ○ /features/automated-workflows        7.93 kB         [37m[1m160 kB[22m[39m
-├ ○ /features/dashboard-analytics        7.86 kB         [37m[1m160 kB[22m[39m
-├ ○ /features/pds                        7.12 kB         [37m[1m159 kB[22m[39m
-├ ○ /features/saln                       7.71 kB         [37m[1m160 kB[22m[39m
-└ ○ /features/security-compliance        5.25 kB         [37m[1m161 kB[22m[39m
+├ ○ /about                               10.4 kB         [37m[1m159 kB[22m[39m
+├ ○ /auth/login                            10 kB         [37m[1m170 kB[22m[39m
+├ ○ /auth/register                       54.1 kB         [37m[1m219 kB[22m[39m
+├ ○ /dashboard                           3.35 kB         [37m[1m152 kB[22m[39m
+├ ○ /dashboard/pds                       5.46 kB         [37m[1m163 kB[22m[39m
+├ ○ /dashboard/profile                   7.28 kB         [37m[1m176 kB[22m[39m
+├ ○ /dashboard/saln                      5.83 kB         [37m[1m163 kB[22m[39m
+├ ○ /dashboard/settings                  9.71 kB         [37m[1m170 kB[22m[39m
+├ ○ /features/ai-compliance              5.22 kB         [37m[1m162 kB[22m[39m
+├ ○ /features/automated-workflows        5.12 kB         [37m[1m162 kB[22m[39m
+├ ○ /features/dashboard-analytics        5.26 kB         [37m[1m162 kB[22m[39m
+├ ○ /features/pds                        4.19 kB         [37m[1m161 kB[22m[39m
+├ ○ /features/saln                       5.13 kB         [37m[1m162 kB[22m[39m
+└ ○ /features/security-compliance        5.53 kB         [37m[1m162 kB[22m[39m
 + First Load JS shared by all             [37m[1m102 kB[22m[39m
   ├ chunks/637-d46eb182374b10a2.js       45.9 kB
   ├ chunks/87c73c54-24122e7b92478d00.js  54.2 kB
