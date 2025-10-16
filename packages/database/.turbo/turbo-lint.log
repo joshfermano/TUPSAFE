@@ -1,5 +1,0 @@
-
-> @smartgov/database@0.1.0 lint
-> eslint src/
-
-Pages directory cannot be found at /home/joshfermano/Thesis/smart-gov/packages/database/pages or /home/joshfermano/Thesis/smart-gov/packages/database/src/pages. If using a custom path, please configure with the `no-html-link-for-pages` rule in your eslint config file.
