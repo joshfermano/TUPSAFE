@@ -1,5 +1,6 @@
 globalThis.__BUILD_MANIFEST = {
   "pages": {
+<<<<<<< HEAD
     "/_app": []
   },
   "devFiles": [],
@@ -19,6 +20,42 @@ globalThis.__BUILD_MANIFEST = {
     "static/chunks/Thesis_smart-gov_apps_employee_a0ff3932._.js",
     "static/chunks/turbopack-Thesis_smart-gov_apps_employee_483c863b._.js"
   ],
+=======
+    "/_app": [
+      "static/chunks/node_modules_next_dist_compiled_next-devtools_index_5277ebc8.js",
+      "static/chunks/node_modules_next_dist_compiled_166120c5._.js",
+      "static/chunks/node_modules_next_dist_shared_lib_2c2ec201._.js",
+      "static/chunks/node_modules_next_dist_client_d0aa886c._.js",
+      "static/chunks/node_modules_next_dist_5b402162._.js",
+      "static/chunks/node_modules_next_app_72f3d36f.js",
+      "static/chunks/[next]_entry_page-loader_ts_742e4b53._.js",
+      "static/chunks/node_modules_react-dom_4411d9bd._.js",
+      "static/chunks/node_modules_db4bb196._.js",
+      "static/chunks/[root-of-the-server]__03546d6e._.js",
+      "static/chunks/apps_employee_pages__app_2da965e7._.js",
+      "static/chunks/turbopack-apps_employee_pages__app_3b27cd07._.js"
+    ],
+    "/_error": [
+      "static/chunks/node_modules_next_dist_compiled_next-devtools_index_5277ebc8.js",
+      "static/chunks/node_modules_next_dist_compiled_166120c5._.js",
+      "static/chunks/node_modules_next_dist_shared_lib_b4122b32._.js",
+      "static/chunks/node_modules_next_dist_client_d0aa886c._.js",
+      "static/chunks/node_modules_next_dist_0cccb603._.js",
+      "static/chunks/node_modules_next_error_1cfbb379.js",
+      "static/chunks/[next]_entry_page-loader_ts_43b523b5._.js",
+      "static/chunks/node_modules_react-dom_4411d9bd._.js",
+      "static/chunks/node_modules_db4bb196._.js",
+      "static/chunks/[root-of-the-server]__b66064eb._.js",
+      "static/chunks/apps_employee_pages__error_2da965e7._.js",
+      "static/chunks/turbopack-apps_employee_pages__error_b67a5e0c._.js"
+    ]
+  },
+  "devFiles": [],
+  "ampDevFiles": [],
+  "polyfillFiles": [],
+  "lowPriorityFiles": [],
+  "rootMainFiles": [],
+>>>>>>> 6c5a2a90b895fe799737953af84eabfa72051d69
   "ampFirstPages": []
 };
 globalThis.__BUILD_MANIFEST.lowPriorityFiles = [

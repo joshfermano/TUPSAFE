@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "pages": {
     "/about/page": [
       "static/chunks/39c1c_next_dist_69f77bdf._.js",
@@ -184,4 +185,7 @@
       "static/chunks/turbopack-Thesis_smart-gov_apps_employee_483c863b._.js"
     ]
   }
+=======
+  "pages": {}
+>>>>>>> 6c5a2a90b895fe799737953af84eabfa72051d69
 }

@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "app": {
     "[project]/Thesis/smart-gov/apps/employee/src/app/about/page": [
       "static/media/caa3a2e1cccd8315-s.p.853070df.woff2",
@@ -34,6 +35,10 @@
     ]
   },
   "appUsingSizeAdjust": true,
+=======
+  "app": {},
+  "appUsingSizeAdjust": false,
+>>>>>>> 6c5a2a90b895fe799737953af84eabfa72051d69
   "pages": {},
   "pagesUsingSizeAdjust": false
 }

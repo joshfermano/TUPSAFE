@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 > employee@0.1.0 dev
 > next dev --turbopack --port 3000
@@ -448,3 +449,51 @@ https://nextjs.org/docs/messages/module-not-found
  GET / [32m200[39m in 39ms
 [?25h
 [1G[0K⠙[1G[0K
+=======
+
+> employee@0.1.0 dev
+> next dev --turbopack --port 3000
+
+   ▲ Next.js 15.5.3 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.0.104:3000
+
+ ✓ Starting...
+ ○ Compiling middleware ...
+ ⨯ ./apps/employee/middleware.ts:1:1
+Module not found: Can't resolve '@smartgov/auth'
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { createAuthMiddleware } [36mfrom[39m [32m'@smartgov/auth'[39m[33m;[39m
+ ✓ Compiled middleware in 1105ms
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m type { [33mNextRequest[39m } [36mfrom[39m [32m'next/server'[39m[33m;[39m
+ [90m 3 |[39m
+ [90m 4 |[39m [36mlet[39m middlewarePromise[33m:[39m [33mPromise[39m[33m<[39m[33many[39m[33m>[39m [33m|[39m [36mnull[39m [33m=[39m [36mnull[39m[33m;[39m[0m
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⨯ ./apps/employee/middleware.ts:1:1
+Module not found: Can't resolve '@smartgov/auth'
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { createAuthMiddleware } [36mfrom[39m [32m'@smartgov/auth'[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m type { [33mNextRequest[39m } [36mfrom[39m [32m'next/server'[39m[33m;[39m
+ [90m 3 |[39m
+ [90m 4 |[39m [36mlet[39m middlewarePromise[33m:[39m [33mPromise[39m[33m<[39m[33many[39m[33m>[39m [33m|[39m [36mnull[39m [33m=[39m [36mnull[39m[33m;[39m[0m
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ✓ Ready in 6.1s
+ ✓ Compiled middleware in 72ms
+ ✓ Compiled in 0ms
+ ⨯ Error: Missing Supabase environment variables. Please check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
+    at createClient (packages\auth\dist\utils\supabase\client.js:6:15)
+    at __TURBOPACK__module__evaluation__ (packages\auth\dist\utils\supabase\client.js:11:25)
+    at __TURBOPACK__module__evaluation__ (packages\auth\dist\index.js:2:1)
+  4 |     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  5 |     if (!supabaseUrl || !supabaseAnonKey) {
+>>>>>>> 6c5a2a90b895fe799737953af84eabfa72051d69
