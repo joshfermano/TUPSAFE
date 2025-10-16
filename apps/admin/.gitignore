@@ -1,0 +1,13 @@
+.next
+.dist
+.turbo
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.example
+.env.development
+.env.production
+.env.test
+.env.local
