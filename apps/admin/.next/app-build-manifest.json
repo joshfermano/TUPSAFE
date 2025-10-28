@@ -1,5 +1,4 @@
 {
-<<<<<<< HEAD
   "pages": {
     "/_not-found/page": [
       "static/chunks/webpack-678e92e8e19642c6.js",
@@ -29,7 +28,4 @@
       "static/chunks/app/page-fb862fc0897da8f8.js"
     ]
   }
-=======
-  "pages": {}
->>>>>>> 8ab018494a9a813622579248cec87fd9db791565
 }

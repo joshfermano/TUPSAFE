@@ -1,21 +1,3 @@
 {
-  "pages": {
-    "/_not-found/page": [
-      "static/chunks/35f5b_next_dist_45741cc9._.js",
-      "static/chunks/SmartGov_apps_employee_src_app_favicon_ico_mjs_b6020af5._.js",
-      "static/chunks/[root-of-the-server]__09a3d8f6._.css",
-      "static/chunks/SmartGov_apps_employee_src_6d2a73c7._.js",
-      "static/chunks/35f5b_e8c0381e._.js",
-      "static/chunks/SmartGov_apps_employee_src_app_layout_tsx_4fce4b46._.js",
-      "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_99e70191._.js",
-      "static/chunks/35f5b_next_dist_compiled_react-dom_8a999cb0._.js",
-      "static/chunks/35f5b_next_dist_compiled_next-devtools_index_f6d419e6.js",
-      "static/chunks/35f5b_next_dist_compiled_0192ffb5._.js",
-      "static/chunks/35f5b_next_dist_client_6186085e._.js",
-      "static/chunks/35f5b_next_dist_c1f38b00._.js",
-      "static/chunks/35f5b_@swc_helpers_cjs_c8b17551._.js",
-      "static/chunks/SmartGov_apps_employee_a0ff3932._.js",
-      "static/chunks/turbopack-SmartGov_apps_employee_73ed8f50._.js"
-    ]
-  }
+  "pages": {}
 }
