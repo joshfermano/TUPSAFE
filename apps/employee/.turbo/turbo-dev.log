@@ -1,17 +1,16 @@
-<<<<<<< HEAD
 
 > employee@0.1.0 dev
 > next dev --turbopack --port 3000
 
-[1G[0K
-[31m✘[39m node v22.19.0, and next.js v15.5.3 are [31mnot yet supported[39m in the Community edition of [33mConsole Ninja[39m.
-We are working hard on it for you [36mhttps://tinyurl.com/3h9mtwra[39m.
+
+✘ node v22.19.0, and next.js v15.5.3 are not yet supported in the Community edition of Console Ninja.
+We are working hard on it for you https://tinyurl.com/3h9mtwra.
 
 Estimated release dates:
-  - Community users: [36maround 10th November, 2025 [1m(subject to team availability)[22m[39m
-[33m  - PRO users[39m:       [1m[32mpriority access is available now[39m[22m
+  - Community users: around 10th November, 2025 (subject to team availability)
+  - PRO users:       priority access is available now
 
- [33m[1m⚠[22m[39m Warning: Next.js inferred your workspace root, but it may not be correct.
+ ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
  We detected multiple lockfiles and selected the directory of /home/joshfermano/package-lock.json as the root directory.
  To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
    See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
@@ -20,95 +19,18 @@ Estimated release dates:
    * /home/joshfermano/Thesis/package-lock.json
 
 
-[31m✘[39m node v22.19.0, and next.js v15.5.3 are [31mnot yet supported[39m in the Community edition of [33mConsole Ninja[39m.
-We are working hard on it for you [36mhttps://tinyurl.com/3h9mtwra[39m.
+✘ node v22.19.0, and next.js v15.5.3 are not yet supported in the Community edition of Console Ninja.
+We are working hard on it for you https://tinyurl.com/3h9mtwra.
 
 Estimated release dates:
-  - Community users: [36maround 10th November, 2025 [1m(subject to team availability)[22m[39m
-[33m  - PRO users[39m:       [1m[32mpriority access is available now[39m[22m
-
-   [1m[38;2;173;127;168m▲ Next.js 15.5.3[39m[22m (Turbopack)
-   - Local:        http://localhost:3000
-   - Network:      http://192.168.1.17:3000
-   - Environments: .env.local
-
- [32m[1m✓[22m[39m Starting...
- [32m[1m✓[22m[39m Compiled middleware in 122ms
- [32m[1m✓[22m[39m Ready in 853ms
- [37m[1m○[22m[39m Compiling / ...
- [32m[1m✓[22m[39m Compiled / in 2.8s
- GET / [32m200[39m in 3180ms
- [32m[1m✓[22m[39m Compiled /favicon.ico in 155ms
- GET /favicon.ico?favicon.0b3bf435.ico [32m200[39m in 420ms
-[?25h
-[1G[0K⠙[1G[0K
-=======
-
-> employee@0.1.0 dev
-> next dev --turbopack --port 3000
-
- ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
- We detected multiple lockfiles and selected the directory of C:\Users\justi\OneDrive\Desktop\thesis\package-lock.json as the root directory.
- To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
-   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
- Detected additional lockfiles: 
-   * C:\Users\justi\OneDrive\Desktop\thesis\SmartGov\package-lock.json
+  - Community users: around 10th November, 2025 (subject to team availability)
+  - PRO users:       priority access is available now
 
    ▲ Next.js 15.5.3 (Turbopack)
    - Local:        http://localhost:3000
-   - Network:      http://192.168.0.104:3000
+   - Network:      http://172.22.45.42:3000
+   - Environments: .env.local
 
  ✓ Starting...
- ⨯ ./SmartGov/apps/employee/middleware.ts:1:1
-Module not found: Can't resolve '@smartgov/auth'
-[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { createAuthMiddleware } [36mfrom[39m [32m'@smartgov/auth'[39m[33m;[39m
- [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
- [90m 2 |[39m [36mimport[39m type { [33mNextRequest[39m } [36mfrom[39m [32m'next/server'[39m[33m;[39m
- [90m 3 |[39m
- [90m 4 |[39m [36mlet[39m middlewarePromise[33m:[39m [33mPromise[39m[33m<[39m[33many[39m[33m>[39m [33m|[39m [36mnull[39m [33m=[39m [36mnull[39m[33m;[39m[0m
-
-
-
-https://nextjs.org/docs/messages/module-not-found
-
-
- ⨯ ./SmartGov/apps/employee/middleware.ts:1:1
-Module not found: Can't resolve '@smartgov/auth'
-[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { createAuthMiddleware } [36mfrom[39m [32m'@smartgov/auth'[39m[33m;[39m
- [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
- [90m 2 |[39m [36mimport[39m type { [33mNextRequest[39m } [36mfrom[39m [32m'next/server'[39m[33m;[39m
- ✓ Compiled middleware in 290ms
- [90m 3 |[39m
- [90m 4 |[39m [36mlet[39m middlewarePromise[33m:[39m [33mPromise[39m[33m<[39m[33many[39m[33m>[39m [33m|[39m [36mnull[39m [33m=[39m [36mnull[39m[33m;[39m[0m
-
-
-
-https://nextjs.org/docs/messages/module-not-found
-
-
- ✓ Ready in 3.2s
- ⨯ Error: Cannot find module '@smartgov/auth'
-    at <unknown> (.next\server\edge\chunks\[root-of-the-server]__b3b92343._.js:24:15)
-    at __TURBOPACK__module__evaluation__ (.next\server\edge\chunks\[root-of-the-server]__b3b92343._.js:27:3)
- ○ Compiling /_error ...
- ✓ Compiled /_error in 1994ms
- GET / 404 in 9ms
- ○ Compiling /_not-found/page ...
- GET /favicon.ico 500 in 3312ms
- ✓ Compiled /_not-found/page in 7.9s
- ⨯ ./SmartGov/apps/employee/src/app/layout.tsx:5:1
-Module not found: Can't resolve '@smartgov/auth'
-[0m [90m 3 |[39m [36mimport[39m [32m'./globals.css'[39m[33m;[39m
- [90m 4 |[39m [36mimport[39m { [33mThemeWrapper[39m[33m,[39m [33mThemeScript[39m } [36mfrom[39m [32m'@/components/theme'[39m[33m;[39m
-[31m[1m>[22m[39m[90m 5 |[39m [36mimport[39m { [33mAuthProvider[39m } [36mfrom[39m [32m'@smartgov/auth'[39m[33m;[39m
- [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
- [90m 6 |[39m
- [90m 7 |[39m [36mconst[39m geistSans [33m=[39m [33mGeist[39m({
- [90m 8 |[39m   variable[33m:[39m [32m'--font-geist-sans'[39m[33m,[39m[0m
-
-
-
-https://nextjs.org/docs/messages/module-not-found
-
-
->>>>>>> 8ab018494a9a813622579248cec87fd9db791565
+ ✓ Compiled middleware in 248ms
+ ✓ Ready in 1078ms

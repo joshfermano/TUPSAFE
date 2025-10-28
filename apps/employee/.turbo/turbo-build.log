@@ -1,9 +1,8 @@
 
-
 > employee@0.1.0 build
 > next build
 
-[1G[0K [33m[1m⚠[22m[39m Warning: Next.js inferred your workspace root, but it may not be correct.
+ ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
  We detected multiple lockfiles and selected the directory of /home/joshfermano/package-lock.json as the root directory.
  To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
    See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
@@ -11,12 +10,13 @@
    * /home/joshfermano/Thesis/smart-gov/package-lock.json
    * /home/joshfermano/Thesis/package-lock.json
 
-   [1m[38;2;173;127;168m▲ Next.js 15.5.3[39m[22m
+   ▲ Next.js 15.5.3
    - Environments: .env.local
 
- [37m[1m [22m[39m Creating an optimized production build ...
- [32m[1m✓[22m[39m Compiled successfully in 2.3s
-[?25l [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G[?25h
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 11.4s
+   Linting and checking validity of types ...
+
 ./src/app/dashboard/pds/page.tsx
 5:20  Warning: 'InfoItem' is defined but never used.  @typescript-eslint/no-unused-vars
 9:3  Warning: 'Card' is defined but never used.  @typescript-eslint/no-unused-vars
@@ -83,30 +83,33 @@
 138:6  Warning: React Hook useEffect has a missing dependency: 'initCanvas'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
 
 info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
-[?25l [36m.[39m [2K[1G [36m..[39m [2K[1G [36m...[39m [2K[1G [36m.[39m [2K[1G [36m..[39m [2K[1G [36m...[39m [2K[1G [36m.[39m [2K[1G [36m..[39m [2K[1G [36m...[39m [2K[1G [36m.[39m [2K[1G [36m..[39m [2K[1G [36m...[39m [2K[1G [36m.[39m [2K[1G [36m..[39m [2K[1G [36m...[39m [2K[1G [36m.[39m [2K[1G [36m..[39m [2K[1G[?25h    [32m[1m✓[22m[39m Linting and checking validity of types 
-[?25l [37m[1m [22m[39m Collecting page data  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting page data  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting page data  [36m...[39m[2K[1G[?25h [37m[1m [22m[39m Collecting page data     [32m[1m✓[22m[39m Collecting page data 
-[?25l [37m[1m [22m[39m Generating static pages (0/19)  [36m[    ][39m[2K[1G [37m[1m [22m[39m Generating static pages (0/19)  [36m[=   ][39m[2K[1G [37m[1m [22m[39m Generating static pages (0/19)  [36m[==  ][39m[2K[1G [37m[1m [22m[39m Generating static pages (16/19)  [36m[=== ][39m[2K[1G[?25h [32m[1m✓[22m[39m Generating static pages (19/19)
-[?25l [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[?25l [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G[?25h [37m[1m [22m[39m Collecting build traces     [32m[1m✓[22m[39m Collecting build traces 
-[2K[1G[?25h [37m[1m [22m[39m Finalizing page optimization     [32m[1m✓[22m[39m Finalizing page optimization 
+   Collecting page data ...
+   Generating static pages (0/19) ...
+   Generating static pages (4/19) 
+   Generating static pages (9/19) 
+   Generating static pages (14/19) 
+ ✓ Generating static pages (19/19)
+   Finalizing page optimization ...
+   Collecting build traces ...
 
-[4mRoute (app)[24m                                 [4mSize[24m  [4mFirst Load JS[24m  [4m[24m  [4m[24m
-┌ ○ /                                    9.32 kB         [37m[1m174 kB[22m[39m
-├ ○ /_not-found                            986 B         [37m[1m103 kB[22m[39m
-├ ○ /about                               10.4 kB         [37m[1m159 kB[22m[39m
-├ ○ /auth/login                            10 kB         [37m[1m170 kB[22m[39m
-├ ○ /auth/register                       54.1 kB         [37m[1m219 kB[22m[39m
-├ ○ /dashboard                           3.35 kB         [37m[1m152 kB[22m[39m
-├ ○ /dashboard/pds                       5.46 kB         [37m[1m163 kB[22m[39m
-├ ○ /dashboard/profile                   7.28 kB         [37m[1m176 kB[22m[39m
-├ ○ /dashboard/saln                      5.83 kB         [37m[1m163 kB[22m[39m
-├ ○ /dashboard/settings                  9.71 kB         [37m[1m170 kB[22m[39m
-├ ○ /features/ai-compliance              5.22 kB         [37m[1m162 kB[22m[39m
-├ ○ /features/automated-workflows        5.12 kB         [37m[1m162 kB[22m[39m
-├ ○ /features/dashboard-analytics        5.26 kB         [37m[1m162 kB[22m[39m
-├ ○ /features/pds                        4.19 kB         [37m[1m161 kB[22m[39m
-├ ○ /features/saln                       5.13 kB         [37m[1m162 kB[22m[39m
-└ ○ /features/security-compliance        5.53 kB         [37m[1m162 kB[22m[39m
-+ First Load JS shared by all             [37m[1m102 kB[22m[39m
+Route (app)                                 Size  First Load JS
+┌ ○ /                                    9.32 kB         174 kB
+├ ○ /_not-found                            986 B         103 kB
+├ ○ /about                               10.4 kB         159 kB
+├ ○ /auth/login                            10 kB         170 kB
+├ ○ /auth/register                       54.1 kB         219 kB
+├ ○ /dashboard                           3.35 kB         152 kB
+├ ○ /dashboard/pds                       5.46 kB         163 kB
+├ ○ /dashboard/profile                   7.28 kB         176 kB
+├ ○ /dashboard/saln                      5.83 kB         163 kB
+├ ○ /dashboard/settings                  9.71 kB         170 kB
+├ ○ /features/ai-compliance              5.22 kB         162 kB
+├ ○ /features/automated-workflows        5.12 kB         162 kB
+├ ○ /features/dashboard-analytics        5.26 kB         162 kB
+├ ○ /features/pds                        4.19 kB         161 kB
+├ ○ /features/saln                       5.13 kB         162 kB
+└ ○ /features/security-compliance        5.53 kB         162 kB
++ First Load JS shared by all             102 kB
   ├ chunks/637-d46eb182374b10a2.js       45.9 kB
   ├ chunks/87c73c54-24122e7b92478d00.js  54.2 kB
   └ other shared chunks (total)          1.94 kB
@@ -114,4 +117,3 @@ info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/d
 
 ○  (Static)  prerendered as static content
 
-[?25h[1G[0K⠙[1G[0K
