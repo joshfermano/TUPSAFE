@@ -2,7 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-# SmartGov: TUP Manila e-PDS and e-SALN Compliance System
+# TUPSAFE: TUP Manila e-PDS and e-SALN Compliance System
+
+**TUPSAFE** stands for **Technological University of the Philippines System for Automated Filing and e-Compliance**
 
 ## Project Overview
 
@@ -48,8 +50,8 @@ This project prioritizes **four core pillars** in all development decisions:
 
 - **Modular Design**: Break down large components into smaller, composable pieces
 - **Separation of Concerns**: Keep business logic separate from UI logic
-- **Reusable Utilities**: Place shared utilities in `@smartgov/*` packages
-- **Comprehensive Types**: Define interfaces/types in `@smartgov/types` for cross-app consistency
+- **Reusable Utilities**: Place shared utilities in `@tupsafe/*` packages
+- **Comprehensive Types**: Define interfaces/types in `@tupsafe/types` for cross-app consistency
 - **Testing**: Write unit tests for utilities, integration tests for API routes, e2e tests for critical flows
 - **Documentation**: Document complex patterns, architectural decisions, and integration points
 - **Version Control**: Use meaningful commit messages, keep commits atomic
@@ -76,10 +78,12 @@ This is a Turbo-managed monorepo with separate applications and shared packages:
 
 ### Shared Packages (packages/\*)
 
-- **@smartgov/database**: Drizzle ORM schemas, migrations, and database utilities
-- **@smartgov/auth**: Authentication utilities and middleware
-- **@smartgov/types**: Shared TypeScript type definitions
-- **@smartgov/shared-ui**: Shared UI components
+- **@tupsafe/database** (also accessible as @smartgov/database): Drizzle ORM schemas, migrations, and database utilities
+- **@tupsafe/auth** (also accessible as @smartgov/auth): Authentication utilities and middleware
+- **@tupsafe/types** (also accessible as @smartgov/types): Shared TypeScript type definitions
+- **@tupsafe/shared-ui** (also accessible as @smartgov/shared-ui): Shared UI components
+
+**Note**: Packages use the `@tupsafe/*` namespace, with legacy `@smartgov/*` imports still supported for backward compatibility.
 
 Both apps are Next.js 15.5.3 applications using App Router with Turbopack. They consume shared packages via workspace dependencies.
 
@@ -137,7 +141,7 @@ npx drizzle-kit studio      # Open Drizzle Studio GUI
 ### Working with the Monorepo
 
 - **Apps are independent**: Each app has its own Next.js config, middleware, and routes
-- **Shared packages are internal**: Import from `@smartgov/*` namespaces
+- **Shared packages are internal**: Import from `@tupsafe/*` namespaces (legacy `@smartgov/*` also supported)
 - **Turbo orchestrates tasks**: Build/lint/type-check tasks run in dependency order
 - **Package changes rebuild dependent apps**: Turbo handles cache invalidation
 
@@ -171,11 +175,11 @@ packages/database/
 
 ### Key Architectural Patterns
 
-1. **Shared database layer**: All database schemas and queries centralized in `@smartgov/database`
+1. **Shared database layer**: All database schemas and queries centralized in `@tupsafe/database`
 2. **Type safety**: TypeScript strict mode with Drizzle-generated types
 3. **Authentication middleware**: Applied at the Next.js middleware level in each app
 4. **Row Level Security (RLS)**: Implemented at the Supabase database level for data isolation
-5. **Form validation**: Zod schemas for runtime validation, shared via `@smartgov/types`
+5. **Form validation**: Zod schemas for runtime validation, shared via `@tupsafe/types`
 6. **Performance architecture**:
    - Prefer Server Components for data fetching
    - Use React Query/SWR for client-side caching
@@ -504,7 +508,7 @@ Use Lighthouse CI in GitHub Actions to enforce budgets.
 
 ### University-Specific Considerations
 
-- **Domain**: Deploy to TUP Manila subdomain (e.g., `smartgov.tup.edu.ph` or similar)
+- **Domain**: Deploy to TUP Manila subdomain (e.g., `tupsafe.tup.edu.ph` or similar)
 - **Maintenance Windows**: Schedule during academic breaks or low-usage periods
 - **Semester Schedule**: Coordinate major releases around semester transitions
 - **Backup Strategy**: Daily automated backups with 30-day retention

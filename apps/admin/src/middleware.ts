@@ -1,4 +1,4 @@
-import { createAuthMiddleware } from '@smartgov/auth';
+import { createAuthMiddleware } from '@tupsafe/auth';
 import type { NextRequest, NextResponse } from 'next/server';
 
 type MiddlewareFunction = (req: NextRequest) => Promise<NextResponse>;

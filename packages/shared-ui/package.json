@@ -1,5 +1,5 @@
 {
-  "name": "@smartgov/shared-ui",
+  "name": "@tupsafe/shared-ui",
   "version": "0.1.0",
   "private": true,
   "exports": {

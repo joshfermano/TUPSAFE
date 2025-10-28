@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useAuth } from '../context';
-import type { Role } from '@smartgov/database';
+import type { Role } from '@tupsafe/database';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

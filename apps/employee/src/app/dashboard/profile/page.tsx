@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth, useProfile } from '@smartgov/mock-data/api';
+import { useAuth, useProfile } from '@tupsafe/mock-data/api';
 import { ProfileHero } from '@/components/dashboard/ProfileHero';
 import { InfoCard, InfoItem } from '@/components/dashboard/InfoCard';
 import { Button } from '@/components/ui/button';

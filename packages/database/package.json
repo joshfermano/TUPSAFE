@@ -1,5 +1,5 @@
 {
-  "name": "@smartgov/database",
+  "name": "@tupsafe/database",
   "version": "0.1.0",
   "private": true,
   "exports": {

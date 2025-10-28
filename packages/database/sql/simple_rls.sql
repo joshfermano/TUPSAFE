@@ -1,6 +1,6 @@
 -- =========================================
 -- Simple Row Level Security (RLS) for Supabase + Drizzle
--- SmartGov PDS/SALN System
+-- TUPSAFE PDS/SALN System
 -- =========================================
 
 -- Enable RLS on key tables

@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useAuth } from '@smartgov/mock-data/api';
-import { mockAuthUsers, type MockUser } from '@smartgov/mock-data';
+import { useAuth } from '@tupsafe/mock-data/api';
+import { mockAuthUsers, type MockUser } from '@tupsafe/mock-data';
 import {
   Loader2,
   Mail,

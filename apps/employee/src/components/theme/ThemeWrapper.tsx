@@ -13,9 +13,9 @@ interface ThemeWrapperProps {
  *
  * Features:
  * - Wraps the entire app with ThemeProvider
- * - Configured for SmartGov government system preferences
+ * - Configured for TUPSAFE university system preferences
  * - Enables system theme detection
- * - Uses 'smartgov-theme' localStorage key for persistence
+ * - Uses 'tupsafe-theme' localStorage key for persistence
  * - Clean separation of concerns - only handles theming
  */
 export const ThemeWrapper: React.FC<ThemeWrapperProps> = ({ children }) => {
@@ -24,7 +24,7 @@ export const ThemeWrapper: React.FC<ThemeWrapperProps> = ({ children }) => {
       defaultTheme="system"
       enableSystem={true}
       disableTransitionOnChange={false}
-      storageKey="smartgov-theme">
+      storageKey="tupsafe-theme">
       <Header />
       {children}
     </ThemeProvider>

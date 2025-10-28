@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import type { schema } from '@smartgov/database';
+import type { schema } from '@tupsafe/database';
 
 // Public routes that don't require authentication
 const PUBLIC_ROUTES = [

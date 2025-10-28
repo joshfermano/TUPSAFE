@@ -6,7 +6,7 @@ import { BorderBeam } from '@/components/ui/border-beam';
 import { cn } from '@/lib/utils';
 import { motion } from 'motion/react';
 import { Shield, Briefcase } from 'lucide-react';
-import type { Profile, Department, Position } from '@smartgov/mock-data';
+import type { Profile, Department, Position } from '@tupsafe/mock-data';
 
 interface ProfileHeroProps {
   profile: Profile;

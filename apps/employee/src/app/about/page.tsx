@@ -201,7 +201,7 @@ export default function AboutPage() {
                   Academic Thesis Project
                 </Badge>
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6 text-foreground">
-                  About <span className="text-government font-extrabold drop-shadow-lg">SmartGov</span>
+                  About <span className="text-government font-extrabold drop-shadow-lg">TUPSAFE</span>
                 </h1>
                 <p className="text-xl md:text-2xl text-muted-foreground leading-relaxed">
                   A comprehensive research project focused on digitalizing
@@ -253,7 +253,7 @@ export default function AboutPage() {
                 Project <span className="text-government">Overview</span>
               </h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                SmartGov represents a paradigm shift in how Philippine
+                TUPSAFE represents a paradigm shift in how Philippine
                 government employees interact with compliance requirements. This
                 thesis project addresses the critical need for digital
                 transformation in government institutions through innovative
@@ -559,7 +559,7 @@ export default function AboutPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" className="btn-government group">
-                Explore SmartGov Platform
+                Explore TUPSAFE Platform
                 <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Button>
               <Button

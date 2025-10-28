@@ -114,7 +114,7 @@ export default function HeroSection() {
     <section
       id="hero"
       className="relative min-h-screen overflow-hidden bg-background"
-      aria-label="SmartGov Hero Section"
+      aria-label="TUPSAFE Hero Section"
       role="banner">
       {/* Animated Background */}
       <div className="absolute inset-0">
@@ -181,7 +181,7 @@ export default function HeroSection() {
                 }}
                 size="lg"
                 className="btn-government text-lg px-8 py-6 shadow-xl hover:shadow-2xl transition-all duration-300 group"
-                aria-label="Get started with SmartGov platform"
+                aria-label="Get started with TUPSAFE platform"
                 role="button">
                 Get Started
                 <ArrowRight

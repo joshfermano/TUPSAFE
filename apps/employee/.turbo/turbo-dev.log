@@ -32,6 +32,10 @@ Estimated release dates:
    - Environments: .env.local
 
  [32m[1m✓[22m[39m Starting...
- [37m[1m○[22m[39m Compiling middleware ...
- [32m[1m✓[22m[39m Compiled middleware in 549ms
- [32m[1m✓[22m[39m Ready in 1351ms
+ [32m[1m✓[22m[39m Compiled middleware in 116ms
+ [32m[1m✓[22m[39m Ready in 804ms
+ [37m[1m○[22m[39m Compiling / ...
+ [32m[1m✓[22m[39m Compiled / in 2.7s
+ GET / [32m200[39m in 3070ms
+[?25h
+[1G[0K⠙[1G[0K

@@ -299,7 +299,7 @@ export default function RegisterPage() {
           <div className="space-y-3 sm:space-y-4">
             <AnimatedGradientText className="text-3xl sm:text-4xl lg:text-6xl font-bold">
               <span className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-600 bg-clip-text text-transparent">
-                SmartGov
+                TUPSAFE
               </span>
             </AnimatedGradientText>
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-slate-700 dark:text-slate-300">

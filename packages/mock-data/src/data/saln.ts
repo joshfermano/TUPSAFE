@@ -1,5 +1,5 @@
 import { v7 as uuidv7 } from 'uuid';
-import type { SalnSubmission } from '@smartgov/database';
+import type { SalnSubmission } from '@tupsafe/database';
 
 // Type definitions based on the database schema
 export type SubmissionStatus =

@@ -2,7 +2,7 @@
 
 import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '@smartgov/mock-data/api';
+import { useAuth } from '@tupsafe/mock-data/api';
 import { MockLoginForm } from '@/components/auth/MockLoginForm';
 import { Badge } from '@/components/ui/badge';
 import { MagicCard } from '@/components/ui/magic-card';

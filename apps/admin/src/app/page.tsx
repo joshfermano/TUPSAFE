@@ -1,6 +1,6 @@
 'use client';
 
-import { ProtectedRoute, useAuth } from '@smartgov/auth';
+import { ProtectedRoute, useAuth } from '@tupsafe/auth';
 import {
   Card,
   CardContent,
