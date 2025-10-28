@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 16, "column": 0}, "map": {"version":3,"sources":["turbopack:///[project]/apps/admin/middleware.ts"],"sourcesContent":["import { createAuthMiddleware } from '@smartgov/auth';\r\nimport type { NextRequest } from 'next/server';\r\n\r\nlet middlewarePromise: Promise<any> | null = null;\r\n\r\nexport default async function middleware(request: NextRequest) {\r\n  if (!middlewarePromise) {\r\n    middlewarePromise = createAuthMiddleware();\r\n  }\r\n  const authMiddleware = await middlewarePromise;\r\n  return authMiddleware(request);\r\n}\r\n\r\nexport const config = {\r\n  matcher: [\r\n    /*\r\n     * Match all request paths except for the ones starting with:\r\n     * - _next/static (static files)\r\n     * - _next/image (image optimization files)\r\n     * - favicon.ico (favicon file)\r\n     * - public folder files\r\n     */\r\n    '/((?!_next/static|_next/image|favicon.ico|.*\\\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',\r\n  ],\r\n};"],"names":[],"mappings":";;;;;;;;;;;;AAGA,IAAI,oBAAyC;AAE9B,eAAe,WAAW,OAAoB;IAC3D,IAAI,CAAC,mBAAmB;QACtB,oBAAoB;IACtB;IACA,MAAM,iBAAiB,MAAM;IAC7B,OAAO,eAAe;AACxB;AAEO,MAAM,SAAS;IACpB,SAAS;QACP;;;;;;KAMC,GACD;KACD;AACH"}}]
+}

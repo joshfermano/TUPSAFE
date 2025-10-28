@@ -227,6 +227,12 @@ export default function AboutPage() {
                   <Award className="h-4 w-4 text-government" />
                   <span className="text-sm font-medium">Academic Research</span>
                 </div>
+                <div className="flex items-center gap-2 px-4 py-2 bg-accent/50 rounded-full">
+                  <Shield className="h-4 w-4 text-government" />
+                  <span className="text-sm font-medium">
+                    ISO Standards
+                  </span>
+                </div>
               </motion.div>
             </motion.div>
           </div>

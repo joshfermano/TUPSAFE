@@ -1,0 +1,55 @@
+globalThis.__BUILD_MANIFEST = {
+  "pages": {
+    "/_app": [
+      "static/chunks/35f5b_next_dist_compiled_next-devtools_index_5c013b5d.js",
+      "static/chunks/35f5b_next_dist_compiled_8dc72116._.js",
+      "static/chunks/35f5b_next_dist_shared_lib_dc045505._.js",
+      "static/chunks/35f5b_next_dist_client_5e8bb3d6._.js",
+      "static/chunks/35f5b_next_dist_74877194._.js",
+      "static/chunks/35f5b_next_app_aa6c8c79.js",
+      "static/chunks/[next]_entry_page-loader_ts_34144e86._.js",
+      "static/chunks/35f5b_react-dom_8de80099._.js",
+      "static/chunks/35f5b_c561aca2._.js",
+      "static/chunks/[root-of-the-server]__f4669af8._.js",
+      "static/chunks/SmartGov_apps_employee_pages__app_2da965e7._.js",
+      "static/chunks/turbopack-SmartGov_apps_employee_pages__app_b0f937ad._.js"
+    ],
+    "/_error": [
+      "static/chunks/35f5b_next_dist_compiled_next-devtools_index_5c013b5d.js",
+      "static/chunks/35f5b_next_dist_compiled_8dc72116._.js",
+      "static/chunks/35f5b_next_dist_shared_lib_7e048348._.js",
+      "static/chunks/35f5b_next_dist_client_5e8bb3d6._.js",
+      "static/chunks/35f5b_next_dist_09c69cd4._.js",
+      "static/chunks/35f5b_next_error_97d30ebb.js",
+      "static/chunks/[next]_entry_page-loader_ts_80bad2e3._.js",
+      "static/chunks/35f5b_react-dom_8de80099._.js",
+      "static/chunks/35f5b_c561aca2._.js",
+      "static/chunks/[root-of-the-server]__43ab8f03._.js",
+      "static/chunks/SmartGov_apps_employee_pages__error_2da965e7._.js",
+      "static/chunks/turbopack-SmartGov_apps_employee_pages__error_44e985c7._.js"
+    ]
+  },
+  "devFiles": [],
+  "ampDevFiles": [],
+  "polyfillFiles": [
+    "static/chunks/35f5b_next_dist_build_polyfills_polyfill-nomodule.js"
+  ],
+  "lowPriorityFiles": [],
+  "rootMainFiles": [
+    "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_99e70191._.js",
+    "static/chunks/35f5b_next_dist_compiled_react-dom_8a999cb0._.js",
+    "static/chunks/35f5b_next_dist_compiled_next-devtools_index_f6d419e6.js",
+    "static/chunks/35f5b_next_dist_compiled_0192ffb5._.js",
+    "static/chunks/35f5b_next_dist_client_6186085e._.js",
+    "static/chunks/35f5b_next_dist_c1f38b00._.js",
+    "static/chunks/35f5b_@swc_helpers_cjs_c8b17551._.js",
+    "static/chunks/SmartGov_apps_employee_a0ff3932._.js",
+    "static/chunks/turbopack-SmartGov_apps_employee_73ed8f50._.js"
+  ],
+  "ampFirstPages": []
+};
+globalThis.__BUILD_MANIFEST.lowPriorityFiles = [
+"/static/" + process.env.__NEXT_BUILD_ID + "/_buildManifest.js",
+,"/static/" + process.env.__NEXT_BUILD_ID + "/_ssgManifest.js",
+
+];
