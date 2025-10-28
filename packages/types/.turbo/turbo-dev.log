@@ -1,6 +1,25 @@
+<<<<<<< HEAD
 
 > @smartgov/types@0.1.0 dev
 > tsc --watch
 
 [1G[0K[2J[3J[H[[90m5:58:50 PM[0m] Starting compilation in watch mode...
 
+=======
+
+> @smartgov/types@0.1.0 dev
+> tsc --watch
+
+[2J[3J[H6:33:59 PM - Starting compilation in watch mode...
+
+
+6:34:02 PM - Found 0 errors. Watching for file changes.
+error TS5083: Cannot read file 'C:/Users/justi/OneDrive/Desktop/thesis/SmartGov/packages/types/tsconfig.json'.
+npm error Lifecycle script `dev` failed with error:
+npm error code 1
+npm error path C:\Users\justi\OneDrive\Desktop\thesis\SmartGov\packages\types
+npm error workspace @smartgov/types@0.1.0
+npm error location C:\Users\justi\OneDrive\Desktop\thesis\SmartGov\packages\types
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c tsc --watch
+>>>>>>> 8ab018494a9a813622579248cec87fd9db791565
