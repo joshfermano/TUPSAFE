@@ -1,4 +1,4 @@
-// Mock Data Exports for SmartGov PDS/SALN Compliance System
+// Mock Data Exports for TUPSAFE PDS/SALN Compliance System
 // This file centralizes all mock data for frontend development before implementing real authentication and database connections
 
 // Authentication Mock Data
@@ -27,7 +27,7 @@ export {
 } from './saln';
 
 // Re-export common types that hooks need
-export type { SalnSubmission, PdsSubmission } from '@smartgov/database';
+export type { SalnSubmission, PdsSubmission } from '@tupsafe/database';
 
 // Re-export specific collections for easy access
 import { mockAuthUsers, MockAuth } from './auth';

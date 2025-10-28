@@ -1,4 +1,4 @@
-import { createAuthMiddleware } from '@smartgov/auth';
+import { createAuthMiddleware } from '@tupsafe/auth';
 import type { NextRequest } from 'next/server';
 
 let middlewarePromise: Promise<any> | null = null;

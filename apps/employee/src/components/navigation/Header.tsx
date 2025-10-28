@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu, Shield, FileText, Users, LogOut, User as UserIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@smartgov/mock-data/api';
+import { useAuth } from '@tupsafe/mock-data/api';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -128,7 +128,7 @@ const MobileNavigation: React.FC<{
         <SheetHeader className="text-left pb-6">
           <SheetTitle className="flex items-center gap-2">
             <Shield className="h-6 w-6 text-primary" />
-            <span className="text-government font-bold">SmartGov</span>
+            <span className="text-government font-bold">TUPSAFE</span>
           </SheetTitle>
         </SheetHeader>
 
@@ -461,10 +461,10 @@ export const Header: React.FC = () => {
                 <div className="absolute inset-0 bg-primary/20 rounded-full blur-sm -z-10 transition-all duration-300 group-hover:bg-primary/30 group-hover:scale-110" />
               </div>
               <span className="text-base sm:text-lg font-bold text-government transition-all duration-300 group-hover:text-primary hidden xs:inline">
-                SmartGov
+                TUPSAFE
               </span>
               <span className="text-sm font-bold text-government transition-all duration-300 group-hover:text-primary xs:hidden">
-                SG
+                TS
               </span>
             </Link>
           </div>

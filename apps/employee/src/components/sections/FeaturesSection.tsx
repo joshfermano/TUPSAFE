@@ -310,7 +310,7 @@ export default function FeaturesSection() {
             </h3>
             <p className="mb-8 text-gray-600 dark:text-gray-300">
               Join thousands of government employees who have streamlined their
-              compliance processes with SmartGov.
+              compliance processes with TUPSAFE.
             </p>
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
               <Button

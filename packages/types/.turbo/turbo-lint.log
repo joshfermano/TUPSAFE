@@ -1,5 +1,5 @@
 
-> @smartgov/types@0.1.0 lint
+> @tupsafe/types@0.1.0 lint
 > eslint src/
 
 Pages directory cannot be found at /home/joshfermano/Thesis/smart-gov/packages/types/pages or /home/joshfermano/Thesis/smart-gov/packages/types/src/pages. If using a custom path, please configure with the `no-html-link-for-pages` rule in your eslint config file.
@@ -14,7 +14,7 @@ Pages directory cannot be found at /home/joshfermano/Thesis/smart-gov/packages/t
 npm error Lifecycle script `lint` failed with error:
 npm error code 1
 npm error path /home/joshfermano/Thesis/smart-gov/packages/types
-npm error workspace @smartgov/types@0.1.0
+npm error workspace @tupsafe/types@0.1.0
 npm error location /home/joshfermano/Thesis/smart-gov/packages/types
 npm error command failed
 npm error command sh -c eslint src/

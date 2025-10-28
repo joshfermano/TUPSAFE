@@ -1,5 +1,5 @@
 {
-  "name": "@smartgov/mock-data",
+  "name": "@tupsafe/mock-data",
   "version": "0.1.0",
   "private": true,
   "exports": {
@@ -24,8 +24,8 @@
   },
   "dependencies": {
     "uuid": "^11.0.3",
-    "@smartgov/database": "*",
-    "@smartgov/types": "*"
+    "@tupsafe/database": "*",
+    "@tupsafe/types": "*"
   },
   "devDependencies": {
     "@types/react": "^19",

@@ -34,7 +34,7 @@ interface ThemeProviderProps {
 const ThemeContext = createContext<ThemeConfig | undefined>(undefined);
 
 // Storage key constant
-const STORAGE_KEY = 'smartgov-theme';
+const STORAGE_KEY = 'tupsafe-theme';
 
 // Helper function to get system theme
 const getSystemTheme = (): ResolvedTheme => {

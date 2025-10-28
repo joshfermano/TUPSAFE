@@ -1,5 +1,5 @@
 -- =========================================
--- Performance Indexes for SmartGov
+-- Performance Indexes for TUPSAFE
 -- Optimized for Drizzle + Supabase Setup
 -- =========================================
 

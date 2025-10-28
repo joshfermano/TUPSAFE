@@ -20,7 +20,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
   global: {
     headers: {
-      'X-Client-Info': 'smartgov@1.0.0',
+      'X-Client-Info': 'tupsafe@1.0.0',
     },
   },
 });

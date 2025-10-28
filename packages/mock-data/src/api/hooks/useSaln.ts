@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { MockDatabase, type SalnSubmission } from '../../data';
-import type { CompleteSalnData } from '@smartgov/database';
+import type { CompleteSalnData } from '@tupsafe/database';
 import { storage } from '../../utils/storage';
 
 export interface UseSalnReturn {

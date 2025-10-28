@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { MockDatabase, type PdsSubmission } from '../../data';
-import type { CompletePdsData } from '@smartgov/database';
+import type { CompletePdsData } from '@tupsafe/database';
 import { storage } from '../../utils/storage';
 
 export interface UsePdsReturn {

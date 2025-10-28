@@ -3,7 +3,7 @@
  * Simulates backend database persistence during development
  */
 
-const STORAGE_PREFIX = 'smartgov_mock_';
+const STORAGE_PREFIX = 'tupsafe_mock_';
 
 export const storage = {
   /**
@@ -48,7 +48,7 @@ export const storage = {
   },
 
   /**
-   * Clear all SmartGov mock data from localStorage
+   * Clear all TUPSAFE mock data from localStorage
    */
   clear: (): void => {
     if (typeof window === 'undefined') return;
@@ -63,7 +63,7 @@ export const storage = {
   },
 
   /**
-   * Get all keys with the SmartGov prefix
+   * Get all keys with the TUPSAFE prefix
    */
   keys: (): string[] => {
     if (typeof window === 'undefined') return [];

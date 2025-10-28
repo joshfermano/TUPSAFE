@@ -1,6 +1,6 @@
 -- =========================================
--- Row Level Security (RLS) Policies for SmartGov
--- Philippine Government PDS/SALN Compliance System
+-- Row Level Security (RLS) Policies for TUPSAFE
+-- TUP Manila PDS/SALN Compliance System
 -- =========================================
 
 -- Enable RLS on all tables first

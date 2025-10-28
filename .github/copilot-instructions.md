@@ -1,11 +1,13 @@
-# SmartGov Copilot Instructions
+# TUPSAFE Copilot Instructions
+
+**TUPSAFE** stands for **Technological University of the Philippines System for Automated Filing and e-Compliance**
 
 ## Monorepo Structure
 
 This is a **Turborepo monorepo** with two Next.js apps and shared packages. Key points:
 
 - **Apps**: `apps/employee` (port 3000) and `apps/admin` (port 3001) are independent Next.js 15.5.3 applications
-- **Shared packages**: Import from `@smartgov/*` namespaces (database, auth, types, shared-ui, mock-data)
+- **Shared packages**: Import from `@tupsafe/*` namespaces (database, auth, types, shared-ui, mock-data)
 - **Build orchestration**: Turbo manages task dependencies. Package changes auto-rebuild dependent apps
 
 ## Development Commands
@@ -37,7 +39,7 @@ npx drizzle-kit studio      # Visual DB editor
 ### Authentication (`packages/auth`)
 
 - Custom auth package wrapping Supabase auth
-- **Middleware pattern**: Each app has `middleware.ts` using `createAuthMiddleware` from `@smartgov/auth`
+- **Middleware pattern**: Each app has `middleware.ts` using `createAuthMiddleware` from `@tupsafe/auth`
 - **Client usage**: Import `useAuth()` hook or `createClient()` for Supabase client
 - **Protected routes**: Configured in middleware `matcher` pattern (see `apps/employee/middleware.ts`)
 
@@ -72,7 +74,7 @@ Magic UI components available: `animated-gradient-text`, `aurora-text`, `border-
 
 1. **Type safety**: All DB queries return Drizzle-typed results. Never use `any`
 2. **Validation**: Every API route/form must validate with Zod schemas
-3. **Imports**: Use `@smartgov/*` for packages, `@/` for app-local imports
+3. **Imports**: Use `@tupsafe/*` for packages, `@/` for app-local imports
 4. **Enums**: Use Drizzle pgEnum values from `packages/database/src/schema.ts` (e.g., `roleEnum`, `submissionStatusEnum`)
 5. **Migrations**: Never manually edit schema after migration. Create new migration instead
 
@@ -81,7 +83,7 @@ Magic UI components available: `animated-gradient-text`, `aurora-text`, `border-
 - **Database schema**: `packages/database/src/schema.ts` (532 lines, all tables/enums/relations)
 - **Turbo config**: `turbo.json` (task dependencies)
 - **App middleware**: `apps/[employee|admin]/middleware.ts` (auth + routing)
-- **Package dependencies**: `@smartgov/database` exports `db`, schemas, types; `@smartgov/auth` exports hooks/middleware
+- **Package dependencies**: `@tupsafe/database` exports `db`, schemas, types; `@tupsafe/auth` exports hooks/middleware
 
 ## Compliance & Security Notes
 
@@ -92,7 +94,7 @@ Magic UI components available: `animated-gradient-text`, `aurora-text`, `border-
 
 ## Testing & Debugging
 
-- **Mock data**: `@smartgov/mock-data` package provides test users/forms for development
+- **Mock data**: `@tupsafe/mock-data` package provides test users/forms for development
 - **Type checking**: Always run `npm run type-check` before pushing
 - **Lint errors**: Fix with `npm run lint` (uses ESLint 9)
 - **DB inspection**: Use `npx drizzle-kit studio` to view/edit data visually

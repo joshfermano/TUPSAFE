@@ -1,4 +1,4 @@
-// Common types for SmartGov applications
+// Common types for TUPSAFE applications
 
 export interface User {
   id: string;

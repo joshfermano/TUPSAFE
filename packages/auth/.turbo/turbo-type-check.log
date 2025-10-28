@@ -1,4 +1,4 @@
 
-> @smartgov/auth@0.1.0 type-check
+> @tupsafe/auth@0.1.0 type-check
 > tsc --noEmit
 

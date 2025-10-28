@@ -1,4 +1,4 @@
-// Theme components and utilities for SmartGov
+// Theme components and utilities for TUPSAFE
 export { ThemeProvider, useTheme, ThemeScript } from '@/context/ThemeContext';
 export { ThemeToggle } from './ThemeToggle';
 export { ThemeWrapper } from './ThemeWrapper';

@@ -1,15 +1,4 @@
 
-> @smartgov/mock-data@0.1.0 type-check
+> @tupsafe/mock-data@0.1.0 type-check
 > tsc --noEmit
 
-src/api/hooks/usePds.ts(5,38): error TS2307: Cannot find module '@smartgov/database' or its corresponding type declarations.
-src/api/hooks/useSaln.ts(5,39): error TS2307: Cannot find module '@smartgov/database' or its corresponding type declarations.
-src/data/index.ts(28,52): error TS2307: Cannot find module '@smartgov/database' or its corresponding type declarations.
-src/data/saln.ts(2,37): error TS2307: Cannot find module '@smartgov/database' or its corresponding type declarations.
-npm error Lifecycle script `type-check` failed with error:
-npm error code 2
-npm error path /home/joshfermano/Thesis/smart-gov/packages/mock-data
-npm error workspace @smartgov/mock-data@0.1.0
-npm error location /home/joshfermano/Thesis/smart-gov/packages/mock-data
-npm error command failed
-npm error command sh -c tsc --noEmit

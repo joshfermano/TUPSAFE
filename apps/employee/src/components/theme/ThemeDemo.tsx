@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 /**
- * ThemeDemo component showcasing all SmartGov theme features
+ * ThemeDemo component showcasing all TUPSAFE theme features
  *
  * This component demonstrates:
  * - Theme state management
@@ -32,7 +32,7 @@ export const ThemeDemo: React.FC = () => {
         {/* Header */}
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-bold text-government">
-            SmartGov Theme System
+            TUPSAFE Theme System
           </h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             A comprehensive theme system for the Philippine Government e-PDS and
@@ -300,7 +300,7 @@ export const ThemeDemo: React.FC = () => {
           <CardHeader>
             <CardTitle className="text-government">Integration Guide</CardTitle>
             <CardDescription>
-              How to integrate the theme system into your SmartGov application
+              How to integrate the theme system into your TUPSAFE application
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
