@@ -209,7 +209,7 @@
 :root {
   --radius: 0.625rem;
 
-  /* Light Theme - Government Blue (#093FB4) Integration */
+  /* Light Theme - TUP Manila Colors (Crimson Red #DC143C) */
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -217,47 +217,47 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
 
-  /* Primary: Government Blue #093FB4 */
-  --primary: oklch(0.38 0.2 260);
+  /* Primary: TUP Manila Crimson Red #DC143C */
+  --primary: oklch(0.55 0.22 15);
   --primary-foreground: oklch(0.985 0 0);
 
-  /* Secondary: Soft blue-gray complement */
-  --secondary: oklch(0.97 0.01 260);
-  --secondary-foreground: oklch(0.2 0.05 260);
+  /* Secondary: Complementary Deep Blue */
+  --secondary: oklch(0.45 0.15 260);
+  --secondary-foreground: oklch(0.985 0 0);
 
-  /* Muted: Subtle blue-tinted grays */
-  --muted: oklch(0.97 0.005 260);
-  --muted-foreground: oklch(0.556 0.02 260);
+  /* Muted: Subtle neutral grays */
+  --muted: oklch(0.97 0.005 0);
+  --muted-foreground: oklch(0.556 0.02 0);
 
-  /* Accent: Lighter blue for highlights */
-  --accent: oklch(0.94 0.03 260);
-  --accent-foreground: oklch(0.25 0.15 260);
+  /* Accent: Soft crimson for highlights */
+  --accent: oklch(0.95 0.08 15);
+  --accent-foreground: oklch(0.25 0.18 15);
 
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0.01 260);
-  --input: oklch(0.922 0.01 260);
-  --ring: oklch(0.38 0.2 260);
+  --border: oklch(0.922 0.01 0);
+  --input: oklch(0.922 0.01 0);
+  --ring: oklch(0.55 0.22 15);
 
-  /* Chart colors with blue theme integration */
-  --chart-1: oklch(0.38 0.2 260);
-  --chart-2: oklch(0.6 0.15 220);
-  --chart-3: oklch(0.45 0.12 300);
-  --chart-4: oklch(0.7 0.18 180);
-  --chart-5: oklch(0.65 0.16 140);
+  /* Chart colors with TUP crimson and complementary palette */
+  --chart-1: oklch(0.55 0.22 15);
+  --chart-2: oklch(0.45 0.15 260);
+  --chart-3: oklch(0.65 0.18 120);
+  --chart-4: oklch(0.60 0.16 180);
+  --chart-5: oklch(0.50 0.14 320);
 
-  /* Sidebar with government blue theme */
+  /* Sidebar with TUP Manila theme */
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.38 0.2 260);
+  --sidebar-primary: oklch(0.55 0.22 15);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.94 0.03 260);
-  --sidebar-accent-foreground: oklch(0.25 0.15 260);
-  --sidebar-border: oklch(0.922 0.01 260);
-  --sidebar-ring: oklch(0.38 0.2 260);
+  --sidebar-accent: oklch(0.95 0.08 15);
+  --sidebar-accent-foreground: oklch(0.25 0.18 15);
+  --sidebar-border: oklch(0.922 0.01 0);
+  --sidebar-ring: oklch(0.55 0.22 15);
 }
 
 .dark {
-  /* Dark Theme - Enhanced Government Blue */
+  /* Dark Theme - Enhanced TUP Manila Crimson */
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -265,43 +265,43 @@
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
 
-  /* Primary: Brighter blue for dark mode contrast */
-  --primary: oklch(0.6 0.18 260);
+  /* Primary: Brighter crimson for dark mode contrast */
+  --primary: oklch(0.65 0.24 15);
   --primary-foreground: oklch(0.985 0 0);
 
-  /* Secondary: Dark blue-gray */
-  --secondary: oklch(0.269 0.02 260);
+  /* Secondary: Complementary blue in dark mode */
+  --secondary: oklch(0.50 0.14 260);
   --secondary-foreground: oklch(0.985 0 0);
 
-  /* Muted: Dark blue-tinted grays */
-  --muted: oklch(0.269 0.01 260);
-  --muted-foreground: oklch(0.708 0.02 260);
+  /* Muted: Dark neutral grays */
+  --muted: oklch(0.269 0.01 0);
+  --muted-foreground: oklch(0.708 0.02 0);
 
-  /* Accent: Medium blue for dark mode */
-  --accent: oklch(0.35 0.08 260);
+  /* Accent: Medium crimson for dark mode */
+  --accent: oklch(0.40 0.12 15);
   --accent-foreground: oklch(0.985 0 0);
 
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.6 0.18 260);
+  --ring: oklch(0.65 0.24 15);
 
-  /* Dark theme chart colors */
-  --chart-1: oklch(0.6 0.18 260);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
+  /* Dark theme chart colors with TUP palette */
+  --chart-1: oklch(0.65 0.24 15);
+  --chart-2: oklch(0.50 0.14 260);
+  --chart-3: oklch(0.65 0.18 120);
+  --chart-4: oklch(0.60 0.16 180);
+  --chart-5: oklch(0.55 0.20 320);
 
-  /* Dark sidebar with government blue accent */
+  /* Dark sidebar with TUP Manila crimson accent */
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.6 0.18 260);
+  --sidebar-primary: oklch(0.65 0.24 15);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.35 0.08 260);
+  --sidebar-accent: oklch(0.40 0.12 15);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.6 0.18 260);
+  --sidebar-ring: oklch(0.65 0.24 15);
 }
 
 @layer base {
@@ -329,49 +329,49 @@
 
 @layer components {
 
-  /* Government Blue Gradient Utilities */
-  .bg-gradient-government {
-    background: linear-gradient(135deg, oklch(0.38 0.2 260) 0%, oklch(0.45 0.15 280) 100%);
+  /* TUP Manila Crimson Gradient Utilities */
+  .bg-gradient-tup {
+    background: linear-gradient(135deg, oklch(0.55 0.22 15) 0%, oklch(0.45 0.15 260) 100%);
   }
 
-  .bg-gradient-government-soft {
-    background: linear-gradient(135deg, oklch(0.94 0.03 260) 0%, oklch(0.97 0.01 260) 100%);
+  .bg-gradient-tup-soft {
+    background: linear-gradient(135deg, oklch(0.95 0.08 15) 0%, oklch(0.97 0.01 0) 100%);
   }
 
-  .dark .bg-gradient-government {
-    background: linear-gradient(135deg, oklch(0.6 0.18 260) 0%, oklch(0.5 0.12 280) 100%);
+  .dark .bg-gradient-tup {
+    background: linear-gradient(135deg, oklch(0.65 0.24 15) 0%, oklch(0.50 0.14 260) 100%);
   }
 
-  .dark .bg-gradient-government-soft {
-    background: linear-gradient(135deg, oklch(0.35 0.08 260) 0%, oklch(0.269 0.02 260) 100%);
+  .dark .bg-gradient-tup-soft {
+    background: linear-gradient(135deg, oklch(0.40 0.12 15) 0%, oklch(0.269 0.01 0) 100%);
   }
 
-  /* Premium glass effect with government blue */
-  .glass-government {
-    background: oklch(0.38 0.2 260 / 0.1);
+  /* Premium glass effect with TUP crimson */
+  .glass-tup {
+    background: oklch(0.55 0.22 15 / 0.1);
     backdrop-filter: blur(12px);
-    border: 1px solid oklch(0.38 0.2 260 / 0.2);
+    border: 1px solid oklch(0.55 0.22 15 / 0.2);
   }
 
-  .dark .glass-government {
-    background: oklch(0.6 0.18 260 / 0.1);
-    border: 1px solid oklch(0.6 0.18 260 / 0.2);
+  .dark .glass-tup {
+    background: oklch(0.65 0.24 15 / 0.1);
+    border: 1px solid oklch(0.65 0.24 15 / 0.2);
   }
 
-  /* Government blue button variants */
-  .btn-government {
+  /* TUP Manila Button Variants */
+  .btn-tup {
     @apply bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/95;
     @apply transition-all duration-200 ease-in-out;
     @apply shadow-sm hover:shadow-md active:shadow-sm;
   }
 
-  .btn-government-outline {
+  .btn-tup-outline {
     @apply border-2 border-primary text-primary bg-transparent;
     @apply hover:bg-primary hover:text-primary-foreground;
     @apply transition-all duration-200 ease-in-out;
   }
 
-  .btn-government-ghost {
+  .btn-tup-ghost {
     @apply text-primary bg-transparent hover:bg-primary/10 active:bg-primary/20;
     @apply transition-all duration-200 ease-in-out;
   }
@@ -379,33 +379,33 @@
 
 @layer utilities {
 
-  /* Theme-aware text colors */
-  .text-government {
-    color: oklch(0.38 0.2 260);
+  /* TUP Manila Theme-Aware Text Colors */
+  .text-tup {
+    color: oklch(0.55 0.22 15); /* TUP Crimson for light mode */
   }
 
-  .dark .text-government {
-    color: oklch(0.6 0.18 260);
+  .dark .text-tup {
+    color: oklch(0.65 0.24 15); /* Brighter crimson for dark mode */
   }
 
-  /* Professional focus states */
-  .focus-government {
+  /* TUP Manila Professional Focus States */
+  .focus-tup {
     @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
     @apply dark:focus:ring-offset-background;
   }
 
-  /* Grid pattern background */
+  /* TUP Manila Grid Pattern Background */
   .bg-grid-pattern {
     background-image:
-      linear-gradient(rgba(9, 63, 180, 0.1) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(9, 63, 180, 0.1) 1px, transparent 1px);
+      linear-gradient(rgba(220, 20, 60, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(220, 20, 60, 0.1) 1px, transparent 1px);
     background-size: 40px 40px;
   }
 
   .dark .bg-grid-pattern {
     background-image:
-      linear-gradient(rgba(96, 165, 250, 0.1) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(96, 165, 250, 0.1) 1px, transparent 1px);
+      linear-gradient(rgba(255, 89, 119, 0.15) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 89, 119, 0.15) 1px, transparent 1px);
   }
 
   /* Smooth animations */

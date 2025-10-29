@@ -31,7 +31,7 @@ export const ThemeDemo: React.FC = () => {
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold text-government">
+          <h1 className="text-4xl font-bold text-tup">
             TUPSAFE Theme System
           </h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
@@ -42,9 +42,9 @@ export const ThemeDemo: React.FC = () => {
         </div>
 
         {/* Theme Status */}
-        <Card className="bg-gradient-government-soft border-border/50">
+        <Card className="bg-gradient-tup-soft border-border/50">
           <CardHeader>
-            <CardTitle className="text-government">
+            <CardTitle className="text-tup">
               Current Theme Status
             </CardTitle>
             <CardDescription>
@@ -174,19 +174,19 @@ export const ThemeDemo: React.FC = () => {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <div className="h-24 rounded-md bg-gradient-government flex items-center justify-center text-white font-semibold">
-                  Government Gradient
+                <div className="h-24 rounded-md bg-gradient-tup flex items-center justify-center text-white font-semibold">
+                  TUP Gradient
                 </div>
                 <p className="text-sm text-muted-foreground text-center">
-                  .bg-gradient-government
+                  .bg-gradient-tup
                 </p>
               </div>
               <div className="space-y-2">
-                <div className="h-24 rounded-md bg-gradient-government-soft flex items-center justify-center font-semibold">
-                  Soft Government Gradient
+                <div className="h-24 rounded-md bg-gradient-tup-soft flex items-center justify-center font-semibold">
+                  Soft TUP Gradient
                 </div>
                 <p className="text-sm text-muted-foreground text-center">
-                  .bg-gradient-government-soft
+                  .bg-gradient-tup-soft
                 </p>
               </div>
             </div>
@@ -202,10 +202,10 @@ export const ThemeDemo: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="relative h-32 bg-gradient-government rounded-lg overflow-hidden">
-              <div className="absolute inset-4 glass-government rounded-lg flex items-center justify-center">
+            <div className="relative h-32 bg-gradient-tup rounded-lg overflow-hidden">
+              <div className="absolute inset-4 glass-tup rounded-lg flex items-center justify-center">
                 <span className="font-semibold text-foreground">
-                  Glass Effect with Government Blue
+                  Glass Effect with TUP Blue
                 </span>
               </div>
             </div>
@@ -222,11 +222,11 @@ export const ThemeDemo: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-4">
-              <Button className="btn-government">Primary Action</Button>
-              <Button className="btn-government-outline">
+              <Button className="btn-tup">Primary Action</Button>
+              <Button className="btn-tup-outline">
                 Secondary Action
               </Button>
-              <Button className="btn-government-ghost">Ghost Action</Button>
+              <Button className="btn-tup-ghost">Ghost Action</Button>
               <Button variant="destructive">Destructive Action</Button>
             </div>
           </CardContent>
@@ -245,10 +245,10 @@ export const ThemeDemo: React.FC = () => {
               <div className="space-y-3">
                 <h4 className="font-semibold">Focus States</h4>
                 <div className="space-y-2">
-                  <button className="w-full px-4 py-2 text-left border rounded focus-government">
+                  <button className="w-full px-4 py-2 text-left border rounded focus-tup">
                     Focusable Element 1
                   </button>
-                  <button className="w-full px-4 py-2 text-left border rounded focus-government">
+                  <button className="w-full px-4 py-2 text-left border rounded focus-tup">
                     Focusable Element 2
                   </button>
                 </div>
@@ -262,7 +262,7 @@ export const ThemeDemo: React.FC = () => {
                   <p className="text-muted-foreground">
                     Secondary text (medium contrast)
                   </p>
-                  <p className="text-government">Government blue text</p>
+                  <p className="text-tup">TUP blue text</p>
                 </div>
               </div>
             </div>
@@ -298,7 +298,7 @@ export const ThemeDemo: React.FC = () => {
         {/* Integration Info */}
         <Card className="border-government/20">
           <CardHeader>
-            <CardTitle className="text-government">Integration Guide</CardTitle>
+            <CardTitle className="text-tup">Integration Guide</CardTitle>
             <CardDescription>
               How to integrate the theme system into your TUPSAFE application
             </CardDescription>

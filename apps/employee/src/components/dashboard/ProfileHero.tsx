@@ -37,8 +37,8 @@ export function ProfileHero({ profile, department, position }: ProfileHeroProps)
   const fullName = `${profile.firstName} ${profile.middleName ? profile.middleName + ' ' : ''}${profile.lastName}`;
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[oklch(0.38_0.2_260)] via-blue-700 to-indigo-600 p-8 sm:p-10 text-white shadow-2xl">
-      <BorderBeam size={280} duration={14} delay={0} colorFrom="#60a5fa" colorTo="#c7d2fe" />
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#8B1538] via-[#6B0F2A] to-[#4A091B] p-8 sm:p-10 text-white shadow-2xl">
+      <BorderBeam size={280} duration={14} delay={0} colorFrom="#8B1538" colorTo="#0066B3" />
 
       {/* Animated Background Effects */}
       <motion.div
@@ -54,7 +54,7 @@ export function ProfileHero({ profile, department, position }: ProfileHeroProps)
         }}
       />
       <motion.div
-        className="absolute bottom-0 left-0 w-48 h-48 bg-indigo-400/20 rounded-full blur-3xl"
+        className="absolute bottom-0 left-0 w-48 h-48 bg-[#0066B3]/20 rounded-full blur-3xl"
         animate={{
           scale: [1, 1.3, 1],
           opacity: [0.2, 0.4, 0.2],
@@ -93,8 +93,8 @@ export function ProfileHero({ profile, department, position }: ProfileHeroProps)
             whileHover={{ scale: 1.05, rotate: 2 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
           >
-            <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-white/30 shadow-2xl ring-4 ring-blue-400/40">
-              <AvatarFallback className="bg-gradient-to-br from-blue-400 to-indigo-500 text-white text-3xl sm:text-4xl font-bold">
+            <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-white/30 shadow-2xl ring-4 ring-[#8B1538]/40">
+              <AvatarFallback className="bg-gradient-to-br from-[#8B1538] to-[#0066B3] text-white text-3xl sm:text-4xl font-bold">
                 {getInitials()}
               </AvatarFallback>
             </Avatar>
@@ -136,7 +136,7 @@ export function ProfileHero({ profile, department, position }: ProfileHeroProps)
               {fullName}
             </motion.h1>
             <motion.p
-              className="text-blue-100 text-lg flex items-center justify-center sm:justify-start gap-2"
+              className="text-white/90 text-lg flex items-center justify-center sm:justify-start gap-2"
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}

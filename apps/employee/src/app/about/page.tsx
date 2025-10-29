@@ -36,9 +36,8 @@ import {
 import { cn } from '@/lib/utils';
 
 const fadeInUp = {
-  initial: { opacity: 0, y: 60 },
+  initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.6, ease: 'easeOut' },
 };
 
 const staggerContainer = {
@@ -50,9 +49,8 @@ const staggerContainer = {
 };
 
 const scaleIn = {
-  initial: { opacity: 0, scale: 0.8 },
-  animate: { opacity: 1, scale: 1 },
-  transition: { duration: 0.5, ease: 'easeOut' },
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
 };
 
 export default function AboutPage() {
@@ -81,14 +79,14 @@ export default function AboutPage() {
       icon: Brain,
       title: 'AI Compliance Assistant',
       description:
-        'Intelligent guidance system for government compliance requirements and policy interpretation.',
+        'Intelligent guidance system for CSC compliance requirements and policy interpretation for university employees.',
       color: 'text-purple-600',
     },
     {
       icon: Workflow,
       title: 'Workflow Automation',
       description:
-        'Automated review processes, deadline management, and approval workflows for efficiency.',
+        'Automated review processes, deadline tracking, and hierarchical approval workflows aligned with TUP Manila structure.',
       color: 'text-orange-600',
     },
     {
@@ -102,7 +100,7 @@ export default function AboutPage() {
       icon: Eye,
       title: 'Audit & Transparency',
       description:
-        'Complete audit trails and transparency mechanisms for government accountability.',
+        'Complete audit trails and transparency mechanisms for institutional accountability and compliance tracking.',
       color: 'text-cyan-600',
     },
   ];
@@ -148,25 +146,25 @@ export default function AboutPage() {
       icon: GraduationCap,
       title: 'Thesis Research',
       description:
-        'This Thesis are focusing on digital transformation in Philippine government institutions.',
+        'Academic thesis project for Technological University of the Philippines Manila, focusing on digital transformation in higher education institutions.',
     },
     {
       icon: BookOpen,
       title: 'Research Methodology',
       description:
-        'Qualitative and quantitative analysis of current government processes and digital adoption.',
+        'Mixed-methods approach combining qualitative user research with quantitative analysis of current TUP Manila compliance processes, system usability testing, and digital adoption metrics.',
     },
     {
       icon: Building2,
-      title: 'Government Partnership',
+      title: 'Institutional Context',
       description:
-        'Collaboration with Civil Service Commission for compliance and validation requirements.',
+        'Designed specifically for TUP Manila&apos;s organizational structure: colleges, departments, faculty members, administrative staff, and HR personnel with role-based access control.',
     },
     {
       icon: Award,
-      title: 'Academic Excellence',
+      title: 'Academic Contribution',
       description:
-        'Research contributing to digital governance and public administration modernization.',
+        'Research contributing to digital governance in Philippine higher education institutions, demonstrating scalable solutions for university compliance systems.',
     },
   ];
 
@@ -181,7 +179,7 @@ export default function AboutPage() {
             x={-1}
             y={-1}
             className={cn(
-              'fill-government/5 stroke-government/10',
+              'fill-tup/5 stroke-tup/10',
               '[mask-image:radial-gradient(1200px_circle_at_center,white,transparent)]'
             )}
           />
@@ -195,40 +193,44 @@ export default function AboutPage() {
               animate={isVisible ? 'animate' : 'initial'}
               variants={staggerContainer}
               className="text-center max-w-4xl mx-auto">
-              <motion.div variants={fadeInUp} className="mb-8">
-                <Badge className="bg-gradient-government border-0 text-white mb-6">
+              <motion.div 
+                variants={fadeInUp}
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                className="mb-8">
+                <Badge className="bg-gradient-tup border-0 text-white mb-6">
                   <GraduationCap className="mr-2 h-4 w-4" />
                   Academic Thesis Project
                 </Badge>
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6 text-foreground">
-                  About <span className="text-government font-extrabold drop-shadow-lg">TUPSAFE</span>
+                  About <span className="text-tup font-extrabold drop-shadow-lg">TUPSAFE</span>
                 </h1>
                 <p className="text-xl md:text-2xl text-muted-foreground leading-relaxed">
-                  A comprehensive research project focused on digitalizing
-                  Philippine government compliance processes through modern web
-                  technologies and AI-powered assistance.
+                  A thesis research project for Technological University of the Philippines Manila,
+                  focused on digitalizing e-PDS and e-SALN compliance processes for university
+                  employees through modern web technologies and AI-powered assistance.
                 </p>
               </motion.div>
 
               <motion.div
                 variants={fadeInUp}
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
                 className="flex flex-wrap justify-center gap-4 mb-12">
                 <div className="flex items-center gap-2 px-4 py-2 bg-accent/50 rounded-full">
                   <CheckCircle className="h-4 w-4 text-green-500" />
                   <span className="text-sm font-medium">CSC Compliant</span>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2 bg-accent/50 rounded-full">
-                  <Shield className="h-4 w-4 text-government" />
+                  <Shield className="h-4 w-4 text-tup" />
                   <span className="text-sm font-medium">
                     Government Standards
                   </span>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2 bg-accent/50 rounded-full">
-                  <Award className="h-4 w-4 text-government" />
+                  <Award className="h-4 w-4 text-tup" />
                   <span className="text-sm font-medium">Academic Research</span>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2 bg-accent/50 rounded-full">
-                  <Shield className="h-4 w-4 text-government" />
+                  <Shield className="h-4 w-4 text-tup" />
                   <span className="text-sm font-medium">
                     ISO Standards
                   </span>
@@ -245,26 +247,31 @@ export default function AboutPage() {
           <motion.div
             initial="initial"
             whileInView="animate"
-            viewport={{ once: true }}
+            viewport={{ once: true, amount: 0.3 }}
             variants={staggerContainer}
             className="max-w-6xl mx-auto">
-            <motion.div variants={fadeInUp} className="text-center mb-16">
+            <motion.div 
+              variants={fadeInUp}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                Project <span className="text-government">Overview</span>
+                Project <span className="text-tup">Overview</span>
               </h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                TUPSAFE represents a paradigm shift in how Philippine
-                government employees interact with compliance requirements. This
-                thesis project addresses the critical need for digital
-                transformation in government institutions through innovative
-                technology solutions.
+                TUPSAFE (TUP System for Automated Filing and e-Compliance) represents
+                a paradigm shift in how TUP Manila employees—including faculty members,
+                professors, and administrative staff—manage CSC compliance requirements.
+                This thesis project addresses the critical need for digital transformation
+                in university administrative processes through innovative technology solutions.
               </p>
             </motion.div>
 
             <div className="grid md:grid-cols-2 gap-8 mb-16">
-              <motion.div variants={scaleIn}>
+              <motion.div 
+                variants={scaleIn}
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}>
                 <NeonGradientCard className="p-8 h-full">
-                  <Target className="h-12 w-12 text-government mb-6" />
+                  <Target className="h-12 w-12 text-tup mb-6" />
                   <h3 className="text-2xl font-bold mb-4">
                     Research Objectives
                   </h3>
@@ -272,47 +279,57 @@ export default function AboutPage() {
                     <li className="flex items-start gap-3">
                       <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
                       <span>
-                        Streamline e-PDS and e-SALN submission processes
+                        Streamline e-PDS and e-SALN submission processes for TUP Manila employees
                       </span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>Implement AI-powered compliance guidance</span>
+                      <span>Implement AI-powered CSC compliance guidance</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
                       <span>
-                        Ensure government-grade security and audit trails
+                        Ensure government-grade security with role-based access control
                       </span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>Enhance transparency and accountability</span>
+                      <span>Support TUP Manila&apos;s organizational hierarchy (Colleges → Departments)</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span>Enhance transparency and accountability in university compliance</span>
                     </li>
                   </ul>
                 </NeonGradientCard>
               </motion.div>
 
-              <motion.div variants={scaleIn}>
+              <motion.div 
+                variants={scaleIn}
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}>
                 <NeonGradientCard className="p-8 h-full">
-                  <Users className="h-12 w-12 text-government mb-6" />
-                  <h3 className="text-2xl font-bold mb-4">Target Impact</h3>
+                  <Users className="h-12 w-12 text-tup mb-6" />
+                  <h3 className="text-2xl font-bold mb-4">Target Users & Scope</h3>
                   <ul className="space-y-3 text-muted-foreground">
                     <li className="flex items-start gap-3">
                       <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>1.8M+ Philippine government employees</span>
+                      <span>TUP Manila faculty members (professors, instructors)</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>Reduce processing time by 75%</span>
+                      <span>Administrative staff and university personnel</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>Eliminate paper-based workflows</span>
+                      <span>Department heads and college deans (oversight)</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>Improve compliance accuracy to 99%+</span>
+                      <span>HR personnel and university administrators</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span>Multi-college organizational hierarchy support</span>
                     </li>
                   </ul>
                 </NeonGradientCard>
@@ -328,17 +345,21 @@ export default function AboutPage() {
           <motion.div
             initial="initial"
             whileInView="animate"
-            viewport={{ once: true }}
+            viewport={{ once: true, amount: 0.3 }}
             variants={staggerContainer}
             className="max-w-6xl mx-auto">
-            <motion.div variants={fadeInUp} className="text-center mb-16">
+            <motion.div 
+              variants={fadeInUp}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                Research <span className="text-government">Scope</span>
+                Research <span className="text-tup">Scope</span>
               </h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                Our research encompasses comprehensive digitalization of
-                government compliance processes with a focus on user experience,
-                security, and regulatory adherence.
+                This thesis research encompasses comprehensive digitalization of
+                CSC compliance processes within TUP Manila&apos;s institutional context,
+                focusing on user experience, security, and regulatory adherence for
+                university employees.
               </p>
             </motion.div>
 
@@ -347,10 +368,10 @@ export default function AboutPage() {
                 <motion.div
                   key={area.title}
                   variants={scaleIn}
-                  transition={{ delay: index * 0.1 }}>
+                  transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: index * 0.1 }}>
                   <MagicCard className="p-6 h-full group cursor-pointer">
                     <area.icon className={cn('h-10 w-10 mb-4', area.color)} />
-                    <h3 className="text-xl font-bold mb-3 group-hover:text-government transition-colors">
+                    <h3 className="text-xl font-bold mb-3 group-hover:text-tup transition-colors">
                       {area.title}
                     </h3>
                     <p className="text-muted-foreground leading-relaxed">
@@ -370,17 +391,21 @@ export default function AboutPage() {
           <motion.div
             initial="initial"
             whileInView="animate"
-            viewport={{ once: true }}
+            viewport={{ once: true, amount: 0.3 }}
             variants={staggerContainer}
             className="max-w-6xl mx-auto">
-            <motion.div variants={fadeInUp} className="text-center mb-16">
+            <motion.div 
+              variants={fadeInUp}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                Academic <span className="text-government">Context</span>
+                Academic <span className="text-tup">Context</span>
               </h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
                 This thesis project contributes to the growing body of research
-                on digital governance and public administration modernization in
-                developing countries.
+                on digital governance in Philippine higher education institutions,
+                demonstrating how universities can modernize compliance processes
+                while maintaining CSC regulatory standards.
               </p>
             </motion.div>
 
@@ -389,9 +414,9 @@ export default function AboutPage() {
                 <motion.div
                   key={context.title}
                   variants={scaleIn}
-                  transition={{ delay: index * 0.15 }}>
-                  <Card className="p-8 h-full glass-government border-government/20 hover:border-government/40 transition-all duration-300">
-                    <context.icon className="h-12 w-12 text-government mb-6" />
+                  transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: index * 0.1 }}>
+                  <Card className="p-8 h-full glass-tup border-tup/20 hover:border-tup/40 transition-all duration-300">
+                    <context.icon className="h-12 w-12 text-tup mb-6" />
                     <h3 className="text-xl font-bold mb-4">{context.title}</h3>
                     <p className="text-muted-foreground leading-relaxed">
                       {context.description}
@@ -410,12 +435,15 @@ export default function AboutPage() {
           <motion.div
             initial="initial"
             whileInView="animate"
-            viewport={{ once: true }}
+            viewport={{ once: true, amount: 0.3 }}
             variants={staggerContainer}
             className="max-w-6xl mx-auto">
-            <motion.div variants={fadeInUp} className="text-center mb-16">
+            <motion.div 
+              variants={fadeInUp}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                Technical <span className="text-government">Innovation</span>
+                Technical <span className="text-tup">Innovation</span>
               </h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
                 Leveraging cutting-edge web technologies to build a secure,
@@ -429,9 +457,9 @@ export default function AboutPage() {
                 <motion.div
                   key={innovation.title}
                   variants={scaleIn}
-                  transition={{ delay: index * 0.1 }}>
+                  transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: index * 0.1 }}>
                   <MagicCard className="p-8 h-full">
-                    <innovation.icon className="h-12 w-12 text-government mb-6" />
+                    <innovation.icon className="h-12 w-12 text-tup mb-6" />
                     <h3 className="text-xl font-bold mb-4">
                       {innovation.title}
                     </h3>
@@ -457,15 +485,18 @@ export default function AboutPage() {
       </section>
 
       {/* Mission & Vision Section */}
-      <section className="py-20 bg-gradient-government text-white">
+      <section className="py-20 bg-gradient-tup text-white">
         <div className="container mx-auto px-4">
           <motion.div
             initial="initial"
             whileInView="animate"
-            viewport={{ once: true }}
+            viewport={{ once: true, amount: 0.3 }}
             variants={staggerContainer}
             className="max-w-6xl mx-auto">
-            <motion.div variants={fadeInUp} className="text-center mb-16">
+            <motion.div 
+              variants={fadeInUp}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl font-bold mb-6">
                 Mission & Vision
               </h2>
@@ -477,21 +508,23 @@ export default function AboutPage() {
             </motion.div>
 
             <div className="grid md:grid-cols-2 gap-8">
-              <motion.div variants={scaleIn}>
+              <motion.div 
+                variants={scaleIn}
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}>
                 <Card className="p-8 bg-white/10 backdrop-blur-sm border-white/20 text-white">
                   <Heart className="h-12 w-12 text-white mb-6" />
                   <h3 className="text-2xl font-bold mb-4">Our Mission</h3>
                   <p className="text-white/90 leading-relaxed mb-6">
-                    To revolutionize government compliance processes through
+                    To revolutionize TUP Manila&apos;s compliance processes through
                     innovative digital solutions that enhance efficiency,
-                    transparency, and citizen services while maintaining the
-                    highest standards of security and regulatory compliance.
+                    transparency, and employee experience while maintaining the
+                    highest standards of security and CSC regulatory compliance.
                   </p>
                   <div className="space-y-2">
                     <div className="flex items-center gap-3">
                       <Lightbulb className="h-4 w-4 text-yellow-300" />
                       <span className="text-sm">
-                        Innovation in Public Service
+                        Innovation in University Administration
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
@@ -502,26 +535,28 @@ export default function AboutPage() {
                     </div>
                     <div className="flex items-center gap-3">
                       <Users className="h-4 w-4 text-green-300" />
-                      <span className="text-sm">Citizen-Centric Design</span>
+                      <span className="text-sm">Employee-Centric Design</span>
                     </div>
                   </div>
                 </Card>
               </motion.div>
 
-              <motion.div variants={scaleIn}>
+              <motion.div 
+                variants={scaleIn}
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}>
                 <Card className="p-8 bg-white/10 backdrop-blur-sm border-white/20 text-white">
                   <Zap className="h-12 w-12 text-white mb-6" />
                   <h3 className="text-2xl font-bold mb-4">Our Vision</h3>
                   <p className="text-white/90 leading-relaxed mb-6">
-                    To establish a new standard for digital governance in the
-                    Philippines, where government processes are seamlessly
-                    integrated, transparent, and accessible to all citizens
+                    To establish a new standard for digital governance in Philippine
+                    higher education institutions, where university compliance processes
+                    are seamlessly integrated, transparent, and accessible to all employees
                     through cutting-edge technology and user-centered design.
                   </p>
                   <div className="space-y-2">
                     <div className="flex items-center gap-3">
                       <Globe className="h-4 w-4 text-blue-300" />
-                      <span className="text-sm">Digital-First Government</span>
+                      <span className="text-sm">Digital-First University</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <Eye className="h-4 w-4 text-green-300" />
@@ -545,27 +580,28 @@ export default function AboutPage() {
           <motion.div
             initial="initial"
             whileInView="animate"
-            viewport={{ once: true }}
+            viewport={{ once: true, amount: 0.3 }}
             variants={fadeInUp}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             className="text-center max-w-4xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold mb-6">
               Join the Digital{' '}
-              <span className="text-government">Transformation</span>
+              <span className="text-tup">Transformation</span>
             </h2>
             <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-              Be part of the research that&apos;s shaping the future of
-              Philippine government services. Experience the next generation of
-              compliance management systems.
+              Be part of the research shaping the future of university administration
+              in the Philippines. Experience the next generation of compliance
+              management systems designed specifically for higher education institutions.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="btn-government group">
+              <Button size="lg" className="btn-tup group">
                 Explore TUPSAFE Platform
                 <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                className="btn-government-outline">
+                className="btn-tup-outline">
                 View Research Documentation
               </Button>
             </div>

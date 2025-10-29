@@ -65,7 +65,7 @@ import {
   registerStep2Schema,
   registerStep3Schema,
   registerStep4Schema,
-  GOVERNMENT_DEPARTMENTS,
+  TUP_DEPARTMENTS,
   type RegisterFormData,
 } from '@/lib/validations/auth';
 import { cn } from '@/lib/utils';
@@ -191,68 +191,68 @@ export default function RegisterPage() {
   if (isSubmitted) {
     return (
       <div className="min-h-screen relative overflow-hidden bg-background">
-        <AnimatedGridPattern
-          numSquares={30}
-          maxOpacity={0.1}
-          duration={3}
-          repeatDelay={1}
-          className={cn(
-            '[mask-image:radial-gradient(500px_circle_at_center,white,transparent)]',
-            'inset-x-0 inset-y-[-30%] h-[200%] skew-y-12'
-          )}
-        />
-        <div className="absolute inset-0 bg-gradient-to-br from-background/95 via-background/80 to-background/95" />
+      <AnimatedGridPattern
+      numSquares={30}
+      maxOpacity={0.1}
+      duration={3}
+      repeatDelay={1}
+      className={cn(
+      '[mask-image:radial-gradient(500px_circle_at_center,white,transparent)]',
+      'inset-x-0 inset-y-[-30%] h-[200%] skew-y-12'
+      )}
+      />
+      <div className="absolute inset-0 bg-gradient-to-br from-background/95 via-background/80 to-background/95" />
 
-        <div className="relative z-10 min-h-screen flex items-center justify-center p-4 pt-28 pb-8">
-          <div className="w-full max-w-md space-y-8 animate-fade-in">
-            <Card className="text-center space-y-6 border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-900/20 relative overflow-hidden">
-              <BorderBeam
-                size={250}
-                duration={12}
-                delay={9}
-                colorFrom="#22c55e"
-                colorTo="#16a34a"
-              />
+      <div className="relative z-10 min-h-screen flex items-center justify-center p-4 pt-28 pb-8">
+      <div className="w-full max-w-md space-y-8 animate-fade-in">
+      <Card className="text-center space-y-6 border-[#8B1538]/20 bg-[#8B1538]/5 dark:border-[#8B1538]/80 dark:bg-[#8B1538]/20 relative overflow-hidden">
+      <BorderBeam
+      size={250}
+      duration={12}
+      delay={9}
+      colorFrom="#8B1538"
+      colorTo="#0066B3"
+      />
 
-              <CardHeader>
-                <div className="w-16 h-16 mx-auto mb-4 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
-                </div>
-                <CardTitle className="text-xl text-green-800 dark:text-green-200">
-                  <AnimatedShinyText className="inline-flex items-center justify-center px-4 py-1 transition ease-out">
-                    <span>Registration Submitted</span>
-                  </AnimatedShinyText>
-                </CardTitle>
-                <CardDescription className="text-green-700 dark:text-green-300">
-                  Your account is pending verification
-                </CardDescription>
-              </CardHeader>
+      <CardHeader>
+      <div className="w-16 h-16 mx-auto mb-4 bg-[#8B1538]/10 dark:bg-[#8B1538]/50 rounded-full flex items-center justify-center">
+      <CheckCircle2 className="h-8 w-8 text-[#8B1538] dark:text-[#8B1538]/90" />
+      </div>
+      <CardTitle className="text-xl text-[#8B1538] dark:text-[#8B1538]/90">
+      <AnimatedShinyText className="inline-flex items-center justify-center px-4 py-1 transition ease-out">
+      <span>Registration Submitted</span>
+      </AnimatedShinyText>
+      </CardTitle>
+      <CardDescription className="text-[#8B1538]/80 dark:text-[#8B1538]/70">
+      Your account is pending verification
+      </CardDescription>
+      </CardHeader>
 
-              <CardContent className="space-y-4">
-                <div className="space-y-3 text-sm text-green-700 dark:text-green-300">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    <span>Processing time: 1-3 business days</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4" />
-                    <span>
-                      Verification email sent to your government address
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Shield className="h-4 w-4" />
-                    <span>HR department will verify your employment</span>
-                  </div>
-                </div>
+      <CardContent className="space-y-4">
+      <div className="space-y-3 text-sm text-[#8B1538]/80 dark:text-[#8B1538]/70">
+      <div className="flex items-center gap-2">
+      <Clock className="h-4 w-4" />
+      <span>Processing time: 1-3 business days</span>
+      </div>
+      <div className="flex items-center gap-2">
+      <Mail className="h-4 w-4" />
+      <span>
+      Verification email sent to your TUP Manila email address
+      </span>
+      </div>
+      <div className="flex items-center gap-2">
+      <Shield className="h-4 w-4" />
+      <span>HR department will verify your employment</span>
+      </div>
+      </div>
 
-                <div className="pt-4 border-t border-green-200 dark:border-green-800">
-                  <p className="text-xs text-green-600 dark:text-green-400 leading-relaxed">
-                    You will receive an email notification once your account has
-                    been verified and activated. Please check your government
-                    email regularly.
-                  </p>
-                </div>
+      <div className="pt-4 border-t border-[#8B1538]/20 dark:border-[#8B1538]/80">
+      <p className="text-xs text-[#8B1538]/70 dark:text-[#8B1538]/60 leading-relaxed">
+      You will receive an email notification once your account has
+      been verified and activated. Please check your TUP Manila
+      email regularly.
+      </p>
+      </div>
 
                 <Button asChild className="w-full" variant="outline">
                   <Link href="/auth/login">Return to Login</Link>
@@ -266,7 +266,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 pt-24 pb-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
+    <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-[#8B1538]/5 to-[#0066B3]/10 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 pt-24 pb-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
       {/* Animated Background Grid Pattern */}
       <AnimatedGridPattern
         numSquares={50}
@@ -288,17 +288,17 @@ export default function RegisterPage() {
           <div className="flex justify-center lg:justify-start">
             <Badge
               variant="secondary"
-              className="bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 border-blue-200 dark:border-blue-800 px-4 py-2"
+              className="bg-[#8B1538]/10 text-[#8B1538] dark:bg-[#8B1538]/20 dark:text-[#8B1538]/90 border-[#8B1538]/20 dark:border-[#8B1538]/80 px-4 py-2"
             >
               <Shield className="w-4 h-4 mr-2" />
-              Secure Government Portal
+              TUP Manila Employee Portal
             </Badge>
           </div>
 
           {/* Main Title */}
           <div className="space-y-3 sm:space-y-4">
             <AnimatedGradientText className="text-3xl sm:text-4xl lg:text-6xl font-bold">
-              <span className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#8B1538] via-[#0066B3] to-[#8B1538] bg-clip-text text-transparent">
                 TUPSAFE
               </span>
             </AnimatedGradientText>
@@ -312,12 +312,12 @@ export default function RegisterPage() {
 
           {/* Feature Highlights */}
           <div className="hidden sm:grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto lg:mx-0">
-            <div className="flex items-center space-x-3 p-4 rounded-lg bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border border-blue-100 dark:border-slate-700">
-              <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <div className="flex items-center space-x-3 p-4 rounded-lg bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border border-[#8B1538]/20 dark:border-slate-700">
+              <FileText className="w-5 h-5 text-[#8B1538] dark:text-[#8B1538]/90" />
               <span className="text-sm font-medium text-slate-700 dark:text-slate-300">e-PDS Management</span>
             </div>
-            <div className="flex items-center space-x-3 p-4 rounded-lg bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border border-blue-100 dark:border-slate-700">
-              <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <div className="flex items-center space-x-3 p-4 rounded-lg bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border border-[#0066B3]/20 dark:border-slate-700">
+              <Building2 className="w-5 h-5 text-[#0066B3] dark:text-[#0066B3]/90" />
               <span className="text-sm font-medium text-slate-700 dark:text-slate-300">e-SALN Compliance</span>
             </div>
           </div>
@@ -333,8 +333,8 @@ export default function RegisterPage() {
                   w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 relative
                   ${
                     currentStep >= step.id
-                      ? 'bg-blue-600 border-blue-600 text-white shadow-lg scale-110'
-                      : 'border-slate-300 dark:border-slate-600 text-slate-400 dark:text-slate-500 hover:border-blue-400'
+                      ? 'bg-[#8B1538] border-[#8B1538] text-white shadow-lg scale-110'
+                      : 'border-slate-300 dark:border-slate-600 text-slate-400 dark:text-slate-500 hover:border-[#8B1538]/40'
                   }
                 `}>
                   {currentStep > step.id ? (
@@ -350,7 +350,7 @@ export default function RegisterPage() {
                   <div
                     className={`text-[10px] sm:text-xs font-medium transition-colors leading-tight ${
                       currentStep >= step.id
-                        ? 'text-blue-600 dark:text-blue-400'
+                        ? 'text-[#8B1538] dark:text-[#8B1538]/90'
                         : 'text-slate-500 dark:text-slate-400'
                     }`}>
                     {step.title}
@@ -362,9 +362,9 @@ export default function RegisterPage() {
 
           {/* Status Indicator */}
           <div className="hidden md:flex justify-center lg:justify-start">
-            <AnimatedShinyText className="inline-flex items-center justify-center px-4 py-2 transition ease-out hover:text-blue-600 hover:duration-300 hover:dark:text-blue-400">
+            <AnimatedShinyText className="inline-flex items-center justify-center px-4 py-2 transition ease-out hover:text-[#8B1538] hover:duration-300 hover:dark:text-[#8B1538]/90">
               <Users className="w-4 h-4 mr-2" />
-              <span>Join Philippine Government Employees</span>
+              <span>Join TUP Manila Community</span>
               <ChevronRight className="ml-1 size-3 transition-transform duration-300 ease-in-out group-hover:translate-x-0.5" />
             </AnimatedShinyText>
           </div>
@@ -374,8 +374,8 @@ export default function RegisterPage() {
         <div className="flex justify-center lg:justify-end order-1 lg:order-2">
           <div className="w-full max-w-md">
             <MagicCard
-              className="relative overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-blue-200/50 dark:border-slate-700/50 shadow-2xl"
-              gradientColor="rgba(59, 130, 246, 0.08)"
+              className="relative overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-[#8B1538]/20 dark:border-slate-700/50 shadow-2xl"
+              gradientColor="rgba(139, 21, 56, 0.08)"
               gradientOpacity={0.3}
             >
               <BorderBeam size={280} duration={12} delay={9} />
@@ -411,7 +411,7 @@ export default function RegisterPage() {
                                 <Input
                                   {...field}
                                   placeholder="Juan"
-                                  className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-blue-400 dark:hover:bg-slate-700/80 dark:hover:border-blue-500"
+                                  className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-[#8B1538] focus:ring-[#8B1538] text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-[#8B1538]/40 dark:hover:bg-slate-700/80 dark:hover:border-[#8B1538]/50"
                                   aria-describedby="firstName-description"
                                 />
                               </FormControl>
@@ -430,7 +430,7 @@ export default function RegisterPage() {
                                 <Input
                                   {...field}
                                   placeholder="Dela Cruz"
-                                  className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-blue-400 dark:hover:bg-slate-700/80 dark:hover:border-blue-500"
+                                  className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-[#8B1538] focus:ring-[#8B1538] text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-[#8B1538]/40 dark:hover:bg-slate-700/80 dark:hover:border-[#8B1538]/50"
                                   aria-describedby="lastName-description"
                                 />
                               </FormControl>
@@ -450,7 +450,7 @@ export default function RegisterPage() {
                               <Input
                                 {...field}
                                 placeholder="Santos (optional)"
-                                className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-blue-400 dark:hover:bg-slate-700/80 dark:hover:border-blue-500"
+                                className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-[#8B1538] focus:ring-[#8B1538] text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-[#8B1538]/40 dark:hover:bg-slate-700/80 dark:hover:border-[#8B1538]/50"
                                 aria-describedby="middleName-description"
                               />
                             </FormControl>
@@ -471,14 +471,14 @@ export default function RegisterPage() {
                                 <Input
                                   {...field}
                                   type="email"
-                                  placeholder="juan.delacruz@gov.ph"
-                                  className="pl-10 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-blue-400 dark:hover:bg-slate-700/80 dark:hover:border-blue-500"
+                                  placeholder="juan.delacruz@tup.edu.ph"
+                                  className="pl-10 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-[#8B1538] focus:ring-[#8B1538] text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-[#8B1538]/40 dark:hover:bg-slate-700/80 dark:hover:border-[#8B1538]/50"
                                   aria-describedby="email-description"
                                 />
                               </div>
                             </FormControl>
                             <FormDescription id="email-description">
-                              Use your official government email address
+                              Use your official TUP Manila email address
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
@@ -498,7 +498,7 @@ export default function RegisterPage() {
                                   {...field}
                                   type="tel"
                                   placeholder="+639123456789 or 09123456789"
-                                  className="pl-10 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-blue-400 dark:hover:bg-slate-700/80 dark:hover:border-blue-500"
+                                  className="pl-10 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-[#8B1538] focus:ring-[#8B1538] text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-[#8B1538]/40 dark:hover:bg-slate-700/80 dark:hover:border-[#8B1538]/50"
                                   aria-describedby="phone-description"
                                 />
                               </div>
@@ -518,17 +518,17 @@ export default function RegisterPage() {
                         name="department"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Government Department *</FormLabel>
+                            <FormLabel>TUP Department/College *</FormLabel>
                             <Select
                               onValueChange={field.onChange}
                               defaultValue={field.value}>
                               <FormControl>
-                                <SelectTrigger className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 transition-all duration-300 hover:bg-white hover:border-blue-400 dark:hover:bg-slate-700/80 dark:hover:border-blue-500">
+                                <SelectTrigger className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-[#8B1538] focus:ring-[#8B1538] text-slate-900 dark:text-slate-100 transition-all duration-300 hover:bg-white hover:border-[#8B1538]/40 dark:hover:bg-slate-700/80 dark:hover:border-[#8B1538]/50">
                                   <SelectValue placeholder="Select your department" />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {GOVERNMENT_DEPARTMENTS.map((dept) => (
+                                {TUP_DEPARTMENTS.map((dept: string) => (
                                   <SelectItem key={dept} value={dept}>
                                     {dept}
                                   </SelectItem>
@@ -551,8 +551,8 @@ export default function RegisterPage() {
                                 <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input
                                   {...field}
-                                  placeholder="e.g., Administrative Officer III"
-                                  className="pl-10 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-blue-400 dark:hover:bg-slate-700/80 dark:hover:border-blue-500"
+                                  placeholder="e.g., Professor, Instructor, Administrative Officer"
+                                  className="pl-10 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-[#8B1538] focus:ring-[#8B1538] text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-[#8B1538]/40 dark:hover:bg-slate-700/80 dark:hover:border-[#8B1538]/50"
                                 />
                               </div>
                             </FormControl>
@@ -571,15 +571,15 @@ export default function RegisterPage() {
                               <FormControl>
                                 <Input
                                   {...field}
-                                  placeholder="EMP001234"
-                                  className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-blue-400 dark:hover:bg-slate-700/80 dark:hover:border-blue-500"
+                                  placeholder="TUP-001234"
+                                  className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-[#8B1538] focus:ring-[#8B1538] text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-[#8B1538]/40 dark:hover:bg-slate-700/80 dark:hover:border-[#8B1538]/50"
                                   onChange={(e) =>
                                     field.onChange(e.target.value.toUpperCase())
                                   }
                                 />
                               </FormControl>
                               <FormDescription>
-                                Your official government employee ID
+                                Your official TUP Manila employee/faculty ID
                               </FormDescription>
                               <FormMessage />
                             </FormItem>
@@ -597,7 +597,7 @@ export default function RegisterPage() {
                                   {...field}
                                   type="number"
                                   placeholder="0"
-                                  className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-blue-400 dark:hover:bg-slate-700/80 dark:hover:border-blue-500"
+                                  className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-[#8B1538] focus:ring-[#8B1538] text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-[#8B1538]/40 dark:hover:bg-slate-700/80 dark:hover:border-[#8B1538]/50"
                                   onChange={(e) =>
                                     field.onChange(
                                       e.target.value
@@ -608,7 +608,7 @@ export default function RegisterPage() {
                                 />
                               </FormControl>
                               <FormDescription>
-                                Total years in government service (optional)
+                                Total years of service at TUP Manila (optional)
                               </FormDescription>
                               <FormMessage />
                             </FormItem>
@@ -634,7 +634,7 @@ export default function RegisterPage() {
                                   {...field}
                                   type={showPassword ? 'text' : 'password'}
                                   placeholder="Create a strong password"
-                                  className="pl-10 pr-10 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-blue-400 dark:hover:bg-slate-700/80 dark:hover:border-blue-500"
+                                  className="pl-10 pr-10 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-[#8B1538] focus:ring-[#8B1538] text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-[#8B1538]/40 dark:hover:bg-slate-700/80 dark:hover:border-[#8B1538]/50"
                                   aria-describedby="password-requirements"
                                 />
                                 <button
@@ -685,7 +685,7 @@ export default function RegisterPage() {
                                     showConfirmPassword ? 'text' : 'password'
                                   }
                                   placeholder="Confirm your password"
-                                  className="pl-10 pr-10 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-blue-400 dark:hover:bg-slate-700/80 dark:hover:border-blue-500"
+                                  className="pl-10 pr-10 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-[#8B1538] focus:ring-[#8B1538] text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-[#8B1538]/40 dark:hover:bg-slate-700/80 dark:hover:border-[#8B1538]/50"
                                 />
                                 <button
                                   type="button"
@@ -726,16 +726,16 @@ export default function RegisterPage() {
                                 <Checkbox
                                   checked={field.value}
                                   onCheckedChange={field.onChange}
-                                  className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 border-slate-300 dark:border-slate-600"
+                                  className="data-[state=checked]:bg-[#8B1538] data-[state=checked]:border-[#8B1538] border-slate-300 dark:border-slate-600"
                                   aria-describedby="terms-description"
                                 />
                               </FormControl>
                               <div className="space-y-1 leading-none">
-                                <FormLabel className="text-sm cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-slate-700 dark:text-slate-300">
+                                <FormLabel className="text-sm cursor-pointer hover:text-[#8B1538] dark:hover:text-[#8B1538]/90 transition-colors text-slate-700 dark:text-slate-300">
                                   I accept the{' '}
                                   <Link
                                     href="/terms"
-                                    className="text-blue-600 dark:text-blue-400 hover:underline focus:underline focus:outline-none hover:text-blue-700 dark:hover:text-blue-300">
+                                    className="text-[#8B1538] dark:text-[#8B1538]/90 hover:underline focus:underline focus:outline-none hover:text-[#8B1538]/80 dark:hover:text-[#8B1538]/70">
                                     Terms and Conditions
                                   </Link>{' '}
                                   *
@@ -754,16 +754,16 @@ export default function RegisterPage() {
                                 <Checkbox
                                   checked={field.value}
                                   onCheckedChange={field.onChange}
-                                  className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 border-slate-300 dark:border-slate-600"
+                                  className="data-[state=checked]:bg-[#8B1538] data-[state=checked]:border-[#8B1538] border-slate-300 dark:border-slate-600"
                                   aria-describedby="privacy-description"
                                 />
                               </FormControl>
                               <div className="space-y-1 leading-none">
-                                <FormLabel className="text-sm cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-slate-700 dark:text-slate-300">
+                                <FormLabel className="text-sm cursor-pointer hover:text-[#8B1538] dark:hover:text-[#8B1538]/90 transition-colors text-slate-700 dark:text-slate-300">
                                   I accept the{' '}
                                   <Link
                                     href="/privacy"
-                                    className="text-blue-600 dark:text-blue-400 hover:underline focus:underline focus:outline-none hover:text-blue-700 dark:hover:text-blue-300">
+                                    className="text-[#8B1538] dark:text-[#8B1538]/90 hover:underline focus:underline focus:outline-none hover:text-[#8B1538]/80 dark:hover:text-[#8B1538]/70">
                                     Privacy Policy
                                   </Link>{' '}
                                   *
@@ -782,14 +782,14 @@ export default function RegisterPage() {
                                 <Checkbox
                                   checked={field.value}
                                   onCheckedChange={field.onChange}
-                                  className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 border-slate-300 dark:border-slate-600"
+                                  className="data-[state=checked]:bg-[#8B1538] data-[state=checked]:border-[#8B1538] border-slate-300 dark:border-slate-600"
                                   aria-describedby="data-processing-description"
                                 />
                               </FormControl>
                               <div className="space-y-1 leading-none">
-                                <FormLabel className="text-sm cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-slate-700 dark:text-slate-300">
+                                <FormLabel className="text-sm cursor-pointer hover:text-[#8B1538] dark:hover:text-[#8B1538]/90 transition-colors text-slate-700 dark:text-slate-300">
                                   I consent to the processing of my personal
-                                  data for government compliance purposes as
+                                  data for university compliance purposes as
                                   required by the Data Privacy Act of 2012 *
                                 </FormLabel>
                               </div>
@@ -798,17 +798,17 @@ export default function RegisterPage() {
                         />
                       </div>
 
-                      <Card className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-900/20">
+                      <Card className="border-[#8B1538]/20 bg-[#8B1538]/5 dark:border-[#8B1538]/80 dark:bg-[#8B1538]/20">
                         <CardContent className="pt-6">
                           <div className="flex items-start gap-3">
-                            <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                            <AlertCircle className="h-5 w-5 text-[#8B1538] dark:text-[#8B1538]/90 flex-shrink-0 mt-0.5" />
                             <div className="space-y-2">
-                              <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                              <p className="text-sm font-medium text-[#8B1538] dark:text-[#8B1538]/90">
                                 Account Verification Process
                               </p>
-                              <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                              <div className="text-xs text-[#8B1538]/80 dark:text-[#8B1538]/70 space-y-1">
                                 <p>
-                                  • Your registration will be reviewed by HR
+                                  • Your registration will be reviewed by TUP HR
                                   personnel
                                 </p>
                                 <p>
@@ -838,7 +838,7 @@ export default function RegisterPage() {
                           variant="outline"
                           onClick={prevStep}
                           disabled={currentStep === 1 || isLoading}
-                          className="flex items-center gap-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:border-blue-300 transition-colors order-2 sm:order-1">
+                          className="flex items-center gap-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:border-[#8B1538]/30 transition-colors order-2 sm:order-1">
                           <ArrowLeft className="h-4 w-4" />
                           Previous
                         </Button>
@@ -848,18 +848,18 @@ export default function RegisterPage() {
                             type="button"
                             onClick={nextStep}
                             disabled={isLoading}
-                            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white relative overflow-hidden group order-1 sm:order-2">
+                            className="flex items-center gap-2 bg-gradient-to-r from-[#8B1538] to-[#0066B3] hover:from-[#8B1538]/90 hover:to-[#0066B3]/90 text-white relative overflow-hidden group order-1 sm:order-2">
                             <span className="relative z-10 flex items-center gap-2">
                               Next
                               <ArrowRight className="h-4 w-4" />
                             </span>
-                            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/0 via-white/10 to-blue-600/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out" />
                           </Button>
                         ) : (
                           <Button
                             type="submit"
                             disabled={isLoading}
-                            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white relative overflow-hidden group order-1 sm:order-2">
+                            className="flex items-center gap-2 bg-gradient-to-r from-[#8B1538] to-[#0066B3] hover:from-[#8B1538]/90 hover:to-[#0066B3]/90 text-white relative overflow-hidden group order-1 sm:order-2">
                             <span className="relative z-10">
                               {isLoading ? (
                                 <>
@@ -873,7 +873,7 @@ export default function RegisterPage() {
                                 </>
                               )}
                             </span>
-                            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/0 via-white/10 to-blue-600/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out" />
                           </Button>
                         )}
                       </div>
@@ -887,7 +887,7 @@ export default function RegisterPage() {
                     Already have an account?{' '}
                     <Link
                       href="/auth/login"
-                      className="text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
+                      className="text-[#8B1538] dark:text-[#8B1538]/90 font-medium hover:text-[#8B1538]/80 dark:hover:text-[#8B1538]/70 transition-colors">
                       Sign in here
                     </Link>
                   </p>
@@ -899,9 +899,9 @@ export default function RegisterPage() {
       </div>
 
       {/* Decorative Elements */}
-      <div className="absolute top-20 left-10 w-20 h-20 bg-blue-400/20 rounded-full blur-xl"></div>
-      <div className="absolute bottom-20 right-10 w-32 h-32 bg-indigo-400/20 rounded-full blur-xl"></div>
-      <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-blue-300/20 rounded-full blur-lg"></div>
+      <div className="absolute top-20 left-10 w-20 h-20 bg-[#8B1538]/20 rounded-full blur-xl"></div>
+      <div className="absolute bottom-20 right-10 w-32 h-32 bg-[#0066B3]/20 rounded-full blur-xl"></div>
+      <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-[#8B1538]/10 rounded-full blur-lg"></div>
     </div>
   );
 }

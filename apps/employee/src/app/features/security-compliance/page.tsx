@@ -32,7 +32,7 @@ import Link from 'next/link';
 
 
 const HeroSection = () => (
-  <section className="relative overflow-hidden bg-gradient-to-br from-red-50 via-white to-pink-50 dark:from-gray-950 dark:via-gray-900 dark:to-red-950 pt-32 pb-20">
+  <section className="relative overflow-hidden bg-gradient-to-br from-[#8B1538]/5 via-white to-[#8B1538]/10 dark:from-gray-950 dark:via-gray-900 dark:to-[#8B1538]/20 pt-32 pb-20">
     {/* Background Pattern */}
     <div className="absolute inset-0 bg-grid-pattern opacity-30" />
 
@@ -43,9 +43,9 @@ const HeroSection = () => (
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="mb-6">
-          <Badge className="bg-[#093FB4]/10 text-[#093FB4] dark:bg-[#093FB4]/20 dark:text-blue-400 px-4 py-2 text-sm font-medium">
+          <Badge className="bg-[#8B1538]/10 text-[#8B1538] dark:bg-[#8B1538]/20 dark:text-[#8B1538] px-4 py-2 text-sm font-medium">
             <Shield className="h-4 w-4 mr-2" />
-            Research Feature
+            Thesis Feature
           </Badge>
         </motion.div>
 
@@ -75,15 +75,15 @@ const HeroSection = () => (
           className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button
             size="lg"
-            className="bg-[#093FB4] hover:bg-[#093FB4]/90 text-white px-8 py-4 text-lg">
-            Explore Security Research
+            className="bg-[#8B1538] hover:bg-[#8B1538]/90 text-white px-8 py-4 text-lg">
+            View Prototype
             <ShieldCheck className="ml-2 h-5 w-5" />
           </Button>
           <Button
             variant="outline"
             size="lg"
-            className="border-[#093FB4] text-[#093FB4] hover:bg-[#093FB4] hover:text-white px-8 py-4 text-lg">
-            View Documentation
+            className="border-[#8B1538] text-[#8B1538] hover:bg-[#8B1538] hover:text-white px-8 py-4 text-lg">
+            Research Documentation
             <Shield className="ml-2 h-5 w-5" />
           </Button>
         </motion.div>
@@ -101,9 +101,9 @@ const HeroSection = () => (
             <MagicCard
               key={stat.label}
               className="p-6 text-center"
-              gradientColor="#DC2626"
+              gradientColor="#8B1538"
               gradientOpacity={0.1}>
-              <stat.icon className="h-8 w-8 text-red-600 mx-auto mb-2" />
+              <stat.icon className="h-8 w-8 text-[#8B1538] mx-auto mb-2" />
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {stat.value}
               </div>
@@ -201,10 +201,10 @@ const SecurityFeaturesSection = () => {
                 className="h-full p-8"
                 borderSize={2}
                 borderRadius={16}
-                neonColors={{ firstColor: '#DC2626', secondColor: '#EF4444' }}>
+                neonColors={{ firstColor: '#8B1538', secondColor: '#0066B3' }}>
                 <div className="flex items-start gap-4 mb-6">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30">
-                    <feature.icon className="h-6 w-6 text-red-600 dark:text-red-400" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#8B1538]/10">
+                    <feature.icon className="h-6 w-6 text-[#8B1538]" />
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
@@ -301,8 +301,8 @@ const ComplianceStandardsSection = () => {
               viewport={{ once: true }}>
               <Card className="p-8 h-full hover:shadow-lg transition-all duration-300">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30">
-                    <standard.icon className="h-6 w-6 text-red-600 dark:text-red-400" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#8B1538]/10">
+                    <standard.icon className="h-6 w-6 text-[#8B1538]" />
                   </div>
                   <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                     {standard.title}
@@ -411,11 +411,11 @@ const SecurityLayersSection = () => {
               viewport={{ once: true }}>
               <MagicCard
                 className="p-6 h-full"
-                gradientColor="#DC2626"
+                gradientColor="#8B1538"
                 gradientOpacity={0.05}>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30">
-                    <layer.icon className="h-5 w-5 text-red-600 dark:text-red-400" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#8B1538]/10">
+                    <layer.icon className="h-5 w-5 text-[#8B1538]" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     {layer.title}
@@ -446,7 +446,7 @@ const SecurityLayersSection = () => {
 };
 
 const ThreatProtectionSection = () => (
-  <section className="py-20 bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20">
+  <section className="py-20 bg-gradient-to-br from-[#8B1538]/5 to-[#8B1538]/10 dark:from-[#8B1538]/10 dark:to-[#8B1538]/20">
     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -494,8 +494,8 @@ const ThreatProtectionSection = () => (
               },
             ].map((item, index) => (
               <div key={index} className="flex items-start gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30 flex-shrink-0">
-                  <item.icon className="h-5 w-5 text-red-600 dark:text-red-400" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#8B1538]/10 flex-shrink-0">
+                  <item.icon className="h-5 w-5 text-[#8B1538]" />
                 </div>
                 <div>
                   <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
@@ -624,8 +624,8 @@ const AccessControlSection = () => {
               viewport={{ once: true }}>
               <Card className="p-6 h-full hover:shadow-lg transition-all duration-300">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30">
-                    <role.icon className="h-5 w-5 text-red-600 dark:text-red-400" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#8B1538]/10">
+                    <role.icon className="h-5 w-5 text-[#8B1538]" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     {role.title}
@@ -673,7 +673,7 @@ const CTASection = () => (
           <Button
             asChild
             size="lg"
-            className="bg-[#093FB4] hover:bg-[#093FB4]/90 text-white px-8 py-4">
+            className="bg-[#8B1538] hover:bg-[#8B1538]/90 text-white px-8 py-4">
             <Link href="/auth/signup">
               View Research Implementation
               <ShieldCheck className="ml-2 h-5 w-5" />
@@ -683,7 +683,7 @@ const CTASection = () => (
             asChild
             variant="outline"
             size="lg"
-            className="border-[#093FB4] text-[#093FB4] hover:bg-[#093FB4] hover:text-white px-8 py-4">
+            className="border-[#8B1538] text-[#8B1538] hover:bg-[#8B1538] hover:text-white px-8 py-4">
             <Link href="/features">
               Explore Study Components
               <ArrowRight className="ml-2 h-5 w-5" />
@@ -697,11 +697,11 @@ const CTASection = () => (
             <span>256-bit Encryption</span>
           </div>
           <div className="flex items-center gap-2">
-            <Scale className="h-4 w-4 text-blue-500" />
+            <Scale className="h-4 w-4 text-[#0066B3]" />
             <span>Fully Compliant</span>
           </div>
           <div className="flex items-center gap-2">
-            <Award className="h-4 w-4 text-purple-500" />
+            <Award className="h-4 w-4 text-[#8B1538]" />
             <span>ISO 27001 Certified</span>
           </div>
         </div>

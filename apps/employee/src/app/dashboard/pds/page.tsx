@@ -213,7 +213,7 @@ export default function PDSPage() {
         className="absolute inset-0 -z-10"
         quantity={40}
         ease={80}
-        color="#3b82f6"
+        color="#8B1538"
         size={0.5}
         staticity={50}
         refresh={false}
@@ -296,7 +296,7 @@ export default function PDSPage() {
             shimmerSize="0.1em"
             shimmerDuration="2s"
             borderRadius="0.75rem"
-            background="linear-gradient(135deg, #093FB4 0%, #3b82f6 50%, #6366f1 100%)">
+            background="linear-gradient(135deg, #8B1538 0%, #0066B3 50%, #004B87 100%)">
             <Plus className="h-5 w-5 mr-2" />
             Create Your First PDS
           </ShimmerButton>
@@ -317,7 +317,7 @@ export default function PDSPage() {
         className="absolute inset-0 -z-10"
         quantity={50}
         ease={80}
-        color="#3b82f6"
+        color="#8B1538"
         size={0.6}
         staticity={45}
         refresh={false}
@@ -367,7 +367,7 @@ export default function PDSPage() {
               shimmerSize="0.08em"
               shimmerDuration="2.5s"
               borderRadius="0.75rem"
-              background="linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)">
+              background="linear-gradient(135deg, #8B1538 0%, #0066B3 100%)">
               <Edit className="h-4 w-4 mr-2" />
               Update PDS
             </ShimmerButton>
@@ -385,8 +385,8 @@ export default function PDSPage() {
           borderSize={2}
           borderRadius={16}
           neonColors={{
-            firstColor: '#3b82f6',
-            secondColor: '#6366f1',
+            firstColor: '#8B1538',
+            secondColor: '#0066B3',
           }}>
           <div className="p-6 sm:p-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -480,7 +480,7 @@ export default function PDSPage() {
               <MagicCard
                 className="relative p-6 cursor-pointer hover:shadow-xl transition-shadow duration-300"
                 gradientSize={200}
-                gradientColor="#3b82f6"
+                gradientColor="#8B1538"
                 gradientOpacity={0.1}>
                 <div className="flex items-start justify-between mb-4">
                   <div
@@ -537,7 +537,7 @@ export default function PDSPage() {
                         'h-full rounded-full',
                         section.isComplete
                           ? 'bg-gradient-to-r from-green-600 to-emerald-600'
-                          : 'bg-gradient-to-r from-blue-600 to-indigo-600'
+                          : 'bg-gradient-to-r from-[#8B1538] to-[#0066B3]'
                       )}
                       initial={{ width: 0 }}
                       animate={{ width: `${section.completionPercentage}%` }}

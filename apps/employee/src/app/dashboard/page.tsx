@@ -26,7 +26,7 @@ export default function DashboardPage() {
         className="absolute inset-0 -z-10"
         quantity={80}
         ease={80}
-        color="#3b82f6"
+        color="#8B1538"
         size={0.8}
         staticity={40}
         refresh={false}
@@ -60,7 +60,7 @@ export default function DashboardPage() {
             ease: 'easeInOut',
           }}>
           <motion.div
-            className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500/30 to-indigo-500/30 blur-2xl"
+            className="absolute inset-0 rounded-full bg-gradient-to-br from-[#8B1538]/30 to-[#0066B3]/30 blur-2xl"
             animate={{
               scale: [1, 1.3, 1],
               opacity: [0.5, 0.8, 0.5],
@@ -71,7 +71,7 @@ export default function DashboardPage() {
               ease: 'easeInOut',
             }}
           />
-          <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 shadow-2xl">
+          <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-[#8B1538] to-[#0066B3] shadow-2xl">
             <Sparkles className="h-12 w-12 text-white" />
           </div>
         </motion.div>
@@ -84,7 +84,7 @@ export default function DashboardPage() {
             repeat: Infinity,
             ease: 'linear',
           }}>
-          <Loader2 className="h-10 w-10 text-blue-600 dark:text-blue-400" />
+          <Loader2 className="h-10 w-10 text-[#8B1538] dark:text-[#8B1538]" />
         </motion.div>
 
         {/* Loading Text */}
@@ -106,7 +106,7 @@ export default function DashboardPage() {
           {[0, 1, 2].map((index) => (
             <motion.div
               key={index}
-              className="h-2 w-2 rounded-full bg-blue-600 dark:bg-blue-400"
+              className="h-2 w-2 rounded-full bg-[#8B1538] dark:bg-[#8B1538]"
               animate={{
                 scale: [1, 1.5, 1],
                 opacity: [0.5, 1, 0.5],

@@ -57,10 +57,10 @@ interface NeonGradientCardProps {
   borderRadius?: number;
 
   /**
-   * @default "{ firstColor: '#ff00aa', secondColor: '#00FFF1' }"
+   * @default "{ firstColor: '#8B1538', secondColor: '#0066B3' }"
    * @type string
    * @description
-   * The colors of the neon gradient
+   * The colors of the neon gradient - TUP Manila Crimson and Blue
    * */
   neonColors?: NeonColorsProps;
 
@@ -73,8 +73,8 @@ export const NeonGradientCard: React.FC<NeonGradientCardProps> = ({
   borderSize = 2,
   borderRadius = 20,
   neonColors = {
-    firstColor: "#ff00aa",
-    secondColor: "#00FFF1",
+    firstColor: "#8B1538",
+    secondColor: "#0066B3",
   },
   ...props
 }) => {
