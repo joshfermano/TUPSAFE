@@ -34,12 +34,12 @@ const features: Feature[] = [
     id: 'e-pds',
     title: 'e-PDS Management',
     description:
-      'Complete digital Personal Data Sheet system with CSC compliance, version control, and automated validation.',
+      'Digital Personal Data Sheet system designed for TUP Manila faculty and staff with CSC compliance standards.',
     benefits: [
-      'CSC-compliant form validation',
-      'Automatic version tracking',
-      'Digital signature support',
-      'Real-time error detection',
+      'CSC-compliant form structure',
+      'Version tracking for updates',
+      'Academic rank integration',
+      'Real-time validation feedback',
     ],
     icon: FileText,
   },
@@ -47,38 +47,40 @@ const features: Feature[] = [
     id: 'e-saln',
     title: 'e-SALN Processing',
     description:
-      'Streamlined Statement of Assets, Liabilities, and Net Worth management with automated calculations and compliance checks.',
+      'Streamlined Statement of Assets, Liabilities, and Net Worth submission system aligned with university compliance requirements.',
     benefits: [
       'Automated net worth calculations',
-      'Asset classification assistance',
-      'Deadline tracking & reminders',
-      'Audit-ready documentation',
+      'Asset classification guidance',
+      'Academic calendar integration',
+      'Submission tracking system',
     ],
     icon: FileCheck,
+    comingSoon: true,
   },
   {
     id: 'ai-assistant',
     title: 'AI Compliance Assistant',
     description:
-      'Intelligent guidance system providing instant answers to compliance questions and form completion assistance.',
+      'Research implementation of intelligent guidance system to assist with compliance questions and form completion.',
     benefits: [
-      '24/7 policy guidance',
-      'Form completion help',
-      'CSC regulation explanations',
-      'Contextual recommendations',
+      'Policy guidance features',
+      'Form completion assistance',
+      'CSC regulation reference',
+      'Contextual help system',
     ],
     icon: Brain,
+    comingSoon: true,
   },
   {
     id: 'workflows',
     title: 'Automated Workflows',
     description:
-      'Smart approval chains, review processes, and deadline management with configurable business rules.',
+      'Hierarchical approval system designed for TUP Manila organizational structure with department and college-level review processes.',
     benefits: [
-      'Multi-level approval chains',
-      'Automated deadline reminders',
-      'Custom workflow rules',
-      'Progress tracking dashboards',
+      'Department-level approvals',
+      'College-level oversight',
+      'Deadline notification system',
+      'Progress tracking interface',
     ],
     icon: Settings,
   },
@@ -86,12 +88,12 @@ const features: Feature[] = [
     id: 'security',
     title: 'Security & Compliance',
     description:
-      'Enterprise-grade security with complete audit trails, data encryption, and regulatory compliance monitoring.',
+      'Research-focused security architecture with audit trails, encryption, and role-based access aligned with university data protection standards.',
     benefits: [
-      'End-to-end encryption',
-      'Complete audit logs',
-      'Data Privacy Act compliance',
-      'Role-based access control',
+      'Secure data transmission',
+      'Complete audit logging',
+      'Privacy compliance design',
+      'Hierarchical access control',
     ],
     icon: Shield,
   },
@@ -99,12 +101,12 @@ const features: Feature[] = [
     id: 'analytics',
     title: 'Dashboard & Analytics',
     description:
-      'Comprehensive reporting and analytics with real-time compliance metrics and organizational insights.',
+      'Administrative reporting interface for TUP Manila HR personnel with compliance metrics and departmental insights.',
     benefits: [
-      'Real-time compliance metrics',
-      'Custom report generation',
-      'Performance analytics',
-      'Executive dashboards',
+      'Compliance tracking metrics',
+      'Department-level reports',
+      'Submission analytics',
+      'Administrative dashboards',
     ],
     icon: BarChart3,
   },
@@ -126,7 +128,7 @@ const FeatureCard: React.FC<{ feature: Feature; index: number }> = ({
   index,
 }) => {
   const IconComponent = feature.icon;
-  const gradient = { firstColor: '#093FB4', secondColor: '#1E40AF' };
+  const gradient = { firstColor: '#8B1538', secondColor: '#0066B3' };
 
   return (
     <motion.div
@@ -145,10 +147,10 @@ const FeatureCard: React.FC<{ feature: Feature; index: number }> = ({
           <div className="mb-4 flex items-start justify-between">
             <div className="flex items-center gap-3">
               <motion.div
-                className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#093FB4]/10 dark:bg-[#093FB4]/20"
+                className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#8B1538]/10 dark:bg-[#8B1538]/20"
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 10 }}>
-                <IconComponent className="h-6 w-6 text-[#093FB4] dark:text-blue-400" />
+                <IconComponent className="h-6 w-6 text-[#8B1538] dark:text-[#E63946]" />
               </motion.div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -157,8 +159,8 @@ const FeatureCard: React.FC<{ feature: Feature; index: number }> = ({
               </div>
             </div>
             {feature.comingSoon && (
-              <Badge variant="outline" className="text-xs">
-                Coming Soon
+              <Badge variant="outline" className="text-xs text-[#0066B3] border-[#0066B3]">
+                Research Proposal
               </Badge>
             )}
           </div>
@@ -181,7 +183,7 @@ const FeatureCard: React.FC<{ feature: Feature; index: number }> = ({
                   delay: index * 0.1 + benefitIndex * 0.05,
                 }}
                 viewport={{ once: true }}>
-                <CheckCircle className="h-4 w-4 flex-shrink-0 text-green-500" />
+                <CheckCircle className="h-4 w-4 flex-shrink-0 text-emerald-600" />
                 <span className="text-gray-700 dark:text-gray-300">
                   {benefit}
                 </span>
@@ -194,8 +196,8 @@ const FeatureCard: React.FC<{ feature: Feature; index: number }> = ({
             <Button
               variant="outline"
               size="sm"
-              className="w-full group-hover:bg-[#093FB4] group-hover:text-white transition-all duration-300">
-              Learn More
+              className="w-full group-hover:bg-[#8B1538] group-hover:text-white transition-all duration-300 border-[#8B1538]/20 text-[#8B1538] hover:border-[#8B1538]">
+              View Details
             </Button>
           </Link>
         </div>
@@ -217,15 +219,15 @@ const StatsCard: React.FC<{
     viewport={{ once: true }}>
     <MagicCard
       className="p-6 text-center transition-all duration-300 hover:scale-105"
-      gradientColor="#093FB4"
-      gradientOpacity={0.1}
-      gradientFrom="#093FB4"
-      gradientTo="#1E40AF">
+      gradientColor="#8B1538"
+      gradientOpacity={0.12}
+      gradientFrom="#8B1538"
+      gradientTo="#0066B3">
       <motion.div
         className="mb-3 flex justify-center"
         whileHover={{ scale: 1.1, rotate: 360 }}
         transition={{ duration: 0.5 }}>
-        <IconComponent className="h-8 w-8 text-[#093FB4] dark:text-blue-400" />
+        <IconComponent className="h-8 w-8 text-[#8B1538] dark:text-[#E63946]" />
       </motion.div>
       <div className="text-2xl font-bold text-gray-900 dark:text-white">
         {value}
@@ -237,10 +239,10 @@ const StatsCard: React.FC<{
 
 export default function FeaturesSection() {
   const stats = [
-    { icon: Users, value: '50K+', label: 'Government Users' },
-    { icon: FileCheck, value: '99.9%', label: 'Compliance Rate' },
-    { icon: Clock, value: '75%', label: 'Time Savings' },
-    { icon: Award, value: 'CSC', label: 'Certified' },
+    { icon: FileText, value: '6', label: 'Core Modules' },
+    { icon: Users, value: 'TUP Manila', label: 'Focused' },
+    { icon: Shield, value: 'CSC', label: 'Compliant Design' },
+    { icon: Award, value: 'Research', label: 'Implementation' },
   ];
 
   return (
@@ -264,22 +266,22 @@ export default function FeaturesSection() {
             whileInView={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}>
-            <Badge className="bg-[#093FB4]/10 text-[#093FB4] dark:bg-[#093FB4]/20 dark:text-blue-400">
-              Comprehensive Solutions
+            <Badge className="bg-[#8B1538]/10 text-[#8B1538] dark:bg-[#8B1538]/20 dark:text-[#E63946]">
+              System Architecture
             </Badge>
           </motion.div>
 
           <h2 className="mb-6 text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl">
-            Comprehensive Compliance{' '}
-            <span className="bg-gradient-to-r from-[#093FB4] to-blue-600 bg-clip-text text-transparent">
-              Solutions
+            Research-Driven{' '}
+            <span className="bg-gradient-to-r from-[#8B1538] to-[#0066B3] bg-clip-text text-transparent">
+              Implementation
             </span>
           </h2>
 
           <p className="text-lg text-gray-600 dark:text-gray-300">
-            Everything you need for seamless government compliance workflows.
-            Streamline your processes with our comprehensive suite of tools
-            designed specifically for Philippine government requirements.
+            A comprehensive digital compliance system designed specifically for TUP Manila faculty and staff.
+            This thesis project implements modern web technologies to streamline e-PDS and e-SALN processes
+            in alignment with CSC standards.
           </p>
         </motion.div>
 
@@ -306,23 +308,23 @@ export default function FeaturesSection() {
           viewport={{ once: true }}>
           <div className="mx-auto max-w-2xl">
             <h3 className="mb-4 text-2xl font-bold text-gray-900 dark:text-white">
-              Ready to Transform Your Compliance Workflow?
+              Built for TUP Manila&apos;s Digital Transformation
             </h3>
             <p className="mb-8 text-gray-600 dark:text-gray-300">
-              Join thousands of government employees who have streamlined their
-              compliance processes with TUPSAFE.
+              This thesis explores how modern web technologies can streamline compliance workflows
+              for university faculty and administrative personnel while maintaining CSC standards.
             </p>
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
               <Button
                 size="lg"
-                className="bg-[#093FB4] hover:bg-[#093FB4]/90 text-white">
-                Explore All Features
+                className="bg-[#8B1538] hover:bg-[#8B1538]/90 text-white">
+                Explore Research Implementation
               </Button>
               <Button
                 variant="outline"
                 size="lg"
-                className="border-[#093FB4] text-[#093FB4] hover:bg-[#093FB4] hover:text-white">
-                Schedule Demo
+                className="border-[#8B1538] text-[#8B1538] hover:bg-[#8B1538] hover:text-white">
+                View Documentation
               </Button>
             </div>
           </div>

@@ -263,7 +263,7 @@ export default function SalnPage() {
         className="absolute inset-0 -z-10"
         quantity={40}
         ease={80}
-        color="#6366f1"
+        color="#0066B3"
         size={0.5}
         staticity={50}
         refresh={false}
@@ -346,7 +346,7 @@ export default function SalnPage() {
             shimmerSize="0.1em"
             shimmerDuration="2s"
             borderRadius="0.75rem"
-            background="linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)">
+            background="linear-gradient(135deg, #0066B3 0%, #004B87 50%, #003461 100%)">
             <Plus className="h-5 w-5 mr-2" />
             Create Your First SALN
           </ShimmerButton>
@@ -367,7 +367,7 @@ export default function SalnPage() {
         className="absolute inset-0 -z-10"
         quantity={50}
         ease={80}
-        color="#6366f1"
+        color="#0066B3"
         size={0.6}
         staticity={45}
         refresh={false}
@@ -416,7 +416,7 @@ export default function SalnPage() {
               shimmerSize="0.08em"
               shimmerDuration="2.5s"
               borderRadius="0.75rem"
-              background="linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)">
+              background="linear-gradient(135deg, #0066B3 0%, #004B87 100%)">
               <Edit className="h-4 w-4 mr-2" />
               Update SALN
             </ShimmerButton>
@@ -434,8 +434,8 @@ export default function SalnPage() {
           borderSize={2}
           borderRadius={16}
           neonColors={{
-            firstColor: '#6366f1',
-            secondColor: '#a855f7',
+            firstColor: '#0066B3',
+            secondColor: '#004B87',
           }}>
           <div className="p-6 sm:p-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -523,7 +523,7 @@ export default function SalnPage() {
               <MagicCard
                 className="relative p-6 cursor-pointer hover:shadow-xl transition-shadow duration-300"
                 gradientSize={200}
-                gradientColor="#6366f1"
+                gradientColor="#0066B3"
                 gradientOpacity={0.1}>
                 <div className="flex items-start justify-between mb-4">
                   <div
@@ -538,7 +538,7 @@ export default function SalnPage() {
                         'h-6 w-6',
                         section.isComplete
                           ? 'text-green-600 dark:text-green-400'
-                          : 'text-indigo-600 dark:text-indigo-400'
+                          : 'text-[#0066B3] dark:text-[#0066B3]'
                       )}
                     />
                   </div>

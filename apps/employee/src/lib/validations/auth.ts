@@ -1,61 +1,50 @@
 import { z } from 'zod';
 
-// Philippine government email domains for validation
-const GOVERNMENT_EMAIL_DOMAINS = [
-  'gov.ph',
+// TUP Manila institutional email domains for validation
+const INSTITUTIONAL_EMAIL_DOMAINS = [
+  'tup.edu.ph',           // Primary TUP Manila institutional domain
+  'gsb.tup.edu.ph',       // Graduate School of Business
+  'manila.tup.edu.ph',    // Manila campus specific
+  'gov.ph',               // Government institutions
   'deped.gov.ph',
-  'doh.gov.ph',
-  'dilg.gov.ph',
-  'dof.gov.ph',
-  'doe.gov.ph',
-  'denr.gov.ph',
-  'dti.gov.ph',
-  'da.gov.ph',
-  'dswd.gov.ph',
-  'dnd.gov.ph',
-  'dotc.gov.ph',
-  'dpwh.gov.ph',
-  'pcoo.gov.ph',
-  'palace.gov.ph',
-  'csc.gov.ph',
-  'coa.gov.ph',
-  'ombudsman.gov.ph',
+  'ched.gov.ph',          // Commission on Higher Education
+  'dost.gov.ph',          // Department of Science and Technology
 ];
 
-// Philippine government departments
-export const GOVERNMENT_DEPARTMENTS = [
-  'Department of Education (DepEd)',
-  'Department of Health (DOH)',
-  'Department of the Interior and Local Government (DILG)',
-  'Department of Finance (DOF)',
-  'Department of Energy (DOE)',
-  'Department of Environment and Natural Resources (DENR)',
-  'Department of Trade and Industry (DTI)',
-  'Department of Agriculture (DA)',
-  'Department of Social Welfare and Development (DSWD)',
-  'Department of National Defense (DND)',
-  'Department of Transportation (DOTr)',
-  'Department of Public Works and Highways (DPWH)',
-  'Presidential Communications Operations Office (PCOO)',
-  'Office of the President',
-  'Civil Service Commission (CSC)',
-  'Commission on Audit (COA)',
-  'Office of the Ombudsman',
-  'Department of Justice (DOJ)',
-  'Department of Labor and Employment (DOLE)',
-  'Department of Science and Technology (DOST)',
-  'Department of Tourism (DOT)',
-  'Department of Information and Communications Technology (DICT)',
-  'National Economic and Development Authority (NEDA)',
-  'Budget and Management (DBM)',
-  'Local Government Unit (LGU)',
-  'Other Government Agency',
+// TUP Manila colleges and administrative offices
+export const TUP_DEPARTMENTS = [
+  // Colleges
+  'College of Engineering (COE)',
+  'College of Science (COS)',
+  'College of Liberal Arts (CLA)',
+  'College of Industrial Technology (CIT)',
+  'College of Industrial Education (CIE)',
+  'College of Architecture and Fine Arts (CAFA)',
+  'Graduate School',
+
+  // Administrative Offices
+  'Human Resources Office',
+  'Finance Office',
+  'Registrar Office',
+  'Library Services',
+  'Information and Communications Technology Office',
+  'Facilities Management Office',
+  'Student Affairs Office',
+  'Research and Development Office',
+  'Planning and Development Office',
+  'Quality Assurance Office',
+  'Extension Services Office',
+  'Guidance and Counseling Office',
+  'Medical and Dental Services',
+  'Campus Security Office',
+  'Procurement Office',
+  'Other Office/Department',
 ];
 
-// Employee ID format validation (flexible for different agencies)
+// TUP Manila employee/faculty ID format validation
 const employeeIdRegex = /^[A-Z0-9]{3,15}$/;
 
-// Strong password requirements for government systems
+// Strong password requirements for institutional security
 const passwordSchema = z
   .string()
   .min(12, 'Password must be at least 12 characters long')
@@ -70,29 +59,26 @@ const passwordSchema = z
     'Password must not contain common weak patterns'
   );
 
-// Government email validation
-const governmentEmailSchema = z
+// TUP Manila institutional email validation
+const institutionalEmailSchema = z
   .string()
   .email('Please enter a valid email address')
   .refine((email) => {
     const domain = email.split('@')[1]?.toLowerCase();
-    return (
-      GOVERNMENT_DEPARTMENTS.includes('Other Government Agency') ||
-      GOVERNMENT_EMAIL_DOMAINS.some((govDomain) => domain?.endsWith(govDomain))
-    );
-  }, 'Please use your official government email address');
+    return INSTITUTIONAL_EMAIL_DOMAINS.some((instDomain) => domain?.endsWith(instDomain));
+  }, 'Please use your TUP Manila institutional email address (e.g., @tup.edu.ph)');
 
 // Login form validation schema
 export const loginSchema = z.object({
   loginIdentifier: z
     .string()
-    .min(1, 'Please enter your employee ID or email')
+    .min(1, 'Please enter your employee/faculty ID or email')
     .refine((value) => {
       // Allow either email format or employee ID format
       const isEmail = z.string().email().safeParse(value).success;
       const isEmployeeId = employeeIdRegex.test(value.toUpperCase());
       return isEmail || isEmployeeId;
-    }, 'Please enter a valid employee ID or government email address'),
+    }, 'Please enter a valid employee/faculty ID or TUP Manila email address'),
   password: z
     .string()
     .min(1, 'Password is required')
@@ -139,7 +125,7 @@ const baseRegisterSchema = z.object({
     )
     .optional(),
 
-  email: governmentEmailSchema,
+  email: institutionalEmailSchema,
 
   phoneNumber: z
     .string()
@@ -149,13 +135,13 @@ const baseRegisterSchema = z.object({
       'Please enter a valid Philippine phone number (e.g., +639123456789 or 09123456789)'
     ),
 
-  // Government Employment Details
+  // TUP Manila Employment Details
   department: z
     .string()
-    .min(1, 'Please select your department')
+    .min(1, 'Please select your college/department')
     .refine(
-      (dept) => GOVERNMENT_DEPARTMENTS.includes(dept),
-      'Please select a valid government department'
+      (dept) => TUP_DEPARTMENTS.includes(dept),
+      'Please select a valid college or department'
     ),
 
   position: z
@@ -166,10 +152,10 @@ const baseRegisterSchema = z.object({
 
   employeeId: z
     .string()
-    .min(1, 'Employee ID is required')
+    .min(1, 'Employee/Faculty ID is required')
     .regex(
       employeeIdRegex,
-      'Employee ID must be 3-15 characters (letters and numbers only)'
+      'Employee/Faculty ID must be 3-15 characters (letters and numbers only)'
     ),
 
   yearsOfService: z
@@ -196,7 +182,7 @@ const baseRegisterSchema = z.object({
     .boolean()
     .refine(
       (val) => val === true,
-      'Consent for data processing is required for government compliance'
+      'Consent for data processing is required for CSC compliance'
     ),
 });
 
@@ -243,7 +229,7 @@ export const registerStep4Schema = baseRegisterSchema.pick({
 
 // Password reset schema
 export const passwordResetSchema = z.object({
-  email: governmentEmailSchema,
+  email: institutionalEmailSchema,
 });
 
 // Change password schema

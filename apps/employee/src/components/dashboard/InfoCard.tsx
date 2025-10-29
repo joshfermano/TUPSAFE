@@ -78,7 +78,7 @@ export function InfoCard({ title, icon: Icon, children, className, gradient = fa
             className="rounded-xl"
             borderWidth={2}
             duration={12}
-            shineColor={gradient ? ["#3b82f6", "#818cf8", "#6366f1"] : ["#60a5fa", "#3b82f6", "#60a5fa"]}
+            shineColor={gradient ? ["#8B1538", "#0066B3", "#004B87"] : ["#8B1538", "#0066B3", "#8B1538"]}
           />
 
           <MagicCard
@@ -87,22 +87,22 @@ export function InfoCard({ title, icon: Icon, children, className, gradient = fa
               "border border-slate-200/50 dark:border-slate-800/50",
               "shadow-lg transition-all duration-500 group rounded-xl",
               // Premium glow effect on hover
-              "hover:shadow-[0_8px_30px_rgba(9,63,180,0.15),0_0_60px_rgba(9,63,180,0.1)]",
-              "dark:hover:shadow-[0_8px_30px_rgba(59,130,246,0.25),0_0_60px_rgba(59,130,246,0.15)]",
-              gradient && "bg-gradient-to-br from-blue-50/80 to-indigo-50/80 dark:from-blue-950/40 dark:to-indigo-950/40",
-              isHovered && "shadow-[0_12px_40px_rgba(9,63,180,0.2)] dark:shadow-[0_12px_40px_rgba(59,130,246,0.3)]",
+              "hover:shadow-[0_8px_30px_rgba(139,21,56,0.15),0_0_60px_rgba(139,21,56,0.1)]",
+              "dark:hover:shadow-[0_8px_30px_rgba(139,21,56,0.25),0_0_60px_rgba(139,21,56,0.15)]",
+              gradient && "bg-gradient-to-br from-[#8B1538]/5 to-[#0066B3]/5 dark:from-[#8B1538]/10 dark:to-[#0066B3]/10",
+              isHovered && "shadow-[0_12px_40px_rgba(139,21,56,0.2)] dark:shadow-[0_12px_40px_rgba(139,21,56,0.3)]",
               className
             )}
             gradientSize={isHovered ? 400 : 200}
-            gradientColor="#3b82f6"
+            gradientColor="#8B1538"
             gradientOpacity={0.08}
-            gradientFrom="#60a5fa"
-            gradientTo="#818cf8"
+            gradientFrom="#8B1538"
+            gradientTo="#0066B3"
           >
             {/* Shimmer sweep effect on hover */}
             <motion.div
               className={cn(
-                "absolute inset-0 bg-gradient-to-r from-transparent via-white/20 dark:via-blue-400/10 to-transparent",
+                "absolute inset-0 bg-gradient-to-r from-transparent via-white/20 dark:via-[#8B1538]/10 to-transparent",
                 "pointer-events-none -translate-x-full"
               )}
               animate={isHovered ? { x: ['0%', '200%'] } : { x: '-100%' }}
@@ -115,16 +115,16 @@ export function InfoCard({ title, icon: Icon, children, className, gradient = fa
                 className={cn(
                   "relative flex h-11 w-11 items-center justify-center rounded-xl transition-all duration-300",
                   gradient
-                    ? "bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/40"
-                    : "bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-950/60 dark:to-indigo-950/60",
-                  gradient ? "text-white" : "text-blue-600 dark:text-blue-400"
+                    ? "bg-gradient-to-br from-[#8B1538] to-[#0066B3] text-white shadow-lg shadow-[#8B1538]/40"
+                    : "bg-gradient-to-br from-[#8B1538]/10 to-[#0066B3]/10 dark:from-[#8B1538]/20 dark:to-[#0066B3]/20",
+                  gradient ? "text-white" : "text-[#8B1538] dark:text-[#8B1538]"
                 )}
                 whileHover={{ scale: 1.15, rotate: 10 }}
                 transition={{ type: "spring", stiffness: 500, damping: 15 }}
               >
                 {/* Icon glow effect */}
                 <motion.div
-                  className="absolute inset-0 rounded-xl bg-blue-500/20 blur-md"
+                  className="absolute inset-0 rounded-xl bg-[#8B1538]/20 blur-md"
                   animate={isHovered ? { opacity: [0.3, 0.6, 0.3] } : { opacity: 0 }}
                   transition={{ duration: 2, repeat: Infinity }}
                 />
@@ -159,8 +159,8 @@ export function InfoCard({ title, icon: Icon, children, className, gradient = fa
                   width: 200,
                   height: 200,
                   background: gradient
-                    ? 'radial-gradient(circle, rgba(99,102,241,0.6) 0%, rgba(59,130,246,0.4) 30%, transparent 70%)'
-                    : 'radial-gradient(circle, rgba(59,130,246,0.5) 0%, rgba(96,165,250,0.3) 30%, transparent 70%)',
+                    ? 'radial-gradient(circle, rgba(139,21,56,0.6) 0%, rgba(0,102,179,0.4) 30%, transparent 70%)'
+                    : 'radial-gradient(circle, rgba(139,21,56,0.5) 0%, rgba(0,102,179,0.3) 30%, transparent 70%)',
                   left: springX,
                   top: springY,
                   x: '-50%',
@@ -203,12 +203,12 @@ export function InfoItem({ label, value, icon: Icon }: InfoItemProps) {
           <div className="relative">
             {/* Icon glow on hover */}
             <motion.div
-              className="absolute inset-0 rounded-full bg-blue-500/20 blur-sm"
+              className="absolute inset-0 rounded-full bg-[#8B1538]/20 blur-sm"
               initial={{ opacity: 0, scale: 0.8 }}
               whileHover={{ opacity: 1, scale: 1.5 }}
               transition={{ duration: 0.3 }}
             />
-            <Icon className="h-5 w-5 relative z-10 text-slate-500 dark:text-slate-400 flex-shrink-0 transition-colors group-hover/item:text-blue-600 dark:group-hover/item:text-blue-400" />
+            <Icon className="h-5 w-5 relative z-10 text-slate-500 dark:text-slate-400 flex-shrink-0 transition-colors group-hover/item:text-[#8B1538] dark:group-hover/item:text-[#8B1538]" />
           </div>
         </motion.div>
       )}

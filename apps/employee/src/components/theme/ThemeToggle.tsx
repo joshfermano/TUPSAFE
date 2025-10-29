@@ -39,7 +39,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
           ${sizeClasses[size]}
           rounded-md border border-border bg-background
           hover:bg-accent hover:text-accent-foreground
-          focus-government
+          focus-tup
           transition-all duration-200 ease-in-out
           flex items-center justify-center
           ${className}
@@ -69,7 +69,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
             pl-10 pr-8 py-2
             bg-background border border-border rounded-md
             text-foreground
-            focus-government
+            focus-tup
             hover:bg-accent
             transition-all duration-200 ease-in-out
             appearance-none cursor-pointer
@@ -110,7 +110,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
                 ${sizeClasses[size]}
                 rounded-sm px-2
                 transition-all duration-200 ease-in-out
-                focus-government
+                focus-tup
                 flex items-center justify-center gap-2
                 ${
                   isActive

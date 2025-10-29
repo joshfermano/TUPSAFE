@@ -128,7 +128,7 @@ const MobileNavigation: React.FC<{
         <SheetHeader className="text-left pb-6">
           <SheetTitle className="flex items-center gap-2">
             <Shield className="h-6 w-6 text-primary" />
-            <span className="text-government font-bold">TUPSAFE</span>
+            <span className="text-tup font-bold">TUPSAFE</span>
           </SheetTitle>
         </SheetHeader>
 
@@ -147,7 +147,7 @@ const MobileNavigation: React.FC<{
                 className={cn(
                   'group flex items-center gap-3 px-4 py-4 rounded-xl text-base font-medium transition-all duration-300',
                   'hover:bg-primary/10 hover:text-primary hover:shadow-sm',
-                  'focus-government relative overflow-hidden',
+                  'focus-tup relative overflow-hidden',
                   'border border-transparent hover:border-primary/20',
                   'transform hover:scale-[1.01] active:scale-[0.99]',
                   pathname === item.href
@@ -171,7 +171,7 @@ const MobileNavigation: React.FC<{
                       className={cn(
                         'flex items-start gap-3 px-3 py-3 rounded-lg text-sm transition-all duration-200',
                         'hover:bg-primary/8 hover:text-primary',
-                        'focus-government',
+                        'focus-tup',
                         pathname === subItem.href
                           ? 'bg-primary/10 text-primary'
                           : 'text-foreground/70 hover:text-foreground'
@@ -214,7 +214,7 @@ const MobileNavigation: React.FC<{
                     onLogout();
                     onClose();
                   }}
-                  className="btn-government-ghost w-full justify-center h-12 text-base font-medium">
+                  className="btn-tup-ghost w-full justify-center h-12 text-base font-medium">
                   <LogOut className="h-4 w-4 mr-2" />
                   Sign Out
                 </Button>
@@ -224,13 +224,13 @@ const MobileNavigation: React.FC<{
                 <Button
                   asChild
                   variant="ghost"
-                  className="btn-government-ghost w-full justify-center h-12 text-base font-medium">
+                  className="btn-tup-ghost w-full justify-center h-12 text-base font-medium">
                   <Link href="/auth/login">Sign In</Link>
                 </Button>
                 <Button
                   asChild
                   variant="default"
-                  className="btn-government w-full justify-center h-12 text-base font-medium shadow-lg">
+                  className="btn-tup w-full justify-center h-12 text-base font-medium shadow-lg">
                   <Link href="/auth/register">Get Started</Link>
                 </Button>
                 <p className="text-xs text-muted-foreground text-center mt-2 px-4">
@@ -262,7 +262,7 @@ const DesktopNavigation: React.FC = () => {
                     'h-9 px-4 py-2 rounded-full transition-all duration-300',
                     'hover:bg-primary/10 hover:text-primary hover:shadow-md',
                     'data-[state=open]:bg-primary/10 data-[state=open]:text-primary',
-                    'focus-government text-sm font-medium',
+                    'focus-tup text-sm font-medium',
                     'border border-transparent hover:border-primary/20',
                     'transform hover:scale-105 active:scale-95'
                   )}>
@@ -278,11 +278,11 @@ const DesktopNavigation: React.FC = () => {
                         <Link
                           href={item.href}
                           onClick={(e) => handleNavClick(e, item.href, pathname, router)}
-                          className="flex h-full w-full select-none flex-col justify-end rounded-xl bg-gradient-government-soft p-6 no-underline outline-none focus:shadow-md hover:shadow-lg transition-all duration-300">
+                          className="flex h-full w-full select-none flex-col justify-end rounded-xl bg-gradient-tup-soft p-6 no-underline outline-none focus:shadow-md hover:shadow-lg transition-all duration-300">
                           {item.icon && (
-                            <item.icon className="h-6 w-6 text-government" />
+                            <item.icon className="h-6 w-6 text-tup" />
                           )}
-                          <div className="mb-2 mt-4 text-lg font-medium text-government">
+                          <div className="mb-2 mt-4 text-lg font-medium text-tup">
                             {item.name}
                           </div>
                           <p className="text-sm leading-tight text-muted-foreground">
@@ -322,7 +322,7 @@ const DesktopNavigation: React.FC = () => {
                   onClick={(e) => handleNavClick(e, item.href, pathname, router)}
                   className={cn(
                     'inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium',
-                    'transition-all duration-300 focus-government',
+                    'transition-all duration-300 focus-tup',
                     'hover:bg-primary/10 hover:text-primary hover:shadow-md',
                     'border border-transparent hover:border-primary/20',
                     'transform hover:scale-105 active:scale-95',
@@ -361,7 +361,7 @@ const TabletNavigation: React.FC = () => {
                 onClick={(e) => handleNavClick(e, item.href, pathname, router)}
                 className={cn(
                   'inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium',
-                  'transition-all duration-300 focus-government',
+                  'transition-all duration-300 focus-tup',
                   'hover:bg-primary/10 hover:text-primary hover:shadow-md',
                   'border border-transparent hover:border-primary/20',
                   'transform hover:scale-105 active:scale-95',
@@ -455,15 +455,15 @@ export const Header: React.FC = () => {
           <div className="flex items-center gap-2 flex-shrink-0">
             <Link
               href={user ? "/dashboard/profile" : "/"}
-              className="group flex items-center gap-2 transition-all duration-300 hover:scale-105 focus-government rounded-full p-1">
+              className="group flex items-center gap-2 transition-all duration-300 hover:scale-105 focus-tup rounded-full p-1">
               <div className="relative">
                 <Shield className="h-6 w-6 sm:h-7 sm:w-7 text-primary transition-all duration-300 group-hover:rotate-12" />
                 <div className="absolute inset-0 bg-primary/20 rounded-full blur-sm -z-10 transition-all duration-300 group-hover:bg-primary/30 group-hover:scale-110" />
               </div>
-              <span className="text-base sm:text-lg font-bold text-government transition-all duration-300 group-hover:text-primary hidden xs:inline">
+              <span className="text-base sm:text-lg font-bold text-tup transition-all duration-300 group-hover:text-primary hidden xs:inline">
                 TUPSAFE
               </span>
-              <span className="text-sm font-bold text-government transition-all duration-300 group-hover:text-primary xs:hidden">
+              <span className="text-sm font-bold text-tup transition-all duration-300 group-hover:text-primary xs:hidden">
                 TS
               </span>
             </Link>
@@ -494,7 +494,7 @@ export const Header: React.FC = () => {
                     variant="ghost"
                     size="sm"
                     onClick={handleLogout}
-                    className="btn-government-ghost rounded-full h-8 px-3 text-xs font-medium">
+                    className="btn-tup-ghost rounded-full h-8 px-3 text-xs font-medium">
                     <LogOut className="h-3.5 w-3.5 mr-1.5" />
                     Sign Out
                   </Button>
@@ -505,13 +505,13 @@ export const Header: React.FC = () => {
                     asChild
                     variant="ghost"
                     size="sm"
-                    className="btn-government-ghost rounded-full h-8 px-3 text-xs font-medium">
+                    className="btn-tup-ghost rounded-full h-8 px-3 text-xs font-medium">
                     <Link href="/auth/login">Sign In</Link>
                   </Button>
                   <Button
                     asChild
                     size="sm"
-                    className="btn-government rounded-full h-8 px-3 text-xs font-medium">
+                    className="btn-tup rounded-full h-8 px-3 text-xs font-medium">
                     <Link href="/auth/register">Sign Up</Link>
                   </Button>
                 </>
@@ -525,7 +525,7 @@ export const Header: React.FC = () => {
               className={cn(
                 'md:hidden rounded-full h-8 w-8 p-0 relative overflow-hidden',
                 'hover:bg-primary/10 transition-all duration-300',
-                'focus-government'
+                'focus-tup'
               )}
               onClick={() => setIsMobileMenuOpen(true)}
               aria-label="Open mobile menu">

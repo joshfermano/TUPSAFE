@@ -3,30 +3,34 @@
   "middleware": {
     "/": {
       "files": [
-        "server/edge-runtime-webpack.js",
-        "server/src/middleware.js"
+        "server/edge/chunks/_9cec003d._.js",
+        "server/edge/chunks/node_modules_@supabase_storage-js_dist_module_4ce21c5e._.js",
+        "server/edge/chunks/node_modules_@supabase_auth-js_dist_module_33c852e9._.js",
+        "server/edge/chunks/node_modules_c57cafdb._.js",
+        "server/edge/chunks/[root-of-the-server]__5782e826._.js",
+        "server/edge/chunks/turbopack-apps_admin_edge-wrapper_c2ac7171.js"
       ],
-      "name": "src/middleware",
+      "name": "middleware",
       "page": "/",
       "matchers": [
         {
-          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?(?:\\/((?!_next\\/static|_next\\/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*))(\\.json)?[\\/#\\?]?$",
+          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?(?:\\/((?!_next\\/static|_next\\/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*))(\\\\.json)?[\\/#\\?]?$",
           "originalSource": "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"
         }
       ],
       "wasm": [],
       "assets": [],
       "env": {
-        "__NEXT_BUILD_ID": "j7_GBFUDEmGmCk5KzXp3v",
+        "__NEXT_BUILD_ID": "development",
         "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "MQbUeXX6JnzM49R1cxgPkvMhzhLHg6WvSEQ5gFXNeCw=",
-        "__NEXT_PREVIEW_MODE_ID": "041120a40c74612020dd547bda7e5bf6",
-        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "7bba73659476aa2e5df16f71c36a245d9f2bf0f537ffa1dc60674a5688e21f8b",
-        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "b9cb4efced26313ba8439468150acaf28b0af5ae3f828bf279663ca64a32ea65"
+        "__NEXT_PREVIEW_MODE_ID": "128ac01802c5febfe6546df064c8769c",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "c6a066023b6e914718e562d76be8d1590ba2993639856d0f28bb4fbee8d6c111",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "864b959163a191c1b99de4df3d112dc482ce44f5e3d7d17912467c5c75de6758"
       }
     }
   },
-  "functions": {},
   "sortedMiddleware": [
     "/"
-  ]
+  ],
+  "functions": {}
 }

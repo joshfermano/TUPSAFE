@@ -72,15 +72,15 @@ export function MockLoginForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {/* Development Helper - Minimalist Collapsible */}
-      <div className="rounded-xl bg-blue-50/60 dark:bg-blue-900/10 border border-blue-200/60 dark:border-blue-800/40 overflow-hidden">
+      <div className="rounded-xl bg-[#8B1538]/5 dark:bg-[#8B1538]/10 border border-[#8B1538]/20 dark:border-[#8B1538]/40 overflow-hidden">
         <button
           type="button"
           onClick={() => setShowAllUsers(!showAllUsers)}
-          className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-100/50 dark:hover:bg-blue-900/20 transition-colors">
+          className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-[#8B1538] dark:text-[#C74E6D] hover:bg-[#8B1538]/10 dark:hover:bg-[#8B1538]/20 transition-colors">
           <span className="flex items-center gap-2">
             <span className="text-xs font-semibold">Mock Login Enabled</span>
           </span>
-          <span className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400">
+          <span className="flex items-center gap-1.5 text-xs text-[#8B1538]/80 dark:text-[#C74E6D]/90">
             {showAllUsers ? 'Hide Users' : 'Show All Users'}
             {showAllUsers ? (
               <ChevronUp className="h-3.5 w-3.5" />
@@ -91,8 +91,8 @@ export function MockLoginForm({
         </button>
 
         {showAllUsers && (
-          <div className="px-4 pb-4 pt-2 border-t border-blue-200/60 dark:border-blue-800/40 bg-blue-50/30 dark:bg-blue-900/5">
-            <p className="text-[11px] font-medium text-blue-600 dark:text-blue-400 mb-2.5">
+          <div className="px-4 pb-4 pt-2 border-t border-[#8B1538]/20 dark:border-[#8B1538]/40 bg-[#8B1538]/[0.03] dark:bg-[#8B1538]/5">
+            <p className="text-[11px] font-medium text-[#8B1538] dark:text-[#C74E6D] mb-2.5">
               Click any account to auto-fill (Password: password123)
             </p>
             <div className="grid grid-cols-1 gap-1.5 max-h-44 overflow-y-auto">
@@ -104,8 +104,8 @@ export function MockLoginForm({
                     setEmail(user.email);
                     setPassword('password123');
                   }}
-                  className="text-left px-3 py-2 rounded-lg bg-white/60 dark:bg-slate-800/40 hover:bg-blue-100/80 dark:hover:bg-blue-900/30 border border-blue-100 dark:border-blue-800/30 hover:border-blue-300 dark:hover:border-blue-600/50 transition-all group">
-                  <code className="text-[11px] font-mono text-blue-700 dark:text-blue-300 group-hover:text-blue-900 dark:group-hover:text-blue-100">
+                  className="text-left px-3 py-2 rounded-lg bg-white/60 dark:bg-slate-800/40 hover:bg-[#8B1538]/10 dark:hover:bg-[#8B1538]/20 border border-[#8B1538]/10 dark:border-[#8B1538]/30 hover:border-[#8B1538]/30 dark:hover:border-[#8B1538]/50 transition-all group">
+                  <code className="text-[11px] font-mono text-[#8B1538] dark:text-[#C74E6D] group-hover:text-[#6B1028] dark:group-hover:text-[#D96A87]">
                     {user.email}
                   </code>
                 </button>
@@ -138,10 +138,10 @@ export function MockLoginForm({
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="your.email@gov.ph"
+            placeholder="your.email@tup.edu.ph"
             required
             disabled={isLoading}
-            className="h-11 pl-10 pr-4 bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:border-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-lg transition-all duration-200"
+            className="h-11 pl-10 pr-4 bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/60 focus:border-[#8B1538] focus:ring-2 focus:ring-[#8B1538]/20 dark:focus:border-[#8B1538] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-lg transition-all duration-200"
           />
         </div>
       </div>
@@ -162,7 +162,7 @@ export function MockLoginForm({
             placeholder="••••••••"
             required
             disabled={isLoading}
-            className="h-11 pl-10 pr-11 bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:border-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-lg transition-all duration-200"
+            className="h-11 pl-10 pr-11 bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/60 focus:border-[#8B1538] focus:ring-2 focus:ring-[#8B1538]/20 dark:focus:border-[#8B1538] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-lg transition-all duration-200"
           />
           <button
             type="button"
@@ -181,7 +181,7 @@ export function MockLoginForm({
       <Button
         type="submit"
         disabled={isLoading}
-        className="w-full h-11 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-200 mt-6">
+        className="w-full h-11 bg-gradient-to-r from-[#8B1538] to-[#0066B3] hover:from-[#6B1028] hover:to-[#004D87] text-white font-medium rounded-lg shadow-lg shadow-[#8B1538]/25 hover:shadow-[#8B1538]/40 transition-all duration-200 mt-6">
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

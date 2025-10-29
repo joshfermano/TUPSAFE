@@ -2,19 +2,11 @@
 > employee@0.1.0 build
 > next build
 
- ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
- We detected multiple lockfiles and selected the directory of /home/joshfermano/package-lock.json as the root directory.
- To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
-   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
- Detected additional lockfiles: 
-   * /home/joshfermano/Thesis/smart-gov/package-lock.json
-   * /home/joshfermano/Thesis/package-lock.json
-
    ▲ Next.js 15.5.3
    - Environments: .env.local
 
    Creating an optimized production build ...
- ✓ Compiled successfully in 4.2s
+ ✓ Compiled successfully in 9.1s
    Linting and checking validity of types ...
 
 ./src/app/dashboard/pds/page.tsx
@@ -68,6 +60,9 @@
 ./src/components/navigation/Header.tsx
 390:9  Warning: 'router' is assigned a value but never used.  @typescript-eslint/no-unused-vars
 
+./src/components/sections/FeaturesSection.tsx
+14:3  Warning: 'Clock' is defined but never used.  @typescript-eslint/no-unused-vars
+
 ./src/components/ui/animated-grid-pattern.tsx
 37:3  Warning: 'repeatDelay' is assigned a value but never used.  @typescript-eslint/no-unused-vars
 79:6  Warning: React Hook useEffect has a missing dependency: 'generateSquares'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
@@ -75,3 +70,45 @@
 
 ./src/components/ui/globe.tsx
 77:17  Warning: Assignments to the 'width' variable from inside React Hook useEffect will be lost after each render. To preserve the value over time, store it in a useRef Hook and keep the mutable value in the '.current' property. Otherwise, you can move this variable directly inside useEffect.  react-hooks/exhaustive-deps
+89:49  Warning: Assignments to the 'phi' variable from inside React Hook useEffect will be lost after each render. To preserve the value over time, store it in a useRef Hook and keep the mutable value in the '.current' property. Otherwise, you can move this variable directly inside useEffect.  react-hooks/exhaustive-deps
+
+./src/components/ui/particles.tsx
+130:6  Warning: React Hook useEffect has missing dependencies: 'animate' and 'initCanvas'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+134:6  Warning: React Hook useEffect has a missing dependency: 'onMouseMove'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+138:6  Warning: React Hook useEffect has a missing dependency: 'initCanvas'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+   Collecting page data ...
+   Generating static pages (0/19) ...
+   Generating static pages (4/19) 
+   Generating static pages (9/19) 
+   Generating static pages (14/19) 
+ ✓ Generating static pages (19/19)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                    10.1 kB         174 kB
+├ ○ /_not-found                            124 B         103 kB
+├ ○ /about                                8.4 kB         160 kB
+├ ○ /auth/login                            10 kB         171 kB
+├ ○ /auth/register                         54 kB         219 kB
+├ ○ /dashboard                           3.38 kB         152 kB
+├ ○ /dashboard/pds                       5.51 kB         163 kB
+├ ○ /dashboard/profile                   7.28 kB         177 kB
+├ ○ /dashboard/saln                      5.86 kB         164 kB
+├ ○ /dashboard/settings                  9.72 kB         170 kB
+├ ○ /features/ai-compliance              9.76 kB         162 kB
+├ ○ /features/automated-workflows        9.61 kB         162 kB
+├ ○ /features/dashboard-analytics        9.54 kB         162 kB
+├ ○ /features/pds                        8.77 kB         161 kB
+├ ○ /features/saln                       9.38 kB         162 kB
+└ ○ /features/security-compliance        7.48 kB         163 kB
++ First Load JS shared by all             102 kB
+  ├ chunks/637-245c08cbf09d6ed5.js       46.2 kB
+  ├ chunks/87c73c54-09e1ba5c70e60a51.js  54.2 kB
+  └ other shared chunks (total)          1.95 kB
+
+
+○  (Static)  prerendered as static content
+

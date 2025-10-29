@@ -74,12 +74,12 @@ export default function SettingsPage() {
               size={200}
               duration={8}
               delay={0}
-              colorFrom="#3b82f6"
-              colorTo="#8b5cf6"
+              colorFrom="#8B1538"
+              colorTo="#0066B3"
             />
             <div className="relative bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-slate-200/50 dark:border-slate-800/50 p-8">
               <div className="flex items-center gap-3 mb-6">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/20">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#8B1538] to-[#0066B3] shadow-lg shadow-[#8B1538]/20">
                   <User className="h-5 w-5 text-white" />
                 </div>
                 <div>
@@ -173,7 +173,7 @@ export default function SettingsPage() {
                     shimmerSize="0.08em"
                     shimmerDuration="2.5s"
                     borderRadius="0.5rem"
-                    background="linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)">
+                    background="linear-gradient(135deg, #8B1538 0%, #0066B3 100%)">
                     <Zap className="h-4 w-4 mr-2" />
                     Save Changes
                   </ShimmerButton>
@@ -362,12 +362,12 @@ export default function SettingsPage() {
               borderSize={1}
               borderRadius={16}
               neonColors={{
-                firstColor: '#6366f1',
-                secondColor: '#8b5cf6',
+                firstColor: '#8B1538',
+                secondColor: '#0066B3',
               }}>
               <div className="p-6">
                 <div className="flex items-center gap-3 mb-5">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-lg shadow-indigo-500/20">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#8B1538] to-[#0066B3] shadow-lg shadow-[#8B1538]/20">
                     <Palette className="h-5 w-5 text-white" />
                   </div>
                   <div>
@@ -563,7 +563,7 @@ function ThemeOption({
         className={cn(
           'transition-colors',
           active
-            ? 'text-indigo-600 dark:text-indigo-400'
+            ? 'text-[#8B1538] dark:text-[#8B1538]'
             : 'text-slate-600 dark:text-slate-400'
         )}>
         {icon}

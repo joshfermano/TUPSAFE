@@ -21,7 +21,7 @@ export interface MockSession {
 export const mockAuthUsers: MockUser[] = [
   {
     id: '01927d4e-8b45-7f52-b123-456789abcdef',
-    email: 'juan.delcruz@dost.gov.ph',
+    email: 'juan.delcruz@tup.edu.ph',
     password: 'password123',
     emailConfirmed: true,
     lastSignIn: new Date('2025-01-15T08:30:00Z'),
@@ -29,7 +29,7 @@ export const mockAuthUsers: MockUser[] = [
   },
   {
     id: '01927d4e-8b45-7f52-b123-456789abcde0',
-    email: 'maria.santos@deped.gov.ph',
+    email: 'maria.santos@tup.edu.ph',
     password: 'password123',
     emailConfirmed: true,
     lastSignIn: new Date('2025-01-14T16:45:00Z'),
@@ -37,7 +37,7 @@ export const mockAuthUsers: MockUser[] = [
   },
   {
     id: '01927d4e-8b45-7f52-b123-456789abcde1',
-    email: 'jose.rizal@doh.gov.ph',
+    email: 'jose.rizal@tup.edu.ph',
     password: 'password123',
     emailConfirmed: true,
     lastSignIn: new Date('2025-01-13T09:15:00Z'),
@@ -45,7 +45,7 @@ export const mockAuthUsers: MockUser[] = [
   },
   {
     id: '01927d4e-8b45-7f52-b123-456789abcde2',
-    email: 'ana.luna@dof.gov.ph',
+    email: 'ana.luna@tup.edu.ph',
     password: 'password123',
     emailConfirmed: true,
     lastSignIn: new Date('2025-01-12T14:20:00Z'),
@@ -53,7 +53,7 @@ export const mockAuthUsers: MockUser[] = [
   },
   {
     id: '01927d4e-8b45-7f52-b123-456789abcde3',
-    email: 'rodrigo.duterte@op.gov.ph',
+    email: 'rodrigo.duterte@tup.edu.ph',
     password: 'password123',
     emailConfirmed: true,
     lastSignIn: new Date('2025-01-11T10:00:00Z'),
@@ -61,7 +61,7 @@ export const mockAuthUsers: MockUser[] = [
   },
   {
     id: '01927d4e-8b45-7f52-b123-456789abcde4',
-    email: 'grace.poe@senate.gov.ph',
+    email: 'grace.poe@tup.edu.ph',
     password: 'password123',
     emailConfirmed: true,
     lastSignIn: new Date('2025-01-10T11:30:00Z'),
@@ -69,7 +69,7 @@ export const mockAuthUsers: MockUser[] = [
   },
   {
     id: '01927d4e-8b45-7f52-b123-456789abcde5',
-    email: 'manny.villar@dpwh.gov.ph',
+    email: 'manny.villar@tup.edu.ph',
     password: 'password123',
     emailConfirmed: true,
     lastSignIn: new Date('2025-01-09T15:45:00Z'),
@@ -77,7 +77,7 @@ export const mockAuthUsers: MockUser[] = [
   },
   {
     id: '01927d4e-8b45-7f52-b123-456789abcde6',
-    email: 'leni.robredo@ovp.gov.ph',
+    email: 'leni.robredo@tup.edu.ph',
     password: 'password123',
     emailConfirmed: true,
     lastSignIn: new Date('2025-01-08T13:20:00Z'),
@@ -85,7 +85,7 @@ export const mockAuthUsers: MockUser[] = [
   },
   {
     id: '01927d4e-8b45-7f52-b123-456789abcde7',
-    email: 'panfilo.lacson@pnp.gov.ph',
+    email: 'panfilo.lacson@tup.edu.ph',
     password: 'password123',
     emailConfirmed: true,
     lastSignIn: new Date('2025-01-07T12:10:00Z'),
@@ -93,7 +93,7 @@ export const mockAuthUsers: MockUser[] = [
   },
   {
     id: '01927d4e-8b45-7f52-b123-456789abcde8',
-    email: 'francis.pangilinan@da.gov.ph',
+    email: 'francis.pangilinan@tup.edu.ph',
     password: 'password123',
     emailConfirmed: true,
     lastSignIn: new Date('2025-01-06T09:30:00Z'),

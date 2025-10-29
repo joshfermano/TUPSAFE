@@ -30,7 +30,7 @@ import Link from 'next/link';
 
 
 const HeroSection = () => (
-  <section className="relative overflow-hidden bg-gradient-to-br from-green-50 via-white to-emerald-50 dark:from-gray-950 dark:via-gray-900 dark:to-green-950 pt-32 pb-20">
+  <section className="relative overflow-hidden bg-gradient-to-br from-[#8B1538]/5 via-white to-[#0066B3]/5 dark:from-gray-950 dark:via-gray-900 dark:to-[#8B1538]/20 pt-32 pb-20">
     {/* Background Pattern */}
     <div className="absolute inset-0 bg-grid-pattern opacity-30" />
 
@@ -41,9 +41,9 @@ const HeroSection = () => (
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="mb-6">
-          <Badge className="bg-[#093FB4]/10 text-[#093FB4] dark:bg-[#093FB4]/20 dark:text-blue-400 px-4 py-2 text-sm font-medium">
+          <Badge className="bg-[#8B1538]/10 text-[#8B1538] dark:bg-[#8B1538]/20 dark:text-[#8B1538] px-4 py-2 text-sm font-medium">
             <FileCheck className="h-4 w-4 mr-2" />
-            Core Feature
+            Thesis Feature
           </Badge>
         </motion.div>
 
@@ -73,15 +73,15 @@ const HeroSection = () => (
           className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button
             size="lg"
-            className="bg-[#093FB4] hover:bg-[#093FB4]/90 text-white px-8 py-4 text-lg">
-            Explore e-SALN Research
+            className="bg-[#8B1538] hover:bg-[#8B1538]/90 text-white px-8 py-4 text-lg">
+            View Prototype
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
           <Button
             variant="outline"
             size="lg"
-            className="border-[#093FB4] text-[#093FB4] hover:bg-[#093FB4] hover:text-white px-8 py-4 text-lg">
-            View Implementation
+            className="border-[#8B1538] text-[#8B1538] hover:bg-[#8B1538] hover:text-white px-8 py-4 text-lg">
+            Research Documentation
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </motion.div>
@@ -99,9 +99,9 @@ const HeroSection = () => (
             <MagicCard
               key={stat.label}
               className="p-6 text-center"
-              gradientColor="#093FB4"
+              gradientColor="#8B1538"
               gradientOpacity={0.1}>
-              <stat.icon className="h-8 w-8 text-[#093FB4] mx-auto mb-2" />
+              <stat.icon className="h-8 w-8 text-[#8B1538] mx-auto mb-2" />
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {stat.value}
               </div>
@@ -199,10 +199,10 @@ const KeyFeaturesSection = () => {
                 className="h-full p-8"
                 borderSize={2}
                 borderRadius={16}
-                neonColors={{ firstColor: '#093FB4', secondColor: '#1E40AF' }}>
+                neonColors={{ firstColor: '#8B1538', secondColor: '#0066B3' }}>
                 <div className="flex items-start gap-4 mb-6">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#093FB4]/10">
-                    <feature.icon className="h-6 w-6 text-[#093FB4]" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#8B1538]/10">
+                    <feature.icon className="h-6 w-6 text-[#8B1538]" />
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
@@ -304,11 +304,11 @@ const AssetCategoriesSection = () => {
               viewport={{ once: true }}>
               <MagicCard
                 className="p-6 h-full"
-                gradientColor="#093FB4"
+                gradientColor="#8B1538"
                 gradientOpacity={0.05}>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#093FB4]/10">
-                    <category.icon className="h-5 w-5 text-[#093FB4]" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#8B1538]/10">
+                    <category.icon className="h-5 w-5 text-[#8B1538]" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     {category.title}
@@ -403,8 +403,8 @@ const ComplianceSection = () => {
               viewport={{ once: true }}>
               <Card className="p-8 h-full hover:shadow-lg transition-all duration-300">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#093FB4]/10">
-                    <requirement.icon className="h-6 w-6 text-[#093FB4]" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#8B1538]/10">
+                    <requirement.icon className="h-6 w-6 text-[#8B1538]" />
                   </div>
                   <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                     {requirement.title}
@@ -467,7 +467,7 @@ const WorkflowSection = () => {
   ];
 
   return (
-    <section className="py-20 bg-gradient-to-br from-[#093FB4]/5 to-blue-50 dark:from-[#093FB4]/10 dark:to-gray-900">
+    <section className="py-20 bg-gradient-to-br from-[#8B1538]/5 to-[#0066B3]/5 dark:from-[#8B1538]/10 dark:to-gray-900">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -494,10 +494,10 @@ const WorkflowSection = () => {
               viewport={{ once: true }}
               className="text-center">
               <div className="relative mb-6">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#093FB4] text-white mx-auto">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#8B1538] text-white mx-auto">
                   <item.icon className="h-8 w-8" />
                 </div>
-                <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-white border-2 border-[#093FB4] text-xs font-bold text-[#093FB4]">
+                <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-white border-2 border-[#8B1538] text-xs font-bold text-[#8B1538]">
                   {item.step}
                 </div>
               </div>
@@ -570,8 +570,8 @@ const BenefitsSection = () => {
               transition={{ duration: 0.6, delay: index * 0.1 }}
               viewport={{ once: true }}
               className="text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#093FB4]/10 mx-auto mb-6">
-                <benefit.icon className="h-8 w-8 text-[#093FB4]" />
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#8B1538]/10 mx-auto mb-6">
+                <benefit.icon className="h-8 w-8 text-[#8B1538]" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
                 {benefit.title}
@@ -609,7 +609,7 @@ const CTASection = () => (
           <Button
             asChild
             size="lg"
-            className="bg-[#093FB4] hover:bg-[#093FB4]/90 text-white px-8 py-4">
+            className="bg-[#8B1538] hover:bg-[#8B1538]/90 text-white px-8 py-4">
             <Link href="/auth/signup">
               View Research Implementation
               <ArrowRight className="ml-2 h-5 w-5" />
@@ -619,7 +619,7 @@ const CTASection = () => (
             asChild
             variant="outline"
             size="lg"
-            className="border-[#093FB4] text-[#093FB4] hover:bg-[#093FB4] hover:text-white px-8 py-4">
+            className="border-[#8B1538] text-[#8B1538] hover:bg-[#8B1538] hover:text-white px-8 py-4">
             <Link href="/features">
               Explore Study Components
               <ArrowRight className="ml-2 h-5 w-5" />
@@ -633,7 +633,7 @@ const CTASection = () => (
             <span>Transparency Compliant</span>
           </div>
           <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-blue-500" />
+            <Shield className="h-4 w-4 text-[#0066B3]" />
             <span>Secure & Auditable</span>
           </div>
           <div className="flex items-center gap-2">
