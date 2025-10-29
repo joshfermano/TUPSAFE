@@ -16,18 +16,19 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
-    "react-hook-form": "^7.63.0",
-    "zod": "^3.25.76",
-    "lucide-react": "^0.544.0",
-    "@tupsafe/types": "*",
-    "@tupsafe/database": "*",
+    "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.45.0",
-    "@supabase/ssr": "^0.5.2"
+    "@tupsafe/database": "*",
+    "@tupsafe/types": "*",
+    "lucide-react": "^0.544.0",
+    "react-hook-form": "^7.63.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
+    "turbo": "^2.5.8",
     "typescript": "^5"
   },
   "peerDependencies": {

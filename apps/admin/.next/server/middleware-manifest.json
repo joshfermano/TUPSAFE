@@ -3,33 +3,30 @@
   "middleware": {
     "/": {
       "files": [
-        "server/edge/chunks/Thesis_smart-gov_325f4bcd._.js",
-        "server/edge/chunks/39c1c_@supabase_auth-js_dist_module_05fefdfa._.js",
-        "server/edge/chunks/39c1c_3a43c5e1._.js",
-        "server/edge/chunks/[root-of-the-server]__128f33c6._.js",
-        "server/edge/chunks/turbopack-Thesis_smart-gov_apps_admin_edge-wrapper_2b612a72.js"
+        "server/edge-runtime-webpack.js",
+        "server/src/middleware.js"
       ],
-      "name": "middleware",
+      "name": "src/middleware",
       "page": "/",
       "matchers": [
         {
-          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?(?:\\/((?!_next\\/static|_next\\/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*))(\\\\.json)?[\\/#\\?]?$",
+          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?(?:\\/((?!_next\\/static|_next\\/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*))(\\.json)?[\\/#\\?]?$",
           "originalSource": "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"
         }
       ],
       "wasm": [],
       "assets": [],
       "env": {
-        "__NEXT_BUILD_ID": "development",
-        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "AQJr7ELUii3YVmlSPc1W9obsHPS9Kn7HBc/MosXk8Ds=",
-        "__NEXT_PREVIEW_MODE_ID": "3f8299077a2509cd5e821bbd4b997a77",
-        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "b32665cf712c3040f2217f5c4e2a5f1fe017c9eb33d49e7c8239e66c70282e67",
-        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "82ffb140973ebdf5aa9a5a71a755ea30f49e4f430becf9d11d05c2362c00587d"
+        "__NEXT_BUILD_ID": "j7_GBFUDEmGmCk5KzXp3v",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "MQbUeXX6JnzM49R1cxgPkvMhzhLHg6WvSEQ5gFXNeCw=",
+        "__NEXT_PREVIEW_MODE_ID": "041120a40c74612020dd547bda7e5bf6",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "7bba73659476aa2e5df16f71c36a245d9f2bf0f537ffa1dc60674a5688e21f8b",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "b9cb4efced26313ba8439468150acaf28b0af5ae3f828bf279663ca64a32ea65"
       }
     }
   },
+  "functions": {},
   "sortedMiddleware": [
     "/"
-  ],
-  "functions": {}
+  ]
 }
