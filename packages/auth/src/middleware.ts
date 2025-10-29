@@ -153,7 +153,7 @@ export async function createAuthMiddleware() {
 // Helper function to get user from middleware headers in server components
 export function getUserFromHeaders(headers: Headers) {
   const userId = headers.get('x-user-id');
-  const userRole = headers.get('x-user-role') as any;
+  const userRole = headers.get('x-user-role') as 'employee' | 'hr' | 'admin' | 'supervisor' | 'auditor' | null;
 
   return userId ? { id: userId, role: userRole } : null;
 }

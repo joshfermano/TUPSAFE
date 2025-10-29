@@ -3,5 +3,5 @@ import type { NextRequest } from 'next/server';
 export declare function createAuthMiddleware(): Promise<(req: NextRequest) => Promise<NextResponse<unknown>>>;
 export declare function getUserFromHeaders(headers: Headers): {
     id: string;
-    role: any;
+    role: "employee" | "hr" | "admin" | "supervisor" | "auditor" | null;
 } | null;

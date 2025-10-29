@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Role } from '@smartgov/database';
+import type { Role } from '@tupsafe/database';
 interface ProtectedRouteProps {
     children: React.ReactNode;
     requireAuth?: boolean;

@@ -1,33 +1,6 @@
 {
   "version": 3,
-  "middleware": {
-    "/": {
-      "files": [
-        "server/edge/chunks/Thesis_smart-gov_0e953bcd._.js",
-        "server/edge/chunks/[root-of-the-server]__d3c0f0ab._.js",
-        "server/edge/chunks/turbopack-Thesis_smart-gov_apps_employee_edge-wrapper_944d1289.js"
-      ],
-      "name": "middleware",
-      "page": "/",
-      "matchers": [
-        {
-          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?(?:\\/((?!_next\\/static|_next\\/image|favicon.ico|auth|about|features|contact|help|privacy|terms|landing|home|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$)(?!^\\/$).*))(\\\\.json)?[\\/#\\?]?$",
-          "originalSource": "/((?!_next/static|_next/image|favicon.ico|auth|about|features|contact|help|privacy|terms|landing|home|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$)(?!^/$).*)"
-        }
-      ],
-      "wasm": [],
-      "assets": [],
-      "env": {
-        "__NEXT_BUILD_ID": "development",
-        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "1Maha79YyAbc8igkAAd2a4WPgQoOijd7hQY9pE1yOaY=",
-        "__NEXT_PREVIEW_MODE_ID": "2d6078ea1ff1b9199485085415e0623d",
-        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "7ea852011678874b7622566ba08ab68eeb3b19b276af84b063e95319ddeacc82",
-        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "c058a82d19b8dd35484546cd12a09f9030f21d3e6ece31f3cd7c2e3b2d9bfd25"
-      }
-    }
-  },
-  "sortedMiddleware": [
-    "/"
-  ],
-  "functions": {}
+  "middleware": {},
+  "functions": {},
+  "sortedMiddleware": []
 }

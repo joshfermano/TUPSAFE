@@ -25,7 +25,7 @@ export function ProtectedRoute({ children, requireAuth = true, requiredRole, req
             onUnauthorized();
             return null;
         }
-        return fallback || (_jsx("div", { className: "flex items-center justify-center min-h-screen", children: _jsxs("div", { className: "text-center", children: [_jsx("h2", { className: "text-2xl font-bold text-gray-900 mb-2", children: "Access Denied" }), _jsx("p", { className: "text-gray-600 mb-4", children: "You don't have permission to access this page." }), _jsxs("p", { className: "text-sm text-gray-500", children: ["Required role: ", requiredRole] })] }) }));
+        return fallback || (_jsx("div", { className: "flex items-center justify-center min-h-screen", children: _jsxs("div", { className: "text-center", children: [_jsx("h2", { className: "text-2xl font-bold text-gray-900 mb-2", children: "Access Denied" }), _jsx("p", { className: "text-gray-600 mb-4", children: "You do not have permission to access this page." }), _jsxs("p", { className: "text-sm text-gray-500", children: ["Required role: ", requiredRole] })] }) }));
     }
     // Check permission requirement
     if (requiredPermission && !hasPermission(requiredPermission)) {
@@ -33,7 +33,7 @@ export function ProtectedRoute({ children, requireAuth = true, requiredRole, req
             onUnauthorized();
             return null;
         }
-        return fallback || (_jsx("div", { className: "flex items-center justify-center min-h-screen", children: _jsxs("div", { className: "text-center", children: [_jsx("h2", { className: "text-2xl font-bold text-gray-900 mb-2", children: "Access Denied" }), _jsx("p", { className: "text-gray-600 mb-4", children: "You don't have permission to perform this action." }), _jsxs("p", { className: "text-sm text-gray-500", children: ["Required permission: ", requiredPermission] })] }) }));
+        return fallback || (_jsx("div", { className: "flex items-center justify-center min-h-screen", children: _jsxs("div", { className: "text-center", children: [_jsx("h2", { className: "text-2xl font-bold text-gray-900 mb-2", children: "Access Denied" }), _jsx("p", { className: "text-gray-600 mb-4", children: "You do not have permission to perform this action." }), _jsxs("p", { className: "text-sm text-gray-500", children: ["Required permission: ", requiredPermission] })] }) }));
     }
     // All checks passed, render children
     return _jsx(_Fragment, { children: children });

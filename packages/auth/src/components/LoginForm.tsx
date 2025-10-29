@@ -5,7 +5,7 @@ import { Eye, EyeOff, Loader2, Shield } from 'lucide-react';
 
 interface LoginFormProps {
   onSuccess?: () => void;
-  onError?: (error: any) => void;
+  onError?: (error: Error | unknown) => void;
   redirectTo?: string;
 }
 
@@ -67,8 +67,8 @@ export function LoginForm({ onSuccess, onError, redirectTo }: LoginFormProps) {
 
       // Simulate successful login
       onSuccess?.();
-    } catch (err: any) {
-      const errorMessage = err?.message || 'An unexpected error occurred';
+    } catch (err: unknown) {
+      const errorMessage = (err as Error)?.message || 'An unexpected error occurred';
       setError(errorMessage);
       onError?.(err);
     } finally {

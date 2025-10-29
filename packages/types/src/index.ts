@@ -160,7 +160,7 @@ export interface AuditLog {
   action: string;
   resource: string;
   resourceId?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   ipAddress?: string;
   userAgent?: string;
   createdAt: Date;
@@ -185,14 +185,14 @@ export type NotificationType =
   | 'general';
 
 // API Response types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
   message?: string;
 }
 
-export interface PaginatedResponse<T = any> {
+export interface PaginatedResponse<T = unknown> {
   data: T[];
   pagination: {
     page: number;
