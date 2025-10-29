@@ -11,9 +11,6 @@
 # Serena
 .serena/
 
-# Claude Code
-.claude/
-
 # MD Files
 QWEN.md
 
