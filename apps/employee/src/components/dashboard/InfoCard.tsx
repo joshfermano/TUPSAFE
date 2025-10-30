@@ -3,7 +3,7 @@
 import { MagicCard } from '@/components/ui/magic-card';
 import { ShineBorder } from '@/components/ui/shine-border';
 import { cn } from '@/lib/utils';
-import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 import { useState, useRef } from 'react';
 

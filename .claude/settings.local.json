@@ -1,9 +1,32 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git -C /mnt/d/thesis/SmartGov ls-files:*)"
+      "Bash(git -C /mnt/d/thesis/SmartGov ls-files:*)",
+      "mcp__magicui__getUIComponents",
+      "Bash(npm run type-check:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm install:*)",
+      "Bash(npx shadcn@latest add popover --path apps/employee --yes)",
+      "Bash(npm run build:*)",
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(npx turbo run:*)",
+      "Bash(npm run lint)",
+      "Bash(rm:*)",
+      "Bash(cat:*)",
+      "Bash(npx next build:*)",
+      "Bash(npm run build:employee:*)",
+      "Bash(npm run dev:employee:*)",
+      "Bash(timeout 5 npm run dev:employee)"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enabledMcpjsonServers": [
+    "shadcn",
+    "magicui",
+    "filesystem",
+    "github",
+    "memory",
+    "sequential-thinking"
+  ]
 }

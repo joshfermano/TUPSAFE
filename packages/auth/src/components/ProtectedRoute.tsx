@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useAuth } from '../context';
+import { useAuth } from '../context.js';
 import type { Role } from '@tupsafe/database';
 
 interface ProtectedRouteProps {

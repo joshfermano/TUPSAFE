@@ -1,5 +1,0 @@
-
-> @tupsafe/types@0.1.0 lint
-> eslint src/
-
-Pages directory cannot be found at D:\thesis\SmartGov\packages\types\pages or D:\thesis\SmartGov\packages\types\src\pages. If using a custom path, please configure with the `no-html-link-for-pages` rule in your eslint config file.

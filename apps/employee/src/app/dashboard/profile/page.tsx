@@ -10,7 +10,7 @@ import { NeonGradientCard } from '@/components/ui/neon-gradient-card';
 import { ShimmerButton } from '@/components/ui/shimmer-button';
 import { Particles } from '@/components/ui/particles';
 import { cn } from '@/lib/utils';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import {
   User,
   Briefcase,

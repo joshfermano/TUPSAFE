@@ -13,5 +13,3 @@ export function createClient() {
   return createBrowserClient(supabaseUrl, supabaseAnonKey);
 }
 
-// Export singleton client for backward compatibility
-export const supabase = createClient();

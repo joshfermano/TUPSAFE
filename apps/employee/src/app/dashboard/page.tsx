@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { Particles } from '@/components/ui/particles';
 import AnimatedGridPattern from '@/components/ui/animated-grid-pattern';
 import { cn } from '@/lib/utils';

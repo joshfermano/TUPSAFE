@@ -2,3 +2,30 @@
 > employee@0.1.0 type-check
 > tsc --noEmit
 
+src/app/auth/login/page.tsx(5,25): error TS2307: Cannot find module '@tupsafe/mock-data/api' or its corresponding type declarations.
+src/app/dashboard/layout.tsx(5,25): error TS2307: Cannot find module '@tupsafe/mock-data/api' or its corresponding type declarations.
+src/app/dashboard/profile/page.tsx(3,37): error TS2307: Cannot find module '@tupsafe/mock-data/api' or its corresponding type declarations.
+src/app/dashboard/settings/page.tsx(5,25): error TS2307: Cannot find module '@tupsafe/mock-data/api' or its corresponding type declarations.
+src/app/layout.tsx(5,34): error TS2307: Cannot find module '@tupsafe/mock-data/providers' or its corresponding type declarations.
+src/app/page.tsx(5,25): error TS2307: Cannot find module '@tupsafe/mock-data/api' or its corresponding type declarations.
+src/components/auth/MockLoginForm.tsx(9,25): error TS2307: Cannot find module '@tupsafe/mock-data/api' or its corresponding type declarations.
+src/components/auth/MockLoginForm.tsx(10,46): error TS2307: Cannot find module '@tupsafe/mock-data' or its corresponding type declarations.
+src/components/dashboard/ProfileHero.tsx(9,52): error TS2307: Cannot find module '@tupsafe/mock-data' or its corresponding type declarations.
+src/components/navigation/Header.tsx(8,25): error TS2307: Cannot find module '@tupsafe/mock-data/api' or its corresponding type declarations.
+src/components/navigation/NotificationBell.tsx(48,25): error TS2307: Cannot find module '@tupsafe/mock-data/api' or its corresponding type declarations.
+src/components/navigation/USAGE_EXAMPLES.tsx(380,25): error TS2307: Cannot find module '@tupsafe/mock-data/api' or its corresponding type declarations.
+src/hooks/useDashboardQuery.ts(4,75): error TS2307: Cannot find module '@tupsafe/mock-data/api' or its corresponding type declarations.
+src/hooks/usePdsQuery.ts(4,57): error TS2307: Cannot find module '@tupsafe/mock-data/api' or its corresponding type declarations.
+src/hooks/usePdsQuery.ts(6,36): error TS2307: Cannot find module '@tupsafe/mock-data' or its corresponding type declarations.
+src/hooks/useProfileQuery.ts(4,69): error TS2307: Cannot find module '@tupsafe/mock-data/api' or its corresponding type declarations.
+src/hooks/useProfileQuery.ts(5,52): error TS2307: Cannot find module '@tupsafe/mock-data' or its corresponding type declarations.
+src/hooks/useSalnQuery.ts(4,60): error TS2307: Cannot find module '@tupsafe/mock-data/api' or its corresponding type declarations.
+src/hooks/useSalnQuery.ts(6,37): error TS2307: Cannot find module '@tupsafe/mock-data' or its corresponding type declarations.
+src/hooks/useSalnQuery.ts(259,48): error TS7006: Parameter 'sub' implicitly has an 'any' type.
+npm error Lifecycle script `type-check` failed with error:
+npm error code 2
+npm error path /mnt/d/thesis/SmartGov/apps/employee
+npm error workspace employee@0.1.0
+npm error location /mnt/d/thesis/SmartGov/apps/employee
+npm error command failed
+npm error command sh -c tsc --noEmit

@@ -6,3 +6,7 @@
  */
 
 export { Header, Header as default } from './Header';
+export { NotificationBell } from './NotificationBell';
+export { NotificationBellClient } from './NotificationBellClient';
+export { NotificationItem } from './NotificationItem';
+export type { NotificationItemProps, Notification } from './NotificationItem';

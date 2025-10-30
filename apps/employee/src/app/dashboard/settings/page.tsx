@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { useAuth } from '@tupsafe/mock-data/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

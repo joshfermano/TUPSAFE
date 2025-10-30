@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { InfoCard, InfoItem } from '@/components/dashboard/InfoCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

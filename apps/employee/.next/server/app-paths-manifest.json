@@ -1,5 +1,19 @@
 {
-  "/about/page": "app/about/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/page": "app/page.js"
+  "/about/page": "app/about/page.js",
+  "/auth/login/page": "app/auth/login/page.js",
+  "/auth/register/page": "app/auth/register/page.js",
+  "/features/ai-compliance/page": "app/features/ai-compliance/page.js",
+  "/features/dashboard-analytics/page": "app/features/dashboard-analytics/page.js",
+  "/features/pds/page": "app/features/pds/page.js",
+  "/features/automated-workflows/page": "app/features/automated-workflows/page.js",
+  "/features/security-compliance/page": "app/features/security-compliance/page.js",
+  "/features/saln/page": "app/features/saln/page.js",
+  "/page": "app/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/dashboard/pds/page": "app/dashboard/pds/page.js",
+  "/dashboard/profile/page": "app/dashboard/profile/page.js",
+  "/dashboard/saln/page": "app/dashboard/saln/page.js",
+  "/dashboard/settings/page": "app/dashboard/settings/page.js"
 }

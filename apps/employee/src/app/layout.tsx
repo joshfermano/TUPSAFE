@@ -3,6 +3,9 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { ThemeWrapper, ThemeScript } from '@/components/theme';
 import { MockDataProvider } from '@tupsafe/mock-data/providers';
+import { QueryProvider } from '@/providers/QueryProvider';
+import { ToastProvider } from '@/providers/ToastProvider';
+import { RealtimeProvider } from '@/providers/RealtimeProvider';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -70,11 +73,16 @@ export default function RootLayout({
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <MockDataProvider>
-          <ThemeWrapper>
-            {children}
-          </ThemeWrapper>
-        </MockDataProvider>
+        <QueryProvider>
+          <RealtimeProvider>
+            <MockDataProvider>
+              <ThemeWrapper>
+                {children}
+              </ThemeWrapper>
+            </MockDataProvider>
+            <ToastProvider />
+          </RealtimeProvider>
+        </QueryProvider>
       </body>
     </html>
   );

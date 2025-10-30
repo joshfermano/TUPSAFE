@@ -2,8 +2,113 @@
 > employee@0.1.0 build
 > next build
 
-   Downloading swc package @next/swc-linux-x64-gnu... to /home/khovi/.cache/next-swc
-   Downloading swc package @next/swc-linux-x64-musl... to /home/khovi/.cache/next-swc
    ▲ Next.js 15.5.3
+   - Environments: .env.local, .env.production
 
    Creating an optimized production build ...
+ ✓ Compiled successfully in 23.6s
+   Linting and checking validity of types ...
+
+./src/app/dashboard/pds/page.tsx
+5:20  Warning: 'InfoItem' is defined but never used.  @typescript-eslint/no-unused-vars
+9:3  Warning: 'Card' is defined but never used.  @typescript-eslint/no-unused-vars
+10:3  Warning: 'CardHeader' is defined but never used.  @typescript-eslint/no-unused-vars
+11:3  Warning: 'CardTitle' is defined but never used.  @typescript-eslint/no-unused-vars
+12:3  Warning: 'CardDescription' is defined but never used.  @typescript-eslint/no-unused-vars
+13:3  Warning: 'CardContent' is defined but never used.  @typescript-eslint/no-unused-vars
+16:10  Warning: 'ShinyButton' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/dashboard/saln/page.tsx
+5:20  Warning: 'InfoItem' is defined but never used.  @typescript-eslint/no-unused-vars
+9:3  Warning: 'Card' is defined but never used.  @typescript-eslint/no-unused-vars
+10:3  Warning: 'CardHeader' is defined but never used.  @typescript-eslint/no-unused-vars
+11:3  Warning: 'CardTitle' is defined but never used.  @typescript-eslint/no-unused-vars
+12:3  Warning: 'CardDescription' is defined but never used.  @typescript-eslint/no-unused-vars
+13:3  Warning: 'CardContent' is defined but never used.  @typescript-eslint/no-unused-vars
+16:10  Warning: 'ShinyButton' is defined but never used.  @typescript-eslint/no-unused-vars
+36:3  Warning: 'FileCheck' is defined but never used.  @typescript-eslint/no-unused-vars
+41:3  Warning: 'DollarSign' is defined but never used.  @typescript-eslint/no-unused-vars
+42:3  Warning: 'Percent' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/features/ai-compliance/page.tsx
+99:24  Warning: 'index' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/features/dashboard-analytics/page.tsx
+99:24  Warning: 'index' is defined but never used.  @typescript-eslint/no-unused-vars
+313:26  Warning: 'index' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/features/pds/page.tsx
+11:3  Warning: 'Download' is defined but never used.  @typescript-eslint/no-unused-vars
+13:3  Warning: 'Eye' is defined but never used.  @typescript-eslint/no-unused-vars
+20:3  Warning: 'ChevronRight' is defined but never used.  @typescript-eslint/no-unused-vars
+27:10  Warning: 'Separator' is defined but never used.  @typescript-eslint/no-unused-vars
+28:10  Warning: 'cn' is defined but never used.  @typescript-eslint/no-unused-vars
+96:24  Warning: 'index' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/features/saln/page.tsx
+98:24  Warning: 'index' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/features/security-compliance/page.tsx
+100:24  Warning: 'index' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/auth/MockLoginForm.tsx
+38:9  Warning: 'router' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/dashboard/ProfileHero.tsx
+6:10  Warning: 'cn' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/navigation/Header.tsx
+393:9  Warning: 'router' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/navigation/NotificationBell.tsx
+21:27  Warning: 'useEffect' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/navigation/USAGE_EXAMPLES.tsx
+29:28  Warning: '_data' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/sections/FeaturesSection.tsx
+14:3  Warning: 'Clock' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/ui/animated-grid-pattern.tsx
+37:3  Warning: 'repeatDelay' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+99:47  Warning: The ref value 'containerRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'containerRef.current' to a variable inside the effect, and use that variable in the cleanup function.  react-hooks/exhaustive-deps
+
+./src/components/ui/globe.tsx
+77:17  Warning: Assignments to the 'width' variable from inside React Hook useEffect will be lost after each render. To preserve the value over time, store it in a useRef Hook and keep the mutable value in the '.current' property. Otherwise, you can move this variable directly inside useEffect.  react-hooks/exhaustive-deps
+89:49  Warning: Assignments to the 'phi' variable from inside React Hook useEffect will be lost after each render. To preserve the value over time, store it in a useRef Hook and keep the mutable value in the '.current' property. Otherwise, you can move this variable directly inside useEffect.  react-hooks/exhaustive-deps
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+   Collecting page data ...
+   Generating static pages (0/19) ...
+   Generating static pages (4/19) 
+   Generating static pages (9/19) 
+   Generating static pages (14/19) 
+ ✓ Generating static pages (19/19)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                    2.25 kB         116 kB
+├ ○ /_not-found                            125 B         103 kB
+├ ○ /about                               8.41 kB         161 kB
+├ ○ /auth/login                          10.4 kB         171 kB
+├ ○ /auth/register                       43.9 kB         224 kB
+├ ○ /dashboard                           3.38 kB         153 kB
+├ ○ /dashboard/pds                       4.88 kB         164 kB
+├ ○ /dashboard/profile                   7.29 kB         177 kB
+├ ○ /dashboard/saln                      5.23 kB         164 kB
+├ ○ /dashboard/settings                  10.1 kB         171 kB
+├ ○ /features/ai-compliance              9.77 kB         163 kB
+├ ○ /features/automated-workflows        9.61 kB         163 kB
+├ ○ /features/dashboard-analytics        9.55 kB         163 kB
+├ ○ /features/pds                        8.78 kB         162 kB
+├ ○ /features/saln                       9.39 kB         162 kB
+└ ○ /features/security-compliance        7.49 kB         163 kB
++ First Load JS shared by all             103 kB
+  ├ chunks/18-87a50b9b2e1477e7.js        46.2 kB
+  ├ chunks/87c73c54-09e1ba5c70e60a51.js  54.2 kB
+  └ other shared chunks (total)          2.16 kB
+
+
+○  (Static)  prerendered as static content
+
