@@ -1,21 +1,14 @@
-# IDE
+# IDE & Editors
 .cursor/
 .vscode/
 .idea/
 *.swp
 *.swo
-.next/
-.dist/
-.turbo/
 
-# Serena
+# AI Tools & Documentation
 .serena/
-
-# MD Files
-QWEN.md
-
-# Documentation
 .documentation/
+QWEN.md
 
 # Dependencies
 node_modules/
@@ -32,13 +25,13 @@ coverage/
 .nyc_output/
 *.lcov
 
-# Next.js
+# Next.js - Apps
 .next/
 out/
 apps/*/.next/
 apps/*/out/
 
-# Production builds
+# Production Builds - All
 build/
 dist/
 apps/*/build/
@@ -46,25 +39,32 @@ apps/*/dist/
 packages/*/build/
 packages/*/dist/
 
-# Turbo
+# Turbo Monorepo
 .turbo/
+apps/*/.turbo/
+packages/*/.turbo/
+*.turbo/
 
-# Environment variables
+# TypeScript
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+next-env.d.ts
+*.d.ts.map
+
+# Environment Variables
 .env
-.env.development
-.env.production
-.env.test
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
-.env.example
+# NOTE: .env.example should be committed, so not included here
 
 # Vercel
 .vercel/
 
-# Database
+# Database Files (Local Development)
 *.db
+*.db-journal
 *.sqlite
 *.sqlite3
 
@@ -77,28 +77,17 @@ yarn-error.log*
 lerna-debug.log*
 .pnpm-debug.log*
 
-# Runtime data
+# Runtime
 pids/
 *.pid
 *.seed
 *.pid.lock
 
-# Dependency directories
-node_modules/
-jspm_packages/
-
-# TypeScript
-*.tsbuildinfo
-next-env.d.ts
-*.d.ts.map
-
-# Optional npm cache directory
+# Caching
 .npm
-
-# Optional eslint cache
 .eslintcache
-
-# Microbundle cache
+.cache
+.parcel-cache
 .rpt2_cache/
 .rts2_cache_cjs/
 .rts2_cache_es/
@@ -107,29 +96,23 @@ next-env.d.ts
 # Optional REPL history
 .node_repl_history
 
-# Output of 'npm pack'
+# Package Manager
 *.tgz
-
-# Yarn Integrity file
 .yarn-integrity
 
-# parcel-bundler cache (https://parceljs.org/)
-.cache
-.parcel-cache
-
-# Storybook build outputs
+# Storybook
 .out
 .storybook-out
 
-# Temporary folders
+# Temporary Folders
 tmp/
 temp/
 
-# MacOS
+# OS Files
+# macOS
 .DS_Store
 .AppleDouble
 .LSOverride
-
 # Windows
 Thumbs.db
 Thumbs.db:encryptable
@@ -138,17 +121,13 @@ ehthumbs_vista.db
 *.tmp
 *.temp
 Desktop.ini
-
 # Linux
 *~
 
-# Editor backup files
+# Editor Backups
 *.bak
-*.swp
-*.swo
-*~
 
-# Archive files
+# Archives (Usually not needed in repo)
 *.7z
 *.dmg
 *.gz
@@ -158,18 +137,16 @@ Desktop.ini
 *.tar
 *.zip
 
-# Certificates
+# Certificates & Keys (SECURITY)
 *.pem
 *.key
 *.crt
 *.csr
 
-# Local database
-*.db-journal
-
-# Drizzle
+# Drizzle ORM (Generated)
+# NOTE: Actual migration SQL files in packages/database/sql/ should be committed
 drizzle/
-migrations/
+.drizzle/
 
-# Supabase
+# Supabase Local
 .supabase/

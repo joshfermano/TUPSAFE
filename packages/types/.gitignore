@@ -1,6 +1,20 @@
-# Build outputs
+# Build Outputs
 dist/
-*.tsbuildinfo
+build/
+lib/
 
-# Turbo
+# TypeScript
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Turbo Cache
 .turbo/
+
+# Dependencies (if installed locally)
+node_modules/
+
+# Logs
+*.log
+
+# Cache
+.cache/
