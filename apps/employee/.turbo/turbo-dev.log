@@ -1,0 +1,23 @@
+
+> employee@0.1.0 dev
+> next dev --turbopack --port 3000
+
+   ▲ Next.js 15.5.3 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.1.4:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Compiled middleware in 487ms
+ ✓ Ready in 3.5s
+ ○ Compiling / ...
+ ✓ Compiled / in 13.7s
+ GET / 200 in 15973ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 539ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 1116ms
+ ○ Compiling /dashboard/profile ...
+ ✓ Compiled /dashboard/profile in 2.3s
+ GET /dashboard/profile 200 in 2932ms
+ GET / 200 in 391ms
+ GET / 200 in 1527ms

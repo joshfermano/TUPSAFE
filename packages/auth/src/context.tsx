@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session, AuthError, AuthChangeEvent } from '@supabase/supabase-js';
-import { createClient } from './utils/supabase/client';
+import { createClient } from './utils/supabase/client.js';
 
 // Simplified types for auth context
 type Role = 'employee' | 'hr' | 'admin' | 'supervisor' | 'auditor';

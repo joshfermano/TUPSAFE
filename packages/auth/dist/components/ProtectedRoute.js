@@ -1,6 +1,6 @@
 'use client';
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
-import { useAuth } from '../context';
+import { useAuth } from '../context.js';
 export function ProtectedRoute({ children, requireAuth = true, requiredRole, requiredPermission, fallback, onUnauthorized, }) {
     const { user, profile, loading, hasRole, hasPermission } = useAuth();
     // Show loading state while checking authentication

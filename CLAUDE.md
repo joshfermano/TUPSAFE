@@ -94,8 +94,11 @@ Both apps are Next.js 15.5.3 applications using App Router with Turbopack. They 
 - **Monorepo**: Turbo for task orchestration
 - **Styling**: Tailwind CSS 4, shadcn/ui, Magic UI components
 - **Database**: PostgreSQL via Supabase with Drizzle ORM
+- **Real-time**: Supabase Realtime for live data synchronization
+- **Data Fetching**: TanStack Query (React Query) v5 for caching and optimistic updates
+- **Notifications**: Sonner for toast notifications
 - **Forms**: React Hook Form + Zod validation
-- **Authentication**: Custom auth package with MFA (input-otp)
+- **Authentication**: Custom auth package with MFA (input-otp), Supabase Auth
 - **Animation**: Framer Motion (motion package)
 
 ## Essential Commands
@@ -154,11 +157,20 @@ apps/[employee|admin]/
 ├── src/
 │   ├── app/              # Next.js App Router pages and layouts
 │   ├── components/       # App-specific components
+│   │   ├── navigation/   # Navigation components (Header, NotificationBell)
+│   │   ├── dashboard/    # Dashboard-specific components
+│   │   └── theme/        # Theme components
+│   ├── providers/        # React context providers
+│   │   ├── QueryProvider.tsx    # React Query provider
+│   │   └── ToastProvider.tsx    # Toast notification provider
+│   ├── hooks/            # Custom React hooks
 │   └── lib/              # App-specific utilities
+│       └── toast-templates.tsx  # Pre-configured toast notifications
 ├── public/               # Static assets
 ├── middleware.ts         # Next.js middleware for auth/routing
 ├── next.config.ts        # Next.js configuration
-└── components.json       # shadcn/ui configuration
+├── components.json       # shadcn/ui configuration
+└── .env.local            # Environment variables (Supabase credentials)
 ```
 
 **Database Package (packages/database):**
@@ -168,6 +180,15 @@ packages/database/
 ├── src/
 │   ├── schema/           # Drizzle table schemas
 │   ├── migrations/       # SQL migration files
+│   ├── hooks/            # Real-time React hooks
+│   │   ├── useRealtimeBase.ts
+│   │   ├── useRealtimeNotifications.ts
+│   │   ├── useRealtimeSubmissionStatus.ts
+│   │   └── useRealtimeProfile.ts
+│   ├── utils/            # Real-time utilities
+│   │   └── realtime-connection.ts
+│   ├── types/            # TypeScript types
+│   │   └── realtime.ts
 │   └── index.ts          # Exports schemas and utilities
 ├── drizzle.config.ts     # Drizzle Kit configuration
 └── package.json
@@ -180,9 +201,16 @@ packages/database/
 3. **Authentication middleware**: Applied at the Next.js middleware level in each app
 4. **Row Level Security (RLS)**: Implemented at the Supabase database level for data isolation
 5. **Form validation**: Zod schemas for runtime validation, shared via `@tupsafe/types`
-6. **Performance architecture**:
+6. **Real-time Data Synchronization**:
+   - Supabase Realtime for WebSocket-based live updates
+   - React Query integration for automatic cache invalidation
+   - Custom hooks in `@tupsafe/database/hooks` for real-time subscriptions
+   - Toast notifications via Sonner for instant user feedback
+7. **Performance architecture**:
    - Prefer Server Components for data fetching
-   - Use React Query/SWR for client-side caching
+   - React Query (TanStack Query) v5 for client-side caching with 5-minute stale time
+   - Optimistic UI updates for instant perceived performance
+   - Automatic background refetching and cache synchronization
    - Implement database connection pooling
    - Strategic use of ISR (Incremental Static Regeneration) for semi-static pages
 
@@ -521,6 +549,63 @@ Use Lighthouse CI in GitHub Actions to enforce budgets.
 - **Uptime Monitoring**: Set up alerts for downtime
 - **Database Metrics**: Monitor query performance, connection pooling
 
+## Real-time Features
+
+TUPSAFE implements comprehensive real-time functionality for instant data synchronization:
+
+### Implemented Features
+
+- **Live Notifications**: Instant delivery via WebSocket when submissions are approved/rejected
+- **Submission Status Updates**: Real-time status changes for PDS/SALN (draft → submitted → reviewing → approved/rejected)
+- **Profile Synchronization**: Automatic updates when role, department, or position changes
+- **Toast Notifications**: User-friendly notifications with Sonner for all real-time events
+- **Optimistic UI Updates**: Immediate UI feedback with React Query mutations
+
+### Architecture
+
+- **Supabase Realtime**: WebSocket-based pub/sub system respecting RLS policies
+- **React Query Integration**: Automatic cache invalidation on real-time events
+- **Custom Hooks**: Type-safe hooks in `@tupsafe/database/hooks` for easy integration
+- **Connection Management**: Auto-reconnect with exponential backoff, health monitoring
+
+### Usage Example
+
+```typescript
+import {
+  useRealtimeNotifications,
+  useRealtimeSubmissionStatus,
+} from '@tupsafe/database/hooks';
+
+function DashboardPage() {
+  const { user } = useAuth();
+
+  // Auto-subscribes and shows toast notifications
+  useRealtimeNotifications(user?.id || '');
+  useRealtimeSubmissionStatus(user?.id || '', {
+    onApproved: (submission) => {
+      // Optional: Custom celebration logic
+    },
+  });
+
+  return <div>Dashboard</div>;
+}
+```
+
+### Security
+
+- **RLS Enforcement**: Real-time respects Row Level Security policies
+- **User-Scoped Channels**: Each user only receives their own data updates
+- **Audit Logging**: All real-time subscriptions logged for compliance
+
+### Documentation
+
+See `/REALTIME.md` for comprehensive documentation on:
+
+- Setup and configuration
+- Available hooks and their APIs
+- Integration examples
+- Troubleshooting guide
+
 ## Important Notes
 
 - Always run `npm run lint` before committing
@@ -528,6 +613,7 @@ Use Lighthouse CI in GitHub Actions to enforce budgets.
 - Database schema changes require migration generation in `packages/database`
 - Each app can be developed independently but builds depend on shared packages
 - MCP servers are configured in `.mcp.json`—use filesystem, shadcn, github, memory, and sequential-thinking servers as appropriate
+- **Real-time Integration**: Use React Query hooks with Supabase Realtime for live data synchronization
 - **Performance First**: Every change should consider its impact on load time and user experience
 - **Accessibility Required**: WCAG 2.1 AA compliance is mandatory, not optional
 - **Security Critical**: This system handles sensitive CSC-regulated employee data—security cannot be compromised
@@ -549,3 +635,5 @@ Use Lighthouse CI in GitHub Actions to enforce budgets.
 - Advanced analytics dashboard for compliance reporting
 - API for third-party integrations
 - Multi-language support (English/Filipino)
+- Real-time collaboration features (presence indicators, concurrent editing)
+- Offline-first support with sync capabilities

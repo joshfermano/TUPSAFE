@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { BorderBeam } from '@/components/ui/border-beam';
 import { cn } from '@/lib/utils';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { Shield, Briefcase } from 'lucide-react';
 import type { Profile, Department, Position } from '@tupsafe/mock-data';
 

@@ -3,8 +3,11 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@tupsafe/mock-data/api';
-import HeroSection from '@/components/sections/HeroSection';
-import FeaturesSection from '@/components/sections/FeaturesSection';
+import dynamic from 'next/dynamic';
+
+// Dynamically import sections to avoid SSR issues
+const HeroSection = dynamic(() => import('@/components/sections/HeroSection'), { ssr: false });
+const FeaturesSection = dynamic(() => import('@/components/sections/FeaturesSection'), { ssr: false });
 
 export default function Home() {
   const router = useRouter();

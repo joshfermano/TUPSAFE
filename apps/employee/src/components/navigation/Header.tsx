@@ -27,6 +27,9 @@ import {
 // Theme Components
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
+// Notification Components
+import { NotificationBellClient } from './NotificationBellClient';
+
 // Types
 interface NavigationItem {
   name: string;
@@ -479,6 +482,9 @@ export const Header: React.FC = () => {
           <div className="flex items-center gap-2 flex-shrink-0">
             {/* Theme Toggle */}
             <ThemeToggle variant="minimal" size="sm" />
+
+            {/* Notification Bell - Only show for authenticated users */}
+            {user && <NotificationBellClient variant="minimal" />}
 
             {/* Auth Buttons - Desktop & Tablet */}
             <div className="hidden md:flex items-center gap-2">

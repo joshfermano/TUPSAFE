@@ -53,10 +53,10 @@ next-env.d.ts
 
 # Environment Variables
 .env
+.env.production
+.env.development
+.env.test
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
 # NOTE: .env.example should be committed, so not included here
 
 # Vercel
