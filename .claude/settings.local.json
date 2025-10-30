@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /mnt/d/thesis/SmartGov ls-files:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

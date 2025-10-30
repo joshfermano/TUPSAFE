@@ -1,14 +1,25 @@
-# Build outputs
+# Build Outputs
 dist/
-*.tsbuildinfo
+build/
+lib/
 
-# Turbo
+# TypeScript
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Turbo Cache
 .turbo/
 
-# Environment variables
-.env
-.env.local
-.env.*.local
+# Dependencies (if installed locally)
+node_modules/
 
-# Drizzle
+# Logs
+*.log
+
+# Cache
+.cache/
+
+# Drizzle Generated Files
 drizzle/
+.drizzle/
+# NOTE: packages/database/sql/ contains actual migration files and should be tracked

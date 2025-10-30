@@ -2,62 +2,42 @@
 > admin@0.1.0 build
 > next build
 
- ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
- We detected multiple lockfiles and selected the directory of /home/joshfermano/package-lock.json as the root directory.
- To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
-   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
- Detected additional lockfiles: 
-   * /home/joshfermano/Thesis/smart-gov/package-lock.json
-   * /home/joshfermano/Thesis/package-lock.json
-
    ▲ Next.js 15.5.3
-   - Environments: .env.local
 
    Creating an optimized production build ...
-<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (114kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
- ⚠ Compiled with warnings in 1597ms
+Failed to compile.
 
-../../node_modules/@supabase/realtime-js/dist/module/lib/websocket-factory.js
-A Node.js API is used (process.versions at line: 35) which is not supported in the Edge Runtime.
-Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+src/app/layout.tsx
+An error occurred in `next/font`.
 
-Import trace for requested module:
-../../node_modules/@supabase/realtime-js/dist/module/lib/websocket-factory.js
-../../node_modules/@supabase/realtime-js/dist/module/index.js
-../../node_modules/@supabase/supabase-js/dist/module/index.js
-../../packages/auth/dist/client.js
-../../packages/auth/dist/index.js
-
-../../node_modules/@supabase/supabase-js/dist/module/index.js
-A Node.js API is used (process.version at line: 24) which is not supported in the Edge Runtime.
-Learn more: https://nextjs.org/docs/api-reference/edge-runtime
-
-Import trace for requested module:
-../../node_modules/@supabase/supabase-js/dist/module/index.js
-../../packages/auth/dist/client.js
-../../packages/auth/dist/index.js
-
- ✓ Compiled successfully in 5.9s
-   Linting and checking validity of types ...
-   Collecting page data ...
-   Generating static pages (0/4) ...
-   Generating static pages (1/4) 
-   Generating static pages (2/4) 
-   Generating static pages (3/4) 
- ✓ Generating static pages (4/4)
-   Finalizing page optimization ...
-   Collecting build traces ...
-
-Route (app)                                 Size  First Load JS
-┌ ○ /                                    35.8 kB         186 kB
-└ ○ /_not-found                            984 B         103 kB
-+ First Load JS shared by all             102 kB
-  ├ chunks/18-cc9f92efa59c45f7.js        45.9 kB
-  ├ chunks/87c73c54-24122e7b92478d00.js  54.2 kB
-  └ other shared chunks (total)          1.93 kB
+Error: Cannot find module '../lightningcss.linux-x64-gnu.node'
+Require stack:
+- /mnt/d/thesis/SmartGov/node_modules/lightningcss/node/index.js
+- /mnt/d/thesis/SmartGov/node_modules/@tailwindcss/node/dist/index.js
+- /mnt/d/thesis/SmartGov/node_modules/@tailwindcss/postcss/dist/index.js
+- /mnt/d/thesis/SmartGov/node_modules/next/dist/build/webpack/config/blocks/css/plugins.js
+- /mnt/d/thesis/SmartGov/node_modules/next/dist/build/webpack/config/blocks/css/index.js
+- /mnt/d/thesis/SmartGov/node_modules/next/dist/build/webpack/config/index.js
+- /mnt/d/thesis/SmartGov/node_modules/next/dist/build/webpack-config.js
+- /mnt/d/thesis/SmartGov/node_modules/next/dist/build/webpack-build/impl.js
+- /mnt/d/thesis/SmartGov/node_modules/next/dist/compiled/jest-worker/processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1401:15)
+    at /mnt/d/thesis/SmartGov/node_modules/next/dist/server/require-hook.js:57:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1057:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1062:22)
+    at Function._load (node:internal/modules/cjs/loader:1211:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1487:12)
+    at mod.require (/mnt/d/thesis/SmartGov/node_modules/next/dist/server/require-hook.js:68:28)
+    at require (node:internal/modules/helpers:135:16)
 
 
-ƒ Middleware                             87.1 kB
-
-○  (Static)  prerendered as static content
-
+> Build failed because of webpack errors
+npm error Lifecycle script `build` failed with error:
+npm error code 1
+npm error path /mnt/d/thesis/SmartGov/apps/admin
+npm error workspace admin@0.1.0
+npm error location /mnt/d/thesis/SmartGov/apps/admin
+npm error command failed
+npm error command sh -c next build
