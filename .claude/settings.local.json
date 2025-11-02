@@ -16,7 +16,12 @@
       "Bash(npx next build:*)",
       "Bash(npm run build:employee:*)",
       "Bash(npm run dev:employee:*)",
-      "Bash(timeout 5 npm run dev:employee)"
+      "Bash(timeout 5 npm run dev:employee)",
+      "Bash(timeout 30 npm run build:employee)",
+      "Bash(npx turbo build)",
+      "Bash(tsc:*)",
+      "Bash(find:*)",
+      "Bash(timeout 10 npm run dev:employee:*)"
     ],
     "deny": [],
     "ask": []
@@ -27,6 +32,7 @@
     "filesystem",
     "github",
     "memory",
-    "sequential-thinking"
+    "sequential-thinking",
+    "serena"
   ]
 }
