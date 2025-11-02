@@ -3,10 +3,10 @@
 > next build
 
    ▲ Next.js 15.5.3
-   - Environments: .env.local, .env.production
+   - Environments: .env.local
 
    Creating an optimized production build ...
- ✓ Compiled successfully in 23.6s
+ ✓ Compiled successfully in 7.1s
    Linting and checking validity of types ...
 
 ./src/app/dashboard/pds/page.tsx
@@ -88,26 +88,26 @@ info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/d
    Collecting build traces ...
 
 Route (app)                                 Size  First Load JS
-┌ ○ /                                    2.25 kB         116 kB
+┌ ○ /                                    2.26 kB         116 kB
 ├ ○ /_not-found                            125 B         103 kB
 ├ ○ /about                               8.41 kB         161 kB
 ├ ○ /auth/login                          10.4 kB         171 kB
 ├ ○ /auth/register                       43.9 kB         224 kB
 ├ ○ /dashboard                           3.38 kB         153 kB
-├ ○ /dashboard/pds                       4.88 kB         164 kB
+├ ○ /dashboard/pds                       4.87 kB         164 kB
 ├ ○ /dashboard/profile                   7.29 kB         177 kB
 ├ ○ /dashboard/saln                      5.23 kB         164 kB
 ├ ○ /dashboard/settings                  10.1 kB         171 kB
 ├ ○ /features/ai-compliance              9.77 kB         163 kB
-├ ○ /features/automated-workflows        9.61 kB         163 kB
+├ ○ /features/automated-workflows        9.62 kB         163 kB
 ├ ○ /features/dashboard-analytics        9.55 kB         163 kB
-├ ○ /features/pds                        8.78 kB         162 kB
+├ ○ /features/pds                        8.77 kB         162 kB
 ├ ○ /features/saln                       9.39 kB         162 kB
 └ ○ /features/security-compliance        7.49 kB         163 kB
 + First Load JS shared by all             103 kB
   ├ chunks/18-87a50b9b2e1477e7.js        46.2 kB
   ├ chunks/87c73c54-09e1ba5c70e60a51.js  54.2 kB
-  └ other shared chunks (total)          2.16 kB
+  └ other shared chunks (total)          2.12 kB
 
 
 ○  (Static)  prerendered as static content

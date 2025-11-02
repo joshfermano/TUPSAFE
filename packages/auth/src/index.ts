@@ -1,16 +1,15 @@
 // Client utilities
-export { createClient } from './utils/supabase/client.js';
+export { createClient } from './utils/supabase/client';
 
 // Legacy client export for backward compatibility
-export { supabase } from './client.js';
-export type { SupabaseClient } from './client.js';
+export { supabase } from './client';
+export type { SupabaseClient } from './client';
 
 // Context
-export { AuthProvider, useAuth } from './context.js';
+export { AuthProvider, useAuth } from './context';
 
 // Components
-export { ProtectedRoute } from './components/ProtectedRoute.js';
-export { LoginForm } from './components/LoginForm.js';
+export { ProtectedRoute } from './components/ProtectedRoute';
 
 // Middleware
-export { createAuthMiddleware, getUserFromHeaders } from './middleware.js';
+export { createAuthMiddleware, getUserFromHeaders } from './middleware';
