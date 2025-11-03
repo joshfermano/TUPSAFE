@@ -196,10 +196,10 @@ const KeyFeaturesSection = () => {
               transition={{ duration: 0.6, delay: index * 0.1 }}
               viewport={{ once: true }}>
               <NeonGradientCard
-                className="h-full p-8"
+                className="h-full p-full centered-card"
                 borderSize={2}
                 borderRadius={16}
-                neonColors={{ firstColor: '#8B1538', secondColor: '#0066B3' }}>
+                neonColors={{ firstColor: '#8B1538', secondColor: '#c73436' }}>
                 <div className="flex items-start gap-4 mb-6">
                   <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#8B1538]/10">
                     <feature.icon className="h-6 w-6 text-[#8B1538]" />
