@@ -36,7 +36,6 @@ export function ProfileHero({ profile, department, position }: ProfileHeroProps)
   const fullName = `${profile.firstName} ${profile.middleName ? profile.middleName + ' ' : ''}${profile.lastName}`;
 
   return (
-<<<<<<< HEAD
     <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-[#093FB4] via-[#0066B3] to-[#0052A3] p-8 sm:p-10 text-white shadow-lg">
       {/* Subtle Shine Border Effect */}
       <ShineBorder
@@ -44,36 +43,6 @@ export function ProfileHero({ profile, department, position }: ProfileHeroProps)
         duration={10}
         shineColor={['#ffffff', '#0066B3', '#8B1538']}
         className="opacity-40"
-=======
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#8B1538] via-[##c73436] to-[#8B1538] p-8 sm:p-10 text-white shadow-2xl">
-      <BorderBeam size={280} duration={14} delay={0} colorFrom="#8B1538" colorTo="#c73436" />
-
-      {/* Animated Background Effects */}
-      <motion.div
-        className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"
-        animate={{
-          scale: [1, 1.2, 1],
-          opacity: [0.3, 0.5, 0.3],
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-      />
-      <motion.div
-        className="absolute bottom-0 left-0 w-48 h-48 bg-[#0066B3]/20 rounded-full blur-3xl"
-        animate={{
-          scale: [1, 1.3, 1],
-          opacity: [0.2, 0.4, 0.2],
-        }}
-        transition={{
-          duration: 6,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay: 0.5
-        }}
->>>>>>> 831112425ec31e6d8d7a958096b5448a791388b3
       />
 
       {/* Clean Decorative Elements */}
@@ -83,25 +52,10 @@ export function ProfileHero({ profile, department, position }: ProfileHeroProps)
       {/* Content */}
       <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-6">
         {/* Avatar */}
-<<<<<<< HEAD
         <div className="relative">
           <div className="relative">
             <Avatar className="h-24 w-24 sm:h-28 sm:w-28 border-4 border-white/20 shadow-xl ring-4 ring-white/10">
               <AvatarFallback className="bg-white/10 backdrop-blur-md text-white text-3xl sm:text-4xl font-bold">
-=======
-        <motion.div
-          className="relative"
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-        >
-          <motion.div
-            whileHover={{ scale: 1.05, rotate: 2 }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-          >
-            <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-white/30 shadow-2xl ring-4 ring-[#8B1538]/40">
-              <AvatarFallback className="bg-gradient-to-br from-[#8B1538] to-[#c73436] text-white text-3xl sm:text-4xl font-bold">
->>>>>>> 831112425ec31e6d8d7a958096b5448a791388b3
                 {getInitials()}
               </AvatarFallback>
             </Avatar>
