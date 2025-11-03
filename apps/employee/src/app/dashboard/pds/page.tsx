@@ -2,22 +2,12 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { InfoCard, InfoItem } from '@/components/dashboard/InfoCard';
+import { InfoCard } from '@/components/dashboard/InfoCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { ShimmerButton } from '@/components/ui/shimmer-button';
-import { ShinyButton } from '@/components/ui/shiny-button';
-import { NeonGradientCard } from '@/components/ui/neon-gradient-card';
 import { MagicCard } from '@/components/ui/magic-card';
-import { Particles } from '@/components/ui/particles';
-import AnimatedGridPattern from '@/components/ui/animated-grid-pattern';
 import { cn } from '@/lib/utils';
 import {
   FileText,
@@ -208,27 +198,7 @@ export default function PDSPage() {
 
   // Empty State Component
   const EmptyState = () => (
-    <div className="relative min-h-[70vh] flex items-center justify-center">
-      <Particles
-        className="absolute inset-0 -z-10"
-        quantity={40}
-        ease={80}
-        color="#8B1538"
-        size={0.5}
-        staticity={50}
-        refresh={false}
-      />
-      <AnimatedGridPattern
-        numSquares={40}
-        maxOpacity={0.1}
-        duration={3}
-        repeatDelay={1}
-        className={cn(
-          '[mask-image:radial-gradient(600px_circle_at_center,white,transparent)]',
-          'inset-x-0 inset-y-[-30%] h-[200%] -z-10'
-        )}
-      />
-
+    <div className="relative min-h-[70vh] flex items-center justify-center bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
       <motion.div
         className="max-w-2xl mx-auto text-center space-y-8 p-8"
         initial={{ opacity: 0, y: 20 }}
@@ -240,7 +210,7 @@ export default function PDSPage() {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}>
           <motion.div
-            className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500/20 to-indigo-500/20 blur-2xl"
+            className="absolute inset-0 rounded-full bg-gradient-to-br from-[#093FB4]/20 to-[#0066B3]/20 blur-2xl"
             animate={{
               scale: [1, 1.2, 1],
               opacity: [0.5, 0.8, 0.5],
@@ -248,7 +218,7 @@ export default function PDSPage() {
             transition={{ duration: 3, repeat: Infinity }}
           />
           <div className="relative flex items-center justify-center w-full h-full rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-950/60 dark:to-indigo-950/60">
-            <FileText className="h-16 w-16 text-blue-600 dark:text-blue-400" />
+            <FileText className="h-16 w-16 text-[#093FB4] dark:text-blue-400" />
           </div>
         </motion.div>
 
@@ -291,12 +261,12 @@ export default function PDSPage() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.8 }}>
           <ShimmerButton
-            className="shadow-2xl hover:shadow-3xl transition-all duration-300 px-8 py-6 text-base"
+            className="shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-6 text-base"
             shimmerColor="#ffffff"
-            shimmerSize="0.1em"
-            shimmerDuration="2s"
+            shimmerSize="0.08em"
+            shimmerDuration="3s"
             borderRadius="0.75rem"
-            background="linear-gradient(135deg, #8B1538 0%, #0066B3 50%, #004B87 100%)">
+            background="linear-gradient(135deg, #093FB4 0%, #0066B3 100%)">
             <Plus className="h-5 w-5 mr-2" />
             Create Your First PDS
           </ShimmerButton>
@@ -312,27 +282,6 @@ export default function PDSPage() {
 
   return (
     <div className="relative space-y-8 pb-8">
-      {/* Animated Background */}
-      <Particles
-        className="absolute inset-0 -z-10"
-        quantity={50}
-        ease={80}
-        color="#8B1538"
-        size={0.6}
-        staticity={45}
-        refresh={false}
-      />
-      <AnimatedGridPattern
-        numSquares={50}
-        maxOpacity={0.06}
-        duration={4}
-        repeatDelay={1}
-        className={cn(
-          '[mask-image:radial-gradient(900px_circle_at_center,white,transparent)]',
-          'inset-x-0 inset-y-[-30%] h-[200%] -z-10'
-        )}
-      />
-
       {/* Page Header */}
       <motion.div
         className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
@@ -362,12 +311,12 @@ export default function PDSPage() {
           transition={{ duration: 0.5, delay: 0.2 }}>
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <ShimmerButton
-              className="h-11 px-6 shadow-lg shadow-blue-500/20"
+              className="h-11 px-6 shadow-md hover:shadow-lg transition-shadow"
               shimmerColor="#ffffff"
               shimmerSize="0.08em"
-              shimmerDuration="2.5s"
+              shimmerDuration="3s"
               borderRadius="0.75rem"
-              background="linear-gradient(135deg, #8B1538 0%, #0066B3 100%)">
+              background="linear-gradient(135deg, #093FB4 0%, #0066B3 100%)">
               <Edit className="h-4 w-4 mr-2" />
               Update PDS
             </ShimmerButton>
@@ -375,20 +324,13 @@ export default function PDSPage() {
         </motion.div>
       </motion.div>
 
-      {/* Status Overview Card */}
+      {/* Status Overview Card - Replaced NeonGradientCard with standard Card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.3 }}>
-        <NeonGradientCard
-          className="overflow-hidden"
-          borderSize={2}
-          borderRadius={16}
-          neonColors={{
-            firstColor: '#8B1538',
-            secondColor: '#0066B3',
-          }}>
-          <div className="p-6 sm:p-8">
+        <Card className="overflow-hidden border-2 border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <div className="p-6 sm:p-8 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Completion Progress */}
               <div className="space-y-3">
@@ -406,7 +348,7 @@ export default function PDSPage() {
                 </div>
                 <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden">
                   <motion.div
-                    className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"
+                    className="h-full bg-gradient-to-r from-[#093FB4] to-[#0066B3] rounded-full"
                     initial={{ width: 0 }}
                     animate={{ width: `${pdsStatus.completionPercentage}%` }}
                     transition={{ duration: 1, delay: 0.5, ease: 'easeOut' }}
@@ -458,7 +400,7 @@ export default function PDSPage() {
               </div>
             </div>
           </div>
-        </NeonGradientCard>
+        </Card>
       </motion.div>
 
       {/* PDS Sections Grid */}
@@ -476,16 +418,16 @@ export default function PDSPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.5 + index * 0.1 }}
-              whileHover={{ y: -4 }}>
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}>
               <MagicCard
-                className="relative p-6 cursor-pointer hover:shadow-xl transition-shadow duration-300"
-                gradientSize={200}
-                gradientColor="#8B1538"
-                gradientOpacity={0.1}>
+                className="relative p-6 cursor-pointer hover:shadow-xl transition-all duration-300 border-slate-200 dark:border-slate-800"
+                gradientSize={0}
+                gradientColor="#093FB4"
+                gradientOpacity={0}>
                 <div className="flex items-start justify-between mb-4">
                   <div
                     className={cn(
-                      'flex h-12 w-12 items-center justify-center rounded-lg',
+                      'flex h-12 w-12 items-center justify-center rounded-lg transition-all duration-300',
                       section.isComplete
                         ? 'bg-green-100 dark:bg-green-950/30'
                         : 'bg-blue-100 dark:bg-blue-950/30'
@@ -495,7 +437,7 @@ export default function PDSPage() {
                         'h-6 w-6',
                         section.isComplete
                           ? 'text-green-600 dark:text-green-400'
-                          : 'text-blue-600 dark:text-blue-400'
+                          : 'text-[#093FB4] dark:text-blue-400'
                       )}
                     />
                   </div>
@@ -537,7 +479,7 @@ export default function PDSPage() {
                         'h-full rounded-full',
                         section.isComplete
                           ? 'bg-gradient-to-r from-green-600 to-emerald-600'
-                          : 'bg-gradient-to-r from-[#8B1538] to-[#0066B3]'
+                          : 'bg-gradient-to-r from-[#093FB4] to-[#0066B3]'
                       )}
                       initial={{ width: 0 }}
                       animate={{ width: `${section.completionPercentage}%` }}
@@ -563,25 +505,25 @@ export default function PDSPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Button
                 variant="outline"
-                className="w-full justify-start hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-all">
+                className="w-full justify-start hover:border-[#093FB4] hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-all duration-300 hover:scale-[1.02]">
                 <Eye className="h-4 w-4 mr-2" />
                 View Full PDS
               </Button>
               <Button
                 variant="outline"
-                className="w-full justify-start hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-950/20 transition-all">
+                className="w-full justify-start hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-950/20 transition-all duration-300 hover:scale-[1.02]">
                 <Download className="h-4 w-4 mr-2" />
                 Download PDF
               </Button>
               <Button
                 variant="outline"
-                className="w-full justify-start hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-950/20 transition-all">
+                className="w-full justify-start hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-950/20 transition-all duration-300 hover:scale-[1.02]">
                 <Printer className="h-4 w-4 mr-2" />
                 Print PDS
               </Button>
               <Button
                 variant="outline"
-                className="w-full justify-start hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 transition-all">
+                className="w-full justify-start hover:border-[#0066B3] hover:bg-indigo-50 dark:hover:bg-indigo-950/20 transition-all duration-300 hover:scale-[1.02]">
                 <Send className="h-4 w-4 mr-2" />
                 Submit for Review
               </Button>
@@ -606,7 +548,7 @@ export default function PDSPage() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.4, delay: 0.9 + index * 0.1 }}>
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950/30 flex-shrink-0">
-                      <ActivityIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <ActivityIcon className="h-4 w-4 text-[#093FB4] dark:text-blue-400" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-slate-900 dark:text-slate-100">

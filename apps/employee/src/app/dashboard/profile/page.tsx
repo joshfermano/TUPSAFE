@@ -3,14 +3,12 @@
 import { useAuth, useProfile } from '@tupsafe/mock-data/api';
 import { ProfileHero } from '@/components/dashboard/ProfileHero';
 import { InfoCard, InfoItem } from '@/components/dashboard/InfoCard';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import AnimatedGridPattern from '@/components/ui/animated-grid-pattern';
-import { NeonGradientCard } from '@/components/ui/neon-gradient-card';
 import { ShimmerButton } from '@/components/ui/shimmer-button';
-import { Particles } from '@/components/ui/particles';
+import { AnimatedGradientText } from '@/components/ui/animated-gradient-text';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import {
   User,
   Briefcase,
@@ -26,6 +24,25 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
+// Animation variants for blur-fade effect
+const blurFadeVariants = {
+  hidden: {
+    opacity: 0,
+    y: 10,
+    filter: 'blur(4px)' as const
+  },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    filter: 'blur(0px)' as const,
+    transition: {
+      duration: 0.4,
+      delay: i * 0.05,
+      ease: [0.4, 0, 0.2, 1] as const,
+    },
+  }),
+};
+
 export default function ProfilePage() {
   const { user } = useAuth();
   const { profile, department, position, loading, error } = useProfile(
@@ -34,19 +51,9 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="relative min-h-[60vh] flex items-center justify-center">
-        <AnimatedGridPattern
-          numSquares={30}
-          maxOpacity={0.1}
-          duration={3}
-          repeatDelay={1}
-          className={cn(
-            '[mask-image:radial-gradient(500px_circle_at_center,white,transparent)]',
-            'inset-x-0 inset-y-[-30%] h-[200%]'
-          )}
-        />
-        <div className="relative z-10 flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#8B1538]/20 border-t-[#8B1538]"></div>
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-[#093FB4]"></div>
           <p className="text-sm text-slate-600 dark:text-slate-400">
             Loading profile...
           </p>
@@ -57,7 +64,7 @@ export default function ProfilePage() {
 
   if (error || !profile) {
     return (
-      <div className="relative min-h-[60vh] flex items-center justify-center">
+      <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center space-y-4">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
           <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
@@ -77,71 +84,50 @@ export default function ProfilePage() {
   });
 
   return (
-    <div className="relative space-y-8 pb-8">
-      {/* Animated Background with Particles */}
-      <Particles
-        className="absolute inset-0 -z-10"
-        quantity={60}
-        ease={80}
-        color="#8B1538"
-        size={0.6}
-        staticity={40}
-        refresh={false}
-      />
-      <AnimatedGridPattern
-        numSquares={50}
-        maxOpacity={0.06}
-        duration={4}
-        repeatDelay={1}
-        className={cn(
-          '[mask-image:radial-gradient(900px_circle_at_center,white,transparent)]',
-          'inset-x-0 inset-y-[-30%] h-[200%] -z-10'
-        )}
-      />
-
-      {/* Page Header with staggered animation */}
+    <div className="space-y-8 pb-8">
+      {/* Page Header */}
       <motion.div
         className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+        custom={0}
+        initial="hidden"
+        animate="visible"
+        variants={blurFadeVariants}
       >
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-        >
-          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 dark:from-slate-100 dark:via-slate-200 dark:to-slate-100 bg-clip-text">
-            My Profile
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100">
+            <AnimatedGradientText
+              colorFrom="#093FB4"
+              colorTo="#0066B3"
+              speed={1.5}
+            >
+              My Profile
+            </AnimatedGradientText>
           </h1>
           <p className="text-slate-600 dark:text-slate-400 mt-2">
             View and manage your employee information
           </p>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
+        </div>
+        <Link href={`/dashboard/profile/edit/${user?.id}`}>
           <ShimmerButton
-            className="shadow-lg hover:shadow-xl transition-shadow duration-300"
-            shimmerColor="#ffffff"
+            shimmerColor="#0066B3"
             shimmerSize="0.1em"
             shimmerDuration="2s"
             borderRadius="0.5rem"
-            background="linear-gradient(135deg, #8B1538 0%, #0066B3 50%, #004B87 100%)"
+            background="linear-gradient(135deg, #093FB4 0%, #0066B3 100%)"
+            className="group relative flex items-center gap-2 font-medium"
           >
-            <Edit className="h-4 w-4 mr-2" />
+            <Edit className="h-4 w-4" />
             Edit Profile
           </ShimmerButton>
-        </motion.div>
+        </Link>
       </motion.div>
 
       {/* Profile Hero */}
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, delay: 0.3, ease: [0.4, 0, 0.2, 1] }}
+        custom={1}
+        initial="hidden"
+        animate="visible"
+        variants={blurFadeVariants}
       >
         <ProfileHero
           profile={profile}
@@ -150,208 +136,176 @@ export default function ProfilePage() {
         />
       </motion.div>
 
-      {/* Information Grid with staggered animation */}
-      <motion.div
-        className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.4 }}
-      >
+      {/* Information Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* Personal Information */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
+          custom={2}
+          initial="hidden"
+          animate="visible"
+          variants={blurFadeVariants}
         >
           <InfoCard title="Personal Information" icon={User} gradient>
-          <div className="space-y-3">
-            <InfoItem
-              label="Full Name"
-              value={`${profile.firstName} ${
-                profile.middleName ? profile.middleName + ' ' : ''
-              }${profile.lastName}`}
-            />
-            <InfoItem
-              label="Employee ID"
-              value={profile.employeeId}
-              icon={Shield}
-            />
-            <InfoItem
-              label="Email Address"
-              value={user?.email || '—'}
-              icon={Mail}
-            />
-          </div>
-        </InfoCard>
+            <div className="space-y-3">
+              <InfoItem
+                label="Full Name"
+                value={`${profile.firstName} ${
+                  profile.middleName ? profile.middleName + ' ' : ''
+                }${profile.lastName}`}
+              />
+              <InfoItem
+                label="Employee ID"
+                value={profile.employeeId}
+                icon={Shield}
+              />
+              <InfoItem
+                label="Email Address"
+                value={user?.email || '—'}
+                icon={Mail}
+              />
+            </div>
+          </InfoCard>
         </motion.div>
 
         {/* Employment Details */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
+          custom={3}
+          initial="hidden"
+          animate="visible"
+          variants={blurFadeVariants}
         >
           <InfoCard title="Employment Details" icon={Briefcase}>
-          <div className="space-y-3">
-            <InfoItem
-              label="Department"
-              value={department?.name || '—'}
-              icon={Building2}
-            />
-            <InfoItem
-              label="Position"
-              value={position?.title || '—'}
-              icon={Award}
-            />
-            <InfoItem
-              label="Salary Grade"
-              value={position?.gradeLevel ? `SG-${position.gradeLevel}` : '—'}
-            />
-          </div>
-        </InfoCard>
+            <div className="space-y-3">
+              <InfoItem
+                label="Department"
+                value={department?.name || '—'}
+                icon={Building2}
+              />
+              <InfoItem
+                label="Position"
+                value={position?.title || '—'}
+                icon={Award}
+              />
+              <InfoItem
+                label="Salary Grade"
+                value={position?.gradeLevel ? `SG-${position.gradeLevel}` : '—'}
+              />
+            </div>
+          </InfoCard>
         </motion.div>
 
         {/* Account Status */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.7 }}
+          custom={4}
+          initial="hidden"
+          animate="visible"
+          variants={blurFadeVariants}
         >
           <InfoCard title="Account Status" icon={Shield}>
-          <div className="space-y-3">
-            <InfoItem
-              label="Status"
-              value={
-                <Badge
-                  variant={profile.isActive ? 'default' : 'destructive'}
-                  className={cn(
-                    'font-semibold',
-                    profile.isActive
-                      ? 'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400'
-                      : ''
-                  )}>
-                  <CheckCircle2 className="h-3 w-3 mr-1" />
-                  {profile.isActive ? 'Active' : 'Inactive'}
-                </Badge>
-              }
-            />
-            <InfoItem
-              label="Member Since"
-              value={memberSince}
-              icon={Calendar}
-            />
-            <InfoItem
-              label="Last Updated"
-              value={new Date(profile.updatedAt).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              })}
-            />
-          </div>
-        </InfoCard>
+            <div className="space-y-3">
+              <InfoItem
+                label="Status"
+                value={
+                  <Badge
+                    variant={profile.isActive ? 'default' : 'destructive'}
+                    className={cn(
+                      'font-semibold',
+                      profile.isActive
+                        ? 'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400'
+                        : ''
+                    )}
+                  >
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    {profile.isActive ? 'Active' : 'Inactive'}
+                  </Badge>
+                }
+              />
+              <InfoItem
+                label="Member Since"
+                value={memberSince}
+                icon={Calendar}
+              />
+              <InfoItem
+                label="Last Updated"
+                value={new Date(profile.updatedAt).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              />
+            </div>
+          </InfoCard>
         </motion.div>
-      </motion.div>
+      </div>
 
-      {/* Quick Actions Grid with staggered animation */}
-      <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 gap-6"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.8 }}
-      >
+      {/* Quick Actions Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* PDS Quick Action */}
         <motion.div
-          whileHover={{ scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          custom={5}
+          initial="hidden"
+          animate="visible"
+          variants={blurFadeVariants}
+          className="group relative"
         >
-          <NeonGradientCard
-            className="overflow-hidden hover:shadow-2xl transition-shadow duration-500"
-            borderSize={2}
-            borderRadius={16}
-            neonColors={{
-              firstColor: '#8B1538',
-              secondColor: '#0066B3',
-            }}
-          >
-            <div className="p-6 sm:p-8">
-              <div className="flex items-start gap-4">
-                <motion.div
-                  className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[#8B1538]/10 to-[#0066B3]/10 dark:from-[#8B1538]/20 dark:to-[#0066B3]/20 shadow-lg"
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                >
-                  <FileText className="h-7 w-7 text-[#8B1538] dark:text-[#8B1538]" />
-                </motion.div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                    Personal Data Sheet (e-PDS)
-                  </h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                    View and update your Personal Data Sheet information
-                  </p>
-                  <motion.div whileHover={{ x: 2 }} transition={{ duration: 0.2 }}>
-                    <Button variant="outline" className="w-full sm:w-auto group hover:border-[#8B1538] hover:bg-[#8B1538]/5 dark:hover:bg-[#8B1538]/10 transition-all duration-300">
-                      <Eye className="h-4 w-4 mr-2 group-hover:text-[#8B1538] transition-colors" />
-                      View e-PDS
-                    </Button>
-                  </motion.div>
-                </div>
+          <div className="h-full p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#8B1538]/10 dark:bg-[#8B1538]/20 transition-colors">
+                <FileText className="h-6 w-6 text-[#8B1538]" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                  Personal Data Sheet (e-PDS)
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                  View and update your Personal Data Sheet information
+                </p>
+                <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#8B1538] bg-[#8B1538]/5 hover:bg-[#8B1538]/10 dark:bg-[#8B1538]/10 dark:hover:bg-[#8B1538]/20 rounded-lg transition-colors">
+                  <Eye className="h-4 w-4" />
+                  View e-PDS
+                </button>
               </div>
             </div>
-          </NeonGradientCard>
+          </div>
         </motion.div>
 
         {/* SALN Quick Action */}
         <motion.div
-          whileHover={{ scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          custom={6}
+          initial="hidden"
+          animate="visible"
+          variants={blurFadeVariants}
+          className="group relative"
         >
-          <NeonGradientCard
-            className="overflow-hidden hover:shadow-2xl transition-shadow duration-500"
-            borderSize={2}
-            borderRadius={16}
-            neonColors={{
-              firstColor: '#0066B3',
-              secondColor: '#004B87',
-            }}
-          >
-            <div className="p-6 sm:p-8">
-              <div className="flex items-start gap-4">
-                <motion.div
-                  className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[#0066B3]/10 to-[#004B87]/10 dark:from-[#0066B3]/20 dark:to-[#004B87]/20 shadow-lg"
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                >
-                  <Award className="h-7 w-7 text-[#0066B3] dark:text-[#0066B3]" />
-                </motion.div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                    Statement of Assets (e-SALN)
-                  </h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                    Manage your annual Statement of Assets, Liabilities, and Net
-                    Worth
-                  </p>
-                  <motion.div whileHover={{ x: 2 }} transition={{ duration: 0.2 }}>
-                    <Button variant="outline" className="w-full sm:w-auto group hover:border-[#0066B3] hover:bg-[#0066B3]/5 dark:hover:bg-[#0066B3]/10 transition-all duration-300">
-                      <Eye className="h-4 w-4 mr-2 group-hover:text-[#0066B3] transition-colors" />
-                      View e-SALN
-                    </Button>
-                  </motion.div>
-                </div>
+          <div className="h-full p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#0066B3]/10 dark:bg-[#0066B3]/20 transition-colors">
+                <Award className="h-6 w-6 text-[#0066B3]" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                  Statement of Assets (e-SALN)
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                  Manage your annual Statement of Assets, Liabilities, and Net Worth
+                </p>
+                <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#0066B3] bg-[#0066B3]/5 hover:bg-[#0066B3]/10 dark:bg-[#0066B3]/10 dark:hover:bg-[#0066B3]/20 rounded-lg transition-colors">
+                  <Eye className="h-4 w-4" />
+                  View e-SALN
+                </button>
               </div>
             </div>
-          </NeonGradientCard>
+          </div>
         </motion.div>
-      </motion.div>
+      </div>
 
       {/* Department Information (Full Width) */}
       {department && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.9 }}
+          custom={7}
+          initial="hidden"
+          animate="visible"
+          variants={blurFadeVariants}
         >
           <InfoCard
             title="Department Information"
