@@ -270,7 +270,7 @@ export default function AboutPage() {
               <motion.div 
                 variants={scaleIn}
                 transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}>
-                <NeonGradientCard className="p-8 h-full">
+                <NeonGradientCard className="p-full h-full">
                   <Target className="h-12 w-12 text-tup mb-6" />
                   <h3 className="text-2xl font-bold mb-4">
                     Research Objectives
@@ -307,7 +307,7 @@ export default function AboutPage() {
               <motion.div 
                 variants={scaleIn}
                 transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}>
-                <NeonGradientCard className="p-8 h-full">
+                <NeonGradientCard className="p-full h-full">
                   <Users className="h-12 w-12 text-tup mb-6" />
                   <h3 className="text-2xl font-bold mb-4">Target Users & Scope</h3>
                   <ul className="space-y-3 text-muted-foreground">
