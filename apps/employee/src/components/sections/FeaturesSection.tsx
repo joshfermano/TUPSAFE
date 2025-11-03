@@ -128,7 +128,7 @@ const FeatureCard: React.FC<{ feature: Feature; index: number }> = ({
   index,
 }) => {
   const IconComponent = feature.icon;
-  const gradient = { firstColor: '#8B1538', secondColor: '#0066B3' };
+  const gradient = { firstColor: '#8B1538', secondColor: '#ffffffff' };
 
   return (
     <motion.div
@@ -159,7 +159,7 @@ const FeatureCard: React.FC<{ feature: Feature; index: number }> = ({
               </div>
             </div>
             {feature.comingSoon && (
-              <Badge variant="outline" className="text-xs text-[#0066B3] border-[#0066B3]">
+              <Badge variant="outline" className="text-xs text-[#c73436] border-[#c73436]">
                 Research Proposal
               </Badge>
             )}
@@ -222,7 +222,7 @@ const StatsCard: React.FC<{
       gradientColor="#8B1538"
       gradientOpacity={0.12}
       gradientFrom="#8B1538"
-      gradientTo="#0066B3">
+      gradientTo="#c73436">
       <motion.div
         className="mb-3 flex justify-center"
         whileHover={{ scale: 1.1, rotate: 360 }}
@@ -273,7 +273,7 @@ export default function FeaturesSection() {
 
           <h2 className="mb-6 text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl">
             Research-Driven{' '}
-            <span className="bg-gradient-to-r from-[#8B1538] to-[#0066B3] bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#8B1538] to-[#c73436] bg-clip-text text-transparent">
               Implementation
             </span>
           </h2>

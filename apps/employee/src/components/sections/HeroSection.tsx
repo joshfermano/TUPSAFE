@@ -72,7 +72,7 @@ export default function HeroSection() {
             <div className="text-center mb-6">
               <AuroraText
                 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight"
-                colors={['#8B1538', '#0066B3', '#8B1538', '#0066B3']}>
+                colors={['#8B1538', '#c73436', '#8B1538', '#c73436']}>
                 TUP Manila e-PDS and e-SALN
                 <br />
                 <span className="text-[#8B1538]">Compliance System</span>
@@ -81,7 +81,7 @@ export default function HeroSection() {
 
             {/* Subtitle - University Name */}
             <div className="text-center mb-4">
-              <h2 className="text-xl md:text-2xl font-semibold text-[#0066B3]">
+              <h2 className="text-xl md:text-2xl font-semibold text-[#8B1538]">
                 Technological University of the Philippines - Manila
               </h2>
             </div>
@@ -153,19 +153,7 @@ export default function HeroSection() {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Scroll Indicator - Clean and Minimalistic */}
-      <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 animate-bounce hidden sm:flex">
-        <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-background/80 backdrop-blur-sm border border-[#8B1538]/10 shadow-sm">
-          <div className="w-6 h-10 border-2 border-[#8B1538]/30 rounded-full flex justify-center relative overflow-hidden">
-            <div className="w-1.5 h-3 bg-[#8B1538]/50 rounded-full mt-2 animate-pulse"></div>
-          </div>
-          <span className="text-xs font-medium text-muted-foreground">
-            Scroll to explore
-          </span>
-        </div>
-      </div>
+      </div> 
     </section>
   );
 }
