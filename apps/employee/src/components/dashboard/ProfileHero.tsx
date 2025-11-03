@@ -54,7 +54,7 @@ export function ProfileHero({ profile, department, position }: ProfileHeroProps)
         }}
       />
       <motion.div
-        className="absolute bottom-0 left-0 w-48 h-48 bg-[#0066B3]/20 rounded-full blur-3xl"
+        className="absolute bottom-0 left-0 w-48 h-48 bg-[#B8264D]/20 rounded-full blur-3xl"
         animate={{
           scale: [1, 1.3, 1],
           opacity: [0.2, 0.4, 0.2],

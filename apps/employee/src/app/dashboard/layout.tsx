@@ -106,9 +106,9 @@ const UserInfo = memo<UserInfoProps>(({ email, initials, prefersReducedMotion })
         transition: { duration: 0.5, delay: 0.1 }
       })}
     >
-      <div className="relative flex items-center gap-3 p-3 rounded-lg bg-gradient-to-br from-slate-50/80 to-slate-100/80 dark:from-slate-800/50 dark:to-slate-900/50 border border-slate-200/50 dark:border-slate-700/50 overflow-hidden transition-all duration-300 group-hover:border-[#093FB4]/30 group-hover:shadow-lg group-hover:shadow-[#093FB4]/10">
+      <div className="relative flex items-center gap-3 p-3 rounded-lg bg-gradient-to-br from-slate-50/80 to-slate-100/80 dark:from-slate-800/50 dark:to-slate-900/50 border border-slate-200/50 dark:border-slate-700/50 overflow-hidden transition-all duration-300 group-hover:border-[#8B1538]/30 group-hover:shadow-lg group-hover:shadow-[#8B1538]/10">
         {/* Shimmer overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#093FB4]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-shimmer" />
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#8B1538]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-shimmer" />
 
         <motion.div
           {...getAnimationProps(prefersReducedMotion, {
@@ -116,8 +116,8 @@ const UserInfo = memo<UserInfoProps>(({ email, initials, prefersReducedMotion })
             transition: { type: "spring", stiffness: 400, damping: 10 }
           })}
         >
-          <Avatar className="h-10 w-10 border-2 border-[#093FB4]/20 group-hover:border-[#093FB4]/40 transition-colors duration-300">
-            <AvatarFallback className="bg-gradient-to-br from-[#093FB4] to-[#0066FF] text-white font-semibold">
+          <Avatar className="h-10 w-10 border-2 border-[#8B1538]/20 group-hover:border-[#8B1538]/40 transition-colors duration-300">
+            <AvatarFallback className="bg-gradient-to-br from-[#8B1538] to-[#B8264D] text-white font-semibold">
               {initials}
             </AvatarFallback>
           </Avatar>
@@ -162,19 +162,19 @@ const NavItem = memo<NavItemProps>(({ item, isActive, onClick, prefersReducedMot
     >
       {/* Active state static gradient background - removed infinite animation */}
       {isActive && (
-        <div className="absolute inset-0 bg-gradient-to-r from-[#093FB4] via-[#0066FF] to-[#093FB4]" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#8B1538] via-[#B8264D] to-[#8B1538]" />
       )}
 
       {/* Hover glow effect */}
       {!isActive && (
         <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-[#093FB4]/5 via-[#0066FF]/10 to-[#093FB4]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          className="absolute inset-0 bg-gradient-to-r from-[#8B1538]/5 via-[#B8264D]/10 to-[#8B1538]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
         />
       )}
 
       {/* Hover border glow */}
       <motion.div
-        className="absolute inset-0 rounded-lg border-2 border-transparent group-hover:border-[#093FB4]/20 transition-colors duration-300"
+        className="absolute inset-0 rounded-lg border-2 border-transparent group-hover:border-[#8B1538]/20 transition-colors duration-300"
       />
 
       <motion.div
@@ -189,7 +189,7 @@ const NavItem = memo<NavItemProps>(({ item, isActive, onClick, prefersReducedMot
             "h-5 w-5 transition-all duration-300",
             isActive
               ? "text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]"
-              : "text-slate-500 dark:text-slate-400 group-hover:text-[#093FB4] dark:group-hover:text-[#0066FF]"
+              : "text-slate-500 dark:text-slate-400 group-hover:text-[#8B1538] dark:group-hover:text-[#B8264D]"
           )}
         />
       </motion.div>
@@ -275,7 +275,7 @@ function DashboardSidebar({ className }: DashboardSidebarProps) {
         <ShineBorder
           borderWidth={2}
           duration={12}
-          shineColor={["#093FB4", "#0066FF", "#093FB4"]}
+          shineColor={["#8B1538", "#B8264D", "#8B1538"]}
           className="!rounded-none"
         />
       </div>
@@ -287,7 +287,7 @@ function DashboardSidebar({ className }: DashboardSidebarProps) {
             className="absolute inset-0"
             quantity={15}
             ease={80}
-            color="#093FB4"
+            color="#8B1538"
             size={0.5}
             staticity={50}
             refresh={false}
@@ -315,12 +315,12 @@ function DashboardSidebar({ className }: DashboardSidebarProps) {
                 transition: { type: "spring", stiffness: 400, damping: 10 }
               })}
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-[#093FB4] via-[#0066FF] to-[#4A90E2]" />
+              <div className="absolute inset-0 bg-gradient-to-br from-[#8B1538] via-[#B8264D] to-[#6B0F2A]" />
               <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/10 to-transparent animate-shimmer" />
               <LayoutDashboard className="relative h-5 w-5 text-white z-10" />
             </motion.div>
             <div className="flex flex-col">
-              <AnimatedShinyText className="text-lg font-bold !mx-0 !max-w-none bg-gradient-to-r from-[#093FB4] via-[#0066FF] to-[#093FB4] bg-clip-text text-transparent">
+              <AnimatedShinyText className="text-lg font-bold !mx-0 !max-w-none bg-gradient-to-r from-[#8B1538] via-[#B8264D] to-[#8B1538] bg-clip-text text-transparent">
                 TUPSAFE
               </AnimatedShinyText>
               <span className="text-xs text-slate-600 dark:text-slate-400">
@@ -422,7 +422,7 @@ export default function DashboardLayout({
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600"></div>
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-red-200 border-t-red-600"></div>
           <p className="text-sm text-slate-600 dark:text-slate-400">Loading dashboard...</p>
         </div>
       </div>

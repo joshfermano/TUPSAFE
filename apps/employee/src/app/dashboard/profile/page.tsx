@@ -129,7 +129,7 @@ export default function ProfilePage() {
             shimmerSize="0.1em"
             shimmerDuration="2s"
             borderRadius="0.5rem"
-            background="linear-gradient(135deg, #8B1538 0%, #0066B3 50%, #004B87 100%)"
+            background="linear-gradient(135deg, #8B1538 0%, #B8264D 50%, #9A1E3D 100%)"
           >
             <Edit className="h-4 w-4 mr-2" />
             Edit Profile
@@ -271,13 +271,13 @@ export default function ProfilePage() {
             borderRadius={16}
             neonColors={{
               firstColor: '#8B1538',
-              secondColor: '#0066B3',
+              secondColor: '#B8264D',
             }}
           >
             <div className="p-6 sm:p-8">
               <div className="flex items-start gap-4">
                 <motion.div
-                  className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[#8B1538]/10 to-[#0066B3]/10 dark:from-[#8B1538]/20 dark:to-[#0066B3]/20 shadow-lg"
+                  className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[#8B1538]/10 to-[#B8264D]/10 dark:from-[#8B1538]/20 dark:to-[#B8264D]/20 shadow-lg"
                   whileHover={{ scale: 1.1, rotate: 5 }}
                   transition={{ type: "spring", stiffness: 400, damping: 15 }}
                 >
@@ -312,18 +312,18 @@ export default function ProfilePage() {
             borderSize={2}
             borderRadius={16}
             neonColors={{
-              firstColor: '#0066B3',
+              firstColor: '#B8264D',
               secondColor: '#004B87',
             }}
           >
             <div className="p-6 sm:p-8">
               <div className="flex items-start gap-4">
                 <motion.div
-                  className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[#0066B3]/10 to-[#004B87]/10 dark:from-[#0066B3]/20 dark:to-[#004B87]/20 shadow-lg"
+                  className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[#B8264D]/10 to-[#9A1E3D]/10 dark:from-[#B8264D]/20 dark:to-[#9A1E3D]/20 shadow-lg"
                   whileHover={{ scale: 1.1, rotate: 5 }}
                   transition={{ type: "spring", stiffness: 400, damping: 15 }}
                 >
-                  <Award className="h-7 w-7 text-[#0066B3] dark:text-[#0066B3]" />
+                  <Award className="h-7 w-7 text-[#B8264D] dark:text-[#B8264D]" />
                 </motion.div>
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
@@ -334,8 +334,8 @@ export default function ProfilePage() {
                     Worth
                   </p>
                   <motion.div whileHover={{ x: 2 }} transition={{ duration: 0.2 }}>
-                    <Button variant="outline" className="w-full sm:w-auto group hover:border-[#0066B3] hover:bg-[#0066B3]/5 dark:hover:bg-[#0066B3]/10 transition-all duration-300">
-                      <Eye className="h-4 w-4 mr-2 group-hover:text-[#0066B3] transition-colors" />
+                    <Button variant="outline" className="w-full sm:w-auto group hover:border-[#B8264D] hover:bg-[#B8264D]/5 dark:hover:bg-[#B8264D]/10 transition-all duration-300">
+                      <Eye className="h-4 w-4 mr-2 group-hover:text-[#B8264D] transition-colors" />
                       View e-SALN
                     </Button>
                   </motion.div>

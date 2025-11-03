@@ -97,7 +97,7 @@ export function LoginForm({ onSuccess, onError, redirectTo }: LoginFormProps) {
           id="loginIdentifier"
           value={formData.loginIdentifier}
           onChange={(e) => handleInputChange('loginIdentifier', e.target.value)}
-          className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
+          className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#B8264D] focus:border-[#B8264D] dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:ring-[#B8264D] dark:focus:border-[#B8264D]"
           placeholder="Enter your employee ID or government email"
           disabled={isLoading}
         />
@@ -122,7 +122,7 @@ export function LoginForm({ onSuccess, onError, redirectTo }: LoginFormProps) {
             id="password"
             value={formData.password}
             onChange={(e) => handleInputChange('password', e.target.value)}
-            className="w-full px-3 py-2 pr-10 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
+            className="w-full px-3 py-2 pr-10 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#B8264D] focus:border-[#B8264D] dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:ring-[#B8264D] dark:focus:border-[#B8264D]"
             placeholder="Enter your password"
             disabled={isLoading}
           />
@@ -162,7 +162,7 @@ export function LoginForm({ onSuccess, onError, redirectTo }: LoginFormProps) {
             value={formData.mfaCode}
             onChange={(e) => handleInputChange('mfaCode', e.target.value)}
             maxLength={6}
-            className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 text-center text-lg tracking-wider"
+            className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#B8264D] focus:border-[#B8264D] dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:ring-[#B8264D] dark:focus:border-[#B8264D] text-center text-lg tracking-wider"
             placeholder="000000"
             disabled={isLoading}
           />
@@ -184,7 +184,7 @@ export function LoginForm({ onSuccess, onError, redirectTo }: LoginFormProps) {
           id="rememberMe"
           checked={formData.rememberMe}
           onChange={(e) => handleInputChange('rememberMe', e.target.checked)}
-          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded dark:border-slate-600 dark:bg-slate-800"
+          className="h-4 w-4 text-[#B8264D] focus:ring-[#B8264D] border-slate-300 rounded dark:border-slate-600 dark:bg-slate-800"
           disabled={isLoading}
         />
         <label
@@ -199,7 +199,7 @@ export function LoginForm({ onSuccess, onError, redirectTo }: LoginFormProps) {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
+        className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#B8264D] hover:bg-[#9A1E3D] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#B8264D] disabled:opacity-50 disabled:cursor-not-allowed dark:bg-[#9A1E3D] dark:hover:bg-[#B8264D] transition-colors"
       >
         {isLoading ? (
           <>
@@ -220,7 +220,7 @@ export function LoginForm({ onSuccess, onError, redirectTo }: LoginFormProps) {
             Forgot your password?{' '}
             <button
               type="button"
-              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+              className="text-[#B8264D] hover:text-[#9A1E3D] dark:text-[#B8264D]/80 dark:hover:text-[#9A1E3D] font-medium"
               onClick={() => {
                 // Handle password reset
                 console.log('Password reset requested');

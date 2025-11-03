@@ -66,7 +66,7 @@ export default function AboutPage() {
       title: 'e-PDS Digitalization',
       description:
         'Digital transformation of Personal Data Sheets with automated validation and CSC compliance.',
-      color: 'text-blue-600',
+      color: 'text-[#B8264D]',
     },
     {
       icon: Scale,
@@ -528,7 +528,7 @@ export default function AboutPage() {
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Shield className="h-4 w-4 text-blue-300" />
+                      <Shield className="h-4 w-4 text-[#B8264D]/60" />
                       <span className="text-sm">
                         Security & Compliance First
                       </span>
@@ -555,7 +555,7 @@ export default function AboutPage() {
                   </p>
                   <div className="space-y-2">
                     <div className="flex items-center gap-3">
-                      <Globe className="h-4 w-4 text-blue-300" />
+                      <Globe className="h-4 w-4 text-[#B8264D]/60" />
                       <span className="text-sm">Digital-First University</span>
                     </div>
                     <div className="flex items-center gap-3">

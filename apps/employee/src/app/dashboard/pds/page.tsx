@@ -161,7 +161,7 @@ export default function PDSPage() {
         icon: Send,
         label: 'Submitted',
         className:
-          'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400',
+          'bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400',
       },
       approved: {
         variant: 'default' as const,
@@ -240,15 +240,15 @@ export default function PDSPage() {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}>
           <motion.div
-            className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500/20 to-indigo-500/20 blur-2xl"
+            className="absolute inset-0 rounded-full bg-gradient-to-br from-[#B8264D]/20 to-[#8B1538]/20 blur-2xl"
             animate={{
               scale: [1, 1.2, 1],
               opacity: [0.5, 0.8, 0.5],
             }}
             transition={{ duration: 3, repeat: Infinity }}
           />
-          <div className="relative flex items-center justify-center w-full h-full rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-950/60 dark:to-indigo-950/60">
-            <FileText className="h-16 w-16 text-blue-600 dark:text-blue-400" />
+          <div className="relative flex items-center justify-center w-full h-full rounded-full bg-gradient-to-br from-[#B8264D]/30 to-[#8B1538]/30 dark:from-[#B8264D]/40 dark:to-[#8B1538]/40">
+            <FileText className="h-16 w-16 text-[#B8264D] dark:text-[#B8264D]" />
           </div>
         </motion.div>
 
@@ -296,7 +296,7 @@ export default function PDSPage() {
             shimmerSize="0.1em"
             shimmerDuration="2s"
             borderRadius="0.75rem"
-            background="linear-gradient(135deg, #8B1538 0%, #0066B3 50%, #004B87 100%)">
+            background="linear-gradient(135deg, #8B1538 0%, #B8264D 50%, #9A1E3D 100%)">
             <Plus className="h-5 w-5 mr-2" />
             Create Your First PDS
           </ShimmerButton>
@@ -362,12 +362,12 @@ export default function PDSPage() {
           transition={{ duration: 0.5, delay: 0.2 }}>
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <ShimmerButton
-              className="h-11 px-6 shadow-lg shadow-blue-500/20"
+              className="h-11 px-6 shadow-lg shadow-[#B8264D]/20"
               shimmerColor="#ffffff"
               shimmerSize="0.08em"
               shimmerDuration="2.5s"
               borderRadius="0.75rem"
-              background="linear-gradient(135deg, #8B1538 0%, #0066B3 100%)">
+              background="linear-gradient(135deg, #8B1538 0%, #B8264D 100%)">
               <Edit className="h-4 w-4 mr-2" />
               Update PDS
             </ShimmerButton>
@@ -386,7 +386,7 @@ export default function PDSPage() {
           borderRadius={16}
           neonColors={{
             firstColor: '#8B1538',
-            secondColor: '#0066B3',
+            secondColor: '#B8264D',
           }}>
           <div className="p-6 sm:p-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -406,7 +406,7 @@ export default function PDSPage() {
                 </div>
                 <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden">
                   <motion.div
-                    className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"
+                    className="h-full bg-gradient-to-r from-[#B8264D] to-[#8B1538] rounded-full"
                     initial={{ width: 0 }}
                     animate={{ width: `${pdsStatus.completionPercentage}%` }}
                     transition={{ duration: 1, delay: 0.5, ease: 'easeOut' }}
@@ -488,14 +488,14 @@ export default function PDSPage() {
                       'flex h-12 w-12 items-center justify-center rounded-lg',
                       section.isComplete
                         ? 'bg-green-100 dark:bg-green-950/30'
-                        : 'bg-blue-100 dark:bg-blue-950/30'
+                        : 'bg-red-100 dark:bg-red-950/30'
                     )}>
                     <section.icon
                       className={cn(
                         'h-6 w-6',
                         section.isComplete
                           ? 'text-green-600 dark:text-green-400'
-                          : 'text-blue-600 dark:text-blue-400'
+                          : 'text-red-600 dark:text-red-400'
                       )}
                     />
                   </div>
@@ -537,7 +537,7 @@ export default function PDSPage() {
                         'h-full rounded-full',
                         section.isComplete
                           ? 'bg-gradient-to-r from-green-600 to-emerald-600'
-                          : 'bg-gradient-to-r from-[#8B1538] to-[#0066B3]'
+                          : 'bg-gradient-to-r from-[#8B1538] to-[#B8264D]'
                       )}
                       initial={{ width: 0 }}
                       animate={{ width: `${section.completionPercentage}%` }}
@@ -563,7 +563,7 @@ export default function PDSPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Button
                 variant="outline"
-                className="w-full justify-start hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-all">
+                className="w-full justify-start hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all">
                 <Eye className="h-4 w-4 mr-2" />
                 View Full PDS
               </Button>
@@ -605,8 +605,8 @@ export default function PDSPage() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.4, delay: 0.9 + index * 0.1 }}>
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950/30 flex-shrink-0">
-                      <ActivityIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 dark:bg-red-950/30 flex-shrink-0">
+                      <ActivityIcon className="h-4 w-4 text-red-600 dark:text-red-400" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-slate-900 dark:text-slate-100">

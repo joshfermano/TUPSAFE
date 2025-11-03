@@ -89,7 +89,7 @@ export function InfoCard({ title, icon: Icon, children, className, gradient = fa
               // Premium glow effect on hover
               "hover:shadow-[0_8px_30px_rgba(139,21,56,0.15),0_0_60px_rgba(139,21,56,0.1)]",
               "dark:hover:shadow-[0_8px_30px_rgba(139,21,56,0.25),0_0_60px_rgba(139,21,56,0.15)]",
-              gradient && "bg-gradient-to-br from-[#8B1538]/5 to-[#0066B3]/5 dark:from-[#8B1538]/10 dark:to-[#0066B3]/10",
+              gradient && "bg-gradient-to-br from-[#8B1538]/5 to-[#B8264D]/5 dark:from-[#8B1538]/10 dark:to-[#B8264D]/10",
               isHovered && "shadow-[0_12px_40px_rgba(139,21,56,0.2)] dark:shadow-[0_12px_40px_rgba(139,21,56,0.3)]",
               className
             )}
@@ -115,8 +115,8 @@ export function InfoCard({ title, icon: Icon, children, className, gradient = fa
                 className={cn(
                   "relative flex h-11 w-11 items-center justify-center rounded-xl transition-all duration-300",
                   gradient
-                    ? "bg-gradient-to-br from-[#8B1538] to-[#0066B3] text-white shadow-lg shadow-[#8B1538]/40"
-                    : "bg-gradient-to-br from-[#8B1538]/10 to-[#0066B3]/10 dark:from-[#8B1538]/20 dark:to-[#0066B3]/20",
+                    ? "bg-gradient-to-br from-[#8B1538] to-[#c73436] text-white shadow-lg shadow-[#8B1538]/40"
+                    : "bg-gradient-to-br from-[#8B1538]/10 to-[#c73436]/10 dark:from-[#8B1538]/20 dark:to-[#c73436]/20",
                   gradient ? "text-white" : "text-[#8B1538] dark:text-[#8B1538]"
                 )}
                 whileHover={{ scale: 1.15, rotate: 10 }}

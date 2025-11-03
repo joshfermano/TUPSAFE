@@ -201,7 +201,7 @@ const SecurityFeaturesSection = () => {
                 className="h-full p-8"
                 borderSize={2}
                 borderRadius={16}
-                neonColors={{ firstColor: '#8B1538', secondColor: '#0066B3' }}>
+                neonColors={{ firstColor: '#8B1538', secondColor: '#B8264D' }}>
                 <div className="flex items-start gap-4 mb-6">
                   <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#8B1538]/10">
                     <feature.icon className="h-6 w-6 text-[#8B1538]" />
@@ -538,7 +538,7 @@ const ThreatProtectionSection = () => (
                   className={cn(
                     'text-white',
                     metric.color === 'green' && 'bg-green-500',
-                    metric.color === 'blue' && 'bg-blue-500',
+                    metric.color === 'blue' && 'bg-red-500',
                     metric.color === 'purple' && 'bg-purple-500'
                   )}>
                   {metric.value}
@@ -697,7 +697,7 @@ const CTASection = () => (
             <span>256-bit Encryption</span>
           </div>
           <div className="flex items-center gap-2">
-            <Scale className="h-4 w-4 text-[#0066B3]" />
+            <Scale className="h-4 w-4 text-[#B8264D]" />
             <span>Fully Compliant</span>
           </div>
           <div className="flex items-center gap-2">
