@@ -188,7 +188,7 @@ export default function SalnPage() {
         icon: Send,
         label: 'Submitted',
         className:
-          'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400',
+          'bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400',
       },
       approved: {
         variant: 'default' as const,
@@ -246,7 +246,31 @@ export default function SalnPage() {
 
   // Empty State Component
   const EmptyState = () => (
+<<<<<<< HEAD
     <div className="relative min-h-[70vh] flex items-center justify-center bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
+=======
+    <div className="relative min-h-[70vh] flex items-center justify-center">
+      <Particles
+        className="absolute inset-0 -z-10"
+        quantity={40}
+        ease={80}
+        color="#B8264D"
+        size={0.5}
+        staticity={50}
+        refresh={false}
+      />
+      <AnimatedGridPattern
+        numSquares={40}
+        maxOpacity={0.1}
+        duration={3}
+        repeatDelay={1}
+        className={cn(
+          '[mask-image:radial-gradient(600px_circle_at_center,white,transparent)]',
+          'inset-x-0 inset-y-[-30%] h-[200%] -z-10'
+        )}
+      />
+
+>>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
       <motion.div
         className="max-w-2xl mx-auto text-center space-y-8 p-8"
         initial={{ opacity: 0, y: 20 }}
@@ -314,7 +338,11 @@ export default function SalnPage() {
             shimmerSize="0.08em"
             shimmerDuration="3s"
             borderRadius="0.75rem"
+<<<<<<< HEAD
             background="linear-gradient(135deg, #093FB4 0%, #0066B3 100%)">
+=======
+            background="linear-gradient(135deg, #B8264D 0%, #9A1E3D 50%, #8B1538 100%)">
+>>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
             <Plus className="h-5 w-5 mr-2" />
             Create Your First SALN
           </ShimmerButton>
@@ -330,6 +358,30 @@ export default function SalnPage() {
 
   return (
     <div className="relative space-y-8 pb-8">
+<<<<<<< HEAD
+=======
+      {/* Animated Background */}
+      <Particles
+        className="absolute inset-0 -z-10"
+        quantity={50}
+        ease={80}
+        color="#B8264D"
+        size={0.6}
+        staticity={45}
+        refresh={false}
+      />
+      <AnimatedGridPattern
+        numSquares={50}
+        maxOpacity={0.06}
+        duration={4}
+        repeatDelay={1}
+        className={cn(
+          '[mask-image:radial-gradient(900px_circle_at_center,white,transparent)]',
+          'inset-x-0 inset-y-[-30%] h-[200%] -z-10'
+        )}
+      />
+
+>>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
       {/* Page Header */}
       <motion.div
         className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
@@ -363,7 +415,11 @@ export default function SalnPage() {
               shimmerSize="0.08em"
               shimmerDuration="3s"
               borderRadius="0.75rem"
+<<<<<<< HEAD
               background="linear-gradient(135deg, #093FB4 0%, #0066B3 100%)">
+=======
+              background="linear-gradient(135deg, #B8264D 0%, #9A1E3D 100%)">
+>>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
               <Edit className="h-4 w-4 mr-2" />
               Update SALN
             </ShimmerButton>
@@ -376,8 +432,20 @@ export default function SalnPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.3 }}>
+<<<<<<< HEAD
         <Card className="overflow-hidden border-2 border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-shadow duration-300">
           <div className="p-6 sm:p-8 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950">
+=======
+        <NeonGradientCard
+          className="overflow-hidden"
+          borderSize={2}
+          borderRadius={16}
+          neonColors={{
+            firstColor: '#B8264D',
+            secondColor: '#004B87',
+          }}>
+          <div className="p-6 sm:p-8">
+>>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Net Worth */}
               <div className="space-y-3">
@@ -461,10 +529,17 @@ export default function SalnPage() {
               transition={{ duration: 0.5, delay: 0.5 + index * 0.1 }}
               whileHover={{ y: -4, transition: { duration: 0.2 } }}>
               <MagicCard
+<<<<<<< HEAD
                 className="relative p-6 cursor-pointer hover:shadow-xl transition-all duration-300 border-slate-200 dark:border-slate-800"
                 gradientSize={0}
                 gradientColor="#093FB4"
                 gradientOpacity={0}>
+=======
+                className="relative p-6 cursor-pointer hover:shadow-xl transition-shadow duration-300"
+                gradientSize={200}
+                gradientColor="#B8264D"
+                gradientOpacity={0.1}>
+>>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
                 <div className="flex items-start justify-between mb-4">
                   <div
                     className={cn(
@@ -478,7 +553,11 @@ export default function SalnPage() {
                         'h-6 w-6',
                         section.isComplete
                           ? 'text-green-600 dark:text-green-400'
+<<<<<<< HEAD
                           : 'text-[#093FB4] dark:text-blue-400'
+=======
+                          : 'text-[#B8264D] dark:text-[#B8264D]'
+>>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
                       )}
                     />
                   </div>
@@ -626,7 +705,11 @@ export default function SalnPage() {
             </Button>
             <Button
               variant="outline"
+<<<<<<< HEAD
               className="w-full justify-start hover:border-[#0066B3] hover:bg-indigo-50 dark:hover:bg-indigo-950/20 transition-all duration-300 hover:scale-[1.02]">
+=======
+              className="w-full justify-start hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all">
+>>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
               <Send className="h-4 w-4 mr-2" />
               Submit for Review
             </Button>

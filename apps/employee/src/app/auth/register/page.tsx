@@ -211,7 +211,7 @@ export default function RegisterPage() {
       duration={12}
       delay={9}
       colorFrom="#8B1538"
-      colorTo="#0066B3"
+      colorTo="#B8264D"
       />
 
       <CardHeader>
@@ -266,7 +266,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-[#8B1538]/5 to-[#0066B3]/10 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 pt-24 pb-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
+    <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-[#8B1538]/5 to-[#B8264D]/10 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 pt-24 pb-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
       {/* Animated Background Grid Pattern */}
       <AnimatedGridPattern
         numSquares={50}
@@ -298,7 +298,7 @@ export default function RegisterPage() {
           {/* Main Title */}
           <div className="space-y-3 sm:space-y-4">
             <AnimatedGradientText className="text-3xl sm:text-4xl lg:text-6xl font-bold">
-              <span className="bg-gradient-to-r from-[#8B1538] via-[#0066B3] to-[#8B1538] bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#8B1538] via-[#B8264D] to-[#8B1538] bg-clip-text text-transparent">
                 TUPSAFE
               </span>
             </AnimatedGradientText>
@@ -316,8 +316,8 @@ export default function RegisterPage() {
               <FileText className="w-5 h-5 text-[#8B1538] dark:text-[#8B1538]/90" />
               <span className="text-sm font-medium text-slate-700 dark:text-slate-300">e-PDS Management</span>
             </div>
-            <div className="flex items-center space-x-3 p-4 rounded-lg bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border border-[#0066B3]/20 dark:border-slate-700">
-              <Building2 className="w-5 h-5 text-[#0066B3] dark:text-[#0066B3]/90" />
+            <div className="flex items-center space-x-3 p-4 rounded-lg bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border border-[#B8264D]/20 dark:border-slate-700">
+              <Building2 className="w-5 h-5 text-[#B8264D] dark:text-[#B8264D]/90" />
               <span className="text-sm font-medium text-slate-700 dark:text-slate-300">e-SALN Compliance</span>
             </div>
           </div>
@@ -848,7 +848,7 @@ export default function RegisterPage() {
                             type="button"
                             onClick={nextStep}
                             disabled={isLoading}
-                            className="flex items-center gap-2 bg-gradient-to-r from-[#8B1538] to-[#0066B3] hover:from-[#8B1538]/90 hover:to-[#0066B3]/90 text-white relative overflow-hidden group order-1 sm:order-2">
+                            className="flex items-center gap-2 bg-gradient-to-r from-[#8B1538] to-[#B8264D] hover:from-[#8B1538]/90 hover:to-[#B8264D]/90 text-white relative overflow-hidden group order-1 sm:order-2">
                             <span className="relative z-10 flex items-center gap-2">
                               Next
                               <ArrowRight className="h-4 w-4" />
@@ -859,7 +859,7 @@ export default function RegisterPage() {
                           <Button
                             type="submit"
                             disabled={isLoading}
-                            className="flex items-center gap-2 bg-gradient-to-r from-[#8B1538] to-[#0066B3] hover:from-[#8B1538]/90 hover:to-[#0066B3]/90 text-white relative overflow-hidden group order-1 sm:order-2">
+                            className="flex items-center gap-2 bg-gradient-to-r from-[#8B1538] to-[#B8264D] hover:from-[#8B1538]/90 hover:to-[#B8264D]/90 text-white relative overflow-hidden group order-1 sm:order-2">
                             <span className="relative z-10">
                               {isLoading ? (
                                 <>
@@ -900,7 +900,7 @@ export default function RegisterPage() {
 
       {/* Decorative Elements */}
       <div className="absolute top-20 left-10 w-20 h-20 bg-[#8B1538]/20 rounded-full blur-xl"></div>
-      <div className="absolute bottom-20 right-10 w-32 h-32 bg-[#0066B3]/20 rounded-full blur-xl"></div>
+      <div className="absolute bottom-20 right-10 w-32 h-32 bg-[#B8264D]/20 rounded-full blur-xl"></div>
       <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-[#8B1538]/10 rounded-full blur-lg"></div>
     </div>
   );

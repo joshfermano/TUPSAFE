@@ -481,7 +481,7 @@ function BellIcon({ className }: { className?: string }) {
 function LoadingSpinner() {
   return (
     <div className="flex items-center justify-center p-8">
-      <div className="w-8 h-8 border-4 border-gray-200 rounded-full border-t-blue-600 animate-spin"></div>
+      <div className="w-8 h-8 border-4 border-gray-200 rounded-full border-t-red-600 animate-spin"></div>
     </div>
   );
 }
@@ -534,7 +534,7 @@ function SubmissionList({
 function StatusBadge({ status }: { status: string }) {
   const colors = {
     draft: 'bg-gray-100 text-gray-800',
-    submitted: 'bg-blue-100 text-blue-800',
+    submitted: 'bg-red-100 text-red-800',
     reviewing: 'bg-yellow-100 text-yellow-800',
     approved: 'bg-green-100 text-green-800',
     rejected: 'bg-red-100 text-red-800',
