@@ -181,7 +181,7 @@ export function MockLoginForm({
       <Button
         type="submit"
         disabled={isLoading}
-        className="w-full h-11 bg-gradient-to-r from-[#8B1538] to-[#0066B3] hover:from-[#6B1028] hover:to-[#004D87] text-white font-medium rounded-lg shadow-lg shadow-[#8B1538]/25 hover:shadow-[#8B1538]/40 transition-all duration-200 mt-6">
+        className="w-full h-11 bg-gradient-to-r from-[#8B1538] to-[#B8264D] hover:from-[#6B1028] hover:to-[#9A1E3D] text-white font-medium rounded-lg shadow-lg shadow-[#8B1538]/25 hover:shadow-[#8B1538]/40 transition-all duration-200 mt-6">
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

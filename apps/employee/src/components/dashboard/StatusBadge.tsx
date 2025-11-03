@@ -42,7 +42,7 @@ const statusConfig: Record<Status, {
   archived: {
     label: 'Archived',
     variant: 'outline',
-    className: 'border-blue-500/50 text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30',
+    className: 'border-red-500/50 text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30',
   },
 };
 

@@ -75,11 +75,11 @@ export default function SettingsPage() {
               duration={8}
               delay={0}
               colorFrom="#8B1538"
-              colorTo="#0066B3"
+              colorTo="#B8264D"
             />
             <div className="relative bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-slate-200/50 dark:border-slate-800/50 p-8">
               <div className="flex items-center gap-3 mb-6">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#8B1538] to-[#0066B3] shadow-lg shadow-[#8B1538]/20">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#8B1538] to-[#B8264D] shadow-lg shadow-[#8B1538]/20">
                   <User className="h-5 w-5 text-white" />
                 </div>
                 <div>
@@ -104,7 +104,7 @@ export default function SettingsPage() {
                       id="firstName"
                       placeholder="Juan"
                       defaultValue="Juan"
-                      className="h-11 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500 transition-colors"
+                      className="h-11 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-[#B8264D] dark:focus:border-[#B8264D] transition-colors"
                     />
                   </div>
                   <div className="space-y-2">
@@ -117,7 +117,7 @@ export default function SettingsPage() {
                       id="lastName"
                       placeholder="Dela Cruz"
                       defaultValue="Dela Cruz"
-                      className="h-11 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500 transition-colors"
+                      className="h-11 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-[#B8264D] dark:focus:border-[#B8264D] transition-colors"
                     />
                   </div>
                 </div>
@@ -157,7 +157,7 @@ export default function SettingsPage() {
                     type="tel"
                     placeholder="+63 912 345 6789"
                     defaultValue="+63 912 345 6789"
-                    className="h-11 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500 transition-colors"
+                    className="h-11 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-[#B8264D] dark:focus:border-[#B8264D] transition-colors"
                   />
                 </div>
 
@@ -173,7 +173,7 @@ export default function SettingsPage() {
                     shimmerSize="0.08em"
                     shimmerDuration="2.5s"
                     borderRadius="0.5rem"
-                    background="linear-gradient(135deg, #8B1538 0%, #0066B3 100%)">
+                    background="linear-gradient(135deg, #8B1538 0%, #B8264D 100%)">
                     <Zap className="h-4 w-4 mr-2" />
                     Save Changes
                   </ShimmerButton>
@@ -363,11 +363,11 @@ export default function SettingsPage() {
               borderRadius={16}
               neonColors={{
                 firstColor: '#8B1538',
-                secondColor: '#0066B3',
+                secondColor: '#B8264D',
               }}>
               <div className="p-6">
                 <div className="flex items-center gap-3 mb-5">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#8B1538] to-[#0066B3] shadow-lg shadow-[#8B1538]/20">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#8B1538] to-[#B8264D] shadow-lg shadow-[#8B1538]/20">
                     <Palette className="h-5 w-5 text-white" />
                   </div>
                   <div>

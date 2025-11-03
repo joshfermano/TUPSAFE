@@ -31,7 +31,7 @@ import Link from 'next/link';
 
 
 const HeroSection = () => (
-  <section className="relative overflow-hidden bg-gradient-to-br from-[#8B1538]/5 via-white to-[#0066B3]/5 dark:from-gray-950 dark:via-gray-900 dark:to-[#8B1538]/20 pt-32 pb-20">
+  <section className="relative overflow-hidden bg-gradient-to-br from-[#8B1538]/5 via-white to-[#B8264D]/5 dark:from-gray-950 dark:via-gray-900 dark:to-[#8B1538]/20 pt-32 pb-20">
     {/* Background Pattern */}
     <div className="absolute inset-0 bg-grid-pattern opacity-30" />
 
@@ -199,7 +199,7 @@ const AnalyticsFeaturesSection = () => {
                 className="h-full p-8"
                 borderSize={2}
                 borderRadius={16}
-                neonColors={{ firstColor: '#8B1538', secondColor: '#0066B3' }}>
+                neonColors={{ firstColor: '#8B1538', secondColor: '#B8264D' }}>
                 <div className="flex items-start gap-4 mb-6">
                   <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#8B1538]/10">
                     <feature.icon className="h-6 w-6 text-[#8B1538]" />
@@ -330,7 +330,7 @@ const DashboardPreviewSection = () => (
                       metric.color === 'green' && 'text-green-600',
                       metric.color === 'yellow' && 'text-yellow-600',
                       metric.color === 'red' && 'text-red-600',
-                      metric.color === 'blue' && 'text-[#0066B3]'
+                      metric.color === 'blue' && 'text-[#B8264D]'
                     )}>
                     {metric.change.startsWith('+') ? (
                       <TrendingUp className="h-3 w-3" />
@@ -348,7 +348,7 @@ const DashboardPreviewSection = () => (
                     metric.color === 'yellow' &&
                       'bg-yellow-100 dark:bg-yellow-900/30',
                     metric.color === 'red' && 'bg-red-100 dark:bg-red-900/30',
-                    metric.color === 'blue' && 'bg-blue-100 dark:bg-blue-900/30'
+                    metric.color === 'blue' && 'bg-red-100 dark:bg-red-900/30'
                   )}>
                   <metric.icon
                     className={cn(
@@ -360,7 +360,7 @@ const DashboardPreviewSection = () => (
                       metric.color === 'red' &&
                         'text-red-600 dark:text-red-400',
                       metric.color === 'blue' &&
-                        'text-[#0066B3]'
+                        'text-[#B8264D]'
                     )}
                   />
                 </div>
@@ -378,7 +378,7 @@ const DashboardPreviewSection = () => (
               </h4>
               <LineChart className="h-5 w-5 text-gray-400" />
             </div>
-            <div className="h-48 bg-gradient-to-r from-[#8B1538]/5 to-[#0066B3]/5 dark:from-[#8B1538]/10 dark:to-[#0066B3]/10 rounded-lg flex items-center justify-center">
+            <div className="h-48 bg-gradient-to-r from-[#8B1538]/5 to-[#B8264D]/5 dark:from-[#8B1538]/10 dark:to-[#B8264D]/10 rounded-lg flex items-center justify-center">
               <p className="text-gray-500 dark:text-gray-400">
                 Interactive line chart visualization
               </p>
@@ -544,7 +544,7 @@ const VisualizationTypesSection = () => {
   ];
 
   return (
-    <section className="py-20 bg-gradient-to-br from-[#8B1538]/5 to-[#0066B3]/5 dark:from-[#8B1538]/10 dark:to-[#0066B3]/10">
+    <section className="py-20 bg-gradient-to-br from-[#8B1538]/5 to-[#B8264D]/5 dark:from-[#8B1538]/10 dark:to-[#B8264D]/10">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -717,7 +717,7 @@ const CTASection = () => (
             <span>Real-Time Data</span>
           </div>
           <div className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4 text-[#0066B3]" />
+            <BarChart3 className="h-4 w-4 text-[#B8264D]" />
             <span>Rich Visualizations</span>
           </div>
           <div className="flex items-center gap-2">

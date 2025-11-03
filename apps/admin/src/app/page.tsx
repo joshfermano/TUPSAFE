@@ -227,15 +227,15 @@ function AdminDashboardContent() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg">
+                  <div className="flex items-start space-x-3 p-3 bg-red-50 rounded-lg">
                     <div className="shrink-0">
-                      <div className="h-2 w-2 bg-blue-400 rounded-full mt-2"></div>
+                      <div className="h-2 w-2 bg-red-400 rounded-full mt-2"></div>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-blue-800">
+                      <p className="text-sm font-medium text-red-800">
                         New user registered: Maria Santos (HR Department)
                       </p>
-                      <p className="text-xs text-blue-600 mt-1">
+                      <p className="text-xs text-red-600 mt-1">
                         15 minutes ago
                       </p>
                     </div>

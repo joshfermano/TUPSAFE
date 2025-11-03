@@ -30,7 +30,7 @@ import Link from 'next/link';
 
 
 const HeroSection = () => (
-  <section className="relative overflow-hidden bg-gradient-to-br from-[#8B1538]/5 via-white to-[#0066B3]/5 dark:from-gray-950 dark:via-gray-900 dark:to-[#8B1538]/20 pt-32 pb-20">
+  <section className="relative overflow-hidden bg-gradient-to-br from-[#8B1538]/5 via-white to-[#B8264D]/5 dark:from-gray-950 dark:via-gray-900 dark:to-[#8B1538]/20 pt-32 pb-20">
     {/* Background Pattern */}
     <div className="absolute inset-0 bg-grid-pattern opacity-30" />
 
@@ -467,7 +467,7 @@ const WorkflowSection = () => {
   ];
 
   return (
-    <section className="py-20 bg-gradient-to-br from-[#8B1538]/5 to-[#0066B3]/5 dark:from-[#8B1538]/10 dark:to-gray-900">
+    <section className="py-20 bg-gradient-to-br from-[#8B1538]/5 to-[#B8264D]/5 dark:from-[#8B1538]/10 dark:to-gray-900">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -633,7 +633,7 @@ const CTASection = () => (
             <span>Transparency Compliant</span>
           </div>
           <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-[#0066B3]" />
+            <Shield className="h-4 w-4 text-[#B8264D]" />
             <span>Secure & Auditable</span>
           </div>
           <div className="flex items-center gap-2">
