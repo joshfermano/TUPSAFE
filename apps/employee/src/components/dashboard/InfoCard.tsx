@@ -78,7 +78,7 @@ export function InfoCard({ title, icon: Icon, children, className, gradient = fa
             className="rounded-xl"
             borderWidth={2}
             duration={12}
-            shineColor={gradient ? ["#8B1538", "#0066B3", "#004B87"] : ["#8B1538", "#0066B3", "#8B1538"]}
+            shineColor={gradient ? ["#8B1538", "#c73436", "#8B1538"] : ["#8B1538", "#c73436", "#8B1538"]}
           />
 
           <MagicCard
@@ -97,7 +97,7 @@ export function InfoCard({ title, icon: Icon, children, className, gradient = fa
             gradientColor="#8B1538"
             gradientOpacity={0.08}
             gradientFrom="#8B1538"
-            gradientTo="#0066B3"
+            gradientTo="#c73436"
           >
             {/* Shimmer sweep effect on hover */}
             <motion.div

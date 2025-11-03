@@ -37,8 +37,8 @@ export function ProfileHero({ profile, department, position }: ProfileHeroProps)
   const fullName = `${profile.firstName} ${profile.middleName ? profile.middleName + ' ' : ''}${profile.lastName}`;
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#8B1538] via-[#6B0F2A] to-[#4A091B] p-8 sm:p-10 text-white shadow-2xl">
-      <BorderBeam size={280} duration={14} delay={0} colorFrom="#8B1538" colorTo="#0066B3" />
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#8B1538] via-[##c73436] to-[#8B1538] p-8 sm:p-10 text-white shadow-2xl">
+      <BorderBeam size={280} duration={14} delay={0} colorFrom="#8B1538" colorTo="#c73436" />
 
       {/* Animated Background Effects */}
       <motion.div
@@ -94,7 +94,7 @@ export function ProfileHero({ profile, department, position }: ProfileHeroProps)
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
           >
             <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-white/30 shadow-2xl ring-4 ring-[#8B1538]/40">
-              <AvatarFallback className="bg-gradient-to-br from-[#8B1538] to-[#0066B3] text-white text-3xl sm:text-4xl font-bold">
+              <AvatarFallback className="bg-gradient-to-br from-[#8B1538] to-[#c73436] text-white text-3xl sm:text-4xl font-bold">
                 {getInitials()}
               </AvatarFallback>
             </Avatar>
