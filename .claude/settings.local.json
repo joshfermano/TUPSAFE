@@ -21,7 +21,10 @@
       "Bash(npx turbo build)",
       "Bash(tsc:*)",
       "Bash(find:*)",
-      "Bash(timeout 10 npm run dev:employee:*)"
+      "Bash(timeout 10 npm run dev:employee:*)",
+      "Bash(git -C /mnt/d/thesis/SmartGov commit -m \"$(cat <<''EOF''\nSecurity: Remove .env.production from repository\n\n- Remove .env.production from Git tracking (already in .gitignore)\n- This file should never be committed as it contains sensitive credentials\n- Local file remains intact for deployment purposes\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git -C /mnt/d/thesis/SmartGov rm:*)",
+      "Bash(git -C /mnt/d/thesis/SmartGov status --short)"
     ],
     "deny": [],
     "ask": []
