@@ -85,6 +85,7 @@ export default function SettingsPage() {
       {/* Centered Container */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <motion.div
+<<<<<<< HEAD
           initial="hidden"
           animate="visible"
           variants={containerVariants}
@@ -103,10 +104,125 @@ export default function SettingsPage() {
                 <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                   Manage your preferences and account settings
                 </p>
+=======
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}>
+          <div className="relative group">
+            <BorderBeam
+              size={200}
+              duration={8}
+              delay={0}
+              colorFrom="#8B1538"
+              colorTo="#B8264D"
+            />
+            <div className="relative bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-slate-200/50 dark:border-slate-800/50 p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#8B1538] to-[#B8264D] shadow-lg shadow-[#8B1538]/20">
+                  <User className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    Profile
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-500">
+                    Update your personal details
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="firstName"
+                      className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                      First Name
+                    </Label>
+                    <Input
+                      id="firstName"
+                      placeholder="Juan"
+                      defaultValue="Juan"
+                      className="h-11 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-[#B8264D] dark:focus:border-[#B8264D] transition-colors"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="lastName"
+                      className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                      Last Name
+                    </Label>
+                    <Input
+                      id="lastName"
+                      placeholder="Dela Cruz"
+                      defaultValue="Dela Cruz"
+                      className="h-11 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-[#B8264D] dark:focus:border-[#B8264D] transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="email"
+                    className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                    Email Address
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="email"
+                      type="email"
+                      defaultValue={user?.email || ''}
+                      readOnly
+                      className="h-11 bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 pr-24"
+                    />
+                    <Badge className="absolute right-3 top-1/2 -translate-y-1/2 bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400 border-0">
+                      <CheckCircle2 className="h-3 w-3 mr-1" />
+                      Verified
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-500">
+                    Email is verified and cannot be changed
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="phone"
+                    className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                    Phone Number
+                  </Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="+63 912 345 6789"
+                    defaultValue="+63 912 345 6789"
+                    className="h-11 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-[#B8264D] dark:focus:border-[#B8264D] transition-colors"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button
+                    variant="outline"
+                    className="h-10 px-6 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800">
+                    Cancel
+                  </Button>
+                  <ShimmerButton
+                    className="h-10 px-6"
+                    shimmerColor="#ffffff"
+                    shimmerSize="0.08em"
+                    shimmerDuration="2.5s"
+                    borderRadius="0.5rem"
+                    background="linear-gradient(135deg, #8B1538 0%, #B8264D 100%)">
+                    <Zap className="h-4 w-4 mr-2" />
+                    Save Changes
+                  </ShimmerButton>
+                </div>
+>>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
               </div>
             </div>
           </motion.div>
 
+<<<<<<< HEAD
           {/* Theme Settings Section */}
           <motion.div variants={itemVariants}>
             <MagicCard
@@ -118,6 +234,194 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-3 mb-6">
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#093FB4] to-[#0066B3] shadow-md">
                     <Palette className="h-6 w-6 text-white" />
+=======
+        {/* Security Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}>
+          <div className="relative group">
+            <BorderBeam
+              size={200}
+              duration={8}
+              delay={2}
+              colorFrom="#ef4444"
+              colorTo="#dc2626"
+            />
+            <div className="relative bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-slate-200/50 dark:border-slate-800/50 p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-red-600 shadow-lg shadow-red-500/20">
+                  <Lock className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    Security
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-500">
+                    Password and authentication
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-5">
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="currentPassword"
+                    className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                    Current Password
+                  </Label>
+                  <Input
+                    id="currentPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    className="h-11 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-red-500 dark:focus:border-red-500 transition-colors"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="newPassword"
+                      className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                      New Password
+                    </Label>
+                    <Input
+                      id="newPassword"
+                      type="password"
+                      placeholder="••••••••"
+                      className="h-11 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-red-500 dark:focus:border-red-500 transition-colors"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="confirmPassword"
+                      className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                      Confirm Password
+                    </Label>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      placeholder="••••••••"
+                      className="h-11 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-red-500 dark:focus:border-red-500 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="relative group/2fa">
+                  <div className="flex items-center justify-between p-5 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100/50 dark:from-slate-800/50 dark:to-slate-900/50 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all">
+                    <div className="flex items-center gap-3">
+                      <Shield className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                      <div>
+                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                          Two-Factor Authentication
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5">
+                          Extra security layer
+                        </p>
+                      </div>
+                    </div>
+                    <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400 border-0">
+                      Not Enabled
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button
+                    variant="outline"
+                    className="h-10 px-6 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800">
+                    Cancel
+                  </Button>
+                  <Button className="h-10 px-6 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg shadow-red-500/20">
+                    Update Password
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Notifications Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}>
+          <div className="relative group">
+            <BorderBeam
+              size={200}
+              duration={8}
+              delay={4}
+              colorFrom="#8b5cf6"
+              colorTo="#a855f7"
+            />
+            <div className="relative bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-slate-200/50 dark:border-slate-800/50 p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg shadow-purple-500/20">
+                  <Bell className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    Notifications
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-500">
+                    How you receive updates
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <ToggleItem
+                  icon={<Bell className="h-5 w-5" />}
+                  title="All Notifications"
+                  description="Master control"
+                  checked={notificationsEnabled}
+                  onChange={() =>
+                    setNotificationsEnabled(!notificationsEnabled)
+                  }
+                />
+
+                <ToggleItem
+                  icon={<Mail className="h-5 w-5" />}
+                  title="Email"
+                  description="Updates via email"
+                  checked={emailNotifications}
+                  onChange={() => setEmailNotifications(!emailNotifications)}
+                  disabled={!notificationsEnabled}
+                />
+
+                <ToggleItem
+                  icon={<Smartphone className="h-5 w-5" />}
+                  title="SMS"
+                  description="Updates via text"
+                  checked={smsNotifications}
+                  onChange={() => setSmsNotifications(!smsNotifications)}
+                  disabled={!notificationsEnabled}
+                />
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Appearance & Actions Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Appearance */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}>
+            <NeonGradientCard
+              className="h-full"
+              borderSize={1}
+              borderRadius={16}
+              neonColors={{
+                firstColor: '#8B1538',
+                secondColor: '#B8264D',
+              }}>
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#8B1538] to-[#B8264D] shadow-lg shadow-[#8B1538]/20">
+                    <Palette className="h-5 w-5 text-white" />
+>>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
                   </div>
                   <div>
                     <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">

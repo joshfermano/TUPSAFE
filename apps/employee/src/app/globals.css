@@ -221,8 +221,8 @@
   --primary: oklch(0.55 0.22 15);
   --primary-foreground: oklch(0.985 0 0);
 
-  /* Secondary: Complementary Deep Blue */
-  --secondary: oklch(0.45 0.15 260);
+  /* Secondary: Complementary Red */
+  --secondary: oklch(0.45 0.18 15);
   --secondary-foreground: oklch(0.985 0 0);
 
   /* Muted: Subtle neutral grays */
@@ -269,8 +269,8 @@
   --primary: oklch(0.65 0.24 15);
   --primary-foreground: oklch(0.985 0 0);
 
-  /* Secondary: Complementary blue in dark mode */
-  --secondary: oklch(0.50 0.14 260);
+  /* Secondary: Complementary red in dark mode */
+  --secondary: oklch(0.50 0.18 15);
   --secondary-foreground: oklch(0.985 0 0);
 
   /* Muted: Dark neutral grays */
@@ -331,7 +331,7 @@
 
   /* TUP Manila Crimson Gradient Utilities */
   .bg-gradient-tup {
-    background: linear-gradient(135deg, oklch(0.55 0.22 15) 0%, oklch(0.45 0.15 260) 100%);
+    background: linear-gradient(135deg, oklch(0.55 0.22 15) 0%, oklch(0.40 0.18 15) 100%);
   }
 
   .bg-gradient-tup-soft {
@@ -339,7 +339,7 @@
   }
 
   .dark .bg-gradient-tup {
-    background: linear-gradient(135deg, oklch(0.65 0.24 15) 0%, oklch(0.50 0.14 260) 100%);
+    background: linear-gradient(135deg, oklch(0.65 0.24 15) 0%, oklch(0.50 0.20 15) 100%);
   }
 
   .dark .bg-gradient-tup-soft {

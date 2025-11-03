@@ -36,6 +36,7 @@ export function ProfileHero({ profile, department, position }: ProfileHeroProps)
   const fullName = `${profile.firstName} ${profile.middleName ? profile.middleName + ' ' : ''}${profile.lastName}`;
 
   return (
+<<<<<<< HEAD
     <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-[#093FB4] via-[#0066B3] to-[#0052A3] p-8 sm:p-10 text-white shadow-lg">
       {/* Subtle Shine Border Effect */}
       <ShineBorder
@@ -43,6 +44,36 @@ export function ProfileHero({ profile, department, position }: ProfileHeroProps)
         duration={10}
         shineColor={['#ffffff', '#0066B3', '#8B1538']}
         className="opacity-40"
+=======
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#8B1538] via-[##c73436] to-[#8B1538] p-8 sm:p-10 text-white shadow-2xl">
+      <BorderBeam size={280} duration={14} delay={0} colorFrom="#8B1538" colorTo="#c73436" />
+
+      {/* Animated Background Effects */}
+      <motion.div
+        className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"
+        animate={{
+          scale: [1, 1.2, 1],
+          opacity: [0.3, 0.5, 0.3],
+        }}
+        transition={{
+          duration: 8,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+      />
+      <motion.div
+        className="absolute bottom-0 left-0 w-48 h-48 bg-[#B8264D]/20 rounded-full blur-3xl"
+        animate={{
+          scale: [1, 1.3, 1],
+          opacity: [0.2, 0.4, 0.2],
+        }}
+        transition={{
+          duration: 6,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 0.5
+        }}
+>>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
       />
 
       {/* Clean Decorative Elements */}

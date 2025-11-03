@@ -43,7 +43,7 @@ const HeroSection = () => (
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="mb-6">
-          <Badge className="bg-[#093FB4]/10 text-[#093FB4] dark:bg-[#093FB4]/20 dark:text-blue-400 px-4 py-2 text-sm font-medium">
+          <Badge className="bg-[#8B1538]/10 text-[#8B1538] dark:bg-[#8B1538]/20 dark:text-red-400 px-4 py-2 text-sm font-medium">
             <Settings className="h-4 w-4 mr-2" />
             Research Feature
           </Badge>
@@ -76,14 +76,14 @@ const HeroSection = () => (
           className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button
             size="lg"
-            className="bg-[#093FB4] hover:bg-[#093FB4]/90 text-white px-8 py-4 text-lg">
+            className="bg-[#8B1538] hover:bg-[#8B1538]/90 text-white px-8 py-4 text-lg">
             View Research Implementation
             <Play className="ml-2 h-5 w-5" />
           </Button>
           <Button
             variant="outline"
             size="lg"
-            className="border-[#093FB4] text-[#093FB4] hover:bg-[#093FB4] hover:text-white px-8 py-4 text-lg">
+            className="border-[#8B1538] text-[#8B1538] hover:bg-[#8B1538] hover:text-white px-8 py-4 text-lg">
             Explore Study Components
             <Settings className="ml-2 h-5 w-5" />
           </Button>
@@ -273,7 +273,7 @@ const WorkflowTypesSection = () => {
   ];
 
   const colorClasses: Record<string, string> = {
-    blue: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
+    blue: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
     green:
       'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400',
     purple:
@@ -490,8 +490,8 @@ const ConfigurationSection = () => (
           viewport={{ once: true }}
           className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
           <div className="space-y-6">
-            <div className="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-500 text-white">
+            <div className="flex items-center gap-3 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+              <div className="flex h-8 w-8 items-center justify-center rounded bg-red-500 text-white">
                 <Play className="h-4 w-4" />
               </div>
               <div>
@@ -563,7 +563,7 @@ const CTASection = () => (
           <Button
             asChild
             size="lg"
-            className="bg-[#093FB4] hover:bg-[#093FB4]/90 text-white px-8 py-4">
+            className="bg-[#8B1538] hover:bg-[#8B1538]/90 text-white px-8 py-4">
             <Link href="/auth/signup">
               View Research Implementation
               <ArrowRight className="ml-2 h-5 w-5" />
@@ -573,7 +573,7 @@ const CTASection = () => (
             asChild
             variant="outline"
             size="lg"
-            className="border-[#093FB4] text-[#093FB4] hover:bg-[#093FB4] hover:text-white px-8 py-4">
+            className="border-[#8B1538] text-[#8B1538] hover:bg-[#8B1538] hover:text-white px-8 py-4">
             <Link href="/features">
               Explore Study Components
               <ArrowRight className="ml-2 h-5 w-5" />
@@ -587,7 +587,7 @@ const CTASection = () => (
             <span>Quick Setup</span>
           </div>
           <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-blue-500" />
+            <Shield className="h-4 w-4 text-red-500" />
             <span>Secure & Reliable</span>
           </div>
           <div className="flex items-center gap-2">

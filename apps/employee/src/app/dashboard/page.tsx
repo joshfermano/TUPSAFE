@@ -60,7 +60,7 @@ export default function DashboardPage() {
             ease: 'easeInOut',
           }}>
           <motion.div
-            className="absolute inset-0 rounded-full bg-gradient-to-br from-[#8B1538]/30 to-[#0066B3]/30 blur-2xl"
+            className="absolute inset-0 rounded-full bg-gradient-to-br from-[#8B1538]/30 to-[#B8264D]/30 blur-2xl"
             animate={{
               scale: [1, 1.3, 1],
               opacity: [0.5, 0.8, 0.5],
@@ -71,7 +71,7 @@ export default function DashboardPage() {
               ease: 'easeInOut',
             }}
           />
-          <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-[#8B1538] to-[#0066B3] shadow-2xl">
+          <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-[#8B1538] to-[#B8264D] shadow-2xl">
             <Sparkles className="h-12 w-12 text-white" />
           </div>
         </motion.div>

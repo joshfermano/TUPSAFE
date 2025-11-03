@@ -113,8 +113,12 @@ export default function ProfilePage() {
             shimmerSize="0.1em"
             shimmerDuration="2s"
             borderRadius="0.5rem"
+<<<<<<< HEAD
             background="linear-gradient(135deg, #093FB4 0%, #0066B3 100%)"
             className="group relative flex items-center gap-2 font-medium"
+=======
+            background="linear-gradient(135deg, #8B1538 0%, #B8264D 50%, #9A1E3D 100%)"
+>>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
           >
             <Edit className="h-4 w-4" />
             Edit Profile
@@ -248,6 +252,7 @@ export default function ProfilePage() {
           variants={blurFadeVariants}
           className="group relative"
         >
+<<<<<<< HEAD
           <div className="h-full p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5">
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#8B1538]/10 dark:bg-[#8B1538]/20 transition-colors">
@@ -264,6 +269,40 @@ export default function ProfilePage() {
                   <Eye className="h-4 w-4" />
                   View e-PDS
                 </button>
+=======
+          <NeonGradientCard
+            className="overflow-hidden hover:shadow-2xl transition-shadow duration-500"
+            borderSize={2}
+            borderRadius={16}
+            neonColors={{
+              firstColor: '#8B1538',
+              secondColor: '#B8264D',
+            }}
+          >
+            <div className="p-6 sm:p-8">
+              <div className="flex items-start gap-4">
+                <motion.div
+                  className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[#8B1538]/10 to-[#B8264D]/10 dark:from-[#8B1538]/20 dark:to-[#B8264D]/20 shadow-lg"
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                >
+                  <FileText className="h-7 w-7 text-[#8B1538] dark:text-[#8B1538]" />
+                </motion.div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                    Personal Data Sheet (e-PDS)
+                  </h3>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                    View and update your Personal Data Sheet information
+                  </p>
+                  <motion.div whileHover={{ x: 2 }} transition={{ duration: 0.2 }}>
+                    <Button variant="outline" className="w-full sm:w-auto group hover:border-[#8B1538] hover:bg-[#8B1538]/5 dark:hover:bg-[#8B1538]/10 transition-all duration-300">
+                      <Eye className="h-4 w-4 mr-2 group-hover:text-[#8B1538] transition-colors" />
+                      View e-PDS
+                    </Button>
+                  </motion.div>
+                </div>
+>>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
               </div>
             </div>
           </div>
@@ -277,6 +316,7 @@ export default function ProfilePage() {
           variants={blurFadeVariants}
           className="group relative"
         >
+<<<<<<< HEAD
           <div className="h-full p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5">
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#0066B3]/10 dark:bg-[#0066B3]/20 transition-colors">
@@ -293,6 +333,41 @@ export default function ProfilePage() {
                   <Eye className="h-4 w-4" />
                   View e-SALN
                 </button>
+=======
+          <NeonGradientCard
+            className="overflow-hidden hover:shadow-2xl transition-shadow duration-500"
+            borderSize={2}
+            borderRadius={16}
+            neonColors={{
+              firstColor: '#B8264D',
+              secondColor: '#004B87',
+            }}
+          >
+            <div className="p-6 sm:p-8">
+              <div className="flex items-start gap-4">
+                <motion.div
+                  className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[#B8264D]/10 to-[#9A1E3D]/10 dark:from-[#B8264D]/20 dark:to-[#9A1E3D]/20 shadow-lg"
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                >
+                  <Award className="h-7 w-7 text-[#B8264D] dark:text-[#B8264D]" />
+                </motion.div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                    Statement of Assets (e-SALN)
+                  </h3>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                    Manage your annual Statement of Assets, Liabilities, and Net
+                    Worth
+                  </p>
+                  <motion.div whileHover={{ x: 2 }} transition={{ duration: 0.2 }}>
+                    <Button variant="outline" className="w-full sm:w-auto group hover:border-[#B8264D] hover:bg-[#B8264D]/5 dark:hover:bg-[#B8264D]/10 transition-all duration-300">
+                      <Eye className="h-4 w-4 mr-2 group-hover:text-[#B8264D] transition-colors" />
+                      View e-SALN
+                    </Button>
+                  </motion.div>
+                </div>
+>>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
               </div>
             </div>
           </div>

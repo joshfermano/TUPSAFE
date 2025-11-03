@@ -143,7 +143,7 @@ export default function HeroSection() {
                 <span>Academic Research</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="h-1.5 w-1.5 rounded-full bg-[#0066B3]" />
+                <div className="h-1.5 w-1.5 rounded-full bg-[#0a76fa]" />
                 <span>TUP Manila Thesis</span>
               </div>
               <div className="flex items-center gap-2">

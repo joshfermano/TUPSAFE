@@ -28,7 +28,7 @@ function LoginContent() {
 
   if (loading) {
     return (
-      <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-red-50 to-blue-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-red-50 to-[#B8264D]/20 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
         <AnimatedGridPattern
           numSquares={30}
           maxOpacity={0.1}
@@ -47,7 +47,7 @@ function LoginContent() {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-red-50 to-blue-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 pt-24 pb-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
+    <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-red-50 to-[#B8264D]/20 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 pt-24 pb-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
       {/* Animated Background Grid Pattern */}
       <AnimatedGridPattern
         numSquares={50}
@@ -77,7 +77,7 @@ function LoginContent() {
           {/* Main Title */}
           <div className="space-y-3 sm:space-y-4">
             <AnimatedGradientText className="text-3xl sm:text-4xl lg:text-6xl font-bold">
-              <span className="bg-gradient-to-r from-[#8B1538] via-[#6B0F2A] to-blue-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#8B1538] via-[#6B0F2A] to-[#B8264D] bg-clip-text text-transparent">
                 TUPSAFE
               </span>
             </AnimatedGradientText>
@@ -164,7 +164,7 @@ function LoginContent() {
 
       {/* Decorative Elements */}
       <div className="absolute top-20 left-10 w-20 h-20 bg-[#8B1538]/20 rounded-full blur-xl"></div>
-      <div className="absolute bottom-20 right-10 w-32 h-32 bg-blue-400/20 rounded-full blur-xl"></div>
+      <div className="absolute bottom-20 right-10 w-32 h-32 bg-[#B8264D]/20 rounded-full blur-xl"></div>
       <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-[#8B1538]/20 rounded-full blur-lg"></div>
     </div>
   );
@@ -174,7 +174,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-red-50 to-blue-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+        <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-red-50 to-[#B8264D]/20 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#8B1538]/20 border-t-[#8B1538]"></div>
         </div>
       }>
