@@ -5,6 +5,8 @@ import React, {
   useContext,
   useEffect,
   useState,
+  useMemo,
+  useCallback,
   ReactNode,
 } from 'react';
 
@@ -54,44 +56,37 @@ const resolveTheme = (
   return theme === 'system' ? systemTheme : theme;
 };
 
-// Helper function to apply theme to DOM
+// Optimized theme application with RAF batching to prevent forced reflows
 const applyTheme = (
   resolvedTheme: ResolvedTheme,
   disableTransitionOnChange = false
 ) => {
-  const root = document.documentElement;
+  // Use requestAnimationFrame to batch all DOM mutations together
+  requestAnimationFrame(() => {
+    const root = document.documentElement;
 
-  // Disable transitions temporarily if specified
-  if (disableTransitionOnChange) {
-    const css = document.createElement('style');
-    css.appendChild(
-      document.createTextNode(
-        `*,*::before,*::after{-webkit-transition:none!important;-moz-transition:none!important;-o-transition:none!important;-ms-transition:none!important;transition:none!important}`
-      )
-    );
-    document.head.appendChild(css);
+    // Add transitioning class to disable transitions during theme change
+    if (disableTransitionOnChange) {
+      root.classList.add('theme-transitioning');
+    }
 
-    // Force reflow
-    (() => window.getComputedStyle(document.body))();
+    // Batch all DOM operations together to minimize reflows
+    root.classList.remove('light', 'dark');
+    root.classList.add(resolvedTheme);
+    root.setAttribute('data-theme', resolvedTheme);
+    root.style.colorScheme = resolvedTheme;
 
-    // Re-enable transitions after a short delay
-    setTimeout(() => {
-      document.head.removeChild(css);
-    }, 1);
-  }
-
-  // Apply theme class
-  root.classList.remove('light', 'dark');
-  root.classList.add(resolvedTheme);
-
-  // Set data attribute for additional styling hooks
-  root.setAttribute('data-theme', resolvedTheme);
-
-  // Set color scheme for native elements
-  root.style.colorScheme = resolvedTheme;
+    // Remove transitioning class after theme is applied
+    // Use RAF again to ensure this happens after paint
+    if (disableTransitionOnChange) {
+      requestAnimationFrame(() => {
+        root.classList.remove('theme-transitioning');
+      });
+    }
+  });
 };
 
-// Theme Provider Component
+// Theme Provider Component - Optimized with memoization
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   children,
   defaultTheme = 'system',
@@ -141,35 +136,44 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   useEffect(() => {
     if (!mounted) return;
 
-    const resolvedTheme = resolveTheme(theme, systemTheme);
-    applyTheme(resolvedTheme, disableTransitionOnChange);
+    const resolved = resolveTheme(theme, systemTheme);
+    applyTheme(resolved, disableTransitionOnChange);
   }, [theme, systemTheme, mounted, disableTransitionOnChange]);
 
-  // Set theme function
-  const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-    localStorage.setItem(storageKey, newTheme);
-  };
+  // Memoize setTheme function to prevent recreation on every render
+  const setTheme = useCallback(
+    (newTheme: Theme) => {
+      setThemeState(newTheme);
+      localStorage.setItem(storageKey, newTheme);
+    },
+    [storageKey]
+  );
 
-  // Toggle theme function
-  const toggleTheme = () => {
+  // Memoize toggleTheme function to prevent recreation on every render
+  const toggleTheme = useCallback(() => {
     const currentResolvedTheme = resolveTheme(theme, systemTheme);
     const newTheme: Theme = currentResolvedTheme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
-  };
+  }, [theme, systemTheme, setTheme]);
 
-  // Resolve current theme
-  const resolvedTheme = resolveTheme(theme, systemTheme);
+  // Memoize resolved theme to prevent recalculation on every render
+  const resolvedTheme = useMemo(
+    () => resolveTheme(theme, systemTheme),
+    [theme, systemTheme]
+  );
 
-  const value: ThemeConfig = {
-    theme,
-    resolvedTheme,
-    setTheme,
-    toggleTheme,
-    systemTheme,
-  };
+  // Memoize context value to prevent unnecessary re-renders of consumers
+  const value: ThemeConfig = useMemo(
+    () => ({
+      theme,
+      resolvedTheme,
+      setTheme,
+      toggleTheme,
+      systemTheme,
+    }),
+    [theme, resolvedTheme, setTheme, toggleTheme, systemTheme]
+  );
 
-  // Always provide context, but with loading state when not mounted
   return (
     <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
   );
@@ -195,7 +199,7 @@ export const ThemeScript = () => {
         const theme = localStorage.getItem(storageKey) || 'system';
         const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         const resolvedTheme = theme === 'system' ? systemTheme : theme;
-        
+
         document.documentElement.classList.add(resolvedTheme);
         document.documentElement.setAttribute('data-theme', resolvedTheme);
         document.documentElement.style.colorScheme = resolvedTheme;

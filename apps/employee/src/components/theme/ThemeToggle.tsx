@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { Moon, Sun, Monitor } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 
@@ -11,25 +11,26 @@ interface ThemeToggleProps {
   className?: string;
 }
 
-export const ThemeToggle: React.FC<ThemeToggleProps> = ({
+export const ThemeToggle: React.FC<ThemeToggleProps> = memo(function ThemeToggle({
   variant = 'button',
   size = 'md',
   showLabel = false,
   className = '',
-}) => {
+}) {
   const { theme, setTheme, resolvedTheme, toggleTheme } = useTheme();
 
-  const sizeClasses = {
+  // Memoize size configurations to prevent recreation on every render
+  const sizeClasses = useMemo(() => ({
     sm: 'h-8 w-8 text-sm',
     md: 'h-10 w-10 text-base',
     lg: 'h-12 w-12 text-lg',
-  };
+  }), []);
 
-  const iconSize = {
+  const iconSize = useMemo(() => ({
     sm: 16,
     md: 20,
     lg: 24,
-  };
+  }), []);
 
   if (variant === 'minimal') {
     return (
@@ -131,6 +132,6 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
       </div>
     </div>
   );
-};
+});
 
 export default ThemeToggle;

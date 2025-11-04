@@ -36,7 +36,7 @@ export const ThemeDemo: React.FC = () => {
           </h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             A comprehensive theme system for the TUPM e-PDS and
-            e-SALN compliance platform. Features TUP's Red (#8B1538)
+            e-SALN compliance platform. Features TUP&apos;s Red (#8B1538)
             branding, accessibility compliance, and seamless dark mode support.
           </p>
         </div>

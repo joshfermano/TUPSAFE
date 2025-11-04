@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useAuth, useProfile } from '@tupsafe/mock-data/api';
 import { ProfileHero } from '@/components/dashboard/ProfileHero';
 import { InfoCard, InfoItem } from '@/components/dashboard/InfoCard';
@@ -24,21 +25,21 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
-// Animation variants for blur-fade effect
-const blurFadeVariants = {
+// Animation variants for blur-fade effect - extracted outside component to prevent recreation
+const BLUR_FADE_VARIANTS = {
   hidden: {
     opacity: 0,
     y: 10,
-    filter: 'blur(4px)' as const
+    filter: 'blur(4px)'
   },
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    filter: 'blur(0px)' as const,
+    filter: 'blur(0px)',
     transition: {
       duration: 0.4,
       delay: i * 0.05,
-      ease: [0.4, 0, 0.2, 1] as const,
+      ease: [0.4, 0, 0.2, 1] as [number, number, number, number],
     },
   }),
 };
@@ -49,11 +50,23 @@ export default function ProfilePage() {
     user?.id || ''
   );
 
+  // Memoize memberSince calculation - MUST be before conditional returns to maintain hook order
+  const memberSince = useMemo(
+    () =>
+      profile?.createdAt
+        ? new Date(profile.createdAt).toLocaleDateString('en-US', {
+            month: 'long',
+            year: 'numeric',
+          })
+        : '',
+    [profile?.createdAt]
+  );
+
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-[#093FB4]"></div>
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-primary"></div>
           <p className="text-sm text-slate-600 dark:text-slate-400">
             Loading profile...
           </p>
@@ -78,11 +91,6 @@ export default function ProfilePage() {
     );
   }
 
-  const memberSince = new Date(profile.createdAt).toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric',
-  });
-
   return (
     <div className="space-y-8 pb-8">
       {/* Page Header */}
@@ -91,13 +99,13 @@ export default function ProfilePage() {
         custom={0}
         initial="hidden"
         animate="visible"
-        variants={blurFadeVariants}
+        variants={BLUR_FADE_VARIANTS}
       >
         <div>
           <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100">
             <AnimatedGradientText
-              colorFrom="#093FB4"
-              colorTo="#0066B3"
+              colorFrom="var(--primary)"
+              colorTo="var(--tup-crimson-light)"
               speed={1.5}
             >
               My Profile
@@ -109,16 +117,12 @@ export default function ProfilePage() {
         </div>
         <Link href={`/dashboard/profile/edit/${user?.id}`}>
           <ShimmerButton
-            shimmerColor="#0066B3"
+            shimmerColor="#ffffff"
             shimmerSize="0.1em"
             shimmerDuration="2s"
             borderRadius="0.5rem"
-<<<<<<< HEAD
-            background="linear-gradient(135deg, #093FB4 0%, #0066B3 100%)"
-            className="group relative flex items-center gap-2 font-medium"
-=======
-            background="linear-gradient(135deg, #8B1538 0%, #B8264D 50%, #9A1E3D 100%)"
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
+            background="linear-gradient(135deg, oklch(0.55 0.22 15) 0%, oklch(0.40 0.18 15) 100%)"
+            className="group relative flex items-center gap-2 font-medium text-white dark:text-white shadow-lg hover:shadow-xl transition-shadow"
           >
             <Edit className="h-4 w-4" />
             Edit Profile
@@ -131,7 +135,7 @@ export default function ProfilePage() {
         custom={1}
         initial="hidden"
         animate="visible"
-        variants={blurFadeVariants}
+        variants={BLUR_FADE_VARIANTS}
       >
         <ProfileHero
           profile={profile}
@@ -147,7 +151,7 @@ export default function ProfilePage() {
           custom={2}
           initial="hidden"
           animate="visible"
-          variants={blurFadeVariants}
+          variants={BLUR_FADE_VARIANTS}
         >
           <InfoCard title="Personal Information" icon={User} gradient>
             <div className="space-y-3">
@@ -176,7 +180,7 @@ export default function ProfilePage() {
           custom={3}
           initial="hidden"
           animate="visible"
-          variants={blurFadeVariants}
+          variants={BLUR_FADE_VARIANTS}
         >
           <InfoCard title="Employment Details" icon={Briefcase}>
             <div className="space-y-3">
@@ -203,7 +207,7 @@ export default function ProfilePage() {
           custom={4}
           initial="hidden"
           animate="visible"
-          variants={blurFadeVariants}
+          variants={BLUR_FADE_VARIANTS}
         >
           <InfoCard title="Account Status" icon={Shield}>
             <div className="space-y-3">
@@ -249,14 +253,13 @@ export default function ProfilePage() {
           custom={5}
           initial="hidden"
           animate="visible"
-          variants={blurFadeVariants}
+          variants={BLUR_FADE_VARIANTS}
           className="group relative"
         >
-<<<<<<< HEAD
           <div className="h-full p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5">
             <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#8B1538]/10 dark:bg-[#8B1538]/20 transition-colors">
-                <FileText className="h-6 w-6 text-[#8B1538]" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 dark:bg-primary/20 transition-colors">
+                <FileText className="h-6 w-6 text-primary" />
               </div>
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
@@ -265,44 +268,10 @@ export default function ProfilePage() {
                 <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
                   View and update your Personal Data Sheet information
                 </p>
-                <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#8B1538] bg-[#8B1538]/5 hover:bg-[#8B1538]/10 dark:bg-[#8B1538]/10 dark:hover:bg-[#8B1538]/20 rounded-lg transition-colors">
+                <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary hover:text-primary-foreground bg-primary/5 hover:bg-primary/90 dark:text-primary dark:hover:text-primary-foreground dark:bg-primary/10 dark:hover:bg-primary/80 border border-primary/20 dark:border-primary/30 rounded-lg transition-all duration-200">
                   <Eye className="h-4 w-4" />
                   View e-PDS
                 </button>
-=======
-          <NeonGradientCard
-            className="overflow-hidden hover:shadow-2xl transition-shadow duration-500"
-            borderSize={2}
-            borderRadius={16}
-            neonColors={{
-              firstColor: '#8B1538',
-              secondColor: '#B8264D',
-            }}
-          >
-            <div className="p-6 sm:p-8">
-              <div className="flex items-start gap-4">
-                <motion.div
-                  className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[#8B1538]/10 to-[#B8264D]/10 dark:from-[#8B1538]/20 dark:to-[#B8264D]/20 shadow-lg"
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                >
-                  <FileText className="h-7 w-7 text-[#8B1538] dark:text-[#8B1538]" />
-                </motion.div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                    Personal Data Sheet (e-PDS)
-                  </h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                    View and update your Personal Data Sheet information
-                  </p>
-                  <motion.div whileHover={{ x: 2 }} transition={{ duration: 0.2 }}>
-                    <Button variant="outline" className="w-full sm:w-auto group hover:border-[#8B1538] hover:bg-[#8B1538]/5 dark:hover:bg-[#8B1538]/10 transition-all duration-300">
-                      <Eye className="h-4 w-4 mr-2 group-hover:text-[#8B1538] transition-colors" />
-                      View e-PDS
-                    </Button>
-                  </motion.div>
-                </div>
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
               </div>
             </div>
           </div>
@@ -313,14 +282,13 @@ export default function ProfilePage() {
           custom={6}
           initial="hidden"
           animate="visible"
-          variants={blurFadeVariants}
+          variants={BLUR_FADE_VARIANTS}
           className="group relative"
         >
-<<<<<<< HEAD
           <div className="h-full p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5">
             <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#0066B3]/10 dark:bg-[#0066B3]/20 transition-colors">
-                <Award className="h-6 w-6 text-[#0066B3]" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-secondary/10 dark:bg-secondary/20 transition-colors">
+                <Award className="h-6 w-6 text-secondary" />
               </div>
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
@@ -329,45 +297,10 @@ export default function ProfilePage() {
                 <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
                   Manage your annual Statement of Assets, Liabilities, and Net Worth
                 </p>
-                <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#0066B3] bg-[#0066B3]/5 hover:bg-[#0066B3]/10 dark:bg-[#0066B3]/10 dark:hover:bg-[#0066B3]/20 rounded-lg transition-colors">
+                <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-secondary hover:text-primary-foreground bg-secondary/5 hover:bg-secondary/90 dark:text-secondary dark:hover:text-primary-foreground dark:bg-secondary/10 dark:hover:bg-secondary/80 border border-secondary/20 dark:border-secondary/30 rounded-lg transition-all duration-200">
                   <Eye className="h-4 w-4" />
                   View e-SALN
                 </button>
-=======
-          <NeonGradientCard
-            className="overflow-hidden hover:shadow-2xl transition-shadow duration-500"
-            borderSize={2}
-            borderRadius={16}
-            neonColors={{
-              firstColor: '#B8264D',
-              secondColor: '#004B87',
-            }}
-          >
-            <div className="p-6 sm:p-8">
-              <div className="flex items-start gap-4">
-                <motion.div
-                  className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[#B8264D]/10 to-[#9A1E3D]/10 dark:from-[#B8264D]/20 dark:to-[#9A1E3D]/20 shadow-lg"
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                >
-                  <Award className="h-7 w-7 text-[#B8264D] dark:text-[#B8264D]" />
-                </motion.div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                    Statement of Assets (e-SALN)
-                  </h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                    Manage your annual Statement of Assets, Liabilities, and Net
-                    Worth
-                  </p>
-                  <motion.div whileHover={{ x: 2 }} transition={{ duration: 0.2 }}>
-                    <Button variant="outline" className="w-full sm:w-auto group hover:border-[#B8264D] hover:bg-[#B8264D]/5 dark:hover:bg-[#B8264D]/10 transition-all duration-300">
-                      <Eye className="h-4 w-4 mr-2 group-hover:text-[#B8264D] transition-colors" />
-                      View e-SALN
-                    </Button>
-                  </motion.div>
-                </div>
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
               </div>
             </div>
           </div>
@@ -380,7 +313,7 @@ export default function ProfilePage() {
           custom={7}
           initial="hidden"
           animate="visible"
-          variants={blurFadeVariants}
+          variants={BLUR_FADE_VARIANTS}
         >
           <InfoCard
             title="Department Information"

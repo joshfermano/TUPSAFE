@@ -29,7 +29,6 @@ import { MagicCard } from '@/components/ui/magic-card';
 import { NeonGradientCard } from '@/components/ui/neon-gradient-card';
 import Link from 'next/link';
 
-
 const HeroSection = () => (
   <section className="relative overflow-hidden bg-gradient-to-br from-[#8B1538]/5 via-white to-[#B8264D]/5 dark:from-gray-950 dark:via-gray-900 dark:to-[#8B1538]/20 pt-32 pb-20">
     {/* Background Pattern */}
@@ -61,10 +60,10 @@ const HeroSection = () => (
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
           className="mb-8 text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
-          Academic research implementation of an AI-powered compliance assistant 
-          for government use. This thesis project demonstrates how artificial intelligence 
-          can support policy guidance, form completion assistance, and regulatory compliance 
-          for Philippine civil service applications.
+          Academic research implementation of an AI-powered compliance assistant
+          for government use. This thesis project demonstrates how artificial
+          intelligence can support policy guidance, form completion assistance,
+          and regulatory compliance for Philippine civil service applications.
         </motion.p>
 
         <motion.div
@@ -182,8 +181,9 @@ const KeyFeaturesSection = () => {
             Research AI Implementation Features
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Academic prototype demonstrating AI capabilities specifically designed 
-            for Philippine government compliance research and digital governance studies.
+            Academic prototype demonstrating AI capabilities specifically
+            designed for Philippine government compliance research and digital
+            governance studies.
           </p>
         </motion.div>
 
@@ -283,8 +283,9 @@ const UseCasesSection = () => {
             Research Use Cases for AI Assistance
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Academic study of how AI assistance can support common government 
-            compliance scenarios and regulatory questions in Philippine civil service.
+            Academic study of how AI assistance can support common government
+            compliance scenarios and regulatory questions in Philippine civil
+            service.
           </p>
         </motion.div>
 
@@ -380,8 +381,9 @@ const AICapabilitiesSection = () => {
             Research AI Technology Implementation
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Thesis research demonstrating advanced artificial intelligence implementation 
-            specifically designed for Philippine government compliance and regulatory assistance.
+            Thesis research demonstrating advanced artificial intelligence
+            implementation specifically designed for Philippine government
+            compliance and regulatory assistance.
           </p>
         </motion.div>
 
@@ -534,9 +536,9 @@ const CTASection = () => (
           Thesis Research on AI-Powered Government Assistance
         </h2>
         <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
-          This academic prototype demonstrates the potential future of government 
-          compliance assistance through AI technology, supporting the Digital 
-          Philippines agenda and government modernization research.
+          This academic prototype demonstrates the potential future of
+          government compliance assistance through AI technology, supporting the
+          Digital Philippines agenda and government modernization research.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">

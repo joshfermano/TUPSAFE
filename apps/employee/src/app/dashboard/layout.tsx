@@ -102,27 +102,15 @@ const UserInfo = memo<UserInfoProps>(({ email, initials, prefersReducedMotion })
         transition: { duration: 0.4, ease: 'easeOut' }
       })}
     >
-<<<<<<< HEAD
       <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50/50 dark:bg-slate-800/30 border border-slate-200/50 dark:border-slate-700/30 transition-all duration-300 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 hover:border-[#093FB4]/20 dark:hover:border-[#093FB4]/30">
-=======
-      <div className="relative flex items-center gap-3 p-3 rounded-lg bg-gradient-to-br from-slate-50/80 to-slate-100/80 dark:from-slate-800/50 dark:to-slate-900/50 border border-slate-200/50 dark:border-slate-700/50 overflow-hidden transition-all duration-300 group-hover:border-[#8B1538]/30 group-hover:shadow-lg group-hover:shadow-[#8B1538]/10">
-        {/* Shimmer overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#8B1538]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-shimmer" />
-
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
         <motion.div
           {...getAnimationProps(prefersReducedMotion, {
             whileHover: { scale: 1.05 },
             transition: { duration: 0.2 }
           })}
         >
-<<<<<<< HEAD
-          <Avatar className="h-10 w-10 ring-2 ring-slate-200 dark:ring-slate-700 transition-all duration-300 group-hover:ring-[#093FB4]/30">
-            <AvatarFallback className="bg-[#093FB4] text-white font-semibold text-sm">
-=======
-          <Avatar className="h-10 w-10 border-2 border-[#8B1538]/20 group-hover:border-[#8B1538]/40 transition-colors duration-300">
-            <AvatarFallback className="bg-gradient-to-br from-[#8B1538] to-[#B8264D] text-white font-semibold">
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
+          <Avatar className="h-10 w-10 ring-2 ring-slate-200 dark:ring-slate-700 transition-all duration-300 group-hover:ring-primary/30">
+            <AvatarFallback className="bg-primary text-white font-semibold text-sm">
               {initials}
             </AvatarFallback>
           </Avatar>
@@ -161,57 +149,19 @@ const NavItem = memo<NavItemProps>(({ item, isActive, onClick, prefersReducedMot
       className={cn(
         "relative w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 group",
         isActive
-          ? "bg-[#093FB4] text-white shadow-sm shadow-[#093FB4]/20"
+          ? "bg-primary text-white shadow-sm shadow-primary/20"
           : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100"
       )}
     >
-<<<<<<< HEAD
       <Icon
         className={cn(
           "h-5 w-5 transition-all duration-300",
           isActive
             ? "text-white"
-            : "text-slate-500 dark:text-slate-400 group-hover:text-[#093FB4] dark:group-hover:text-[#093FB4]"
+            : "text-slate-500 dark:text-slate-400 group-hover:text-primary dark:group-hover:text-primary"
         )}
       />
       <span className="flex-1 text-left">{item.name}</span>
-=======
-      {/* Active state static gradient background - removed infinite animation */}
-      {isActive && (
-        <div className="absolute inset-0 bg-gradient-to-r from-[#8B1538] via-[#B8264D] to-[#8B1538]" />
-      )}
-
-      {/* Hover glow effect */}
-      {!isActive && (
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-[#8B1538]/5 via-[#B8264D]/10 to-[#8B1538]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-        />
-      )}
-
-      {/* Hover border glow */}
-      <motion.div
-        className="absolute inset-0 rounded-lg border-2 border-transparent group-hover:border-[#8B1538]/20 transition-colors duration-300"
-      />
-
-      <motion.div
-        {...getAnimationProps(prefersReducedMotion, {
-          whileHover: { rotate: isActive ? 0 : 5, scale: 1.1 },
-          transition: { type: "spring", stiffness: 400, damping: 10 }
-        })}
-        className="relative z-10"
-      >
-        <Icon
-          className={cn(
-            "h-5 w-5 transition-all duration-300",
-            isActive
-              ? "text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]"
-              : "text-slate-500 dark:text-slate-400 group-hover:text-[#8B1538] dark:group-hover:text-[#B8264D]"
-          )}
-        />
-      </motion.div>
-
-      <span className="relative flex-1 text-left z-10">{item.name}</span>
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
 
       {isActive && (
         <motion.div
@@ -230,7 +180,7 @@ NavItem.displayName = 'NavItem';
 // MAIN COMPONENTS
 // ============================================================================
 
-function DashboardSidebar({ className }: DashboardSidebarProps) {
+const DashboardSidebar = memo(function DashboardSidebar({ className }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, signOut } = useAuth();
@@ -282,45 +232,12 @@ function DashboardSidebar({ className }: DashboardSidebarProps) {
 
   return (
     <div className={cn("relative flex h-full flex-col", className)}>
-<<<<<<< HEAD
       {/* Clean white/dark background with subtle border */}
       <div className="relative z-10 flex h-full flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
 
         {/* Sidebar Header - Clean and Simple */}
         <div className="flex flex-col gap-4 p-6 border-b border-slate-200 dark:border-slate-800">
           {/* Logo - Minimalistic with single accent color */}
-=======
-      {/* ShineBorder effect wrapper - kept as it's lightweight */}
-      <div className="absolute inset-0 pointer-events-none">
-        <ShineBorder
-          borderWidth={2}
-          duration={12}
-          shineColor={["#8B1538", "#B8264D", "#8B1538"]}
-          className="!rounded-none"
-        />
-      </div>
-
-      {/* Particles background - reduced from 30 to 15 for better performance */}
-      {!prefersReducedMotion && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <Particles
-            className="absolute inset-0"
-            quantity={15}
-            ease={80}
-            color="#8B1538"
-            size={0.5}
-            staticity={50}
-            refresh={false}
-          />
-        </div>
-      )}
-
-      {/* Main sidebar content with glassmorphism */}
-      <div className="relative z-10 flex h-full flex-col bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-r border-slate-200/50 dark:border-slate-800/50">
-        {/* Sidebar Header */}
-        <div className="flex flex-col gap-4 p-6 border-b border-slate-200/50 dark:border-slate-800/50">
-          {/* Logo with shimmer effect */}
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
           <motion.div
             className="flex items-center gap-3"
             {...getAnimationProps(prefersReducedMotion, {
@@ -329,27 +246,11 @@ function DashboardSidebar({ className }: DashboardSidebarProps) {
               transition: { duration: 0.5, ease: 'easeOut' }
             })}
           >
-<<<<<<< HEAD
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#093FB4] shadow-sm">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-sm">
               <LayoutDashboard className="h-5 w-5 text-white" />
             </div>
             <div className="flex flex-col">
               <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-=======
-            <motion.div
-              className="relative flex h-10 w-10 items-center justify-center rounded-lg overflow-hidden"
-              {...getAnimationProps(prefersReducedMotion, {
-                whileHover: { scale: 1.05 },
-                transition: { type: "spring", stiffness: 400, damping: 10 }
-              })}
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-[#8B1538] via-[#B8264D] to-[#6B0F2A]" />
-              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/10 to-transparent animate-shimmer" />
-              <LayoutDashboard className="relative h-5 w-5 text-white z-10" />
-            </motion.div>
-            <div className="flex flex-col">
-              <AnimatedShinyText className="text-lg font-bold !mx-0 !max-w-none bg-gradient-to-r from-[#8B1538] via-[#B8264D] to-[#8B1538] bg-clip-text text-transparent">
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
                 TUPSAFE
               </h1>
               <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -412,7 +313,7 @@ function DashboardSidebar({ className }: DashboardSidebarProps) {
       </div>
     </div>
   );
-}
+});
 
 export default function DashboardLayout({
   children,
@@ -441,13 +342,8 @@ export default function DashboardLayout({
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-900">
         <div className="flex flex-col items-center gap-4">
-<<<<<<< HEAD
-          <div className="h-10 w-10 animate-spin rounded-full border-3 border-slate-200 dark:border-slate-700 border-t-[#093FB4]"></div>
+          <div className="h-10 w-10 animate-spin rounded-full border-3 border-slate-200 dark:border-slate-700 border-t-primary"></div>
           <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Loading dashboard...</p>
-=======
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-red-200 border-t-red-600"></div>
-          <p className="text-sm text-slate-600 dark:text-slate-400">Loading dashboard...</p>
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
         </div>
       </div>
     );

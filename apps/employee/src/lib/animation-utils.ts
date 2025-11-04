@@ -19,7 +19,10 @@
  * <Particles quantity={particleCount} />
  * ```
  */
-export const getParticleCount = (baseCount: number, isMobile = false): number => {
+export const getParticleCount = (
+  baseCount: number,
+  isMobile = false
+): number => {
   if (isMobile) {
     // Reduce to 30% on mobile for better performance
     return Math.floor(baseCount * 0.3);
@@ -91,7 +94,10 @@ export const shouldAnimate = (reducedMotion: boolean): boolean => {
  * />
  * ```
  */
-export const getAnimationDuration = (baseDuration: number, reducedMotion: boolean): number => {
+export const getAnimationDuration = (
+  baseDuration: number,
+  reducedMotion: boolean
+): number => {
   return reducedMotion ? 0 : baseDuration;
 };
 
