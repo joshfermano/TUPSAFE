@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ShineBorder } from '@/components/ui/shine-border';
@@ -13,7 +14,17 @@ interface ProfileHeroProps {
   position: Position | null;
 }
 
-export function ProfileHero({ profile, department, position }: ProfileHeroProps) {
+// Static constants extracted outside component to prevent recreation on every render
+const ROLE_BADGE_COLORS: Record<string, string> = {
+  admin: 'bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400',
+  hr: 'bg-tup-crimson-subtle text-primary dark:bg-primary/30 dark:text-tup-crimson-light',
+  supervisor: 'bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400',
+  default: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+} as const;
+
+const SHINE_COLORS: string[] = ['#ffffff', 'var(--tup-crimson-light)', 'var(--tup-crimson-dark)'];
+
+export const ProfileHero = memo(function ProfileHero({ profile, department, position }: ProfileHeroProps) {
   const getInitials = () => {
     const firstInitial = profile.firstName?.[0]?.toUpperCase() || '';
     const lastInitial = profile.lastName?.[0]?.toUpperCase() || '';
@@ -21,64 +32,24 @@ export function ProfileHero({ profile, department, position }: ProfileHeroProps)
   };
 
   const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return 'bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400';
-      case 'hr':
-        return 'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400';
-      case 'supervisor':
-        return 'bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400';
-      default:
-        return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
-    }
+    return ROLE_BADGE_COLORS[role] || ROLE_BADGE_COLORS.default;
   };
 
   const fullName = `${profile.firstName} ${profile.middleName ? profile.middleName + ' ' : ''}${profile.lastName}`;
 
   return (
-<<<<<<< HEAD
-    <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-[#093FB4] via-[#0066B3] to-[#0052A3] p-8 sm:p-10 text-white shadow-lg">
+    <div className="relative overflow-hidden rounded-xl bg-gradient-tup p-8 sm:p-10 text-white shadow-lg">
       {/* Subtle Shine Border Effect */}
       <ShineBorder
         borderWidth={2}
         duration={10}
-        shineColor={['#ffffff', '#0066B3', '#8B1538']}
+        shineColor={SHINE_COLORS}
         className="opacity-40"
-=======
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#8B1538] via-[##c73436] to-[#8B1538] p-8 sm:p-10 text-white shadow-2xl">
-      <BorderBeam size={280} duration={14} delay={0} colorFrom="#8B1538" colorTo="#c73436" />
-
-      {/* Animated Background Effects */}
-      <motion.div
-        className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"
-        animate={{
-          scale: [1, 1.2, 1],
-          opacity: [0.3, 0.5, 0.3],
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-      />
-      <motion.div
-        className="absolute bottom-0 left-0 w-48 h-48 bg-[#B8264D]/20 rounded-full blur-3xl"
-        animate={{
-          scale: [1, 1.3, 1],
-          opacity: [0.2, 0.4, 0.2],
-        }}
-        transition={{
-          duration: 6,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay: 0.5
-        }}
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
       />
 
       {/* Clean Decorative Elements */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-      <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#8B1538]/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2"></div>
+      <div className="absolute bottom-0 left-0 w-48 h-48 bg-primary/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2"></div>
 
       {/* Content */}
       <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-6">
@@ -131,4 +102,4 @@ export function ProfileHero({ profile, department, position }: ProfileHeroProps)
       </div>
     </div>
   );
-}
+});

@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, memo, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
+import { useAuth, usePds } from '@tupsafe/mock-data/api';
 import { InfoCard } from '@/components/dashboard/InfoCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
 import { ShimmerButton } from '@/components/ui/shimmer-button';
 import { MagicCard } from '@/components/ui/magic-card';
 import { cn } from '@/lib/utils';
@@ -28,17 +29,11 @@ import {
   Edit,
   Send,
   TrendingUp,
+  Archive,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-// Mock Data Types
-interface PDSStatus {
-  completionPercentage: number;
-  lastUpdated: Date;
-  status: 'draft' | 'submitted' | 'approved' | 'rejected';
-  hasSubmitted: boolean;
-}
-
+// Section interface for UI display
 interface PDSSection {
   id: string;
   title: string;
@@ -56,15 +51,8 @@ interface ActivityItem {
   type: 'create' | 'update' | 'submit' | 'approve';
 }
 
-// Mock Data
-const mockPDSStatus: PDSStatus = {
-  completionPercentage: 85,
-  lastUpdated: new Date('2025-10-10'),
-  status: 'draft',
-  hasSubmitted: true,
-};
-
-const mockPDSSections: PDSSection[] = [
+// Mock sections data for UI display
+const MOCK_PDS_SECTIONS: PDSSection[] = [
   {
     id: 'personal-info',
     title: 'Personal Information',
@@ -107,7 +95,7 @@ const mockPDSSections: PDSSection[] = [
   },
 ];
 
-const mockRecentActivity: ActivityItem[] = [
+const MOCK_RECENT_ACTIVITY: ActivityItem[] = [
   {
     id: '1',
     action: 'Updated Educational Background',
@@ -130,74 +118,9 @@ const mockRecentActivity: ActivityItem[] = [
   },
 ];
 
-export default function PDSPage() {
-  const [pdsStatus] = useState<PDSStatus>(mockPDSStatus);
-  const [pdsSections] = useState<PDSSection[]>(mockPDSSections);
-  const [recentActivity] = useState<ActivityItem[]>(mockRecentActivity);
-
-  const hasExistingPDS = pdsStatus.hasSubmitted;
-
-  const getStatusBadge = (status: PDSStatus['status']) => {
-    const variants = {
-      draft: {
-        variant: 'secondary' as const,
-        icon: Clock,
-        label: 'Draft',
-        className:
-          'bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400',
-      },
-      submitted: {
-        variant: 'default' as const,
-        icon: Send,
-        label: 'Submitted',
-        className:
-          'bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400',
-      },
-      approved: {
-        variant: 'default' as const,
-        icon: CheckCircle2,
-        label: 'Approved',
-        className:
-          'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400',
-      },
-      rejected: {
-        variant: 'destructive' as const,
-        icon: AlertCircle,
-        label: 'Rejected',
-        className: '',
-      },
-    };
-
-    const config = variants[status];
-    const IconComponent = config.icon;
-
-    return (
-      <Badge
-        variant={config.variant}
-        className={cn('font-semibold', config.className)}>
-        <IconComponent className="h-3 w-3 mr-1" />
-        {config.label}
-      </Badge>
-    );
-  };
-
-  const getActivityIcon = (type: ActivityItem['type']) => {
-    switch (type) {
-      case 'create':
-        return Plus;
-      case 'update':
-        return Edit;
-      case 'submit':
-        return Send;
-      case 'approve':
-        return CheckCircle2;
-      default:
-        return FileText;
-    }
-  };
-
-  // Empty State Component
-  const EmptyState = () => (
+// Memoized EmptyState component to prevent unnecessary re-renders
+const EmptyState = memo(function EmptyState() {
+  return (
     <div className="relative min-h-[70vh] flex items-center justify-center bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
       <motion.div
         className="max-w-2xl mx-auto text-center space-y-8 p-8"
@@ -210,24 +133,15 @@ export default function PDSPage() {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}>
           <motion.div
-<<<<<<< HEAD
-            className="absolute inset-0 rounded-full bg-gradient-to-br from-[#093FB4]/20 to-[#0066B3]/20 blur-2xl"
-=======
-            className="absolute inset-0 rounded-full bg-gradient-to-br from-[#B8264D]/20 to-[#8B1538]/20 blur-2xl"
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
+            className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/20 to-tup-crimson-light/20 blur-2xl"
             animate={{
               scale: [1, 1.2, 1],
               opacity: [0.5, 0.8, 0.5],
             }}
             transition={{ duration: 3, repeat: Infinity }}
           />
-<<<<<<< HEAD
-          <div className="relative flex items-center justify-center w-full h-full rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-950/60 dark:to-indigo-950/60">
-            <FileText className="h-16 w-16 text-[#093FB4] dark:text-blue-400" />
-=======
-          <div className="relative flex items-center justify-center w-full h-full rounded-full bg-gradient-to-br from-[#B8264D]/30 to-[#8B1538]/30 dark:from-[#B8264D]/40 dark:to-[#8B1538]/40">
-            <FileText className="h-16 w-16 text-[#B8264D] dark:text-[#B8264D]" />
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
+          <div className="relative flex items-center justify-center w-full h-full rounded-full bg-gradient-to-br from-tup-crimson-subtle to-tup-crimson-subtle dark:from-primary/60 dark:to-tup-crimson-dark/60">
+            <FileText className="h-16 w-16 text-primary dark:text-tup-crimson-light" />
           </div>
         </motion.div>
 
@@ -269,24 +183,137 @@ export default function PDSPage() {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.8 }}>
-          <ShimmerButton
-            className="shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-6 text-base"
-            shimmerColor="#ffffff"
-            shimmerSize="0.08em"
-            shimmerDuration="3s"
-            borderRadius="0.75rem"
-<<<<<<< HEAD
-            background="linear-gradient(135deg, #093FB4 0%, #0066B3 100%)">
-=======
-            background="linear-gradient(135deg, #8B1538 0%, #B8264D 50%, #9A1E3D 100%)">
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
-            <Plus className="h-5 w-5 mr-2" />
-            Create Your First PDS
-          </ShimmerButton>
+          <Link href="/dashboard/pds/create">
+            <ShimmerButton
+              className="shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-6 text-base text-white dark:text-white font-semibold"
+              shimmerColor="#ffffff"
+              shimmerSize="0.08em"
+              shimmerDuration="3s"
+              borderRadius="0.75rem"
+              background="linear-gradient(135deg, oklch(0.55 0.22 15) 0%, oklch(0.40 0.18 15) 100%)">
+              <Plus className="h-5 w-5 mr-2" />
+              Create Your First PDS
+            </ShimmerButton>
+          </Link>
         </motion.div>
       </motion.div>
     </div>
   );
+});
+
+export default function PDSPage() {
+  const { user } = useAuth();
+  const { submissions, latest, loading, error } = usePds(user?.id || '');
+
+  const hasExistingPDS = submissions.length > 0;
+
+  const getStatusBadge = useCallback((status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'reviewing'): React.ReactNode => {
+    const variants = {
+      draft: {
+        variant: 'secondary' as const,
+        icon: Clock,
+        label: 'Draft',
+        className:
+          'bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400',
+      },
+      submitted: {
+        variant: 'default' as const,
+        icon: Send,
+        label: 'Submitted',
+        className:
+          'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400',
+      },
+      reviewing: {
+        variant: 'default' as const,
+        icon: Eye,
+        label: 'Under Review',
+        className:
+          'bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400',
+      },
+      approved: {
+        variant: 'default' as const,
+        icon: CheckCircle2,
+        label: 'Approved',
+        className:
+          'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400',
+      },
+      rejected: {
+        variant: 'destructive' as const,
+        icon: AlertCircle,
+        label: 'Rejected',
+        className: '',
+      },
+    };
+
+    const config = variants[status] || variants.draft;
+    const IconComponent = config.icon;
+
+    return (
+      <Badge
+        variant={config.variant}
+        className={cn('font-semibold', config.className)}>
+        <IconComponent className="h-3 w-3 mr-1" />
+        {config.label}
+      </Badge>
+    );
+  }, []);
+
+  const getActivityIcon = useCallback((type: ActivityItem['type']): LucideIcon => {
+    switch (type) {
+      case 'create':
+        return Plus;
+      case 'update':
+        return Edit;
+      case 'submit':
+        return Send;
+      case 'approve':
+        return CheckCircle2;
+      default:
+        return FileText;
+    }
+  }, []);
+
+  // Memoized completion percentage and days ago calculations
+  const completionData = useMemo((): { percentage: number; daysAgo: number } => {
+    if (!latest) return { percentage: 0, daysAgo: 0 };
+
+    return {
+      percentage: 85, // Mock percentage - would be calculated from actual form data
+      daysAgo: Math.floor(
+        (new Date().getTime() - new Date(latest.updatedAt).getTime()) /
+          (1000 * 60 * 60 * 24)
+      ),
+    };
+  }, [latest]);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-primary"></div>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            Loading PDS data...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+            Error Loading PDS
+          </h2>
+          <p className="text-slate-600 dark:text-slate-400">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   // Main Content with Existing PDS
   if (!hasExistingPDS) {
@@ -309,7 +336,7 @@ export default function PDSPage() {
             <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100">
               Personal Data Sheet (e-PDS)
             </h1>
-            {getStatusBadge(pdsStatus.status)}
+            {latest && getStatusBadge(latest.status)}
           </div>
           <p className="text-slate-600 dark:text-slate-400">
             Manage your personal information required by the Civil Service
@@ -323,121 +350,99 @@ export default function PDSPage() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}>
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <ShimmerButton
-<<<<<<< HEAD
-              className="h-11 px-6 shadow-md hover:shadow-lg transition-shadow"
-=======
-              className="h-11 px-6 shadow-lg shadow-[#B8264D]/20"
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
-              shimmerColor="#ffffff"
-              shimmerSize="0.08em"
-              shimmerDuration="3s"
-              borderRadius="0.75rem"
-<<<<<<< HEAD
-              background="linear-gradient(135deg, #093FB4 0%, #0066B3 100%)">
-=======
-              background="linear-gradient(135deg, #8B1538 0%, #B8264D 100%)">
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
-              <Edit className="h-4 w-4 mr-2" />
-              Update PDS
-            </ShimmerButton>
+            <Link href="/dashboard/pds/edit">
+              <ShimmerButton
+                className="h-11 px-6 shadow-md hover:shadow-lg transition-shadow text-white dark:text-white font-semibold"
+                shimmerColor="#ffffff"
+                shimmerSize="0.08em"
+                shimmerDuration="3s"
+                borderRadius="0.75rem"
+                background="linear-gradient(135deg, oklch(0.55 0.22 15) 0%, oklch(0.40 0.18 15) 100%)">
+                <Edit className="h-4 w-4 mr-2" />
+                Update PDS
+              </ShimmerButton>
+            </Link>
           </motion.div>
         </motion.div>
       </motion.div>
 
-      {/* Status Overview Card - Replaced NeonGradientCard with standard Card */}
+      {/* Status Overview Card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.3 }}>
-<<<<<<< HEAD
-        <Card className="overflow-hidden border-2 border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-shadow duration-300">
-          <div className="p-6 sm:p-8 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950">
-=======
-        <NeonGradientCard
-          className="overflow-hidden"
-          borderSize={2}
-          borderRadius={16}
-          neonColors={{
-            firstColor: '#8B1538',
-            secondColor: '#B8264D',
-          }}>
-          <div className="p-6 sm:p-8">
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Completion Progress */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
-                  <TrendingUp className="h-4 w-4" />
-                  Completion Progress
-                </div>
-                <div className="flex items-end gap-2">
-                  <span className="text-4xl font-bold text-slate-900 dark:text-slate-100">
-                    {pdsStatus.completionPercentage}%
-                  </span>
-                  <span className="text-sm text-slate-600 dark:text-slate-400 mb-2">
-                    Complete
-                  </span>
-                </div>
-                <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden">
-                  <motion.div
-<<<<<<< HEAD
-                    className="h-full bg-gradient-to-r from-[#093FB4] to-[#0066B3] rounded-full"
-=======
-                    className="h-full bg-gradient-to-r from-[#B8264D] to-[#8B1538] rounded-full"
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
-                    initial={{ width: 0 }}
-                    animate={{ width: `${pdsStatus.completionPercentage}%` }}
-                    transition={{ duration: 1, delay: 0.5, ease: 'easeOut' }}
-                  />
-                </div>
+        <MagicCard
+          className="overflow-hidden p-6 sm:p-8 border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-all duration-300"
+          gradientSize={200}
+          gradientColor="var(--primary)"
+          gradientOpacity={0.05}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Completion Progress */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
+                <TrendingUp className="h-4 w-4" />
+                Completion Progress
               </div>
-
-              {/* Last Updated */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
-                  <Calendar className="h-4 w-4" />
-                  Last Updated
-                </div>
-                <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-                  {pdsStatus.lastUpdated.toLocaleDateString('en-US', {
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
-                </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">
-                  {Math.floor(
-                    (new Date().getTime() - pdsStatus.lastUpdated.getTime()) /
-                      (1000 * 60 * 60 * 24)
-                  )}{' '}
-                  days ago
-                </div>
+              <div className="flex items-end gap-2">
+                <span className="text-4xl font-bold text-slate-900 dark:text-slate-100">
+                  {completionData.percentage}%
+                </span>
+                <span className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+                  Complete
+                </span>
               </div>
+              <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                <motion.div
+                  className="h-full bg-gradient-tup rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${completionData.percentage}%` }}
+                  transition={{ duration: 1, delay: 0.5, ease: 'easeOut' }}
+                />
+              </div>
+            </div>
 
-              {/* Status */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
-                  <FileCheck className="h-4 w-4" />
-                  Current Status
-                </div>
-                <div className="flex flex-col gap-3">
-                  {getStatusBadge(pdsStatus.status)}
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
-                    {pdsStatus.status === 'draft' &&
-                      'Continue editing and submit for review when ready'}
-                    {pdsStatus.status === 'submitted' &&
-                      'Your PDS is under review by HR personnel'}
-                    {pdsStatus.status === 'approved' &&
-                      'Your PDS has been approved and is now official'}
-                    {pdsStatus.status === 'rejected' &&
-                      'Please review feedback and resubmit'}
-                  </p>
-                </div>
+            {/* Last Updated */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
+                <Calendar className="h-4 w-4" />
+                Last Updated
+              </div>
+              <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+                {latest && new Date(latest.updatedAt).toLocaleDateString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </div>
+              <div className="text-sm text-slate-600 dark:text-slate-400">
+                {completionData.daysAgo} days ago
+              </div>
+            </div>
+
+            {/* Status */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
+                <FileCheck className="h-4 w-4" />
+                Current Status
+              </div>
+              <div className="flex flex-col gap-3">
+                {latest && getStatusBadge(latest.status)}
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  {latest?.status === 'draft' &&
+                    'Continue editing and submit for review when ready'}
+                  {latest?.status === 'submitted' &&
+                    'Your PDS has been submitted for review'}
+                  {latest?.status === 'reviewing' &&
+                    'Your PDS is under review by HR personnel'}
+                  {latest?.status === 'approved' &&
+                    'Your PDS has been approved and is now official'}
+                  {latest?.status === 'rejected' &&
+                    'Please review feedback and resubmit'}
+                </p>
               </div>
             </div>
           </div>
-        </Card>
+        </MagicCard>
       </motion.div>
 
       {/* PDS Sections Grid */}
@@ -449,7 +454,7 @@ export default function PDSPage() {
           PDS Sections
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {pdsSections.map((section, index) => (
+          {MOCK_PDS_SECTIONS.map((section, index) => (
             <motion.div
               key={section.id}
               initial={{ opacity: 0, y: 20 }}
@@ -459,7 +464,7 @@ export default function PDSPage() {
               <MagicCard
                 className="relative p-6 cursor-pointer hover:shadow-xl transition-all duration-300 border-slate-200 dark:border-slate-800"
                 gradientSize={0}
-                gradientColor="#093FB4"
+                gradientColor="var(--primary)"
                 gradientOpacity={0}>
                 <div className="flex items-start justify-between mb-4">
                   <div
@@ -467,18 +472,14 @@ export default function PDSPage() {
                       'flex h-12 w-12 items-center justify-center rounded-lg transition-all duration-300',
                       section.isComplete
                         ? 'bg-green-100 dark:bg-green-950/30'
-                        : 'bg-red-100 dark:bg-red-950/30'
+                        : 'bg-tup-crimson-subtle dark:bg-primary/30'
                     )}>
                     <section.icon
                       className={cn(
                         'h-6 w-6',
                         section.isComplete
                           ? 'text-green-600 dark:text-green-400'
-<<<<<<< HEAD
-                          : 'text-[#093FB4] dark:text-blue-400'
-=======
-                          : 'text-red-600 dark:text-red-400'
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
+                          : 'text-primary dark:text-tup-crimson-light'
                       )}
                     />
                   </div>
@@ -520,11 +521,7 @@ export default function PDSPage() {
                         'h-full rounded-full',
                         section.isComplete
                           ? 'bg-gradient-to-r from-green-600 to-emerald-600'
-<<<<<<< HEAD
-                          : 'bg-gradient-to-r from-[#093FB4] to-[#0066B3]'
-=======
-                          : 'bg-gradient-to-r from-[#8B1538] to-[#B8264D]'
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
+                          : 'bg-gradient-tup'
                       )}
                       initial={{ width: 0 }}
                       animate={{ width: `${section.completionPercentage}%` }}
@@ -547,32 +544,38 @@ export default function PDSPage() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, delay: 0.7 }}>
           <InfoCard title="Quick Actions" icon={FileText}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              <Link href="/dashboard/pds/view" className="w-full">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-primary hover:bg-primary/10 dark:hover:border-primary dark:hover:bg-primary/20 hover:text-primary dark:hover:text-primary transition-all duration-300 hover:scale-[1.02]">
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Submissions
+                </Button>
+              </Link>
+              <Link href="/dashboard/pds/archive" className="w-full">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-amber-600 hover:bg-amber-50 dark:hover:border-amber-500 dark:hover:bg-amber-950/30 hover:text-amber-700 dark:hover:text-amber-400 transition-all duration-300 hover:scale-[1.02]">
+                  <Archive className="h-4 w-4 mr-2" />
+                  View Archive
+                </Button>
+              </Link>
               <Button
                 variant="outline"
-<<<<<<< HEAD
-                className="w-full justify-start hover:border-[#093FB4] hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-all duration-300 hover:scale-[1.02]">
-=======
-                className="w-full justify-start hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all">
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
-                <Eye className="h-4 w-4 mr-2" />
-                View Full PDS
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-950/20 transition-all duration-300 hover:scale-[1.02]">
+                className="w-full justify-start text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-green-600 hover:bg-green-50 dark:hover:border-green-500 dark:hover:bg-green-950/30 hover:text-green-700 dark:hover:text-green-400 transition-all duration-300 hover:scale-[1.02]">
                 <Download className="h-4 w-4 mr-2" />
                 Download PDF
               </Button>
               <Button
                 variant="outline"
-                className="w-full justify-start hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-950/20 transition-all duration-300 hover:scale-[1.02]">
+                className="w-full justify-start text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-purple-600 hover:bg-purple-50 dark:hover:border-purple-500 dark:hover:bg-purple-950/30 hover:text-purple-700 dark:hover:text-purple-400 transition-all duration-300 hover:scale-[1.02]">
                 <Printer className="h-4 w-4 mr-2" />
                 Print PDS
               </Button>
               <Button
                 variant="outline"
-                className="w-full justify-start hover:border-[#0066B3] hover:bg-indigo-50 dark:hover:bg-indigo-950/20 transition-all duration-300 hover:scale-[1.02]">
+                className="w-full justify-start text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-secondary hover:bg-secondary/10 dark:hover:border-secondary dark:hover:bg-secondary/20 hover:text-secondary dark:hover:text-secondary transition-all duration-300 hover:scale-[1.02]">
                 <Send className="h-4 w-4 mr-2" />
                 Submit for Review
               </Button>
@@ -587,7 +590,7 @@ export default function PDSPage() {
           transition={{ duration: 0.6, delay: 0.8 }}>
           <InfoCard title="Recent Activity" icon={Clock}>
             <div className="space-y-4">
-              {recentActivity.map((activity, index) => {
+              {MOCK_RECENT_ACTIVITY.map((activity, index) => {
                 const ActivityIcon = getActivityIcon(activity.type);
                 return (
                   <motion.div
@@ -596,13 +599,8 @@ export default function PDSPage() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.4, delay: 0.9 + index * 0.1 }}>
-<<<<<<< HEAD
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950/30 flex-shrink-0">
-                      <ActivityIcon className="h-4 w-4 text-[#093FB4] dark:text-blue-400" />
-=======
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 dark:bg-red-950/30 flex-shrink-0">
-                      <ActivityIcon className="h-4 w-4 text-red-600 dark:text-red-400" />
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tup-crimson-subtle dark:bg-primary/30 flex-shrink-0">
+                      <ActivityIcon className="h-4 w-4 text-primary dark:text-tup-crimson-light" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-slate-900 dark:text-slate-100">

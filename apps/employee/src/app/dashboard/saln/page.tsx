@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, memo, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
+import { useAuth, useSaln } from '@tupsafe/mock-data/api';
 import { InfoCard } from '@/components/dashboard/InfoCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,10 +33,12 @@ import {
   BarChart3,
   ArrowUpRight,
   ArrowDownRight,
+  Archive,
+  FolderOpen,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-// Mock Data Types
+// Types for UI display
 interface SALNStatus {
   year: number;
   status: 'draft' | 'submitted' | 'approved' | 'rejected';
@@ -69,8 +73,16 @@ interface YearSummary {
   status: 'draft' | 'submitted' | 'approved' | 'rejected';
 }
 
-// Mock Data
-const mockSALNStatus: SALNStatus = {
+// Currency formatter - created once outside component to prevent recreation
+const CURRENCY_FORMATTER = new Intl.NumberFormat('en-PH', {
+  style: 'currency',
+  currency: 'PHP',
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
+
+// Mock Data - extracted outside component to prevent recreation on every render
+const MOCK_SALN_STATUS: SALNStatus = {
   year: 2025,
   status: 'draft',
   lastUpdated: new Date('2025-10-10'),
@@ -80,7 +92,7 @@ const mockSALNStatus: SALNStatus = {
   hasSubmitted: true,
 };
 
-const mockSALNSections: SALNSection[] = [
+const MOCK_SALN_SECTIONS: SALNSection[] = [
   {
     id: 'real-property',
     title: 'Real Property',
@@ -128,7 +140,7 @@ const mockSALNSections: SALNSection[] = [
   },
 ];
 
-const mockRecentActivity: ActivityItem[] = [
+const MOCK_RECENT_ACTIVITY: ActivityItem[] = [
   {
     id: '1',
     action: 'Updated Real Property values',
@@ -151,126 +163,16 @@ const mockRecentActivity: ActivityItem[] = [
   },
 ];
 
-const mockYearSummaries: YearSummary[] = [
+const MOCK_YEAR_SUMMARIES: YearSummary[] = [
   { year: 2025, netWorth: 4850000, status: 'draft' },
   { year: 2024, netWorth: 4200000, status: 'approved' },
   { year: 2023, netWorth: 3800000, status: 'approved' },
 ];
 
-export default function SalnPage() {
-  const [salnStatus] = useState<SALNStatus>(mockSALNStatus);
-  const [salnSections] = useState<SALNSection[]>(mockSALNSections);
-  const [recentActivity] = useState<ActivityItem[]>(mockRecentActivity);
-  const [yearSummaries] = useState<YearSummary[]>(mockYearSummaries);
-
-  const hasExistingSALN = salnStatus.hasSubmitted;
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-PH', {
-      style: 'currency',
-      currency: 'PHP',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const getStatusBadge = (status: SALNStatus['status']) => {
-    const variants = {
-      draft: {
-        variant: 'secondary' as const,
-        icon: Clock,
-        label: 'Draft',
-        className:
-          'bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400',
-      },
-      submitted: {
-        variant: 'default' as const,
-        icon: Send,
-        label: 'Submitted',
-        className:
-          'bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400',
-      },
-      approved: {
-        variant: 'default' as const,
-        icon: CheckCircle2,
-        label: 'Approved',
-        className:
-          'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400',
-      },
-      rejected: {
-        variant: 'destructive' as const,
-        icon: AlertCircle,
-        label: 'Rejected',
-        className: '',
-      },
-    };
-
-    const config = variants[status];
-    const IconComponent = config.icon;
-
-    return (
-      <Badge
-        variant={config.variant}
-        className={cn('font-semibold', config.className)}>
-        <IconComponent className="h-3 w-3 mr-1" />
-        {config.label}
-      </Badge>
-    );
-  };
-
-  const getActivityIcon = (type: ActivityItem['type']) => {
-    switch (type) {
-      case 'create':
-        return Plus;
-      case 'update':
-        return Edit;
-      case 'submit':
-        return Send;
-      case 'approve':
-        return CheckCircle2;
-      default:
-        return Landmark;
-    }
-  };
-
-  const getNetWorthChange = () => {
-    if (yearSummaries.length < 2) return null;
-    const currentYear = yearSummaries[0];
-    const previousYear = yearSummaries[1];
-    const change = currentYear.netWorth - previousYear.netWorth;
-    const percentChange = (change / previousYear.netWorth) * 100;
-    return { change, percentChange, isPositive: change >= 0 };
-  };
-
-  const netWorthChange = getNetWorthChange();
-
-  // Empty State Component
-  const EmptyState = () => (
-<<<<<<< HEAD
+// Memoized EmptyState component to prevent unnecessary re-renders
+const EmptyState = memo(function EmptyState() {
+  return (
     <div className="relative min-h-[70vh] flex items-center justify-center bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
-=======
-    <div className="relative min-h-[70vh] flex items-center justify-center">
-      <Particles
-        className="absolute inset-0 -z-10"
-        quantity={40}
-        ease={80}
-        color="#B8264D"
-        size={0.5}
-        staticity={50}
-        refresh={false}
-      />
-      <AnimatedGridPattern
-        numSquares={40}
-        maxOpacity={0.1}
-        duration={3}
-        repeatDelay={1}
-        className={cn(
-          '[mask-image:radial-gradient(600px_circle_at_center,white,transparent)]',
-          'inset-x-0 inset-y-[-30%] h-[200%] -z-10'
-        )}
-      />
-
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
       <motion.div
         className="max-w-2xl mx-auto text-center space-y-8 p-8"
         initial={{ opacity: 0, y: 20 }}
@@ -282,15 +184,15 @@ export default function SalnPage() {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}>
           <motion.div
-            className="absolute inset-0 rounded-full bg-gradient-to-br from-[#093FB4]/20 to-[#0066B3]/20 blur-2xl"
+            className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/20 to-tup-crimson-light/20 blur-2xl"
             animate={{
               scale: [1, 1.2, 1],
               opacity: [0.5, 0.8, 0.5],
             }}
             transition={{ duration: 3, repeat: Infinity }}
           />
-          <div className="relative flex items-center justify-center w-full h-full rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-950/60 dark:to-indigo-950/60">
-            <Landmark className="h-16 w-16 text-[#093FB4] dark:text-blue-400" />
+          <div className="relative flex items-center justify-center w-full h-full rounded-full bg-gradient-to-br from-tup-crimson-subtle to-tup-crimson-subtle dark:from-primary/60 dark:to-tup-crimson-dark/60">
+            <Landmark className="h-16 w-16 text-primary dark:text-tup-crimson-light" />
           </div>
         </motion.div>
 
@@ -332,24 +234,142 @@ export default function SalnPage() {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.8 }}>
-          <ShimmerButton
-            className="shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-6 text-base"
-            shimmerColor="#ffffff"
-            shimmerSize="0.08em"
-            shimmerDuration="3s"
-            borderRadius="0.75rem"
-<<<<<<< HEAD
-            background="linear-gradient(135deg, #093FB4 0%, #0066B3 100%)">
-=======
-            background="linear-gradient(135deg, #B8264D 0%, #9A1E3D 50%, #8B1538 100%)">
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
-            <Plus className="h-5 w-5 mr-2" />
-            Create Your First SALN
-          </ShimmerButton>
+          <Link href="/dashboard/saln/create">
+            <ShimmerButton
+              className="shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-6 text-base text-white dark:text-white font-semibold"
+              shimmerColor="#ffffff"
+              shimmerSize="0.08em"
+              shimmerDuration="3s"
+              borderRadius="0.75rem"
+              background="linear-gradient(135deg, oklch(0.55 0.22 15) 0%, oklch(0.40 0.18 15) 100%)">
+              <Plus className="h-5 w-5 mr-2" />
+              Create Your First SALN
+            </ShimmerButton>
+          </Link>
         </motion.div>
       </motion.div>
     </div>
   );
+});
+
+export default function SalnPage() {
+  const { user } = useAuth();
+  const { submissions, latest, loading, error } = useSaln(user?.id || '');
+
+  const hasExistingSALN = submissions.length > 0;
+
+  // Use memoized currency formatter
+  const formatCurrency = useCallback((amount: number) => {
+    return CURRENCY_FORMATTER.format(amount);
+  }, []);
+
+  const getStatusBadge = useCallback((status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'reviewing') => {
+    const variants = {
+      draft: {
+        variant: 'secondary' as const,
+        icon: Clock,
+        label: 'Draft',
+        className:
+          'bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400',
+      },
+      submitted: {
+        variant: 'default' as const,
+        icon: Send,
+        label: 'Submitted',
+        className:
+          'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400',
+      },
+      reviewing: {
+        variant: 'default' as const,
+        icon: Eye,
+        label: 'Under Review',
+        className:
+          'bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400',
+      },
+      approved: {
+        variant: 'default' as const,
+        icon: CheckCircle2,
+        label: 'Approved',
+        className:
+          'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400',
+      },
+      rejected: {
+        variant: 'destructive' as const,
+        icon: AlertCircle,
+        label: 'Rejected',
+        className: '',
+      },
+    };
+
+    const config = variants[status] || variants.draft;
+    const IconComponent = config.icon;
+
+    return (
+      <Badge
+        variant={config.variant}
+        className={cn('font-semibold', config.className)}>
+        <IconComponent className="h-3 w-3 mr-1" />
+        {config.label}
+      </Badge>
+    );
+  }, []);
+
+  const getActivityIcon = useCallback((type: ActivityItem['type']) => {
+    switch (type) {
+      case 'create':
+        return Plus;
+      case 'update':
+        return Edit;
+      case 'submit':
+        return Send;
+      case 'approve':
+        return CheckCircle2;
+      default:
+        return Landmark;
+    }
+  }, []);
+
+  // Memoize net worth calculation to prevent recalculation on every render
+  const netWorthChange = useMemo(() => {
+    if (submissions.length < 2) return null;
+    const sorted = [...submissions].sort((a, b) => b.year - a.year);
+    const currentYear = sorted[0];
+    const previousYear = sorted[1];
+    const currentNetWorth = Number(currentYear.netWorth);
+    const previousNetWorth = Number(previousYear.netWorth);
+    const change = currentNetWorth - previousNetWorth;
+    const percentChange = (change / previousNetWorth) * 100;
+    return { change, percentChange, isPositive: change >= 0 };
+  }, [submissions]);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-primary"></div>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            Loading SALN data...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+            Error Loading SALN
+          </h2>
+          <p className="text-slate-600 dark:text-slate-400">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   // Main Content with Existing SALN
   if (!hasExistingSALN) {
@@ -358,30 +378,6 @@ export default function SalnPage() {
 
   return (
     <div className="relative space-y-8 pb-8">
-<<<<<<< HEAD
-=======
-      {/* Animated Background */}
-      <Particles
-        className="absolute inset-0 -z-10"
-        quantity={50}
-        ease={80}
-        color="#B8264D"
-        size={0.6}
-        staticity={45}
-        refresh={false}
-      />
-      <AnimatedGridPattern
-        numSquares={50}
-        maxOpacity={0.06}
-        duration={4}
-        repeatDelay={1}
-        className={cn(
-          '[mask-image:radial-gradient(900px_circle_at_center,white,transparent)]',
-          'inset-x-0 inset-y-[-30%] h-[200%] -z-10'
-        )}
-      />
-
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
       {/* Page Header */}
       <motion.div
         className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
@@ -394,9 +390,9 @@ export default function SalnPage() {
           transition={{ duration: 0.6, delay: 0.1 }}>
           <div className="flex items-center gap-3 mb-2">
             <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100">
-              e-SALN {salnStatus.year}
+              e-SALN {latest?.year || new Date().getFullYear()}
             </h1>
-            {getStatusBadge(salnStatus.status)}
+            {latest && getStatusBadge(latest.status)}
           </div>
           <p className="text-slate-600 dark:text-slate-400">
             Statement of Assets, Liabilities, and Net Worth
@@ -409,107 +405,95 @@ export default function SalnPage() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}>
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <ShimmerButton
-              className="h-11 px-6 shadow-md hover:shadow-lg transition-shadow"
-              shimmerColor="#ffffff"
-              shimmerSize="0.08em"
-              shimmerDuration="3s"
-              borderRadius="0.75rem"
-<<<<<<< HEAD
-              background="linear-gradient(135deg, #093FB4 0%, #0066B3 100%)">
-=======
-              background="linear-gradient(135deg, #B8264D 0%, #9A1E3D 100%)">
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
-              <Edit className="h-4 w-4 mr-2" />
-              Update SALN
-            </ShimmerButton>
+            <Link href="/dashboard/saln/edit">
+              <ShimmerButton
+                className="h-11 px-6 shadow-md hover:shadow-lg transition-shadow text-white dark:text-white font-semibold"
+                shimmerColor="#ffffff"
+                shimmerSize="0.08em"
+                shimmerDuration="3s"
+                borderRadius="0.75rem"
+                background="linear-gradient(135deg, oklch(0.55 0.22 15) 0%, oklch(0.40 0.18 15) 100%)">
+                <Edit className="h-4 w-4 mr-2" />
+                Update SALN
+              </ShimmerButton>
+            </Link>
           </motion.div>
         </motion.div>
       </motion.div>
 
-      {/* Net Worth Overview Card - Replaced NeonGradientCard with standard Card */}
+      {/* Net Worth Overview Card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.3 }}>
-<<<<<<< HEAD
-        <Card className="overflow-hidden border-2 border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-shadow duration-300">
-          <div className="p-6 sm:p-8 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950">
-=======
-        <NeonGradientCard
-          className="overflow-hidden"
-          borderSize={2}
-          borderRadius={16}
-          neonColors={{
-            firstColor: '#B8264D',
-            secondColor: '#004B87',
-          }}>
-          <div className="p-6 sm:p-8">
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Net Worth */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
-                  <BarChart3 className="h-4 w-4" />
-                  Net Worth
-                </div>
-                <div className="flex items-end gap-2">
-                  <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">
-                    {formatCurrency(salnStatus.netWorth)}
+        <MagicCard
+          className="overflow-hidden p-6 sm:p-8 border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-all duration-300"
+          gradientSize={200}
+          gradientColor="var(--primary)"
+          gradientOpacity={0.05}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Net Worth */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
+                <BarChart3 className="h-4 w-4" />
+                Net Worth
+              </div>
+              <div className="flex items-end gap-2">
+                <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">
+                  {latest && formatCurrency(Number(latest.netWorth))}
+                </span>
+              </div>
+              {netWorthChange && (
+                <div
+                  className={cn(
+                    'flex items-center gap-1 text-sm font-medium',
+                    netWorthChange.isPositive
+                      ? 'text-green-600 dark:text-green-400'
+                      : 'text-red-600 dark:text-red-400'
+                  )}>
+                  {netWorthChange.isPositive ? (
+                    <ArrowUpRight className="h-4 w-4" />
+                  ) : (
+                    <ArrowDownRight className="h-4 w-4" />
+                  )}
+                  <span>
+                    {netWorthChange.isPositive ? '+' : ''}
+                    {formatCurrency(netWorthChange.change)} (
+                    {netWorthChange.percentChange.toFixed(1)}%)
                   </span>
                 </div>
-                {netWorthChange && (
-                  <div
-                    className={cn(
-                      'flex items-center gap-1 text-sm font-medium',
-                      netWorthChange.isPositive
-                        ? 'text-green-600 dark:text-green-400'
-                        : 'text-red-600 dark:text-red-400'
-                    )}>
-                    {netWorthChange.isPositive ? (
-                      <ArrowUpRight className="h-4 w-4" />
-                    ) : (
-                      <ArrowDownRight className="h-4 w-4" />
-                    )}
-                    <span>
-                      {netWorthChange.isPositive ? '+' : ''}
-                      {formatCurrency(netWorthChange.change)} (
-                      {netWorthChange.percentChange.toFixed(1)}%)
-                    </span>
-                  </div>
-                )}
-              </div>
+              )}
+            </div>
 
-              {/* Total Assets */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
-                  <TrendingUp className="h-4 w-4" />
-                  Total Assets
-                </div>
-                <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-                  {formatCurrency(salnStatus.totalAssets)}
-                </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">
-                  Real property, personal property, and investments
-                </div>
+            {/* Total Assets */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
+                <TrendingUp className="h-4 w-4" />
+                Total Assets
               </div>
+              <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+                {latest && formatCurrency(Number(latest.totalAssets))}
+              </div>
+              <div className="text-sm text-slate-600 dark:text-slate-400">
+                Real property, personal property, and investments
+              </div>
+            </div>
 
-              {/* Total Liabilities */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
-                  <CreditCard className="h-4 w-4" />
-                  Total Liabilities
-                </div>
-                <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-                  {formatCurrency(salnStatus.totalLiabilities)}
-                </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">
-                  Loans, mortgages, and other obligations
-                </div>
+            {/* Total Liabilities */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
+                <CreditCard className="h-4 w-4" />
+                Total Liabilities
+              </div>
+              <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+                {latest && formatCurrency(Number(latest.totalLiabilities))}
+              </div>
+              <div className="text-sm text-slate-600 dark:text-slate-400">
+                Loans, mortgages, and other obligations
               </div>
             </div>
           </div>
-        </Card>
+        </MagicCard>
       </motion.div>
 
       {/* SALN Sections Grid */}
@@ -521,7 +505,7 @@ export default function SalnPage() {
           SALN Categories
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {salnSections.map((section, index) => (
+          {MOCK_SALN_SECTIONS.map((section, index) => (
             <motion.div
               key={section.id}
               initial={{ opacity: 0, y: 20 }}
@@ -529,35 +513,24 @@ export default function SalnPage() {
               transition={{ duration: 0.5, delay: 0.5 + index * 0.1 }}
               whileHover={{ y: -4, transition: { duration: 0.2 } }}>
               <MagicCard
-<<<<<<< HEAD
                 className="relative p-6 cursor-pointer hover:shadow-xl transition-all duration-300 border-slate-200 dark:border-slate-800"
                 gradientSize={0}
-                gradientColor="#093FB4"
+                gradientColor="var(--primary)"
                 gradientOpacity={0}>
-=======
-                className="relative p-6 cursor-pointer hover:shadow-xl transition-shadow duration-300"
-                gradientSize={200}
-                gradientColor="#B8264D"
-                gradientOpacity={0.1}>
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
                 <div className="flex items-start justify-between mb-4">
                   <div
                     className={cn(
                       'flex h-12 w-12 items-center justify-center rounded-lg transition-all duration-300',
                       section.isComplete
                         ? 'bg-green-100 dark:bg-green-950/30'
-                        : 'bg-blue-100 dark:bg-blue-950/30'
+                        : 'bg-tup-crimson-subtle dark:bg-primary/30'
                     )}>
                     <section.icon
                       className={cn(
                         'h-6 w-6',
                         section.isComplete
                           ? 'text-green-600 dark:text-green-400'
-<<<<<<< HEAD
-                          : 'text-[#093FB4] dark:text-blue-400'
-=======
-                          : 'text-[#B8264D] dark:text-[#B8264D]'
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
+                          : 'text-primary dark:text-tup-crimson-light'
                       )}
                     />
                   </div>
@@ -607,7 +580,7 @@ export default function SalnPage() {
           transition={{ duration: 0.6, delay: 0.7 }}>
           <InfoCard title="Historical Overview" icon={Calendar}>
             <div className="space-y-4">
-              {yearSummaries.map((summary, index) => (
+              {MOCK_YEAR_SUMMARIES.map((summary, index) => (
                 <motion.div
                   key={summary.year}
                   className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -615,8 +588,8 @@ export default function SalnPage() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.4, delay: 0.8 + index * 0.1 }}>
                   <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-950/50 dark:to-indigo-950/50">
-                      <Calendar className="h-6 w-6 text-[#093FB4] dark:text-blue-400" />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-tup-crimson-subtle to-tup-crimson-subtle dark:from-primary/50 dark:to-tup-crimson-dark/50">
+                      <Calendar className="h-6 w-6 text-primary dark:text-tup-crimson-light" />
                     </div>
                     <div>
                       <p className="font-semibold text-slate-900 dark:text-slate-100">
@@ -641,7 +614,7 @@ export default function SalnPage() {
           transition={{ duration: 0.6, delay: 0.8 }}>
           <InfoCard title="Recent Activity" icon={Clock}>
             <div className="space-y-4">
-              {recentActivity.map((activity, index) => {
+              {MOCK_RECENT_ACTIVITY.map((activity, index) => {
                 const ActivityIcon = getActivityIcon(activity.type);
                 return (
                   <motion.div
@@ -650,8 +623,8 @@ export default function SalnPage() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.4, delay: 0.9 + index * 0.1 }}>
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950/30 flex-shrink-0">
-                      <ActivityIcon className="h-4 w-4 text-[#093FB4] dark:text-blue-400" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tup-crimson-subtle dark:bg-primary/30 flex-shrink-0">
+                      <ActivityIcon className="h-4 w-4 text-primary dark:text-tup-crimson-light" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
@@ -684,32 +657,38 @@ export default function SalnPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.9 }}>
         <InfoCard title="Quick Actions" icon={Landmark}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            <Link href="/dashboard/saln/view" className="w-full">
+              <Button
+                variant="outline"
+                className="w-full justify-start text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-primary hover:bg-primary/10 dark:hover:border-primary dark:hover:bg-primary/20 hover:text-primary dark:hover:text-primary transition-all duration-300 hover:scale-[1.02]">
+                <Eye className="h-4 w-4 mr-2" />
+                View Submissions
+              </Button>
+            </Link>
+            <Link href="/dashboard/saln/archive" className="w-full">
+              <Button
+                variant="outline"
+                className="w-full justify-start text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-amber-600 hover:bg-amber-50 dark:hover:border-amber-500 dark:hover:bg-amber-950/30 hover:text-amber-700 dark:hover:text-amber-400 transition-all duration-300 hover:scale-[1.02]">
+                <Archive className="h-4 w-4 mr-2" />
+                View Archive
+              </Button>
+            </Link>
             <Button
               variant="outline"
-              className="w-full justify-start hover:border-[#093FB4] hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-all duration-300 hover:scale-[1.02]">
-              <Eye className="h-4 w-4 mr-2" />
-              View Full SALN
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full justify-start hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-950/20 transition-all duration-300 hover:scale-[1.02]">
+              className="w-full justify-start text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-green-600 hover:bg-green-50 dark:hover:border-green-500 dark:hover:bg-green-950/30 hover:text-green-700 dark:hover:text-green-400 transition-all duration-300 hover:scale-[1.02]">
               <Download className="h-4 w-4 mr-2" />
               Download PDF
             </Button>
             <Button
               variant="outline"
-              className="w-full justify-start hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-950/20 transition-all duration-300 hover:scale-[1.02]">
+              className="w-full justify-start text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-purple-600 hover:bg-purple-50 dark:hover:border-purple-500 dark:hover:bg-purple-950/30 hover:text-purple-700 dark:hover:text-purple-400 transition-all duration-300 hover:scale-[1.02]">
               <Printer className="h-4 w-4 mr-2" />
               Print SALN
             </Button>
             <Button
               variant="outline"
-<<<<<<< HEAD
-              className="w-full justify-start hover:border-[#0066B3] hover:bg-indigo-50 dark:hover:bg-indigo-950/20 transition-all duration-300 hover:scale-[1.02]">
-=======
-              className="w-full justify-start hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all">
->>>>>>> 71598573d189041eaa79c66dfb2f6ac4867149a6
+              className="w-full justify-start text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-secondary hover:bg-secondary/10 dark:hover:border-secondary dark:hover:bg-secondary/20 hover:text-secondary dark:hover:text-secondary transition-all duration-300 hover:scale-[1.02]">
               <Send className="h-4 w-4 mr-2" />
               Submit for Review
             </Button>

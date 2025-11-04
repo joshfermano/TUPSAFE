@@ -204,7 +204,18 @@
   0% {
     background-position: -200% 0;}
   100% {
-    background-position: 200% 0;}}}
+    background-position: 200% 0;}}
+  @keyframes background-position-spin {
+  0% {
+    background-position: top center;}
+  100% {
+    background-position: bottom center;}}
+  --animate-ripple: ripple var(--duration,2s) ease calc(var(--i, 0)*.2s) infinite;
+  @keyframes ripple {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);}
+  50% {
+    transform: translate(-50%, -50%) scale(0.9);}}}
 
 :root {
   --radius: 0.625rem;
@@ -311,9 +322,11 @@
 
   body {
     @apply bg-background text-foreground;
-    /* Smooth theme transitions */
-    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-      color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Smooth theme transitions with GPU acceleration */
+    transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+      color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: background-color;
+    contain: layout style;
   }
 
   /* Prevent theme transition flash */
@@ -328,6 +341,19 @@
 }
 
 @layer components {
+  /* Theme-aware class for elements that need smooth transitions */
+  .theme-aware {
+    transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+      color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    contain: layout style;
+  }
+
+  /* For cards and containers */
+  .theme-aware-container {
+    transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    contain: layout style paint;
+  }
 
   /* TUP Manila Crimson Gradient Utilities */
   .bg-gradient-tup {
