@@ -74,31 +74,87 @@ This is a Turbo-managed monorepo with separate applications and shared packages:
 ### Apps (apps/\*)
 
 - **employee**: Employee-facing portal (port 3000) for PDS/SALN submissions
+
+  - **Design System**: Tailwind CSS 4 + Magic UI components for modern, engaging, and interactive user experience
+  - **Component Library**: Magic UI animations, effects, and premium components
+  - **Icons**: Radix UI icons only
+  - **Target Audience**: Faculty, staff, and administrators submitting forms
+
 - **admin**: HR/Admin portal (port 3001) for reviewing and managing submissions
+  - **Design System**: Tailwind CSS 4 + shadcn/ui for professional, clean, and enterprise-grade UI
+  - **Component Library**: shadcn/ui components (built on Radix UI primitives)
+  - **Target Audience**: HR personnel, department heads, college deans, and system administrators
 
 ### Shared Packages (packages/\*)
 
-- **@tupsafe/database** (also accessible as @smartgov/database): Drizzle ORM schemas, migrations, and database utilities
-- **@tupsafe/auth** (also accessible as @smartgov/auth): Authentication utilities and middleware
-- **@tupsafe/types** (also accessible as @smartgov/types): Shared TypeScript type definitions
-- **@tupsafe/shared-ui** (also accessible as @smartgov/shared-ui): Shared UI components
+The monorepo leverages shared packages for code reusability, consistency, and maintainability across both portals:
 
-**Note**: Packages use the `@tupsafe/*` namespace, with legacy `@smartgov/*` imports still supported for backward compatibility.
+- **@tupsafe/database** (also accessible as @smartgov/database):
+
+  - Drizzle ORM schemas and type-safe queries
+  - Database migrations and seed scripts
+  - Real-time hooks for live data synchronization
+  - Database utilities and connection management
+
+- **@tupsafe/auth** (also accessible as @smartgov/auth):
+
+  - Supabase Auth integration
+  - Authentication utilities and session management
+  - Protected route middleware
+  - Multi-factor authentication (MFA) support
+
+- **@tupsafe/types** (also accessible as @smartgov/types):
+
+  - Shared TypeScript type definitions and interfaces
+  - Form validation schemas (Zod)
+  - API response types
+  - Domain models and entities
+
+- **@tupsafe/shared-ui** (also accessible as @smartgov/shared-ui):
+  - App-agnostic utility components
+  - Shared form components and layouts
+  - Common UI patterns used across both portals
+  - Utility functions and hooks
+
+**Package Strategy**:
+
+- **Import from packages**: Always prefer importing from `@tupsafe/*` packages for shared functionality
+- **App-specific components**: Keep app-specific UI in respective `apps/[employee|admin]/src/components`
+- **Design system separation**: Employee uses Magic UI, Admin uses shadcn/ui - shared-ui bridges common functionality
+- **Namespace**: Packages use the `@tupsafe/*` namespace, with legacy `@smartgov/*` imports still supported for backward compatibility
 
 Both apps are Next.js 15.5.3 applications using App Router with Turbopack. They consume shared packages via workspace dependencies.
 
 ## Technology Stack
 
+### Core Technologies
+
 - **Frontend**: Next.js 15.5.3, React 19.1.0, TypeScript 5
 - **Build Tool**: Turbopack (via `--turbopack` flag) for fast development
-- **Monorepo**: Turbo for task orchestration
-- **Styling**: Tailwind CSS 4, shadcn/ui, Magic UI components
-- **Database**: PostgreSQL via Supabase with Drizzle ORM
+- **Monorepo**: Turbo for task orchestration and caching
+
+### Design Systems (App-Specific)
+
+- **Employee Portal (apps/employee)**:
+
+  - **Styling**: Tailwind CSS 4
+  - **Components**: Magic UI (premium animations and effects)
+  - **Icons**: Radix UI Icons (`@radix-ui/react-icons`)
+  - **Philosophy**: Modern, engaging, interactive user experience
+
+- **Admin Portal (apps/admin)**:
+  - **Styling**: Tailwind CSS 4
+  - **Components**: shadcn/ui (built on Radix UI primitives)
+  - **Philosophy**: Professional, clean, enterprise-grade interface
+
+### Shared Infrastructure
+
+- **Database**: PostgreSQL via Supabase with Drizzle ORM (`@tupsafe/database`)
 - **Real-time**: Supabase Realtime for live data synchronization
 - **Data Fetching**: TanStack Query (React Query) v5 for caching and optimistic updates
 - **Notifications**: Sonner for toast notifications
-- **Forms**: React Hook Form + Zod validation
-- **Authentication**: Custom auth package with MFA (input-otp), Supabase Auth
+- **Forms**: React Hook Form + Zod validation (`@tupsafe/types`)
+- **Authentication**: Custom auth package with MFA (input-otp), Supabase Auth (`@tupsafe/auth`)
 - **Animation**: Framer Motion (motion package)
 
 ## Essential Commands
@@ -173,25 +229,47 @@ apps/[employee|admin]/
 └── .env.local            # Environment variables (Supabase credentials)
 ```
 
-**Database Package (packages/database):**
+**Shared Packages Structure (packages/\*):**
 
 ```
-packages/database/
-├── src/
-│   ├── schema/           # Drizzle table schemas
-│   ├── migrations/       # SQL migration files
-│   ├── hooks/            # Real-time React hooks
-│   │   ├── useRealtimeBase.ts
-│   │   ├── useRealtimeNotifications.ts
-│   │   ├── useRealtimeSubmissionStatus.ts
-│   │   └── useRealtimeProfile.ts
-│   ├── utils/            # Real-time utilities
-│   │   └── realtime-connection.ts
-│   ├── types/            # TypeScript types
-│   │   └── realtime.ts
-│   └── index.ts          # Exports schemas and utilities
-├── drizzle.config.ts     # Drizzle Kit configuration
-└── package.json
+packages/
+├── database/                    # @tupsafe/database
+│   ├── src/
+│   │   ├── schema/              # Drizzle table schemas
+│   │   ├── migrations/          # SQL migration files
+│   │   ├── hooks/               # Real-time React hooks
+│   │   │   ├── useRealtimeBase.ts
+│   │   │   ├── useRealtimeNotifications.ts
+│   │   │   ├── useRealtimeSubmissionStatus.ts
+│   │   │   └── useRealtimeProfile.ts
+│   │   ├── utils/               # Real-time utilities
+│   │   │   └── realtime-connection.ts
+│   │   ├── types/               # TypeScript types
+│   │   │   └── realtime.ts
+│   │   └── index.ts             # Exports schemas and utilities
+│   ├── drizzle.config.ts        # Drizzle Kit configuration
+│   └── package.json
+│
+├── auth/                        # @tupsafe/auth
+│   ├── src/
+│   │   ├── utils/supabase/      # Supabase client utilities
+│   │   ├── components/          # Auth components (LoginForm, ProtectedRoute)
+│   │   ├── middleware.ts        # Auth middleware for Next.js
+│   │   └── index.ts
+│   └── package.json
+│
+├── types/                       # @tupsafe/types
+│   ├── src/
+│   │   ├── index.ts             # Shared type definitions
+│   │   └── [domain-models].ts   # Domain-specific types
+│   └── package.json
+│
+└── shared-ui/                   # @tupsafe/shared-ui
+    ├── src/
+    │   ├── ui/                  # Shared UI components
+    │   ├── lib/                 # Shared utilities (cn, etc.)
+    │   └── index.ts
+    └── package.json
 ```
 
 ### Key Architectural Patterns
@@ -315,26 +393,44 @@ export default {
 
 ### Component Styling Guidelines
 
-**shadcn/ui Customization:**
+**Employee Portal (apps/employee) - Magic UI:**
 
-- Configure theme colors in `components.json` to use TUP Manila palette
-- Maintain consistent border radius (`rounded-lg` for cards, `rounded-md` for buttons)
-- Use consistent spacing scale (Tailwind's default 4px scale)
+Magic UI provides premium, animated components for engaging user experiences:
 
-**Magic UI Integration:**
-Premium effects for enhanced UX:
+- **Animated Backgrounds**: `dot-pattern`, `retro-grid`, `animated-grid-pattern`, `flickering-grid` for hero sections
+- **Interactive Buttons**: `shimmer-button`, `shiny-button`, `rainbow-button` for primary CTAs
+- **Text Animations**: `animated-gradient-text`, `text-reveal`, `sparkles-text`, `aurora-text` for headlines
+- **Special Effects**: `shine-border`, `border-beam`, `meteors`, `particles` for highlighted cards/sections
+- **Card Effects**: `magic-card`, `neon-gradient-card` for interactive surfaces
+- **Backgrounds**: `warp-background`, `ripple` for dynamic page backgrounds
+- **Smooth Transitions**: Use Framer Motion (`blur-fade`) for page transitions and animations
+- **Icons**: Import from `@radix-ui/react-icons` only (no Radix UI components)
 
-- **Animated Backgrounds**: `dot-pattern`, `retro-grid`, `animated-grid-pattern` for hero sections
-- **Interactive Buttons**: `shimmer-button`, `rainbow-button` for primary CTAs
-- **Text Animations**: `animated-gradient-text`, `text-reveal` for headlines
-- **Special Effects**: `shine-border`, `border-beam` for highlighted cards/sections
-- **Smooth Transitions**: Use Framer Motion for page transitions, modal animations
+**Admin Portal (apps/admin) - shadcn/ui:**
 
-**Dark Mode Support:**
+shadcn/ui provides professional, accessible components built on Radix UI:
+
+- **Component Library**: Use shadcn/ui CLI to add components (`npx shadcn@latest add [component]`)
+- **Radix Primitives**: All components built on accessible Radix UI primitives
+- **Configuration**: Theme colors defined in `components.json` using TUP Manila palette
+- **Consistency**: Maintain consistent border radius (`rounded-lg` for cards, `rounded-md` for buttons)
+- **Spacing**: Use Tailwind's default 4px spacing scale
+- **Professional Aesthetic**: Clean, minimal design with subtle shadows and clear hierarchy
+
+**Shared Components (@tupsafe/shared-ui):**
+
+- **Cross-Portal Utilities**: Components that work across both design systems
+- **Form Helpers**: Shared form layouts, validation components
+- **Utility Functions**: `cn()` for class merging, color utilities
+- **Type-Safe**: Full TypeScript support with proper prop types
+
+**Dark Mode Support (Both Portals):**
 
 - Implement system-preferred dark mode using Next.js 15 and Tailwind CSS 4
 - Ensure all colors have dark mode variants
-- Test readability and contrast ratios in both modes
+- Test readability and contrast ratios in both modes (WCAG 2.1 AA compliance)
+- Magic UI components automatically support dark mode
+- shadcn/ui components include dark mode variants
 
 ### Accessibility Standards
 
@@ -371,13 +467,39 @@ small: text-sm font-sans (14px)
 
 ## Component Development
 
+### Design System Guidelines by Portal
+
+**Employee Portal (apps/employee):**
+
+- **Primary Library**: Magic UI components for animations and premium effects
+- **No Radix UI Components**: Use Radix UI icons only (`@radix-ui/react-icons`)
+- **Installation**: Magic UI components are already integrated in the employee portal
+- **Styling**: Tailwind CSS 4 with custom Magic UI theme
+- **Component Location**: `apps/employee/src/components/ui/` for Magic UI components
+- **Philosophy**: Engaging, modern, interactive - prioritize user delight
+
+**Admin Portal (apps/admin):**
+
+- **Primary Library**: shadcn/ui components (built on Radix UI primitives)
+- **Installation**: Use `npx shadcn@latest add [component] --path apps/admin`
+- **Configuration**: Check `apps/admin/components.json` for shadcn configuration
+- **Component Location**: `apps/admin/src/components/ui/` for shadcn components
+- **Philosophy**: Professional, clean, enterprise-grade - prioritize clarity and efficiency
+
+**Shared Components (@tupsafe/shared-ui):**
+
+- **Purpose**: Design-system-agnostic utilities and helpers
+- **Import Path**: `@tupsafe/shared-ui` or `@smartgov/shared-ui`
+- **Examples**: Form wrappers, validation helpers, common hooks
+- **Rule**: Should work seamlessly in both employee and admin portals
+
 ### General Guidelines
 
-- Use shadcn/ui components from each app's local installation
-- Check `components.json` in each app for shadcn configuration
-- Magic UI components are available for enhanced visual effects
-- Follow Tailwind CSS 4 conventions for styling
-- Use `cn()` utility for conditional class merging
+- Follow Tailwind CSS 4 conventions for styling in both portals
+- Use `cn()` utility (from `@tupsafe/shared-ui/lib/utils`) for conditional class merging
+- Maintain consistent spacing and typography scales across both portals
+- Leverage shared packages (`@tupsafe/*`) for business logic and data fetching
+- Keep design system components separate - don't mix Magic UI in admin or shadcn in employee
 
 ### Performance Best Practices
 
@@ -608,12 +730,25 @@ See `/REALTIME.md` for comprehensive documentation on:
 
 ## Important Notes
 
+### Code Quality & Development
+
 - Always run `npm run lint` before committing
 - Use `npm run type-check` to verify TypeScript before pushing
 - Database schema changes require migration generation in `packages/database`
 - Each app can be developed independently but builds depend on shared packages
 - MCP servers are configured in `.mcp.json`—use filesystem, shadcn, github, memory, and sequential-thinking servers as appropriate
+
+### Design System Separation
+
+- **Employee Portal**: Magic UI + Tailwind CSS 4 (no Radix UI components, only icons)
+- **Admin Portal**: shadcn/ui + Tailwind CSS 4 (Radix UI primitives allowed)
+- **Shared Packages**: Use `@tupsafe/*` for cross-portal functionality
+- **DO NOT MIX**: Keep Magic UI in employee, shadcn/ui in admin - they are intentionally separate
+
+### Architecture & Integration
+
 - **Real-time Integration**: Use React Query hooks with Supabase Realtime for live data synchronization
+- **Shared Logic**: Always prefer `@tupsafe/database`, `@tupsafe/auth`, `@tupsafe/types` for shared functionality
 - **Performance First**: Every change should consider its impact on load time and user experience
 - **Accessibility Required**: WCAG 2.1 AA compliance is mandatory, not optional
 - **Security Critical**: This system handles sensitive CSC-regulated employee data—security cannot be compromised
