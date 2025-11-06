@@ -46,7 +46,14 @@
       "Bash(tee:*)",
       "Bash(ESLINT_NO_DEV_ERRORS=true npm run build:*)",
       "Bash(export ESLINT_NO_DEV_ERRORS=true)",
-      "Bash(timeout 90 npm run build:employee:*)"
+      "Bash(timeout 90 npm run build:employee:*)",
+      "mcp__magicui__getTextAnimations",
+      "Bash(for file in shine-border.tsx blur-fade.tsx text-animate.tsx sparkles-text.tsx dot-pattern.tsx flickering-grid.tsx retro-grid.tsx particles.tsx)",
+      "Bash(do sed -i 's|@/lib/utils|../lib/utils|g' \"$file\")",
+      "Bash(done)",
+      "Bash(ls:*)",
+      "Bash(timeout 30 npm run dev:employee:*)",
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": []

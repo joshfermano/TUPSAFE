@@ -1,15 +1,34 @@
 'use client';
 
-import { useMemo, memo, useCallback } from 'react';
-import { motion } from 'framer-motion';
+// React and Next.js
+import { useMemo, memo, useCallback, lazy, Suspense } from 'react';
 import Link from 'next/link';
+
+// Motion and Animation
+import { motion } from 'framer-motion';
+
+// API Hooks
 import { useAuth, usePds } from '@tupsafe/mock-data/api';
+
+// Enhanced UI Components from shared-ui
+import {
+  EnhancedButton,
+  EnhancedCard,
+  EnhancedCardContent,
+  EnhancedBackground,
+  AnimatedGradientText,
+  NumberTicker,
+  BlurFade,
+  Badge,
+} from '@tupsafe/shared-ui';
+
+// Local Components
 import { InfoCard } from '@/components/dashboard/InfoCard';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ShimmerButton } from '@/components/ui/shimmer-button';
-import { MagicCard } from '@/components/ui/magic-card';
+
+// Utils
 import { cn } from '@/lib/utils';
+
+// Icons
 import {
   FileText,
   User,
@@ -33,7 +52,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-// Section interface for UI display
+// Type Definitions
 interface PDSSection {
   id: string;
   title: string;
@@ -51,7 +70,7 @@ interface ActivityItem {
   type: 'create' | 'update' | 'submit' | 'approve';
 }
 
-// Mock sections data for UI display
+// Constants
 const MOCK_PDS_SECTIONS: PDSSection[] = [
   {
     id: 'personal-info',
@@ -118,12 +137,16 @@ const MOCK_RECENT_ACTIVITY: ActivityItem[] = [
   },
 ];
 
-// Memoized EmptyState component to prevent unnecessary re-renders
+// Memoized Components
 const EmptyState = memo(function EmptyState() {
   return (
-    <div className="relative min-h-[70vh] flex items-center justify-center bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
+    <EnhancedBackground
+      effect="dots"
+      intensity="low"
+      className="relative min-h-[70vh] flex items-center justify-center"
+      respectReducedMotion>
       <motion.div
-        className="max-w-2xl mx-auto text-center space-y-8 p-8"
+        className="max-w-2xl mx-auto text-center space-y-8 p-8 relative z-10"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}>
@@ -165,18 +188,18 @@ const EmptyState = memo(function EmptyState() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.6 }}>
-          <div className="flex items-center justify-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-            <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-            <span>Easy to fill out step-by-step</span>
-          </div>
-          <div className="flex items-center justify-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-            <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-            <span>Auto-save as you progress</span>
-          </div>
-          <div className="flex items-center justify-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-            <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-            <span>Digital signature support</span>
-          </div>
+          {[
+            'Easy to fill out step-by-step',
+            'Auto-save as you progress',
+            'Digital signature support',
+          ].map((feature, i) => (
+            <div
+              key={i}
+              className="flex items-center justify-center gap-3 text-sm text-slate-600 dark:text-slate-400">
+              <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <span>{feature}</span>
+            </div>
+          ))}
         </motion.div>
 
         <motion.div
@@ -184,101 +207,179 @@ const EmptyState = memo(function EmptyState() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.8 }}>
           <Link href="/dashboard/pds/create">
-            <ShimmerButton
-              className="shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-6 text-base text-white dark:text-white font-semibold"
-              shimmerColor="#ffffff"
-              shimmerSize="0.08em"
-              shimmerDuration="3s"
-              borderRadius="0.75rem"
-              background="linear-gradient(135deg, oklch(0.55 0.22 15) 0%, oklch(0.40 0.18 15) 100%)">
+            <EnhancedButton variant="shimmer" size="lg" className="px-8 py-6">
               <Plus className="h-5 w-5 mr-2" />
               Create Your First PDS
-            </ShimmerButton>
+            </EnhancedButton>
           </Link>
         </motion.div>
       </motion.div>
-    </div>
+    </EnhancedBackground>
   );
 });
 
+// Memoized Section Card
+const SectionCard = memo(function SectionCard({
+  section,
+  index,
+}: {
+  section: PDSSection;
+  index: number;
+}) {
+  const IconComponent = section.icon;
+
+  return (
+    <BlurFade delay={0.5 + index * 0.05} duration={0.4}>
+      <EnhancedCard
+        variant="magic"
+        gradientSize={150}
+        gradientOpacity={0.03}
+        className="relative p-6 cursor-pointer hover:shadow-xl transition-all duration-300 h-full">
+        <div className="flex items-start justify-between mb-4">
+          <div
+            className={cn(
+              'flex h-12 w-12 items-center justify-center rounded-lg transition-all duration-300',
+              section.isComplete
+                ? 'bg-green-100 dark:bg-green-950/30'
+                : 'bg-tup-crimson-subtle dark:bg-primary/30'
+            )}>
+            <IconComponent
+              className={cn(
+                'h-6 w-6',
+                section.isComplete
+                  ? 'text-green-600 dark:text-green-400'
+                  : 'text-primary dark:text-tup-crimson-light'
+              )}
+            />
+          </div>
+          <Badge
+            className={
+              section.isComplete
+                ? 'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400'
+                : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400'
+            }>
+            {section.isComplete ? (
+              <>
+                <CheckCircle2 className="h-3 w-3 mr-1" />
+                Complete
+              </>
+            ) : (
+              <>
+                <Clock className="h-3 w-3 mr-1" />
+                In Progress
+              </>
+            )}
+          </Badge>
+        </div>
+
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          {section.title}
+        </h3>
+        <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+          {section.description}
+        </p>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-slate-600 dark:text-slate-400">Progress</span>
+            <span className="font-semibold text-slate-900 dark:text-slate-100">
+              {section.completionPercentage}%
+            </span>
+          </div>
+          <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+            <motion.div
+              className={cn(
+                'h-full rounded-full',
+                section.isComplete
+                  ? 'bg-gradient-to-r from-green-600 to-emerald-600'
+                  : 'bg-gradient-tup'
+              )}
+              initial={{ width: 0 }}
+              animate={{ width: `${section.completionPercentage}%` }}
+              transition={{ duration: 1, delay: 0.6 + index * 0.1 }}
+            />
+          </div>
+        </div>
+      </EnhancedCard>
+    </BlurFade>
+  );
+});
+
+// Main Component
 export default function PDSPage() {
   const { user } = useAuth();
   const { submissions, latest, loading, error } = usePds(user?.id || '');
 
   const hasExistingPDS = submissions.length > 0;
 
-  const getStatusBadge = useCallback((status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'reviewing'): React.ReactNode => {
-    const variants = {
-      draft: {
-        variant: 'secondary' as const,
-        icon: Clock,
-        label: 'Draft',
-        className:
-          'bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400',
-      },
-      submitted: {
-        variant: 'default' as const,
-        icon: Send,
-        label: 'Submitted',
-        className:
-          'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400',
-      },
-      reviewing: {
-        variant: 'default' as const,
-        icon: Eye,
-        label: 'Under Review',
-        className:
-          'bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400',
-      },
-      approved: {
-        variant: 'default' as const,
-        icon: CheckCircle2,
-        label: 'Approved',
-        className:
-          'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400',
-      },
-      rejected: {
-        variant: 'destructive' as const,
-        icon: AlertCircle,
-        label: 'Rejected',
-        className: '',
-      },
-    };
+  // Memoized status badge renderer
+  const getStatusBadge = useCallback(
+    (
+      status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'reviewing'
+    ): React.ReactNode => {
+      const variants = {
+        draft: {
+          icon: Clock,
+          label: 'Draft',
+          className:
+            'bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400',
+        },
+        submitted: {
+          icon: Send,
+          label: 'Submitted',
+          className:
+            'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400',
+        },
+        reviewing: {
+          icon: Eye,
+          label: 'Under Review',
+          className:
+            'bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400',
+        },
+        approved: {
+          icon: CheckCircle2,
+          label: 'Approved',
+          className:
+            'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400',
+        },
+        rejected: {
+          icon: AlertCircle,
+          label: 'Rejected',
+          className:
+            'bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400',
+        },
+      };
 
-    const config = variants[status] || variants.draft;
-    const IconComponent = config.icon;
+      const config = variants[status] || variants.draft;
+      const IconComponent = config.icon;
 
-    return (
-      <Badge
-        variant={config.variant}
-        className={cn('font-semibold', config.className)}>
-        <IconComponent className="h-3 w-3 mr-1" />
-        {config.label}
-      </Badge>
-    );
-  }, []);
+      return (
+        <Badge className={cn('font-semibold', config.className)}>
+          <IconComponent className="h-3 w-3 mr-1" />
+          {config.label}
+        </Badge>
+      );
+    },
+    []
+  );
 
+  // Memoized activity icon getter
   const getActivityIcon = useCallback((type: ActivityItem['type']): LucideIcon => {
-    switch (type) {
-      case 'create':
-        return Plus;
-      case 'update':
-        return Edit;
-      case 'submit':
-        return Send;
-      case 'approve':
-        return CheckCircle2;
-      default:
-        return FileText;
-    }
+    const icons = {
+      create: Plus,
+      update: Edit,
+      submit: Send,
+      approve: CheckCircle2,
+    };
+    return icons[type] || FileText;
   }, []);
 
-  // Memoized completion percentage and days ago calculations
-  const completionData = useMemo((): { percentage: number; daysAgo: number } => {
+  // Memoized completion data
+  const completionData = useMemo(() => {
     if (!latest) return { percentage: 0, daysAgo: 0 };
 
     return {
-      percentage: 85, // Mock percentage - would be calculated from actual form data
+      percentage: 85,
       daysAgo: Math.floor(
         (new Date().getTime() - new Date(latest.updatedAt).getTime()) /
           (1000 * 60 * 60 * 24)
@@ -286,12 +387,12 @@ export default function PDSPage() {
     };
   }, [latest]);
 
-  // Show loading state
+  // Loading State
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-primary"></div>
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-primary" />
           <p className="text-sm text-slate-600 dark:text-slate-400">
             Loading PDS data...
           </p>
@@ -300,7 +401,7 @@ export default function PDSPage() {
     );
   }
 
-  // Show error state
+  // Error State
   if (error) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -315,67 +416,58 @@ export default function PDSPage() {
     );
   }
 
-  // Main Content with Existing PDS
+  // Empty State
   if (!hasExistingPDS) {
     return <EmptyState />;
   }
 
+  // Main Content
   return (
     <div className="relative space-y-8 pb-8">
-      {/* Page Header */}
-      <motion.div
-        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}>
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}>
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100">
-              Personal Data Sheet (e-PDS)
-            </h1>
-            {latest && getStatusBadge(latest.status)}
-          </div>
-          <p className="text-slate-600 dark:text-slate-400">
-            Manage your personal information required by the Civil Service
-            Commission
-          </p>
-        </motion.div>
+      {/* Subtle Background Effect */}
+      <EnhancedBackground
+        effect="dots"
+        intensity="low"
+        className="fixed inset-0 -z-10"
+        respectReducedMotion
+      />
 
-        <motion.div
-          className="flex flex-wrap gap-3"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}>
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <Link href="/dashboard/pds/edit">
-              <ShimmerButton
-                className="h-11 px-6 shadow-md hover:shadow-lg transition-shadow text-white dark:text-white font-semibold"
-                shimmerColor="#ffffff"
-                shimmerSize="0.08em"
-                shimmerDuration="3s"
-                borderRadius="0.75rem"
-                background="linear-gradient(135deg, oklch(0.55 0.22 15) 0%, oklch(0.40 0.18 15) 100%)">
-                <Edit className="h-4 w-4 mr-2" />
-                Update PDS
-              </ShimmerButton>
-            </Link>
-          </motion.div>
-        </motion.div>
-      </motion.div>
+      {/* Page Header */}
+      <BlurFade delay={0} duration={0.5}>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <AnimatedGradientText
+                className="text-3xl sm:text-4xl font-bold"
+                colorFrom="#8B1538"
+                colorTo="#B8264D"
+                speed={1.5}>
+                Personal Data Sheet (e-PDS)
+              </AnimatedGradientText>
+              {latest && getStatusBadge(latest.status)}
+            </div>
+            <p className="text-slate-600 dark:text-slate-400">
+              Manage your personal information required by the Civil Service
+              Commission
+            </p>
+          </div>
+
+          <Link href="/dashboard/pds/edit">
+            <EnhancedButton variant="shimmer" size="lg">
+              <Edit className="h-4 w-4 mr-2" />
+              Update PDS
+            </EnhancedButton>
+          </Link>
+        </div>
+      </BlurFade>
 
       {/* Status Overview Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.3 }}>
-        <MagicCard
-          className="overflow-hidden p-6 sm:p-8 border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-all duration-300"
+      <BlurFade delay={0.1} duration={0.5}>
+        <EnhancedCard
+          variant="magic"
           gradientSize={200}
-          gradientColor="var(--primary)"
-          gradientOpacity={0.05}>
+          gradientOpacity={0.05}
+          className="overflow-hidden p-6 sm:p-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Completion Progress */}
             <div className="space-y-3">
@@ -384,11 +476,12 @@ export default function PDSPage() {
                 Completion Progress
               </div>
               <div className="flex items-end gap-2">
-                <span className="text-4xl font-bold text-slate-900 dark:text-slate-100">
-                  {completionData.percentage}%
-                </span>
+                <NumberTicker
+                  value={completionData.percentage}
+                  className="text-4xl font-bold text-slate-900 dark:text-slate-100"
+                />
                 <span className="text-sm text-slate-600 dark:text-slate-400 mb-2">
-                  Complete
+                  % Complete
                 </span>
               </div>
               <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden">
@@ -396,7 +489,7 @@ export default function PDSPage() {
                   className="h-full bg-gradient-tup rounded-full"
                   initial={{ width: 0 }}
                   animate={{ width: `${completionData.percentage}%` }}
-                  transition={{ duration: 1, delay: 0.5, ease: 'easeOut' }}
+                  transition={{ duration: 1, delay: 0.3, ease: 'easeOut' }}
                 />
               </div>
             </div>
@@ -408,11 +501,12 @@ export default function PDSPage() {
                 Last Updated
               </div>
               <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-                {latest && new Date(latest.updatedAt).toLocaleDateString('en-US', {
-                  month: 'long',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
+                {latest &&
+                  new Date(latest.updatedAt).toLocaleDateString('en-US', {
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
               </div>
               <div className="text-sm text-slate-600 dark:text-slate-400">
                 {completionData.daysAgo} days ago
@@ -442,152 +536,59 @@ export default function PDSPage() {
               </div>
             </div>
           </div>
-        </MagicCard>
-      </motion.div>
+        </EnhancedCard>
+      </BlurFade>
 
       {/* PDS Sections Grid */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.4 }}>
+      <BlurFade delay={0.2} duration={0.5}>
         <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
           PDS Sections
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {MOCK_PDS_SECTIONS.map((section, index) => (
-            <motion.div
-              key={section.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.5 + index * 0.1 }}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}>
-              <MagicCard
-                className="relative p-6 cursor-pointer hover:shadow-xl transition-all duration-300 border-slate-200 dark:border-slate-800"
-                gradientSize={0}
-                gradientColor="var(--primary)"
-                gradientOpacity={0}>
-                <div className="flex items-start justify-between mb-4">
-                  <div
-                    className={cn(
-                      'flex h-12 w-12 items-center justify-center rounded-lg transition-all duration-300',
-                      section.isComplete
-                        ? 'bg-green-100 dark:bg-green-950/30'
-                        : 'bg-tup-crimson-subtle dark:bg-primary/30'
-                    )}>
-                    <section.icon
-                      className={cn(
-                        'h-6 w-6',
-                        section.isComplete
-                          ? 'text-green-600 dark:text-green-400'
-                          : 'text-primary dark:text-tup-crimson-light'
-                      )}
-                    />
-                  </div>
-                  {section.isComplete ? (
-                    <Badge className="bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400">
-                      <CheckCircle2 className="h-3 w-3 mr-1" />
-                      Complete
-                    </Badge>
-                  ) : (
-                    <Badge
-                      variant="secondary"
-                      className="bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400">
-                      <Clock className="h-3 w-3 mr-1" />
-                      In Progress
-                    </Badge>
-                  )}
-                </div>
-
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                  {section.title}
-                </h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                  {section.description}
-                </p>
-
-                {/* Progress Bar */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-600 dark:text-slate-400">
-                      Progress
-                    </span>
-                    <span className="font-semibold text-slate-900 dark:text-slate-100">
-                      {section.completionPercentage}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
-                    <motion.div
-                      className={cn(
-                        'h-full rounded-full',
-                        section.isComplete
-                          ? 'bg-gradient-to-r from-green-600 to-emerald-600'
-                          : 'bg-gradient-tup'
-                      )}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${section.completionPercentage}%` }}
-                      transition={{ duration: 1, delay: 0.6 + index * 0.1 }}
-                    />
-                  </div>
-                </div>
-              </MagicCard>
-            </motion.div>
+            <SectionCard key={section.id} section={section} index={index} />
           ))}
         </div>
-      </motion.div>
+      </BlurFade>
 
       {/* Quick Actions and Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Quick Actions */}
-        <motion.div
-          className="lg:col-span-2"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.7 }}>
+        <BlurFade delay={0.3} duration={0.5} className="lg:col-span-2">
           <InfoCard title="Quick Actions" icon={FileText}>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               <Link href="/dashboard/pds/view" className="w-full">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-primary hover:bg-primary/10 dark:hover:border-primary dark:hover:bg-primary/20 hover:text-primary dark:hover:text-primary transition-all duration-300 hover:scale-[1.02]">
+                <EnhancedButton variant="outline" className="w-full justify-start">
                   <Eye className="h-4 w-4 mr-2" />
                   View Submissions
-                </Button>
+                </EnhancedButton>
               </Link>
               <Link href="/dashboard/pds/archive" className="w-full">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-amber-600 hover:bg-amber-50 dark:hover:border-amber-500 dark:hover:bg-amber-950/30 hover:text-amber-700 dark:hover:text-amber-400 transition-all duration-300 hover:scale-[1.02]">
+                <EnhancedButton variant="outline" className="w-full justify-start">
                   <Archive className="h-4 w-4 mr-2" />
                   View Archive
-                </Button>
+                </EnhancedButton>
               </Link>
-              <Button
-                variant="outline"
-                className="w-full justify-start text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-green-600 hover:bg-green-50 dark:hover:border-green-500 dark:hover:bg-green-950/30 hover:text-green-700 dark:hover:text-green-400 transition-all duration-300 hover:scale-[1.02]">
+              <EnhancedButton variant="outline" className="w-full justify-start">
                 <Download className="h-4 w-4 mr-2" />
                 Download PDF
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-purple-600 hover:bg-purple-50 dark:hover:border-purple-500 dark:hover:bg-purple-950/30 hover:text-purple-700 dark:hover:text-purple-400 transition-all duration-300 hover:scale-[1.02]">
+              </EnhancedButton>
+              <EnhancedButton variant="outline" className="w-full justify-start">
                 <Printer className="h-4 w-4 mr-2" />
                 Print PDS
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-secondary hover:bg-secondary/10 dark:hover:border-secondary dark:hover:bg-secondary/20 hover:text-secondary dark:hover:text-secondary transition-all duration-300 hover:scale-[1.02]">
+              </EnhancedButton>
+              <EnhancedButton
+                variant="shiny"
+                className="w-full justify-start sm:col-span-2 md:col-span-1">
                 <Send className="h-4 w-4 mr-2" />
                 Submit for Review
-              </Button>
+              </EnhancedButton>
             </div>
           </InfoCard>
-        </motion.div>
+        </BlurFade>
 
         {/* Recent Activity */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.8 }}>
+        <BlurFade delay={0.35} duration={0.5}>
           <InfoCard title="Recent Activity" icon={Clock}>
             <div className="space-y-4">
               {MOCK_RECENT_ACTIVITY.map((activity, index) => {
@@ -598,7 +599,7 @@ export default function PDSPage() {
                     className="flex items-start gap-3 pb-4 border-b border-slate-200 dark:border-slate-800 last:border-0 last:pb-0"
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.4, delay: 0.9 + index * 0.1 }}>
+                    transition={{ duration: 0.4, delay: 0.4 + index * 0.05 }}>
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tup-crimson-subtle dark:bg-primary/30 flex-shrink-0">
                       <ActivityIcon className="h-4 w-4 text-primary dark:text-tup-crimson-light" />
                     </div>
@@ -624,7 +625,7 @@ export default function PDSPage() {
               })}
             </div>
           </InfoCard>
-        </motion.div>
+        </BlurFade>
       </div>
     </div>
   );

@@ -1,16 +1,47 @@
 'use client';
 
+/**
+ * SALN Dashboard Page - Enhanced with MagicUI Components
+ *
+ * Features:
+ * - NeonGradientCard for net worth overview
+ * - NumberTicker for all financial values with animated counting
+ * - AnimatedGradientText for page title
+ * - EnhancedCard variant="magic" for SALN entries
+ * - ShimmerButton for primary actions
+ * - AnimatedGridPattern background for financial theme
+ * - BlurFade entrance animations
+ *
+ * Performance Optimizations:
+ * - React.memo for all components
+ * - useMemo for calculations
+ * - useCallback for event handlers
+ * - Memoized currency formatter
+ *
+ * Target: ~480 lines, < 180 KB bundle size
+ */
+
 import { useMemo, memo, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import Link from 'next/link';
 import { useAuth, useSaln } from '@tupsafe/mock-data/api';
 import { InfoCard } from '@/components/dashboard/InfoCard';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { ShimmerButton } from '@/components/ui/shimmer-button';
-import { MagicCard } from '@/components/ui/magic-card';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+
+// Import Enhanced Components from @tupsafe/shared-ui
+import {
+  AnimatedGradientText,
+  AnimatedGridPattern,
+  BlurFade,
+  EnhancedCard,
+  EnhancedCardContent,
+  EnhancedButton,
+  NumberTicker,
+  NeonGradientCard,
+} from '@tupsafe/shared-ui';
+
 import {
   Landmark,
   Home,
@@ -25,7 +56,6 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
-  FileCheck,
   Calendar,
   Plus,
   Edit,
@@ -34,7 +64,6 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Archive,
-  FolderOpen,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -73,7 +102,7 @@ interface YearSummary {
   status: 'draft' | 'submitted' | 'approved' | 'rejected';
 }
 
-// Currency formatter - created once outside component to prevent recreation
+// Currency formatter - created once outside component
 const CURRENCY_FORMATTER = new Intl.NumberFormat('en-PH', {
   style: 'currency',
   currency: 'PHP',
@@ -81,7 +110,7 @@ const CURRENCY_FORMATTER = new Intl.NumberFormat('en-PH', {
   maximumFractionDigits: 0,
 });
 
-// Mock Data - extracted outside component to prevent recreation on every render
+// Mock Data
 const MOCK_SALN_STATUS: SALNStatus = {
   year: 2025,
   status: 'draft',
@@ -169,12 +198,21 @@ const MOCK_YEAR_SUMMARIES: YearSummary[] = [
   { year: 2023, netWorth: 3800000, status: 'approved' },
 ];
 
-// Memoized EmptyState component to prevent unnecessary re-renders
+// Memoized EmptyState component
 const EmptyState = memo(function EmptyState() {
   return (
-    <div className="relative min-h-[70vh] flex items-center justify-center bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
+    <div className="relative min-h-[70vh] flex items-center justify-center">
+      {/* Subtle animated grid background */}
+      <AnimatedGridPattern
+        numSquares={30}
+        maxOpacity={0.1}
+        duration={3}
+        repeatDelay={1}
+        className="absolute inset-0 [mask-image:radial-gradient(500px_circle_at_center,white,transparent)]"
+      />
+
       <motion.div
-        className="max-w-2xl mx-auto text-center space-y-8 p-8"
+        className="relative z-10 max-w-2xl mx-auto text-center space-y-8 p-8"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}>
@@ -201,9 +239,9 @@ const EmptyState = memo(function EmptyState() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}>
-          <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
+          <AnimatedGradientText className="text-3xl font-bold">
             Start Your Statement of Assets
-          </h2>
+          </AnimatedGradientText>
           <p className="text-lg text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
             The Statement of Assets, Liabilities, and Net Worth (e-SALN) is your
             annual financial disclosure required for transparency and
@@ -235,16 +273,10 @@ const EmptyState = memo(function EmptyState() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.8 }}>
           <Link href="/dashboard/saln/create">
-            <ShimmerButton
-              className="shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-6 text-base text-white dark:text-white font-semibold"
-              shimmerColor="#ffffff"
-              shimmerSize="0.08em"
-              shimmerDuration="3s"
-              borderRadius="0.75rem"
-              background="linear-gradient(135deg, oklch(0.55 0.22 15) 0%, oklch(0.40 0.18 15) 100%)">
+            <EnhancedButton variant="shimmer" size="lg">
               <Plus className="h-5 w-5 mr-2" />
               Create Your First SALN
-            </ShimmerButton>
+            </EnhancedButton>
           </Link>
         </motion.div>
       </motion.div>
@@ -258,11 +290,12 @@ export default function SalnPage() {
 
   const hasExistingSALN = submissions.length > 0;
 
-  // Use memoized currency formatter
+  // Memoized currency formatter
   const formatCurrency = useCallback((amount: number) => {
     return CURRENCY_FORMATTER.format(amount);
   }, []);
 
+  // Memoized status badge renderer
   const getStatusBadge = useCallback((status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'reviewing') => {
     const variants = {
       draft: {
@@ -314,6 +347,7 @@ export default function SalnPage() {
     );
   }, []);
 
+  // Memoized activity icon getter
   const getActivityIcon = useCallback((type: ActivityItem['type']) => {
     switch (type) {
       case 'create':
@@ -329,7 +363,7 @@ export default function SalnPage() {
     }
   }, []);
 
-  // Memoize net worth calculation to prevent recalculation on every render
+  // Memoize net worth calculation
   const netWorthChange = useMemo(() => {
     if (submissions.length < 2) return null;
     const sorted = [...submissions].sort((a, b) => b.year - a.year);
@@ -342,7 +376,7 @@ export default function SalnPage() {
     return { change, percentChange, isPositive: change >= 0 };
   }, [submissions]);
 
-  // Show loading state
+  // Loading state
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -356,7 +390,7 @@ export default function SalnPage() {
     );
   }
 
-  // Show error state
+  // Error state
   if (error) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -371,291 +405,260 @@ export default function SalnPage() {
     );
   }
 
-  // Main Content with Existing SALN
+  // Empty state
   if (!hasExistingSALN) {
     return <EmptyState />;
   }
 
+  // Main content with existing SALN
   return (
     <div className="relative space-y-8 pb-8">
-      {/* Page Header */}
-      <motion.div
-        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}>
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}>
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100">
-              e-SALN {latest?.year || new Date().getFullYear()}
-            </h1>
-            {latest && getStatusBadge(latest.status)}
-          </div>
-          <p className="text-slate-600 dark:text-slate-400">
-            Statement of Assets, Liabilities, and Net Worth
-          </p>
-        </motion.div>
+      {/* Subtle animated grid background */}
+      <AnimatedGridPattern
+        numSquares={30}
+        maxOpacity={0.05}
+        duration={3}
+        repeatDelay={1}
+        className="absolute inset-0 [mask-image:radial-gradient(800px_circle_at_center,white,transparent)]"
+      />
 
-        <motion.div
-          className="flex flex-wrap gap-3"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}>
+      {/* Page Header */}
+      <BlurFade delay={0.1}>
+        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <AnimatedGradientText className="text-3xl sm:text-4xl font-bold">
+                e-SALN {latest?.year || new Date().getFullYear()}
+              </AnimatedGradientText>
+              {latest && getStatusBadge(latest.status)}
+            </div>
+            <p className="text-slate-600 dark:text-slate-400">
+              Statement of Assets, Liabilities, and Net Worth
+            </p>
+          </div>
+
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <Link href="/dashboard/saln/edit">
-              <ShimmerButton
-                className="h-11 px-6 shadow-md hover:shadow-lg transition-shadow text-white dark:text-white font-semibold"
-                shimmerColor="#ffffff"
-                shimmerSize="0.08em"
-                shimmerDuration="3s"
-                borderRadius="0.75rem"
-                background="linear-gradient(135deg, oklch(0.55 0.22 15) 0%, oklch(0.40 0.18 15) 100%)">
+              <EnhancedButton variant="shimmer">
                 <Edit className="h-4 w-4 mr-2" />
                 Update SALN
-              </ShimmerButton>
+              </EnhancedButton>
             </Link>
           </motion.div>
-        </motion.div>
-      </motion.div>
+        </div>
+      </BlurFade>
 
-      {/* Net Worth Overview Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.3 }}>
-        <MagicCard
-          className="overflow-hidden p-6 sm:p-8 border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-all duration-300"
-          gradientSize={200}
-          gradientColor="var(--primary)"
-          gradientOpacity={0.05}>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Net Worth */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
-                <BarChart3 className="h-4 w-4" />
-                Net Worth
-              </div>
-              <div className="flex items-end gap-2">
-                <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">
-                  {latest && formatCurrency(Number(latest.netWorth))}
-                </span>
-              </div>
-              {netWorthChange && (
-                <div
-                  className={cn(
-                    'flex items-center gap-1 text-sm font-medium',
-                    netWorthChange.isPositive
-                      ? 'text-green-600 dark:text-green-400'
-                      : 'text-red-600 dark:text-red-400'
-                  )}>
-                  {netWorthChange.isPositive ? (
-                    <ArrowUpRight className="h-4 w-4" />
-                  ) : (
-                    <ArrowDownRight className="h-4 w-4" />
-                  )}
-                  <span>
-                    {netWorthChange.isPositive ? '+' : ''}
-                    {formatCurrency(netWorthChange.change)} (
-                    {netWorthChange.percentChange.toFixed(1)}%)
+      {/* Net Worth Overview Card - NeonGradientCard with NumberTicker */}
+      <BlurFade delay={0.2}>
+        <NeonGradientCard
+          className="relative z-10 overflow-hidden"
+          neonColors={{
+            firstColor: '#9b1c1c',
+            secondColor: '#dc2626',
+          }}
+          borderSize={2}
+          borderRadius={12}>
+          <EnhancedCardContent className="p-6 sm:p-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Net Worth */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
+                  <BarChart3 className="h-4 w-4" />
+                  Net Worth
+                </div>
+                <div className="flex items-end gap-2">
+                  <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">
+                    ₱<NumberTicker value={latest ? Number(latest.netWorth) : 0} />
                   </span>
                 </div>
-              )}
-            </div>
-
-            {/* Total Assets */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
-                <TrendingUp className="h-4 w-4" />
-                Total Assets
-              </div>
-              <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-                {latest && formatCurrency(Number(latest.totalAssets))}
-              </div>
-              <div className="text-sm text-slate-600 dark:text-slate-400">
-                Real property, personal property, and investments
-              </div>
-            </div>
-
-            {/* Total Liabilities */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
-                <CreditCard className="h-4 w-4" />
-                Total Liabilities
-              </div>
-              <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-                {latest && formatCurrency(Number(latest.totalLiabilities))}
-              </div>
-              <div className="text-sm text-slate-600 dark:text-slate-400">
-                Loans, mortgages, and other obligations
-              </div>
-            </div>
-          </div>
-        </MagicCard>
-      </motion.div>
-
-      {/* SALN Sections Grid */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.4 }}>
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
-          SALN Categories
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {MOCK_SALN_SECTIONS.map((section, index) => (
-            <motion.div
-              key={section.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.5 + index * 0.1 }}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}>
-              <MagicCard
-                className="relative p-6 cursor-pointer hover:shadow-xl transition-all duration-300 border-slate-200 dark:border-slate-800"
-                gradientSize={0}
-                gradientColor="var(--primary)"
-                gradientOpacity={0}>
-                <div className="flex items-start justify-between mb-4">
+                {netWorthChange && (
                   <div
                     className={cn(
-                      'flex h-12 w-12 items-center justify-center rounded-lg transition-all duration-300',
-                      section.isComplete
-                        ? 'bg-green-100 dark:bg-green-950/30'
-                        : 'bg-tup-crimson-subtle dark:bg-primary/30'
+                      'flex items-center gap-1 text-sm font-medium',
+                      netWorthChange.isPositive
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-red-600 dark:text-red-400'
                     )}>
-                    <section.icon
-                      className={cn(
-                        'h-6 w-6',
-                        section.isComplete
-                          ? 'text-green-600 dark:text-green-400'
-                          : 'text-primary dark:text-tup-crimson-light'
-                      )}
-                    />
+                    {netWorthChange.isPositive ? (
+                      <ArrowUpRight className="h-4 w-4" />
+                    ) : (
+                      <ArrowDownRight className="h-4 w-4" />
+                    )}
+                    <span>
+                      {netWorthChange.isPositive ? '+' : ''}
+                      {formatCurrency(netWorthChange.change)} (
+                      <NumberTicker value={Math.abs(netWorthChange.percentChange)} decimalPlaces={1} />%)
+                    </span>
                   </div>
-                  {section.isComplete ? (
-                    <Badge className="bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400">
-                      <CheckCircle2 className="h-3 w-3 mr-1" />
-                      Complete
-                    </Badge>
-                  ) : (
-                    <Badge
-                      variant="secondary"
-                      className="bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400">
-                      <Clock className="h-3 w-3 mr-1" />
-                      In Progress
-                    </Badge>
-                  )}
-                </div>
+                )}
+              </div>
 
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                  {section.title}
-                </h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                  {section.description}
-                </p>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                    {formatCurrency(section.amount)}
-                  </span>
-                  <span className="text-sm text-slate-600 dark:text-slate-400">
-                    {section.items} {section.items === 1 ? 'item' : 'items'}
-                  </span>
+              {/* Total Assets */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
+                  <TrendingUp className="h-4 w-4" />
+                  Total Assets
                 </div>
-              </MagicCard>
-            </motion.div>
-          ))}
+                <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+                  ₱<NumberTicker value={latest ? Number(latest.totalAssets) : 0} />
+                </div>
+                <div className="text-sm text-slate-600 dark:text-slate-400">
+                  Real property, personal property, and investments
+                </div>
+              </div>
+
+              {/* Total Liabilities */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
+                  <CreditCard className="h-4 w-4" />
+                  Total Liabilities
+                </div>
+                <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+                  ₱<NumberTicker value={latest ? Number(latest.totalLiabilities) : 0} />
+                </div>
+                <div className="text-sm text-slate-600 dark:text-slate-400">
+                  Loans, mortgages, and other obligations
+                </div>
+              </div>
+            </div>
+          </EnhancedCardContent>
+        </NeonGradientCard>
+      </BlurFade>
+
+      {/* SALN Categories Grid */}
+      <BlurFade delay={0.3}>
+        <div className="relative z-10">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+            SALN Categories
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {MOCK_SALN_SECTIONS.map((section, index) => (
+              <BlurFade key={section.id} delay={0.4 + index * 0.05}>
+                <EnhancedCard variant="magic" className="cursor-pointer hover:shadow-xl transition-all duration-300">
+                  <div className="flex items-start justify-between mb-4">
+                    <div
+                      className={cn(
+                        'flex h-12 w-12 items-center justify-center rounded-lg transition-all duration-300',
+                        section.isComplete
+                          ? 'bg-green-100 dark:bg-green-950/30'
+                          : 'bg-tup-crimson-subtle dark:bg-primary/30'
+                      )}>
+                      <section.icon
+                        className={cn(
+                          'h-6 w-6',
+                          section.isComplete
+                            ? 'text-green-600 dark:text-green-400'
+                            : 'text-primary dark:text-tup-crimson-light'
+                        )}
+                      />
+                    </div>
+                    {section.isComplete ? (
+                      <Badge className="bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400">
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                        Complete
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="secondary"
+                        className="bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400">
+                        <Clock className="h-3 w-3 mr-1" />
+                        In Progress
+                      </Badge>
+                    )}
+                  </div>
+
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                    {section.title}
+                  </h3>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                    {section.description}
+                  </p>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                      ₱<NumberTicker value={section.amount} />
+                    </span>
+                    <span className="text-sm text-slate-600 dark:text-slate-400">
+                      {section.items} {section.items === 1 ? 'item' : 'items'}
+                    </span>
+                  </div>
+                </EnhancedCard>
+              </BlurFade>
+            ))}
+          </div>
         </div>
-      </motion.div>
+      </BlurFade>
 
       {/* Year Summaries and Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Year Summaries */}
-        <motion.div
-          className="lg:col-span-2"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.7 }}>
+        <BlurFade delay={0.5} className="lg:col-span-2">
           <InfoCard title="Historical Overview" icon={Calendar}>
             <div className="space-y-4">
               {MOCK_YEAR_SUMMARIES.map((summary, index) => (
-                <motion.div
-                  key={summary.year}
-                  className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.4, delay: 0.8 + index * 0.1 }}>
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-tup-crimson-subtle to-tup-crimson-subtle dark:from-primary/50 dark:to-tup-crimson-dark/50">
-                      <Calendar className="h-6 w-6 text-primary dark:text-tup-crimson-light" />
+                <BlurFade key={summary.year} delay={0.6 + index * 0.05}>
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-tup-crimson-subtle to-tup-crimson-subtle dark:from-primary/50 dark:to-tup-crimson-dark/50">
+                        <Calendar className="h-6 w-6 text-primary dark:text-tup-crimson-light" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-900 dark:text-slate-100">
+                          SALN {summary.year}
+                        </p>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                          ₱<NumberTicker value={summary.netWorth} />
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold text-slate-900 dark:text-slate-100">
-                        SALN {summary.year}
-                      </p>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        {formatCurrency(summary.netWorth)}
-                      </p>
-                    </div>
+                    {getStatusBadge(summary.status)}
                   </div>
-                  {getStatusBadge(summary.status)}
-                </motion.div>
+                </BlurFade>
               ))}
             </div>
           </InfoCard>
-        </motion.div>
+        </BlurFade>
 
         {/* Recent Activity */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.8 }}>
+        <BlurFade delay={0.6}>
           <InfoCard title="Recent Activity" icon={Clock}>
             <div className="space-y-4">
               {MOCK_RECENT_ACTIVITY.map((activity, index) => {
                 const ActivityIcon = getActivityIcon(activity.type);
                 return (
-                  <motion.div
-                    key={activity.id}
-                    className="flex items-start gap-3 pb-4 border-b border-slate-200 dark:border-slate-800 last:border-0 last:pb-0"
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.4, delay: 0.9 + index * 0.1 }}>
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tup-crimson-subtle dark:bg-primary/30 flex-shrink-0">
-                      <ActivityIcon className="h-4 w-4 text-primary dark:text-tup-crimson-light" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                        {activity.action}
-                      </p>
-                      {activity.section && (
-                        <p className="text-xs text-slate-600 dark:text-slate-400">
-                          {activity.section}
+                  <BlurFade key={activity.id} delay={0.7 + index * 0.05}>
+                    <div className="flex items-start gap-3 pb-4 border-b border-slate-200 dark:border-slate-800 last:border-0 last:pb-0">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tup-crimson-subtle dark:bg-primary/30 flex-shrink-0">
+                        <ActivityIcon className="h-4 w-4 text-primary dark:text-tup-crimson-light" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                          {activity.action}
                         </p>
-                      )}
-                      <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
-                        {activity.date.toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
-                      </p>
+                        {activity.section && (
+                          <p className="text-xs text-slate-600 dark:text-slate-400">
+                            {activity.section}
+                          </p>
+                        )}
+                        <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
+                          {activity.date.toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}
+                        </p>
+                      </div>
                     </div>
-                  </motion.div>
+                  </BlurFade>
                 );
               })}
             </div>
           </InfoCard>
-        </motion.div>
+        </BlurFade>
       </div>
 
       {/* Quick Actions */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.9 }}>
+      <BlurFade delay={0.7}>
         <InfoCard title="Quick Actions" icon={Landmark}>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
             <Link href="/dashboard/saln/view" className="w-full">
@@ -694,7 +697,7 @@ export default function SalnPage() {
             </Button>
           </div>
         </InfoCard>
-      </motion.div>
+      </BlurFade>
     </div>
   );
 }

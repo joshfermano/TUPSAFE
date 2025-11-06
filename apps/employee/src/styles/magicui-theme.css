@@ -1,0 +1,315 @@
+/**
+ * MagicUI Theme Variables
+ *
+ * Comprehensive theme system for MagicUI components aligned with TUP Manila branding.
+ * This file defines all animation durations, easing functions, colors, and effects
+ * used across MagicUI components for consistent, premium design.
+ *
+ * Usage:
+ * Import this file in globals.css and use CSS variables throughout components.
+ * Example: animation-duration: var(--magicui-duration-normal);
+ */
+
+:root {
+  /* ========================================================================
+     ANIMATION DURATIONS
+     Fast: UI interactions (hover, focus)
+     Normal: Component transitions (modals, dropdowns)
+     Slow: Decorative animations (gradients, particles)
+     ======================================================================== */
+  --magicui-duration-fast: 150ms;
+  --magicui-duration-normal: 300ms;
+  --magicui-duration-slow: 500ms;
+  --magicui-duration-very-slow: 800ms;
+
+  /* ========================================================================
+     EASING FUNCTIONS
+     GPU-accelerated cubic-bezier curves for smooth, professional animations
+     ======================================================================== */
+  --magicui-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --magicui-ease-out: cubic-bezier(0.16, 1, 0.3, 1); /* Preferred for most UI */
+  --magicui-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --magicui-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* Bouncy effect */
+  --magicui-ease-smooth: cubic-bezier(0.45, 0, 0.55, 1); /* Ultra smooth */
+  --magicui-ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55); /* Subtle bounce */
+
+  /* ========================================================================
+     MAGIC COLORS - TUP MANILA CRIMSON BRAND
+     Using OKLCH color space for perceptually uniform gradients
+     All colors aligned with TUP Manila's official crimson red (#DC143C)
+     ======================================================================== */
+
+  /* Gradient Colors */
+  --magicui-gradient-from: oklch(0.55 0.22 15); /* TUP Crimson */
+  --magicui-gradient-to: oklch(0.40 0.18 15); /* Darker crimson */
+  --magicui-gradient-via: oklch(0.50 0.20 15); /* Mid-tone crimson */
+
+  /* Shimmer & Glow Effects */
+  --magicui-shimmer: oklch(0.95 0.05 15 / 0.3); /* Subtle crimson shimmer */
+  --magicui-shimmer-bright: oklch(0.98 0.02 15 / 0.6); /* Bright shimmer */
+  --magicui-glow: oklch(0.55 0.22 15 / 0.4); /* Crimson glow */
+  --magicui-glow-intense: oklch(0.65 0.24 15 / 0.6); /* Intense glow */
+
+  /* Shine & Sparkle */
+  --magicui-shine-start: oklch(1 0 0 / 0); /* Transparent white start */
+  --magicui-shine-middle: oklch(1 0 0 / 0.8); /* Opaque white middle */
+  --magicui-shine-end: oklch(1 0 0 / 0); /* Transparent white end */
+
+  /* Border & Beam Colors */
+  --magicui-border-beam: oklch(0.55 0.22 15); /* TUP Crimson beam */
+  --magicui-border-beam-glow: oklch(0.65 0.24 15 / 0.5); /* Beam glow */
+
+  /* Particle & Meteor Colors */
+  --magicui-particle: oklch(0.60 0.20 15 / 0.7); /* Crimson particles */
+  --magicui-meteor: oklch(0.70 0.22 15 / 0.8); /* Bright meteor trail */
+
+  /* Magic Card Colors */
+  --magicui-card-glow: oklch(0.55 0.22 15 / 0.15); /* Subtle card glow */
+  --magicui-card-border: oklch(0.55 0.22 15 / 0.3); /* Card border */
+
+  /* ========================================================================
+     EFFECTS CONFIGURATION
+     Control intensity and behavior of visual effects
+     ======================================================================== */
+
+  /* Blur Effects */
+  --magicui-blur-light: 8px; /* Subtle blur */
+  --magicui-blur-medium: 12px; /* Standard blur */
+  --magicui-blur-heavy: 20px; /* Heavy blur */
+
+  /* Glow Intensity */
+  --magicui-glow-size-sm: 4px; /* Small glow */
+  --magicui-glow-size-md: 8px; /* Medium glow */
+  --magicui-glow-size-lg: 16px; /* Large glow */
+
+  /* Animation Speeds (for component-specific animations) */
+  --magicui-shine-speed: 2s; /* Shine animation duration */
+  --magicui-shimmer-speed: 2s; /* Shimmer animation duration */
+  --magicui-pulse-speed: 2s; /* Pulse animation duration */
+  --magicui-ripple-speed: 2s; /* Ripple animation duration */
+
+  /* Gradient Sizes */
+  --magicui-gradient-size: 200%; /* For animated gradients */
+
+  /* ========================================================================
+     Z-INDEX LAYERS
+     Consistent stacking context for MagicUI components
+     ======================================================================== */
+  --magicui-z-background: -1; /* Background effects */
+  --magicui-z-content: 0; /* Normal content */
+  --magicui-z-overlay: 10; /* Overlays (tooltips, popovers) */
+  --magicui-z-modal: 50; /* Modals and dialogs */
+  --magicui-z-notification: 100; /* Notifications and toasts */
+
+  /* ========================================================================
+     SHADOW PRESETS
+     Premium shadows for depth and elevation
+     ======================================================================== */
+  --magicui-shadow-sm: 0 1px 2px 0 oklch(0 0 0 / 0.05);
+  --magicui-shadow-md: 0 4px 6px -1px oklch(0 0 0 / 0.1),
+                       0 2px 4px -2px oklch(0 0 0 / 0.1);
+  --magicui-shadow-lg: 0 10px 15px -3px oklch(0 0 0 / 0.1),
+                       0 4px 6px -4px oklch(0 0 0 / 0.1);
+  --magicui-shadow-xl: 0 20px 25px -5px oklch(0 0 0 / 0.1),
+                       0 8px 10px -6px oklch(0 0 0 / 0.1);
+
+  /* Colored Shadows (TUP Crimson) */
+  --magicui-shadow-crimson-sm: 0 1px 2px 0 oklch(0.55 0.22 15 / 0.1);
+  --magicui-shadow-crimson-md: 0 4px 6px -1px oklch(0.55 0.22 15 / 0.15),
+                               0 2px 4px -2px oklch(0.55 0.22 15 / 0.1);
+  --magicui-shadow-crimson-lg: 0 10px 15px -3px oklch(0.55 0.22 15 / 0.2),
+                               0 4px 6px -4px oklch(0.55 0.22 15 / 0.15);
+
+  /* ========================================================================
+     BORDER WIDTHS & STYLES
+     Consistent border styling across MagicUI components
+     ======================================================================== */
+  --magicui-border-width-thin: 1px;
+  --magicui-border-width-medium: 2px;
+  --magicui-border-width-thick: 3px;
+
+  /* ========================================================================
+     OPACITY PRESETS
+     Standard opacity values for consistency
+     ======================================================================== */
+  --magicui-opacity-subtle: 0.1;
+  --magicui-opacity-light: 0.3;
+  --magicui-opacity-medium: 0.5;
+  --magicui-opacity-strong: 0.7;
+  --magicui-opacity-heavy: 0.9;
+}
+
+/* ============================================================================
+   DARK MODE OVERRIDES
+   Adjust colors for better contrast and visibility in dark mode
+   ============================================================================ */
+
+.dark {
+  /* Brighter gradients for dark mode visibility */
+  --magicui-gradient-from: oklch(0.65 0.24 15); /* Brighter crimson */
+  --magicui-gradient-to: oklch(0.50 0.20 15); /* Medium crimson */
+  --magicui-gradient-via: oklch(0.58 0.22 15); /* Mid-tone */
+
+  /* Enhanced shimmer & glow for dark backgrounds */
+  --magicui-shimmer: oklch(0.98 0.02 15 / 0.4); /* Brighter shimmer */
+  --magicui-shimmer-bright: oklch(1 0 0 / 0.7); /* Very bright shimmer */
+  --magicui-glow: oklch(0.65 0.24 15 / 0.5); /* Stronger glow */
+  --magicui-glow-intense: oklch(0.75 0.26 15 / 0.7); /* Intense glow */
+
+  /* Dark mode borders & beams */
+  --magicui-border-beam: oklch(0.65 0.24 15); /* Brighter beam */
+  --magicui-border-beam-glow: oklch(0.75 0.26 15 / 0.6); /* Stronger beam glow */
+
+  /* Dark mode particles */
+  --magicui-particle: oklch(0.70 0.22 15 / 0.8);
+  --magicui-meteor: oklch(0.80 0.24 15 / 0.9);
+
+  /* Dark mode card effects */
+  --magicui-card-glow: oklch(0.65 0.24 15 / 0.2);
+  --magicui-card-border: oklch(0.65 0.24 15 / 0.4);
+
+  /* Adjusted shadows for dark mode */
+  --magicui-shadow-sm: 0 1px 2px 0 oklch(0 0 0 / 0.3);
+  --magicui-shadow-md: 0 4px 6px -1px oklch(0 0 0 / 0.4),
+                       0 2px 4px -2px oklch(0 0 0 / 0.3);
+  --magicui-shadow-lg: 0 10px 15px -3px oklch(0 0 0 / 0.5),
+                       0 4px 6px -4px oklch(0 0 0 / 0.4);
+
+  /* Dark mode colored shadows */
+  --magicui-shadow-crimson-md: 0 4px 6px -1px oklch(0.65 0.24 15 / 0.3),
+                               0 2px 4px -2px oklch(0.65 0.24 15 / 0.2);
+  --magicui-shadow-crimson-lg: 0 10px 15px -3px oklch(0.65 0.24 15 / 0.4),
+                               0 4px 6px -4px oklch(0.65 0.24 15 / 0.3);
+}
+
+/* ============================================================================
+   ACCESSIBILITY - REDUCED MOTION
+   Respect user's motion preferences for accessibility
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    /* Reduce all animation durations to near-instant */
+    --magicui-duration-fast: 1ms;
+    --magicui-duration-normal: 1ms;
+    --magicui-duration-slow: 1ms;
+    --magicui-duration-very-slow: 1ms;
+
+    /* Simplify easing to linear */
+    --magicui-ease-in: linear;
+    --magicui-ease-out: linear;
+    --magicui-ease-in-out: linear;
+    --magicui-ease-spring: linear;
+    --magicui-ease-smooth: linear;
+    --magicui-ease-bounce: linear;
+
+    /* Disable animation speeds */
+    --magicui-shine-speed: 0s;
+    --magicui-shimmer-speed: 0s;
+    --magicui-pulse-speed: 0s;
+    --magicui-ripple-speed: 0s;
+  }
+}
+
+/* ============================================================================
+   PERFORMANCE OPTIMIZATIONS
+   GPU acceleration and containment for better performance
+   ============================================================================ */
+
+.magicui-optimized {
+  /* Enable GPU acceleration */
+  transform: translateZ(0);
+  will-change: transform, opacity;
+
+  /* Contain paint and layout */
+  contain: paint layout;
+
+  /* Force hardware acceleration */
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+.magicui-animated {
+  /* For actively animating elements */
+  will-change: transform, opacity;
+}
+
+.magicui-interactive {
+  /* For interactive elements (buttons, cards with hover) */
+  will-change: transform;
+  transition: transform var(--magicui-duration-fast) var(--magicui-ease-out);
+}
+
+/* ============================================================================
+   USAGE EXAMPLES
+   Copy these examples to your components for quick implementation
+   ============================================================================ */
+
+/*
+  Example 1: Shimmer Button
+
+  .my-button {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .my-button::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--magicui-shimmer-bright),
+      transparent
+    );
+    animation: shimmer var(--magicui-shimmer-speed) infinite;
+  }
+*/
+
+/*
+  Example 2: Glow Card
+
+  .my-card {
+    border: var(--magicui-border-width-thin) solid var(--magicui-card-border);
+    box-shadow: 0 0 var(--magicui-glow-size-md) var(--magicui-card-glow);
+    transition: box-shadow var(--magicui-duration-normal) var(--magicui-ease-out);
+  }
+
+  .my-card:hover {
+    box-shadow: 0 0 var(--magicui-glow-size-lg) var(--magicui-glow);
+  }
+*/
+
+/*
+  Example 3: Gradient Text
+
+  .my-gradient-text {
+    background: linear-gradient(
+      90deg,
+      var(--magicui-gradient-from),
+      var(--magicui-gradient-via),
+      var(--magicui-gradient-to)
+    );
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    animation: gradient-shift var(--magicui-duration-slow) ease infinite;
+  }
+*/
+
+/*
+  Example 4: Interactive Hover Effect
+
+  .my-interactive-element {
+    transition: transform var(--magicui-duration-fast) var(--magicui-ease-spring);
+  }
+
+  .my-interactive-element:hover {
+    transform: translateY(-4px);
+  }
+
+  .my-interactive-element:active {
+    transform: translateY(-2px);
+  }
+*/

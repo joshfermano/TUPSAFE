@@ -1,9 +1,12 @@
 'use client';
 
 import { memo } from 'react';
+import { motion } from 'framer-motion';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ShineBorder } from '@/components/ui/shine-border';
+import { BlurFade } from '@/components/ui/blur-fade';
+import { TextAnimate } from '@/components/ui/text-animate';
 import { cn } from '@/lib/utils';
 import { Shield, Briefcase } from 'lucide-react';
 import type { Profile, Department, Position } from '@tupsafe/mock-data';
@@ -38,68 +41,118 @@ export const ProfileHero = memo(function ProfileHero({ profile, department, posi
   const fullName = `${profile.firstName} ${profile.middleName ? profile.middleName + ' ' : ''}${profile.lastName}`;
 
   return (
-    <div className="relative overflow-hidden rounded-xl bg-gradient-tup p-8 sm:p-10 text-white shadow-lg">
-      {/* Subtle Shine Border Effect */}
-      <ShineBorder
-        borderWidth={2}
-        duration={10}
-        shineColor={SHINE_COLORS}
-        className="opacity-40"
-      />
+    <BlurFade delay={0.05} inView>
+      <motion.div
+        className="relative overflow-hidden rounded-xl bg-gradient-tup p-8 sm:p-10 text-white shadow-lg"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+      >
+        {/* Subtle Shine Border Effect */}
+        <ShineBorder
+          borderWidth={2}
+          duration={10}
+          shineColor={SHINE_COLORS}
+          className="opacity-40"
+        />
 
-      {/* Clean Decorative Elements */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-      <div className="absolute bottom-0 left-0 w-48 h-48 bg-primary/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2"></div>
+        {/* Clean Decorative Elements */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-primary/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2"></div>
 
-      {/* Content */}
-      <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-6">
-        {/* Avatar */}
-        <div className="relative">
-          <div className="relative">
-            <Avatar className="h-24 w-24 sm:h-28 sm:w-28 border-4 border-white/20 shadow-xl ring-4 ring-white/10">
-              <AvatarFallback className="bg-white/10 backdrop-blur-md text-white text-3xl sm:text-4xl font-bold">
-                {getInitials()}
-              </AvatarFallback>
-            </Avatar>
-            {profile.isActive && (
-              <div className="absolute bottom-1 right-1 h-5 w-5 rounded-full bg-green-400 border-4 border-white shadow-lg animate-pulse"></div>
-            )}
-          </div>
-        </div>
-
-        {/* Info */}
-        <div className="flex-1 text-center sm:text-left space-y-3">
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-bold mb-2 drop-shadow-md">
-              {fullName}
-            </h1>
-            <p className="text-white/90 text-lg flex items-center justify-center sm:justify-start gap-2">
-              <Briefcase className="h-5 w-5" />
-              {position?.title || 'Government Employee'}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-            <Badge
-              className={cn(
-                'px-3 py-1 font-semibold border-white/20 backdrop-blur-sm shadow-sm',
-                getRoleBadgeColor(profile.role)
-              )}
+        {/* Content */}
+        <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-6">
+          {/* Avatar */}
+          <BlurFade delay={0.1} inView>
+            <motion.div
+              className="relative"
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
             >
-              <Shield className="h-3 w-3 mr-1" />
-              {profile.role.toUpperCase()}
-            </Badge>
-            <Badge className="px-3 py-1 bg-white/10 text-white border-white/20 backdrop-blur-sm hover:bg-white/20 transition-colors shadow-sm">
-              ID: {profile.employeeId}
-            </Badge>
-            {department && (
-              <Badge className="px-3 py-1 bg-white/10 text-white border-white/20 backdrop-blur-sm hover:bg-white/20 transition-colors shadow-sm">
-                {department.code}
-              </Badge>
-            )}
+              <div className="relative">
+                <Avatar className="h-24 w-24 sm:h-28 sm:w-28 border-4 border-white/20 shadow-xl ring-4 ring-white/10">
+                  <AvatarFallback className="bg-white/10 backdrop-blur-md text-white text-3xl sm:text-4xl font-bold">
+                    {getInitials()}
+                  </AvatarFallback>
+                </Avatar>
+                {profile.isActive && (
+                  <motion.div
+                    className="absolute bottom-1 right-1 h-5 w-5 rounded-full bg-green-400 border-4 border-white shadow-lg"
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
+                )}
+              </div>
+            </motion.div>
+          </BlurFade>
+
+          {/* Info */}
+          <div className="flex-1 text-center sm:text-left space-y-3">
+            <BlurFade delay={0.15} inView>
+              <div>
+                <TextAnimate
+                  animation="blurInUp"
+                  by="word"
+                  className="text-3xl sm:text-4xl font-bold mb-2 drop-shadow-md"
+                >
+                  {fullName}
+                </TextAnimate>
+                <motion.p
+                  className="text-white/90 text-lg flex items-center justify-center sm:justify-start gap-2"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3, duration: 0.4 }}
+                >
+                  <Briefcase className="h-5 w-5" />
+                  {position?.title || 'Government Employee'}
+                </motion.p>
+              </div>
+            </BlurFade>
+
+            <BlurFade delay={0.2} inView>
+              <motion.div
+                className="flex flex-wrap items-center justify-center sm:justify-start gap-2"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.4 }}
+              >
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ type: 'spring', stiffness: 400 }}
+                >
+                  <Badge
+                    className={cn(
+                      'px-3 py-1 font-semibold border-white/20 backdrop-blur-sm shadow-sm',
+                      getRoleBadgeColor(profile.role)
+                    )}
+                  >
+                    <Shield className="h-3 w-3 mr-1" />
+                    {profile.role.toUpperCase()}
+                  </Badge>
+                </motion.div>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ type: 'spring', stiffness: 400 }}
+                >
+                  <Badge className="px-3 py-1 bg-white/10 text-white border-white/20 backdrop-blur-sm hover:bg-white/20 transition-colors shadow-sm">
+                    ID: {profile.employeeId}
+                  </Badge>
+                </motion.div>
+                {department && (
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ type: 'spring', stiffness: 400 }}
+                  >
+                    <Badge className="px-3 py-1 bg-white/10 text-white border-white/20 backdrop-blur-sm hover:bg-white/20 transition-colors shadow-sm">
+                      {department.code}
+                    </Badge>
+                  </motion.div>
+                )}
+              </motion.div>
+            </BlurFade>
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </BlurFade>
   );
 });

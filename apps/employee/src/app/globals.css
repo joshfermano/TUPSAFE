@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* MagicUI Theme System - Import first for variable availability */
+@import "../styles/magicui-theme.css";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -215,7 +218,19 @@
   0%, 100% {
     transform: translate(-50%, -50%) scale(1);}
   50% {
-    transform: translate(-50%, -50%) scale(0.9);}}}
+    transform: translate(-50%, -50%) scale(0.9);}}
+  --animate-pulse: pulse var(--duration) ease-out infinite;
+  @keyframes pulse {
+  0%, 100% {
+    boxShadow: 0 0 0 0 var(--pulse-color);}
+  50% {
+    boxShadow: 0 0 0 8px var(--pulse-color);}}
+  --animate-grid: grid 15s linear infinite;
+  @keyframes grid {
+  0% {
+    transform: translateY(-50%);}
+  100% {
+    transform: translateY(0);}}}
 
 :root {
   --radius: 0.625rem;
@@ -488,6 +503,549 @@
     to {
       opacity: 1;
       transform: translateY(0) scale(1);
+    }
+  }
+
+  /* ========================================================================
+     MAGICUI ANIMATION KEYFRAMES
+     GPU-accelerated animations for premium UI effects
+     All animations use transform and opacity for optimal performance
+     ======================================================================== */
+
+  /* Shimmer Effect - For buttons and highlights */
+  @keyframes magicui-shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(200%);
+    }
+  }
+
+  /* Glow Pulse - For attention-grabbing elements */
+  @keyframes magicui-glow-pulse {
+    0%,
+    100% {
+      opacity: 1;
+      box-shadow: 0 0 var(--magicui-glow-size-md) var(--magicui-glow);
+    }
+    50% {
+      opacity: 0.8;
+      box-shadow: 0 0 var(--magicui-glow-size-lg) var(--magicui-glow-intense);
+    }
+  }
+
+  /* Float Up - For particles and success animations */
+  @keyframes magicui-float-up {
+    0% {
+      transform: translateY(0) translateZ(0);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-20px) translateZ(0);
+      opacity: 0;
+    }
+  }
+
+  /* Float Down - For dropdown animations */
+  @keyframes magicui-float-down {
+    0% {
+      transform: translateY(-10px) translateZ(0);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0) translateZ(0);
+      opacity: 1;
+    }
+  }
+
+  /* Bounce In - For modal/dialog entrances */
+  @keyframes magicui-bounce-in {
+    0% {
+      transform: scale(0.9) translateZ(0);
+      opacity: 0;
+    }
+    50% {
+      transform: scale(1.02) translateZ(0);
+    }
+    100% {
+      transform: scale(1) translateZ(0);
+      opacity: 1;
+    }
+  }
+
+  /* Bounce Out - For modal/dialog exits */
+  @keyframes magicui-bounce-out {
+    0% {
+      transform: scale(1) translateZ(0);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.02) translateZ(0);
+    }
+    100% {
+      transform: scale(0.9) translateZ(0);
+      opacity: 0;
+    }
+  }
+
+  /* Scale In - For button press feedback */
+  @keyframes magicui-scale-in {
+    0% {
+      transform: scale(0.95) translateZ(0);
+    }
+    100% {
+      transform: scale(1) translateZ(0);
+    }
+  }
+
+  /* Rotate Gentle - For loading indicators */
+  @keyframes magicui-rotate-gentle {
+    0% {
+      transform: rotate(0deg) translateZ(0);
+    }
+    100% {
+      transform: rotate(360deg) translateZ(0);
+    }
+  }
+
+  /* Gradient Shift - For animated gradient backgrounds */
+  @keyframes magicui-gradient-shift {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  /* Slide In Right - For side panel entrances */
+  @keyframes magicui-slide-in-right {
+    0% {
+      transform: translateX(100%) translateZ(0);
+      opacity: 0;
+    }
+    100% {
+      transform: translateX(0) translateZ(0);
+      opacity: 1;
+    }
+  }
+
+  /* Slide In Left - For side panel entrances */
+  @keyframes magicui-slide-in-left {
+    0% {
+      transform: translateX(-100%) translateZ(0);
+      opacity: 0;
+    }
+    100% {
+      transform: translateX(0) translateZ(0);
+      opacity: 1;
+    }
+  }
+
+  /* Pulse Scale - For notification badges */
+  @keyframes magicui-pulse-scale {
+    0%,
+    100% {
+      transform: scale(1) translateZ(0);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.15) translateZ(0);
+      opacity: 0.8;
+    }
+  }
+
+  /* Shake - For error states */
+  @keyframes magicui-shake {
+    0%,
+    100% {
+      transform: translateX(0) translateZ(0);
+    }
+    25% {
+      transform: translateX(-5px) translateZ(0);
+    }
+    75% {
+      transform: translateX(5px) translateZ(0);
+    }
+  }
+
+  /* Spin Slow - For background decorations */
+  @keyframes magicui-spin-slow {
+    0% {
+      transform: rotate(0deg) translateZ(0);
+    }
+    100% {
+      transform: rotate(360deg) translateZ(0);
+    }
+  }
+
+  /* Border Beam - For animated borders */
+  @keyframes magicui-border-beam {
+    0% {
+      offset-distance: 0%;
+    }
+    100% {
+      offset-distance: 100%;
+    }
+  }
+
+  /* Text Shimmer - For animated text effects */
+  @keyframes magicui-text-shimmer {
+    0% {
+      background-position: 0% 50%;
+    }
+    100% {
+      background-position: 200% 50%;
+    }
+  }
+
+  /* Reveal - For progressive content reveal */
+  @keyframes magicui-reveal {
+    0% {
+      opacity: 0;
+      transform: translateY(10px) translateZ(0);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) translateZ(0);
+    }
+  }
+}
+
+@layer components {
+  /* ========================================================================
+     MAGICUI ANIMATION UTILITY CLASSES
+     Pre-configured animations ready to use on any element
+     ======================================================================== */
+
+  /* Shimmer Animations */
+  .animate-magicui-shimmer {
+    animation: magicui-shimmer var(--magicui-shimmer-speed) infinite linear;
+  }
+
+  .animate-magicui-shimmer-slow {
+    animation: magicui-shimmer var(--magicui-duration-very-slow) infinite linear;
+  }
+
+  /* Glow Animations */
+  .animate-magicui-glow {
+    animation: magicui-glow-pulse var(--magicui-pulse-speed) ease-in-out infinite;
+  }
+
+  /* Float Animations */
+  .animate-magicui-float-up {
+    animation: magicui-float-up var(--magicui-duration-normal) var(--magicui-ease-out);
+  }
+
+  .animate-magicui-float-down {
+    animation: magicui-float-down var(--magicui-duration-normal) var(--magicui-ease-out);
+  }
+
+  /* Bounce Animations */
+  .animate-magicui-bounce-in {
+    animation: magicui-bounce-in var(--magicui-duration-normal) var(--magicui-ease-spring);
+  }
+
+  .animate-magicui-bounce-out {
+    animation: magicui-bounce-out var(--magicui-duration-normal) var(--magicui-ease-spring);
+  }
+
+  /* Scale Animation */
+  .animate-magicui-scale-in {
+    animation: magicui-scale-in var(--magicui-duration-fast) var(--magicui-ease-out);
+  }
+
+  /* Rotate Animations */
+  .animate-magicui-rotate {
+    animation: magicui-rotate-gentle 2s linear infinite;
+  }
+
+  .animate-magicui-spin-slow {
+    animation: magicui-spin-slow 8s linear infinite;
+  }
+
+  /* Gradient Animation */
+  .animate-magicui-gradient {
+    animation: magicui-gradient-shift var(--magicui-duration-very-slow) ease infinite;
+    background-size: var(--magicui-gradient-size) var(--magicui-gradient-size);
+  }
+
+  /* Slide Animations */
+  .animate-magicui-slide-in-right {
+    animation: magicui-slide-in-right var(--magicui-duration-normal) var(--magicui-ease-out);
+  }
+
+  .animate-magicui-slide-in-left {
+    animation: magicui-slide-in-left var(--magicui-duration-normal) var(--magicui-ease-out);
+  }
+
+  /* Pulse Animation */
+  .animate-magicui-pulse-scale {
+    animation: magicui-pulse-scale 1.5s ease-in-out infinite;
+  }
+
+  /* Shake Animation */
+  .animate-magicui-shake {
+    animation: magicui-shake var(--magicui-duration-normal) var(--magicui-ease-out);
+  }
+
+  /* Border Beam Animation */
+  .animate-magicui-border-beam {
+    animation: magicui-border-beam 3s linear infinite;
+  }
+
+  /* Text Shimmer Animation */
+  .animate-magicui-text-shimmer {
+    animation: magicui-text-shimmer 3s linear infinite;
+    background-size: 200% auto;
+  }
+
+  /* Reveal Animation */
+  .animate-magicui-reveal {
+    animation: magicui-reveal var(--magicui-duration-normal) var(--magicui-ease-out);
+  }
+
+  /* ========================================================================
+     MAGICUI HOVER EFFECTS
+     Interactive hover states for premium feel
+     ======================================================================== */
+
+  /* Lift on Hover */
+  .magicui-hover-lift {
+    transition: transform var(--magicui-duration-fast) var(--magicui-ease-out),
+                box-shadow var(--magicui-duration-fast) var(--magicui-ease-out);
+  }
+
+  .magicui-hover-lift:hover {
+    transform: translateY(-4px) translateZ(0);
+    box-shadow: var(--magicui-shadow-lg);
+  }
+
+  .magicui-hover-lift:active {
+    transform: translateY(-2px) translateZ(0);
+    box-shadow: var(--magicui-shadow-md);
+  }
+
+  /* Glow on Hover */
+  .magicui-hover-glow {
+    transition: box-shadow var(--magicui-duration-normal) var(--magicui-ease-out);
+  }
+
+  .magicui-hover-glow:hover {
+    box-shadow: 0 0 var(--magicui-glow-size-lg) var(--magicui-glow);
+  }
+
+  /* Scale on Hover */
+  .magicui-hover-scale {
+    transition: transform var(--magicui-duration-fast) var(--magicui-ease-spring);
+  }
+
+  .magicui-hover-scale:hover {
+    transform: scale(1.05) translateZ(0);
+  }
+
+  .magicui-hover-scale:active {
+    transform: scale(0.98) translateZ(0);
+  }
+
+  /* Crimson Glow on Hover (TUP Brand) */
+  .magicui-hover-crimson-glow {
+    transition: box-shadow var(--magicui-duration-normal) var(--magicui-ease-out);
+  }
+
+  .magicui-hover-crimson-glow:hover {
+    box-shadow: var(--magicui-shadow-crimson-lg);
+  }
+
+  /* Brighten on Hover */
+  .magicui-hover-brighten {
+    transition: filter var(--magicui-duration-fast) var(--magicui-ease-out);
+  }
+
+  .magicui-hover-brighten:hover {
+    filter: brightness(1.1);
+  }
+
+  /* ========================================================================
+     MAGICUI GLASS EFFECTS
+     Premium glass morphism effects aligned with TUP branding
+     ======================================================================== */
+
+  .magicui-glass {
+    background: oklch(1 0 0 / 0.05);
+    backdrop-filter: blur(var(--magicui-blur-medium));
+    border: var(--magicui-border-width-thin) solid oklch(1 0 0 / 0.1);
+  }
+
+  .dark .magicui-glass {
+    background: oklch(1 0 0 / 0.03);
+    border: var(--magicui-border-width-thin) solid oklch(1 0 0 / 0.08);
+  }
+
+  .magicui-glass-crimson {
+    background: var(--magicui-card-glow);
+    backdrop-filter: blur(var(--magicui-blur-medium));
+    border: var(--magicui-border-width-thin) solid var(--magicui-card-border);
+  }
+
+  /* ========================================================================
+     MAGICUI GRADIENT UTILITIES
+     TUP Manila branded gradient backgrounds
+     ======================================================================== */
+
+  .magicui-gradient-crimson {
+    background: linear-gradient(
+      135deg,
+      var(--magicui-gradient-from) 0%,
+      var(--magicui-gradient-via) 50%,
+      var(--magicui-gradient-to) 100%
+    );
+  }
+
+  .magicui-gradient-crimson-radial {
+    background: radial-gradient(
+      circle at center,
+      var(--magicui-gradient-from) 0%,
+      var(--magicui-gradient-to) 100%
+    );
+  }
+
+  .magicui-gradient-text-crimson {
+    background: linear-gradient(
+      90deg,
+      var(--magicui-gradient-from),
+      var(--magicui-gradient-via),
+      var(--magicui-gradient-to)
+    );
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+
+  /* ========================================================================
+     MAGICUI SHIMMER OVERLAY
+     For buttons and interactive elements
+     ======================================================================== */
+
+  .magicui-shimmer-overlay {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .magicui-shimmer-overlay::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--magicui-shimmer-bright) 50%,
+      transparent 100%
+    );
+    transform: translateX(-100%);
+    pointer-events: none;
+  }
+
+  .magicui-shimmer-overlay:hover::after {
+    animation: magicui-shimmer var(--magicui-shimmer-speed) ease-in-out;
+  }
+
+  /* ========================================================================
+     MAGICUI BORDER EFFECTS
+     Animated and glowing borders
+     ======================================================================== */
+
+  .magicui-border-glow {
+    border: var(--magicui-border-width-thin) solid var(--magicui-card-border);
+    box-shadow: 0 0 var(--magicui-glow-size-sm) var(--magicui-card-glow);
+    transition: box-shadow var(--magicui-duration-normal) var(--magicui-ease-out);
+  }
+
+  .magicui-border-glow:hover {
+    box-shadow: 0 0 var(--magicui-glow-size-md) var(--magicui-glow);
+  }
+
+  /* ========================================================================
+     MAGICUI PERFORMANCE UTILITIES
+     Apply to animated elements for better performance
+     ======================================================================== */
+
+  .magicui-gpu-accelerated {
+    transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
+  }
+
+  .magicui-contain-paint {
+    contain: paint layout;
+  }
+
+  /* ========================================================================
+     ACCESSIBILITY - REDUCED MOTION SUPPORT
+     Comprehensive support for users who prefer reduced motion
+     All MagicUI animations are disabled while maintaining functionality
+     ======================================================================== */
+
+  @media (prefers-reduced-motion: reduce) {
+    /* Disable all MagicUI animations */
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+
+    /* Disable all MagicUI animation classes */
+    .animate-magicui-shimmer,
+    .animate-magicui-shimmer-slow,
+    .animate-magicui-glow,
+    .animate-magicui-float-up,
+    .animate-magicui-float-down,
+    .animate-magicui-bounce-in,
+    .animate-magicui-bounce-out,
+    .animate-magicui-scale-in,
+    .animate-magicui-rotate,
+    .animate-magicui-spin-slow,
+    .animate-magicui-gradient,
+    .animate-magicui-slide-in-right,
+    .animate-magicui-slide-in-left,
+    .animate-magicui-pulse-scale,
+    .animate-magicui-shake,
+    .animate-magicui-border-beam,
+    .animate-magicui-text-shimmer,
+    .animate-magicui-reveal {
+      animation: none !important;
+    }
+
+    /* Simplify hover effects to instant transitions */
+    .magicui-hover-lift:hover,
+    .magicui-hover-scale:hover,
+    .magicui-hover-glow:hover,
+    .magicui-hover-crimson-glow:hover,
+    .magicui-hover-brighten:hover {
+      transition: none !important;
+    }
+
+    /* Disable shimmer overlay animation */
+    .magicui-shimmer-overlay:hover::after {
+      animation: none !important;
+    }
+
+    /* Disable all transform-based transitions */
+    .magicui-hover-lift,
+    .magicui-hover-scale {
+      transition: box-shadow 0.01ms !important;
+    }
+
+    /* Remove will-change for performance (not needed without animations) */
+    .magicui-gpu-accelerated,
+    .magicui-animated {
+      will-change: auto !important;
     }
   }
 }

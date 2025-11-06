@@ -10,6 +10,7 @@ import React, {
   type InputHTMLAttributes,
 } from 'react';
 import { useFormContext, Controller } from 'react-hook-form';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -290,20 +291,29 @@ export const CurrencyInput = memo(function CurrencyInput({
               </Label>
             )}
 
-            {/* Input Container */}
-            <div className="relative">
+            {/* Input Container with Motion */}
+            <motion.div
+              className="relative"
+              animate={isFocused ? { scale: 1.01 } : { scale: 1 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+            >
               {/* Peso Sign Prefix */}
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+              <motion.div
+                className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"
+                animate={isFocused ? { x: 1 } : { x: 0 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+              >
                 <span
                   className={cn(
-                    'text-muted-foreground text-sm font-medium select-none',
+                    'text-muted-foreground text-sm font-medium select-none transition-colors duration-200',
+                    isFocused && 'text-primary',
                     error && 'text-destructive',
                     disabled && 'opacity-50'
                   )}
                 >
                   ₱
                 </span>
-              </div>
+              </motion.div>
 
               {/* Input Field */}
               <Input
@@ -336,24 +346,32 @@ export const CurrencyInput = memo(function CurrencyInput({
                 {...inputProps}
               />
 
-              {/* Clear Button */}
-              {showClearButton && displayValue && !disabled && (
-                <button
-                  type="button"
-                  onClick={() => handleClear(onChange)}
-                  className={cn(
-                    'absolute inset-y-0 right-0 flex items-center pr-3',
-                    'text-muted-foreground hover:text-foreground',
-                    'transition-colors duration-200',
-                    'focus:outline-none focus-visible:text-foreground'
-                  )}
-                  aria-label="Clear value"
-                  tabIndex={-1}
-                >
-                  <X className="size-4" />
-                </button>
-              )}
-            </div>
+              {/* Clear Button with Animation */}
+              <AnimatePresence>
+                {showClearButton && displayValue && !disabled && (
+                  <motion.button
+                    type="button"
+                    onClick={() => handleClear(onChange)}
+                    className={cn(
+                      'absolute inset-y-0 right-0 flex items-center pr-3',
+                      'text-muted-foreground hover:text-foreground',
+                      'transition-colors duration-200',
+                      'focus:outline-none focus-visible:text-foreground'
+                    )}
+                    aria-label="Clear value"
+                    tabIndex={-1}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.15 }}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <X className="size-4" />
+                  </motion.button>
+                )}
+              </AnimatePresence>
+            </motion.div>
 
             {/* Helper Text or Error Message */}
             {error ? (

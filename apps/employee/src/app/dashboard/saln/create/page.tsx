@@ -17,7 +17,7 @@
  * - Mobile-responsive design
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
@@ -52,8 +52,9 @@ import {
 // Form components
 import {
   FormStepIndicator,
+  FormStepSkeleton,
   type FormStep,
-} from '@/components/forms/shared/FormStepIndicator';
+} from '@/components/forms/shared';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -177,9 +178,13 @@ export default function SALNCreatePage() {
     return calculateSalnSummary(formData);
   }, [formData]);
 
-  // Update form calculations in real-time
+  // Update form calculations in real-time (with deep equality check to prevent infinite loops)
   useEffect(() => {
-    form.setValue('calculations', financialSummary);
+    const currentCalculations = form.getValues('calculations');
+    // Only update if calculations have actually changed
+    if (JSON.stringify(currentCalculations) !== JSON.stringify(financialSummary)) {
+      form.setValue('calculations', financialSummary, { shouldValidate: false });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [financialSummary]);
 
@@ -407,7 +412,9 @@ export default function SALNCreatePage() {
           {/* Type assertion needed: Complex nested form schema type inference */}
           <form onSubmit={form.handleSubmit(handleSubmit as any)}>
             <BlurFade delay={0.2} key={currentStep}>
-              <div className="mb-8">{renderStep()}</div>
+              <Suspense fallback={<FormStepSkeleton fieldCount={7} />}>
+                <div className="mb-8">{renderStep()}</div>
+              </Suspense>
             </BlurFade>
 
             {/* Navigation buttons */}
