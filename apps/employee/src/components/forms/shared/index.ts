@@ -13,3 +13,6 @@ export type { AddressInputProps } from './AddressInput';
 
 export { CurrencyInput } from './CurrencyInput';
 export type { CurrencyInputProps } from './CurrencyInput';
+
+export { FormStepSkeleton, FormStepSkeletonCompact } from './FormStepSkeleton';
+export type { FormStepSkeletonProps } from './FormStepSkeleton';

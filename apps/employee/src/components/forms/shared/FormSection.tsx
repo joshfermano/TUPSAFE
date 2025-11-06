@@ -1,10 +1,12 @@
 'use client';
 
 import { memo, type ReactNode } from 'react';
+import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { LucideIcon, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { BlurFade } from '@/components/ui/blur-fade';
 
 interface FormSectionProps {
   /**
@@ -69,17 +71,23 @@ export const FormSection = memo<FormSectionProps>(function FormSection({
   stepNumber,
 }) {
   return (
-    <Card
-      className={cn(
-        'p-6 sm:p-8',
-        'bg-white dark:bg-slate-900',
-        'border border-slate-200 dark:border-slate-800',
-        'transition-all duration-300',
-        'hover:bg-slate-50 dark:hover:bg-slate-800/50',
-        completed && 'border-primary/30',
-        className
-      )}
-    >
+    <BlurFade delay={0.1} inView>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: 'easeOut' }}
+      >
+        <Card
+          className={cn(
+            'p-6 sm:p-8',
+            'bg-white dark:bg-slate-900',
+            'border border-slate-200 dark:border-slate-800',
+            'transition-all duration-300',
+            'hover:border-primary/20 hover:shadow-sm',
+            completed && 'border-primary/30 shadow-sm',
+            className
+          )}
+        >
       {/* Section Header */}
       <div className="mb-6 space-y-2">
         <div className="flex items-start justify-between gap-4">
@@ -154,6 +162,8 @@ export const FormSection = memo<FormSectionProps>(function FormSection({
 
       {/* Section Content */}
       <div className="space-y-6">{children}</div>
-    </Card>
+        </Card>
+      </motion.div>
+    </BlurFade>
   );
 });

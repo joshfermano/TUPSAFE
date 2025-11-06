@@ -15,7 +15,7 @@
  * - Mobile-responsive design
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
@@ -51,7 +51,7 @@ import {
 import { z } from 'zod';
 
 // Form components
-import { FormStepIndicator, type FormStep } from '@/components/forms/shared/FormStepIndicator';
+import { FormStepIndicator, FormStepSkeleton, type FormStep } from '@/components/forms/shared';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -416,7 +416,9 @@ export default function PDSCreatePage() {
         <FormProvider {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)}>
             <BlurFade delay={0.2} key={currentStep}>
-              <div className="mb-8">{renderStep()}</div>
+              <Suspense fallback={<FormStepSkeleton fieldCount={8} />}>
+                <div className="mb-8">{renderStep()}</div>
+              </Suspense>
             </BlurFade>
 
             {/* Navigation buttons */}

@@ -1,11 +1,18 @@
 'use client';
 
 /**
- * Step 7: Review & Submit
+ * SALN Step 7: Review & Submit
  * Final review of all sections with expandable details and declaration
+ *
+ * Rebuilt with:
+ * - EnhancedFormSection for main sections
+ * - EnhancedCard for review cards
+ * - BlurFade for entrance animations
+ * - Clean, minimalistic collapsible sections
+ * - React.memo for performance
  */
 
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { useFormContext, Controller } from 'react-hook-form';
 import {
   CheckCircle2,
@@ -20,7 +27,6 @@ import {
   Calculator,
   AlertTriangle,
 } from 'lucide-react';
-import { FormSection } from '@/components/forms/shared/FormSection';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -34,12 +40,21 @@ import {
 import { formatCurrency } from '@/lib/utils/currency';
 import type { CompleteSalnData, SalnSummary } from '@/lib/validations/saln-schema';
 
+// Import Enhanced Components
+import {
+  EnhancedFormSection,
+  BlurFade,
+} from '@tupsafe/shared-ui';
+
 interface ReviewSubmitProps {
   data: Partial<CompleteSalnData>;
   summary: SalnSummary;
 }
 
-export function ReviewSubmit({ data, summary }: ReviewSubmitProps) {
+export const ReviewSubmit = memo(function ReviewSubmit({
+  data,
+  summary,
+}: ReviewSubmitProps) {
   const {
     control,
     formState: { errors },
@@ -61,390 +76,406 @@ export function ReviewSubmit({ data, summary }: ReviewSubmitProps) {
 
   return (
     <div className="space-y-6">
-      <FormSection
-        title="Review Your SALN"
-        description="Please review all information before submitting"
-        icon={CheckCircle2}
-      >
-        <Alert className="mb-6">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            Review all information carefully. Once submitted, your SALN will be sent for official
-            review and cannot be edited without approval.
-          </AlertDescription>
-        </Alert>
-
-        {/* Declarant Information */}
-        <Collapsible
-          open={expandedSections.declarant}
-          onOpenChange={() => toggleSection('declarant')}
-        >
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-full justify-between mb-4"
-              type="button"
-            >
-              <div className="flex items-center gap-3">
-                <User className="h-5 w-5" />
-                <span className="font-semibold">Declarant Information</span>
-              </div>
-              {expandedSections.declarant ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="p-4 border rounded-lg mb-4 space-y-2">
-            <div className="grid gap-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Reporting Year:</span>
-                <span className="font-medium">{data.submission?.year}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Filing Type:</span>
-                <span className="font-medium capitalize">
-                  {data.submission?.filingType?.replace('_', ' ')}
-                </span>
-              </div>
-              {data.submission?.spouseName && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Spouse Name:</span>
-                  <span className="font-medium">{data.submission.spouseName}</span>
-                </div>
-              )}
-              {data.submission?.position && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Position:</span>
-                  <span className="font-medium">{data.submission.position}</span>
-                </div>
-              )}
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
-
-        {/* Real Properties */}
-        <Collapsible
-          open={expandedSections.real}
-          onOpenChange={() => toggleSection('real')}
-        >
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-full justify-between mb-4"
-              type="button"
-            >
-              <div className="flex items-center gap-3">
-                <Building className="h-5 w-5" />
-                <span className="font-semibold">
-                  Real Properties ({data.realProperties?.length || 0})
-                </span>
-              </div>
-              {expandedSections.real ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="p-4 border rounded-lg mb-4 space-y-4">
-            {data.realProperties && data.realProperties.length > 0 ? (
-              data.realProperties.map((prop, index) => (
-                <div key={index} className="pb-3 border-b last:border-0">
-                  <p className="font-medium mb-1">{prop.description}</p>
-                  <p className="text-sm text-muted-foreground mb-1">{prop.exactLocation}</p>
-                  <div className="flex gap-4 text-sm">
-                    <span>FMV: {formatCurrency(prop.currentFairMarketValue)}</span>
-                    <Badge variant="secondary">{prop.kind}</Badge>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">No real properties declared</p>
-            )}
-          </CollapsibleContent>
-        </Collapsible>
-
-        {/* Personal Properties */}
-        <Collapsible
-          open={expandedSections.personal}
-          onOpenChange={() => toggleSection('personal')}
-        >
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-full justify-between mb-4"
-              type="button"
-            >
-              <div className="flex items-center gap-3">
-                <Car className="h-5 w-5" />
-                <span className="font-semibold">
-                  Personal Properties ({data.personalProperties?.length || 0})
-                </span>
-              </div>
-              {expandedSections.personal ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="p-4 border rounded-lg mb-4 space-y-4">
-            {data.personalProperties && data.personalProperties.length > 0 ? (
-              data.personalProperties.map((prop, index) => (
-                <div key={index} className="pb-3 border-b last:border-0">
-                  <p className="font-medium mb-1">{prop.description}</p>
-                  <div className="flex gap-4 text-sm text-muted-foreground">
-                    <span>Year: {prop.yearAcquired}</span>
-                    <span>Value: {formatCurrency(prop.acquisitionCost)}</span>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">No personal properties declared</p>
-            )}
-          </CollapsibleContent>
-        </Collapsible>
-
-        {/* Liabilities */}
-        <Collapsible
-          open={expandedSections.liabilities}
-          onOpenChange={() => toggleSection('liabilities')}
-        >
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-full justify-between mb-4"
-              type="button"
-            >
-              <div className="flex items-center gap-3">
-                <CreditCard className="h-5 w-5" />
-                <span className="font-semibold">
-                  Liabilities ({data.liabilities?.length || 0})
-                </span>
-              </div>
-              {expandedSections.liabilities ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="p-4 border rounded-lg mb-4 space-y-4">
-            {data.liabilities && data.liabilities.length > 0 ? (
-              data.liabilities.map((liability, index) => (
-                <div key={index} className="pb-3 border-b last:border-0">
-                  <p className="font-medium mb-1">{liability.nature}</p>
-                  <p className="text-sm text-muted-foreground mb-1">{liability.creditorName}</p>
-                  <p className="text-sm font-semibold text-destructive">
-                    Balance: {formatCurrency(liability.outstandingBalance)}
-                  </p>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">No liabilities declared</p>
-            )}
-          </CollapsibleContent>
-        </Collapsible>
-
-        {/* Business Interests */}
-        <Collapsible
-          open={expandedSections.business}
-          onOpenChange={() => toggleSection('business')}
-        >
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-full justify-between mb-4"
-              type="button"
-            >
-              <div className="flex items-center gap-3">
-                <Briefcase className="h-5 w-5" />
-                <span className="font-semibold">
-                  Business Interests ({data.businessInterests?.length || 0})
-                </span>
-              </div>
-              {expandedSections.business ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="p-4 border rounded-lg mb-4 space-y-4">
-            {data.businessInterests && data.businessInterests.length > 0 ? (
-              data.businessInterests.map((business, index) => (
-                <div key={index} className="pb-3 border-b last:border-0">
-                  <p className="font-medium mb-1">{business.entityName}</p>
-                  <p className="text-sm text-muted-foreground">{business.natureOfBusiness}</p>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">No business interests declared</p>
-            )}
-          </CollapsibleContent>
-        </Collapsible>
-
-        {/* Relatives in Government */}
-        <Collapsible
-          open={expandedSections.relatives}
-          onOpenChange={() => toggleSection('relatives')}
-        >
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-full justify-between mb-4"
-              type="button"
-            >
-              <div className="flex items-center gap-3">
-                <Users className="h-5 w-5" />
-                <span className="font-semibold">
-                  Relatives in Government ({data.relativesInGov?.length || 0})
-                </span>
-              </div>
-              {expandedSections.relatives ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="p-4 border rounded-lg mb-4 space-y-4">
-            {data.relativesInGov && data.relativesInGov.length > 0 ? (
-              data.relativesInGov.map((relative, index) => (
-                <div key={index} className="pb-3 border-b last:border-0">
-                  <p className="font-medium mb-1">{relative.name}</p>
-                  <div className="flex gap-4 text-sm text-muted-foreground">
-                    <span>{relative.relationship}</span>
-                    <span>{relative.position}</span>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                No relatives in government declared
-              </p>
-            )}
-          </CollapsibleContent>
-        </Collapsible>
-
-        {/* Financial Summary */}
-        <Collapsible
-          open={expandedSections.summary}
-          onOpenChange={() => toggleSection('summary')}
-        >
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-full justify-between mb-4"
-              type="button"
-            >
-              <div className="flex items-center gap-3">
-                <Calculator className="h-5 w-5" />
-                <span className="font-semibold">Financial Summary</span>
-              </div>
-              {expandedSections.summary ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="p-6 border rounded-lg mb-6 space-y-3">
-            <div className="flex justify-between text-sm">
-              <span>Total Real Property:</span>
-              <span className="font-semibold">
-                {formatCurrency(summary.totalRealPropertyValue)}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span>Total Personal Property:</span>
-              <span className="font-semibold">
-                {formatCurrency(summary.totalPersonalPropertyValue)}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm pt-2 border-t">
-              <span className="font-medium">Total Assets:</span>
-              <span className="font-bold text-primary">
-                {formatCurrency(summary.totalAssets)}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="font-medium">Total Liabilities:</span>
-              <span className="font-bold text-destructive">
-                {formatCurrency(summary.totalLiabilities)}
-              </span>
-            </div>
-            <div className="flex justify-between text-lg pt-3 border-t-2">
-              <span className="font-bold">Net Worth:</span>
-              <span
-                className={`font-bold ${
-                  summary.netWorth >= 0 ? 'text-primary' : 'text-amber-500'
-                }`}
-              >
-                {formatCurrency(summary.netWorth)}
-              </span>
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
-      </FormSection>
-
-      {/* Declaration */}
-      <FormSection
-        title="Declaration"
-        description="Required declaration under penalty of perjury"
-        required
-      >
-        <div className="space-y-4">
-          <div className="p-4 bg-muted/50 rounded-lg">
-            <p className="text-sm leading-relaxed">
-              I declare under penalty of perjury that this Statement of Assets, Liabilities and
-              Net Worth is a true, detailed and sworn statement of my assets, liabilities, net
-              worth, business interests and financial connections, including those of my spouse
-              and unmarried children below eighteen (18) years of age living in my household, as
-              of December 31, {data.submission?.year}, pursuant to Section 8 of Republic Act No.
-              6713 (Code of Conduct and Ethical Standards for Public Officials and Employees).
-            </p>
-          </div>
-
-          <Controller
-            name="declaration"
-            control={control}
-            render={({ field }) => (
-              <div className="flex items-start space-x-3 p-4 border rounded-lg">
-                <Checkbox
-                  id="declaration"
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-                <div className="grid gap-1.5 leading-none">
-                  <Label
-                    htmlFor="declaration"
-                    className="text-sm font-medium leading-relaxed cursor-pointer peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    I acknowledge and agree to the declaration above
-                    <span className="text-destructive ml-1">*</span>
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    You must accept this declaration to submit your SALN
-                  </p>
-                </div>
-              </div>
-            )}
-          />
-          {errors?.declaration && (
-            <p className="text-sm text-destructive">{errors.declaration.message as string}</p>
-          )}
-
-          <Alert>
+      <BlurFade delay={0.1}>
+        <EnhancedFormSection
+          title="Review Your SALN"
+          subtitle="Please review all information before submitting"
+          variant="default">
+          <Alert className="mb-6">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              Note: Wet signature will be required after PDF generation for official submission.
+              Review all information carefully. Once submitted, your SALN will be sent for
+              official review and cannot be edited without approval.
             </AlertDescription>
           </Alert>
-        </div>
-      </FormSection>
+
+          {/* Declarant Information */}
+          <BlurFade delay={0.15}>
+            <Collapsible
+              open={expandedSections.declarant}
+              onOpenChange={() => toggleSection('declarant')}>
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-between mb-4"
+                  type="button">
+                  <div className="flex items-center gap-3">
+                    <User className="h-5 w-5" />
+                    <span className="font-semibold">Declarant Information</span>
+                  </div>
+                  {expandedSections.declarant ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border rounded-lg mb-4 space-y-2">
+                <div className="grid gap-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Reporting Year:</span>
+                    <span className="font-medium">{data.submission?.year}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Filing Type:</span>
+                    <span className="font-medium capitalize">
+                      {data.submission?.filingType?.replace('_', ' ')}
+                    </span>
+                  </div>
+                  {data.submission?.spouseName && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Spouse Name:</span>
+                      <span className="font-medium">{data.submission.spouseName}</span>
+                    </div>
+                  )}
+                  {data.submission?.position && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Position:</span>
+                      <span className="font-medium">{data.submission.position}</span>
+                    </div>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </BlurFade>
+
+          {/* Real Properties */}
+          <BlurFade delay={0.18}>
+            <Collapsible
+              open={expandedSections.real}
+              onOpenChange={() => toggleSection('real')}>
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-between mb-4"
+                  type="button">
+                  <div className="flex items-center gap-3">
+                    <Building className="h-5 w-5" />
+                    <span className="font-semibold">
+                      Real Properties ({data.realProperties?.length || 0})
+                    </span>
+                  </div>
+                  {expandedSections.real ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border rounded-lg mb-4 space-y-4">
+                {data.realProperties && data.realProperties.length > 0 ? (
+                  data.realProperties.map((prop, index) => (
+                    <div key={index} className="pb-3 border-b last:border-0">
+                      <p className="font-medium mb-1">{prop.description}</p>
+                      <p className="text-sm text-muted-foreground mb-1">
+                        {prop.exactLocation}
+                      </p>
+                      <div className="flex gap-4 text-sm">
+                        <span>FMV: {formatCurrency(prop.currentFairMarketValue)}</span>
+                        <Badge variant="secondary">{prop.kind}</Badge>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No real properties declared
+                  </p>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
+          </BlurFade>
+
+          {/* Personal Properties */}
+          <BlurFade delay={0.21}>
+            <Collapsible
+              open={expandedSections.personal}
+              onOpenChange={() => toggleSection('personal')}>
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-between mb-4"
+                  type="button">
+                  <div className="flex items-center gap-3">
+                    <Car className="h-5 w-5" />
+                    <span className="font-semibold">
+                      Personal Properties ({data.personalProperties?.length || 0})
+                    </span>
+                  </div>
+                  {expandedSections.personal ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border rounded-lg mb-4 space-y-4">
+                {data.personalProperties && data.personalProperties.length > 0 ? (
+                  data.personalProperties.map((prop, index) => (
+                    <div key={index} className="pb-3 border-b last:border-0">
+                      <p className="font-medium mb-1">{prop.description}</p>
+                      <div className="flex gap-4 text-sm text-muted-foreground">
+                        <span>Year: {prop.yearAcquired}</span>
+                        <span>Value: {formatCurrency(prop.acquisitionCost)}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No personal properties declared
+                  </p>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
+          </BlurFade>
+
+          {/* Liabilities */}
+          <BlurFade delay={0.24}>
+            <Collapsible
+              open={expandedSections.liabilities}
+              onOpenChange={() => toggleSection('liabilities')}>
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-between mb-4"
+                  type="button">
+                  <div className="flex items-center gap-3">
+                    <CreditCard className="h-5 w-5" />
+                    <span className="font-semibold">
+                      Liabilities ({data.liabilities?.length || 0})
+                    </span>
+                  </div>
+                  {expandedSections.liabilities ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border rounded-lg mb-4 space-y-4">
+                {data.liabilities && data.liabilities.length > 0 ? (
+                  data.liabilities.map((liability, index) => (
+                    <div key={index} className="pb-3 border-b last:border-0">
+                      <p className="font-medium mb-1">{liability.nature}</p>
+                      <p className="text-sm text-muted-foreground mb-1">
+                        {liability.creditorName}
+                      </p>
+                      <p className="text-sm font-semibold text-destructive">
+                        Balance: {formatCurrency(liability.outstandingBalance)}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">No liabilities declared</p>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
+          </BlurFade>
+
+          {/* Business Interests */}
+          <BlurFade delay={0.27}>
+            <Collapsible
+              open={expandedSections.business}
+              onOpenChange={() => toggleSection('business')}>
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-between mb-4"
+                  type="button">
+                  <div className="flex items-center gap-3">
+                    <Briefcase className="h-5 w-5" />
+                    <span className="font-semibold">
+                      Business Interests ({data.businessInterests?.length || 0})
+                    </span>
+                  </div>
+                  {expandedSections.business ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border rounded-lg mb-4 space-y-4">
+                {data.businessInterests && data.businessInterests.length > 0 ? (
+                  data.businessInterests.map((business, index) => (
+                    <div key={index} className="pb-3 border-b last:border-0">
+                      <p className="font-medium mb-1">{business.entityName}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {business.natureOfBusiness}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No business interests declared
+                  </p>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
+          </BlurFade>
+
+          {/* Relatives in Government */}
+          <BlurFade delay={0.3}>
+            <Collapsible
+              open={expandedSections.relatives}
+              onOpenChange={() => toggleSection('relatives')}>
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-between mb-4"
+                  type="button">
+                  <div className="flex items-center gap-3">
+                    <Users className="h-5 w-5" />
+                    <span className="font-semibold">
+                      Relatives in Government ({data.relativesInGov?.length || 0})
+                    </span>
+                  </div>
+                  {expandedSections.relatives ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border rounded-lg mb-4 space-y-4">
+                {data.relativesInGov && data.relativesInGov.length > 0 ? (
+                  data.relativesInGov.map((relative, index) => (
+                    <div key={index} className="pb-3 border-b last:border-0">
+                      <p className="font-medium mb-1">{relative.name}</p>
+                      <div className="flex gap-4 text-sm text-muted-foreground">
+                        <span>{relative.relationship}</span>
+                        <span>{relative.position}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No relatives in government declared
+                  </p>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
+          </BlurFade>
+
+          {/* Financial Summary */}
+          <BlurFade delay={0.33}>
+            <Collapsible
+              open={expandedSections.summary}
+              onOpenChange={() => toggleSection('summary')}>
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-between mb-4"
+                  type="button">
+                  <div className="flex items-center gap-3">
+                    <Calculator className="h-5 w-5" />
+                    <span className="font-semibold">Financial Summary</span>
+                  </div>
+                  {expandedSections.summary ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-6 border rounded-lg mb-6 space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span>Total Real Property:</span>
+                  <span className="font-semibold">
+                    {formatCurrency(summary.totalRealPropertyValue)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Total Personal Property:</span>
+                  <span className="font-semibold">
+                    {formatCurrency(summary.totalPersonalPropertyValue)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm pt-2 border-t">
+                  <span className="font-medium">Total Assets:</span>
+                  <span className="font-bold text-primary">
+                    {formatCurrency(summary.totalAssets)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="font-medium">Total Liabilities:</span>
+                  <span className="font-bold text-destructive">
+                    {formatCurrency(summary.totalLiabilities)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-lg pt-3 border-t-2">
+                  <span className="font-bold">Net Worth:</span>
+                  <span
+                    className={`font-bold ${
+                      summary.netWorth >= 0 ? 'text-primary' : 'text-amber-500'
+                    }`}>
+                    {formatCurrency(summary.netWorth)}
+                  </span>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </BlurFade>
+        </EnhancedFormSection>
+      </BlurFade>
+
+      {/* Declaration */}
+      <BlurFade delay={0.36}>
+        <EnhancedFormSection
+          title="Declaration"
+          subtitle="Required declaration under penalty of perjury"
+          variant="default">
+          <div className="space-y-4">
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <p className="text-sm leading-relaxed">
+                I declare under penalty of perjury that this Statement of Assets,
+                Liabilities and Net Worth is a true, detailed and sworn statement of my
+                assets, liabilities, net worth, business interests and financial
+                connections, including those of my spouse and unmarried children below
+                eighteen (18) years of age living in my household, as of December 31,{' '}
+                {data.submission?.year}, pursuant to Section 8 of Republic Act No. 6713
+                (Code of Conduct and Ethical Standards for Public Officials and Employees).
+              </p>
+            </div>
+
+            <Controller
+              name="declaration"
+              control={control}
+              render={({ field }) => (
+                <div className="flex items-start space-x-3 p-4 border rounded-lg">
+                  <Checkbox
+                    id="declaration"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <Label
+                      htmlFor="declaration"
+                      className="text-sm font-medium leading-relaxed cursor-pointer peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      I acknowledge and agree to the declaration above
+                      <span className="text-destructive ml-1">*</span>
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      You must accept this declaration to submit your SALN
+                    </p>
+                  </div>
+                </div>
+              )}
+            />
+            {errors?.declaration && (
+              <p className="text-sm text-destructive">
+                {errors.declaration.message as string}
+              </p>
+            )}
+
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Note: Wet signature will be required after PDF generation for official
+                submission.
+              </AlertDescription>
+            </Alert>
+          </div>
+        </EnhancedFormSection>
+      </BlurFade>
     </div>
   );
-}
+});
