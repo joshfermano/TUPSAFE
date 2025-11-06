@@ -22,12 +22,20 @@ import { type CompletePdsData } from '@/lib/validations/pds-schema';
 export const VoluntaryTraining = memo(function VoluntaryTraining() {
   const form = useFormContext<CompletePdsData>();
 
-  const { fields: voluntaryFields, append: appendVoluntary, remove: removeVoluntary } = useFieldArray({
+  const {
+    fields: voluntaryFields,
+    append: appendVoluntary,
+    remove: removeVoluntary,
+  } = useFieldArray({
     control: form.control,
     name: 'voluntaryWork',
   });
 
-  const { fields: trainingFields, append: appendTraining, remove: removeTraining } = useFieldArray({
+  const {
+    fields: trainingFields,
+    append: appendTraining,
+    remove: removeTraining,
+  } = useFieldArray({
     control: form.control,
     name: 'learningDevelopment',
   });
@@ -37,8 +45,7 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
       title="Voluntary Work & Training"
       description="Voluntary work involvement and learning and development interventions"
       icon={Heart}
-      stepNumber={7}
-    >
+      stepNumber={7}>
       <div className="space-y-8">
         {/* Voluntary Work */}
         <div>
@@ -51,15 +58,16 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => appendVoluntary({
-                organizationName: '',
-                organizationAddress: '',
-                dateFrom: new Date(),
-                dateTo: null,
-                numberOfHours: null,
-                positionNature: '',
-              })}
-            >
+              onClick={() =>
+                appendVoluntary({
+                  organizationName: '',
+                  organizationAddress: '',
+                  dateFrom: new Date(),
+                  dateTo: null,
+                  numberOfHours: null,
+                  positionNature: '',
+                })
+              }>
               <Plus className="h-4 w-4 mr-2" />
               Add Voluntary Work
             </Button>
@@ -72,15 +80,18 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
           ) : (
             <div className="space-y-4">
               {voluntaryFields.map((field, index) => (
-                <div key={field.id} className="p-4 rounded-lg border border-border space-y-4">
+                <div
+                  key={field.id}
+                  className="p-4 rounded-lg border border-border space-y-4">
                   <div className="flex justify-between items-start">
-                    <p className="text-sm font-medium">Voluntary Work #{index + 1}</p>
+                    <p className="text-sm font-medium">
+                      Voluntary Work #{index + 1}
+                    </p>
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      onClick={() => removeVoluntary(index)}
-                    >
+                      onClick={() => removeVoluntary(index)}>
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
@@ -92,7 +103,10 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
                       <FormItem>
                         <FormLabel>Organization Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., Red Cross Philippines" {...field} />
+                          <Input
+                            placeholder="e.g., Red Cross Philippines"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -117,15 +131,16 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => appendTraining({
-                title: '',
-                dateFrom: new Date(),
-                dateTo: new Date(),
-                hours: null,
-                typeOfLd: '',
-                conductedBy: '',
-              })}
-            >
+              onClick={() =>
+                appendTraining({
+                  title: '',
+                  dateFrom: new Date(),
+                  dateTo: new Date(),
+                  hours: null,
+                  typeOfLd: '',
+                  conductedBy: '',
+                })
+              }>
               <Plus className="h-4 w-4 mr-2" />
               Add Training
             </Button>
@@ -138,15 +153,16 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
           ) : (
             <div className="space-y-4">
               {trainingFields.map((field, index) => (
-                <div key={field.id} className="p-4 rounded-lg border border-border space-y-4">
+                <div
+                  key={field.id}
+                  className="p-4 rounded-lg border border-border space-y-4">
                   <div className="flex justify-between items-start">
                     <p className="text-sm font-medium">Training #{index + 1}</p>
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      onClick={() => removeTraining(index)}
-                    >
+                      onClick={() => removeTraining(index)}>
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
@@ -158,7 +174,10 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
                       <FormItem>
                         <FormLabel>Title of Training/Seminar</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., Advanced Teaching Methodologies" {...field} />
+                          <Input
+                            placeholder="e.g., Advanced Teaching Methodologies"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
