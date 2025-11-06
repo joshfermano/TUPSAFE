@@ -1,46 +1,33 @@
 'use client';
 
 /**
- * SALN Dashboard Page - Enhanced with MagicUI Components
+ * SALN Dashboard Page - Clean & Minimalistic Design
  *
- * Features:
- * - NeonGradientCard for net worth overview
- * - NumberTicker for all financial values with animated counting
- * - AnimatedGradientText for page title
- * - EnhancedCard variant="magic" for SALN entries
- * - ShimmerButton for primary actions
- * - AnimatedGridPattern background for financial theme
- * - BlurFade entrance animations
+ * Design Principles:
+ * - Clean, minimalistic layout with no heavy backgrounds
+ * - Modern & premium feel with subtle hover effects
+ * - Compact & space-efficient design
+ * - TUP Manila branding with subtle red accents
+ * - Optimized performance with minimal animations
  *
  * Performance Optimizations:
  * - React.memo for all components
  * - useMemo for calculations
  * - useCallback for event handlers
  * - Memoized currency formatter
- *
- * Target: ~480 lines, < 180 KB bundle size
  */
 
 import { useMemo, memo, useCallback } from 'react';
-import { motion } from 'motion/react';
 import Link from 'next/link';
 import { useAuth, useSaln } from '@tupsafe/mock-data/api';
 import { InfoCard } from '@/components/dashboard/InfoCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
-// Import Enhanced Components from @tupsafe/shared-ui
-import {
-  AnimatedGradientText,
-  AnimatedGridPattern,
-  BlurFade,
-  EnhancedCard,
-  EnhancedCardContent,
-  EnhancedButton,
-  NumberTicker,
-  NeonGradientCard,
-} from '@tupsafe/shared-ui';
+// Import minimal MagicUI components
+import { BlurFade, NumberTicker } from '@tupsafe/shared-ui';
 
 import {
   Landmark,
@@ -111,16 +98,6 @@ const CURRENCY_FORMATTER = new Intl.NumberFormat('en-PH', {
 });
 
 // Mock Data
-const MOCK_SALN_STATUS: SALNStatus = {
-  year: 2025,
-  status: 'draft',
-  lastUpdated: new Date('2025-10-10'),
-  netWorth: 4850000,
-  totalAssets: 6500000,
-  totalLiabilities: 1650000,
-  hasSubmitted: true,
-};
-
 const MOCK_SALN_SECTIONS: SALNSection[] = [
   {
     id: 'real-property',
@@ -201,85 +178,37 @@ const MOCK_YEAR_SUMMARIES: YearSummary[] = [
 // Memoized EmptyState component
 const EmptyState = memo(function EmptyState() {
   return (
-    <div className="relative min-h-[70vh] flex items-center justify-center">
-      {/* Subtle animated grid background */}
-      <AnimatedGridPattern
-        numSquares={30}
-        maxOpacity={0.1}
-        duration={3}
-        repeatDelay={1}
-        className="absolute inset-0 [mask-image:radial-gradient(500px_circle_at_center,white,transparent)]"
-      />
+    <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-5 px-4">
+      {/* Icon Container */}
+      <div className="relative flex items-center justify-center w-20 h-20 rounded-2xl bg-slate-100 dark:bg-slate-800">
+        <Landmark className="h-10 w-10 text-slate-400 dark:text-slate-500" />
+      </div>
 
-      <motion.div
-        className="relative z-10 max-w-2xl mx-auto text-center space-y-8 p-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}>
-        <motion.div
-          className="relative w-32 h-32 mx-auto"
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}>
-          <motion.div
-            className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/20 to-tup-crimson-light/20 blur-2xl"
-            animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.5, 0.8, 0.5],
-            }}
-            transition={{ duration: 3, repeat: Infinity }}
-          />
-          <div className="relative flex items-center justify-center w-full h-full rounded-full bg-gradient-to-br from-tup-crimson-subtle to-tup-crimson-subtle dark:from-primary/60 dark:to-tup-crimson-dark/60">
-            <Landmark className="h-16 w-16 text-primary dark:text-tup-crimson-light" />
-          </div>
-        </motion.div>
+      {/* Text Content */}
+      <div className="text-center space-y-2 max-w-md">
+        <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+          No Active SALN Submissions
+        </h3>
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          You haven&apos;t created any Statement of Assets, Liabilities, and Net Worth in the last 5 years. Start a new submission or view your archived records.
+        </p>
+      </div>
 
-        <motion.div
-          className="space-y-4"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}>
-          <AnimatedGradientText className="text-3xl font-bold">
-            Start Your Statement of Assets
-          </AnimatedGradientText>
-          <p className="text-lg text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
-            The Statement of Assets, Liabilities, and Net Worth (e-SALN) is your
-            annual financial disclosure required for transparency and
-            accountability.
-          </p>
-        </motion.div>
-
-        <motion.div
-          className="space-y-3"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.6 }}>
-          <div className="flex items-center justify-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-            <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-            <span>Automatic net worth calculation</span>
-          </div>
-          <div className="flex items-center justify-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-            <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-            <span>Track assets and liabilities</span>
-          </div>
-          <div className="flex items-center justify-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-            <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-            <span>Secure and confidential</span>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.8 }}>
-          <Link href="/dashboard/saln/create">
-            <EnhancedButton variant="shimmer" size="lg">
-              <Plus className="h-5 w-5 mr-2" />
-              Create Your First SALN
-            </EnhancedButton>
-          </Link>
-        </motion.div>
-      </motion.div>
+      {/* Action Buttons */}
+      <div className="flex gap-3">
+        <Link href="/dashboard/saln/create">
+          <Button className="gap-2 bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)] text-white">
+            <Plus className="h-4 w-4" />
+            Create New SALN
+          </Button>
+        </Link>
+        <Link href="/dashboard/saln/archive">
+          <Button variant="outline" className="gap-2">
+            <Archive className="h-4 w-4" />
+            View Archive
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 });
@@ -412,77 +341,59 @@ export default function SalnPage() {
 
   // Main content with existing SALN
   return (
-    <div className="relative space-y-8 pb-8">
-      {/* Subtle animated grid background */}
-      <AnimatedGridPattern
-        numSquares={30}
-        maxOpacity={0.05}
-        duration={3}
-        repeatDelay={1}
-        className="absolute inset-0 [mask-image:radial-gradient(800px_circle_at_center,white,transparent)]"
-      />
-
+    <div className="space-y-6 pb-8">
       {/* Page Header */}
       <BlurFade delay={0.1}>
-        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <AnimatedGradientText className="text-3xl sm:text-4xl font-bold">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">
                 e-SALN {latest?.year || new Date().getFullYear()}
-              </AnimatedGradientText>
+              </h1>
               {latest && getStatusBadge(latest.status)}
             </div>
-            <p className="text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
               Statement of Assets, Liabilities, and Net Worth
             </p>
           </div>
 
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <Link href="/dashboard/saln/edit">
-              <EnhancedButton variant="shimmer">
-                <Edit className="h-4 w-4 mr-2" />
-                Update SALN
-              </EnhancedButton>
-            </Link>
-          </motion.div>
+          <Link href="/dashboard/saln/edit">
+            <Button className="h-9 bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]">
+              <Edit className="h-4 w-4 mr-2" />
+              Update SALN
+            </Button>
+          </Link>
         </div>
       </BlurFade>
 
-      {/* Net Worth Overview Card - NeonGradientCard with NumberTicker */}
+      {/* Net Worth Overview Card */}
       <BlurFade delay={0.2}>
-        <NeonGradientCard
-          className="relative z-10 overflow-hidden"
-          neonColors={{
-            firstColor: '#9b1c1c',
-            secondColor: '#dc2626',
-          }}
-          borderSize={2}
-          borderRadius={12}>
-          <EnhancedCardContent className="p-6 sm:p-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="border-slate-200 dark:border-slate-800 hover:border-[oklch(0.55_0.22_15)] transition-colors">
+          <CardContent className="p-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {/* Net Worth */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400">
                   <BarChart3 className="h-4 w-4" />
                   Net Worth
                 </div>
                 <div className="flex items-end gap-2">
-                  <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">
+                  <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                     ₱<NumberTicker value={latest ? Number(latest.netWorth) : 0} />
                   </span>
                 </div>
                 {netWorthChange && (
                   <div
                     className={cn(
-                      'flex items-center gap-1 text-sm font-medium',
+                      'flex items-center gap-1 text-xs font-medium',
                       netWorthChange.isPositive
                         ? 'text-green-600 dark:text-green-400'
                         : 'text-red-600 dark:text-red-400'
                     )}>
                     {netWorthChange.isPositive ? (
-                      <ArrowUpRight className="h-4 w-4" />
+                      <ArrowUpRight className="h-3 w-3" />
                     ) : (
-                      <ArrowDownRight className="h-4 w-4" />
+                      <ArrowDownRight className="h-3 w-3" />
                     )}
                     <span>
                       {netWorthChange.isPositive ? '+' : ''}
@@ -494,95 +405,97 @@ export default function SalnPage() {
               </div>
 
               {/* Total Assets */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400">
                   <TrendingUp className="h-4 w-4" />
                   Total Assets
                 </div>
-                <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+                <div className="text-xl font-semibold text-slate-900 dark:text-slate-100">
                   ₱<NumberTicker value={latest ? Number(latest.totalAssets) : 0} />
                 </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">
+                <div className="text-xs text-slate-600 dark:text-slate-400">
                   Real property, personal property, and investments
                 </div>
               </div>
 
               {/* Total Liabilities */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400">
                   <CreditCard className="h-4 w-4" />
                   Total Liabilities
                 </div>
-                <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+                <div className="text-xl font-semibold text-slate-900 dark:text-slate-100">
                   ₱<NumberTicker value={latest ? Number(latest.totalLiabilities) : 0} />
                 </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">
+                <div className="text-xs text-slate-600 dark:text-slate-400">
                   Loans, mortgages, and other obligations
                 </div>
               </div>
             </div>
-          </EnhancedCardContent>
-        </NeonGradientCard>
+          </CardContent>
+        </Card>
       </BlurFade>
 
       {/* SALN Categories Grid */}
       <BlurFade delay={0.3}>
-        <div className="relative z-10">
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+        <div>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-3.5">
             SALN Categories
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
             {MOCK_SALN_SECTIONS.map((section, index) => (
               <BlurFade key={section.id} delay={0.4 + index * 0.05}>
-                <EnhancedCard variant="magic" className="cursor-pointer hover:shadow-xl transition-all duration-300">
-                  <div className="flex items-start justify-between mb-4">
-                    <div
-                      className={cn(
-                        'flex h-12 w-12 items-center justify-center rounded-lg transition-all duration-300',
-                        section.isComplete
-                          ? 'bg-green-100 dark:bg-green-950/30'
-                          : 'bg-tup-crimson-subtle dark:bg-primary/30'
-                      )}>
-                      <section.icon
+                <Card className="cursor-pointer hover:shadow-md hover:border-[oklch(0.55_0.22_15)] transition-all border-slate-200 dark:border-slate-800">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div
                         className={cn(
-                          'h-6 w-6',
+                          'flex h-10 w-10 items-center justify-center rounded-lg',
                           section.isComplete
-                            ? 'text-green-600 dark:text-green-400'
-                            : 'text-primary dark:text-tup-crimson-light'
-                        )}
-                      />
+                            ? 'bg-green-100 dark:bg-green-950/30'
+                            : 'bg-tup-crimson-subtle dark:bg-primary/30'
+                        )}>
+                        <section.icon
+                          className={cn(
+                            'h-5 w-5',
+                            section.isComplete
+                              ? 'text-green-600 dark:text-green-400'
+                              : 'text-primary dark:text-tup-crimson-light'
+                          )}
+                        />
+                      </div>
+                      {section.isComplete ? (
+                        <Badge className="bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400 px-2 py-0.5 text-xs">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Complete
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="secondary"
+                          className="bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400 px-2 py-0.5 text-xs">
+                          <Clock className="h-3 w-3 mr-1" />
+                          In Progress
+                        </Badge>
+                      )}
                     </div>
-                    {section.isComplete ? (
-                      <Badge className="bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400">
-                        <CheckCircle2 className="h-3 w-3 mr-1" />
-                        Complete
-                      </Badge>
-                    ) : (
-                      <Badge
-                        variant="secondary"
-                        className="bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400">
-                        <Clock className="h-3 w-3 mr-1" />
-                        In Progress
-                      </Badge>
-                    )}
-                  </div>
 
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                    {section.title}
-                  </h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                    {section.description}
-                  </p>
+                    <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-1.5">
+                      {section.title}
+                    </h3>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mb-3">
+                      {section.description}
+                    </p>
 
-                  <div className="flex items-center justify-between">
-                    <span className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                      ₱<NumberTicker value={section.amount} />
-                    </span>
-                    <span className="text-sm text-slate-600 dark:text-slate-400">
-                      {section.items} {section.items === 1 ? 'item' : 'items'}
-                    </span>
-                  </div>
-                </EnhancedCard>
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                        ₱<NumberTicker value={section.amount} />
+                      </span>
+                      <span className="text-xs text-slate-600 dark:text-slate-400">
+                        {section.items} {section.items === 1 ? 'item' : 'items'}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
               </BlurFade>
             ))}
           </div>
@@ -590,7 +503,7 @@ export default function SalnPage() {
       </BlurFade>
 
       {/* Year Summaries and Recent Activity */}
-      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Year Summaries */}
         <BlurFade delay={0.5} className="lg:col-span-2">
           <InfoCard title="Historical Overview" icon={Calendar}>
@@ -660,39 +573,39 @@ export default function SalnPage() {
       {/* Quick Actions */}
       <BlurFade delay={0.7}>
         <InfoCard title="Quick Actions" icon={Landmark}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
             <Link href="/dashboard/saln/view" className="w-full">
               <Button
                 variant="outline"
-                className="w-full justify-start text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-primary hover:bg-primary/10 dark:hover:border-primary dark:hover:bg-primary/20 hover:text-primary dark:hover:text-primary transition-all duration-300 hover:scale-[1.02]">
-                <Eye className="h-4 w-4 mr-2" />
+                className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-[oklch(0.55_0.22_15)] transition-colors">
+                <Eye className="h-3.5 w-3.5 mr-2" />
                 View Submissions
               </Button>
             </Link>
             <Link href="/dashboard/saln/archive" className="w-full">
               <Button
                 variant="outline"
-                className="w-full justify-start text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-amber-600 hover:bg-amber-50 dark:hover:border-amber-500 dark:hover:bg-amber-950/30 hover:text-amber-700 dark:hover:text-amber-400 transition-all duration-300 hover:scale-[1.02]">
-                <Archive className="h-4 w-4 mr-2" />
+                className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors">
+                <Archive className="h-3.5 w-3.5 mr-2" />
                 View Archive
               </Button>
             </Link>
             <Button
               variant="outline"
-              className="w-full justify-start text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-green-600 hover:bg-green-50 dark:hover:border-green-500 dark:hover:bg-green-950/30 hover:text-green-700 dark:hover:text-green-400 transition-all duration-300 hover:scale-[1.02]">
-              <Download className="h-4 w-4 mr-2" />
+              className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-950/30 transition-colors">
+              <Download className="h-3.5 w-3.5 mr-2" />
               Download PDF
             </Button>
             <Button
               variant="outline"
-              className="w-full justify-start text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-purple-600 hover:bg-purple-50 dark:hover:border-purple-500 dark:hover:bg-purple-950/30 hover:text-purple-700 dark:hover:text-purple-400 transition-all duration-300 hover:scale-[1.02]">
-              <Printer className="h-4 w-4 mr-2" />
+              className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors">
+              <Printer className="h-3.5 w-3.5 mr-2" />
               Print SALN
             </Button>
             <Button
               variant="outline"
-              className="w-full justify-start text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-secondary hover:bg-secondary/10 dark:hover:border-secondary dark:hover:bg-secondary/20 hover:text-secondary dark:hover:text-secondary transition-all duration-300 hover:scale-[1.02]">
-              <Send className="h-4 w-4 mr-2" />
+              className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-[oklch(0.55_0.22_15)] transition-colors">
+              <Send className="h-3.5 w-3.5 mr-2" />
               Submit for Review
             </Button>
           </div>

@@ -1,25 +1,22 @@
 'use client';
 
 /**
- * PDS View Page - Enhanced with MagicUI Components
+ * PDS View Page - Minimalistic & Premium Design
  *
- * Transformations applied:
- * - NeonGradientCard for summary stats section
- * - EnhancedCard variant="magic" for PDS cards
- * - RetroGrid background with low opacity
- * - AnimatedGradientText for page title
- * - ShimmerButton for primary actions
- * - BlurFade entrance animations with staggering
- * - NumberTicker for statistics
- * - BorderBeam on card hover
+ * Design Philosophy:
+ * - Clean, modern, and minimalistic interface
+ * - Premium feel through typography and spacing
+ * - Subtle animations for smooth UX
+ * - TUP Manila red theme integration
+ * - Compact, space-efficient layouts
  *
  * Performance optimizations:
  * - React.memo on all child components
  * - useMemo for expensive calculations
  * - useCallback for event handlers
- * - Lazy loading icons where possible
+ * - Minimal animation overhead
  *
- * Target: < 220 KB First Load JS
+ * Target: < 200 KB First Load JS
  */
 
 import React, { useMemo, useCallback, useState } from 'react';
@@ -43,25 +40,16 @@ import {
   Clock,
   FileEdit,
   Archive,
-  Sparkles
 } from 'lucide-react';
 
-// Enhanced UI Components
-import {
-  AnimatedGradientText,
-  ShimmerButton,
-  NumberTicker,
-  BlurFade,
-  NeonGradientCard,
-  BorderBeam,
-  RetroGrid
-} from '@tupsafe/shared-ui';
+// Subtle UI Components - Magic UI used sparingly
+import { NumberTicker, BlurFade } from '@tupsafe/shared-ui';
 
 // Standard UI Components
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Collapsible,
   CollapsibleContent,
@@ -119,33 +107,40 @@ interface StatsCardProps {
 }
 
 const StatsCard = React.memo(({ label, value, icon: Icon, color = 'default' }: StatsCardProps) => {
-  const colorClasses = {
-    default: 'from-slate-500 to-slate-600',
-    green: 'from-emerald-500 to-emerald-600',
-    yellow: 'from-amber-500 to-amber-600',
-    blue: 'from-blue-500 to-blue-600',
-    red: 'from-rose-500 to-rose-600',
+  const iconColors = {
+    default: 'text-slate-500 dark:text-slate-400',
+    green: 'text-emerald-600 dark:text-emerald-500',
+    yellow: 'text-amber-600 dark:text-amber-500',
+    blue: 'text-blue-600 dark:text-blue-500',
+    red: 'text-rose-600 dark:text-rose-500',
+  };
+
+  const iconBgColors = {
+    default: 'bg-slate-100 dark:bg-slate-800',
+    green: 'bg-emerald-50 dark:bg-emerald-950/30',
+    yellow: 'bg-amber-50 dark:bg-amber-950/30',
+    blue: 'bg-blue-50 dark:bg-blue-950/30',
+    red: 'bg-rose-50 dark:bg-rose-950/30',
   };
 
   return (
-    <Card className="relative overflow-hidden border-slate-200 dark:border-slate-800 hover:shadow-lg transition-shadow">
-      <CardContent className="p-6">
+    <Card className="border-slate-200 dark:border-slate-800 hover:shadow-md transition-shadow duration-200">
+      <CardContent className="p-4">
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">
+          <div className="flex-1">
+            <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
               {label}
             </p>
-            <div className="text-3xl font-bold bg-gradient-to-r from-[oklch(0.55_0.22_15)] to-[oklch(0.65_0.22_15)] bg-clip-text text-transparent">
+            <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
               <NumberTicker value={value} />
             </div>
           </div>
           {Icon && (
             <div className={cn(
-              "p-3 rounded-full bg-gradient-to-br",
-              colorClasses[color],
-              "bg-opacity-10"
+              "p-2.5 rounded-lg",
+              iconBgColors[color]
             )}>
-              <Icon className={cn("h-6 w-6", `text-${color === 'default' ? 'slate' : color}-600`)} />
+              <Icon className={cn("h-5 w-5", iconColors[color])} />
             </div>
           )}
         </div>
@@ -170,7 +165,6 @@ interface PDSCardProps {
 
 const PDSCard = React.memo(({ submission, onView, onEdit, onDownload, onPrint }: PDSCardProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
   const completion = useMemo(() => calculateCompletion(submission), [submission]);
 
   const StatusIcon = STATUS_ICONS[submission.status as keyof typeof STATUS_ICONS];
@@ -190,21 +184,15 @@ const PDSCard = React.memo(({ submission, onView, onEdit, onDownload, onPrint }:
   ], [completion]);
 
   return (
-    <Card
-      className="group cursor-pointer transition-all duration-300 hover:shadow-xl relative overflow-hidden border-slate-200 dark:border-slate-800"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      {isHovered && <BorderBeam size={250} duration={12} delay={9} />}
-
-      <CardContent className="p-6 space-y-4">
+    <Card className="border-slate-200 dark:border-slate-800 hover:shadow-lg hover:border-[oklch(0.55_0.22_15)] dark:hover:border-[oklch(0.65_0.24_15)] transition-all duration-200">
+      <CardContent className="p-5 space-y-3.5">
         {/* Header */}
-        <div className="flex justify-between items-start gap-4">
-          <div className="flex-1">
-            <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-1">
+        <div className="flex justify-between items-start gap-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-0.5 truncate">
               Personal Data Sheet {submissionYear}
             </h3>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-xs text-slate-600 dark:text-slate-400">
               {submission.submittedAt
                 ? `Submitted ${formatDistanceToNow(new Date(submission.submittedAt), { addSuffix: true })}`
                 : `Created ${formatDistanceToNow(new Date(submission.createdAt), { addSuffix: true })}`
@@ -214,33 +202,33 @@ const PDSCard = React.memo(({ submission, onView, onEdit, onDownload, onPrint }:
           <Badge
             variant="outline"
             className={cn(
-              "gap-1.5 px-3 py-1",
+              "gap-1 px-2 py-0.5 shrink-0",
               STATUS_COLORS[submission.status as keyof typeof STATUS_COLORS]
             )}
           >
-            <StatusIcon className="h-3.5 w-3.5" />
-            <span className="capitalize font-medium">{submission.status}</span>
+            <StatusIcon className="h-3 w-3" />
+            <span className="capitalize text-xs font-medium">{submission.status}</span>
           </Badge>
         </div>
 
         {/* Completion Progress */}
-        <div className="space-y-2">
-          <div className="flex justify-between items-center text-sm">
+        <div className="space-y-1.5">
+          <div className="flex justify-between items-center text-xs">
             <span className="text-slate-600 dark:text-slate-400 font-medium">Completion</span>
-            <span className="text-slate-900 dark:text-slate-100 font-bold">{completion}%</span>
+            <span className="text-slate-900 dark:text-slate-100 font-semibold">{completion}%</span>
           </div>
-          <Progress value={completion} className="h-2" />
+          <Progress value={completion} className="h-1.5" />
         </div>
 
         {/* Version and Last Updated */}
-        <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+        <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
           <span className="flex items-center gap-1">
-            <FileText className="h-3.5 w-3.5" />
-            Version {submission.version}
+            <FileText className="h-3 w-3" />
+            v{submission.version}
           </span>
           <span className="flex items-center gap-1">
-            <Clock className="h-3.5 w-3.5" />
-            Updated {format(new Date(submission.updatedAt), 'MMM d, yyyy')}
+            <Clock className="h-3 w-3" />
+            {format(new Date(submission.updatedAt), 'MMM d, yyyy')}
           </span>
         </div>
 
@@ -249,24 +237,25 @@ const PDSCard = React.memo(({ submission, onView, onEdit, onDownload, onPrint }:
           <CollapsibleTrigger asChild>
             <Button
               variant="ghost"
-              className="w-full justify-between hover:bg-slate-100 dark:hover:bg-slate-800"
+              size="sm"
+              className="w-full justify-between h-8 hover:bg-slate-100 dark:hover:bg-slate-800"
             >
-              <span className="text-sm font-medium">View Sections</span>
+              <span className="text-xs font-medium">View Sections</span>
               {isOpen ? (
-                <ChevronUp className="h-4 w-4" />
+                <ChevronUp className="h-3.5 w-3.5" />
               ) : (
-                <ChevronDown className="h-4 w-4" />
+                <ChevronDown className="h-3.5 w-3.5" />
               )}
             </Button>
           </CollapsibleTrigger>
-          <CollapsibleContent className="mt-3">
-            <ul className="space-y-2">
+          <CollapsibleContent className="mt-2">
+            <ul className="space-y-1.5">
               {sections.map((section, index) => (
-                <li key={index} className="flex items-center gap-2 text-sm">
+                <li key={index} className="flex items-center gap-2 text-xs">
                   {section.completed ? (
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
                   ) : (
-                    <div className="h-4 w-4 rounded-full border-2 border-slate-300 dark:border-slate-600 shrink-0" />
+                    <div className="h-3.5 w-3.5 rounded-full border-2 border-slate-300 dark:border-slate-600 shrink-0" />
                   )}
                   <span className={cn(
                     section.completed
@@ -282,14 +271,14 @@ const PDSCard = React.memo(({ submission, onView, onEdit, onDownload, onPrint }:
         </Collapsible>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-3 border-t border-slate-200 dark:border-slate-800">
           <Button
             variant="outline"
             size="sm"
             onClick={onView}
-            className="gap-2"
+            className="gap-1.5 h-8 text-xs"
           >
-            <Eye className="h-4 w-4" />
+            <Eye className="h-3.5 w-3.5" />
             View
           </Button>
           {(submission.status === 'draft' || submission.status === 'rejected') && (
@@ -297,9 +286,9 @@ const PDSCard = React.memo(({ submission, onView, onEdit, onDownload, onPrint }:
               variant="outline"
               size="sm"
               onClick={onEdit}
-              className="gap-2"
+              className="gap-1.5 h-8 text-xs"
             >
-              <Edit className="h-4 w-4" />
+              <Edit className="h-3.5 w-3.5" />
               Edit
             </Button>
           )}
@@ -307,18 +296,18 @@ const PDSCard = React.memo(({ submission, onView, onEdit, onDownload, onPrint }:
             variant="outline"
             size="sm"
             onClick={onDownload}
-            className="gap-2"
+            className="gap-1.5 h-8 text-xs"
           >
-            <Download className="h-4 w-4" />
+            <Download className="h-3.5 w-3.5" />
             PDF
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={onPrint}
-            className="gap-2"
+            className="gap-1.5 h-8 text-xs"
           >
-            <Printer className="h-4 w-4" />
+            <Printer className="h-3.5 w-3.5" />
             Print
           </Button>
         </div>
@@ -353,25 +342,36 @@ const ErrorState = ({ error }: { error: string }) => (
 );
 
 const EmptyState = ({ onCreateNew, onViewArchive }: { onCreateNew: () => void; onViewArchive: () => void }) => (
-  <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 px-4">
-    <div className="relative">
-      <FileText className="h-24 w-24 text-slate-300 dark:text-slate-700" />
-      <Sparkles className="h-8 w-8 text-[oklch(0.55_0.22_15)] absolute -top-2 -right-2" />
+  <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-5 px-4">
+    {/* Icon Container */}
+    <div className="relative flex items-center justify-center w-20 h-20 rounded-2xl bg-slate-100 dark:bg-slate-800">
+      <FileText className="h-10 w-10 text-slate-400 dark:text-slate-500" />
     </div>
-    <div className="text-center space-y-2">
-      <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+
+    {/* Text Content */}
+    <div className="text-center space-y-2 max-w-md">
+      <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
         No Active PDS Submissions
       </h3>
-      <p className="text-slate-600 dark:text-slate-400 max-w-md">
+      <p className="text-sm text-slate-600 dark:text-slate-400">
         You haven&apos;t created any Personal Data Sheet in the last 5 years. Start a new submission or view your archived records.
       </p>
     </div>
-    <div className="flex gap-4">
-      <ShimmerButton onClick={onCreateNew} className="gap-2">
+
+    {/* Action Buttons */}
+    <div className="flex gap-3">
+      <Button
+        onClick={onCreateNew}
+        className="gap-2 bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)] text-white"
+      >
         <Plus className="h-4 w-4" />
         Create New PDS
-      </ShimmerButton>
-      <Button variant="outline" onClick={onViewArchive} className="gap-2">
+      </Button>
+      <Button
+        variant="outline"
+        onClick={onViewArchive}
+        className="gap-2"
+      >
         <Archive className="h-4 w-4" />
         View Archive
       </Button>
@@ -461,33 +461,30 @@ export default function PDSViewPage() {
   if (error) return <ErrorState error={error} />;
 
   return (
-    <div className="relative min-h-screen pb-12">
-      {/* Background Effect */}
-      <RetroGrid className="absolute inset-0 pointer-events-none opacity-30" />
-
-      <div className="relative z-10 space-y-8">
+    <div className="min-h-screen pb-12">
+      <div className="space-y-6">
         {/* Header */}
         <BlurFade delay={0.05}>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
-              <AnimatedGradientText className="text-3xl md:text-4xl font-bold mb-2">
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100 mb-1">
                 PDS Submissions
-              </AnimatedGradientText>
-              <p className="text-slate-600 dark:text-slate-400">
+              </h1>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
                 View and manage your active Personal Data Sheet submissions from the last 5 years
               </p>
             </div>
-            <ShimmerButton onClick={handleCreateNew} className="gap-2 shrink-0">
+            <Button onClick={handleCreateNew} className="gap-2 shrink-0">
               <Plus className="h-4 w-4" />
               Create New PDS
-            </ShimmerButton>
+            </Button>
           </div>
         </BlurFade>
 
         {/* Statistics */}
         {activeSubmissions.length > 0 && (
           <BlurFade delay={0.1}>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <StatsCard label="Total Submissions" value={stats.total} icon={FileText} />
               <StatsCard label="Approved" value={stats.approved} icon={CheckCircle2} color="green" />
               <StatsCard label="Pending Review" value={stats.pending} icon={Clock} color="yellow" />
@@ -499,11 +496,11 @@ export default function PDSViewPage() {
         {/* Filters and Sort */}
         {activeSubmissions.length > 0 && (
           <BlurFade delay={0.15}>
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex items-center gap-2 flex-1">
-                <Filter className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                <Filter className="h-4 w-4 text-slate-500 dark:text-slate-400 shrink-0" />
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectTrigger className="w-full sm:w-[180px] h-9">
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -517,9 +514,9 @@ export default function PDSViewPage() {
                 </Select>
               </div>
               <div className="flex items-center gap-2 flex-1">
-                <SortAsc className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                <SortAsc className="h-4 w-4 text-slate-500 dark:text-slate-400 shrink-0" />
                 <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
-                  <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectTrigger className="w-full sm:w-[180px] h-9">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
                   <SelectContent>
@@ -533,7 +530,7 @@ export default function PDSViewPage() {
               <Button
                 variant="outline"
                 onClick={handleViewArchive}
-                className="gap-2"
+                className="gap-2 h-9 shrink-0"
               >
                 <Archive className="h-4 w-4" />
                 View Archive
@@ -551,7 +548,7 @@ export default function PDSViewPage() {
             />
           </BlurFade>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {activeSubmissions.map((submission, index) => (
               <BlurFade key={submission.id} delay={0.2 + index * 0.05}>
                 <PDSCard
