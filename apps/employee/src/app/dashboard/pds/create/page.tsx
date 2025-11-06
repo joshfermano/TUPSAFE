@@ -51,7 +51,11 @@ import {
 import { z } from 'zod';
 
 // Form components
-import { FormStepIndicator, FormStepSkeleton, type FormStep } from '@/components/forms/shared';
+import {
+  FormStepIndicator,
+  FormStepSkeleton,
+  type FormStep,
+} from '@/components/forms/shared';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -173,18 +177,21 @@ export default function PDSCreatePage() {
   const formData = form.watch();
 
   // Auto-save setup
-  const { saveStatus, lastSaved, saveNow, clearSaved, hasSavedData } = useAutoSave({
-    key: `pds-draft-${userId}`,
-    data: formData,
-    debounceMs: 2000,
-    autoSaveIntervalMs: 30000,
-    enabled: !isSubmitting,
-    showToast: false, // We'll show custom toast
-  });
+  const { saveStatus, lastSaved, saveNow, clearSaved, hasSavedData } =
+    useAutoSave({
+      key: `pds-draft-${userId}`,
+      data: formData,
+      debounceMs: 2000,
+      autoSaveIntervalMs: 30000,
+      enabled: !isSubmitting,
+      showToast: false, // We'll show custom toast
+    });
 
   // Check for saved draft on mount
   useEffect(() => {
-    const savedDraft = getSavedDraft<Partial<CompletePdsData>>(`pds-draft-${userId}`);
+    const savedDraft = getSavedDraft<Partial<CompletePdsData>>(
+      `pds-draft-${userId}`
+    );
     if (savedDraft && Object.keys(savedDraft).length > 0) {
       setHasSavedDraft(true);
       setShowDraftDialog(true);
@@ -193,7 +200,9 @@ export default function PDSCreatePage() {
 
   // Handle draft restoration
   const handleRestoreDraft = useCallback(() => {
-    const savedDraft = getSavedDraft<Partial<CompletePdsData>>(`pds-draft-${userId}`);
+    const savedDraft = getSavedDraft<Partial<CompletePdsData>>(
+      `pds-draft-${userId}`
+    );
     if (savedDraft) {
       form.reset(savedDraft);
       toast.success('Draft Restored', {
@@ -287,7 +296,8 @@ export default function PDSCreatePage() {
         });
 
         toast.success('PDS Submitted Successfully!', {
-          description: 'Your Personal Data Sheet has been submitted for review.',
+          description:
+            'Your Personal Data Sheet has been submitted for review.',
         });
 
         // Clear draft
@@ -328,7 +338,9 @@ export default function PDSCreatePage() {
         return (
           <div className="flex items-center gap-2 text-sm text-primary">
             <CheckCircle2 className="h-3 w-3" />
-            <span>Saved {lastSaved ? `at ${lastSaved.toLocaleTimeString()}` : ''}</span>
+            <span>
+              Saved {lastSaved ? `at ${lastSaved.toLocaleTimeString()}` : ''}
+            </span>
           </div>
         );
       case 'error':
@@ -393,8 +405,7 @@ export default function PDSCreatePage() {
                   variant="outline"
                   size="sm"
                   onClick={saveNow}
-                  disabled={isSubmitting}
-                >
+                  disabled={isSubmitting}>
                   <Save className="h-4 w-4 mr-2" />
                   Save Now
                 </Button>
@@ -428,8 +439,7 @@ export default function PDSCreatePage() {
                   type="button"
                   variant="outline"
                   onClick={handlePrevious}
-                  disabled={currentStep === 0 || isSubmitting}
-                >
+                  disabled={currentStep === 0 || isSubmitting}>
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Previous
                 </Button>
@@ -439,8 +449,7 @@ export default function PDSCreatePage() {
                     type="button"
                     variant="secondary"
                     onClick={saveNow}
-                    disabled={isSubmitting}
-                  >
+                    disabled={isSubmitting}>
                     <Save className="h-4 w-4 mr-2" />
                     Save Draft
                   </Button>
@@ -449,8 +458,7 @@ export default function PDSCreatePage() {
                     <ShimmerButton
                       type="submit"
                       disabled={isSubmitting}
-                      className="min-w-[160px]"
-                    >
+                      className="min-w-[160px]">
                       {isSubmitting ? (
                         <>
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -464,7 +472,10 @@ export default function PDSCreatePage() {
                       )}
                     </ShimmerButton>
                   ) : (
-                    <ShimmerButton type="button" onClick={handleNext} disabled={isSubmitting}>
+                    <ShimmerButton
+                      type="button"
+                      onClick={handleNext}
+                      disabled={isSubmitting}>
                       Next
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </ShimmerButton>
@@ -485,12 +496,14 @@ export default function PDSCreatePage() {
               Resume Previous Draft?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              We found a saved draft of your PDS form. Would you like to continue where you
-              left off, or start fresh?
+              We found a saved draft of your PDS form. Would you like to
+              continue where you left off, or start fresh?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleDiscardDraft}>Start Fresh</AlertDialogCancel>
+            <AlertDialogCancel onClick={handleDiscardDraft}>
+              Start Fresh
+            </AlertDialogCancel>
             <AlertDialogAction onClick={handleRestoreDraft}>
               Resume Draft
             </AlertDialogAction>

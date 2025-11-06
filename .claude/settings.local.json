@@ -54,7 +54,9 @@
       "Bash(ls:*)",
       "Bash(timeout 30 npm run dev:employee:*)",
       "Bash(test:*)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "Bash(echo:*)",
+      "Bash(/mnt/d/thesis/SmartGov/apps/employee/src/app/dashboard/pds/edit/[id]/page.tsx)"
     ],
     "deny": [],
     "ask": []
