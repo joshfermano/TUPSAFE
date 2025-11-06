@@ -1,5 +1,16 @@
 'use client';
 
+/**
+ * SALN Archive Page - Clean & Minimalistic Design
+ *
+ * Design Principles:
+ * - Clean, minimalistic layout with no heavy backgrounds
+ * - Modern & premium feel with subtle hover effects
+ * - Compact & space-efficient design
+ * - TUP Manila branding with subtle red accents
+ * - Optimized performance with minimal animations
+ */
+
 import React, { useMemo, useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSaln, useAuth } from '@tupsafe/mock-data/api';
@@ -29,12 +40,8 @@ import {
   Info,
 } from 'lucide-react';
 
-import { MagicCard } from '@/components/ui/magic-card';
-import { AnimatedGradientText } from '@/components/ui/animated-gradient-text';
-import { ShimmerButton } from '@/components/ui/shimmer-button';
 import { NumberTicker } from '@/components/ui/number-ticker';
 import { BlurFade } from '@/components/ui/blur-fade';
-import { Particles } from '@/components/ui/particles';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -91,8 +98,8 @@ const STATUS_ICONS = {
 };
 
 // Parse string currency from database to number
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 // Type assertion needed: Database returns string | null for currency fields, we parse to number
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const parseSubmission = (submission: any): SalnSubmissionWithNumbers => ({
   ...submission,
   totalAssets: parseCurrencyFromDb(submission.totalAssets),
@@ -145,27 +152,27 @@ const StatsCard = React.memo(({
   };
 
   return (
-    <Card className="relative overflow-hidden border-slate-200 dark:border-slate-800">
-      <CardContent className="p-6">
+    <Card className="border-slate-200 dark:border-slate-800 hover:border-[oklch(0.55_0.22_15)] transition-colors">
+      <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">
+            <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
               {label}
             </p>
             <div className="flex items-baseline gap-2">
               <div className={cn(
-                "text-3xl font-bold bg-gradient-to-r bg-clip-text text-transparent",
+                "text-2xl font-bold bg-gradient-to-r bg-clip-text text-transparent",
                 colorClasses[color]
               )}>
-                {prefix && <span className="text-2xl">{prefix}</span>}
+                {prefix && <span className="text-xl">{prefix}</span>}
                 <NumberTicker value={value} />
-                {suffix && <span className="text-2xl ml-1">{suffix}</span>}
+                {suffix && <span className="text-xl ml-1">{suffix}</span>}
               </div>
               {showChange && changeValue !== undefined && changeValue !== null && (
                 <Badge
                   variant="outline"
                   className={cn(
-                    "ml-2 gap-1",
+                    "ml-2 gap-1 px-2 py-0.5",
                     changeValue >= 0
                       ? "border-emerald-500 text-emerald-700 dark:text-emerald-400"
                       : "border-rose-500 text-rose-700 dark:text-rose-400"
@@ -181,10 +188,10 @@ const StatsCard = React.memo(({
           </div>
           {Icon && (
             <div className={cn(
-              "p-3 rounded-full bg-gradient-to-br opacity-80",
+              "p-2.5 rounded-full bg-gradient-to-br opacity-80",
               colorClasses[color]
             )}>
-              <Icon className="h-6 w-6 text-white" />
+              <Icon className="h-5 w-5 text-white" />
             </div>
           )}
         </div>
@@ -218,73 +225,73 @@ const ArchivedSALNCard = React.memo(({
   const yearOverYearChange = calculateYearOverYearChange(submission, previousYear);
 
   return (
-    <MagicCard className="group cursor-pointer transition-all duration-300 hover:shadow-xl">
-      <div className="p-6 space-y-4">
+    <Card className="cursor-pointer transition-all hover:shadow-md hover:border-[oklch(0.55_0.22_15)] border-slate-200 dark:border-slate-800">
+      <CardContent className="p-5 space-y-3.5">
         {/* Header: Year + Status + Archived Badge */}
-        <div className="flex justify-between items-start gap-4">
+        <div className="flex justify-between items-start gap-3">
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+            <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                 SALN {submission.year}
               </h3>
-              <Badge variant="outline" className="border-amber-500/50 bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400">
+              <Badge variant="outline" className="border-amber-500/50 bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 px-2 py-0.5 text-xs">
                 <Archive className="h-3 w-3 mr-1" />
                 Archived ({yearsArchived}y ago)
               </Badge>
             </div>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-xs text-slate-600 dark:text-slate-400">
               As of December 31, {submission.year}
             </p>
           </div>
           <Badge
             variant="outline"
             className={cn(
-              "gap-1.5 px-3 py-1",
+              "gap-1 px-2 py-0.5",
               STATUS_COLORS[submission.status]
             )}
           >
-            <StatusIcon className="h-3.5 w-3.5" />
-            <span className="capitalize font-medium">{submission.status}</span>
+            <StatusIcon className="h-3 w-3" />
+            <span className="capitalize font-medium text-xs">{submission.status}</span>
           </Badge>
         </div>
 
         {/* Financial Summary */}
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {/* Total Assets */}
-          <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors hover:bg-slate-100 dark:hover:bg-slate-800">
+          <div className="flex justify-between items-center p-2.5 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors hover:bg-slate-100 dark:hover:bg-slate-800">
             <div className="flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Total Assets</span>
+              <Building2 className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" />
+              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Total Assets</span>
             </div>
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-emerald-600" />
-              <span className="text-base font-bold text-emerald-700 dark:text-emerald-400">
+              <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
+              <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
                 ₱ <NumberTicker value={submission.totalAssets} />
               </span>
             </div>
           </div>
 
           {/* Total Liabilities */}
-          <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors hover:bg-slate-100 dark:hover:bg-slate-800">
+          <div className="flex justify-between items-center p-2.5 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors hover:bg-slate-100 dark:hover:bg-slate-800">
             <div className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Total Liabilities</span>
+              <CreditCard className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" />
+              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Total Liabilities</span>
             </div>
-            <span className="text-base font-bold text-rose-700 dark:text-rose-400">
+            <span className="text-sm font-bold text-rose-700 dark:text-rose-400">
               ₱ <NumberTicker value={submission.totalLiabilities} />
             </span>
           </div>
 
           {/* Net Worth - Highlighted */}
-          <div className="relative p-4 bg-gradient-to-br from-amber-500/5 via-amber-600/5 to-amber-700/5 border-2 border-amber-500/20 rounded-lg">
+          <div className="p-3 bg-gradient-to-br from-amber-500/5 via-amber-600/5 to-amber-700/5 border border-amber-500/20 rounded-lg">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-amber-600" />
-                <span className="text-lg font-bold text-slate-900 dark:text-slate-100">Net Worth</span>
+                <DollarSign className="h-4 w-4 text-amber-600" />
+                <span className="text-base font-bold text-slate-900 dark:text-slate-100">Net Worth</span>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <span className={cn(
-                  "text-xl font-bold",
+                  "text-lg font-bold",
                   submission.netWorth >= 0
                     ? "text-emerald-700 dark:text-emerald-400"
                     : "text-rose-700 dark:text-rose-400"
@@ -393,32 +400,32 @@ const ArchivedSALNCard = React.memo(({
             variant="outline"
             size="sm"
             onClick={onView}
-            className="gap-2"
+            className="gap-1.5 h-8 text-xs hover:border-[oklch(0.55_0.22_15)] transition-colors"
           >
-            <Eye className="h-4 w-4" />
+            <Eye className="h-3.5 w-3.5" />
             View
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={onDownload}
-            className="gap-2"
+            className="gap-1.5 h-8 text-xs hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-950/30 transition-colors"
           >
-            <Download className="h-4 w-4" />
+            <Download className="h-3.5 w-3.5" />
             PDF
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={onPrint}
-            className="gap-2"
+            className="gap-1.5 h-8 text-xs hover:border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors"
           >
-            <Printer className="h-4 w-4" />
+            <Printer className="h-3.5 w-3.5" />
             Print
           </Button>
         </div>
-      </div>
-    </MagicCard>
+      </CardContent>
+    </Card>
   );
 });
 
@@ -426,44 +433,51 @@ ArchivedSALNCard.displayName = 'ArchivedSALNCard';
 
 // Loading State Component
 const LoadingState = () => (
-  <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+  <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-3">
     <div className="relative">
-      <div className="h-16 w-16 rounded-full border-4 border-slate-200 dark:border-slate-800" />
-      <div className="absolute top-0 left-0 h-16 w-16 rounded-full border-4 border-amber-600 border-t-transparent animate-spin" />
+      <div className="h-12 w-12 rounded-full border-4 border-slate-200 dark:border-slate-800" />
+      <div className="absolute top-0 left-0 h-12 w-12 rounded-full border-4 border-amber-600 border-t-transparent animate-spin" />
     </div>
-    <p className="text-slate-600 dark:text-slate-400 text-lg font-medium">Loading archived SALN submissions...</p>
+    <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">Loading archived SALN submissions...</p>
   </div>
 );
 
 // Error State Component
 const ErrorState = ({ error }: { error: string }) => (
-  <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-    <AlertCircle className="h-16 w-16 text-rose-500" />
-    <p className="text-slate-900 dark:text-slate-100 text-xl font-semibold">Something went wrong</p>
-    <p className="text-slate-600 dark:text-slate-400">{error}</p>
-    <Button onClick={() => window.location.reload()}>Try Again</Button>
+  <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-3">
+    <AlertCircle className="h-12 w-12 text-rose-500" />
+    <p className="text-slate-900 dark:text-slate-100 text-lg font-semibold">Something went wrong</p>
+    <p className="text-slate-600 dark:text-slate-400 text-sm">{error}</p>
+    <Button onClick={() => window.location.reload()} className="h-9">Try Again</Button>
   </div>
 );
 
 // Empty State Component
 const EmptyState = ({ onBackToActive }: { onBackToActive: () => void }) => (
-  <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 px-4">
-    <div className="relative">
-      <Archive className="h-24 w-24 text-slate-300 dark:text-slate-700" />
-      <Sparkles className="h-8 w-8 text-amber-600 absolute -top-2 -right-2" />
+  <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-5 px-4">
+    {/* Icon Container */}
+    <div className="relative flex items-center justify-center w-20 h-20 rounded-2xl bg-slate-100 dark:bg-slate-800">
+      <Archive className="h-10 w-10 text-slate-400 dark:text-slate-500" />
     </div>
-    <div className="text-center space-y-2">
-      <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+
+    {/* Text Content */}
+    <div className="text-center space-y-2 max-w-md">
+      <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
         No Archived SALN Submissions
       </h3>
-      <p className="text-slate-600 dark:text-slate-400 max-w-md">
-        You don&apos;t have any Statement of Assets, Liabilities, and Net Worth submissions older than 5 years.
+      <p className="text-sm text-slate-600 dark:text-slate-400">
+        Your archived SALN submissions (older than 5 years) will appear here. Check your active submissions to see recent records.
       </p>
     </div>
-    <ShimmerButton onClick={onBackToActive} className="gap-2">
+
+    {/* Action Button */}
+    <Button
+      onClick={onBackToActive}
+      className="gap-2 bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)] text-white"
+    >
       <ArrowLeft className="h-4 w-4" />
       View Active Submissions
-    </ShimmerButton>
+    </Button>
   </div>
 );
 
@@ -574,166 +588,157 @@ export default function SALNArchivePage() {
   if (error) return <ErrorState error={error} />;
 
   return (
-    <div className="relative min-h-screen pb-12">
-      <Particles
-        className="absolute inset-0 pointer-events-none"
-        quantity={20}
-        staticity={50}
-        ease={50}
-      />
-
-      <div className="relative z-10 space-y-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <AnimatedGradientText className="text-3xl md:text-4xl font-bold">
-                SALN Archive
-              </AnimatedGradientText>
-              <Badge className="bg-gradient-to-r from-amber-600 to-amber-700 text-white border-0">
-                Historical Records
-              </Badge>
-            </div>
-            <p className="text-slate-600 dark:text-slate-400">
-              View archived financial disclosures from 5 or more years ago
-            </p>
+    <div className="min-h-screen pb-12 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">
+              SALN Archive
+            </h1>
+            <Badge className="bg-gradient-to-r from-amber-600 to-amber-700 text-white border-0 px-2 py-0.5 text-xs">
+              Historical Records
+            </Badge>
           </div>
-          <ShimmerButton onClick={handleBackToActive} className="gap-2 shrink-0">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Active Submissions
-          </ShimmerButton>
+          <p className="text-slate-600 dark:text-slate-400 text-sm">
+            View archived financial disclosures from 5 or more years ago
+          </p>
         </div>
+        <Button onClick={handleBackToActive} className="gap-2 shrink-0 h-9 bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]">
+          <ArrowLeft className="h-4 w-4" />
+          Back to Active Submissions
+        </Button>
+      </div>
 
-        {/* Archive Notice */}
-        <BlurFade delay={0.05}>
-          <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
-            <Info className="h-4 w-4 text-amber-700 dark:text-amber-400" />
-            <AlertTitle className="text-amber-900 dark:text-amber-300">Historical Records</AlertTitle>
-            <AlertDescription className="text-amber-700 dark:text-amber-400">
-              These are archived SALN submissions from 5 or more years ago.
-              Archived records are read-only and cannot be edited.
-            </AlertDescription>
-          </Alert>
+      {/* Archive Notice */}
+      <BlurFade delay={0.05}>
+        <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
+          <Info className="h-4 w-4 text-amber-700 dark:text-amber-400" />
+          <AlertTitle className="text-amber-900 dark:text-amber-300 text-sm">Historical Records</AlertTitle>
+          <AlertDescription className="text-amber-700 dark:text-amber-400 text-xs">
+            These are archived SALN submissions from 5 or more years ago.
+            Archived records are read-only and cannot be edited.
+          </AlertDescription>
+        </Alert>
+      </BlurFade>
+
+      {/* Statistics */}
+      {archivedSubmissions.length > 0 && (
+        <BlurFade delay={0.1}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <StatsCard
+              label="Total Archived Submissions"
+              value={stats.total}
+              icon={Archive}
+              color="amber"
+            />
+            <StatsCard
+              label="Oldest Submission Year"
+              value={stats.oldestYear}
+              icon={FileText}
+              color="default"
+            />
+            <StatsCard
+              label="Average Archived Net Worth"
+              value={stats.avgNetWorth}
+              prefix="₱ "
+              icon={DollarSign}
+              color="green"
+            />
+            <StatsCard
+              label="Total Archived Years"
+              value={stats.totalYearsSpan}
+              suffix=" years"
+              icon={Clock}
+              color="blue"
+            />
+          </div>
         </BlurFade>
+      )}
 
-        {/* Statistics */}
-        {archivedSubmissions.length > 0 && (
-          <BlurFade delay={0.1}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatsCard
-                label="Total Archived Submissions"
-                value={stats.total}
-                icon={Archive}
-                color="amber"
-              />
-              <StatsCard
-                label="Oldest Submission Year"
-                value={stats.oldestYear}
-                icon={FileText}
-                color="default"
-              />
-              <StatsCard
-                label="Average Archived Net Worth"
-                value={stats.avgNetWorth}
-                prefix="₱ "
-                icon={DollarSign}
-                color="green"
-              />
-              <StatsCard
-                label="Total Archived Years"
-                value={stats.totalYearsSpan}
-                suffix=" years"
-                icon={Clock}
-                color="blue"
-              />
+      {/* Filters and Sort */}
+      {archivedSubmissions.length > 0 && (
+        <BlurFade delay={0.15}>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex items-center gap-2 flex-1">
+              <Filter className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-[160px] h-9">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="submitted">Submitted</SelectItem>
+                  <SelectItem value="reviewing">Reviewing</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </BlurFade>
-        )}
-
-        {/* Filters and Sort */}
-        {archivedSubmissions.length > 0 && (
-          <BlurFade delay={0.15}>
-            <div className="flex flex-col sm:flex-row gap-4">
+            {availableDecades.length > 1 && (
               <div className="flex items-center gap-2 flex-1">
                 <Filter className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
-                    <SelectValue placeholder="Filter by status" />
+                <Select value={decadeFilter} onValueChange={setDecadeFilter}>
+                  <SelectTrigger className="w-full sm:w-[160px] h-9">
+                    <SelectValue placeholder="Filter by decade" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="submitted">Submitted</SelectItem>
-                    <SelectItem value="reviewing">Reviewing</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
+                    <SelectItem value="all">All Decades</SelectItem>
+                    {availableDecades.map(decade => (
+                      <SelectItem key={decade} value={decade.toString()}>
+                        {decade}s
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
-              {availableDecades.length > 1 && (
-                <div className="flex items-center gap-2 flex-1">
-                  <Filter className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-                  <Select value={decadeFilter} onValueChange={setDecadeFilter}>
-                    <SelectTrigger className="w-full sm:w-[180px]">
-                      <SelectValue placeholder="Filter by decade" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Decades</SelectItem>
-                      {availableDecades.map(decade => (
-                        <SelectItem key={decade} value={decade.toString()}>
-                          {decade}s
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              <div className="flex items-center gap-2 flex-1">
-                <SortAsc className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-                <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'date-desc' | 'date-asc' | 'networth-desc' | 'networth-asc' | 'status')}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
-                    <SelectValue placeholder="Sort by" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="date-desc">Newest First</SelectItem>
-                    <SelectItem value="date-asc">Oldest First</SelectItem>
-                    <SelectItem value="networth-desc">Highest Net Worth</SelectItem>
-                    <SelectItem value="networth-asc">Lowest Net Worth</SelectItem>
-                    <SelectItem value="status">Status</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            )}
+            <div className="flex items-center gap-2 flex-1">
+              <SortAsc className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+              <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'date-desc' | 'date-asc' | 'networth-desc' | 'networth-asc' | 'status')}>
+                <SelectTrigger className="w-full sm:w-[160px] h-9">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date-desc">Newest First</SelectItem>
+                  <SelectItem value="date-asc">Oldest First</SelectItem>
+                  <SelectItem value="networth-desc">Highest Net Worth</SelectItem>
+                  <SelectItem value="networth-asc">Lowest Net Worth</SelectItem>
+                  <SelectItem value="status">Status</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </BlurFade>
-        )}
-
-        {/* Cards Grid or Empty State */}
-        {archivedSubmissions.length === 0 ? (
-          <BlurFade delay={0.2}>
-            <EmptyState onBackToActive={handleBackToActive} />
-          </BlurFade>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {archivedSubmissions.map((submission, index) => {
-              const yearEnd = new Date(submission.year, 11, 31);
-              const yearsArchived = differenceInYears(new Date(), yearEnd);
-
-              return (
-                <BlurFade key={submission.id} delay={0.2 + index * 0.05}>
-                  <ArchivedSALNCard
-                    submission={submission}
-                    previousYear={archivedSubmissions[index + 1]}
-                    yearsArchived={yearsArchived}
-                    onView={() => handleView(submission.id)}
-                    onDownload={() => handleDownload(submission.id)}
-                    onPrint={() => handlePrint(submission.id)}
-                  />
-                </BlurFade>
-              );
-            })}
           </div>
-        )}
-      </div>
+        </BlurFade>
+      )}
+
+      {/* Cards Grid or Empty State */}
+      {archivedSubmissions.length === 0 ? (
+        <BlurFade delay={0.2}>
+          <EmptyState onBackToActive={handleBackToActive} />
+        </BlurFade>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {archivedSubmissions.map((submission, index) => {
+            const yearEnd = new Date(submission.year, 11, 31);
+            const yearsArchived = differenceInYears(new Date(), yearEnd);
+
+            return (
+              <BlurFade key={submission.id} delay={0.2 + index * 0.05}>
+                <ArchivedSALNCard
+                  submission={submission}
+                  previousYear={archivedSubmissions[index + 1]}
+                  yearsArchived={yearsArchived}
+                  onView={() => handleView(submission.id)}
+                  onDownload={() => handleDownload(submission.id)}
+                  onPrint={() => handlePrint(submission.id)}
+                />
+              </BlurFade>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

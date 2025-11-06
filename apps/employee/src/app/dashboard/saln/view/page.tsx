@@ -20,7 +20,6 @@ import {
   Clock,
   FileEdit,
   Archive,
-  Sparkles,
   TrendingUp,
   TrendingDown,
   DollarSign,
@@ -29,14 +28,8 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
-import { MagicCard } from '@/components/ui/magic-card';
-import { NeonGradientCard } from '@/components/ui/neon-gradient-card';
-import { AnimatedGradientText } from '@/components/ui/animated-gradient-text';
-import { ShimmerButton } from '@/components/ui/shimmer-button';
 import { NumberTicker } from '@/components/ui/number-ticker';
 import { BlurFade } from '@/components/ui/blur-fade';
-import { Particles } from '@/components/ui/particles';
-import { BorderBeam } from '@/components/ui/border-beam';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -54,9 +47,7 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import {
-  formatCurrency,
   parseCurrencyFromDb,
-  type CompleteSalnData,
 } from '@/lib/validations/saln-schema';
 
 // Type for SALN submission with parsed numbers
@@ -93,8 +84,9 @@ const STATUS_ICONS = {
   rejected: XCircle,
 };
 
-// Type for raw submission from database
-interface RawSalnSubmission {
+// Parse string currency from database to number
+// Type assertion needed: Database returns string | null for currency fields, we parse to number
+const parseSubmission = (submission: {
   id: string;
   userId: string;
   year: number;
@@ -108,12 +100,7 @@ interface RawSalnSubmission {
   filingType: 'joint' | 'separate' | 'not_applicable';
   createdAt: Date;
   updatedAt: Date;
-}
-
-// Parse string currency from database to number
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-// Type assertion needed: Database returns string | null for currency fields, we parse to number
-const parseSubmission = (submission: any): SalnSubmissionWithNumbers => ({
+}): SalnSubmissionWithNumbers => ({
   ...submission,
   totalAssets: parseCurrencyFromDb(submission.totalAssets),
   totalLiabilities: parseCurrencyFromDb(submission.totalLiabilities),
@@ -132,7 +119,7 @@ const calculateYearOverYearChange = (
   return ((currentNetWorth - previousNetWorth) / Math.abs(previousNetWorth)) * 100;
 };
 
-// Statistics Card Component
+// Statistics Card Component - Clean & Compact
 interface StatsCardProps {
   label: string;
   value: number;
@@ -154,46 +141,34 @@ const StatsCard = React.memo(({
   showChange = false,
   changeValue,
 }: StatsCardProps) => {
-  const colorClasses = {
-    default: 'from-slate-500 to-slate-600',
-    green: 'from-emerald-500 to-emerald-600',
-    red: 'from-rose-500 to-rose-600',
-    yellow: 'from-amber-500 to-amber-600',
-    blue: 'from-blue-500 to-blue-600',
-    crimson: 'from-[oklch(0.55_0.22_15)] to-[oklch(0.65_0.22_15)]',
-  };
-
   const iconColor = {
-    default: 'text-slate-600',
-    green: 'text-emerald-600',
-    red: 'text-rose-600',
-    yellow: 'text-amber-600',
-    blue: 'text-blue-600',
-    crimson: 'text-[oklch(0.55_0.22_15)]',
+    default: 'text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800',
+    green: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30',
+    red: 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30',
+    yellow: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30',
+    blue: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30',
+    crimson: 'text-[oklch(0.55_0.22_15)] dark:text-[oklch(0.65_0.22_15)] bg-[oklch(0.55_0.22_15)]/5 dark:bg-[oklch(0.55_0.22_15)]/10',
   };
 
   return (
-    <Card className="relative overflow-hidden border-slate-200 dark:border-slate-800">
-      <CardContent className="p-6">
+    <Card className="relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-[oklch(0.55_0.22_15)]">
+      <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">
+            <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
               {label}
             </p>
             <div className="flex items-baseline gap-2">
-              <div className={cn(
-                "text-3xl font-bold bg-gradient-to-r bg-clip-text text-transparent",
-                colorClasses[color]
-              )}>
-                {prefix && <span className="text-2xl">{prefix}</span>}
+              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                {prefix && <span className="text-lg">{prefix}</span>}
                 <NumberTicker value={value} />
-                {suffix && <span className="text-2xl ml-1">{suffix}</span>}
+                {suffix && <span className="text-lg ml-1">{suffix}</span>}
               </div>
               {showChange && changeValue !== undefined && changeValue !== null && (
                 <Badge
                   variant="outline"
                   className={cn(
-                    "ml-2 gap-1",
+                    "ml-1 gap-1",
                     changeValue >= 0
                       ? "border-emerald-500 text-emerald-700 dark:text-emerald-400"
                       : "border-rose-500 text-rose-700 dark:text-rose-400"
@@ -208,11 +183,8 @@ const StatsCard = React.memo(({
             </div>
           </div>
           {Icon && (
-            <div className={cn(
-              "p-3 rounded-full bg-gradient-to-br opacity-80",
-              colorClasses[color]
-            )}>
-              <Icon className={cn("h-6 w-6", iconColor[color])} />
+            <div className={cn("p-2.5 rounded-lg", iconColor[color])}>
+              <Icon className="h-5 w-5" />
             </div>
           )}
         </div>
@@ -223,7 +195,7 @@ const StatsCard = React.memo(({
 
 StatsCard.displayName = 'StatsCard';
 
-// SALN Card Component
+// SALN Card Component - Clean & Compact
 interface SALNCardProps {
   submission: SalnSubmissionWithNumbers;
   previousYear?: SalnSubmissionWithNumbers;
@@ -247,79 +219,72 @@ const SALNCard = React.memo(({
   const StatusIcon = STATUS_ICONS[submission.status];
   const yearOverYearChange = calculateYearOverYearChange(submission, previousYear);
 
-  const CardComponent = isLatest ? NeonGradientCard : MagicCard;
-
   return (
-    <CardComponent className="group cursor-pointer transition-all duration-300 hover:shadow-xl">
-      {isLatest && <BorderBeam size={250} duration={12} delay={9} />}
-      <div className="p-6 space-y-4">
+    <Card className="group transition-all duration-200 hover:shadow-md hover:border-[oklch(0.55_0.22_15)]">
+      <div className="p-5 space-y-3.5">
         {/* Header: Year + Status + Latest Badge */}
-        <div className="flex justify-between items-start gap-4">
+        <div className="flex justify-between items-start gap-3">
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+            <div className="flex items-center gap-2 mb-0.5">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                 SALN {submission.year}
               </h3>
               {isLatest && (
-                <Badge className="bg-gradient-to-r from-[oklch(0.55_0.22_15)] to-[oklch(0.65_0.22_15)] text-white border-0">
-                  <Sparkles className="h-3 w-3 mr-1" />
+                <Badge className="bg-[oklch(0.55_0.22_15)] text-white text-xs border-0">
                   Latest
                 </Badge>
               )}
             </div>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-xs text-slate-600 dark:text-slate-400">
               As of December 31, {submission.year}
             </p>
           </div>
           <Badge
             variant="outline"
             className={cn(
-              "gap-1.5 px-3 py-1",
+              "gap-1 px-2.5 py-0.5",
               STATUS_COLORS[submission.status]
             )}
           >
-            <StatusIcon className="h-3.5 w-3.5" />
-            <span className="capitalize font-medium">{submission.status}</span>
+            <StatusIcon className="h-3 w-3" />
+            <span className="capitalize font-medium text-xs">{submission.status}</span>
           </Badge>
         </div>
 
         {/* Financial Summary */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           {/* Total Assets */}
-          <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors hover:bg-slate-100 dark:hover:bg-slate-800">
+          <div className="flex justify-between items-center p-2.5 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
             <div className="flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Total Assets</span>
+              <Building2 className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" />
+              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Total Assets</span>
             </div>
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-emerald-600" />
-              <span className="text-base font-bold text-emerald-700 dark:text-emerald-400">
-                ₱ <NumberTicker value={submission.totalAssets} />
-              </span>
-            </div>
+            <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
+              ₱ <NumberTicker value={submission.totalAssets} />
+            </span>
           </div>
 
           {/* Total Liabilities */}
-          <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors hover:bg-slate-100 dark:hover:bg-slate-800">
+          <div className="flex justify-between items-center p-2.5 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
             <div className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Total Liabilities</span>
+              <CreditCard className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" />
+              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Total Liabilities</span>
             </div>
-            <span className="text-base font-bold text-rose-700 dark:text-rose-400">
+            <span className="text-sm font-bold text-rose-700 dark:text-rose-400">
               ₱ <NumberTicker value={submission.totalLiabilities} />
             </span>
           </div>
 
           {/* Net Worth - Highlighted */}
-          <div className="relative p-4 bg-gradient-to-br from-[oklch(0.55_0.22_15)]/5 via-[oklch(0.65_0.22_15)]/5 to-[oklch(0.75_0.22_15)]/5 border-2 border-[oklch(0.55_0.22_15)]/20 rounded-lg">
+          <div className="relative p-3 bg-slate-50 dark:bg-slate-900/50 border border-[oklch(0.55_0.22_15)]/20 rounded-lg">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-[oklch(0.55_0.22_15)]" />
-                <span className="text-lg font-bold text-slate-900 dark:text-slate-100">Net Worth</span>
+                <DollarSign className="h-4 w-4 text-[oklch(0.55_0.22_15)]" />
+                <span className="text-sm font-bold text-slate-900 dark:text-slate-100">Net Worth</span>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <span className={cn(
-                  "text-xl font-bold",
+                  "text-base font-bold",
                   submission.netWorth >= 0
                     ? "text-emerald-700 dark:text-emerald-400"
                     : "text-rose-700 dark:text-rose-400"
@@ -330,10 +295,10 @@ const SALNCard = React.memo(({
                   <Badge
                     variant="outline"
                     className={cn(
-                      "gap-1 px-2 py-0.5",
+                      "gap-0.5 px-1.5 py-0",
                       yearOverYearChange >= 0
-                        ? "border-emerald-500 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20"
-                        : "border-rose-500 text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/20"
+                        ? "border-emerald-500 text-emerald-700 dark:text-emerald-400"
+                        : "border-rose-500 text-rose-700 dark:text-rose-400"
                     )}
                   >
                     {yearOverYearChange >= 0 ? (
@@ -362,26 +327,27 @@ const SALNCard = React.memo(({
           <CollapsibleTrigger asChild>
             <Button
               variant="ghost"
-              className="w-full justify-between hover:bg-slate-100 dark:hover:bg-slate-800"
+              size="sm"
+              className="w-full justify-between hover:bg-slate-100 dark:hover:bg-slate-800 h-8"
             >
-              <span className="text-sm font-medium">Financial Details</span>
+              <span className="text-xs font-medium">Financial Details</span>
               {isOpen ? (
-                <ChevronUp className="h-4 w-4" />
+                <ChevronUp className="h-3.5 w-3.5" />
               ) : (
-                <ChevronDown className="h-4 w-4" />
+                <ChevronDown className="h-3.5 w-3.5" />
               )}
             </Button>
           </CollapsibleTrigger>
-          <CollapsibleContent className="mt-3">
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-800">
+          <CollapsibleContent className="mt-2">
+            <div className="space-y-1.5 text-xs">
+              <div className="flex justify-between items-center py-1.5 border-b border-slate-200 dark:border-slate-800">
                 <span className="text-slate-600 dark:text-slate-400">Filing Type</span>
                 <span className="font-medium capitalize text-slate-900 dark:text-slate-100">
                   {submission.filingType === 'not_applicable' ? 'N/A' : submission.filingType}
                 </span>
               </div>
               {submission.submittedAt && (
-                <div className="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-800">
+                <div className="flex justify-between items-center py-1.5 border-b border-slate-200 dark:border-slate-800">
                   <span className="text-slate-600 dark:text-slate-400">Submitted</span>
                   <span className="font-medium text-slate-900 dark:text-slate-100">
                     {format(new Date(submission.submittedAt), 'MMM d, yyyy')}
@@ -389,7 +355,7 @@ const SALNCard = React.memo(({
                 </div>
               )}
               {submission.approvedAt && (
-                <div className="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-800">
+                <div className="flex justify-between items-center py-1.5 border-b border-slate-200 dark:border-slate-800">
                   <span className="text-slate-600 dark:text-slate-400">Approved</span>
                   <span className="font-medium text-emerald-700 dark:text-emerald-400">
                     {format(new Date(submission.approvedAt), 'MMM d, yyyy')}
@@ -398,13 +364,13 @@ const SALNCard = React.memo(({
               )}
               {yearOverYearChange !== null && previousYear && (
                 <>
-                  <div className="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-800">
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-200 dark:border-slate-800">
                     <span className="text-slate-600 dark:text-slate-400">Previous Year Net Worth</span>
                     <span className="font-medium text-slate-900 dark:text-slate-100">
                       ₱ {previousYear.netWorth.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center py-2">
+                  <div className="flex justify-between items-center py-1.5">
                     <span className="text-slate-600 dark:text-slate-400">Net Worth Change</span>
                     <span className={cn(
                       "font-bold",
@@ -428,9 +394,9 @@ const SALNCard = React.memo(({
             variant="outline"
             size="sm"
             onClick={onView}
-            className="gap-2"
+            className="gap-1.5 h-8 text-xs"
           >
-            <Eye className="h-4 w-4" />
+            <Eye className="h-3.5 w-3.5" />
             View
           </Button>
           {(submission.status === 'draft' || submission.status === 'rejected') && (
@@ -438,9 +404,9 @@ const SALNCard = React.memo(({
               variant="outline"
               size="sm"
               onClick={onEdit}
-              className="gap-2"
+              className="gap-1.5 h-8 text-xs"
             >
-              <Edit className="h-4 w-4" />
+              <Edit className="h-3.5 w-3.5" />
               Edit
             </Button>
           )}
@@ -448,23 +414,23 @@ const SALNCard = React.memo(({
             variant="outline"
             size="sm"
             onClick={onDownload}
-            className="gap-2"
+            className="gap-1.5 h-8 text-xs"
           >
-            <Download className="h-4 w-4" />
+            <Download className="h-3.5 w-3.5" />
             PDF
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={onPrint}
-            className="gap-2"
+            className="gap-1.5 h-8 text-xs"
           >
-            <Printer className="h-4 w-4" />
+            <Printer className="h-3.5 w-3.5" />
             Print
           </Button>
         </div>
       </div>
-    </CardComponent>
+    </Card>
   );
 });
 
@@ -495,23 +461,22 @@ const ErrorState = ({ error }: { error: string }) => (
 const EmptyState = ({ onCreateNew, onViewArchive }: { onCreateNew: () => void; onViewArchive: () => void }) => (
   <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 px-4">
     <div className="relative">
-      <FileText className="h-24 w-24 text-slate-300 dark:text-slate-700" />
-      <Sparkles className="h-8 w-8 text-[oklch(0.55_0.22_15)] absolute -top-2 -right-2" />
+      <FileText className="h-20 w-20 text-slate-300 dark:text-slate-700" />
     </div>
     <div className="text-center space-y-2">
-      <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
         No Active SALN Submissions
       </h3>
-      <p className="text-slate-600 dark:text-slate-400 max-w-md">
+      <p className="text-sm text-slate-600 dark:text-slate-400 max-w-md">
         You haven&apos;t filed any Statement of Assets, Liabilities, and Net Worth in the last 5 years.
         Start a new submission or view your archived records.
       </p>
     </div>
-    <div className="flex gap-4">
-      <ShimmerButton onClick={onCreateNew} className="gap-2">
+    <div className="flex gap-3">
+      <Button onClick={onCreateNew} className="gap-2 bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]">
         <Plus className="h-4 w-4" />
         Create New SALN
-      </ShimmerButton>
+      </Button>
       <Button variant="outline" onClick={onViewArchive} className="gap-2">
         <Archive className="h-4 w-4" />
         View Archive
@@ -535,7 +500,6 @@ export default function SALNViewPage() {
     const filtered = submissions
       .map(parseSubmission)
       .filter(submission => {
-        const submissionDate = submission.submittedAt || submission.createdAt;
         const age = differenceInYears(new Date(), new Date(submission.year, 11, 31));
         return age < 5;
       });
@@ -633,34 +597,27 @@ export default function SALNViewPage() {
 
   return (
     <div className="relative min-h-screen pb-12">
-      <Particles
-        className="absolute inset-0 pointer-events-none"
-        quantity={20}
-        staticity={50}
-        ease={50}
-      />
-
-      <div className="relative z-10 space-y-8">
+      <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <AnimatedGradientText className="text-3xl md:text-4xl font-bold mb-2">
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100 mb-1">
               SALN Submissions
-            </AnimatedGradientText>
-            <p className="text-slate-600 dark:text-slate-400">
+            </h1>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
               View and manage your Statement of Assets, Liabilities, and Net Worth from the last 5 years
             </p>
           </div>
-          <ShimmerButton onClick={handleCreateNew} className="gap-2 shrink-0">
+          <Button onClick={handleCreateNew} className="gap-2 shrink-0 bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]">
             <Plus className="h-4 w-4" />
             Create New SALN
-          </ShimmerButton>
+          </Button>
         </div>
 
         {/* Statistics */}
         {activeSubmissions.length > 0 && (
           <BlurFade delay={0.1}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               <StatsCard
                 label="Total Submissions"
                 value={stats.total}
@@ -695,11 +652,11 @@ export default function SALNViewPage() {
         {/* Filters and Sort */}
         {activeSubmissions.length > 0 && (
           <BlurFade delay={0.15}>
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex items-center gap-2 flex-1">
                 <Filter className="h-4 w-4 text-slate-600 dark:text-slate-400" />
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectTrigger className="w-full sm:w-[180px] h-9">
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -715,7 +672,7 @@ export default function SALNViewPage() {
               <div className="flex items-center gap-2 flex-1">
                 <SortAsc className="h-4 w-4 text-slate-600 dark:text-slate-400" />
                 <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'date-desc' | 'date-asc' | 'networth-desc' | 'networth-asc' | 'status')}>
-                  <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectTrigger className="w-full sm:w-[180px] h-9">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
                   <SelectContent>
@@ -730,7 +687,7 @@ export default function SALNViewPage() {
               <Button
                 variant="outline"
                 onClick={handleViewArchive}
-                className="gap-2"
+                className="gap-2 h-9"
               >
                 <Archive className="h-4 w-4" />
                 View Archive
@@ -748,7 +705,7 @@ export default function SALNViewPage() {
             />
           </BlurFade>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {activeSubmissions.map((submission, index) => (
               <BlurFade key={submission.id} delay={0.2 + index * 0.05}>
                 <SALNCard
