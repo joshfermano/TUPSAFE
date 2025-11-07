@@ -83,28 +83,28 @@ export const RealProperties = memo(function RealProperties() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <BlurFade delay={0.1}>
         <EnhancedFormSection
           title="Real Properties"
           subtitle="List all real estate properties you own (land, houses, buildings, etc.)"
           variant="default">
           {fields.length === 0 ? (
-            <div className="text-center py-12 border-2 border-dashed rounded-lg">
+            <div className="text-center py-12 border-2 border-dashed rounded-lg border-slate-200/50 dark:border-slate-800/50">
               <Building className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground mb-4">No real properties added yet</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">No real properties added yet</p>
               <Button type="button" onClick={addRealProperty} variant="outline">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Real Property
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {fields.map((field, index) => (
                 <BlurFade key={field.id} delay={0.15 + index * 0.05}>
                   <EnhancedCard variant="default">
-                    <EnhancedCardContent>
-                      <div className="space-y-4">
+                    <EnhancedCardContent className="p-6">
+                      <div className="space-y-6">
                         <div className="flex items-center justify-between">
                           <Badge variant="outline">Property {index + 1}</Badge>
                           <Button
@@ -120,7 +120,7 @@ export const RealProperties = memo(function RealProperties() {
                         <div className="grid gap-2">
                           <Label
                             htmlFor={`realProperties.${index}.description`}
-                            className="after:content-['*'] after:ml-0.5 after:text-destructive">
+                            className="text-base font-medium after:content-['*'] after:ml-0.5 after:text-destructive">
                             Property Description
                           </Label>
                           <Controller
@@ -131,6 +131,7 @@ export const RealProperties = memo(function RealProperties() {
                                 {...field}
                                 placeholder="e.g., 3-bedroom house and lot"
                                 rows={2}
+                                className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                               />
                             )}
                           />
@@ -147,11 +148,11 @@ export const RealProperties = memo(function RealProperties() {
                         </div>
 
                         {/* Kind & Acquisition Year */}
-                        <div className="grid gap-4 md:grid-cols-2">
+                        <div className="grid gap-6 md:grid-cols-2">
                           <div className="grid gap-2">
                             <Label
                               htmlFor={`realProperties.${index}.kind`}
-                              className="after:content-['*'] after:ml-0.5 after:text-destructive">
+                              className="text-base font-medium after:content-['*'] after:ml-0.5 after:text-destructive">
                               Property Kind
                             </Label>
                             <Controller
@@ -161,7 +162,7 @@ export const RealProperties = memo(function RealProperties() {
                                 <select
                                   value={value || ''}
                                   onChange={(e) => onChange(e.target.value)}
-                                  className="flex h-10 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50 hover:border-slate-300 dark:hover:border-slate-600 [&>option]:bg-white [&>option]:dark:bg-slate-800">
+                                  className="flex h-10 w-full rounded-lg border bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all px-3 py-2 text-sm shadow-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>option]:bg-white [&>option]:dark:bg-slate-800">
                                   <option value="">Select kind</option>
                                   {PROPERTY_KIND.map((kind) => (
                                     <option key={kind} value={kind}>
@@ -176,7 +177,7 @@ export const RealProperties = memo(function RealProperties() {
                           <div className="grid gap-2">
                             <Label
                               htmlFor={`realProperties.${index}.acquisitionYear`}
-                              className="after:content-['*'] after:ml-0.5 after:text-destructive">
+                              className="text-base font-medium after:content-['*'] after:ml-0.5 after:text-destructive">
                               Year Acquired
                             </Label>
                             <Controller
@@ -191,7 +192,7 @@ export const RealProperties = memo(function RealProperties() {
                                       onChange(numValue);
                                     }
                                   }}
-                                  className="flex h-10 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50 hover:border-slate-300 dark:hover:border-slate-600 [&>option]:bg-white [&>option]:dark:bg-slate-800">
+                                  className="flex h-10 w-full rounded-lg border bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all px-3 py-2 text-sm shadow-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>option]:bg-white [&>option]:dark:bg-slate-800">
                                   <option value="">Select year</option>
                                   {Array.from(
                                     { length: 75 },
@@ -211,7 +212,7 @@ export const RealProperties = memo(function RealProperties() {
                         <div className="grid gap-2">
                           <Label
                             htmlFor={`realProperties.${index}.exactLocation`}
-                            className="after:content-['*'] after:ml-0.5 after:text-destructive">
+                            className="text-base font-medium after:content-['*'] after:ml-0.5 after:text-destructive">
                             Exact Location/Address
                           </Label>
                           <Controller
@@ -222,13 +223,14 @@ export const RealProperties = memo(function RealProperties() {
                                 {...field}
                                 placeholder="Street, Barangay, City/Municipality, Province"
                                 rows={2}
+                                className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                               />
                             )}
                           />
                         </div>
 
                         {/* Financial Values */}
-                        <div className="grid gap-4 md:grid-cols-2">
+                        <div className="grid gap-6 md:grid-cols-2">
                           <CurrencyInput
                             name={`realProperties.${index}.assessedValue`}
                             label="Assessed Value"
@@ -245,11 +247,11 @@ export const RealProperties = memo(function RealProperties() {
                         </div>
 
                         {/* Acquisition Details */}
-                        <div className="grid gap-4 md:grid-cols-2">
+                        <div className="grid gap-6 md:grid-cols-2">
                           <div className="grid gap-2">
                             <Label
                               htmlFor={`realProperties.${index}.acquisitionMode`}
-                              className="after:content-['*'] after:ml-0.5 after:text-destructive">
+                              className="text-base font-medium after:content-['*'] after:ml-0.5 after:text-destructive">
                               Mode of Acquisition
                             </Label>
                             <Controller
@@ -259,7 +261,7 @@ export const RealProperties = memo(function RealProperties() {
                                 <select
                                   value={value || ''}
                                   onChange={(e) => onChange(e.target.value)}
-                                  className="flex h-10 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50 hover:border-slate-300 dark:hover:border-slate-600 [&>option]:bg-white [&>option]:dark:bg-slate-800">
+                                  className="flex h-10 w-full rounded-lg border bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all px-3 py-2 text-sm shadow-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>option]:bg-white [&>option]:dark:bg-slate-800">
                                   <option value="">Select mode</option>
                                   {ACQUISITION_MODE.map((mode) => (
                                     <option key={mode} value={mode}>

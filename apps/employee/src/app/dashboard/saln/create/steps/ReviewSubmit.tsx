@@ -75,15 +75,15 @@ export const ReviewSubmit = memo(function ReviewSubmit({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <BlurFade delay={0.1}>
         <EnhancedFormSection
           title="Review Your SALN"
           subtitle="Please review all information before submitting"
           variant="default">
-          <Alert className="mb-6">
+          <Alert className="mb-6 border-slate-200/50 dark:border-slate-800/50">
             <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
+            <AlertDescription className="text-sm text-slate-600 dark:text-slate-400">
               Review all information carefully. Once submitted, your SALN will be sent for
               official review and cannot be edited without approval.
             </AlertDescription>
@@ -97,7 +97,7 @@ export const ReviewSubmit = memo(function ReviewSubmit({
               <CollapsibleTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-between mb-4"
+                  className="w-full justify-between mb-4 border-slate-200 dark:border-slate-800"
                   type="button">
                   <div className="flex items-center gap-3">
                     <User className="h-5 w-5" />
@@ -110,27 +110,27 @@ export const ReviewSubmit = memo(function ReviewSubmit({
                   )}
                 </Button>
               </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border rounded-lg mb-4 space-y-2">
-                <div className="grid gap-2 text-sm">
+              <CollapsibleContent className="p-6 border border-slate-200 dark:border-slate-800 rounded-lg mb-6 space-y-3">
+                <div className="grid gap-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Reporting Year:</span>
+                    <span className="text-slate-600 dark:text-slate-400">Reporting Year:</span>
                     <span className="font-medium">{data.submission?.year}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Filing Type:</span>
+                    <span className="text-slate-600 dark:text-slate-400">Filing Type:</span>
                     <span className="font-medium capitalize">
                       {data.submission?.filingType?.replace('_', ' ')}
                     </span>
                   </div>
                   {data.submission?.spouseName && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Spouse Name:</span>
+                      <span className="text-slate-600 dark:text-slate-400">Spouse Name:</span>
                       <span className="font-medium">{data.submission.spouseName}</span>
                     </div>
                   )}
                   {data.submission?.position && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Position:</span>
+                      <span className="text-slate-600 dark:text-slate-400">Position:</span>
                       <span className="font-medium">{data.submission.position}</span>
                     </div>
                   )}
@@ -147,7 +147,7 @@ export const ReviewSubmit = memo(function ReviewSubmit({
               <CollapsibleTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-between mb-4"
+                  className="w-full justify-between mb-4 border-slate-200 dark:border-slate-800"
                   type="button">
                   <div className="flex items-center gap-3">
                     <Building className="h-5 w-5" />
@@ -162,22 +162,22 @@ export const ReviewSubmit = memo(function ReviewSubmit({
                   )}
                 </Button>
               </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border rounded-lg mb-4 space-y-4">
+              <CollapsibleContent className="p-6 border border-slate-200 dark:border-slate-800 rounded-lg mb-6 space-y-6">
                 {data.realProperties && data.realProperties.length > 0 ? (
                   data.realProperties.map((prop, index) => (
-                    <div key={index} className="pb-3 border-b last:border-0">
+                    <div key={index} className="pb-4 border-b border-slate-200/50 dark:border-slate-800/50 last:border-0">
                       <p className="font-medium mb-1">{prop.description}</p>
-                      <p className="text-sm text-muted-foreground mb-1">
+                      <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
                         {prop.exactLocation}
                       </p>
                       <div className="flex gap-4 text-sm">
-                        <span>FMV: {formatCurrency(prop.currentFairMarketValue)}</span>
+                        <span className="text-slate-600 dark:text-slate-400">FMV: {formatCurrency(prop.currentFairMarketValue)}</span>
                         <Badge variant="secondary">{prop.kind}</Badge>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
                     No real properties declared
                   </p>
                 )}
@@ -193,7 +193,7 @@ export const ReviewSubmit = memo(function ReviewSubmit({
               <CollapsibleTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-between mb-4"
+                  className="w-full justify-between mb-4 border-slate-200 dark:border-slate-800"
                   type="button">
                   <div className="flex items-center gap-3">
                     <Car className="h-5 w-5" />
@@ -208,19 +208,19 @@ export const ReviewSubmit = memo(function ReviewSubmit({
                   )}
                 </Button>
               </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border rounded-lg mb-4 space-y-4">
+              <CollapsibleContent className="p-6 border border-slate-200 dark:border-slate-800 rounded-lg mb-6 space-y-6">
                 {data.personalProperties && data.personalProperties.length > 0 ? (
                   data.personalProperties.map((prop, index) => (
-                    <div key={index} className="pb-3 border-b last:border-0">
-                      <p className="font-medium mb-1">{prop.description}</p>
-                      <div className="flex gap-4 text-sm text-muted-foreground">
+                    <div key={index} className="pb-4 border-b border-slate-200/50 dark:border-slate-800/50 last:border-0">
+                      <p className="font-medium mb-2">{prop.description}</p>
+                      <div className="flex gap-4 text-sm text-slate-600 dark:text-slate-400">
                         <span>Year: {prop.yearAcquired}</span>
                         <span>Value: {formatCurrency(prop.acquisitionCost)}</span>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
                     No personal properties declared
                   </p>
                 )}
@@ -236,7 +236,7 @@ export const ReviewSubmit = memo(function ReviewSubmit({
               <CollapsibleTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-between mb-4"
+                  className="w-full justify-between mb-4 border-slate-200 dark:border-slate-800"
                   type="button">
                   <div className="flex items-center gap-3">
                     <CreditCard className="h-5 w-5" />
@@ -251,12 +251,12 @@ export const ReviewSubmit = memo(function ReviewSubmit({
                   )}
                 </Button>
               </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border rounded-lg mb-4 space-y-4">
+              <CollapsibleContent className="p-6 border border-slate-200 dark:border-slate-800 rounded-lg mb-6 space-y-6">
                 {data.liabilities && data.liabilities.length > 0 ? (
                   data.liabilities.map((liability, index) => (
-                    <div key={index} className="pb-3 border-b last:border-0">
-                      <p className="font-medium mb-1">{liability.nature}</p>
-                      <p className="text-sm text-muted-foreground mb-1">
+                    <div key={index} className="pb-4 border-b border-slate-200/50 dark:border-slate-800/50 last:border-0">
+                      <p className="font-medium mb-2">{liability.nature}</p>
+                      <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
                         {liability.creditorName}
                       </p>
                       <p className="text-sm font-semibold text-destructive">
@@ -265,7 +265,7 @@ export const ReviewSubmit = memo(function ReviewSubmit({
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-muted-foreground">No liabilities declared</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">No liabilities declared</p>
                 )}
               </CollapsibleContent>
             </Collapsible>
@@ -279,7 +279,7 @@ export const ReviewSubmit = memo(function ReviewSubmit({
               <CollapsibleTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-between mb-4"
+                  className="w-full justify-between mb-4 border-slate-200 dark:border-slate-800"
                   type="button">
                   <div className="flex items-center gap-3">
                     <Briefcase className="h-5 w-5" />
@@ -294,18 +294,18 @@ export const ReviewSubmit = memo(function ReviewSubmit({
                   )}
                 </Button>
               </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border rounded-lg mb-4 space-y-4">
+              <CollapsibleContent className="p-6 border border-slate-200 dark:border-slate-800 rounded-lg mb-6 space-y-6">
                 {data.businessInterests && data.businessInterests.length > 0 ? (
                   data.businessInterests.map((business, index) => (
-                    <div key={index} className="pb-3 border-b last:border-0">
-                      <p className="font-medium mb-1">{business.entityName}</p>
-                      <p className="text-sm text-muted-foreground">
+                    <div key={index} className="pb-4 border-b border-slate-200/50 dark:border-slate-800/50 last:border-0">
+                      <p className="font-medium mb-2">{business.entityName}</p>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
                         {business.natureOfBusiness}
                       </p>
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
                     No business interests declared
                   </p>
                 )}
@@ -321,7 +321,7 @@ export const ReviewSubmit = memo(function ReviewSubmit({
               <CollapsibleTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-between mb-4"
+                  className="w-full justify-between mb-4 border-slate-200 dark:border-slate-800"
                   type="button">
                   <div className="flex items-center gap-3">
                     <Users className="h-5 w-5" />
@@ -336,19 +336,19 @@ export const ReviewSubmit = memo(function ReviewSubmit({
                   )}
                 </Button>
               </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border rounded-lg mb-4 space-y-4">
+              <CollapsibleContent className="p-6 border border-slate-200 dark:border-slate-800 rounded-lg mb-6 space-y-6">
                 {data.relativesInGov && data.relativesInGov.length > 0 ? (
                   data.relativesInGov.map((relative, index) => (
-                    <div key={index} className="pb-3 border-b last:border-0">
-                      <p className="font-medium mb-1">{relative.name}</p>
-                      <div className="flex gap-4 text-sm text-muted-foreground">
+                    <div key={index} className="pb-4 border-b border-slate-200/50 dark:border-slate-800/50 last:border-0">
+                      <p className="font-medium mb-2">{relative.name}</p>
+                      <div className="flex gap-4 text-sm text-slate-600 dark:text-slate-400">
                         <span>{relative.relationship}</span>
                         <span>{relative.position}</span>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
                     No relatives in government declared
                   </p>
                 )}
@@ -364,7 +364,7 @@ export const ReviewSubmit = memo(function ReviewSubmit({
               <CollapsibleTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-between mb-4"
+                  className="w-full justify-between mb-4 border-slate-200 dark:border-slate-800"
                   type="button">
                   <div className="flex items-center gap-3">
                     <Calculator className="h-5 w-5" />
@@ -377,20 +377,20 @@ export const ReviewSubmit = memo(function ReviewSubmit({
                   )}
                 </Button>
               </CollapsibleTrigger>
-              <CollapsibleContent className="p-6 border rounded-lg mb-6 space-y-3">
+              <CollapsibleContent className="p-8 border border-slate-200 dark:border-slate-800 rounded-lg mb-8 space-y-4">
                 <div className="flex justify-between text-sm">
-                  <span>Total Real Property:</span>
+                  <span className="text-slate-600 dark:text-slate-400">Total Real Property:</span>
                   <span className="font-semibold">
                     {formatCurrency(summary.totalRealPropertyValue)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span>Total Personal Property:</span>
+                  <span className="text-slate-600 dark:text-slate-400">Total Personal Property:</span>
                   <span className="font-semibold">
                     {formatCurrency(summary.totalPersonalPropertyValue)}
                   </span>
                 </div>
-                <div className="flex justify-between text-sm pt-2 border-t">
+                <div className="flex justify-between text-sm pt-3 border-t border-slate-200/50 dark:border-slate-800/50">
                   <span className="font-medium">Total Assets:</span>
                   <span className="font-bold text-primary">
                     {formatCurrency(summary.totalAssets)}
@@ -402,7 +402,7 @@ export const ReviewSubmit = memo(function ReviewSubmit({
                     {formatCurrency(summary.totalLiabilities)}
                   </span>
                 </div>
-                <div className="flex justify-between text-lg pt-3 border-t-2">
+                <div className="flex justify-between text-lg pt-4 border-t-2 border-slate-200 dark:border-slate-800">
                   <span className="font-bold">Net Worth:</span>
                   <span
                     className={`font-bold ${
@@ -423,9 +423,9 @@ export const ReviewSubmit = memo(function ReviewSubmit({
           title="Declaration"
           subtitle="Required declaration under penalty of perjury"
           variant="default">
-          <div className="space-y-4">
-            <div className="p-4 bg-muted/50 rounded-lg">
-              <p className="text-sm leading-relaxed">
+          <div className="space-y-6">
+            <div className="p-6 bg-muted/50 rounded-lg border border-slate-200/50 dark:border-slate-800/50">
+              <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
                 I declare under penalty of perjury that this Statement of Assets,
                 Liabilities and Net Worth is a true, detailed and sworn statement of my
                 assets, liabilities, net worth, business interests and financial
@@ -440,20 +440,20 @@ export const ReviewSubmit = memo(function ReviewSubmit({
               name="declaration"
               control={control}
               render={({ field }) => (
-                <div className="flex items-start space-x-3 p-4 border rounded-lg">
+                <div className="flex items-start space-x-3 p-6 border border-slate-200 dark:border-slate-800 rounded-lg">
                   <Checkbox
                     id="declaration"
                     checked={field.value}
                     onCheckedChange={field.onChange}
                   />
-                  <div className="grid gap-1.5 leading-none">
+                  <div className="grid gap-2 leading-none">
                     <Label
                       htmlFor="declaration"
-                      className="text-sm font-medium leading-relaxed cursor-pointer peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      className="text-base font-medium leading-relaxed cursor-pointer peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                       I acknowledge and agree to the declaration above
                       <span className="text-destructive ml-1">*</span>
                     </Label>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
                       You must accept this declaration to submit your SALN
                     </p>
                   </div>
@@ -466,9 +466,9 @@ export const ReviewSubmit = memo(function ReviewSubmit({
               </p>
             )}
 
-            <Alert>
+            <Alert className="border-slate-200/50 dark:border-slate-800/50">
               <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
+              <AlertDescription className="text-sm text-slate-600 dark:text-slate-400">
                 Note: Wet signature will be required after PDF generation for official
                 submission.
               </AlertDescription>

@@ -56,18 +56,18 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Reporting Year */}
       <BlurFade delay={0.1}>
         <EnhancedFormSection
           title="Reporting Period"
           subtitle="Select the year for this SALN statement"
           variant="default">
-          <div className="grid gap-4">
+          <div className="grid gap-6">
             <div className="grid gap-2">
               <Label
                 htmlFor="submission.year"
-                className="after:content-['*'] after:ml-0.5 after:text-destructive">
+                className="text-base font-medium after:content-['*'] after:ml-0.5 after:text-destructive">
                 As of December 31 of Year
               </Label>
               <select
@@ -75,7 +75,7 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
                 {...register('submission.year', {
                   setValueAs: (v) => (v ? parseInt(v, 10) : undefined),
                 })}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                className="flex h-9 w-full rounded-md border bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all px-3 py-2 text-sm ring-offset-background focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50">
                 <option value="">Select year</option>
                 {yearOptions.map((year) => (
                   <option key={year} value={year}>
@@ -88,6 +88,9 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
                   {(errors as FormErrors).submission?.year?.message}
                 </p>
               )}
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Year for which this SALN is being filed
+              </p>
             </div>
           </div>
         </EnhancedFormSection>
@@ -99,9 +102,9 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
           title="Position Information"
           subtitle="Your current position and office"
           variant="default">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2">
             <div className="grid gap-2">
-              <Label htmlFor="submission.position">Position/Designation</Label>
+              <Label htmlFor="submission.position" className="text-base font-medium">Position/Designation</Label>
               <EnhancedInput
                 id="submission.position"
                 placeholder="e.g., Assistant Professor III"
@@ -115,7 +118,7 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="submission.agency">Agency/Office</Label>
+              <Label htmlFor="submission.agency" className="text-base font-medium">Agency/Office</Label>
               <EnhancedInput
                 id="submission.agency"
                 placeholder="e.g., Technological University of the Philippines"
@@ -130,7 +133,7 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="submission.officeAddress">Office Address</Label>
+            <Label htmlFor="submission.officeAddress" className="text-base font-medium">Office Address</Label>
             <EnhancedInput
               id="submission.officeAddress"
               placeholder="Complete office address"
@@ -151,57 +154,57 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
           title="Filing Type"
           subtitle="Specify if filing jointly with spouse or separately"
           variant="default">
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="grid gap-3">
-              <label className="flex items-center space-x-3 rounded-lg border border-slate-200 dark:border-slate-700 p-4 hover:bg-accent/50 hover:border-slate-300 dark:hover:border-slate-600 transition-all duration-200 cursor-pointer group">
+              <label className="flex items-center space-x-3 rounded-lg border border-slate-200 dark:border-slate-800 p-6 hover:bg-accent/50 hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-200 cursor-pointer group">
                 <input
                   type="radio"
                   {...register('submission.filingType')}
                   value="separate"
                   id="separate"
-                  className="w-4 h-4 text-primary bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200 cursor-pointer hover:border-primary"
+                  className="w-4 h-4 text-primary bg-transparent border-2 border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200 cursor-pointer hover:border-primary"
                 />
                 <div className="flex-1">
                   <div className="font-medium text-slate-900 dark:text-slate-100">
                     Separate Filing
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
                     Filing individually (not with spouse)
                   </p>
                 </div>
               </label>
 
-              <label className="flex items-center space-x-3 rounded-lg border border-slate-200 dark:border-slate-700 p-4 hover:bg-accent/50 hover:border-slate-300 dark:hover:border-slate-600 transition-all duration-200 cursor-pointer group">
+              <label className="flex items-center space-x-3 rounded-lg border border-slate-200 dark:border-slate-800 p-6 hover:bg-accent/50 hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-200 cursor-pointer group">
                 <input
                   type="radio"
                   {...register('submission.filingType')}
                   value="joint"
                   id="joint"
-                  className="w-4 h-4 text-primary bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200 cursor-pointer hover:border-primary"
+                  className="w-4 h-4 text-primary bg-transparent border-2 border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200 cursor-pointer hover:border-primary"
                 />
                 <div className="flex-1">
                   <div className="font-medium text-slate-900 dark:text-slate-100">
                     Joint Filing
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
                     Filing together with spouse (combined assets/liabilities)
                   </p>
                 </div>
               </label>
 
-              <label className="flex items-center space-x-3 rounded-lg border border-slate-200 dark:border-slate-700 p-4 hover:bg-accent/50 hover:border-slate-300 dark:hover:border-slate-600 transition-all duration-200 cursor-pointer group">
+              <label className="flex items-center space-x-3 rounded-lg border border-slate-200 dark:border-slate-800 p-6 hover:bg-accent/50 hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-200 cursor-pointer group">
                 <input
                   type="radio"
                   {...register('submission.filingType')}
                   value="not_applicable"
                   id="not_applicable"
-                  className="w-4 h-4 text-primary bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200 cursor-pointer hover:border-primary"
+                  className="w-4 h-4 text-primary bg-transparent border-2 border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200 cursor-pointer hover:border-primary"
                 />
                 <div className="flex-1">
                   <div className="font-medium text-slate-900 dark:text-slate-100">
                     Not Applicable
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
                     Single, widowed, or separated
                   </p>
                 </div>
@@ -216,10 +219,10 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
             {/* Spouse Name - shown only for joint filing */}
             {isJointFiling && (
               <BlurFade delay={0.25}>
-                <div className="grid gap-2 pt-2">
+                <div className="grid gap-2 pt-4">
                   <Label
                     htmlFor="submission.spouseName"
-                    className="after:content-['*'] after:ml-0.5 after:text-destructive">
+                    className="text-base font-medium after:content-['*'] after:ml-0.5 after:text-destructive">
                     Spouse Full Name
                   </Label>
                   <EnhancedInput
@@ -232,7 +235,7 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
                       {(errors as FormErrors).submission?.spouseName?.message}
                     </p>
                   )}
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
                     Required for joint filing. Include middle name if applicable.
                   </p>
                 </div>

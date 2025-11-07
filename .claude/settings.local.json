@@ -59,7 +59,8 @@
       "Bash(/mnt/d/thesis/SmartGov/apps/employee/src/app/dashboard/pds/edit/[id]/page.tsx)",
       "WebFetch(domain:magicui.design)",
       "mcp__serena__write_memory",
-      "Bash(timeout 120 npm run build:*)"
+      "Bash(timeout 120 npm run build:*)",
+      "mcp__serena__get_symbols_overview"
     ],
     "deny": [],
     "ask": []

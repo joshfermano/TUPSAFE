@@ -37,18 +37,18 @@ export const NetWorthSummary = memo(function NetWorthSummary({
   const isPositiveNetWorth = summary.netWorth >= 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <BlurFade delay={0.1}>
         <EnhancedFormSection
           title="Financial Summary"
           subtitle="Auto-calculated totals from your declarations"
           variant="default">
           {/* Assets Breakdown */}
-          <div className="grid gap-4 md:grid-cols-2 mb-6">
+          <div className="grid gap-6 md:grid-cols-2 mb-8">
             <BlurFade delay={0.15}>
               <EnhancedCard variant="default">
-                <EnhancedCardContent>
-                  <p className="text-sm text-muted-foreground mb-2">
+                <EnhancedCardContent className="p-6">
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
                     Real Property Value
                   </p>
                   <p className="text-2xl font-bold text-primary">
@@ -60,8 +60,8 @@ export const NetWorthSummary = memo(function NetWorthSummary({
 
             <BlurFade delay={0.2}>
               <EnhancedCard variant="default">
-                <EnhancedCardContent>
-                  <p className="text-sm text-muted-foreground mb-2">
+                <EnhancedCardContent className="p-6">
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
                     Personal Property Value
                   </p>
                   <p className="text-2xl font-bold text-primary">
@@ -74,17 +74,17 @@ export const NetWorthSummary = memo(function NetWorthSummary({
 
           {/* Total Assets */}
           <BlurFade delay={0.25}>
-            <div className="p-8 border-2 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 mb-6">
-              <p className="text-sm text-muted-foreground mb-3 uppercase tracking-wider text-center">
+            <div className="p-10 border-2 border-slate-200/50 dark:border-slate-800/50 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 mb-8">
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 uppercase tracking-wider text-center font-medium">
                 Total Assets
               </p>
               <div className="flex items-center justify-center gap-3">
-                <span className="text-sm text-muted-foreground">PHP</span>
+                <span className="text-sm text-slate-600 dark:text-slate-400">PHP</span>
                 <p className="text-5xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                   <NumberTicker value={Math.round(summary.totalAssets)} />
                 </p>
               </div>
-              <p className="text-xs text-muted-foreground mt-2 text-center">
+              <p className="text-sm text-slate-600 dark:text-slate-400 mt-3 text-center">
                 {formatCurrency(summary.totalAssets)}
               </p>
             </div>
@@ -92,8 +92,8 @@ export const NetWorthSummary = memo(function NetWorthSummary({
 
           {/* Total Liabilities */}
           <BlurFade delay={0.3}>
-            <div className="p-6 border border-destructive/20 rounded-lg bg-destructive/5 mb-6">
-              <p className="text-sm text-muted-foreground mb-2">Total Liabilities</p>
+            <div className="p-8 border border-destructive/20 rounded-lg bg-destructive/5 mb-8">
+              <p className="text-base font-medium text-slate-600 dark:text-slate-400 mb-3">Total Liabilities</p>
               <p className="text-3xl font-bold text-destructive">
                 {formatCurrency(summary.totalLiabilities)}
               </p>
@@ -103,12 +103,12 @@ export const NetWorthSummary = memo(function NetWorthSummary({
           {/* Net Worth - Highlight */}
           <BlurFade delay={0.35}>
             <div
-              className={`p-8 border-2 rounded-xl text-center ${
+              className={`p-10 border-2 rounded-xl text-center ${
                 isPositiveNetWorth
                   ? 'border-primary/50 bg-primary/5'
                   : 'border-amber-500/50 bg-amber-50 dark:bg-amber-950/20'
               }`}>
-              <div className="flex items-center justify-center gap-2 mb-3">
+              <div className="flex items-center justify-center gap-3 mb-4">
                 {isPositiveNetWorth ? (
                   <TrendingUp className="h-6 w-6 text-primary" />
                 ) : (
@@ -117,8 +117,8 @@ export const NetWorthSummary = memo(function NetWorthSummary({
                 <p className="text-lg font-semibold uppercase tracking-wide">Net Worth</p>
               </div>
 
-              <div className="flex items-center justify-center gap-3 mb-2">
-                <span className="text-base text-muted-foreground">PHP</span>
+              <div className="flex items-center justify-center gap-3 mb-3">
+                <span className="text-base text-slate-600 dark:text-slate-400">PHP</span>
                 <p
                   className={`text-6xl font-bold ${
                     isPositiveNetWorth ? 'text-primary' : 'text-amber-500'
@@ -127,11 +127,11 @@ export const NetWorthSummary = memo(function NetWorthSummary({
                 </p>
               </div>
 
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
                 {formatCurrency(summary.netWorth)}
               </p>
 
-              <p className="text-xs text-muted-foreground max-w-md mx-auto">
+              <p className="text-sm text-slate-600 dark:text-slate-400 max-w-md mx-auto">
                 {isPositiveNetWorth
                   ? 'Your total assets exceed your liabilities. This is a healthy financial position.'
                   : 'Your liabilities exceed your assets. This indicates negative net worth.'}
@@ -141,9 +141,9 @@ export const NetWorthSummary = memo(function NetWorthSummary({
 
           {/* Formula Explanation */}
           <BlurFade delay={0.4}>
-            <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-              <p className="text-sm font-medium mb-2">Calculation:</p>
-              <div className="space-y-1 text-sm text-muted-foreground font-mono">
+            <div className="mt-8 p-6 bg-muted/50 rounded-lg border border-slate-200/50 dark:border-slate-800/50">
+              <p className="text-base font-medium mb-3">Calculation:</p>
+              <div className="space-y-2 text-sm text-slate-600 dark:text-slate-400 font-mono">
                 <p>Total Assets = Real Property + Personal Property</p>
                 <p>Net Worth = Total Assets - Total Liabilities</p>
               </div>

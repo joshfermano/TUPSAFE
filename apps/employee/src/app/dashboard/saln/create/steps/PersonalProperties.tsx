@@ -79,17 +79,17 @@ export const PersonalProperties = memo(function PersonalProperties() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <BlurFade delay={0.1}>
         <EnhancedFormSection
           title="Personal Properties"
           subtitle="List all personal assets (vehicles, jewelry, cash, investments, etc.)"
           variant="default">
           {fields.length === 0 ? (
-            <div className="space-y-4">
-              <div className="text-center py-12 border-2 border-dashed rounded-lg">
+            <div className="space-y-6">
+              <div className="text-center py-12 border-2 border-dashed rounded-lg border-slate-200/50 dark:border-slate-800/50">
                 <Car className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground mb-4">
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
                   No personal properties added yet
                 </p>
                 <Button type="button" onClick={addPersonalProperty} variant="outline">
@@ -99,8 +99,8 @@ export const PersonalProperties = memo(function PersonalProperties() {
               </div>
 
               {/* Suggested Categories */}
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm font-medium mb-3">Suggested Categories:</p>
+              <div className="p-6 bg-muted/50 rounded-lg border border-slate-200/50 dark:border-slate-800/50">
+                <p className="text-base font-medium mb-3">Suggested Categories:</p>
                 <div className="flex flex-wrap gap-2">
                   {suggestedCategories.map((category) => (
                     <Badge key={category} variant="secondary" className="text-xs">
@@ -111,12 +111,12 @@ export const PersonalProperties = memo(function PersonalProperties() {
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {fields.map((field, index) => (
                 <BlurFade key={field.id} delay={0.15 + index * 0.05}>
                   <EnhancedCard variant="default">
-                    <EnhancedCardContent>
-                      <div className="space-y-4">
+                    <EnhancedCardContent className="p-6">
+                      <div className="space-y-6">
                         <div className="flex items-center justify-between">
                           <Badge variant="outline">Property {index + 1}</Badge>
                           <Button
@@ -132,7 +132,7 @@ export const PersonalProperties = memo(function PersonalProperties() {
                         <div className="grid gap-2">
                           <Label
                             htmlFor={`personalProperties.${index}.description`}
-                            className="after:content-['*'] after:ml-0.5 after:text-destructive">
+                            className="text-base font-medium after:content-['*'] after:ml-0.5 after:text-destructive">
                             Property Description
                           </Label>
                           <Controller
@@ -143,6 +143,7 @@ export const PersonalProperties = memo(function PersonalProperties() {
                                 {...field}
                                 placeholder="e.g., 2020 Toyota Corolla, Jewelry Collection, Cash in BPI Savings"
                                 rows={2}
+                                className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                               />
                             )}
                           />
@@ -159,11 +160,11 @@ export const PersonalProperties = memo(function PersonalProperties() {
                         </div>
 
                         {/* Year and Cost */}
-                        <div className="grid gap-4 md:grid-cols-2">
+                        <div className="grid gap-6 md:grid-cols-2">
                           <div className="grid gap-2">
                             <Label
                               htmlFor={`personalProperties.${index}.yearAcquired`}
-                              className="after:content-['*'] after:ml-0.5 after:text-destructive">
+                              className="text-base font-medium after:content-['*'] after:ml-0.5 after:text-destructive">
                               Year Acquired
                             </Label>
                             <Controller
@@ -178,7 +179,7 @@ export const PersonalProperties = memo(function PersonalProperties() {
                                       onChange(numValue);
                                     }
                                   }}
-                                  className="flex h-10 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50 hover:border-slate-300 dark:hover:border-slate-600 [&>option]:bg-white [&>option]:dark:bg-slate-800">
+                                  className="flex h-10 w-full rounded-lg border bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all px-3 py-2 text-sm shadow-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>option]:bg-white [&>option]:dark:bg-slate-800">
                                   <option value="">Select year</option>
                                   {Array.from(
                                     { length: 75 },
