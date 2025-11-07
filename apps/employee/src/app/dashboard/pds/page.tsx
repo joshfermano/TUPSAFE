@@ -1,7 +1,7 @@
 'use client';
 
 // React and Next.js
-import { useMemo, memo, useCallback, lazy, Suspense } from 'react';
+import { useMemo, memo, useCallback } from 'react';
 import Link from 'next/link';
 
 // Motion and Animation
@@ -12,15 +12,14 @@ import { useAuth, usePds } from '@tupsafe/mock-data/api';
 
 // Enhanced UI Components from shared-ui
 import {
-  EnhancedButton,
-  EnhancedCard,
-  EnhancedCardContent,
-  EnhancedBackground,
-  AnimatedGradientText,
   NumberTicker,
   BlurFade,
   Badge,
 } from '@tupsafe/shared-ui';
+
+// Local UI Components
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 // Local Components
 import { InfoCard } from '@/components/dashboard/InfoCard';
@@ -140,81 +139,34 @@ const MOCK_RECENT_ACTIVITY: ActivityItem[] = [
 // Memoized Components
 const EmptyState = memo(function EmptyState() {
   return (
-    <EnhancedBackground
-      effect="dots"
-      intensity="low"
-      className="relative min-h-[70vh] flex items-center justify-center"
-      respectReducedMotion>
-      <motion.div
-        className="max-w-2xl mx-auto text-center space-y-8 p-8 relative z-10"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}>
-        <motion.div
-          className="relative w-32 h-32 mx-auto"
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}>
-          <motion.div
-            className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/20 to-tup-crimson-light/20 blur-2xl"
-            animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.5, 0.8, 0.5],
-            }}
-            transition={{ duration: 3, repeat: Infinity }}
-          />
-          <div className="relative flex items-center justify-center w-full h-full rounded-full bg-gradient-to-br from-tup-crimson-subtle to-tup-crimson-subtle dark:from-primary/60 dark:to-tup-crimson-dark/60">
-            <FileText className="h-16 w-16 text-primary dark:text-tup-crimson-light" />
-          </div>
-        </motion.div>
+    <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-5 px-4">
+      {/* Icon Container */}
+      <div className="relative flex items-center justify-center w-20 h-20 rounded-2xl bg-slate-100 dark:bg-slate-800">
+        <FileText className="h-10 w-10 text-slate-400 dark:text-slate-500" />
+      </div>
 
-        <motion.div
-          className="space-y-4"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}>
-          <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
-            Start Your Personal Data Sheet
-          </h2>
-          <p className="text-lg text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
-            The Personal Data Sheet (e-PDS) is a comprehensive record of your
-            personal, educational, and professional information required by the
-            Civil Service Commission.
-          </p>
-        </motion.div>
+      {/* Text Content */}
+      <div className="text-center space-y-2 max-w-md">
+        <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+          Start Your Personal Data Sheet
+        </h3>
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          The Personal Data Sheet (e-PDS) is a comprehensive record of your
+          personal, educational, and professional information required by the
+          Civil Service Commission.
+        </p>
+      </div>
 
-        <motion.div
-          className="space-y-3"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.6 }}>
-          {[
-            'Easy to fill out step-by-step',
-            'Auto-save as you progress',
-            'Digital signature support',
-          ].map((feature, i) => (
-            <div
-              key={i}
-              className="flex items-center justify-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-              <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-              <span>{feature}</span>
-            </div>
-          ))}
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.8 }}>
-          <Link href="/dashboard/pds/create">
-            <EnhancedButton variant="shimmer" size="lg" className="px-8 py-6">
-              <Plus className="h-5 w-5 mr-2" />
-              Create Your First PDS
-            </EnhancedButton>
-          </Link>
-        </motion.div>
-      </motion.div>
-    </EnhancedBackground>
+      {/* Action Buttons */}
+      <div className="flex gap-3">
+        <Link href="/dashboard/pds/create">
+          <Button className="gap-2 bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)] text-white">
+            <Plus className="h-4 w-4" />
+            Create Your First PDS
+          </Button>
+        </Link>
+      </div>
+    </div>
   );
 });
 
@@ -229,12 +181,8 @@ const SectionCard = memo(function SectionCard({
   const IconComponent = section.icon;
 
   return (
-    <BlurFade delay={0.5 + index * 0.05} duration={0.4}>
-      <EnhancedCard
-        variant="magic"
-        gradientSize={150}
-        gradientOpacity={0.03}
-        className="relative p-6 cursor-pointer hover:shadow-xl transition-all duration-300 h-full">
+    <Card className="cursor-pointer hover:shadow-md hover:border-primary/20 transition-all border-slate-200 dark:border-slate-800 h-full">
+      <CardContent className="p-5">
         <div className="flex items-start justify-between mb-4">
           <div
             className={cn(
@@ -300,8 +248,8 @@ const SectionCard = memo(function SectionCard({
             />
           </div>
         </div>
-      </EnhancedCard>
-    </BlurFade>
+      </CardContent>
+    </Card>
   );
 });
 
@@ -423,27 +371,15 @@ export default function PDSPage() {
 
   // Main Content
   return (
-    <div className="relative space-y-8 pb-8">
-      {/* Subtle Background Effect */}
-      <EnhancedBackground
-        effect="dots"
-        intensity="low"
-        className="fixed inset-0 -z-10"
-        respectReducedMotion
-      />
-
+    <div className="space-y-6 pb-8">
       {/* Page Header */}
-      <BlurFade delay={0} duration={0.5}>
+      <BlurFade delay={0.1} duration={0.5}>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <AnimatedGradientText
-                className="text-3xl sm:text-4xl font-bold"
-                colorFrom="#8B1538"
-                colorTo="#B8264D"
-                speed={1.5}>
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100">
                 Personal Data Sheet (e-PDS)
-              </AnimatedGradientText>
+              </h1>
               {latest && getStatusBadge(latest.status)}
             </div>
             <p className="text-slate-600 dark:text-slate-400">
@@ -453,21 +389,60 @@ export default function PDSPage() {
           </div>
 
           <Link href="/dashboard/pds/edit">
-            <EnhancedButton variant="shimmer" size="lg">
+            <Button className="bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]">
               <Edit className="h-4 w-4 mr-2" />
               Update PDS
-            </EnhancedButton>
+            </Button>
           </Link>
         </div>
       </BlurFade>
 
+      {/* Quick Actions */}
+      <BlurFade delay={0.2} duration={0.5}>
+        <InfoCard title="Quick Actions" icon={FileText}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5">
+            <Link href="/dashboard/pds/view" className="w-full">
+              <Button
+                variant="outline"
+                className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-primary/40 transition-colors">
+                <Eye className="h-3.5 w-3.5 mr-2" />
+                View Submissions
+              </Button>
+            </Link>
+            <Link href="/dashboard/pds/archive" className="w-full">
+              <Button
+                variant="outline"
+                className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors">
+                <Archive className="h-3.5 w-3.5 mr-2" />
+                View Archive
+              </Button>
+            </Link>
+            <Button
+              variant="outline"
+              className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-950/30 transition-colors">
+              <Download className="h-3.5 w-3.5 mr-2" />
+              Download PDF
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors">
+              <Printer className="h-3.5 w-3.5 mr-2" />
+              Print PDS
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-primary/40 transition-colors">
+              <Send className="h-3.5 w-3.5 mr-2" />
+              Submit for Review
+            </Button>
+          </div>
+        </InfoCard>
+      </BlurFade>
+
       {/* Status Overview Card */}
-      <BlurFade delay={0.1} duration={0.5}>
-        <EnhancedCard
-          variant="magic"
-          gradientSize={200}
-          gradientOpacity={0.05}
-          className="overflow-hidden p-6 sm:p-8">
+      <BlurFade delay={0.3} duration={0.5}>
+        <Card className="border-slate-200 dark:border-slate-800 hover:border-primary/20 transition-colors">
+          <CardContent className="p-5">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Completion Progress */}
             <div className="space-y-3">
@@ -536,59 +511,37 @@ export default function PDSPage() {
               </div>
             </div>
           </div>
-        </EnhancedCard>
+          </CardContent>
+        </Card>
       </BlurFade>
 
       {/* PDS Sections Grid */}
-      <BlurFade delay={0.2} duration={0.5}>
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
-          PDS Sections
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {MOCK_PDS_SECTIONS.map((section, index) => (
-            <SectionCard key={section.id} section={section} index={index} />
-          ))}
+      <BlurFade delay={0.4} duration={0.5}>
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+            PDS Sections
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {MOCK_PDS_SECTIONS.map((section, index) => (
+              <SectionCard key={section.id} section={section} index={index} />
+            ))}
+          </div>
         </div>
       </BlurFade>
 
-      {/* Quick Actions and Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Quick Actions */}
-        <BlurFade delay={0.3} duration={0.5} className="lg:col-span-2">
-          <InfoCard title="Quick Actions" icon={FileText}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              <Link href="/dashboard/pds/view" className="w-full">
-                <EnhancedButton variant="outline" className="w-full justify-start">
-                  <Eye className="h-4 w-4 mr-2" />
-                  View Submissions
-                </EnhancedButton>
-              </Link>
-              <Link href="/dashboard/pds/archive" className="w-full">
-                <EnhancedButton variant="outline" className="w-full justify-start">
-                  <Archive className="h-4 w-4 mr-2" />
-                  View Archive
-                </EnhancedButton>
-              </Link>
-              <EnhancedButton variant="outline" className="w-full justify-start">
-                <Download className="h-4 w-4 mr-2" />
-                Download PDF
-              </EnhancedButton>
-              <EnhancedButton variant="outline" className="w-full justify-start">
-                <Printer className="h-4 w-4 mr-2" />
-                Print PDS
-              </EnhancedButton>
-              <EnhancedButton
-                variant="shiny"
-                className="w-full justify-start sm:col-span-2 md:col-span-1">
-                <Send className="h-4 w-4 mr-2" />
-                Submit for Review
-              </EnhancedButton>
+      {/* Historical Context and Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Historical Context (if needed - placeholder for consistency) */}
+        <BlurFade delay={0.5} duration={0.5} className="lg:col-span-2">
+          <InfoCard title="Submission History" icon={Calendar}>
+            <div className="text-sm text-slate-600 dark:text-slate-400">
+              <p>View your complete PDS submission history and track changes over time.</p>
             </div>
           </InfoCard>
         </BlurFade>
 
         {/* Recent Activity */}
-        <BlurFade delay={0.35} duration={0.5}>
+        <BlurFade delay={0.6} duration={0.5}>
           <InfoCard title="Recent Activity" icon={Clock}>
             <div className="space-y-4">
               {MOCK_RECENT_ACTIVITY.map((activity, index) => {
