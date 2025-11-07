@@ -30,8 +30,8 @@ export const Contact = memo(function Contact() {
       required={true}
       stepNumber={3}
     >
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
             control={form.control}
             name="personalInfo.telephoneNo"
@@ -46,9 +46,10 @@ export const Contact = memo(function Contact() {
                     placeholder="+63-2-8123-4567"
                     {...field}
                     value={field.value || ''}
+                    className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                   />
                 </FormControl>
-                <FormDescription>Landline number (optional)</FormDescription>
+                <FormDescription className="text-sm text-slate-600 dark:text-slate-400">Landline number (optional)</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -68,9 +69,10 @@ export const Contact = memo(function Contact() {
                     placeholder="+63-917-123-4567"
                     {...field}
                     value={field.value || ''}
+                    className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                   />
                 </FormControl>
-                <FormDescription>Mobile phone number (optional)</FormDescription>
+                <FormDescription className="text-sm text-slate-600 dark:text-slate-400">Mobile phone number (optional)</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -92,9 +94,10 @@ export const Contact = memo(function Contact() {
                   placeholder="juan.delacruz@tup.edu.ph"
                   {...field}
                   value={field.value || ''}
+                  className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                 />
               </FormControl>
-              <FormDescription>
+              <FormDescription className="text-sm text-slate-600 dark:text-slate-400">
                 Official or personal email address for communication
               </FormDescription>
               <FormMessage />
@@ -103,11 +106,11 @@ export const Contact = memo(function Contact() {
         />
 
         {/* Info box */}
-        <div className="flex items-start gap-3 p-4 rounded-lg bg-primary/5 dark:bg-primary/10 border border-primary/20">
+        <div className="flex items-start gap-3 p-6 rounded-lg bg-primary/5 dark:bg-primary/10 border border-primary/10">
           <Mail className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
           <div className="space-y-1">
             <p className="text-sm font-medium text-foreground">Contact Information Policy</p>
-            <p className="text-xs text-muted-foreground leading-relaxed">
+            <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
               Your contact information will be used for official university communications only.
               Please ensure at least one contact method is provided and regularly monitored.
             </p>

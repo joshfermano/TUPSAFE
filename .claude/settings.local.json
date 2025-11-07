@@ -56,7 +56,10 @@
       "Bash(test:*)",
       "Bash(npm run lint:*)",
       "Bash(echo:*)",
-      "Bash(/mnt/d/thesis/SmartGov/apps/employee/src/app/dashboard/pds/edit/[id]/page.tsx)"
+      "Bash(/mnt/d/thesis/SmartGov/apps/employee/src/app/dashboard/pds/edit/[id]/page.tsx)",
+      "WebFetch(domain:magicui.design)",
+      "mcp__serena__write_memory",
+      "Bash(timeout 120 npm run build:*)"
     ],
     "deny": [],
     "ask": []

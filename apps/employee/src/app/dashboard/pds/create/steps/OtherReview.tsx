@@ -67,8 +67,8 @@ export const OtherReview = memo(function OtherReview() {
       <div className="space-y-8">
         {/* Skills */}
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-sm font-semibold text-foreground">Special Skills & Hobbies</h4>
+          <div className="flex items-center justify-between mb-6">
+            <h4 className="text-base font-medium text-foreground">Special Skills & Hobbies</h4>
             <Button
               type="button"
               variant="outline"
@@ -80,16 +80,16 @@ export const OtherReview = memo(function OtherReview() {
             </Button>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             {skillFields.map((field, index) => (
-              <div key={field.id} className="flex gap-2">
+              <div key={field.id} className="flex gap-3">
                 <FormField
                   control={form.control}
                   name={`otherInfo.skills.${index}`}
                   render={({ field }) => (
                     <FormItem className="flex-1">
                       <FormControl>
-                        <Input placeholder="e.g., Public Speaking" {...field} />
+                        <Input placeholder="e.g., Public Speaking" {...field} className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -108,14 +108,14 @@ export const OtherReview = memo(function OtherReview() {
           </div>
         </div>
 
-        <Separator />
+        <Separator className="border-slate-200/50 dark:border-slate-800/50" />
 
         {/* CSC Questions */}
         <div>
-          <h4 className="text-sm font-semibold text-foreground mb-4">CSC Questions (34-42)</h4>
-          <div className="space-y-4">
+          <h4 className="text-base font-medium text-foreground mb-6">CSC Questions (34-42)</h4>
+          <div className="space-y-6">
             {questions.map((question) => (
-              <div key={question.key} className="space-y-2">
+              <div key={question.key} className="space-y-3">
                 <FormField
                   control={form.control}
                   name={`otherInfo.questions.${question.key}` as FieldPath<Partial<CompletePdsData>>}
@@ -143,7 +143,7 @@ export const OtherReview = memo(function OtherReview() {
                         <FormControl>
                           <Textarea
                             placeholder="Please provide details..."
-                            className="resize-none"
+                            className="resize-none bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                             {...field}
                             value={(field?.value as string) || ''}
                           />
@@ -158,16 +158,16 @@ export const OtherReview = memo(function OtherReview() {
           </div>
         </div>
 
-        <Separator />
+        <Separator className="border-slate-200/50 dark:border-slate-800/50" />
 
         {/* References */}
         <div>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <h4 className="text-sm font-semibold text-foreground">
+              <h4 className="text-base font-medium text-foreground">
                 Character References <span className="text-destructive">*</span>
               </h4>
-              <p className="text-xs text-muted-foreground">Minimum 3, Maximum 5</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Minimum 3, Maximum 5</p>
             </div>
             <Button
               type="button"
@@ -186,13 +186,13 @@ export const OtherReview = memo(function OtherReview() {
           </div>
 
           {referenceFields.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">
+            <div className="text-center py-12 text-slate-600 dark:text-slate-400 text-sm">
               No references added yet. Minimum of 3 required.
             </div>
           ) : (
             <div className="space-y-4">
               {referenceFields.map((field, index) => (
-                <div key={field.id} className="p-4 rounded-lg border border-border space-y-4">
+                <div key={field.id} className="p-6 rounded-lg border border-slate-200 dark:border-slate-800 space-y-6">
                   <div className="flex justify-between items-start">
                     <p className="text-sm font-medium">Reference #{index + 1}</p>
                     <Button
@@ -205,7 +205,7 @@ export const OtherReview = memo(function OtherReview() {
                     </Button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
                       name={`otherInfo.references.${index}.name`}
@@ -213,7 +213,7 @@ export const OtherReview = memo(function OtherReview() {
                         <FormItem>
                           <FormLabel>Full Name</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g., Dr. Maria Santos" {...field} />
+                            <Input placeholder="e.g., Dr. Maria Santos" {...field} className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -227,7 +227,7 @@ export const OtherReview = memo(function OtherReview() {
                         <FormItem>
                           <FormLabel>Telephone No.</FormLabel>
                           <FormControl>
-                            <Input placeholder="+63-2-8123-4567" {...field} value={field.value || ''} />
+                            <Input placeholder="+63-2-8123-4567" {...field} value={field.value || ''} className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -244,7 +244,7 @@ export const OtherReview = memo(function OtherReview() {
                             <Textarea
                               placeholder="Complete address"
                               {...field}
-                              className="resize-none"
+                              className="resize-none bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                             />
                           </FormControl>
                           <FormMessage />
@@ -258,20 +258,20 @@ export const OtherReview = memo(function OtherReview() {
           )}
         </div>
 
-        <Separator />
+        <Separator className="border-slate-200/50 dark:border-slate-800/50" />
 
         {/* Final Review */}
-        <NeonGradientCard className="p-6">
-          <div className="space-y-4">
+        <NeonGradientCard className="p-8">
+          <div className="space-y-5">
             <div className="flex items-center gap-3">
               <CheckCircle2 className="h-6 w-6 text-primary" />
-              <h4 className="text-lg font-semibold text-foreground">Ready to Submit?</h4>
+              <h4 className="text-base font-medium text-foreground">Ready to Submit?</h4>
             </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Please review all the information you&apos;ve provided. Once submitted, your Personal Data
+            <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              Please review all the information you've provided. Once submitted, your Personal Data
               Sheet will be forwarded to HR for review. You can still save as draft if you need more time.
             </p>
-            <ul className="text-sm text-muted-foreground space-y-2 list-disc list-inside">
+            <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-2 list-disc list-inside">
               <li>All required fields are marked with an asterisk (*)</li>
               <li>Minimum of 3 character references required</li>
               <li>Ensure all information is accurate and up-to-date</li>

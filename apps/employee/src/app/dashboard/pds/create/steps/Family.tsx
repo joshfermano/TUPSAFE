@@ -43,8 +43,8 @@ export const Family = memo(function Family() {
         {isMarried && (
           <>
             <div>
-              <h4 className="text-sm font-semibold text-foreground mb-4">Spouse Information</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <h4 className="text-base font-medium text-foreground mb-6">Spouse Information</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
                   name="family.spouseSurname"
@@ -52,7 +52,7 @@ export const Family = memo(function Family() {
                     <FormItem>
                       <FormLabel>Surname</FormLabel>
                       <FormControl>
-                        <Input placeholder="Surname" {...field} value={field.value || ''} />
+                        <Input placeholder="Surname" {...field} value={field.value || ''} className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -66,7 +66,7 @@ export const Family = memo(function Family() {
                     <FormItem>
                       <FormLabel>First Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="First Name" {...field} value={field.value || ''} />
+                        <Input placeholder="First Name" {...field} value={field.value || ''} className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -80,7 +80,7 @@ export const Family = memo(function Family() {
                     <FormItem>
                       <FormLabel>Occupation</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Teacher" {...field} value={field.value || ''} />
+                        <Input placeholder="e.g., Teacher" {...field} value={field.value || ''} className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -98,6 +98,7 @@ export const Family = memo(function Family() {
                           placeholder="e.g., TUP Manila"
                           {...field}
                           value={field.value || ''}
+                          className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                         />
                       </FormControl>
                       <FormMessage />
@@ -107,17 +108,17 @@ export const Family = memo(function Family() {
               </div>
             </div>
 
-            <Separator />
+            <Separator className="border-slate-200/50 dark:border-slate-800/50" />
           </>
         )}
 
         {/* Parents Information */}
         <div>
-          <h4 className="text-sm font-semibold text-foreground mb-4">Parents Information</h4>
-          <div className="space-y-6">
+          <h4 className="text-base font-medium text-foreground mb-6">Parents Information</h4>
+          <div className="space-y-8">
             <div>
-              <p className="text-sm text-muted-foreground mb-3">Father&apos;s Name</p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">Father's Name</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <FormField
                   control={form.control}
                   name="family.fatherSurname"
@@ -125,7 +126,7 @@ export const Family = memo(function Family() {
                     <FormItem>
                       <FormLabel>Surname</FormLabel>
                       <FormControl>
-                        <Input placeholder="Surname" {...field} value={field.value || ''} />
+                        <Input placeholder="Surname" {...field} value={field.value || ''} className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -139,7 +140,7 @@ export const Family = memo(function Family() {
                     <FormItem>
                       <FormLabel>First Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="First Name" {...field} value={field.value || ''} />
+                        <Input placeholder="First Name" {...field} value={field.value || ''} className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -153,7 +154,7 @@ export const Family = memo(function Family() {
                     <FormItem>
                       <FormLabel>Middle Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Middle Name" {...field} value={field.value || ''} />
+                        <Input placeholder="Middle Name" {...field} value={field.value || ''} className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -163,8 +164,8 @@ export const Family = memo(function Family() {
             </div>
 
             <div>
-              <p className="text-sm text-muted-foreground mb-3">Mother&apos;s Maiden Name</p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">Mother's Maiden Name</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <FormField
                   control={form.control}
                   name="family.motherMaidenSurname"
@@ -172,7 +173,7 @@ export const Family = memo(function Family() {
                     <FormItem>
                       <FormLabel>Maiden Surname</FormLabel>
                       <FormControl>
-                        <Input placeholder="Maiden Surname" {...field} value={field.value || ''} />
+                        <Input placeholder="Maiden Surname" {...field} value={field.value || ''} className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -186,7 +187,7 @@ export const Family = memo(function Family() {
                     <FormItem>
                       <FormLabel>First Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="First Name" {...field} value={field.value || ''} />
+                        <Input placeholder="First Name" {...field} value={field.value || ''} className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -200,7 +201,7 @@ export const Family = memo(function Family() {
                     <FormItem>
                       <FormLabel>Middle Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Middle Name" {...field} value={field.value || ''} />
+                        <Input placeholder="Middle Name" {...field} value={field.value || ''} className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -211,12 +212,12 @@ export const Family = memo(function Family() {
           </div>
         </div>
 
-        <Separator />
+        <Separator className="border-slate-200/50 dark:border-slate-800/50" />
 
         {/* Children */}
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-sm font-semibold text-foreground">
+          <div className="flex items-center justify-between mb-6">
+            <h4 className="text-base font-medium text-foreground">
               Children (Maximum of 12)
             </h4>
             <Button
@@ -234,18 +235,18 @@ export const Family = memo(function Family() {
           </div>
 
           {fields.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-12 text-slate-600 dark:text-slate-400">
               <p className="text-sm">No children added yet</p>
-              <p className="text-xs mt-1">Click &quot;Add Child&quot; to add your children</p>
+              <p className="text-sm mt-1">Click "Add Child" to add your children</p>
             </div>
           ) : (
             <div className="space-y-4">
               {fields.map((field, index) => (
                 <div
                   key={field.id}
-                  className="flex gap-4 items-start p-4 rounded-lg border border-border"
+                  className="flex gap-4 items-start p-6 rounded-lg border border-slate-200 dark:border-slate-800"
                 >
-                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
                       name={`family.children.${index}.fullName`}
@@ -253,7 +254,7 @@ export const Family = memo(function Family() {
                         <FormItem>
                           <FormLabel>Full Name</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g., Juan Dela Cruz Jr." {...field} />
+                            <Input placeholder="e.g., Juan Dela Cruz Jr." {...field} className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -276,6 +277,7 @@ export const Family = memo(function Family() {
                                   : ''
                               }
                               onChange={(e) => field.onChange(new Date(e.target.value))}
+                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                             />
                           </FormControl>
                           <FormMessage />

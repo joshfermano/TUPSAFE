@@ -40,9 +40,9 @@ export const Education = memo(function Education() {
       <div className="space-y-8">
         {educationLevels.map((level, index) => (
           <div key={level.key}>
-            {index > 0 && <Separator className="mb-6" />}
-            <h4 className="text-sm font-semibold text-foreground mb-4">{level.label}</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {index > 0 && <Separator className="mb-8 border-slate-200/50 dark:border-slate-800/50" />}
+            <h4 className="text-base font-medium text-foreground mb-6">{level.label}</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
                 name={`education.${level.key}.schoolName` as FieldPath<CompletePdsData>}
@@ -54,6 +54,7 @@ export const Education = memo(function Education() {
                         placeholder={`e.g., ${level.key === 'elementary' ? 'Manila Elementary School' : level.key === 'secondary' ? 'Manila Science High School' : 'Technological University of the Philippines'}`}
                         {...field}
                         value={(field?.value as string) || ''}
+                        className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                       />
                     </FormControl>
                     <FormMessage />
@@ -72,6 +73,7 @@ export const Education = memo(function Education() {
                         placeholder={level.key === 'college' ? 'e.g., BS Computer Science' : 'Leave blank if not applicable'}
                         {...field}
                         value={(field?.value as string) || ''}
+                        className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                       />
                     </FormControl>
                     <FormMessage />
@@ -94,6 +96,7 @@ export const Education = memo(function Education() {
                         {...field}
                         value={(field?.value as number) || ''}
                         onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                        className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                       />
                     </FormControl>
                     <FormMessage />
