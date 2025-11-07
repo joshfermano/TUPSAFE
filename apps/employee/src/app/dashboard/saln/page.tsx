@@ -55,16 +55,6 @@ import {
 import type { LucideIcon } from 'lucide-react';
 
 // Types for UI display
-interface SALNStatus {
-  year: number;
-  status: 'draft' | 'submitted' | 'approved' | 'rejected';
-  lastUpdated: Date;
-  netWorth: number;
-  totalAssets: number;
-  totalLiabilities: number;
-  hasSubmitted: boolean;
-}
-
 interface SALNSection {
   id: string;
   title: string;
@@ -347,18 +337,18 @@ export default function SalnPage() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">
+              <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100">
                 e-SALN {latest?.year || new Date().getFullYear()}
               </h1>
               {latest && getStatusBadge(latest.status)}
             </div>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-slate-600 dark:text-slate-400">
               Statement of Assets, Liabilities, and Net Worth
             </p>
           </div>
 
           <Link href="/dashboard/saln/edit">
-            <Button className="h-9 bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]">
+            <Button className="bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]">
               <Edit className="h-4 w-4 mr-2" />
               Update SALN
             </Button>
@@ -366,8 +356,50 @@ export default function SalnPage() {
         </div>
       </BlurFade>
 
-      {/* Net Worth Overview Card */}
+      {/* Quick Actions */}
       <BlurFade delay={0.2}>
+        <InfoCard title="Quick Actions" icon={Landmark}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5">
+            <Link href="/dashboard/saln/view" className="w-full">
+              <Button
+                variant="outline"
+                className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-[oklch(0.55_0.22_15)] transition-colors">
+                <Eye className="h-3.5 w-3.5 mr-2" />
+                View Submissions
+              </Button>
+            </Link>
+            <Link href="/dashboard/saln/archive" className="w-full">
+              <Button
+                variant="outline"
+                className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors">
+                <Archive className="h-3.5 w-3.5 mr-2" />
+                View Archive
+              </Button>
+            </Link>
+            <Button
+              variant="outline"
+              className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-950/30 transition-colors">
+              <Download className="h-3.5 w-3.5 mr-2" />
+              Download PDF
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors">
+              <Printer className="h-3.5 w-3.5 mr-2" />
+              Print SALN
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-[oklch(0.55_0.22_15)] transition-colors">
+              <Send className="h-3.5 w-3.5 mr-2" />
+              Submit for Review
+            </Button>
+          </div>
+        </InfoCard>
+      </BlurFade>
+
+      {/* Net Worth Overview Card */}
+      <BlurFade delay={0.3}>
         <Card className="border-slate-200 dark:border-slate-800 hover:border-[oklch(0.55_0.22_15)] transition-colors">
           <CardContent className="p-5">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -437,16 +469,15 @@ export default function SalnPage() {
       </BlurFade>
 
       {/* SALN Categories Grid */}
-      <BlurFade delay={0.3}>
+      <BlurFade delay={0.4}>
         <div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-3.5">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
             SALN Categories
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {MOCK_SALN_SECTIONS.map((section, index) => (
-              <BlurFade key={section.id} delay={0.4 + index * 0.05}>
-                <Card className="cursor-pointer hover:shadow-md hover:border-[oklch(0.55_0.22_15)] transition-all border-slate-200 dark:border-slate-800">
-                  <CardContent className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {MOCK_SALN_SECTIONS.map((section) => (
+              <Card key={section.id} className="cursor-pointer hover:shadow-md hover:border-[oklch(0.55_0.22_15)] transition-all border-slate-200 dark:border-slate-800">
+                <CardContent className="p-5">
                     <div className="flex items-start justify-between mb-3">
                       <div
                         className={cn(
@@ -496,7 +527,6 @@ export default function SalnPage() {
                     </div>
                   </CardContent>
                 </Card>
-              </BlurFade>
             ))}
           </div>
         </div>
@@ -508,9 +538,8 @@ export default function SalnPage() {
         <BlurFade delay={0.5} className="lg:col-span-2">
           <InfoCard title="Historical Overview" icon={Calendar}>
             <div className="space-y-4">
-              {MOCK_YEAR_SUMMARIES.map((summary, index) => (
-                <BlurFade key={summary.year} delay={0.6 + index * 0.05}>
-                  <div className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+              {MOCK_YEAR_SUMMARIES.map((summary) => (
+                <div key={summary.year} className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                     <div className="flex items-center gap-4">
                       <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-tup-crimson-subtle to-tup-crimson-subtle dark:from-primary/50 dark:to-tup-crimson-dark/50">
                         <Calendar className="h-6 w-6 text-primary dark:text-tup-crimson-light" />
@@ -526,7 +555,6 @@ export default function SalnPage() {
                     </div>
                     {getStatusBadge(summary.status)}
                   </div>
-                </BlurFade>
               ))}
             </div>
           </InfoCard>
@@ -536,11 +564,10 @@ export default function SalnPage() {
         <BlurFade delay={0.6}>
           <InfoCard title="Recent Activity" icon={Clock}>
             <div className="space-y-4">
-              {MOCK_RECENT_ACTIVITY.map((activity, index) => {
+              {MOCK_RECENT_ACTIVITY.map((activity) => {
                 const ActivityIcon = getActivityIcon(activity.type);
                 return (
-                  <BlurFade key={activity.id} delay={0.7 + index * 0.05}>
-                    <div className="flex items-start gap-3 pb-4 border-b border-slate-200 dark:border-slate-800 last:border-0 last:pb-0">
+                    <div key={activity.id} className="flex items-start gap-3 pb-4 border-b border-slate-200 dark:border-slate-800 last:border-0 last:pb-0">
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tup-crimson-subtle dark:bg-primary/30 flex-shrink-0">
                         <ActivityIcon className="h-4 w-4 text-primary dark:text-tup-crimson-light" />
                       </div>
@@ -562,55 +589,12 @@ export default function SalnPage() {
                         </p>
                       </div>
                     </div>
-                  </BlurFade>
                 );
               })}
             </div>
           </InfoCard>
         </BlurFade>
       </div>
-
-      {/* Quick Actions */}
-      <BlurFade delay={0.7}>
-        <InfoCard title="Quick Actions" icon={Landmark}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
-            <Link href="/dashboard/saln/view" className="w-full">
-              <Button
-                variant="outline"
-                className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-[oklch(0.55_0.22_15)] transition-colors">
-                <Eye className="h-3.5 w-3.5 mr-2" />
-                View Submissions
-              </Button>
-            </Link>
-            <Link href="/dashboard/saln/archive" className="w-full">
-              <Button
-                variant="outline"
-                className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors">
-                <Archive className="h-3.5 w-3.5 mr-2" />
-                View Archive
-              </Button>
-            </Link>
-            <Button
-              variant="outline"
-              className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-950/30 transition-colors">
-              <Download className="h-3.5 w-3.5 mr-2" />
-              Download PDF
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors">
-              <Printer className="h-3.5 w-3.5 mr-2" />
-              Print SALN
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-[oklch(0.55_0.22_15)] transition-colors">
-              <Send className="h-3.5 w-3.5 mr-2" />
-              Submit for Review
-            </Button>
-          </div>
-        </InfoCard>
-      </BlurFade>
     </div>
   );
 }
