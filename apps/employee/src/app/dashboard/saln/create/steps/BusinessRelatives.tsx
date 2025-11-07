@@ -78,19 +78,19 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
           title="Business Interests and Financial Connections"
           subtitle="Disclose any business interests, partnerships, or financial connections"
           variant="default">
-          <Alert className="mb-6">
+          <Alert className="mb-6 border-slate-200/50 dark:border-slate-800/50">
             <Info className="h-4 w-4" />
-            <AlertDescription>
+            <AlertDescription className="text-sm text-slate-600 dark:text-slate-400">
               Include any business where you or your spouse have an interest (stockholder,
               partner, officer, director, etc.). If none, you may skip this section.
             </AlertDescription>
           </Alert>
 
           {businessFields.length === 0 ? (
-            <div className="text-center py-12 border-2 border-dashed rounded-lg">
+            <div className="text-center py-12 border-2 border-dashed rounded-lg border-slate-200/50 dark:border-slate-800/50">
               <Briefcase className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground mb-2">No business interests added</p>
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="text-slate-600 dark:text-slate-400 mb-2">No business interests added</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
                 If you have no business interests, you can skip this section
               </p>
               <Button type="button" onClick={addBusinessInterest} variant="outline">
@@ -99,12 +99,12 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {businessFields.map((field, index) => (
                 <BlurFade key={field.id} delay={0.15 + index * 0.05}>
                   <EnhancedCard variant="default">
-                    <EnhancedCardContent>
-                      <div className="space-y-4">
+                    <EnhancedCardContent className="p-6">
+                      <div className="space-y-6">
                         <div className="flex items-center justify-between">
                           <Badge variant="outline">Business {index + 1}</Badge>
                           <Button
@@ -116,11 +116,11 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
                           </Button>
                         </div>
 
-                        <div className="grid gap-4">
+                        <div className="grid gap-6">
                           <div className="grid gap-2">
                             <Label
                               htmlFor={`businessInterests.${index}.entityName`}
-                              className="after:content-['*'] after:ml-0.5 after:text-destructive">
+                              className="text-base font-medium after:content-['*'] after:ml-0.5 after:text-destructive">
                               Business Name
                             </Label>
                             <Controller
@@ -138,7 +138,7 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
                           <div className="grid gap-2">
                             <Label
                               htmlFor={`businessInterests.${index}.businessAddress`}
-                              className="after:content-['*'] after:ml-0.5 after:text-destructive">
+                              className="text-base font-medium after:content-['*'] after:ml-0.5 after:text-destructive">
                               Business Address
                             </Label>
                             <Controller
@@ -156,7 +156,7 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
                           <div className="grid gap-2">
                             <Label
                               htmlFor={`businessInterests.${index}.natureOfBusiness`}
-                              className="after:content-['*'] after:ml-0.5 after:text-destructive">
+                              className="text-base font-medium after:content-['*'] after:ml-0.5 after:text-destructive">
                               Nature of Business Interest
                             </Label>
                             <Controller
@@ -174,7 +174,7 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
                           <div className="grid gap-2">
                             <Label
                               htmlFor={`businessInterests.${index}.dateOfAcquisition`}
-                              className="after:content-['*'] after:ml-0.5 after:text-destructive">
+                              className="text-base font-medium after:content-['*'] after:ml-0.5 after:text-destructive">
                               Date of Acquisition
                             </Label>
                             <Controller
@@ -221,21 +221,21 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
           title="Relatives in Government Service"
           subtitle="List relatives within 4th civil degree working in government"
           variant="default">
-          <Alert className="mb-6">
+          <Alert className="mb-6 border-slate-200/50 dark:border-slate-800/50">
             <Info className="h-4 w-4" />
-            <AlertDescription>
+            <AlertDescription className="text-sm text-slate-600 dark:text-slate-400">
               Disclose relatives within the 4th civil degree (by consanguinity or affinity)
               currently employed in government. If none, you may skip this section.
             </AlertDescription>
           </Alert>
 
           {relativeFields.length === 0 ? (
-            <div className="text-center py-12 border-2 border-dashed rounded-lg">
+            <div className="text-center py-12 border-2 border-dashed rounded-lg border-slate-200/50 dark:border-slate-800/50">
               <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground mb-2">
+              <p className="text-slate-600 dark:text-slate-400 mb-2">
                 No relatives in government added
               </p>
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
                 If you have no relatives in government service, you can skip this section
               </p>
               <Button type="button" onClick={addRelative} variant="outline">
@@ -244,12 +244,12 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {relativeFields.map((field, index) => (
                 <BlurFade key={field.id} delay={0.25 + index * 0.05}>
                   <EnhancedCard variant="default">
-                    <EnhancedCardContent>
-                      <div className="space-y-4">
+                    <EnhancedCardContent className="p-6">
+                      <div className="space-y-6">
                         <div className="flex items-center justify-between">
                           <Badge variant="outline">Relative {index + 1}</Badge>
                           <Button
@@ -261,12 +261,12 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
                           </Button>
                         </div>
 
-                        <div className="grid gap-4">
-                          <div className="grid gap-4 md:grid-cols-2">
+                        <div className="grid gap-6">
+                          <div className="grid gap-6 md:grid-cols-2">
                             <div className="grid gap-2">
                               <Label
                                 htmlFor={`relativesInGov.${index}.name`}
-                                className="after:content-['*'] after:ml-0.5 after:text-destructive">
+                                className="text-base font-medium after:content-['*'] after:ml-0.5 after:text-destructive">
                                 Full Name
                               </Label>
                               <Controller
@@ -284,7 +284,7 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
                             <div className="grid gap-2">
                               <Label
                                 htmlFor={`relativesInGov.${index}.relationship`}
-                                className="after:content-['*'] after:ml-0.5 after:text-destructive">
+                                className="text-base font-medium after:content-['*'] after:ml-0.5 after:text-destructive">
                                 Relationship
                               </Label>
                               <Controller
@@ -294,7 +294,7 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
                                   <select
                                     value={value || ''}
                                     onChange={(e) => onChange(e.target.value)}
-                                    className="flex h-10 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50 hover:border-slate-300 dark:hover:border-slate-600 [&>option]:bg-white [&>option]:dark:bg-slate-800">
+                                    className="flex h-10 w-full rounded-lg border bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all px-3 py-2 text-sm shadow-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>option]:bg-white [&>option]:dark:bg-slate-800">
                                     <option value="">Select relationship</option>
                                     {RELATIONSHIP_TYPE.map((rel) => (
                                       <option key={rel} value={rel}>
@@ -310,7 +310,7 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
                           <div className="grid gap-2">
                             <Label
                               htmlFor={`relativesInGov.${index}.position`}
-                              className="after:content-['*'] after:ml-0.5 after:text-destructive">
+                              className="text-base font-medium after:content-['*'] after:ml-0.5 after:text-destructive">
                               Position/Title
                             </Label>
                             <Controller
@@ -328,7 +328,7 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
                           <div className="grid gap-2">
                             <Label
                               htmlFor={`relativesInGov.${index}.agencyAddress`}
-                              className="after:content-['*'] after:ml-0.5 after:text-destructive">
+                              className="text-base font-medium after:content-['*'] after:ml-0.5 after:text-destructive">
                               Agency/Office and Address
                             </Label>
                             <Controller

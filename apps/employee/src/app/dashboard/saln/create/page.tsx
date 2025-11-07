@@ -72,6 +72,7 @@ import {
 import { ShimmerButton } from '@/components/ui/shimmer-button';
 import { AnimatedGradientText } from '@/components/ui/animated-gradient-text';
 import { BlurFade } from '@/components/ui/blur-fade';
+import { DotPattern } from '@/components/ui/dot-pattern';
 
 // Hooks
 import { useAutoSave, getSavedDraft } from '@/hooks/useAutoSave';
@@ -365,30 +366,41 @@ export default function SALNCreatePage() {
   const isLastStep = currentStep === FORM_STEPS.length - 1;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="relative min-h-screen">
+      {/* Subtle background pattern */}
+      <DotPattern
+        className="fixed inset-0 -z-10 opacity-[0.03] dark:opacity-[0.05]"
+        width={20}
+        height={20}
+        cx={1}
+        cy={1}
+        cr={1}
+      />
+
       {/* Main content */}
-      <div className="container max-w-5xl mx-auto px-4 py-8">
+      <div className="relative z-10 container max-w-5xl mx-auto px-6 py-12">
         {/* Header */}
-        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm pb-6 mb-8 border-b border-border">
+        <div className="pb-8 mb-8 border-b border-slate-200/50 dark:border-slate-800/50">
           <BlurFade delay={0.1}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-4">
-                <AnimatedGradientText className="text-3xl font-bold">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                <AnimatedGradientText className="text-2xl sm:text-3xl font-semibold">
                   Create SALN Statement
                 </AnimatedGradientText>
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-xs font-normal border-slate-300/50 dark:border-slate-700/50 w-fit">
                   CSC Form No. SALN 2019
                 </Badge>
               </div>
 
               {/* Save status */}
-              <div className="flex items-center gap-4">
+              <div className="hidden sm:flex items-center gap-4">
                 {saveStatusDisplay}
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={saveNow}
-                  disabled={isSubmitting}>
+                  disabled={isSubmitting}
+                  className="border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50">
                   <Save className="h-4 w-4 mr-2" />
                   Save Now
                 </Button>
@@ -413,13 +425,13 @@ export default function SALNCreatePage() {
           <form onSubmit={form.handleSubmit(handleSubmit as any)}>
             <BlurFade delay={0.2} key={currentStep}>
               <Suspense fallback={<FormStepSkeleton fieldCount={7} />}>
-                <div className="mb-8">{renderStep()}</div>
+                <div className="mb-10">{renderStep()}</div>
               </Suspense>
             </BlurFade>
 
             {/* Navigation buttons */}
             <BlurFade delay={0.3}>
-              <div className="flex items-center justify-between gap-4 pt-8 border-t border-border">
+              <div className="flex items-center justify-between gap-4 pt-10 border-t border-border/50">
                 <Button
                   type="button"
                   variant="outline"
