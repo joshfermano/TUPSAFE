@@ -49,8 +49,8 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
       <div className="space-y-8">
         {/* Voluntary Work */}
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+          <div className="flex items-center justify-between mb-6">
+            <h4 className="text-base font-medium text-foreground flex items-center gap-2">
               <Heart className="h-4 w-4 text-primary" />
               Voluntary Work or Involvement
             </h4>
@@ -74,7 +74,7 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
           </div>
 
           {voluntaryFields.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">
+            <div className="text-center py-12 text-slate-600 dark:text-slate-400 text-sm">
               No voluntary work added yet
             </div>
           ) : (
@@ -82,7 +82,7 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
               {voluntaryFields.map((field, index) => (
                 <div
                   key={field.id}
-                  className="p-4 rounded-lg border border-border space-y-4">
+                  className="p-6 rounded-lg border border-slate-200 dark:border-slate-800 space-y-6">
                   <div className="flex justify-between items-start">
                     <p className="text-sm font-medium">
                       Voluntary Work #{index + 1}
@@ -106,6 +106,7 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
                           <Input
                             placeholder="e.g., Red Cross Philippines"
                             {...field}
+                            className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                           />
                         </FormControl>
                         <FormMessage />
@@ -118,12 +119,12 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
           )}
         </div>
 
-        <Separator />
+        <Separator className="border-slate-200/50 dark:border-slate-800/50" />
 
         {/* Learning & Development */}
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+          <div className="flex items-center justify-between mb-6">
+            <h4 className="text-base font-medium text-foreground flex items-center gap-2">
               <BookOpen className="h-4 w-4 text-primary" />
               Learning and Development Interventions
             </h4>
@@ -147,7 +148,7 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
           </div>
 
           {trainingFields.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">
+            <div className="text-center py-12 text-slate-600 dark:text-slate-400 text-sm">
               No learning and development interventions added yet
             </div>
           ) : (
@@ -155,7 +156,7 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
               {trainingFields.map((field, index) => (
                 <div
                   key={field.id}
-                  className="p-4 rounded-lg border border-border space-y-4">
+                  className="p-6 rounded-lg border border-slate-200 dark:border-slate-800 space-y-6">
                   <div className="flex justify-between items-start">
                     <p className="text-sm font-medium">Training #{index + 1}</p>
                     <Button
@@ -177,6 +178,7 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
                           <Input
                             placeholder="e.g., Advanced Teaching Methodologies"
                             {...field}
+                            className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                           />
                         </FormControl>
                         <FormMessage />

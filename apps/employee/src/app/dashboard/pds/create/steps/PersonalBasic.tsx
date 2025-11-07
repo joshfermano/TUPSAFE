@@ -46,11 +46,11 @@ export const PersonalBasic = memo(function PersonalBasic() {
       required={true}
       stepNumber={1}
     >
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* Name Fields */}
         <div>
-          <h4 className="text-sm font-semibold text-foreground mb-4">Full Name</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <h4 className="text-base font-medium text-foreground mb-6">Full Name</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField
               control={form.control}
               name="personalInfo.surname"
@@ -60,7 +60,7 @@ export const PersonalBasic = memo(function PersonalBasic() {
                     Surname <span className="text-destructive">*</span>
                   </FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., DELA CRUZ" {...field} className="uppercase" />
+                    <Input placeholder="e.g., DELA CRUZ" {...field} className="uppercase bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -76,7 +76,7 @@ export const PersonalBasic = memo(function PersonalBasic() {
                     First Name <span className="text-destructive">*</span>
                   </FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Juan" {...field} />
+                    <Input placeholder="e.g., Juan" {...field} className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -90,9 +90,9 @@ export const PersonalBasic = memo(function PersonalBasic() {
                 <FormItem>
                   <FormLabel>Middle Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Santos" {...field} value={field.value || ''} />
+                    <Input placeholder="e.g., Santos" {...field} value={field.value || ''} className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
                   </FormControl>
-                  <FormDescription>Leave blank if none</FormDescription>
+                  <FormDescription className="text-sm text-slate-600 dark:text-slate-400">Leave blank if none</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -106,7 +106,7 @@ export const PersonalBasic = memo(function PersonalBasic() {
                   <FormLabel>Name Extension/Suffix</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value || undefined}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all">
                         <SelectValue placeholder="None (if applicable)" />
                       </SelectTrigger>
                     </FormControl>
@@ -126,15 +126,15 @@ export const PersonalBasic = memo(function PersonalBasic() {
           </div>
         </div>
 
-        <Separator />
+        <Separator className="border-slate-200/50 dark:border-slate-800/50" />
 
         {/* Birth Information */}
         <div>
-          <h4 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-4">
+          <h4 className="text-base font-medium text-foreground flex items-center gap-2 mb-6">
             <Calendar className="h-4 w-4 text-primary" />
             Birth Information
           </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField
               control={form.control}
               name="personalInfo.dateOfBirth"
@@ -153,6 +153,7 @@ export const PersonalBasic = memo(function PersonalBasic() {
                           : ''
                       }
                       onChange={(e) => field.onChange(new Date(e.target.value))}
+                      className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                     />
                   </FormControl>
                   <FormMessage />
@@ -169,7 +170,7 @@ export const PersonalBasic = memo(function PersonalBasic() {
                     Place of Birth <span className="text-destructive">*</span>
                   </FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Manila, Philippines" {...field} />
+                    <Input placeholder="e.g., Manila, Philippines" {...field} className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -178,14 +179,14 @@ export const PersonalBasic = memo(function PersonalBasic() {
           </div>
         </div>
 
-        <Separator />
+        <Separator className="border-slate-200/50 dark:border-slate-800/50" />
 
         {/* Personal Characteristics */}
         <div>
-          <h4 className="text-sm font-semibold text-foreground mb-4">
+          <h4 className="text-base font-medium text-foreground mb-6">
             Personal Characteristics
           </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField
               control={form.control}
               name="personalInfo.sex"
@@ -227,7 +228,7 @@ export const PersonalBasic = memo(function PersonalBasic() {
                   </FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all">
                         <SelectValue placeholder="Select civil status" />
                       </SelectTrigger>
                     </FormControl>
@@ -262,9 +263,10 @@ export const PersonalBasic = memo(function PersonalBasic() {
                       onChange={(e) =>
                         field.onChange(e.target.value ? parseFloat(e.target.value) : null)
                       }
+                      className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                     />
                   </FormControl>
-                  <FormDescription>Optional</FormDescription>
+                  <FormDescription className="text-sm text-slate-600 dark:text-slate-400">Optional</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -288,9 +290,10 @@ export const PersonalBasic = memo(function PersonalBasic() {
                       onChange={(e) =>
                         field.onChange(e.target.value ? parseFloat(e.target.value) : null)
                       }
+                      className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                     />
                   </FormControl>
-                  <FormDescription>Optional</FormDescription>
+                  <FormDescription className="text-sm text-slate-600 dark:text-slate-400">Optional</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -304,7 +307,7 @@ export const PersonalBasic = memo(function PersonalBasic() {
                   <FormLabel>Blood Type</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value || undefined}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all">
                         <SelectValue placeholder="Unknown / Not specified" />
                       </SelectTrigger>
                     </FormControl>
@@ -319,7 +322,7 @@ export const PersonalBasic = memo(function PersonalBasic() {
                       <SelectItem value="O-">O-</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormDescription>Optional</FormDescription>
+                  <FormDescription className="text-sm text-slate-600 dark:text-slate-400">Optional</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -327,19 +330,19 @@ export const PersonalBasic = memo(function PersonalBasic() {
           </div>
         </div>
 
-        <Separator />
+        <Separator className="border-slate-200/50 dark:border-slate-800/50" />
 
         {/* Government IDs */}
         <div>
-          <h4 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-4">
+          <h4 className="text-base font-medium text-foreground flex items-center gap-2 mb-6">
             <Shield className="h-4 w-4 text-primary" />
             Government Identification Numbers
           </h4>
-          <p className="text-xs text-muted-foreground mb-4">
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
             Provide at least one government ID number for verification purposes
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField
               control={form.control}
               name="personalInfo.gsisNo"
@@ -347,7 +350,7 @@ export const PersonalBasic = memo(function PersonalBasic() {
                 <FormItem>
                   <FormLabel>GSIS ID No.</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., 12-3456789-0" {...field} value={field.value || ''} />
+                    <Input placeholder="e.g., 12-3456789-0" {...field} value={field.value || ''} className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -365,6 +368,7 @@ export const PersonalBasic = memo(function PersonalBasic() {
                       placeholder="e.g., 1234-5678-9012"
                       {...field}
                       value={field.value || ''}
+                      className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                     />
                   </FormControl>
                   <FormMessage />
@@ -383,6 +387,7 @@ export const PersonalBasic = memo(function PersonalBasic() {
                       placeholder="e.g., 12-345678901-2"
                       {...field}
                       value={field.value || ''}
+                      className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                     />
                   </FormControl>
                   <FormMessage />
@@ -401,6 +406,7 @@ export const PersonalBasic = memo(function PersonalBasic() {
                       placeholder="e.g., 34-5678901-2"
                       {...field}
                       value={field.value || ''}
+                      className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                     />
                   </FormControl>
                   <FormMessage />
@@ -419,6 +425,7 @@ export const PersonalBasic = memo(function PersonalBasic() {
                       placeholder="e.g., 123-456-789-000"
                       {...field}
                       value={field.value || ''}
+                      className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                     />
                   </FormControl>
                   <FormMessage />
@@ -437,9 +444,10 @@ export const PersonalBasic = memo(function PersonalBasic() {
                       placeholder="TUP Employee Number"
                       {...field}
                       value={field.value || ''}
+                      className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                     />
                   </FormControl>
-                  <FormDescription>Your TUP Manila employee ID</FormDescription>
+                  <FormDescription className="text-sm text-slate-600 dark:text-slate-400">Your TUP Manila employee ID</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -447,12 +455,12 @@ export const PersonalBasic = memo(function PersonalBasic() {
           </div>
         </div>
 
-        <Separator />
+        <Separator className="border-slate-200/50 dark:border-slate-800/50" />
 
         {/* Citizenship */}
         <div>
-          <h4 className="text-sm font-semibold text-foreground mb-4">Citizenship</h4>
-          <div className="space-y-4">
+          <h4 className="text-base font-medium text-foreground mb-6">Citizenship</h4>
+          <div className="space-y-6">
             <FormField
               control={form.control}
               name="personalInfo.citizenship.type"
@@ -494,9 +502,9 @@ export const PersonalBasic = memo(function PersonalBasic() {
                       Please specify country <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., United States" {...field} />
+                      <Input placeholder="e.g., United States" {...field} className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
                     </FormControl>
-                    <FormDescription>
+                    <FormDescription className="text-sm text-slate-600 dark:text-slate-400">
                       Indicate the other country of your dual citizenship
                     </FormDescription>
                     <FormMessage />

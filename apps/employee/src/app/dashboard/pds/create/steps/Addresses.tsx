@@ -18,7 +18,7 @@ export const Addresses = memo(function Addresses() {
       required={true}
       stepNumber={2}
     >
-      <div className="space-y-8">
+      <div className="space-y-12">
         <AddressInput
           name="personalInfo.residentialAddress"
           label="Residential Address"

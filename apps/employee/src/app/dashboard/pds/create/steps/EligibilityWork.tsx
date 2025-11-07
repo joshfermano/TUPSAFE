@@ -42,8 +42,8 @@ export const EligibilityWork = memo(function EligibilityWork() {
       <div className="space-y-8">
         {/* Civil Service Eligibility */}
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+          <div className="flex items-center justify-between mb-6">
+            <h4 className="text-base font-medium text-foreground flex items-center gap-2">
               <Award className="h-4 w-4 text-primary" />
               Civil Service Eligibility
             </h4>
@@ -66,13 +66,13 @@ export const EligibilityWork = memo(function EligibilityWork() {
           </div>
 
           {eligibilityFields.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">
+            <div className="text-center py-12 text-slate-600 dark:text-slate-400 text-sm">
               No civil service eligibility added yet
             </div>
           ) : (
             <div className="space-y-4">
               {eligibilityFields.map((field, index) => (
-                <div key={field.id} className="p-4 rounded-lg border border-border space-y-4">
+                <div key={field.id} className="p-6 rounded-lg border border-slate-200 dark:border-slate-800 space-y-6">
                   <div className="flex justify-between items-start">
                     <p className="text-sm font-medium">Eligibility #{index + 1}</p>
                     <Button
@@ -92,7 +92,7 @@ export const EligibilityWork = memo(function EligibilityWork() {
                       <FormItem>
                         <FormLabel>Eligibility Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., Career Service Professional" {...field} />
+                          <Input placeholder="e.g., Career Service Professional" {...field} className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -104,12 +104,12 @@ export const EligibilityWork = memo(function EligibilityWork() {
           )}
         </div>
 
-        <Separator />
+        <Separator className="border-slate-200/50 dark:border-slate-800/50" />
 
         {/* Work Experience */}
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+          <div className="flex items-center justify-between mb-6">
+            <h4 className="text-base font-medium text-foreground flex items-center gap-2">
               <Briefcase className="h-4 w-4 text-primary" />
               Work Experience
             </h4>
@@ -134,13 +134,13 @@ export const EligibilityWork = memo(function EligibilityWork() {
           </div>
 
           {workFields.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">
+            <div className="text-center py-12 text-slate-600 dark:text-slate-400 text-sm">
               No work experience added yet
             </div>
           ) : (
             <div className="space-y-4">
               {workFields.map((field, index) => (
-                <div key={field.id} className="p-4 rounded-lg border border-border space-y-4">
+                <div key={field.id} className="p-6 rounded-lg border border-slate-200 dark:border-slate-800 space-y-6">
                   <div className="flex justify-between items-start">
                     <p className="text-sm font-medium">Work Experience #{index + 1}</p>
                     <Button
@@ -153,7 +153,7 @@ export const EligibilityWork = memo(function EligibilityWork() {
                     </Button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
                       name={`workExperience.${index}.positionTitle`}
@@ -161,7 +161,7 @@ export const EligibilityWork = memo(function EligibilityWork() {
                         <FormItem>
                           <FormLabel>Position Title</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g., Professor" {...field} />
+                            <Input placeholder="e.g., Professor" {...field} className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -175,7 +175,7 @@ export const EligibilityWork = memo(function EligibilityWork() {
                         <FormItem>
                           <FormLabel>Department / Agency</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g., TUP Manila" {...field} />
+                            <Input placeholder="e.g., TUP Manila" {...field} className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
