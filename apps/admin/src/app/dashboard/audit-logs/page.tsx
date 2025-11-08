@@ -11,18 +11,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
-import {
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-  Legend,
-} from 'recharts';
+import { Cell, Line, LineChart, Pie, PieChart, XAxis, YAxis } from 'recharts';
 
 import {
   useAuditLogsQuery,
@@ -57,6 +46,11 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart';
 
 // Action types for filtering
 const ACTIONS = [
@@ -374,7 +368,15 @@ export default function AuditLogsPage() {
             <CardDescription>Log activity over the last 30 days</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ChartContainer
+              config={{
+                count: {
+                  label: 'Activity Count',
+                  color: '#8B1538',
+                },
+              }}
+              className="h-[300px]"
+            >
               <LineChart data={activityTimelineData}>
                 <XAxis
                   dataKey="date"
@@ -389,23 +391,17 @@ export default function AuditLogsPage() {
                   tickLine={false}
                   axisLine={false}
                 />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--background))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '0.5rem',
-                  }}
-                />
+                <ChartTooltip content={<ChartTooltipContent />} />
                 <Line
                   type="monotone"
                   dataKey="count"
-                  stroke="#8B1538"
+                  stroke="var(--color-count)"
                   strokeWidth={2}
-                  dot={{ fill: '#8B1538', r: 3 }}
+                  dot={{ fill: 'var(--color-count)', r: 3 }}
                   activeDot={{ r: 5 }}
                 />
               </LineChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
 
@@ -419,7 +415,15 @@ export default function AuditLogsPage() {
             <CardDescription>Breakdown of actions by type</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ChartContainer
+              config={{
+                value: {
+                  label: 'Count',
+                  color: '#8B1538',
+                },
+              }}
+              className="h-[300px]"
+            >
               <PieChart>
                 <Pie
                   data={actionDistributionData}
@@ -428,22 +432,16 @@ export default function AuditLogsPage() {
                   labelLine={false}
                   label={(entry) => entry.name}
                   outerRadius={80}
-                  fill="#8B1538"
+                  fill="var(--color-value)"
                   dataKey="value"
                 >
                   {actionDistributionData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--background))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '0.5rem',
-                  }}
-                />
+                <ChartTooltip content={<ChartTooltipContent />} />
               </PieChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
       </div>
@@ -484,7 +482,7 @@ export default function AuditLogsPage() {
                 <SelectTrigger>
                   <SelectValue placeholder="Select user" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="glass-dropdown">
                   {availableUsers.map((user) => (
                     <SelectItem key={user.value} value={user.value}>
                       {user.label}
@@ -498,7 +496,7 @@ export default function AuditLogsPage() {
                 <SelectTrigger>
                   <SelectValue placeholder="Select action" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="glass-dropdown">
                   {ACTIONS.map((action) => (
                     <SelectItem key={action.value} value={action.value}>
                       {action.label}
@@ -515,7 +513,7 @@ export default function AuditLogsPage() {
                 <SelectTrigger>
                   <SelectValue placeholder="Select resource" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="glass-dropdown">
                   {RESOURCES.map((resource) => (
                     <SelectItem key={resource.value} value={resource.value}>
                       {resource.label}

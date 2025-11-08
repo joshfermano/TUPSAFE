@@ -14,14 +14,7 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
-import {
-  Area,
-  AreaChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { Area, AreaChart, XAxis, YAxis } from 'recharts';
 
 import {
   useDashboardQuery,
@@ -57,6 +50,11 @@ import {
   EnhancedTableRow,
   EnhancedTableCell,
 } from '@/components/admin/EnhancedTable';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart';
 
 // Recent Activity Item Component (memoized with animation)
 const ActivityItem = memo(
@@ -161,6 +159,13 @@ const generateComplianceData = () => {
 const ComplianceChart = memo(() => {
   const [chartData] = useState(generateComplianceData);
 
+  const chartConfig = {
+    rate: {
+      label: 'Compliance Rate',
+      color: '#8B1538',
+    },
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -168,7 +173,7 @@ const ComplianceChart = memo(() => {
         <CardDescription>Last 6 months</CardDescription>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={200}>
+        <ChartContainer config={chartConfig} className="h-[200px]">
           <AreaChart data={chartData}>
             <defs>
               <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
@@ -191,29 +196,23 @@ const ComplianceChart = memo(() => {
               domain={[0, 100]}
               ticks={[0, 25, 50, 75, 100]}
             />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: 'hsl(var(--card))',
-                border: '1px solid hsl(var(--border))',
-                borderRadius: '8px',
-                fontSize: '12px',
-              }}
-              labelStyle={{ color: 'hsl(var(--foreground))' }}
-              formatter={(value: number) => [
-                `${value.toFixed(1)}%`,
-                'Compliance Rate',
-              ]}
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  formatter={(value) => `${Number(value).toFixed(1)}%`}
+                />
+              }
             />
             <Area
               type="monotone"
               dataKey="rate"
-              stroke="#8B1538"
+              stroke="var(--color-rate)"
               strokeWidth={2}
               fillOpacity={1}
               fill="url(#colorRate)"
             />
           </AreaChart>
-        </ResponsiveContainer>
+        </ChartContainer>
       </CardContent>
     </Card>
   );
@@ -493,7 +492,7 @@ export default function DashboardPage() {
                                 <span className="sr-only">Actions</span>
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                            <DropdownMenuContent align="end" className="glass-dropdown">
                               <DropdownMenuItem>
                                 <Eye className="mr-2 h-4 w-4" />
                                 Quick Review

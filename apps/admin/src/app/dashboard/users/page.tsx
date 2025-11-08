@@ -14,14 +14,7 @@ import {
   Users,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import {
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { Line, LineChart, XAxis, YAxis } from 'recharts';
 
 import {
   useUsersQuery,
@@ -69,6 +62,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart';
 
 // Available roles for filtering
 const ROLES = [
@@ -103,10 +101,18 @@ const getUserGrowthData = () => {
 
 // User Row Component (memoized)
 const UserRow = memo(({ user, index }: { user: UserWithDetails; index: number }) => {
-  const handleAction = useCallback((action: string) => {
-    console.log(`Action: ${action} for user:`, user.profile.id);
-    // TODO: Implement actions
-  }, [user.profile.id]);
+  const handleAction = useCallback((action: string, userId: string) => {
+    switch (action) {
+      case 'view':
+        window.location.href = `/dashboard/users/view/${userId}`;
+        break;
+      case 'edit':
+        window.location.href = `/dashboard/users/edit/${userId}`;
+        break;
+      default:
+        console.log(`Action: ${action} for user:`, userId);
+    }
+  }, []);
 
   const fullName = `${user.profile.firstName} ${user.profile.lastName}`;
 
@@ -152,30 +158,30 @@ const UserRow = memo(({ user, index }: { user: UserWithDetails; index: number })
               <span className="sr-only">Actions</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => handleAction('view')}>
+          <DropdownMenuContent align="end" className="glass-dropdown">
+            <DropdownMenuItem onClick={() => handleAction('view', user.profile.id)}>
               <Eye className="mr-2 h-4 w-4" />
               View Details
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleAction('edit')}>
+            <DropdownMenuItem onClick={() => handleAction('edit', user.profile.id)}>
               <Edit className="mr-2 h-4 w-4" />
               Edit User
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             {user.profile.isActive ? (
-              <DropdownMenuItem onClick={() => handleAction('deactivate')}>
+              <DropdownMenuItem onClick={() => handleAction('deactivate', user.profile.id)}>
                 <UserX className="mr-2 h-4 w-4" />
                 Deactivate
               </DropdownMenuItem>
             ) : (
-              <DropdownMenuItem onClick={() => handleAction('activate')}>
+              <DropdownMenuItem onClick={() => handleAction('activate', user.profile.id)}>
                 <UserCheck className="mr-2 h-4 w-4" />
                 Activate
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={() => handleAction('delete')}
+              onClick={() => handleAction('delete', user.profile.id)}
               className="text-red-600 focus:text-red-600"
             >
               <Trash2 className="mr-2 h-4 w-4" />
@@ -239,8 +245,7 @@ export default function UsersPage() {
   );
 
   const handleCreateUser = useCallback(() => {
-    console.log('Create user clicked');
-    // TODO: Implement create user dialog/page
+    window.location.href = '/dashboard/users/create';
   }, []);
 
   const handleResetFilters = useCallback(() => {
@@ -278,7 +283,15 @@ export default function UsersPage() {
           <CardDescription>User registration over the last 6 months</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
+          <ChartContainer
+            config={{
+              users: {
+                label: 'Users',
+                color: '#8B1538',
+              },
+            }}
+            className="h-[300px]"
+          >
             <LineChart data={userGrowthData}>
               <XAxis
                 dataKey="month"
@@ -293,34 +306,27 @@ export default function UsersPage() {
                 tickLine={false}
                 axisLine={false}
               />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--background))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '0.5rem',
-                }}
-                labelStyle={{ color: 'hsl(var(--foreground))' }}
-              />
+              <ChartTooltip content={<ChartTooltipContent />} />
               <Line
                 type="monotone"
                 dataKey="users"
-                stroke="#8B1538"
+                stroke="var(--color-users)"
                 strokeWidth={2}
-                dot={{ fill: '#8B1538', r: 4 }}
+                dot={{ fill: 'var(--color-users)', r: 4 }}
                 activeDot={{ r: 6 }}
               />
             </LineChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </CardContent>
       </Card>
 
-      {/* Filters Card */}
-      <Card className="glass-card">
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
+      {/* Filters Card - Fixed theme adaptivity */}
+      <Card className="border-muted/50 bg-card shadow-sm">
+        <CardHeader className="border-b border-subtle bg-muted/30">
+          <CardTitle className="text-base">Filters</CardTitle>
           <CardDescription>Search and filter users</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="flex flex-col gap-4">
             <div className="grid gap-4 md:grid-cols-3">
               {/* Search Input with animated icon */}
@@ -341,16 +347,16 @@ export default function UsersPage() {
                   onChange={handleSearchChange}
                   onFocus={() => setSearchFocused(true)}
                   onBlur={() => setSearchFocused(false)}
-                  className="pl-9"
+                  className="pl-9 bg-background"
                 />
               </div>
 
               {/* Role Filter */}
               <Select value={roleFilter} onValueChange={setRoleFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="glass-dropdown">
                   {ROLES.map((role) => (
                     <SelectItem key={role.value} value={role.value}>
                       {role.label}
@@ -364,10 +370,10 @@ export default function UsersPage() {
                 value={departmentFilter}
                 onValueChange={setDepartmentFilter}
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Select department" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="glass-dropdown">
                   {DEPARTMENTS.map((dept) => (
                     <SelectItem key={dept.value} value={dept.value}>
                       {dept.label}
@@ -379,7 +385,7 @@ export default function UsersPage() {
 
             {/* Reset Filters */}
             {hasActiveFilters && (
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between rounded-lg bg-muted/50 px-4 py-3 border border-subtle">
                 <p className="text-sm text-muted-foreground">
                   {users?.length || 0} user(s) found
                 </p>

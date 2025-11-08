@@ -110,15 +110,37 @@
 @layer utilities {
   /* Glassmorphism utilities */
   .glass {
-    @apply backdrop-blur-xl bg-white/95 dark:bg-gray-950/95 saturate-150;
+    backdrop-filter: blur(24px);
+    background-color: rgb(255 255 255 / 0.95);
+    filter: saturate(1.5);
+  }
+
+  .dark .glass {
+    background-color: rgb(3 7 18 / 0.95);
   }
 
   .glass-card {
-    @apply backdrop-blur-lg bg-white/90 dark:bg-gray-950/90 saturate-150 border border-white/20 dark:border-gray-800/50;
+    backdrop-filter: blur(16px);
+    background-color: rgb(255 255 255 / 0.9);
+    filter: saturate(1.5);
+    border: 1px solid rgb(255 255 255 / 0.2);
+  }
+
+  .dark .glass-card {
+    background-color: rgb(3 7 18 / 0.9);
+    border-color: rgb(31 41 55 / 0.5);
   }
 
   .glass-nav {
-    @apply backdrop-blur-md bg-white/80 dark:bg-gray-950/80 saturate-150 border-b border-white/20 dark:border-gray-800/50;
+    backdrop-filter: blur(12px);
+    background-color: rgb(255 255 255 / 0.8);
+    filter: saturate(1.5);
+    border-bottom: 1px solid rgb(255 255 255 / 0.2);
+  }
+
+  .dark .glass-nav {
+    background-color: rgb(3 7 18 / 0.8);
+    border-bottom-color: rgb(31 41 55 / 0.5);
   }
 
   /* Gradient utilities - subtle and professional */
@@ -209,5 +231,88 @@
 
   .stagger-delay-5 {
     animation-delay: 0.5s;
+  }
+
+  /* Glassmorphism for dropdowns */
+  .glass-dropdown {
+    backdrop-filter: blur(24px);
+    background-color: hsl(var(--popover) / 0.95);
+    filter: saturate(1.5);
+    border: 1px solid hsl(0 0% 100% / 0.1);
+  }
+
+  .dark .glass-dropdown {
+    border-color: hsl(0 0% 100% / 0.05);
+  }
+
+  /* Gradient utilities for Tailwind CSS 4 compatibility */
+  .gradient-card-subtle {
+    background: linear-gradient(to bottom right, hsl(var(--card)), hsl(var(--card) / 0.8));
+  }
+
+  .gradient-primary-glow {
+    background: linear-gradient(to bottom right, hsl(var(--primary) / 0.1), transparent);
+  }
+
+  .gradient-primary-glow-tl {
+    background: linear-gradient(to top left, hsl(var(--primary) / 0.1), transparent);
+  }
+
+  .gradient-primary-accent {
+    background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--primary) / 0.8), hsl(var(--primary) / 0.6));
+  }
+
+  .gradient-primary-header {
+    background: linear-gradient(to bottom right, hsl(var(--primary)), hsl(var(--primary) / 0.8));
+  }
+
+  .gradient-primary-bg {
+    background: linear-gradient(to bottom right, hsl(var(--primary) / 0.05), hsl(var(--background)), hsl(var(--primary) / 0.1));
+  }
+
+  .gradient-user-banner {
+    background: linear-gradient(to right, hsl(var(--primary) / 0.2), hsl(var(--primary) / 0.1), hsl(var(--background)));
+  }
+
+  /* Border opacity utilities */
+  .border-subtle {
+    border-color: hsl(var(--border) / 0.5);
+  }
+
+  .border-primary-subtle {
+    border-color: hsl(var(--primary) / 0.2);
+  }
+
+  /* Financial summary card gradients (SALN specific) */
+  .gradient-emerald-card {
+    background: linear-gradient(to bottom right, rgb(236 253 245), rgb(209 250 229));
+  }
+
+  .dark .gradient-emerald-card {
+    background: linear-gradient(to bottom right, rgb(6 78 59 / 0.2), rgb(6 95 70 / 0.2));
+  }
+
+  .gradient-amber-card {
+    background: linear-gradient(to bottom right, rgb(254 252 232), rgb(254 243 199));
+  }
+
+  .dark .gradient-amber-card {
+    background: linear-gradient(to bottom right, rgb(120 53 15 / 0.2), rgb(146 64 14 / 0.2));
+  }
+
+  .gradient-blue-card {
+    background: linear-gradient(to bottom right, rgb(239 246 255), rgb(219 234 254));
+  }
+
+  .dark .gradient-blue-card {
+    background: linear-gradient(to bottom right, rgb(30 58 138 / 0.2), rgb(30 64 175 / 0.2));
+  }
+
+  .gradient-emerald-summary {
+    background: linear-gradient(to bottom right, rgb(236 253 245 / 0.5), rgb(209 250 229 / 0.5));
+  }
+
+  .dark .gradient-emerald-summary {
+    background: linear-gradient(to bottom right, rgb(6 78 59 / 0.1), rgb(6 95 70 / 0.1));
   }
 }

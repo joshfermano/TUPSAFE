@@ -68,7 +68,7 @@ export const LoadingCard = memo(function LoadingCard({
         <Card
           key={index}
           className={cn(
-            'border-border/50 bg-gradient-to-br from-card to-card/80',
+            'border-subtle gradient-card-subtle',
             className,
           )}
         >

@@ -83,7 +83,7 @@ const navItems: NavItem[] = [
   // System Section
   {
     name: 'Audit Logs',
-    href: '/dashboard/logs',
+    href: '/dashboard/audit-logs',
     icon: FileSearch,
     section: 'system',
   },
@@ -116,13 +116,7 @@ const getUserInitials = (name: string | undefined): string => {
 
 // Sidebar navigation component (memoized)
 const SidebarNav = memo(
-  ({
-    pathname,
-    onNavigate,
-  }: {
-    pathname: string;
-    onNavigate?: () => void;
-  }) => {
+  ({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) => {
     const router = useRouter();
     const { user, profile, signOut } = useAuth();
     const { resolvedTheme, toggleTheme } = useTheme();
@@ -136,18 +130,17 @@ const SidebarNav = memo(
     const displayName = profile
       ? `${profile.firstName} ${profile.lastName}`
       : user?.email || 'Admin User';
-    const userRole = profile?.position?.title || (profile?.role === 'admin' ? 'Administrator' : 'HR Personnel');
+    const userRole =
+      profile?.position?.title ||
+      (profile?.role === 'admin' ? 'Administrator' : 'HR Personnel');
 
     // Group navigation items by section
-    const groupedNavItems = navItems.reduce(
-      (acc, item) => {
-        const section = item.section || 'main';
-        if (!acc[section]) acc[section] = [];
-        acc[section].push(item);
-        return acc;
-      },
-      {} as Record<string, NavItem[]>
-    );
+    const groupedNavItems = navItems.reduce((acc, item) => {
+      const section = item.section || 'main';
+      if (!acc[section]) acc[section] = [];
+      acc[section].push(item);
+      return acc;
+    }, {} as Record<string, NavItem[]>);
 
     return (
       <div className="flex h-full flex-col bg-muted/30">
@@ -155,14 +148,17 @@ const SidebarNav = memo(
         <div className="flex h-16 shrink-0 items-center border-b bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <Link
             href="/dashboard"
-            className="group flex items-center gap-3 transition-opacity hover:opacity-80"
-          >
+            className="group flex items-center gap-3 transition-opacity hover:opacity-80">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#8B1538] text-white shadow-sm ring-1 ring-[#8B1538]/10">
               <span className="text-sm font-bold">TS</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-semibold tracking-tight">TUPSAFE</span>
-              <span className="text-xs text-muted-foreground">Admin Portal</span>
+              <span className="text-sm font-semibold tracking-tight">
+                TUPSAFE
+              </span>
+              <span className="text-xs text-muted-foreground">
+                Admin Portal
+              </span>
             </div>
           </Link>
         </div>
@@ -195,16 +191,16 @@ const SidebarNav = memo(
                             ? 'bg-[#8B1538]/10 text-[#8B1538] hover:bg-[#8B1538]/15 hover:text-[#8B1538] shadow-sm dark:bg-[#8B1538]/20 dark:text-[#e87d9a] dark:hover:bg-[#8B1538]/25'
                             : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                         )}
-                        asChild
-                      >
+                        asChild>
                         <Link href={item.href} onClick={onNavigate}>
                           <Icon className="h-5 w-5 shrink-0" />
-                          <span className="flex-1 text-left text-sm">{item.name}</span>
+                          <span className="flex-1 text-left text-sm">
+                            {item.name}
+                          </span>
                           {item.badge && (
                             <Badge
                               variant="secondary"
-                              className="ml-auto h-5 min-w-5 px-1.5 text-xs font-medium"
-                            >
+                              className="ml-auto h-5 min-w-5 px-1.5 text-xs font-medium">
                               {item.badge}
                             </Badge>
                           )}
@@ -232,9 +228,13 @@ const SidebarNav = memo(
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 overflow-hidden">
-              <p className="truncate text-sm font-semibold leading-tight">{displayName}</p>
+              <p className="truncate text-sm font-semibold leading-tight">
+                {displayName}
+              </p>
               <div className="mt-0.5 flex items-center gap-1.5">
-                <Badge variant="outline" className="h-5 px-1.5 text-[10px] font-medium">
+                <Badge
+                  variant="outline"
+                  className="h-5 px-1.5 text-[10px] font-medium">
                   {userRole}
                 </Badge>
               </div>
@@ -247,8 +247,7 @@ const SidebarNav = memo(
               variant="outline"
               size="sm"
               onClick={toggleTheme}
-              className="flex-1 gap-2 h-9"
-            >
+              className="flex-1 gap-2 h-9">
               {resolvedTheme === 'dark' ? (
                 <Sun className="h-4 w-4" />
               ) : (
@@ -263,8 +262,7 @@ const SidebarNav = memo(
               variant="outline"
               size="sm"
               onClick={handleSignOut}
-              className="flex-1 gap-2 h-9 text-destructive hover:bg-destructive/10 hover:text-destructive"
-            >
+              className="flex-1 gap-2 h-9 text-destructive hover:bg-destructive/10 hover:text-destructive">
               <LogOut className="h-4 w-4" />
               <span className="text-xs font-medium">Sign Out</span>
             </Button>
@@ -330,8 +328,7 @@ export default function DashboardLayout({
           <Button
             variant="outline"
             size="icon"
-            className="fixed left-4 top-4 z-40 h-10 w-10 shadow-md"
-          >
+            className="fixed left-4 top-4 z-40 h-10 w-10 shadow-md">
             <Menu className="h-5 w-5" />
             <span className="sr-only">Toggle menu</span>
           </Button>

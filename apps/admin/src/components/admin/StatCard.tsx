@@ -107,9 +107,9 @@ export const StatCard = memo(function StatCard({
       <Card
         className={cn(
           'transition-all duration-200',
-          'border-border/50',
-          'bg-gradient-to-br from-card to-card/80',
-          'hover:shadow-2xl hover:-translate-y-0.5 hover:border-tup-primary/20',
+          'border-subtle',
+          'gradient-card-subtle',
+          'hover:shadow-2xl hover:-translate-y-0.5 hover:border-primary-subtle',
           className,
         )}
       >

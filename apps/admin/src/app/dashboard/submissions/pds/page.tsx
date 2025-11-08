@@ -15,15 +15,7 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { motion } from 'framer-motion';
-import {
-  Bar,
-  BarChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-  Legend,
-} from 'recharts';
+import { Bar, BarChart, Legend, XAxis, YAxis } from 'recharts';
 
 import {
   usePdsSubmissionsQuery,
@@ -78,6 +70,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+} from '@/components/ui/chart';
 
 // Available departments for filtering
 const DEPARTMENTS = [
@@ -161,13 +160,13 @@ const PdsSubmissionRow = memo(
                   <span className="sr-only">Actions</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="glass-dropdown">
                 <DropdownMenuItem onClick={() => setReviewDialogOpen(true)}>
                   <Eye className="mr-2 h-4 w-4" />
                   Quick Review
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href={`/dashboard/submissions/pds/${submission.submission.id}`}>
+                  <Link href={`/dashboard/submissions/pds/view/${submission.submission.id}`}>
                     View Details
                   </Link>
                 </DropdownMenuItem>
@@ -240,7 +239,7 @@ const PdsSubmissionRow = memo(
                   Close
                 </Button>
                 <Button asChild>
-                  <Link href={`/dashboard/submissions/pds/${submission.submission.id}`}>
+                  <Link href={`/dashboard/submissions/pds/view/${submission.submission.id}`}>
                     View Full Details
                   </Link>
                 </Button>
@@ -337,7 +336,23 @@ export default function PdsSubmissionsPage() {
           <CardDescription>Monthly submission counts by status</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
+          <ChartContainer
+            config={{
+              submitted: {
+                label: 'Submitted',
+                color: '#8B1538',
+              },
+              approved: {
+                label: 'Approved',
+                color: '#10b981',
+              },
+              rejected: {
+                label: 'Rejected',
+                color: '#ef4444',
+              },
+            }}
+            className="h-[300px]"
+          >
             <BarChart data={timelineData}>
               <XAxis
                 dataKey="month"
@@ -352,19 +367,13 @@ export default function PdsSubmissionsPage() {
                 tickLine={false}
                 axisLine={false}
               />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--background))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '0.5rem',
-                }}
-              />
-              <Legend />
-              <Bar dataKey="submitted" fill="#8B1538" name="Submitted" />
-              <Bar dataKey="approved" fill="#10b981" name="Approved" />
-              <Bar dataKey="rejected" fill="#ef4444" name="Rejected" />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartLegend content={<ChartLegendContent />} />
+              <Bar dataKey="submitted" fill="var(--color-submitted)" />
+              <Bar dataKey="approved" fill="var(--color-approved)" />
+              <Bar dataKey="rejected" fill="var(--color-rejected)" />
             </BarChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </CardContent>
       </Card>
 
@@ -384,13 +393,13 @@ export default function PdsSubmissionsPage() {
         </Tabs>
       </div>
 
-      {/* Filters Card */}
-      <Card className="glass-card">
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
+      {/* Filters Card - Fixed theme adaptivity */}
+      <Card className="border-muted/50 bg-card shadow-sm">
+        <CardHeader className="border-b border-subtle bg-muted/30">
+          <CardTitle className="text-base">Filters</CardTitle>
           <CardDescription>Search and filter submissions</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="flex flex-col gap-4">
             <div className="grid gap-4 md:grid-cols-2">
               {/* Search Input with animated icon */}
@@ -411,7 +420,7 @@ export default function PdsSubmissionsPage() {
                   onChange={handleSearchChange}
                   onFocus={() => setSearchFocused(true)}
                   onBlur={() => setSearchFocused(false)}
-                  className="pl-9"
+                  className="pl-9 bg-background"
                 />
               </div>
 
@@ -420,10 +429,10 @@ export default function PdsSubmissionsPage() {
                 value={departmentFilter}
                 onValueChange={setDepartmentFilter}
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Select department" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="glass-dropdown">
                   {DEPARTMENTS.map((dept) => (
                     <SelectItem key={dept.value} value={dept.value}>
                       {dept.label}
@@ -435,7 +444,7 @@ export default function PdsSubmissionsPage() {
 
             {/* Reset Filters */}
             {hasActiveFilters && (
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between rounded-lg bg-muted/50 px-4 py-3 border border-subtle">
                 <p className="text-sm text-muted-foreground">
                   {submissions?.length || 0} submission(s) found
                 </p>
