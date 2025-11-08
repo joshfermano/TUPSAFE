@@ -60,7 +60,19 @@
       "WebFetch(domain:magicui.design)",
       "mcp__serena__write_memory",
       "Bash(timeout 120 npm run build:*)",
-      "mcp__serena__get_symbols_overview"
+      "mcp__serena__get_symbols_overview",
+      "mcp__filesystem__directory_tree",
+      "mcp__filesystem__list_directory",
+      "mcp__shadcn__get_project_registries",
+      "mcp__shadcn__get_add_command_for_items",
+      "Bash(curl:*)",
+      "Bash(npm run build:admin:*)",
+      "Bash(npm run type-check:admin:*)",
+      "Bash(lsof:*)",
+      "mcp__serena__initial_instructions",
+      "mcp__serena__check_onboarding_performed",
+      "Bash(npm run dev:admin:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []

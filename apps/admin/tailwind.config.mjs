@@ -49,6 +49,11 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // TUP Manila Brand Colors (aliases for convenience)
+        tup: {
+          primary: "hsl(var(--primary))", // TUP Crimson
+          secondary: "hsl(var(--secondary))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

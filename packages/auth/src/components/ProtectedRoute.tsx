@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../context.js';
 import type { Role } from '@tupsafe/database';
 
@@ -21,7 +22,19 @@ export function ProtectedRoute({
   fallback,
   onUnauthorized,
 }: ProtectedRouteProps) {
+  const router = useRouter();
   const { user, profile, loading, hasRole, hasPermission } = useAuth();
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && requireAuth && !user) {
+      if (onUnauthorized) {
+        onUnauthorized();
+      } else {
+        router.push('/auth/login');
+      }
+    }
+  }, [loading, requireAuth, user, onUnauthorized, router]);
 
   // Show loading state while checking authentication
   if (loading) {
@@ -34,23 +47,9 @@ export function ProtectedRoute({
 
   // Check if authentication is required
   if (requireAuth && !user) {
-    if (onUnauthorized) {
-      onUnauthorized();
-      return null;
-    }
-    
     return fallback || (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Authentication Required</h2>
-          <p className="text-gray-600 mb-4">Please sign in to access this page.</p>
-          <a
-            href="/auth/login"
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-          >
-            Sign In
-          </a>
-        </div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
