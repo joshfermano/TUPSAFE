@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import {
   CheckCircle2,
@@ -90,19 +91,40 @@ export const StatusBadge = memo(function StatusBadge({
 }: StatusBadgeProps) {
   const config = statusConfig[status];
   const Icon = config.icon;
+  const shouldReduceMotion = useReducedMotion();
+
+  // Pulse animation for "reviewing" status
+  const pulseAnimation =
+    status === 'reviewing' && !shouldReduceMotion
+      ? {
+          scale: [1, 1.02, 1],
+          transition: {
+            duration: 2,
+            repeat: Infinity,
+            ease: 'easeInOut' as const,
+          },
+        }
+      : {};
 
   return (
-    <Badge
-      variant="outline"
-      className={cn(
-        'inline-flex items-center gap-1 font-medium transition-colors',
-        config.className,
-        className,
-      )}
+    <motion.span
+      layout
+      animate={pulseAnimation}
+      transition={{ duration: 0.3 }}
+      style={{ display: 'inline-flex' }}
     >
-      {showIcon && <Icon className="h-3 w-3" />}
-      {config.label}
-    </Badge>
+      <Badge
+        variant="outline"
+        className={cn(
+          'inline-flex items-center gap-1 font-medium transition-colors duration-300',
+          config.className,
+          className,
+        )}
+      >
+        {showIcon && <Icon className="h-3 w-3" />}
+        {config.label}
+      </Badge>
+    </motion.span>
   );
 });
 

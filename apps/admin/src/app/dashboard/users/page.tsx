@@ -11,7 +11,17 @@ import {
   MoreVertical,
   UserCheck,
   UserX,
+  Users,
 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import {
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 
 import {
   useUsersQuery,
@@ -24,6 +34,15 @@ import {
   StatusBadge,
   UserAvatar,
 } from '@/components/admin';
+import { PageTransition } from '@/components/PageTransition';
+import {
+  EnhancedTable,
+  EnhancedTableBody,
+  EnhancedTableCell,
+  EnhancedTableHead,
+  EnhancedTableHeader,
+  EnhancedTableRow,
+} from '@/components/admin/EnhancedTable';
 
 import {
   Card,
@@ -32,14 +51,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -81,8 +92,17 @@ const DEPARTMENTS = [
   { value: 'administration', label: 'Administration' },
 ];
 
+// Mock data for user growth chart (last 6 months)
+const getUserGrowthData = () => {
+  const months = ['Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov'];
+  return months.map((month, index) => ({
+    month,
+    users: 45 + index * 12 + Math.floor(Math.random() * 10),
+  }));
+};
+
 // User Row Component (memoized)
-const UserRow = memo(({ user }: { user: UserWithDetails }) => {
+const UserRow = memo(({ user, index }: { user: UserWithDetails; index: number }) => {
   const handleAction = useCallback((action: string) => {
     console.log(`Action: ${action} for user:`, user.profile.id);
     // TODO: Implement actions
@@ -91,8 +111,8 @@ const UserRow = memo(({ user }: { user: UserWithDetails }) => {
   const fullName = `${user.profile.firstName} ${user.profile.lastName}`;
 
   return (
-    <TableRow>
-      <TableCell>
+    <EnhancedTableRow index={index}>
+      <EnhancedTableCell>
         <div className="flex items-center gap-3">
           <UserAvatar
             user={{
@@ -107,24 +127,24 @@ const UserRow = memo(({ user }: { user: UserWithDetails }) => {
             <p className="text-sm text-muted-foreground">{user.profile.employeeId}</p>
           </div>
         </div>
-      </TableCell>
-      <TableCell>
+      </EnhancedTableCell>
+      <EnhancedTableCell>
         <Badge variant="outline" className="capitalize">
           {user.profile.role.replace('_', ' ')}
         </Badge>
-      </TableCell>
-      <TableCell className="hidden md:table-cell">
+      </EnhancedTableCell>
+      <EnhancedTableCell className="hidden md:table-cell">
         {user.department?.name || 'N/A'}
-      </TableCell>
-      <TableCell className="hidden lg:table-cell">
+      </EnhancedTableCell>
+      <EnhancedTableCell className="hidden lg:table-cell">
         {user.position?.title || 'N/A'}
-      </TableCell>
-      <TableCell>
+      </EnhancedTableCell>
+      <EnhancedTableCell>
         <StatusBadge
           status={user.profile.isActive ? 'active' : 'inactive'}
         />
-      </TableCell>
-      <TableCell>
+      </EnhancedTableCell>
+      <EnhancedTableCell>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -163,8 +183,8 @@ const UserRow = memo(({ user }: { user: UserWithDetails }) => {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </TableCell>
-    </TableRow>
+      </EnhancedTableCell>
+    </EnhancedTableRow>
   );
 });
 
@@ -192,6 +212,7 @@ export default function UsersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [departmentFilter, setDepartmentFilter] = useState('all');
+  const [searchFocused, setSearchFocused] = useState(false);
 
   // Build filters object
   const filters = useMemo<UsersFilters>(
@@ -205,6 +226,9 @@ export default function UsersPage() {
 
   // Fetch users with filters
   const { data: users, isLoading, isError, error } = useUsersQuery(filters);
+
+  // Mock user growth data
+  const userGrowthData = useMemo(() => getUserGrowthData(), []);
 
   // Handle search input with debounce effect
   const handleSearchChange = useCallback(
@@ -229,7 +253,7 @@ export default function UsersPage() {
     searchQuery || roleFilter !== 'all' || departmentFilter !== 'all';
 
   return (
-    <div className="space-y-6">
+    <PageTransition className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -244,8 +268,54 @@ export default function UsersPage() {
         </Button>
       </div>
 
-      {/* Filters Card */}
+      {/* User Growth Chart */}
       <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-primary" />
+            <CardTitle>User Growth Trend</CardTitle>
+          </div>
+          <CardDescription>User registration over the last 6 months</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={userGrowthData}>
+              <XAxis
+                dataKey="month"
+                stroke="hsl(var(--muted-foreground))"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                stroke="hsl(var(--muted-foreground))"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--background))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '0.5rem',
+                }}
+                labelStyle={{ color: 'hsl(var(--foreground))' }}
+              />
+              <Line
+                type="monotone"
+                dataKey="users"
+                stroke="#8B1538"
+                strokeWidth={2}
+                dot={{ fill: '#8B1538', r: 4 }}
+                activeDot={{ r: 6 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      {/* Filters Card */}
+      <Card className="glass-card">
         <CardHeader>
           <CardTitle>Filters</CardTitle>
           <CardDescription>Search and filter users</CardDescription>
@@ -253,13 +323,24 @@ export default function UsersPage() {
         <CardContent>
           <div className="flex flex-col gap-4">
             <div className="grid gap-4 md:grid-cols-3">
-              {/* Search Input */}
+              {/* Search Input with animated icon */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <motion.div
+                  animate={{
+                    scale: searchFocused ? 1.1 : 1,
+                    rotate: searchFocused ? 10 : 0,
+                  }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute left-3 top-1/2 -translate-y-1/2"
+                >
+                  <Search className="h-4 w-4 text-muted-foreground" />
+                </motion.div>
                 <Input
                   placeholder="Search users..."
                   value={searchQuery}
                   onChange={handleSearchChange}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setSearchFocused(false)}
                   className="pl-9"
                 />
               </div>
@@ -366,33 +447,33 @@ export default function UsersPage() {
           {/* Users Table */}
           {!isLoading && !isError && users && users.length > 0 && (
             <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead className="hidden md:table-cell">
+              <EnhancedTable>
+                <EnhancedTableHeader>
+                  <EnhancedTableRow animate={false}>
+                    <EnhancedTableHead>User</EnhancedTableHead>
+                    <EnhancedTableHead>Role</EnhancedTableHead>
+                    <EnhancedTableHead className="hidden md:table-cell">
                       Department
-                    </TableHead>
-                    <TableHead className="hidden lg:table-cell">
+                    </EnhancedTableHead>
+                    <EnhancedTableHead className="hidden lg:table-cell">
                       Position
-                    </TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-[50px]">
+                    </EnhancedTableHead>
+                    <EnhancedTableHead>Status</EnhancedTableHead>
+                    <EnhancedTableHead className="w-[50px]">
                       <span className="sr-only">Actions</span>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((user) => (
-                    <UserRow key={user.profile.id} user={user} />
+                    </EnhancedTableHead>
+                  </EnhancedTableRow>
+                </EnhancedTableHeader>
+                <EnhancedTableBody>
+                  {users.map((user, index) => (
+                    <UserRow key={user.profile.id} user={user} index={index} />
                   ))}
-                </TableBody>
-              </Table>
+                </EnhancedTableBody>
+              </EnhancedTable>
             </div>
           )}
         </CardContent>
       </Card>
-    </div>
+    </PageTransition>
   );
 }

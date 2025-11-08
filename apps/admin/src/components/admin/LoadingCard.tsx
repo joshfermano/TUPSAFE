@@ -3,6 +3,40 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
+const shimmerKeyframes = `
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.shimmer {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 0%,
+    hsl(var(--muted-foreground) / 0.1) 20%,
+    hsl(var(--muted)) 40%,
+    hsl(var(--muted))
+  );
+  background-size: 1000px 100%;
+}
+`;
+
+// Inject shimmer animation styles
+if (typeof document !== 'undefined') {
+  const styleId = 'loading-card-shimmer-styles';
+  if (!document.getElementById(styleId)) {
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = shimmerKeyframes;
+    document.head.appendChild(style);
+  }
+}
+
 interface LoadingCardProps {
   /** Number of cards to render */
   count?: number;
@@ -39,17 +73,17 @@ export const LoadingCard = memo(function LoadingCard({
           )}
         >
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-8 w-8 rounded-lg" />
+            <Skeleton className="h-4 w-24 shimmer" />
+            <Skeleton className="h-8 w-8 rounded-lg shimmer" />
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <Skeleton className="h-9 w-20" />
+              <Skeleton className="h-9 w-20 shimmer" />
 
               {showTrend && (
                 <div className="flex items-center gap-2">
-                  <Skeleton className="h-3 w-12" />
-                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-3 w-12 shimmer" />
+                  <Skeleton className="h-3 w-16 shimmer" />
                 </div>
               )}
             </div>

@@ -15,6 +15,15 @@ import {
   TrendingDown,
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
+import { motion } from 'framer-motion';
+import {
+  Area,
+  AreaChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 
 import {
   useSalnSubmissionsQuery,
@@ -27,6 +36,15 @@ import {
   StatusBadge,
   UserAvatar,
 } from '@/components/admin';
+import { PageTransition } from '@/components/PageTransition';
+import {
+  EnhancedTable,
+  EnhancedTableBody,
+  EnhancedTableCell,
+  EnhancedTableHead,
+  EnhancedTableHeader,
+  EnhancedTableRow,
+} from '@/components/admin/EnhancedTable';
 
 import {
   Card,
@@ -35,14 +53,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -93,6 +103,19 @@ const YEARS = (() => {
 // Status types
 type StatusType = 'all' | 'submitted' | 'reviewing' | 'approved' | 'rejected';
 
+// Mock data for net worth trend chart (average net worth over years)
+const getNetWorthTrendData = () => {
+  const currentYear = new Date().getFullYear();
+  const years = [];
+  for (let i = 5; i >= 0; i--) {
+    years.push({
+      year: (currentYear - i).toString(),
+      avgNetWorth: 800000 + i * 150000 + Math.floor(Math.random() * 100000),
+    });
+  }
+  return years;
+};
+
 // Format currency
 const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('en-PH', {
@@ -102,9 +125,40 @@ const formatCurrency = (amount: number): string => {
   }).format(amount);
 };
 
+// Custom hook for number counting animation
+const useCountingAnimation = (end: number, duration: number = 1500) => {
+  const [count, setCount] = React.useState(0);
+
+  React.useEffect(() => {
+    let startTime: number | null = null;
+    let animationFrame: number;
+
+    const animate = (currentTime: number) => {
+      if (!startTime) startTime = currentTime;
+      const progress = Math.min((currentTime - startTime) / duration, 1);
+
+      setCount(Math.floor(progress * end));
+
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(animate);
+      }
+    };
+
+    animationFrame = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
+    };
+  }, [end, duration]);
+
+  return count;
+};
+
 // SALN Submission Row Component (memoized)
 const SalnSubmissionRow = memo(
-  ({ submission }: { submission: SalnSubmissionWithDetails }) => {
+  ({ submission, index }: { submission: SalnSubmissionWithDetails; index: number }) => {
     const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
 
     const handleAction = useCallback((action: string) => {
@@ -116,15 +170,12 @@ const SalnSubmissionRow = memo(
       ? `${submission.user.firstName} ${submission.user.lastName}`
       : 'Unknown';
 
-    // Calculate year-over-year change - placeholder for now
-    const yoyChange = 0;
-    const hasIncrease = yoyChange > 0;
-    const hasDecrease = yoyChange < 0;
+    const netWorth = parseFloat(submission.submission.netWorth || '0');
 
     return (
       <>
-        <TableRow>
-          <TableCell>
+        <EnhancedTableRow index={index}>
+          <EnhancedTableCell>
             <div className="flex items-center gap-3">
               <UserAvatar
                 user={{
@@ -141,29 +192,27 @@ const SalnSubmissionRow = memo(
                 </p>
               </div>
             </div>
-          </TableCell>
-          <TableCell className="hidden md:table-cell">
+          </EnhancedTableCell>
+          <EnhancedTableCell className="hidden md:table-cell">
             <Badge variant="outline">{submission.submission.year}</Badge>
-          </TableCell>
-          <TableCell className="hidden lg:table-cell">
-            <div className="flex flex-col">
-              <span className="font-medium">
-                {formatCurrency(parseFloat(submission.submission.netWorth || '0'))}
-              </span>
-            </div>
-          </TableCell>
-          <TableCell className="hidden xl:table-cell">
+          </EnhancedTableCell>
+          <EnhancedTableCell className="hidden lg:table-cell">
+            <span className="font-medium">
+              {formatCurrency(netWorth)}
+            </span>
+          </EnhancedTableCell>
+          <EnhancedTableCell className="hidden xl:table-cell">
             {submission.department?.name || 'N/A'}
-          </TableCell>
-          <TableCell>
+          </EnhancedTableCell>
+          <EnhancedTableCell>
             <StatusBadge status={submission.submission.status} />
-          </TableCell>
-          <TableCell className="hidden 2xl:table-cell">
+          </EnhancedTableCell>
+          <EnhancedTableCell className="hidden 2xl:table-cell">
             {formatDistanceToNow(new Date(submission.submission.createdAt), {
               addSuffix: true,
             })}
-          </TableCell>
-          <TableCell>
+          </EnhancedTableCell>
+          <EnhancedTableCell>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -207,8 +256,8 @@ const SalnSubmissionRow = memo(
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-          </TableCell>
-        </TableRow>
+          </EnhancedTableCell>
+        </EnhancedTableRow>
 
         {/* Quick Review Dialog */}
         <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
@@ -225,7 +274,7 @@ const SalnSubmissionRow = memo(
                   <div>
                     <p className="text-sm font-medium">Net Worth</p>
                     <p className="text-lg font-semibold">
-                      {formatCurrency(parseFloat(submission.submission.netWorth || '0'))}
+                      {formatCurrency(netWorth)}
                     </p>
                   </div>
                   <div>
@@ -302,6 +351,7 @@ export default function SalnSubmissionsPage() {
   const [yearFilter, setYearFilter] = useState('all');
   const [departmentFilter, setDepartmentFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
 
   // Build filters object
   const filters = useMemo<SalnSubmissionsFilters>(
@@ -321,6 +371,9 @@ export default function SalnSubmissionsPage() {
     isError,
     error,
   } = useSalnSubmissionsQuery(filters);
+
+  // Mock net worth trend data
+  const netWorthTrendData = useMemo(() => getNetWorthTrendData(), []);
 
   // Handle search input
   const handleSearchChange = useCallback(
@@ -344,7 +397,7 @@ export default function SalnSubmissionsPage() {
     searchQuery;
 
   return (
-    <div className="space-y-6">
+    <PageTransition className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">SALN Submissions</h1>
@@ -353,6 +406,59 @@ export default function SalnSubmissionsPage() {
           submissions
         </p>
       </div>
+
+      {/* Net Worth Trend Chart */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            <CardTitle>Average Net Worth Trend</CardTitle>
+          </div>
+          <CardDescription>Year-over-year average net worth progression</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={netWorthTrendData}>
+              <defs>
+                <linearGradient id="netWorthGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#8B1538" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#8B1538" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <XAxis
+                dataKey="year"
+                stroke="hsl(var(--muted-foreground))"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                stroke="hsl(var(--muted-foreground))"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(value) => `₱${(value / 1000000).toFixed(1)}M`}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--background))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '0.5rem',
+                }}
+                formatter={(value: number) => [formatCurrency(value), 'Avg. Net Worth']}
+              />
+              <Area
+                type="monotone"
+                dataKey="avgNetWorth"
+                stroke="#8B1538"
+                strokeWidth={2}
+                fillOpacity={1}
+                fill="url(#netWorthGradient)"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
 
       {/* Status Tabs */}
       <Tabs
@@ -369,7 +475,7 @@ export default function SalnSubmissionsPage() {
       </Tabs>
 
       {/* Filters Card */}
-      <Card>
+      <Card className="glass-card">
         <CardHeader>
           <CardTitle>Filters</CardTitle>
           <CardDescription>Search and filter submissions</CardDescription>
@@ -377,18 +483,29 @@ export default function SalnSubmissionsPage() {
         <CardContent>
           <div className="flex flex-col gap-4">
             <div className="grid gap-4 md:grid-cols-3">
-              {/* Search Input */}
+              {/* Search Input with animated icon */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <motion.div
+                  animate={{
+                    scale: searchFocused ? 1.1 : 1,
+                    rotate: searchFocused ? 10 : 0,
+                  }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute left-3 top-1/2 -translate-y-1/2"
+                >
+                  <Search className="h-4 w-4 text-muted-foreground" />
+                </motion.div>
                 <Input
                   placeholder="Search by employee name..."
                   value={searchQuery}
                   onChange={handleSearchChange}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setSearchFocused(false)}
                   className="pl-9"
                 />
               </div>
 
-              {/* Year Filter */}
+              {/* Year Filter with smooth transition */}
               <Select value={yearFilter} onValueChange={setYearFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select year" />
@@ -492,41 +609,42 @@ export default function SalnSubmissionsPage() {
             submissions &&
             submissions.length > 0 && (
               <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Employee</TableHead>
-                      <TableHead className="hidden md:table-cell">
+                <EnhancedTable>
+                  <EnhancedTableHeader>
+                    <EnhancedTableRow animate={false}>
+                      <EnhancedTableHead>Employee</EnhancedTableHead>
+                      <EnhancedTableHead className="hidden md:table-cell">
                         Year
-                      </TableHead>
-                      <TableHead className="hidden lg:table-cell">
+                      </EnhancedTableHead>
+                      <EnhancedTableHead className="hidden lg:table-cell">
                         Net Worth
-                      </TableHead>
-                      <TableHead className="hidden xl:table-cell">
+                      </EnhancedTableHead>
+                      <EnhancedTableHead className="hidden xl:table-cell">
                         Department
-                      </TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="hidden 2xl:table-cell">
+                      </EnhancedTableHead>
+                      <EnhancedTableHead>Status</EnhancedTableHead>
+                      <EnhancedTableHead className="hidden 2xl:table-cell">
                         Submitted
-                      </TableHead>
-                      <TableHead className="w-[50px]">
+                      </EnhancedTableHead>
+                      <EnhancedTableHead className="w-[50px]">
                         <span className="sr-only">Actions</span>
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {submissions.map((submission) => (
+                      </EnhancedTableHead>
+                    </EnhancedTableRow>
+                  </EnhancedTableHeader>
+                  <EnhancedTableBody>
+                    {submissions.map((submission, index) => (
                       <SalnSubmissionRow
                         key={submission.submission.id}
                         submission={submission}
+                        index={index}
                       />
                     ))}
-                  </TableBody>
-                </Table>
+                  </EnhancedTableBody>
+                </EnhancedTable>
               </div>
             )}
         </CardContent>
       </Card>
-    </div>
+    </PageTransition>
   );
 }

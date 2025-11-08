@@ -1,7 +1,49 @@
-import { memo } from 'react';
+import { memo, useEffect, useState } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { ArrowDown, ArrowUp, LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+/**
+ * Custom hook for animating number counting
+ * @param end - The target number to count to
+ * @param duration - Duration of the animation in milliseconds (default: 1000ms)
+ */
+function useCountAnimation(end: number, duration = 1000): number {
+  const [count, setCount] = useState(0);
+  const shouldReduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    // Skip animation if user prefers reduced motion
+    if (shouldReduceMotion) {
+      setCount(end);
+      return;
+    }
+
+    const startTime = Date.now();
+    const startValue = 0;
+
+    const updateCount = () => {
+      const currentTime = Date.now();
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Easing function for smooth animation (easeOutExpo)
+      const easeOutExpo = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      const currentCount = Math.floor(startValue + (end - startValue) * easeOutExpo);
+
+      setCount(currentCount);
+
+      if (progress < 1) {
+        requestAnimationFrame(updateCount);
+      }
+    };
+
+    requestAnimationFrame(updateCount);
+  }, [end, duration, shouldReduceMotion]);
+
+  return count;
+}
 
 interface TrendData {
   /** Trend direction */
@@ -52,55 +94,68 @@ export const StatCard = memo(function StatCard({
   description,
   className,
 }: StatCardProps) {
+  const shouldReduceMotion = useReducedMotion();
+  const numericValue = typeof value === 'number' ? value : 0;
+  const animatedValue = useCountAnimation(numericValue, 1000);
+
   return (
-    <Card
-      className={cn(
-        'transition-all duration-300 hover:shadow-lg hover:scale-[1.02]',
-        'border-border/50 hover:border-tup-primary/20',
-        'bg-gradient-to-br from-card to-card/80',
-        className,
-      )}
+    <motion.div
+      initial={shouldReduceMotion ? {} : { opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: 'easeOut' as const }}
     >
-      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-        <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
-        <div className="p-2 rounded-lg bg-tup-primary/10">
-          <Icon className="h-4 w-4 text-tup-primary" />
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-1">
-          <p className="text-3xl font-bold tracking-tight text-foreground">
-            {typeof value === 'number' ? value.toLocaleString() : value}
-          </p>
+      <Card
+        className={cn(
+          'transition-all duration-200',
+          'border-border/50',
+          'bg-gradient-to-br from-card to-card/80',
+          'hover:shadow-2xl hover:-translate-y-0.5 hover:border-tup-primary/20',
+          className,
+        )}
+      >
+        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+          <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
+          <div className="p-2 rounded-lg bg-tup-primary/10">
+            <Icon className="h-4 w-4 text-tup-primary" />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-1">
+            <p className="text-3xl font-bold tracking-tight text-foreground">
+              {typeof value === 'number'
+                ? animatedValue.toLocaleString()
+                : value}
+            </p>
 
-          {(trend || description) && (
-            <div className="flex items-center gap-2 text-xs">
-              {trend && (
-                <div
-                  className={cn(
-                    'inline-flex items-center gap-1 font-medium',
-                    trend.isPositive
-                      ? 'text-green-600 dark:text-green-400'
-                      : 'text-red-600 dark:text-red-400',
-                  )}
-                >
-                  {trend.direction === 'up' ? (
-                    <ArrowUp className="h-3 w-3" />
-                  ) : (
-                    <ArrowDown className="h-3 w-3" />
-                  )}
-                  <span>{trend.percentage}%</span>
-                </div>
-              )}
+            {(trend || description) && (
+              <div className="flex items-center gap-2 text-xs">
+                {trend && (
+                  <div
+                    className={cn(
+                      'inline-flex items-center gap-1 font-medium',
+                      trend.isPositive
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-red-600 dark:text-red-400',
+                    )}
+                  >
+                    {trend.direction === 'up' ? (
+                      <ArrowUp className="h-3 w-3" />
+                    ) : (
+                      <ArrowDown className="h-3 w-3" />
+                    )}
+                    <span>{trend.percentage}%</span>
+                  </div>
+                )}
 
-              {description && (
-                <span className="text-muted-foreground">{description}</span>
-              )}
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+                {description && (
+                  <span className="text-muted-foreground">{description}</span>
+                )}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 });
 

@@ -75,6 +75,24 @@
     border-color: hsl(var(--border));
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
@@ -86,5 +104,110 @@
   .theme-transitioning *::before,
   .theme-transitioning *::after {
     transition: none !important;
+  }
+}
+
+@layer utilities {
+  /* Glassmorphism utilities */
+  .glass {
+    @apply backdrop-blur-xl bg-white/95 dark:bg-gray-950/95 saturate-150;
+  }
+
+  .glass-card {
+    @apply backdrop-blur-lg bg-white/90 dark:bg-gray-950/90 saturate-150 border border-white/20 dark:border-gray-800/50;
+  }
+
+  .glass-nav {
+    @apply backdrop-blur-md bg-white/80 dark:bg-gray-950/80 saturate-150 border-b border-white/20 dark:border-gray-800/50;
+  }
+
+  /* Gradient utilities - subtle and professional */
+  .gradient-primary {
+    background: linear-gradient(to right, hsl(var(--primary) / 0.9), hsl(var(--primary)));
+  }
+
+  .gradient-primary-soft {
+    background: linear-gradient(to bottom right, hsl(var(--primary) / 0.1), hsl(var(--primary) / 0.05), transparent);
+  }
+
+  .gradient-muted {
+    background: linear-gradient(to bottom right, hsl(var(--muted) / 0.5), hsl(var(--muted) / 0.3));
+  }
+
+  .gradient-shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+  }
+
+  /* Shimmer effect for loading states */
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
+
+  .shimmer {
+    animation: shimmer 2s infinite linear;
+    background: linear-gradient(
+      to right,
+      transparent 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 100%
+    );
+    background-size: 1000px 100%;
+  }
+
+  .shimmer-dark {
+    animation: shimmer 2s infinite linear;
+    background: linear-gradient(
+      to right,
+      transparent 0%,
+      rgba(255, 255, 255, 0.05) 50%,
+      transparent 100%
+    );
+    background-size: 1000px 100%;
+  }
+
+  /* Professional shadow utilities */
+  .shadow-glow-primary {
+    box-shadow: 0 0 20px rgba(139, 21, 56, 0.1);
+  }
+
+  .shadow-glow-primary-lg {
+    box-shadow: 0 0 40px rgba(139, 21, 56, 0.15);
+  }
+
+  /* Stagger animation utilities */
+  .stagger-item {
+    opacity: 0;
+    animation: fade-in-up 0.4s ease-out forwards;
+  }
+
+  .stagger-delay-1 {
+    animation-delay: 0.1s;
+  }
+
+  .stagger-delay-2 {
+    animation-delay: 0.2s;
+  }
+
+  .stagger-delay-3 {
+    animation-delay: 0.3s;
+  }
+
+  .stagger-delay-4 {
+    animation-delay: 0.4s;
+  }
+
+  .stagger-delay-5 {
+    animation-delay: 0.5s;
   }
 }
