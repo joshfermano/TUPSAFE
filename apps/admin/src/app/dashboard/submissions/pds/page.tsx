@@ -11,8 +11,19 @@ import {
   Search,
   CheckCircle,
   XCircle,
+  TrendingUp,
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
+import { motion } from 'framer-motion';
+import {
+  Bar,
+  BarChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+  Legend,
+} from 'recharts';
 
 import {
   usePdsSubmissionsQuery,
@@ -25,6 +36,15 @@ import {
   StatusBadge,
   UserAvatar,
 } from '@/components/admin';
+import { PageTransition } from '@/components/PageTransition';
+import {
+  EnhancedTable,
+  EnhancedTableBody,
+  EnhancedTableCell,
+  EnhancedTableHead,
+  EnhancedTableHeader,
+  EnhancedTableRow,
+} from '@/components/admin/EnhancedTable';
 
 import {
   Card,
@@ -33,14 +53,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -79,9 +91,20 @@ const DEPARTMENTS = [
 // Status types
 type StatusType = 'all' | 'submitted' | 'reviewing' | 'approved' | 'rejected';
 
+// Mock data for submission timeline chart (monthly counts by status)
+const getSubmissionTimelineData = () => {
+  const months = ['Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov'];
+  return months.map((month) => ({
+    month,
+    submitted: Math.floor(Math.random() * 15) + 10,
+    approved: Math.floor(Math.random() * 12) + 5,
+    rejected: Math.floor(Math.random() * 5) + 1,
+  }));
+};
+
 // PDS Submission Row Component (memoized)
 const PdsSubmissionRow = memo(
-  ({ submission }: { submission: PdsSubmissionWithDetails }) => {
+  ({ submission, index }: { submission: PdsSubmissionWithDetails; index: number }) => {
     const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
 
     const handleAction = useCallback((action: string) => {
@@ -95,8 +118,8 @@ const PdsSubmissionRow = memo(
 
     return (
       <>
-        <TableRow>
-          <TableCell>
+        <EnhancedTableRow index={index}>
+          <EnhancedTableCell>
             <div className="flex items-center gap-3">
               <UserAvatar
                 user={{
@@ -113,24 +136,24 @@ const PdsSubmissionRow = memo(
                 </p>
               </div>
             </div>
-          </TableCell>
-          <TableCell className="hidden md:table-cell">
+          </EnhancedTableCell>
+          <EnhancedTableCell className="hidden md:table-cell">
             {submission.department?.name || 'N/A'}
-          </TableCell>
-          <TableCell>
+          </EnhancedTableCell>
+          <EnhancedTableCell>
             <StatusBadge status={submission.submission.status} />
-          </TableCell>
-          <TableCell className="hidden lg:table-cell">
+          </EnhancedTableCell>
+          <EnhancedTableCell className="hidden lg:table-cell">
             {formatDistanceToNow(new Date(submission.submission.createdAt), {
               addSuffix: true,
             })}
-          </TableCell>
-          <TableCell className="hidden xl:table-cell">
+          </EnhancedTableCell>
+          <EnhancedTableCell className="hidden xl:table-cell">
             {submission.submission.updatedAt
               ? format(new Date(submission.submission.updatedAt), 'MMM d, yyyy')
               : 'N/A'}
-          </TableCell>
-          <TableCell>
+          </EnhancedTableCell>
+          <EnhancedTableCell>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -174,8 +197,8 @@ const PdsSubmissionRow = memo(
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-          </TableCell>
-        </TableRow>
+          </EnhancedTableCell>
+        </EnhancedTableRow>
 
         {/* Quick Review Dialog */}
         <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
@@ -254,6 +277,7 @@ export default function PdsSubmissionsPage() {
   const [statusFilter, setStatusFilter] = useState<StatusType>('all');
   const [departmentFilter, setDepartmentFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
 
   // Build filters object
   const filters = useMemo<PdsSubmissionsFilters>(
@@ -273,6 +297,9 @@ export default function PdsSubmissionsPage() {
     error,
   } = usePdsSubmissionsQuery(filters);
 
+  // Mock submission timeline data
+  const timelineData = useMemo(() => getSubmissionTimelineData(), []);
+
   // Handle search input
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -291,7 +318,7 @@ export default function PdsSubmissionsPage() {
     statusFilter !== 'all' || departmentFilter !== 'all' || searchQuery;
 
   return (
-    <div className="space-y-6">
+    <PageTransition className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">PDS Submissions</h1>
@@ -300,22 +327,65 @@ export default function PdsSubmissionsPage() {
         </p>
       </div>
 
-      {/* Status Tabs */}
-      <Tabs
-        value={statusFilter}
-        onValueChange={(value) => setStatusFilter(value as StatusType)}
-      >
-        <TabsList>
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="submitted">Submitted</TabsTrigger>
-          <TabsTrigger value="reviewing">Reviewing</TabsTrigger>
-          <TabsTrigger value="approved">Approved</TabsTrigger>
-          <TabsTrigger value="rejected">Rejected</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      {/* Submission Timeline Chart */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            <CardTitle>Submission Timeline</CardTitle>
+          </div>
+          <CardDescription>Monthly submission counts by status</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={timelineData}>
+              <XAxis
+                dataKey="month"
+                stroke="hsl(var(--muted-foreground))"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                stroke="hsl(var(--muted-foreground))"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--background))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '0.5rem',
+                }}
+              />
+              <Legend />
+              <Bar dataKey="submitted" fill="#8B1538" name="Submitted" />
+              <Bar dataKey="approved" fill="#10b981" name="Approved" />
+              <Bar dataKey="rejected" fill="#ef4444" name="Rejected" />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      {/* Status Tabs with animated indicator */}
+      <div className="relative">
+        <Tabs
+          value={statusFilter}
+          onValueChange={(value) => setStatusFilter(value as StatusType)}
+        >
+          <TabsList className="relative">
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="submitted">Submitted</TabsTrigger>
+            <TabsTrigger value="reviewing">Reviewing</TabsTrigger>
+            <TabsTrigger value="approved">Approved</TabsTrigger>
+            <TabsTrigger value="rejected">Rejected</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
       {/* Filters Card */}
-      <Card>
+      <Card className="glass-card">
         <CardHeader>
           <CardTitle>Filters</CardTitle>
           <CardDescription>Search and filter submissions</CardDescription>
@@ -323,13 +393,24 @@ export default function PdsSubmissionsPage() {
         <CardContent>
           <div className="flex flex-col gap-4">
             <div className="grid gap-4 md:grid-cols-2">
-              {/* Search Input */}
+              {/* Search Input with animated icon */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <motion.div
+                  animate={{
+                    scale: searchFocused ? 1.1 : 1,
+                    rotate: searchFocused ? 10 : 0,
+                  }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute left-3 top-1/2 -translate-y-1/2"
+                >
+                  <Search className="h-4 w-4 text-muted-foreground" />
+                </motion.div>
                 <Input
                   placeholder="Search by employee name..."
                   value={searchQuery}
                   onChange={handleSearchChange}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setSearchFocused(false)}
                   className="pl-9"
                 />
               </div>
@@ -424,38 +505,39 @@ export default function PdsSubmissionsPage() {
             submissions &&
             submissions.length > 0 && (
               <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Employee</TableHead>
-                      <TableHead className="hidden md:table-cell">
+                <EnhancedTable>
+                  <EnhancedTableHeader>
+                    <EnhancedTableRow animate={false}>
+                      <EnhancedTableHead>Employee</EnhancedTableHead>
+                      <EnhancedTableHead className="hidden md:table-cell">
                         Department
-                      </TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="hidden lg:table-cell">
+                      </EnhancedTableHead>
+                      <EnhancedTableHead>Status</EnhancedTableHead>
+                      <EnhancedTableHead className="hidden lg:table-cell">
                         Submitted
-                      </TableHead>
-                      <TableHead className="hidden xl:table-cell">
+                      </EnhancedTableHead>
+                      <EnhancedTableHead className="hidden xl:table-cell">
                         Reviewed
-                      </TableHead>
-                      <TableHead className="w-[50px]">
+                      </EnhancedTableHead>
+                      <EnhancedTableHead className="w-[50px]">
                         <span className="sr-only">Actions</span>
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {submissions.map((submission) => (
+                      </EnhancedTableHead>
+                    </EnhancedTableRow>
+                  </EnhancedTableHeader>
+                  <EnhancedTableBody>
+                    {submissions.map((submission, index) => (
                       <PdsSubmissionRow
                         key={submission.submission.id}
                         submission={submission}
+                        index={index}
                       />
                     ))}
-                  </TableBody>
-                </Table>
+                  </EnhancedTableBody>
+                </EnhancedTable>
               </div>
             )}
         </CardContent>
       </Card>
-    </div>
+    </PageTransition>
   );
 }
