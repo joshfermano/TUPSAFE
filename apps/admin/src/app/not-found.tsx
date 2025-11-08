@@ -19,11 +19,11 @@ export default function NotFound() {
   const router = useRouter();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-primary/5">
+    <div className="flex min-h-screen items-center justify-center" style={{ background: 'linear-gradient(to bottom right, hsl(var(--background)), hsl(var(--background)), hsl(var(--primary) / 0.05))' }}>
       {/* Background Pattern */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-primary/10 to-transparent rounded-full blur-3xl" />
-        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-primary/10 to-transparent rounded-full blur-3xl" />
+        <div className="absolute -top-1/2 -left-1/2 w-full h-full gradient-primary-glow rounded-full blur-3xl" />
+        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full gradient-primary-glow-tl rounded-full blur-3xl" />
       </div>
 
       {/* Main Content */}
@@ -38,7 +38,7 @@ export default function NotFound() {
 
         {/* 404 Text with Gradient */}
         <h1
-          className="text-8xl sm:text-9xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent animate-in slide-in-from-bottom duration-700 delay-150"
+          className="text-8xl sm:text-9xl font-bold gradient-primary-accent bg-clip-text text-transparent animate-in slide-in-from-bottom duration-700 delay-150"
           aria-label="404 Error"
         >
           404
@@ -77,7 +77,7 @@ export default function NotFound() {
         </div>
 
         {/* Additional Help Text */}
-        <div className="mt-12 pt-8 border-t border-border/50 animate-in slide-in-from-bottom duration-700 delay-500">
+        <div className="mt-12 pt-8 border-t border-subtle animate-in slide-in-from-bottom duration-700 delay-500">
           <p className="text-xs text-muted-foreground/70">
             If you believe this is an error, please contact the administrator.
           </p>

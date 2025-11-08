@@ -115,7 +115,7 @@ export function usePdsSubmissionsQuery(filters: PdsSubmissionsFilters = {}) {
   });
 
   /**
-   * Query for a complete PDS submission with all sections
+   * Query for a complete PDS submission with all sections and user details
    */
   const useCompleteSubmission = (submissionId: string | null) => {
     return useQuery({
@@ -125,7 +125,20 @@ export function usePdsSubmissionsQuery(filters: PdsSubmissionsFilters = {}) {
 
         await new Promise((resolve) => setTimeout(resolve, 150));
 
-        return getCompletePdsSubmission(submissionId);
+        const completePds = getCompletePdsSubmission(submissionId);
+        if (!completePds) return null;
+
+        // Add user details
+        const user = MockDatabase.getProfile(completePds.submission.userId);
+        const department = user?.departmentId ? MockDatabase.getDepartment(user.departmentId) : null;
+        const position = user?.positionId ? MockDatabase.getPosition(user.positionId) : null;
+
+        return {
+          ...completePds,
+          user,
+          department,
+          position,
+        };
       },
       enabled: !!submissionId,
       staleTime: 5 * 60 * 1000,

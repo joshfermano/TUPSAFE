@@ -268,6 +268,44 @@ export function filterUsersByActiveStatus(users: Profile[], activeOnly: boolean)
 }
 
 /**
+ * Search submissions by employee name or employee ID
+ *
+ * Searches through firstName, lastName, full name, and employee ID fields
+ *
+ * @param submissions - Array of submissions with userId
+ * @param query - Search query string
+ * @returns Filtered submissions matching the search query
+ */
+export function searchSubmissionsByName<T extends PdsSubmission | SalnSubmission>(
+  submissions: T[],
+  query: string | null | undefined
+): T[] {
+  if (!query || query.trim() === '') {
+    return submissions;
+  }
+
+  const lowercaseQuery = query.toLowerCase().trim();
+
+  return submissions.filter((submission) => {
+    const user = MockDatabase.getProfile(submission.userId);
+    if (!user) return false;
+
+    // Search in multiple fields for better user experience
+    const fullName = `${user.firstName} ${user.lastName}`.toLowerCase();
+    const firstName = user.firstName.toLowerCase();
+    const lastName = user.lastName.toLowerCase();
+    const employeeId = user.employeeId.toLowerCase();
+
+    return (
+      firstName.includes(lowercaseQuery) ||
+      lastName.includes(lowercaseQuery) ||
+      fullName.includes(lowercaseQuery) ||
+      employeeId.includes(lowercaseQuery)
+    );
+  });
+}
+
+/**
  * Sort submissions by date
  *
  * @param submissions - Array of submissions

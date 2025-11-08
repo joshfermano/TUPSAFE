@@ -86,11 +86,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10 flex items-center justify-center p-4">
+    <div className="min-h-screen gradient-primary-bg flex items-center justify-center p-4">
       {/* Background Pattern */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-primary/10 to-transparent rounded-full blur-3xl" />
-        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-primary/10 to-transparent rounded-full blur-3xl" />
+        <div className="absolute -top-1/2 -left-1/2 w-full h-full gradient-primary-glow rounded-full blur-3xl" />
+        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full gradient-primary-glow-tl rounded-full blur-3xl" />
       </div>
 
       <div className="w-full max-w-6xl grid md:grid-cols-2 gap-8 items-center">
@@ -99,7 +99,7 @@ export default function LoginPage() {
           <div className="space-y-4">
             {/* Logo/Brand Section */}
             <div className="flex items-center space-x-3">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg">
+              <div className="w-16 h-16 gradient-primary-header rounded-2xl flex items-center justify-center shadow-lg">
                 <Shield className="w-8 h-8 text-primary-foreground" />
               </div>
               <div>

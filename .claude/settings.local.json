@@ -72,7 +72,15 @@
       "mcp__serena__initial_instructions",
       "mcp__serena__check_onboarding_performed",
       "Bash(npm run dev:admin:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(git -C /home/joshfermano/Thesis/smart-gov/apps/admin status --short)",
+      "Bash(npx recharts:*)",
+      "Bash(timeout 30 npm run dev:*)",
+      "Bash(fuser:*)",
+      "Bash(git add:*)",
+      "mcp__serena__find_file",
+      "mcp__serena__search_for_pattern",
+      "Bash(pkill:*)"
     ],
     "deny": [],
     "ask": []

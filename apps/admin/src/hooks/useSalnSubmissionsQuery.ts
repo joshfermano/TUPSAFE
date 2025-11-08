@@ -122,7 +122,7 @@ export function useSalnSubmissionsQuery(filters: SalnSubmissionsFilters = {}) {
   });
 
   /**
-   * Query for a complete SALN submission with all financial data
+   * Query for a complete SALN submission with all financial data and user details
    */
   const useCompleteSubmission = (submissionId: string | null) => {
     return useQuery({
@@ -132,7 +132,20 @@ export function useSalnSubmissionsQuery(filters: SalnSubmissionsFilters = {}) {
 
         await new Promise((resolve) => setTimeout(resolve, 150));
 
-        return getCompleteSalnSubmission(submissionId);
+        const completeSaln = getCompleteSalnSubmission(submissionId);
+        if (!completeSaln) return null;
+
+        // Add user details
+        const user = MockDatabase.getProfile(completeSaln.submission.userId);
+        const department = user?.departmentId ? MockDatabase.getDepartment(user.departmentId) : null;
+        const position = user?.positionId ? MockDatabase.getPosition(user.positionId) : null;
+
+        return {
+          ...completeSaln,
+          user,
+          department,
+          position,
+        };
       },
       enabled: !!submissionId,
       staleTime: 5 * 60 * 1000,

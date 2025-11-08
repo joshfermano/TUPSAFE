@@ -16,14 +16,7 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { motion } from 'framer-motion';
-import {
-  Area,
-  AreaChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { Area, AreaChart, XAxis, YAxis } from 'recharts';
 
 import {
   useSalnSubmissionsQuery,
@@ -79,6 +72,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart';
 
 // Available departments for filtering
 const DEPARTMENTS = [
@@ -220,13 +218,13 @@ const SalnSubmissionRow = memo(
                   <span className="sr-only">Actions</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="glass-dropdown">
                 <DropdownMenuItem onClick={() => setReviewDialogOpen(true)}>
                   <Eye className="mr-2 h-4 w-4" />
                   Quick Review
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href={`/dashboard/submissions/saln/${submission.submission.id}`}>
+                  <Link href={`/dashboard/submissions/saln/view/${submission.submission.id}`}>
                     View Details
                   </Link>
                 </DropdownMenuItem>
@@ -313,7 +311,7 @@ const SalnSubmissionRow = memo(
                   Close
                 </Button>
                 <Button asChild>
-                  <Link href={`/dashboard/submissions/saln/${submission.submission.id}`}>
+                  <Link href={`/dashboard/submissions/saln/view/${submission.submission.id}`}>
                     View Full Details
                   </Link>
                 </Button>
@@ -417,7 +415,15 @@ export default function SalnSubmissionsPage() {
           <CardDescription>Year-over-year average net worth progression</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
+          <ChartContainer
+            config={{
+              avgNetWorth: {
+                label: 'Avg. Net Worth',
+                color: '#8B1538',
+              },
+            }}
+            className="h-[300px]"
+          >
             <AreaChart data={netWorthTrendData}>
               <defs>
                 <linearGradient id="netWorthGradient" x1="0" y1="0" x2="0" y2="1">
@@ -439,24 +445,23 @@ export default function SalnSubmissionsPage() {
                 axisLine={false}
                 tickFormatter={(value) => `₱${(value / 1000000).toFixed(1)}M`}
               />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--background))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '0.5rem',
-                }}
-                formatter={(value: number) => [formatCurrency(value), 'Avg. Net Worth']}
+              <ChartTooltip
+                content={
+                  <ChartTooltipContent
+                    formatter={(value) => formatCurrency(Number(value))}
+                  />
+                }
               />
               <Area
                 type="monotone"
                 dataKey="avgNetWorth"
-                stroke="#8B1538"
+                stroke="var(--color-avgNetWorth)"
                 strokeWidth={2}
                 fillOpacity={1}
                 fill="url(#netWorthGradient)"
               />
             </AreaChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </CardContent>
       </Card>
 
@@ -474,13 +479,13 @@ export default function SalnSubmissionsPage() {
         </TabsList>
       </Tabs>
 
-      {/* Filters Card */}
-      <Card className="glass-card">
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
+      {/* Filters Card - Fixed theme adaptivity */}
+      <Card className="border-muted/50 bg-card shadow-sm">
+        <CardHeader className="border-b border-subtle bg-muted/30">
+          <CardTitle className="text-base">Filters</CardTitle>
           <CardDescription>Search and filter submissions</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="flex flex-col gap-4">
             <div className="grid gap-4 md:grid-cols-3">
               {/* Search Input with animated icon */}
@@ -501,16 +506,16 @@ export default function SalnSubmissionsPage() {
                   onChange={handleSearchChange}
                   onFocus={() => setSearchFocused(true)}
                   onBlur={() => setSearchFocused(false)}
-                  className="pl-9"
+                  className="pl-9 bg-background"
                 />
               </div>
 
               {/* Year Filter with smooth transition */}
               <Select value={yearFilter} onValueChange={setYearFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Select year" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="glass-dropdown">
                   {YEARS.map((year) => (
                     <SelectItem key={year.value} value={year.value}>
                       {year.label}
@@ -524,10 +529,10 @@ export default function SalnSubmissionsPage() {
                 value={departmentFilter}
                 onValueChange={setDepartmentFilter}
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Select department" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="glass-dropdown">
                   {DEPARTMENTS.map((dept) => (
                     <SelectItem key={dept.value} value={dept.value}>
                       {dept.label}
@@ -539,7 +544,7 @@ export default function SalnSubmissionsPage() {
 
             {/* Reset Filters */}
             {hasActiveFilters && (
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between rounded-lg bg-muted/50 px-4 py-3 border border-subtle">
                 <p className="text-sm text-muted-foreground">
                   {submissions?.length || 0} submission(s) found
                 </p>

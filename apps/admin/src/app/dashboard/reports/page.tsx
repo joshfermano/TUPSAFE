@@ -15,13 +15,10 @@ import {
   Bar,
   BarChart,
   Cell,
-  Legend,
   Line,
   LineChart,
   Pie,
   PieChart,
-  ResponsiveContainer,
-  Tooltip,
   XAxis,
   YAxis,
 } from 'recharts';
@@ -38,6 +35,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+} from '@/components/ui/chart';
 
 /**
  * Mock Data Generators
@@ -135,6 +139,13 @@ const ComplianceOverviewCard = memo(() => {
     rate: Math.random() * 5 + 88,
   }));
 
+  const chartConfig = {
+    rate: {
+      label: 'Compliance Rate',
+      color: '#8B1538',
+    },
+  };
+
   const content = (
     <Card className="bg-gradient-to-br from-[#8B1538]/5 to-transparent">
       <CardHeader>
@@ -165,26 +176,24 @@ const ComplianceOverviewCard = memo(() => {
           <p className="text-xs text-muted-foreground">vs previous period</p>
 
           {/* Mini area chart */}
-          <div className="h-[60px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trendData}>
-                <defs>
-                  <linearGradient id="miniTrend" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8B1538" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#8B1538" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <Area
-                  type="monotone"
-                  dataKey="rate"
-                  stroke="#8B1538"
-                  strokeWidth={1.5}
-                  fillOpacity={1}
-                  fill="url(#miniTrend)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          <ChartContainer config={chartConfig} className="h-[60px]">
+            <AreaChart data={trendData}>
+              <defs>
+                <linearGradient id="miniTrend" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#8B1538" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#8B1538" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <Area
+                type="monotone"
+                dataKey="rate"
+                stroke="var(--color-rate)"
+                strokeWidth={1.5}
+                fillOpacity={1}
+                fill="url(#miniTrend)"
+              />
+            </AreaChart>
+          </ChartContainer>
         </div>
       </CardContent>
     </Card>
@@ -296,6 +305,13 @@ const DepartmentPerformanceCard = memo(() => {
     setPrefersReducedMotion(mediaQuery.matches);
   }, []);
 
+  const chartConfig = {
+    compliance: {
+      label: 'Compliance',
+      color: '#8B1538',
+    },
+  };
+
   const content = (
     <Card>
       <CardHeader>
@@ -305,44 +321,40 @@ const DepartmentPerformanceCard = memo(() => {
         <CardDescription>Compliance by department</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="h-[180px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={departmentData.slice(0, 4)} layout="vertical">
-              <XAxis type="number" domain={[0, 100]} hide />
-              <YAxis
-                type="category"
-                dataKey="department"
-                width={120}
-                tick={{ fontSize: 11 }}
-                tickLine={false}
-                axisLine={false}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                }}
-                formatter={(value: number) => [`${value}%`, 'Compliance']}
-              />
-              <Bar dataKey="compliance" radius={[0, 4, 4, 0]}>
-                {departmentData.slice(0, 4).map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={
-                      entry.compliance >= 95
-                        ? '#10b981'
-                        : entry.compliance >= 85
-                          ? '#f59e0b'
-                          : '#ef4444'
-                    }
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <ChartContainer config={chartConfig} className="h-[180px]">
+          <BarChart data={departmentData.slice(0, 4)} layout="vertical">
+            <XAxis type="number" domain={[0, 100]} hide />
+            <YAxis
+              type="category"
+              dataKey="department"
+              width={120}
+              tick={{ fontSize: 11 }}
+              tickLine={false}
+              axisLine={false}
+            />
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  formatter={(value) => `${Number(value)}%`}
+                />
+              }
+            />
+            <Bar dataKey="compliance" radius={[0, 4, 4, 0]}>
+              {departmentData.slice(0, 4).map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={
+                    entry.compliance >= 95
+                      ? '#10b981'
+                      : entry.compliance >= 85
+                        ? '#f59e0b'
+                        : '#ef4444'
+                  }
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ChartContainer>
       </CardContent>
     </Card>
   );
@@ -487,6 +499,31 @@ export default function ReportsPage() {
     );
   };
 
+  const dualLineChartConfig = {
+    pds: {
+      label: 'PDS Submissions',
+      color: '#8B1538',
+    },
+    saln: {
+      label: 'SALN Submissions',
+      color: '#4A90E2',
+    },
+  };
+
+  const departmentBarChartConfig = {
+    compliance: {
+      label: 'Compliance Rate',
+      color: '#8B1538',
+    },
+  };
+
+  const statusPieConfig = {
+    value: {
+      label: 'Count',
+      color: '#8B1538',
+    },
+  };
+
   return (
     <PageTransition>
       <div className="space-y-6">
@@ -526,65 +563,41 @@ export default function ReportsPage() {
             description="PDS and SALN submissions over the last 6 months"
             delay={0.4}
           >
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={submissionTrendData}>
-                  <defs>
-                    <linearGradient id="pdsFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#8B1538" stopOpacity={0.1} />
-                      <stop offset="95%" stopColor="#8B1538" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="salnFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4A90E2" stopOpacity={0.1} />
-                      <stop offset="95%" stopColor="#4A90E2" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis
-                    dataKey="month"
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                    }}
-                  />
-                  <Legend
-                    wrapperStyle={{ fontSize: '12px' }}
-                    iconType="line"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="pds"
-                    stroke="#8B1538"
-                    strokeWidth={2}
-                    name="PDS Submissions"
-                    dot={{ fill: '#8B1538', r: 4 }}
-                    activeDot={{ r: 6 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="saln"
-                    stroke="#4A90E2"
-                    strokeWidth={2}
-                    name="SALN Submissions"
-                    dot={{ fill: '#4A90E2', r: 4 }}
-                    activeDot={{ r: 6 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            <ChartContainer config={dualLineChartConfig} className="h-[300px]">
+              <LineChart data={submissionTrendData}>
+                <XAxis
+                  dataKey="month"
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <ChartLegend content={<ChartLegendContent />} />
+                <Line
+                  type="monotone"
+                  dataKey="pds"
+                  stroke="var(--color-pds)"
+                  strokeWidth={2}
+                  dot={{ fill: 'var(--color-pds)', r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="saln"
+                  stroke="var(--color-saln)"
+                  strokeWidth={2}
+                  dot={{ fill: 'var(--color-saln)', r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ChartContainer>
           </ChartCard>
 
           {/* Two-column layout for Bar and Pie charts */}
@@ -595,54 +608,50 @@ export default function ReportsPage() {
               description="All departments ranked by compliance rate"
               delay={0.5}
             >
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={departmentData} layout="vertical">
-                    <XAxis
-                      type="number"
-                      domain={[0, 100]}
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis
-                      type="category"
-                      dataKey="department"
-                      width={150}
-                      tick={{ fontSize: 11 }}
-                      tickLine={false}
-                      axisLine={false}
-                      stroke="hsl(var(--muted-foreground))"
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                      }}
-                      formatter={(value: number) => [`${value}%`, 'Compliance Rate']}
-                    />
-                    <Bar dataKey="compliance" radius={[0, 4, 4, 0]}>
-                      {departmentData.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={
-                            entry.compliance >= 95
-                              ? '#10b981'
-                              : entry.compliance >= 90
-                                ? '#8B1538'
-                                : entry.compliance >= 85
-                                  ? '#f59e0b'
-                                  : '#ef4444'
-                          }
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              <ChartContainer config={departmentBarChartConfig} className="h-[300px]">
+                <BarChart data={departmentData} layout="vertical">
+                  <XAxis
+                    type="number"
+                    domain={[0, 100]}
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="department"
+                    width={150}
+                    tick={{ fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={false}
+                    stroke="hsl(var(--muted-foreground))"
+                  />
+                  <ChartTooltip
+                    content={
+                      <ChartTooltipContent
+                        formatter={(value) => `${Number(value)}%`}
+                      />
+                    }
+                  />
+                  <Bar dataKey="compliance" radius={[0, 4, 4, 0]}>
+                    {departmentData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={
+                          entry.compliance >= 95
+                            ? '#10b981'
+                            : entry.compliance >= 90
+                              ? '#8B1538'
+                              : entry.compliance >= 85
+                                ? '#f59e0b'
+                                : '#ef4444'
+                        }
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ChartContainer>
             </ChartCard>
 
             {/* Status Distribution - Donut Chart */}
@@ -651,38 +660,35 @@ export default function ReportsPage() {
               description="Breakdown of all submission statuses"
               delay={0.6}
             >
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={statusData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={90}
-                      paddingAngle={2}
-                      dataKey="value"
-                      label={(entry: any) =>
-                        `${entry.name} ${(entry.percent * 100).toFixed(0)}%`
-                      }
-                      labelLine={{ stroke: 'hsl(var(--muted-foreground))' }}
-                    >
-                      {statusData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                      }}
-                      formatter={(value: number) => [value, 'Count']}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+              <ChartContainer config={statusPieConfig} className="h-[300px]">
+                <PieChart>
+                  <Pie
+                    data={statusData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={2}
+                    dataKey="value"
+                    label={(entry) => {
+                      const data = entry as unknown as { name: string; percent: number };
+                      return `${data.name} ${(data.percent * 100).toFixed(0)}%`;
+                    }}
+                    labelLine={{ stroke: 'hsl(var(--muted-foreground))' }}
+                  >
+                    {statusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip
+                    content={
+                      <ChartTooltipContent
+                        formatter={(value) => [Number(value), 'Count']}
+                      />
+                    }
+                  />
+                </PieChart>
+              </ChartContainer>
             </ChartCard>
           </div>
         </div>
