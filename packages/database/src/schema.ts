@@ -70,6 +70,19 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'system_update',
 ]);
 
+// Auth-related enums
+export const accountStatusEnum = pgEnum('account_status', [
+  'pending',
+  'active',
+  'suspended',
+  'rejected',
+]);
+export const otpTypeEnum = pgEnum('otp_type', [
+  'email_verification',
+  'login_challenge',
+  'password_reset',
+]);
+
 // Core User Management Tables
 export const profiles = pgTable(
   'profiles',
@@ -79,6 +92,7 @@ export const profiles = pgTable(
     firstName: text('first_name').notNull(),
     lastName: text('last_name').notNull(),
     middleName: text('middle_name'),
+    phoneNumber: text('phone_number'),
     role: roleEnum('role').default('employee').notNull(),
     departmentId: uuid('department_id'),
     positionId: uuid('position_id'),
@@ -87,6 +101,12 @@ export const profiles = pgTable(
     tenureStatus: text('tenure_status'), // Tenured, tenure-track, non-tenure track, contractual
     employmentType: text('employment_type'), // Full-time, part-time, adjunct
     campusAssignment: text('campus_assignment'), // Main campus or satellite campus
+    // Auth-related fields
+    accountStatus: accountStatusEnum('account_status').default('pending').notNull(),
+    emailVerifiedAt: timestamp('email_verified_at'),
+    approvedBy: uuid('approved_by'),
+    approvedAt: timestamp('approved_at'),
+    temporaryPassword: boolean('temporary_password').default(false).notNull(),
     isActive: boolean('is_active').default(true).notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -96,6 +116,7 @@ export const profiles = pgTable(
     roleIdx: index('profiles_role_idx').on(table.role),
     departmentIdIdx: index('profiles_department_id_idx').on(table.departmentId),
     isActiveIdx: index('profiles_is_active_idx').on(table.isActive),
+    accountStatusIdx: index('profiles_account_status_idx').on(table.accountStatus),
     // Composite index for common queries
     roleDepartmentIdx: index('profiles_role_department_idx').on(
       table.role,
@@ -813,6 +834,93 @@ export const salnSubmissionsRelations = relations(
   })
 );
 
+
+// Auth System Tables
+
+// OTP Verifications table - for email verification and login challenges
+export const otpVerifications = pgTable(
+  'otp_verifications',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .$defaultFn(() => v7()),
+    userId: uuid('user_id').notNull(),
+    code: text('code').notNull(), // 6-digit code
+    type: otpTypeEnum('type').notNull(),
+    expiresAt: timestamp('expires_at').notNull(),
+    verifiedAt: timestamp('verified_at'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index('otp_verifications_user_id_idx').on(table.userId),
+    expiresAtIdx: index('otp_verifications_expires_at_idx').on(table.expiresAt),
+    typeIdx: index('otp_verifications_type_idx').on(table.type),
+    userTypeIdx: index('otp_verifications_user_type_idx').on(table.userId, table.type),
+  })
+);
+
+// Pending Registrations table - admin approval queue
+export const pendingRegistrations = pgTable(
+  'pending_registrations',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .$defaultFn(() => v7()),
+    userId: uuid('user_id').notNull().unique(),
+    status: approvalStatusEnum('status').default('pending').notNull(),
+    adminNotes: text('admin_notes'),
+    approvedBy: uuid('approved_by'),
+    approvedAt: timestamp('approved_at'),
+    rejectedAt: timestamp('rejected_at'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index('pending_registrations_user_id_idx').on(table.userId),
+    statusIdx: index('pending_registrations_status_idx').on(table.status),
+    createdAtIdx: index('pending_registrations_created_at_idx').on(table.createdAt),
+  })
+);
+
+// Trusted Devices table - 30-day device trust
+export const trustedDevices = pgTable(
+  'trusted_devices',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .$defaultFn(() => v7()),
+    userId: uuid('user_id').notNull(),
+    deviceFingerprint: text('device_fingerprint').notNull(), // Hash of IP + User-Agent
+    browserInfo: text('browser_info'), // User-Agent string
+    ipAddress: inet('ip_address'),
+    trustedAt: timestamp('trusted_at').defaultNow().notNull(),
+    expiresAt: timestamp('expires_at').notNull(),
+    lastUsedAt: timestamp('last_used_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index('trusted_devices_user_id_idx').on(table.userId),
+    deviceFingerprintIdx: index('trusted_devices_device_fingerprint_idx').on(table.deviceFingerprint),
+    expiresAtIdx: index('trusted_devices_expires_at_idx').on(table.expiresAt),
+    userDeviceIdx: index('trusted_devices_user_device_idx').on(table.userId, table.deviceFingerprint),
+  })
+);
+
+// Employee ID Registry table - prevent collisions
+export const employeeIdRegistry = pgTable(
+  'employee_id_registry',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .$defaultFn(() => v7()),
+    employeeId: text('employee_id').unique().notNull(),
+    userId: uuid('user_id').notNull().unique(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    employeeIdIdx: index('employee_id_registry_employee_id_idx').on(table.employeeId),
+    userIdIdx: index('employee_id_registry_user_id_idx').on(table.userId),
+  })
+);
+
 // Export all tables for drizzle-kit
 export const schema = {
   profiles,
@@ -839,4 +947,9 @@ export const schema = {
   auditLogs,
   notifications,
   archives,
+  // Auth system tables
+  otpVerifications,
+  pendingRegistrations,
+  trustedDevices,
+  employeeIdRegistry,
 };

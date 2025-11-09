@@ -95,6 +95,26 @@ export type NewNotification = InferInsertModel<typeof schema.notifications>;
 export type Archive = InferSelectModel<typeof schema.archives>;
 export type NewArchive = InferInsertModel<typeof schema.archives>;
 
+// Auth System Types
+export type OtpVerification = InferSelectModel<typeof schema.otpVerifications>;
+export type NewOtpVerification = InferInsertModel<
+  typeof schema.otpVerifications
+>;
+export type PendingRegistration = InferSelectModel<
+  typeof schema.pendingRegistrations
+>;
+export type NewPendingRegistration = InferInsertModel<
+  typeof schema.pendingRegistrations
+>;
+export type TrustedDevice = InferSelectModel<typeof schema.trustedDevices>;
+export type NewTrustedDevice = InferInsertModel<typeof schema.trustedDevices>;
+export type EmployeeIdRegistry = InferSelectModel<
+  typeof schema.employeeIdRegistry
+>;
+export type NewEmployeeIdRegistry = InferInsertModel<
+  typeof schema.employeeIdRegistry
+>;
+
 // Enum Types
 export type Role = 'employee' | 'hr' | 'admin' | 'supervisor' | 'auditor';
 export type SubmissionStatus =
@@ -130,6 +150,11 @@ export type NotificationType =
   | 'submission_status'
   | 'approval_required'
   | 'system_update';
+export type AccountStatus = 'pending' | 'active' | 'suspended' | 'rejected';
+export type OtpType =
+  | 'email_verification'
+  | 'login_challenge'
+  | 'password_reset';
 
 // Complex Types for JSONB fields
 export interface Citizenship {
@@ -342,6 +367,26 @@ export interface Database {
         Insert: NewArchive;
         Update: Partial<NewArchive>;
       };
+      otp_verifications: {
+        Row: OtpVerification;
+        Insert: NewOtpVerification;
+        Update: Partial<NewOtpVerification>;
+      };
+      pending_registrations: {
+        Row: PendingRegistration;
+        Insert: NewPendingRegistration;
+        Update: Partial<NewPendingRegistration>;
+      };
+      trusted_devices: {
+        Row: TrustedDevice;
+        Insert: NewTrustedDevice;
+        Update: Partial<NewTrustedDevice>;
+      };
+      employee_id_registry: {
+        Row: EmployeeIdRegistry;
+        Insert: NewEmployeeIdRegistry;
+        Update: Partial<NewEmployeeIdRegistry>;
+      };
     };
     Views: {
       [_ in never]: never;
@@ -360,6 +405,8 @@ export interface Database {
       filing_type: FilingType;
       approval_status: ApprovalStatus;
       notification_type: NotificationType;
+      account_status: AccountStatus;
+      otp_type: OtpType;
     };
     CompositeTypes: {
       [_ in never]: never;
