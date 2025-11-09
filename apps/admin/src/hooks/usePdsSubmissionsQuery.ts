@@ -90,7 +90,10 @@ export function usePdsSubmissionsQuery(filters: PdsSubmissionsFilters = {}) {
 
       // Apply department filter
       if (filters.department) {
-        submissions = filterSubmissionsByDepartment(submissions, filters.department);
+        submissions = filterSubmissionsByDepartment(
+          submissions,
+          filters.department
+        );
       }
 
       // Apply date range filter
@@ -103,15 +106,21 @@ export function usePdsSubmissionsQuery(filters: PdsSubmissionsFilters = {}) {
       }
 
       // Sort submissions
-      submissions = sortSubmissionsByDate(submissions, filters.sortOrder || 'desc');
+      submissions = sortSubmissionsByDate(
+        submissions,
+        filters.sortOrder || 'desc'
+      );
 
       // Map to include user details
-      return submissions.map((submission) => getSubmissionWithUserDetails(submission));
+      return submissions.map((submission) =>
+        getSubmissionWithUserDetails(submission)
+      );
     },
     staleTime: 3 * 60 * 1000, // 3 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes garbage collection
     retry: 2,
-    retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retryDelay: (attemptIndex: number) =>
+      Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   /**
@@ -130,8 +139,12 @@ export function usePdsSubmissionsQuery(filters: PdsSubmissionsFilters = {}) {
 
         // Add user details
         const user = MockDatabase.getProfile(completePds.submission.userId);
-        const department = user?.departmentId ? MockDatabase.getDepartment(user.departmentId) : null;
-        const position = user?.positionId ? MockDatabase.getPosition(user.positionId) : null;
+        const department = user?.departmentId
+          ? MockDatabase.getDepartment(user.departmentId)
+          : null;
+        const position = user?.positionId
+          ? MockDatabase.getPosition(user.positionId)
+          : null;
 
         return {
           ...completePds,
@@ -161,7 +174,9 @@ export function usePdsSubmissionsQuery(filters: PdsSubmissionsFilters = {}) {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 800));
 
-      const submissionIndex = mockPdsSubmissions.findIndex((s) => s.id === submissionId);
+      const submissionIndex = mockPdsSubmissions.findIndex(
+        (s) => s.id === submissionId
+      );
       if (submissionIndex === -1) {
         throw new Error('Submission not found');
       }
@@ -171,6 +186,8 @@ export function usePdsSubmissionsQuery(filters: PdsSubmissionsFilters = {}) {
         status: 'approved',
         approvedBy: reviewedBy,
         approvedAt: new Date(),
+        rejectionReason: null,
+        pdfFilePath: `/pds/${new Date().getFullYear()}/pds-${submissionId}.pdf`,
         updatedAt: new Date(),
       };
 
@@ -183,9 +200,9 @@ export function usePdsSubmissionsQuery(filters: PdsSubmissionsFilters = {}) {
       await queryClient.cancelQueries({ queryKey: pdsSubmissionsKeys.all });
 
       // Snapshot previous value
-      const previousSubmissions = queryClient.getQueryData<PdsSubmissionWithDetails[]>(
-        pdsSubmissionsKeys.list(filters)
-      );
+      const previousSubmissions = queryClient.getQueryData<
+        PdsSubmissionWithDetails[]
+      >(pdsSubmissionsKeys.list(filters));
 
       // Optimistically update status
       queryClient.setQueryData<PdsSubmissionWithDetails[]>(
@@ -210,7 +227,10 @@ export function usePdsSubmissionsQuery(filters: PdsSubmissionsFilters = {}) {
     onError: (_err, _variables, context) => {
       // Rollback on error
       if (context?.previousSubmissions) {
-        queryClient.setQueryData(pdsSubmissionsKeys.list(filters), context.previousSubmissions);
+        queryClient.setQueryData(
+          pdsSubmissionsKeys.list(filters),
+          context.previousSubmissions
+        );
       }
     },
     onSettled: () => {
@@ -237,7 +257,9 @@ export function usePdsSubmissionsQuery(filters: PdsSubmissionsFilters = {}) {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 800));
 
-      const submissionIndex = mockPdsSubmissions.findIndex((s) => s.id === submissionId);
+      const submissionIndex = mockPdsSubmissions.findIndex(
+        (s) => s.id === submissionId
+      );
       if (submissionIndex === -1) {
         throw new Error('Submission not found');
       }
@@ -245,6 +267,8 @@ export function usePdsSubmissionsQuery(filters: PdsSubmissionsFilters = {}) {
       const updatedSubmission: PdsSubmission = {
         ...mockPdsSubmissions[submissionIndex],
         status: 'rejected',
+        rejectionReason: reviewNotes,
+        pdfFilePath: null,
         updatedAt: new Date(),
       };
 
@@ -252,14 +276,14 @@ export function usePdsSubmissionsQuery(filters: PdsSubmissionsFilters = {}) {
 
       return getSubmissionWithUserDetails(updatedSubmission);
     },
-    onMutate: async ({ submissionId }) => {
+    onMutate: async ({ submissionId, reviewNotes }) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: pdsSubmissionsKeys.all });
 
       // Snapshot previous value
-      const previousSubmissions = queryClient.getQueryData<PdsSubmissionWithDetails[]>(
-        pdsSubmissionsKeys.list(filters)
-      );
+      const previousSubmissions = queryClient.getQueryData<
+        PdsSubmissionWithDetails[]
+      >(pdsSubmissionsKeys.list(filters));
 
       // Optimistically update status
       queryClient.setQueryData<PdsSubmissionWithDetails[]>(
@@ -272,6 +296,8 @@ export function usePdsSubmissionsQuery(filters: PdsSubmissionsFilters = {}) {
                   submission: {
                     ...item.submission,
                     status: 'rejected',
+                    rejectionReason: reviewNotes,
+                    pdfFilePath: null,
                     updatedAt: new Date(),
                   },
                 }
@@ -284,7 +310,10 @@ export function usePdsSubmissionsQuery(filters: PdsSubmissionsFilters = {}) {
     onError: (_err, _variables, context) => {
       // Rollback on error
       if (context?.previousSubmissions) {
-        queryClient.setQueryData(pdsSubmissionsKeys.list(filters), context.previousSubmissions);
+        queryClient.setQueryData(
+          pdsSubmissionsKeys.list(filters),
+          context.previousSubmissions
+        );
       }
     },
     onSettled: () => {
@@ -311,7 +340,9 @@ export function usePdsSubmissionsQuery(filters: PdsSubmissionsFilters = {}) {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 600));
 
-      const submissionIndex = mockPdsSubmissions.findIndex((s) => s.id === submissionId);
+      const submissionIndex = mockPdsSubmissions.findIndex(
+        (s) => s.id === submissionId
+      );
       if (submissionIndex === -1) {
         throw new Error('Submission not found');
       }
@@ -319,6 +350,8 @@ export function usePdsSubmissionsQuery(filters: PdsSubmissionsFilters = {}) {
       const updatedSubmission: PdsSubmission = {
         ...mockPdsSubmissions[submissionIndex],
         status: 'draft',
+        rejectionReason: null,
+        pdfFilePath: null,
         updatedAt: new Date(),
       };
 
