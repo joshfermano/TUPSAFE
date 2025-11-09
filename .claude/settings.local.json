@@ -80,7 +80,15 @@
       "Bash(git add:*)",
       "mcp__serena__find_file",
       "mcp__serena__search_for_pattern",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "mcp__serena__find_symbol",
+      "mcp__serena__insert_after_symbol",
+      "mcp__serena__replace_symbol_body",
+      "Bash(npx drizzle-kit generate)",
+      "Bash(node -e:*)",
+      "Bash(npx drizzle-kit push)",
+      "Bash(timeout 120 npx drizzle-kit push:*)",
+      "Bash(npx drizzle-kit:*)"
     ],
     "deny": [],
     "ask": []
