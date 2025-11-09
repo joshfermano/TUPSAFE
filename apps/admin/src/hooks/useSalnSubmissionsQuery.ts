@@ -97,7 +97,10 @@ export function useSalnSubmissionsQuery(filters: SalnSubmissionsFilters = {}) {
 
       // Apply department filter
       if (filters.department) {
-        submissions = filterSubmissionsByDepartment(submissions, filters.department);
+        submissions = filterSubmissionsByDepartment(
+          submissions,
+          filters.department
+        );
       }
 
       // Apply date range filter
@@ -110,15 +113,21 @@ export function useSalnSubmissionsQuery(filters: SalnSubmissionsFilters = {}) {
       }
 
       // Sort submissions
-      submissions = sortSubmissionsByDate(submissions, filters.sortOrder || 'desc');
+      submissions = sortSubmissionsByDate(
+        submissions,
+        filters.sortOrder || 'desc'
+      );
 
       // Map to include user details
-      return submissions.map((submission) => getSubmissionWithUserDetails(submission));
+      return submissions.map((submission) =>
+        getSubmissionWithUserDetails(submission)
+      );
     },
     staleTime: 3 * 60 * 1000, // 3 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes garbage collection
     retry: 2,
-    retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retryDelay: (attemptIndex: number) =>
+      Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   /**
@@ -137,8 +146,12 @@ export function useSalnSubmissionsQuery(filters: SalnSubmissionsFilters = {}) {
 
         // Add user details
         const user = MockDatabase.getProfile(completeSaln.submission.userId);
-        const department = user?.departmentId ? MockDatabase.getDepartment(user.departmentId) : null;
-        const position = user?.positionId ? MockDatabase.getPosition(user.positionId) : null;
+        const department = user?.departmentId
+          ? MockDatabase.getDepartment(user.departmentId)
+          : null;
+        const position = user?.positionId
+          ? MockDatabase.getPosition(user.positionId)
+          : null;
 
         return {
           ...completeSaln,
@@ -162,7 +175,9 @@ export function useSalnSubmissionsQuery(filters: SalnSubmissionsFilters = {}) {
         await new Promise((resolve) => setTimeout(resolve, 150));
 
         const submissions = mockSalnSubmissions.filter((s) => s.year === year);
-        return submissions.map((submission) => getSubmissionWithUserDetails(submission));
+        return submissions.map((submission) =>
+          getSubmissionWithUserDetails(submission)
+        );
       },
       staleTime: 5 * 60 * 1000,
     });
@@ -184,7 +199,9 @@ export function useSalnSubmissionsQuery(filters: SalnSubmissionsFilters = {}) {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 800));
 
-      const submissionIndex = mockSalnSubmissions.findIndex((s) => s.id === submissionId);
+      const submissionIndex = mockSalnSubmissions.findIndex(
+        (s) => s.id === submissionId
+      );
       if (submissionIndex === -1) {
         throw new Error('Submission not found');
       }
@@ -206,9 +223,9 @@ export function useSalnSubmissionsQuery(filters: SalnSubmissionsFilters = {}) {
       await queryClient.cancelQueries({ queryKey: salnSubmissionsKeys.all });
 
       // Snapshot previous value
-      const previousSubmissions = queryClient.getQueryData<SalnSubmissionWithDetails[]>(
-        salnSubmissionsKeys.list(filters)
-      );
+      const previousSubmissions = queryClient.getQueryData<
+        SalnSubmissionWithDetails[]
+      >(salnSubmissionsKeys.list(filters));
 
       // Optimistically update status
       queryClient.setQueryData<SalnSubmissionWithDetails[]>(
@@ -233,7 +250,10 @@ export function useSalnSubmissionsQuery(filters: SalnSubmissionsFilters = {}) {
     onError: (_err, _variables, context) => {
       // Rollback on error
       if (context?.previousSubmissions) {
-        queryClient.setQueryData(salnSubmissionsKeys.list(filters), context.previousSubmissions);
+        queryClient.setQueryData(
+          salnSubmissionsKeys.list(filters),
+          context.previousSubmissions
+        );
       }
     },
     onSettled: () => {
@@ -260,7 +280,9 @@ export function useSalnSubmissionsQuery(filters: SalnSubmissionsFilters = {}) {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 800));
 
-      const submissionIndex = mockSalnSubmissions.findIndex((s) => s.id === submissionId);
+      const submissionIndex = mockSalnSubmissions.findIndex(
+        (s) => s.id === submissionId
+      );
       if (submissionIndex === -1) {
         throw new Error('Submission not found');
       }
@@ -280,9 +302,9 @@ export function useSalnSubmissionsQuery(filters: SalnSubmissionsFilters = {}) {
       await queryClient.cancelQueries({ queryKey: salnSubmissionsKeys.all });
 
       // Snapshot previous value
-      const previousSubmissions = queryClient.getQueryData<SalnSubmissionWithDetails[]>(
-        salnSubmissionsKeys.list(filters)
-      );
+      const previousSubmissions = queryClient.getQueryData<
+        SalnSubmissionWithDetails[]
+      >(salnSubmissionsKeys.list(filters));
 
       // Optimistically update status
       queryClient.setQueryData<SalnSubmissionWithDetails[]>(
@@ -307,7 +329,10 @@ export function useSalnSubmissionsQuery(filters: SalnSubmissionsFilters = {}) {
     onError: (_err, _variables, context) => {
       // Rollback on error
       if (context?.previousSubmissions) {
-        queryClient.setQueryData(salnSubmissionsKeys.list(filters), context.previousSubmissions);
+        queryClient.setQueryData(
+          salnSubmissionsKeys.list(filters),
+          context.previousSubmissions
+        );
       }
     },
     onSettled: () => {
@@ -334,7 +359,9 @@ export function useSalnSubmissionsQuery(filters: SalnSubmissionsFilters = {}) {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 600));
 
-      const submissionIndex = mockSalnSubmissions.findIndex((s) => s.id === submissionId);
+      const submissionIndex = mockSalnSubmissions.findIndex(
+        (s) => s.id === submissionId
+      );
       if (submissionIndex === -1) {
         throw new Error('Submission not found');
       }
