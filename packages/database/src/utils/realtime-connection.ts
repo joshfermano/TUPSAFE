@@ -235,7 +235,8 @@ export async function reconnectWithBackoff(
       return;
     } catch (error) {
       const realtimeError: RealtimeError = {
-        message: error instanceof Error ? error.message : 'Unknown reconnection error',
+        message:
+          error instanceof Error ? error.message : 'Unknown reconnection error',
         code: 'RECONNECT_FAILED',
         details: { attempt, maxAttempts },
         timestamp: new Date().toISOString(),
@@ -414,9 +415,7 @@ export function unregisterRealtimeChannel(channelName: string): void {
  * }
  * ```
  */
-export async function isRealtimeAvailable(
-  supabase: any
-): Promise<boolean> {
+export async function isRealtimeAvailable(supabase: any): Promise<boolean> {
   try {
     // Create a test channel
     const channel = supabase.channel('health-check');

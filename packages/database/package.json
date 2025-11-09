@@ -14,8 +14,12 @@
     "lint": "eslint src/",
     "type-check": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "tsx src/seed.ts",
+    "db:test": "tsx src/test-connection.ts",
+    "storage:setup": "tsx src/storage-setup.ts"
   },
   "dependencies": {
     "dotenv": "^17.2.3",
@@ -45,6 +49,7 @@
     "eslint": "^9",
     "react": "^19.1.0",
     "sonner": "^1.7.2",
+    "tsx": "^4.19.2",
     "typescript": "^5"
   }
 }
