@@ -1,7 +1,11 @@
-import 'dotenv/config';
+import { config } from 'dotenv';
+import { resolve } from 'path';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema';
+
+// Load .env.local from monorepo root
+config({ path: resolve(__dirname, '../../../.env.local') });
 
 // Disable prefetch as it is not supported for "Transaction" pool mode in Supabase
 const connectionString = process.env.DATABASE_URL!;
@@ -13,7 +17,7 @@ if (!connectionString) {
 export const client = postgres(connectionString, {
   prepare: false,
   max: 10,
-  onnotice: () => {}, // Suppress notices
+  onnotice: () => {},
 });
 
 export const db = drizzle(client, { schema });
