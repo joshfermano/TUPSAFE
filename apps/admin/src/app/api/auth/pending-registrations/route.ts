@@ -4,10 +4,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@tupsafe/database';
-import { pendingRegistrations, profiles } from '@tupsafe/database';
+import { db, pendingRegistrations, profiles } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
-import { checkUserRole } from '@tupsafe/auth';
+import {
+  checkUserRole,
+  createServerClient,
+} from '@tupsafe/auth/server';
 
 export async function GET(request: NextRequest) {
   try {
@@ -53,7 +55,6 @@ export async function GET(request: NextRequest) {
     const usersWithEmails = await Promise.all(
       pendingUsers.map(async (user) => {
         try {
-          const { createServerClient } = await import('@tupsafe/auth');
           const supabase = await createServerClient();
           const { data: userData } = await supabase.auth.admin.getUserById(user.userId);
 

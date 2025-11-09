@@ -5,14 +5,16 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db } from '@tupsafe/database';
-import { profiles, trustedDevices } from '@tupsafe/database';
+import { db, profiles, trustedDevices, createAuditLog } from '@tupsafe/database/server';
 import { eq, and } from 'drizzle-orm';
-import { createServerClient } from '@tupsafe/auth';
-import { generateDeviceFingerprint, checkTrustedDevice } from '@tupsafe/auth';
-import { generateOTP, sendOTPEmail } from '@tupsafe/auth';
-import { createSession } from '@tupsafe/auth';
-import { createAuditLog } from '@tupsafe/database';
+import {
+  createServerClient,
+  generateDeviceFingerprint,
+  checkTrustedDevice,
+  generateOTP,
+  sendOTPEmail,
+  createSession,
+} from '@tupsafe/auth/server';
 
 // Login validation schema
 const loginSchema = z.object({

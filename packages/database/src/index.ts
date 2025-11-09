@@ -1,13 +1,9 @@
-// Database client and schema
-export { db, client } from './db';
-export * from './schema';
+// Types only (client-safe)
 export type * from './types';
 export type * from './types/realtime';
 
-// Realtime hooks
+// Realtime hooks (client-safe, marked with 'use client')
 export * from './hooks';
 
-// Utilities
+// Realtime utilities (client-safe)
 export * from './utils/realtime-connection';
-export * from './utils/storage';
-export * from './utils/audit-log';

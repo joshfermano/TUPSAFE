@@ -5,16 +5,16 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db } from '@tupsafe/database';
 import {
+  db,
   otpVerifications,
   pendingRegistrations,
   profiles,
   notifications,
-} from '@tupsafe/database';
+  createAuditLog,
+} from '@tupsafe/database/server';
 import { eq, and, or } from 'drizzle-orm';
-import { verifyOTP } from '@tupsafe/auth';
-import { createAuditLog } from '@tupsafe/database';
+import { verifyOTP } from '@tupsafe/auth/server';
 
 // Verification validation schema
 const verificationSchema = z.object({

@@ -11,9 +11,14 @@ import {
   profiles,
   notifications,
   createAuditLog,
-} from '@tupsafe/database';
+} from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
-import { checkUserRole, getSessionUser, sendEmail } from '@tupsafe/auth';
+import {
+  checkUserRole,
+  getSessionUser,
+  sendEmail,
+  createServerClient,
+} from '@tupsafe/auth/server';
 
 // Rejection validation schema
 const rejectionSchema = z.object({
@@ -117,7 +122,6 @@ export async function POST(request: NextRequest) {
       .where(eq(pendingRegistrations.userId, userId));
 
     // Get user email for notification
-    const { createServerClient } = await import('@tupsafe/auth');
     const supabase = await createServerClient();
     const { data: userData } = await supabase.auth.admin.getUserById(userId);
     const userEmail = userData?.user?.email;

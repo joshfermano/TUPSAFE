@@ -5,12 +5,14 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db } from '@tupsafe/database';
-import { profiles, trustedDevices } from '@tupsafe/database';
+import {
+  db,
+  profiles,
+  trustedDevices,
+  createAuditLog,
+} from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
-import { verifyOTP } from '@tupsafe/auth';
-import { createSession } from '@tupsafe/auth';
-import { createAuditLog } from '@tupsafe/database';
+import { verifyOTP, createSession } from '@tupsafe/auth/server';
 
 // Device verification validation schema
 const deviceVerificationSchema = z.object({

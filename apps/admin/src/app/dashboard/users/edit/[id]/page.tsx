@@ -452,7 +452,7 @@ export default function EditUserPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <FormDescription>This determines the user's permissions</FormDescription>
+                    <FormDescription>This determines the user&apos;s permissions</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

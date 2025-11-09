@@ -4,9 +4,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { destroySession, getSessionUser } from '@tupsafe/auth';
-import { createServerClient } from '@tupsafe/auth';
-import { createAuditLog } from '@tupsafe/database';
+import {
+  destroySession,
+  getSessionUser,
+  createServerClient,
+} from '@tupsafe/auth/server';
+import { createAuditLog } from '@tupsafe/database/server';
 
 export async function POST(request: NextRequest) {
   try {
