@@ -12,7 +12,10 @@ export interface UsePdsReturn {
   error: string | null;
   getCompleteSubmission: (id: string) => CompletePdsData | null;
   createDraft: () => Promise<PdsSubmission>;
-  updateSubmission: (id: string, data: Partial<CompletePdsData>) => Promise<boolean>;
+  updateSubmission: (
+    id: string,
+    data: Partial<CompletePdsData>
+  ) => Promise<boolean>;
   submitForReview: (id: string) => Promise<boolean>;
   refetch: () => void;
 }
@@ -37,18 +40,22 @@ export function usePds(userId: string): UsePdsReturn {
         const userSubmissions = MockDatabase.getPdsByUser(userId);
         setSubmissions(userSubmissions);
 
-        const latestSubmission = userSubmissions
-          .filter((pds) => pds.isLatest)
-          .sort(
-            (a, b) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          )[0] || null;
+        const latestSubmission =
+          userSubmissions
+            .filter((pds) => pds.isLatest)
+            .sort(
+              (a, b) =>
+                new Date(b.createdAt).getTime() -
+                new Date(a.createdAt).getTime()
+            )[0] || null;
 
         setLatest(latestSubmission);
         setLoading(false);
       }, 300);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch PDS submissions');
+      setError(
+        err instanceof Error ? err.message : 'Failed to fetch PDS submissions'
+      );
       setLoading(false);
     }
   }, [userId]);
@@ -59,14 +66,17 @@ export function usePds(userId: string): UsePdsReturn {
     }
   }, [userId, fetchSubmissions]);
 
-  const getCompleteSubmission = useCallback((id: string): CompletePdsData | null => {
-    const result = MockDatabase.getCompletePds(id);
-    return result as CompletePdsData | null;
-  }, []);
+  const getCompleteSubmission = useCallback(
+    (id: string): CompletePdsData | null => {
+      const result = MockDatabase.getCompletePds(id);
+      return result as CompletePdsData | null;
+    },
+    []
+  );
 
   const createDraft = useCallback(async (): Promise<PdsSubmission> => {
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     const newSubmission: PdsSubmission = {
       id: `pds-${Date.now()}`,
@@ -76,6 +86,8 @@ export function usePds(userId: string): UsePdsReturn {
       submittedAt: null,
       approvedBy: null,
       approvedAt: null,
+      rejectionReason: null,
+      pdfFilePath: null,
       isLatest: true,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -89,41 +101,44 @@ export function usePds(userId: string): UsePdsReturn {
     return newSubmission;
   }, [userId, fetchSubmissions]);
 
-  const updateSubmission = useCallback(async (
-    id: string,
-    data: Partial<CompletePdsData>
-  ): Promise<boolean> => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500));
+  const updateSubmission = useCallback(
+    async (id: string, data: Partial<CompletePdsData>): Promise<boolean> => {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-    const key = `pds_draft_${id}`;
-    const existing = storage.get<Partial<CompletePdsData>>(key) || {};
-    storage.set(key, { ...existing, ...data });
+      const key = `pds_draft_${id}`;
+      const existing = storage.get<Partial<CompletePdsData>>(key) || {};
+      storage.set(key, { ...existing, ...data });
 
-    fetchSubmissions();
-    return true;
-  }, [fetchSubmissions]);
+      fetchSubmissions();
+      return true;
+    },
+    [fetchSubmissions]
+  );
 
-  const submitForReview = useCallback(async (id: string): Promise<boolean> => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500));
+  const submitForReview = useCallback(
+    async (id: string): Promise<boolean> => {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-    const submission = submissions.find(s => s.id === id);
-    if (!submission) return false;
+      const submission = submissions.find((s) => s.id === id);
+      if (!submission) return false;
 
-    const updated = {
-      ...submission,
-      status: 'submitted' as const,
-      submittedAt: new Date(),
-      updatedAt: new Date(),
-    };
+      const updated = {
+        ...submission,
+        status: 'submitted' as const,
+        submittedAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-    const key = `pds_draft_${id}`;
-    storage.set(key, updated);
+      const key = `pds_draft_${id}`;
+      storage.set(key, updated);
 
-    fetchSubmissions();
-    return true;
-  }, [submissions, fetchSubmissions]);
+      fetchSubmissions();
+      return true;
+    },
+    [submissions, fetchSubmissions]
+  );
 
   return {
     submissions,
