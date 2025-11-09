@@ -4,7 +4,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { validateSession, getRemainingSessionTime } from '@tupsafe/auth';
+import {
+  validateSession,
+  getRemainingSessionTime,
+} from '@tupsafe/auth/server';
 
 export async function GET(request: NextRequest) {
   try {

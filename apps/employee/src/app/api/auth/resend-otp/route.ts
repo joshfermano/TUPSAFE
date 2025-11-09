@@ -5,11 +5,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db } from '@tupsafe/database';
-import { profiles } from '@tupsafe/database';
+import { db, profiles } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
-import { generateOTP, sendOTPEmail } from '@tupsafe/auth';
-import { createServerClient } from '@tupsafe/auth';
+import {
+  generateOTP,
+  sendOTPEmail,
+  createServerClient,
+} from '@tupsafe/auth/server';
 
 // Resend OTP validation schema
 const resendOTPSchema = z.object({

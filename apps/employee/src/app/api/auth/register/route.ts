@@ -5,15 +5,19 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db } from '@tupsafe/database';
-import { profiles, employeeIdRegistry } from '@tupsafe/database';
+import {
+  db,
+  profiles,
+  employeeIdRegistry,
+  createAuditLog,
+} from '@tupsafe/database/server';
 import {
   generateAndRegisterEmployeeId,
   isEmployeeIdAvailable,
-} from '@tupsafe/auth';
-import { generateOTP, sendOTPEmail } from '@tupsafe/auth';
-import { createServerClient } from '@tupsafe/auth';
-import { createAuditLog } from '@tupsafe/database';
+  generateOTP,
+  sendOTPEmail,
+  createServerClient,
+} from '@tupsafe/auth/server';
 import { eq } from 'drizzle-orm';
 
 // Registration validation schema

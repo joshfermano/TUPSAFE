@@ -10,7 +10,9 @@ import {
   profiles,
   notifications,
   createAuditLog,
-} from '@tupsafe/database';
+  employeeIdRegistry,
+} from '@tupsafe/database/server';
+import { eq } from 'drizzle-orm';
 import {
   checkUserRole,
   getSessionUser,
@@ -18,7 +20,7 @@ import {
   generatePassword,
   sendEmail,
   createServerClient,
-} from '@tupsafe/auth';
+} from '@tupsafe/auth/server';
 
 // User creation validation schema
 const createUserSchema = z.object({
@@ -143,9 +145,6 @@ export async function POST(request: NextRequest) {
 
     // Update employee ID registry with actual user ID
     try {
-      const { eq } = await import('drizzle-orm');
-      const { employeeIdRegistry } = await import('@tupsafe/database');
-
       await db
         .update(employeeIdRegistry)
         .set({ userId })
