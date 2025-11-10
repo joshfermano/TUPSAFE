@@ -3,8 +3,8 @@
  * Generates unique TUPM-XXXXX employee IDs with collision prevention
  */
 
-import { db } from '@tupsafe/database';
-import { employeeIdRegistry } from '@tupsafe/database';
+import { db } from '@tupsafe/database/server';
+import { employeeIdRegistry } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
 
 /**

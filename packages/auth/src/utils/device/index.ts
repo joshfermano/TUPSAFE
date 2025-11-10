@@ -3,7 +3,7 @@
  * Handles device identification and 30-day trust system
  */
 
-import { db, trustedDevices } from '@tupsafe/database';
+import { db, trustedDevices } from '@tupsafe/database/server';
 import { eq, and, gt, lt } from 'drizzle-orm';
 import crypto from 'crypto';
 

@@ -373,7 +373,7 @@ const { profile, loading: profileLoading } = useProfile(id);
                   borderSize={2}
                   borderRadius={16}
                   neonColors={{
-                    firstColor: 'var(--primary)',
+                    firstColor: 'var(--tup-crimson-dark)',
                     secondColor: 'var(--tup-crimson-light)',
                   }}
                   className="p-8"
@@ -520,7 +520,7 @@ const { profile, loading: profileLoading } = useProfile(id);
                                 disabled
                                 className="bg-slate-50 dark:bg-slate-800/50"
                               />
-                              <Mail className="h-5 w-5 text-slate-400" />
+                              <Mail className="h-5 w-5 text-red-500" />
                             </div>
                             <FormDescription>
                               Email cannot be changed. Contact HR for assistance.

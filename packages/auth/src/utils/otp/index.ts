@@ -3,8 +3,8 @@
  * Handles generation, verification, and cleanup of OTP codes
  */
 
-import { db } from '@tupsafe/database';
-import { otpVerifications } from '@tupsafe/database';
+import { db } from '@tupsafe/database/server';
+import { otpVerifications } from '@tupsafe/database/server';
 import { eq, and, gt, isNull, lt } from 'drizzle-orm';
 
 export type OTPType =

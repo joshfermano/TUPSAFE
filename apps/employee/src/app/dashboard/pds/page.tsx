@@ -187,16 +187,14 @@ const SectionCard = memo(function SectionCard({
           <div
             className={cn(
               'flex h-12 w-12 items-center justify-center rounded-lg transition-all duration-300',
-              section.isComplete
-                ? 'bg-green-100 dark:bg-green-950/30'
-                : 'bg-tup-crimson-subtle dark:bg-primary/30'
+              'bg-white dark:bg-slate-800'
             )}>
             <IconComponent
               className={cn(
                 'h-6 w-6',
                 section.isComplete
-                  ? 'text-green-600 dark:text-green-400'
-                  : 'text-primary dark:text-tup-crimson-light'
+                  ? 'text-red-600 dark:text-red-400'
+                  : 'text-red-500 dark:text-red-500'
               )}
             />
           </div>
@@ -239,7 +237,7 @@ const SectionCard = memo(function SectionCard({
               className={cn(
                 'h-full rounded-full',
                 section.isComplete
-                  ? 'bg-gradient-to-r from-green-600 to-emerald-600'
+                  ? 'bg-gradient-to-r from-red-600 to-red-700'
                   : 'bg-gradient-tup'
               )}
               initial={{ width: 0 }}
@@ -388,12 +386,7 @@ export default function PDSPage() {
             </p>
           </div>
 
-          <Link href="/dashboard/pds/edit">
-            <Button className="bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]">
-              <Edit className="h-4 w-4 mr-2" />
-              Update PDS
-            </Button>
-          </Link>
+
         </div>
       </BlurFade>
 
