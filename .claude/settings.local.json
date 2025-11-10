@@ -88,7 +88,8 @@
       "Bash(node -e:*)",
       "Bash(npx drizzle-kit push)",
       "Bash(timeout 120 npx drizzle-kit push:*)",
-      "Bash(npx drizzle-kit:*)"
+      "Bash(npx drizzle-kit:*)",
+      "Bash(timeout 45 bash:*)"
     ],
     "deny": [],
     "ask": []
