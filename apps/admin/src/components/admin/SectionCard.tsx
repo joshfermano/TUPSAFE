@@ -117,7 +117,7 @@ export function SectionCard({
         <div className="flex items-center gap-3">
           {/* Optional Icon */}
           {icon && (
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10 text-red-500">
               {icon}
             </div>
           )}

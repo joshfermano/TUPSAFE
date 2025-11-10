@@ -111,7 +111,7 @@ export default function ProfilePage() {
               My Profile
             </AnimatedGradientText>
           </h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-2">
+          <p className="text-slate-700 dark:text-slate-400 mt-2">
             View and manage your employee information
           </p>
         </div>

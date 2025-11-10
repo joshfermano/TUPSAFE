@@ -347,12 +347,7 @@ export default function SalnPage() {
             </p>
           </div>
 
-          <Link href="/dashboard/saln/edit">
-            <Button className="bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]">
-              <Edit className="h-4 w-4 mr-2" />
-              Update SALN
-            </Button>
-          </Link>
+
         </div>
       </BlurFade>
 
@@ -482,16 +477,14 @@ export default function SalnPage() {
                       <div
                         className={cn(
                           'flex h-10 w-10 items-center justify-center rounded-lg',
-                          section.isComplete
-                            ? 'bg-green-100 dark:bg-green-950/30'
-                            : 'bg-tup-crimson-subtle dark:bg-primary/30'
+                          'bg-white dark:bg-slate-800'
                         )}>
                         <section.icon
                           className={cn(
                             'h-5 w-5',
                             section.isComplete
-                              ? 'text-green-600 dark:text-green-400'
-                              : 'text-primary dark:text-tup-crimson-light'
+                              ? 'text-red-600 dark:text-red-400'
+                              : 'text-red-500 dark:text-red-500'
                           )}
                         />
                       </div>

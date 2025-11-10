@@ -22,7 +22,7 @@
     "build:admin": "turbo build --filter=admin"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.31.6",
+    "drizzle-kit": "^0.18.1",
     "turbo": "^2.5.8",
     "typescript": "^5"
   },

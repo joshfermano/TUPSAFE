@@ -106,9 +106,9 @@ export function AvatarUpload({
           className={cn(
             'relative rounded-full overflow-hidden border-4 transition-all duration-200',
             isDragging
-              ? 'border-[#093FB4] bg-[#093FB4]/5'
+              ? 'border-red-500 bg-red-500/5'
               : 'border-slate-200 dark:border-slate-700',
-            'hover:border-[#093FB4]/50 dark:hover:border-[#093FB4]/50'
+            'hover:border-red-500/50 dark:hover:border-red-500/50'
           )}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -116,7 +116,7 @@ export function AvatarUpload({
         >
           <Avatar className="h-32 w-32">
             <AvatarImage src={preview || currentAvatar} alt={userName} />
-            <AvatarFallback className="text-2xl font-semibold bg-gradient-to-br from-[#093FB4] to-[#0066B3] text-white">
+            <AvatarFallback className="text-2xl font-semibold bg-gradient-to-br from-red-700 to-red-800 text-white">
               {getInitials(userName)}
             </AvatarFallback>
           </Avatar>
@@ -158,7 +158,7 @@ export function AvatarUpload({
           variant="outline"
           size="sm"
           onClick={handleClick}
-          className="border-[#093FB4] text-[#093FB4] hover:bg-[#093FB4]/5 dark:border-[#0066B3] dark:text-[#0066B3] dark:hover:bg-[#0066B3]/10"
+          className="border-red-700 text-red-500 hover:bg-red-500/5 dark:border-red-600 dark:text-red-600 dark:hover:bg-red-600/10"
         >
           <Upload className="h-4 w-4 mr-2" />
           Upload Photo
