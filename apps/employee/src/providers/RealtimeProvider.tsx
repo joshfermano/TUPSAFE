@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { initializeRealtimeClient } from '@tupsafe/database';
+import { initializeRealtimeClient } from '@tupsafe/database/client';
 import { createClient } from '@tupsafe/auth';
 
 /**

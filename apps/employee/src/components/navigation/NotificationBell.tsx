@@ -35,13 +35,13 @@ import { Separator } from '@/components/ui/separator';
 // Notification Components
 import { NotificationItem, type Notification } from './NotificationItem';
 
-// Database hooks
+// Database hooks - use client export for browser-safe imports
 import {
   useRealtimeNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
   notificationKeys,
-} from '@tupsafe/database';
+} from '@tupsafe/database/client';
 import { createClient } from '@tupsafe/auth';
 
 // Mock auth (replace with real auth)
