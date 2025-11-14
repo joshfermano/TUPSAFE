@@ -9,9 +9,9 @@
  * Theme: TUP red accent - oklch(0.55_0.22_15)
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, use } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useSaln, useAuth } from '@tupsafe/mock-data/api';
 import { format } from 'date-fns';
 import {
@@ -158,13 +158,15 @@ const LoadingState = () => (
 // MAIN PAGE COMPONENT
 // ============================================================================
 
-export default function SALNViewDetailPage() {
-  const params = useParams();
+export default function SALNViewDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id: salnId } = use(params);
   const router = useRouter();
   const { user } = useAuth();
   const { submissions, getCompleteSubmission, loading } = useSaln(user?.id || '');
-
-  const salnId = params?.id as string;
   const submission = useMemo(
     () => submissions.find(s => s.id === salnId),
     [submissions, salnId]

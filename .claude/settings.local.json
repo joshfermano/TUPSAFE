@@ -92,7 +92,8 @@
       "Bash(timeout 45 bash:*)",
       "Bash(npm run db:test:*)",
       "WebFetch(domain:tup.edu.ph)",
-      "Bash(npx turbo build:*)"
+      "Bash(npx turbo build:*)",
+      "Bash(npm run clean:*)"
     ],
     "deny": [],
     "ask": []

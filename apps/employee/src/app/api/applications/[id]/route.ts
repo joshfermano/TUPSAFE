@@ -16,7 +16,7 @@ import { eq, desc, and } from 'drizzle-orm';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createServerClient();
@@ -45,7 +45,7 @@ export async function GET(
       );
     }
 
-    const applicationId = params.id;
+    const { id: applicationId } = await params;
 
     // Fetch application with all details
     const [application] = await db

@@ -10,9 +10,9 @@
  * Features: Auto-save every 30s, change tracking, optimistic updates
  */
 
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, use } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useSaln, useAuth } from '@tupsafe/mock-data/api';
 import { toast } from 'sonner';
 import {
@@ -157,8 +157,12 @@ const LoadingState = () => (
 // MAIN PAGE COMPONENT
 // ============================================================================
 
-export default function SALNEditDetailPage() {
-  const params = useParams();
+export default function SALNEditDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id: salnId } = use(params);
   const router = useRouter();
   const { user } = useAuth();
   const {
@@ -168,8 +172,6 @@ export default function SALNEditDetailPage() {
     submitForReview,
     loading,
   } = useSaln(user?.id || '');
-
-  const salnId = params?.id as string;
   const submission = useMemo(
     () => submissions.find((s) => s.id === salnId),
     [submissions, salnId]
