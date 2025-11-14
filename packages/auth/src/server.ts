@@ -1,6 +1,10 @@
 // Server-only Supabase client
 export { createClient as createServerClient } from './utils/supabase/server';
 
+// Admin Supabase client (server-only, bypasses RLS)
+export { createAdminClient } from './utils/supabase/admin';
+export type { AdminClient } from './utils/supabase/admin';
+
 // Middleware utilities (server-only)
 export { updateSession } from './utils/supabase/middleware';
 export { createAuthMiddleware, getUserFromHeaders } from './middleware';

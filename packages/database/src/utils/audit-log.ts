@@ -12,10 +12,22 @@ export type AuditAction =
   | 'ARCHIVE'
   | 'RESTORE'
   | 'LOGIN'
+  | 'LOGIN_ATTEMPT'
   | 'LOGOUT'
   | 'UPLOAD'
   | 'DOWNLOAD'
-  | 'EXPORT';
+  | 'EXPORT'
+  | 'APPROVE_REGISTRATION'
+  | 'REJECT_REGISTRATION'
+  | 'REQUEST_INFO_REGISTRATION'
+  | 'approve_pds_submission'
+  | 'reject_pds_submission'
+  | 'view_pds_submission'
+  | 'approve_saln_submission'
+  | 'reject_saln_submission'
+  | 'view_saln_submission'
+  | 'bulk_approve_pds_submission'
+  | 'bulk_approve_saln_submission';
 
 export type AuditEntityType =
   | 'profile'
@@ -26,17 +38,15 @@ export type AuditEntityType =
   | 'notification'
   | 'approval_workflow'
   | 'file'
-  | 'auth';
+  | 'auth'
+  | 'registration';
 
 export interface AuditLogData {
   userId: string;
   action: AuditAction;
   entityType: AuditEntityType;
   entityId?: string;
-  changes?: {
-    before?: Record<string, any>;
-    after?: Record<string, any>;
-  };
+  changes?: Record<string, any>; // Flexible structure for before/after/custom metadata
   metadata?: Record<string, any>;
   ipAddress?: string;
   userAgent?: string;

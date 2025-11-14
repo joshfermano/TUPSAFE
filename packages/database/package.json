@@ -14,6 +14,14 @@
     "./server": {
       "types": "./dist/server.d.ts",
       "default": "./dist/server.js"
+    },
+    "./schema": {
+      "types": "./dist/schema.d.ts",
+      "default": "./dist/schema.js"
+    },
+    "./utils/audit-log": {
+      "types": "./dist/utils/audit-log.d.ts",
+      "default": "./dist/utils/audit-log.js"
     }
   },
   "scripts": {
@@ -28,7 +36,8 @@
     "db:seed": "tsx src/seed.ts",
     "db:seed:tup": "tsx src/seed-tup-structure.ts",
     "db:test": "tsx src/test-connection.ts",
-    "storage:setup": "tsx src/storage-setup.ts"
+    "storage:setup": "tsx src/storage-setup.ts",
+    "admin:create": "tsx src/scripts/create-super-admin.ts"
   },
   "dependencies": {
     "dotenv": "^17.2.3",
@@ -52,10 +61,14 @@
     "@supabase/supabase-js": "^2.76.1",
     "@tanstack/react-query": "^5.62.19",
     "@types/node": "^20.19.15",
+    "@types/prompts": "^2.4.9",
     "@types/react": "^19",
     "@types/uuid": "^10.0.0",
+    "chalk": "^4.1.2",
     "drizzle-kit": "^0.18.1",
     "eslint": "^9",
+    "ora": "^5.4.1",
+    "prompts": "^2.4.2",
     "react": "^19.1.0",
     "sonner": "^1.7.2",
     "tsx": "^4.19.2",

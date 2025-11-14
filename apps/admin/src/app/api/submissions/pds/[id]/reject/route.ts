@@ -1,0 +1,200 @@
+/**
+ * PDS Submission Rejection API
+ * POST /api/submissions/pds/[id]/reject
+ *
+ * Rejects a PDS submission with required reason
+ *
+ * Workflow:
+ * 1. Validate admin/HR has permission
+ * 2. Verify submission is in 'submitted' or 'reviewing' status
+ * 3. Prevent self-review
+ * 4. Validate rejection reason (minimum 20 characters for compliance)
+ * 5. Update status to 'rejected'
+ * 6. Store rejection reason and optional notes
+ * 7. Set reviewedBy and reviewedAt
+ * 8. Create comprehensive audit log
+ * 9. Send rejection notification with reason to employee
+ * 10. Return updated submission
+ *
+ * Security:
+ * - Requires admin or hr role
+ * - Cannot reject own submission
+ * - Rejection reason required for audit compliance
+ * - Transaction handling for atomicity
+ * - Audit logging for accountability
+ *
+ * @param {string} id - PDS submission ID (UUID)
+ * @param {RejectSubmissionData} body - Rejection reason (required) and optional notes
+ * @returns {ApiSuccess} Success response with updated submission
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { checkUserRole, getSessionUser } from '@tupsafe/auth/server';
+import { db, pdsSubmissions, notifications } from '@tupsafe/database/server';
+import { eq, and, or } from 'drizzle-orm';
+import { createAuditLog } from '@tupsafe/database/utils/audit-log';
+import { rejectSubmissionSchema, type ApiSuccess } from '@tupsafe/types';
+import { v7 as uuidv7 } from 'uuid';
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    // Verify admin/HR permissions
+    const hasPermission = await checkUserRole(['admin', 'hr']);
+
+    if (!hasPermission) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Admin or HR role required.' },
+        { status: 403 }
+      );
+    }
+
+    // Get current user
+    const sessionUser = await getSessionUser();
+    if (!sessionUser) {
+      return NextResponse.json({ error: 'Session expired' }, { status: 401 });
+    }
+
+    // Validate UUID format
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      return NextResponse.json({ error: 'Invalid submission ID' }, { status: 400 });
+    }
+
+    // Parse and validate request body (includes rejection reason validation)
+    const body = await request.json();
+    const validatedData = rejectSubmissionSchema.parse(body);
+
+    // Fetch submission and verify it exists
+    const [submission] = await db
+      .select({
+        id: pdsSubmissions.id,
+        userId: pdsSubmissions.userId,
+        status: pdsSubmissions.status,
+        version: pdsSubmissions.version,
+      })
+      .from(pdsSubmissions)
+      .where(eq(pdsSubmissions.id, id))
+      .limit(1);
+
+    if (!submission) {
+      return NextResponse.json({ error: 'PDS submission not found' }, { status: 404 });
+    }
+
+    // Prevent self-review
+    if (submission.userId === sessionUser.id) {
+      return NextResponse.json(
+        { error: 'Cannot reject your own submission' },
+        { status: 403 }
+      );
+    }
+
+    // Verify submission is in reviewable status
+    if (submission.status !== 'submitted' && submission.status !== 'reviewing') {
+      return NextResponse.json(
+        {
+          error: `Cannot reject submission with status '${submission.status}'`,
+          details: 'Only submissions with status "submitted" or "reviewing" can be rejected',
+        },
+        { status: 409 }
+      );
+    }
+
+    // Update submission to rejected (atomic transaction)
+    const now = new Date();
+    const [updatedSubmission] = await db
+      .update(pdsSubmissions)
+      .set({
+        status: 'rejected',
+        approvedBy: sessionUser.id, // Track who rejected
+        approvedAt: now,
+        rejectionReason: validatedData.reason,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(pdsSubmissions.id, id),
+          or(
+            eq(pdsSubmissions.status, 'submitted'),
+            eq(pdsSubmissions.status, 'reviewing')
+          )
+        )
+      )
+      .returning();
+
+    if (!updatedSubmission) {
+      return NextResponse.json(
+        {
+          error: 'Failed to reject submission',
+          details: 'Submission may have been modified by another user',
+        },
+        { status: 409 }
+      );
+    }
+
+    // Create comprehensive audit log
+    await createAuditLog({
+      userId: sessionUser.id,
+      action: 'reject_pds_submission',
+      entityType: 'pds_submission',
+      entityId: id,
+      changes: {
+        submissionId: id,
+        previousStatus: submission.status,
+        newStatus: 'rejected',
+        rejectedBy: sessionUser.id,
+        rejectedAt: now.toISOString(),
+        version: submission.version,
+        rejectionReason: validatedData.reason,
+        internalNotes: validatedData.notes,
+      },
+      ipAddress: request.headers.get('x-forwarded-for') || undefined,
+      userAgent: request.headers.get('user-agent') || undefined,
+    });
+
+    // Send rejection notification to employee with reason
+    await db.insert(notifications).values({
+      id: uuidv7(),
+      userId: submission.userId,
+      type: 'submission_status',
+      title: 'PDS Submission Rejected',
+      message: `Your PDS submission (Version ${submission.version}) has been rejected.\n\nReason: ${validatedData.reason}\n\nPlease review the feedback and resubmit with the necessary corrections.`,
+      isRead: false,
+      createdAt: now,
+    });
+
+    const response: ApiSuccess<typeof updatedSubmission> = {
+      success: true,
+      message: 'PDS submission rejected successfully',
+      data: updatedSubmission,
+    };
+
+    return NextResponse.json(response, { status: 200 });
+  } catch (error) {
+    console.error('PDS rejection error:', error);
+
+    // Handle validation errors
+    if (error instanceof Error && error.name === 'ZodError') {
+      return NextResponse.json(
+        {
+          error: 'Invalid request data',
+          details: error.message,
+        },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
+      {
+        error: 'Failed to reject PDS submission',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
+  }
+}

@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Mail, Lock, Eye, EyeOff, LogIn, Shield, AlertCircle } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Mail, Lock, Eye, EyeOff, LogIn, Shield, AlertCircle, KeyRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,30 +10,38 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useTheme } from '@/context/ThemeContext';
-import { useAuth } from '@/context/AuthContext';
+import { useRealAuth, type OTPVerificationState } from '@/context/RealAuthContext';
 
 // Demo credentials display (for UI only)
 const demoCredentials = [
   {
     email: 'admin@tup.edu.ph',
     password: 'admin123',
-    name: 'Dr. Adora Guerrero',
-    role: 'admin',
-    title: 'University President'
-  },
-  {
-    email: 'hr@tup.edu.ph',
-    password: 'hr123',
-    name: 'Prof. Antonio Santos',
-    role: 'hr',
-    title: 'HR Director'
+    name: 'Admin User',
+    role: 'super_admin',
+    title: 'System Administrator'
   },
 ];
 
+// Error message mapping
+const ERROR_MESSAGES: Record<string, string> = {
+  authentication_required: 'Please sign in to access this page',
+  insufficient_privileges: 'Admin or HR privileges required to access this portal',
+  account_pending_approval: 'Your account is pending approval',
+  account_suspended: 'Your account has been suspended',
+  account_rejected: 'Your account registration was rejected',
+  account_inactive: 'Your account is inactive',
+  configuration_error: 'System configuration error. Please contact support.',
+  database_error: 'Database connection error. Please try again.',
+  profile_not_found: 'User profile not found',
+  internal_error: 'An internal error occurred. Please try again.',
+};
+
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { resolvedTheme } = useTheme();
-  const { signIn } = useAuth();
+  const { signIn, verifyOTP } = useRealAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -41,6 +49,21 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // OTP verification state
+  const [showOTPInput, setShowOTPInput] = useState(false);
+  const [otpCode, setOTPCode] = useState('');
+  const [otpState, setOTPState] = useState<OTPVerificationState | null>(null);
+
+  // Get error from URL params
+  const urlError = searchParams.get('error');
+  const urlMessage = searchParams.get('message');
+
+  React.useEffect(() => {
+    if (urlError) {
+      setError(ERROR_MESSAGES[urlError] || urlMessage || 'An error occurred');
+    }
+  }, [urlError, urlMessage]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,19 +78,66 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // Simulate authentication delay for better UX
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const result = await signIn(email, password);
 
-      // Sign in using AuthContext
-      await signIn(email, password);
-
-      // Store remember me preference
-      if (typeof window !== 'undefined' && rememberMe) {
-        localStorage.setItem('rememberMe', 'true');
+      if (result.requiresOTP && result.otpState) {
+        // Show OTP input form
+        setShowOTPInput(true);
+        setOTPState(result.otpState);
+        setIsLoading(false);
+        return;
       }
 
-      // Redirect to dashboard
-      router.push('/dashboard');
+      if (!result.success) {
+        setError(result.error || 'Login failed');
+        setIsLoading(false);
+        return;
+      }
+
+      // Login successful - refresh to ensure middleware has latest session, then redirect
+      // The session is now in cookies, so middleware will recognize the user
+      router.refresh();
+
+      // Small delay to ensure session is propagated
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      const redirectUrl = searchParams.get('redirect') || '/dashboard';
+      router.push(redirectUrl);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+      setError(errorMessage);
+      setIsLoading(false);
+    }
+  };
+
+  const handleOTPVerification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!otpCode || otpCode.length !== 6) {
+      setError('Please enter a valid 6-digit code');
+      return;
+    }
+
+    if (!otpState) {
+      setError('Invalid verification state');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const result = await verifyOTP(otpCode, otpState);
+
+      if (!result.success) {
+        setError(result.error || 'Verification failed');
+        setIsLoading(false);
+        return;
+      }
+
+      // Verification successful - redirect to dashboard
+      const redirectUrl = searchParams.get('redirect') || '/dashboard';
+      router.push(redirectUrl);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
       setError(errorMessage);
@@ -83,6 +153,13 @@ export default function LoginPage() {
       const event = new Event('submit', { bubbles: true, cancelable: true });
       document.querySelector('form')?.dispatchEvent(event);
     }, 300);
+  };
+
+  const handleBackToLogin = () => {
+    setShowOTPInput(false);
+    setOTPCode('');
+    setOTPState(null);
+    setError('');
   };
 
   return (
@@ -154,51 +231,57 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Right Side - Login Form */}
+        {/* Right Side - Login/OTP Form */}
         <div className="flex items-center justify-center">
           <Card className="w-full max-w-md border bg-card shadow-2xl backdrop-blur-sm">
             <CardHeader className="space-y-1 pb-6">
               <CardTitle className="text-2xl font-bold text-center">
-                Admin Sign In
+                {showOTPInput ? 'Device Verification' : 'Admin Sign In'}
               </CardTitle>
               <CardDescription className="text-center">
-                Enter your credentials to access the admin portal
+                {showOTPInput
+                  ? 'Enter the 6-digit code sent to your email'
+                  : 'Enter your credentials to access the admin portal'}
               </CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-6">
-              {/* Demo Credentials Info */}
-              <Alert className="bg-primary/5 border-primary/20">
-                <AlertCircle className="h-4 w-4 text-primary" />
-                <AlertDescription className="text-xs">
-                  <strong className="font-semibold">Demo Credentials:</strong>
-                  <div className="mt-2 space-y-2">
-                    {demoCredentials.map((cred) => (
-                      <div key={cred.email} className="flex flex-col space-y-0.5">
-                        <div className="flex items-center justify-between">
-                          <span className="text-muted-foreground font-medium">
-                            {cred.name}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground/70 uppercase">
-                            {cred.role}
-                          </span>
-                        </div>
-                        <Button
-                          variant="link"
-                          size="sm"
-                          className="h-auto p-0 text-xs text-primary hover:text-primary/80 justify-start"
-                          onClick={() => handleDemoLogin(cred.email, cred.password)}
-                        >
-                          {cred.email} / {cred.password}
-                        </Button>
-                        <span className="text-[10px] text-muted-foreground/60">
-                          {cred.title}
-                        </span>
+              {!showOTPInput && (
+                <>
+                  {/* Demo Credentials Info */}
+                  <Alert className="bg-primary/5 border-primary/20">
+                    <AlertCircle className="h-4 w-4 text-primary" />
+                    <AlertDescription className="text-xs">
+                      <strong className="font-semibold">Demo Credentials:</strong>
+                      <div className="mt-2 space-y-2">
+                        {demoCredentials.map((cred) => (
+                          <div key={cred.email} className="flex flex-col space-y-0.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-muted-foreground font-medium">
+                                {cred.name}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground/70 uppercase">
+                                {cred.role}
+                              </span>
+                            </div>
+                            <Button
+                              variant="link"
+                              size="sm"
+                              className="h-auto p-0 text-xs text-primary hover:text-primary/80 justify-start"
+                              onClick={() => handleDemoLogin(cred.email, cred.password)}
+                            >
+                              {cred.email} / {cred.password}
+                            </Button>
+                            <span className="text-[10px] text-muted-foreground/60">
+                              {cred.title}
+                            </span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </AlertDescription>
-              </Alert>
+                    </AlertDescription>
+                  </Alert>
+                </>
+              )}
 
               {/* Error Alert */}
               {error && (
@@ -208,92 +291,152 @@ export default function LoginPage() {
                 </Alert>
               )}
 
-              {/* Login Form */}
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Email Input */}
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="your.name@tup.edu.ph"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 focus-visible:ring-primary"
-                      disabled={isLoading}
-                      autoComplete="email"
-                    />
+              {!showOTPInput ? (
+                /* Login Form */
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {/* Email Input */}
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="your.name@tup.edu.ph"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-10 focus-visible:ring-primary"
+                        disabled={isLoading}
+                        autoComplete="email"
+                      />
+                    </div>
                   </div>
-                </div>
 
-                {/* Password Input */}
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="Enter your password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 pr-10 focus-visible:ring-primary"
+                  {/* Password Input */}
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="password"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pl-10 pr-10 focus-visible:ring-primary"
+                        disabled={isLoading}
+                        autoComplete="current-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        disabled={isLoading}
+                        tabIndex={-1}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Remember Me */}
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="remember"
+                      checked={rememberMe}
+                      onCheckedChange={(checked) => setRememberMe(checked as boolean)}
                       disabled={isLoading}
-                      autoComplete="current-password"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                      disabled={isLoading}
-                      tabIndex={-1}
+                    <Label
+                      htmlFor="remember"
+                      className="text-sm font-normal cursor-pointer"
                     >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
+                      Remember me
+                    </Label>
                   </div>
-                </div>
 
-                {/* Remember Me */}
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="remember"
-                    checked={rememberMe}
-                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                  {/* Submit Button */}
+                  <Button
+                    type="submit"
+                    className="w-full bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all"
                     disabled={isLoading}
-                  />
-                  <Label
-                    htmlFor="remember"
-                    className="text-sm font-normal cursor-pointer"
                   >
-                    Remember me
-                  </Label>
-                </div>
+                    {isLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-2" />
+                        Signing in...
+                      </>
+                    ) : (
+                      <>
+                        <LogIn className="w-4 h-4 mr-2" />
+                        Sign In
+                      </>
+                    )}
+                  </Button>
+                </form>
+              ) : (
+                /* OTP Verification Form */
+                <form onSubmit={handleOTPVerification} className="space-y-4">
+                  <Alert className="bg-primary/5 border-primary/20">
+                    <KeyRound className="h-4 w-4 text-primary" />
+                    <AlertDescription className="text-xs">
+                      We've sent a 6-digit verification code to <strong>{email}</strong>.
+                      Please check your email and enter the code below.
+                    </AlertDescription>
+                  </Alert>
 
-                {/* Submit Button */}
-                <Button
-                  type="submit"
-                  className="w-full bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-2" />
-                      Signing in...
-                    </>
-                  ) : (
-                    <>
-                      <LogIn className="w-4 h-4 mr-2" />
-                      Sign In
-                    </>
-                  )}
-                </Button>
-              </form>
+                  {/* OTP Input */}
+                  <div className="space-y-2">
+                    <Label htmlFor="otp">Verification Code</Label>
+                    <Input
+                      id="otp"
+                      type="text"
+                      placeholder="000000"
+                      value={otpCode}
+                      onChange={(e) => setOTPCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      className="text-center text-2xl tracking-widest focus-visible:ring-primary"
+                      disabled={isLoading}
+                      maxLength={6}
+                      autoComplete="one-time-code"
+                      autoFocus
+                    />
+                  </div>
+
+                  {/* Verify Button */}
+                  <Button
+                    type="submit"
+                    className="w-full bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all"
+                    disabled={isLoading || otpCode.length !== 6}
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-2" />
+                        Verifying...
+                      </>
+                    ) : (
+                      <>
+                        <KeyRound className="w-4 h-4 mr-2" />
+                        Verify Code
+                      </>
+                    )}
+                  </Button>
+
+                  {/* Back to Login */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleBackToLogin}
+                    disabled={isLoading}
+                  >
+                    Back to Login
+                  </Button>
+                </form>
+              )}
 
               {/* Footer */}
               <div className="pt-4 border-t text-center">

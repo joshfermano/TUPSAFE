@@ -16,6 +16,7 @@ import {
   Sun,
   Moon,
   ChevronRight,
+  UserCheck,
 } from 'lucide-react';
 
 import { useAuth } from '@/context/AuthContext';
@@ -60,6 +61,12 @@ const navItems: NavItem[] = [
     section: 'main',
   },
   // Management Section
+  {
+    name: 'Registrations',
+    href: '/dashboard/registrations',
+    icon: UserCheck,
+    section: 'management',
+  },
   {
     name: 'Users',
     href: '/dashboard/users',
@@ -131,7 +138,6 @@ const SidebarNav = memo(
       ? `${profile.firstName} ${profile.lastName}`
       : user?.email || 'Admin User';
     const userRole =
-      profile?.position?.title ||
       (profile?.role === 'admin' ? 'Administrator' : 'HR Personnel');
 
     // Group navigation items by section

@@ -97,7 +97,11 @@
       "mcp__supabase__list_storage_buckets",
       "mcp__supabase__get_storage_config",
       "Bash(npm run setup:storage:*)",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "mcp__serena__think_about_collected_information",
+      "Bash(npx turbo:*)",
+      "Bash(killall:*)",
+      "Bash(timeout 30 npx turbo:*)"
     ],
     "deny": [],
     "ask": []

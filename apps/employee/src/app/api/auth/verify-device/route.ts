@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
     // Create session
     await createSession({
       userId,
+      id: userId,
       email: profile.firstName + '@' + profile.lastName, // We'll get actual email from Supabase
       ...(profile.employeeId ? { employeeId: profile.employeeId } : {}),
       role: profile.role,
