@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, useCallback, memo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@tupsafe/mock-data/api';
+import { useProfileQuery } from '@/hooks/useProfileQuery';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -16,6 +17,8 @@ import {
   LogOut,
   Menu,
   User,
+  Briefcase,
+  Building2,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -44,6 +47,7 @@ interface UserInfoProps {
 
 interface DashboardSidebarProps {
   className?: string;
+  userType?: 'employee' | 'applicant';
 }
 
 // ============================================================================
@@ -180,35 +184,68 @@ NavItem.displayName = 'NavItem';
 // MAIN COMPONENTS
 // ============================================================================
 
-const DashboardSidebar = memo(function DashboardSidebar({ className }: DashboardSidebarProps) {
+const DashboardSidebar = memo(function DashboardSidebar({ className, userType = 'employee' }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, signOut } = useAuth();
   const prefersReducedMotion = useReducedMotion();
 
-  // Memoize navigation items array to prevent recreation on every render
-  const navigationItems = useMemo<NavigationItem[]>(() => [
-    {
-      name: 'Profile',
-      href: '/dashboard/profile',
-      icon: User,
-    },
-    {
-      name: 'e-PDS',
-      href: '/dashboard/pds',
-      icon: FileText,
-    },
-    {
-      name: 'e-SALN',
-      href: '/dashboard/saln',
-      icon: Landmark,
-    },
-    {
-      name: 'Settings',
-      href: '/dashboard/settings',
-      icon: Settings,
-    },
-  ], []);
+  // Memoize navigation items array based on user type
+  const navigationItems = useMemo<NavigationItem[]>(() => {
+    if (userType === 'applicant') {
+      return [
+        {
+          name: 'Profile',
+          href: '/dashboard/profile',
+          icon: User,
+        },
+        {
+          name: 'e-PDS',
+          href: '/dashboard/pds',
+          icon: FileText,
+        },
+        {
+          name: 'My Applications',
+          href: '/dashboard/applications',
+          icon: Briefcase,
+        },
+        {
+          name: 'Open Positions',
+          href: '/dashboard/positions',
+          icon: Building2,
+        },
+        {
+          name: 'Settings',
+          href: '/dashboard/settings',
+          icon: Settings,
+        },
+      ];
+    }
+
+    // Employee navigation (default)
+    return [
+      {
+        name: 'Profile',
+        href: '/dashboard/profile',
+        icon: User,
+      },
+      {
+        name: 'e-PDS',
+        href: '/dashboard/pds',
+        icon: FileText,
+      },
+      {
+        name: 'e-SALN',
+        href: '/dashboard/saln',
+        icon: Landmark,
+      },
+      {
+        name: 'Settings',
+        href: '/dashboard/settings',
+        icon: Settings,
+      },
+    ];
+  }, [userType]);
 
   // Memoize sign out handler to prevent recreation on every render
   const handleSignOut = useCallback(async () => {
@@ -324,6 +361,10 @@ export default function DashboardLayout({
   const { user, loading } = useAuth();
   const [mounted, setMounted] = useState(false);
 
+  // Fetch user profile to get userType (employee | applicant)
+  // This determines which navigation items are shown in the sidebar
+  const { profile, isLoading: profileLoading } = useProfileQuery(user?.id || '');
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -337,8 +378,13 @@ export default function DashboardLayout({
     }
   }, [user, loading, router, mounted]);
 
+  // Determine user type from profile
+  // Profile now includes userType field (employee | applicant)
+  // This determines which navigation items are shown in the sidebar
+  const userType: 'employee' | 'applicant' = profile?.userType || 'employee';
+
   // Show loading state while checking authentication
-  if (!mounted || loading) {
+  if (!mounted || loading || profileLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-900">
         <div className="flex flex-col items-center gap-4">
@@ -358,7 +404,7 @@ export default function DashboardLayout({
     <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-900">
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex w-72 flex-shrink-0">
-        <DashboardSidebar />
+        <DashboardSidebar userType={userType} />
       </aside>
 
       {/* Mobile Sidebar */}
@@ -374,7 +420,7 @@ export default function DashboardLayout({
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-72 p-0">
-            <DashboardSidebar />
+            <DashboardSidebar userType={userType} />
           </SheetContent>
         </Sheet>
       </div>

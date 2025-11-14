@@ -7,7 +7,7 @@ export type { MockUser, MockSession } from './auth';
 
 // User Profiles and Organization Mock Data
 export * from './users';
-export type { Department, Position, Profile, Role } from './users';
+export type { Department, Position, Profile, Role, UserType } from './users';
 
 // PDS (Personal Data Sheet) Mock Data
 export * from './pds';
@@ -225,7 +225,8 @@ export class MockDatabase {
         (profile) =>
           profile.firstName.toLowerCase().includes(lowercaseQuery) ||
           profile.lastName.toLowerCase().includes(lowercaseQuery) ||
-          profile.employeeId.toLowerCase().includes(lowercaseQuery) ||
+          (profile.employeeId && profile.employeeId.toLowerCase().includes(lowercaseQuery)) ||
+          (profile.applicantId && profile.applicantId.toLowerCase().includes(lowercaseQuery)) ||
           (profile.middleName &&
             profile.middleName.toLowerCase().includes(lowercaseQuery))
       )

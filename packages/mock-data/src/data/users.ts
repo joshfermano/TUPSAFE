@@ -2,6 +2,7 @@ import { v7 as uuidv7 } from 'uuid';
 
 // Type definitions based on the database schema
 export type Role = 'employee' | 'hr' | 'admin' | 'supervisor' | 'auditor';
+export type UserType = 'employee' | 'applicant';
 
 export interface Department {
   id: string;
@@ -23,7 +24,9 @@ export interface Position {
 
 export interface Profile {
   id: string; // References Supabase auth.users.id
-  employeeId: string;
+  userType: UserType; // Employee or applicant - determines navigation and access
+  employeeId: string | null; // Nullable for applicants
+  applicantId?: string | null; // Optional field for applicants
   firstName: string;
   lastName: string;
   middleName: string | null;
@@ -338,6 +341,8 @@ export const mockPositions: Position[] = [
 export const mockProfiles: Profile[] = [
   {
     id: '01927d4e-8b45-7f52-b123-456789abcdef', // References auth user
+    userType: 'employee',
+    applicantId: null,
     employeeId: 'DOST-2023-001',
     firstName: 'Juan',
     lastName: 'dela Cruz',
@@ -351,6 +356,8 @@ export const mockProfiles: Profile[] = [
   },
   {
     id: '01927d4e-8b45-7f52-b123-456789abcde0',
+    userType: 'employee',
+    applicantId: null,
     employeeId: 'DEPED-2023-047',
     firstName: 'Maria',
     lastName: 'Santos',
@@ -364,6 +371,8 @@ export const mockProfiles: Profile[] = [
   },
   {
     id: '01927d4e-8b45-7f52-b123-456789abcde1',
+    userType: 'employee',
+    applicantId: null,
     employeeId: 'DOH-2024-089',
     firstName: 'Jose',
     lastName: 'Rizal',
@@ -377,6 +386,8 @@ export const mockProfiles: Profile[] = [
   },
   {
     id: '01927d4e-8b45-7f52-b123-456789abcde2',
+    userType: 'employee',
+    applicantId: null,
     employeeId: 'DOF-2024-125',
     firstName: 'Ana',
     lastName: 'Luna',
@@ -390,6 +401,8 @@ export const mockProfiles: Profile[] = [
   },
   {
     id: '01927d4e-8b45-7f52-b123-456789abcde3',
+    userType: 'employee',
+    applicantId: null,
     employeeId: 'OP-2024-001',
     firstName: 'Rodrigo',
     lastName: 'Duterte',
@@ -403,6 +416,8 @@ export const mockProfiles: Profile[] = [
   },
   {
     id: '01927d4e-8b45-7f52-b123-456789abcde4',
+    userType: 'employee',
+    applicantId: null,
     employeeId: 'SENATE-2024-033',
     firstName: 'Grace',
     lastName: 'Poe',
@@ -416,6 +431,8 @@ export const mockProfiles: Profile[] = [
   },
   {
     id: '01927d4e-8b45-7f52-b123-456789abcde5',
+    userType: 'employee',
+    applicantId: null,
     employeeId: 'DPWH-2024-078',
     firstName: 'Manuel',
     lastName: 'Villar',
@@ -429,6 +446,8 @@ export const mockProfiles: Profile[] = [
   },
   {
     id: '01927d4e-8b45-7f52-b123-456789abcde6',
+    userType: 'employee',
+    applicantId: null,
     employeeId: 'OVP-2024-012',
     firstName: 'Leni',
     lastName: 'Robredo',
@@ -442,6 +461,8 @@ export const mockProfiles: Profile[] = [
   },
   {
     id: '01927d4e-8b45-7f52-b123-456789abcde7',
+    userType: 'employee',
+    applicantId: null,
     employeeId: 'PNP-2024-156',
     firstName: 'Panfilo',
     lastName: 'Lacson',
@@ -455,6 +476,8 @@ export const mockProfiles: Profile[] = [
   },
   {
     id: '01927d4e-8b45-7f52-b123-456789abcde8',
+    userType: 'employee',
+    applicantId: null,
     employeeId: 'DA-2024-203',
     firstName: 'Francis',
     lastName: 'Pangilinan',
@@ -466,6 +489,22 @@ export const mockProfiles: Profile[] = [
     createdAt: new Date('2024-10-12T00:00:00Z'),
     updatedAt: new Date('2024-10-12T00:00:00Z'),
   },
+  // Test applicant profile for testing applicant navigation
+  {
+    id: '01927d4e-8b45-7f52-b123-456789abcde9',
+    userType: 'applicant',
+    employeeId: null,
+    applicantId: 'APP-2024-001',
+    firstName: 'Maria',
+    lastName: 'Garcia',
+    middleName: 'Reyes',
+    role: 'employee', // Applicants still have employee role by default until hired
+    departmentId: null,
+    positionId: null,
+    isActive: true,
+    createdAt: new Date('2024-11-01T00:00:00Z'),
+    updatedAt: new Date('2024-11-01T00:00:00Z'),
+  }
 ];
 
 // Helper functions for mock data
@@ -506,7 +545,8 @@ export function generateMockProfile(
   middleName: string | null,
   role: Role,
   departmentId: string,
-  positionId: string
+  positionId: string,
+  userType: UserType = 'employee'
 ): Profile {
   const employeeIdPrefix = getDepartmentById(departmentId)?.code || 'GOV';
   const year = new Date().getFullYear();
@@ -516,7 +556,9 @@ export function generateMockProfile(
 
   return {
     id: uuidv7(),
-    employeeId: `${employeeIdPrefix}-${year}-${randomNum}`,
+    userType,
+    employeeId: userType === 'employee' ? `${employeeIdPrefix}-${year}-${randomNum}` : null,
+    applicantId: userType === 'applicant' ? `APP-${year}-${randomNum}` : null,
     firstName,
     lastName,
     middleName,

@@ -2,25 +2,17 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import {
   User,
-  Mail,
-  Phone,
+  Shield,
+  FileText,
   Building,
   Briefcase,
-  Lock,
-  Eye,
-  EyeOff,
-  Check,
-  ArrowLeft,
-  ArrowRight,
-  FileText,
-  Shield,
-  AlertCircle,
   CheckCircle2,
   Clock,
+  Mail,
+  Check,
+  AlertCircle,
   Building2,
   Users,
   ChevronRight,
@@ -35,42 +27,31 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  FormDescription,
-} from '@/components/ui/form';
 import { MagicCard } from '@/components/ui/magic-card';
 import { BorderBeam } from '@/components/ui/border-beam';
 import { AnimatedGradientText } from '@/components/ui/animated-gradient-text';
 import { AnimatedShinyText } from '@/components/ui/animated-shiny-text';
 import AnimatedGridPattern from '@/components/ui/animated-grid-pattern';
 
+// Import new components
+import { UserTypeSelection } from '@/components/auth/UserTypeSelection';
+import { EmployeeRegistrationForm } from '@/components/auth/EmployeeRegistrationForm';
+import { ApplicantRegistrationForm } from '@/components/auth/ApplicantRegistrationForm';
+
 import {
-  registerSchema,
-  registerStep1Schema,
-  registerStep2Schema,
-  registerStep3Schema,
-  registerStep4Schema,
-  TUP_DEPARTMENTS,
-  type RegisterFormData,
+  type EmployeeRegistrationFormData,
+  type ApplicantRegistrationFormData,
 } from '@/lib/validations/auth';
 import { cn } from '@/lib/utils';
 
-const STEPS = [
+// Step definitions for employee flow
+const EMPLOYEE_STEPS = [
+  {
+    id: 0,
+    title: 'User Type',
+    description: 'Select your role',
+    icon: Users,
+  },
   {
     id: 1,
     title: 'Personal Info',
@@ -80,13 +61,13 @@ const STEPS = [
   {
     id: 2,
     title: 'Employment',
-    description: 'Government position details',
+    description: 'Position details',
     icon: Building,
   },
   {
     id: 3,
     title: 'Security',
-    description: 'Account security setup',
+    description: 'Account security',
     icon: Shield,
   },
   {
@@ -97,84 +78,91 @@ const STEPS = [
   },
 ];
 
+// Step definitions for applicant flow
+const APPLICANT_STEPS = [
+  {
+    id: 0,
+    title: 'User Type',
+    description: 'Select your role',
+    icon: Users,
+  },
+  {
+    id: 1,
+    title: 'Personal Info',
+    description: 'Basic information',
+    icon: User,
+  },
+  {
+    id: 2,
+    title: 'Position',
+    description: 'Select position',
+    icon: Briefcase,
+  },
+  {
+    id: 3,
+    title: 'Security',
+    description: 'Account security',
+    icon: Shield,
+  },
+  {
+    id: 4,
+    title: 'Verification',
+    description: 'Terms and verification',
+    icon: FileText,
+  },
+];
+
+type UserTypeSelection =
+  | 'employee-faculty'
+  | 'employee-staff'
+  | 'applicant'
+  | null;
+
 export default function RegisterPage() {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [userTypeSelection, setUserTypeSelection] =
+    useState<UserTypeSelection>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const form = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: {
-      firstName: '',
-      lastName: '',
-      middleName: '',
-      email: '',
-      phoneNumber: '',
-      department: '',
-      position: '',
-      employeeId: '',
-      yearsOfService: undefined,
-      password: '',
-      confirmPassword: '',
-      termsAccepted: false,
-      privacyAccepted: false,
-      dataProcessingConsent: false,
-    },
-    mode: 'onChange',
-  });
+  // Determine if employee or applicant
+  const isEmployee = userTypeSelection?.startsWith('employee');
+  const isApplicant = userTypeSelection === 'applicant';
+  const isFaculty = userTypeSelection === 'employee-faculty';
 
-  const getCurrentStepSchema = () => {
-    switch (currentStep) {
-      case 1:
-        return registerStep1Schema;
-      case 2:
-        return registerStep2Schema;
-      case 3:
-        return registerStep3Schema;
-      case 4:
-        return registerStep4Schema;
-      default:
-        return registerStep1Schema;
-    }
+  // Get appropriate steps based on user type
+  const steps = isEmployee ? EMPLOYEE_STEPS : APPLICANT_STEPS;
+
+  const handleUserTypeSelection = (type: UserTypeSelection) => {
+    setUserTypeSelection(type);
+    setCurrentStep(1); // Move to first form step after selection
   };
 
-  const validateCurrentStep = async () => {
-    const schema = getCurrentStepSchema();
-    const currentData = form.getValues();
-
-    try {
-      schema.parse(currentData);
-      return true;
-    } catch {
-      // Trigger form validation to show errors
-      await form.trigger();
-      return false;
-    }
-  };
-
-  const nextStep = async () => {
-    const isValid = await validateCurrentStep();
-    if (isValid && currentStep < 4) {
+  const nextStep = () => {
+    if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     }
   };
 
   const prevStep = () => {
-    if (currentStep > 1) {
+    if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
+    }
+    // If going back to step 0, reset user type selection
+    if (currentStep === 1) {
+      setUserTypeSelection(null);
+      setCurrentStep(0);
     }
   };
 
-  const onSubmit = async (data: RegisterFormData) => {
+  const onSubmitEmployee = async (data: EmployeeRegistrationFormData) => {
     setIsLoading(true);
 
     try {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 3000));
 
-      console.log('Registration attempt:', {
+      console.log('Employee registration attempt:', {
         ...data,
         password: '[REDACTED]',
         confirmPassword: '[REDACTED]',
@@ -188,71 +176,98 @@ export default function RegisterPage() {
     }
   };
 
+  const onSubmitApplicant = async (data: ApplicantRegistrationFormData) => {
+    setIsLoading(true);
+
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+
+      console.log('Applicant registration attempt:', {
+        ...data,
+        password: '[REDACTED]',
+        confirmPassword: '[REDACTED]',
+      });
+
+      setIsSubmitted(true);
+    } catch (error) {
+      console.error('Registration failed:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Success state
   if (isSubmitted) {
     return (
       <div className="min-h-screen relative overflow-hidden bg-background">
-      <AnimatedGridPattern
-      numSquares={30}
-      maxOpacity={0.1}
-      duration={3}
-      repeatDelay={1}
-      className={cn(
-      '[mask-image:radial-gradient(500px_circle_at_center,white,transparent)]',
-      'inset-x-0 inset-y-[-30%] h-[200%] skew-y-12'
-      )}
-      />
-      <div className="absolute inset-0 bg-gradient-to-br from-background/95 via-background/80 to-background/95" />
+        <AnimatedGridPattern
+          numSquares={30}
+          maxOpacity={0.1}
+          duration={3}
+          repeatDelay={1}
+          className={cn(
+            '[mask-image:radial-gradient(500px_circle_at_center,white,transparent)]',
+            'inset-x-0 inset-y-[-30%] h-[200%] skew-y-12'
+          )}
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-background/95 via-background/80 to-background/95" />
 
-      <div className="relative z-10 min-h-screen flex items-center justify-center p-4 pt-28 pb-8">
-      <div className="w-full max-w-md space-y-8 animate-fade-in">
-      <Card className="text-center space-y-6 border-[#8B1538]/20 bg-[#8B1538]/5 dark:border-[#8B1538]/80 dark:bg-[#8B1538]/20 relative overflow-hidden">
-      <BorderBeam
-      size={250}
-      duration={12}
-      delay={9}
-      colorFrom="#8B1538"
-      colorTo="#B8264D"
-      />
+        <div className="relative z-10 min-h-screen flex items-center justify-center p-4 pt-28 pb-8">
+          <div className="w-full max-w-md space-y-8 animate-fade-in">
+            <Card className="text-center space-y-6 border-[#8B1538]/20 bg-[#8B1538]/5 dark:border-[#8B1538]/80 dark:bg-[#8B1538]/20 relative overflow-hidden">
+              <BorderBeam
+                size={250}
+                duration={12}
+                delay={9}
+                colorFrom="#8B1538"
+                colorTo="#B8264D"
+              />
 
-      <CardHeader>
-      <div className="w-16 h-16 mx-auto mb-4 bg-[#8B1538]/10 dark:bg-[#8B1538]/50 rounded-full flex items-center justify-center">
-      <CheckCircle2 className="h-8 w-8 text-[#8B1538] dark:text-[#8B1538]/90" />
-      </div>
-      <CardTitle className="text-xl text-[#8B1538] dark:text-[#8B1538]/90">
-      <AnimatedShinyText className="inline-flex items-center justify-center px-4 py-1 transition ease-out">
-      <span>Registration Submitted</span>
-      </AnimatedShinyText>
-      </CardTitle>
-      <CardDescription className="text-[#8B1538]/80 dark:text-[#8B1538]/70">
-      Your account is pending verification
-      </CardDescription>
-      </CardHeader>
+              <CardHeader>
+                <div className="w-16 h-16 mx-auto mb-4 bg-[#8B1538]/10 dark:bg-[#8B1538]/50 rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="h-8 w-8 text-[#8B1538] dark:text-[#8B1538]/90" />
+                </div>
+                <CardTitle className="text-xl text-[#8B1538] dark:text-[#8B1538]/90">
+                  <AnimatedShinyText className="inline-flex items-center justify-center px-4 py-1 transition ease-out">
+                    <span>Registration Submitted</span>
+                  </AnimatedShinyText>
+                </CardTitle>
+                <CardDescription className="text-[#8B1538]/80 dark:text-[#8B1538]/70">
+                  Your account is pending verification
+                </CardDescription>
+              </CardHeader>
 
-      <CardContent className="space-y-4">
-      <div className="space-y-3 text-sm text-[#8B1538]/80 dark:text-[#8B1538]/70">
-      <div className="flex items-center gap-2">
-      <Clock className="h-4 w-4" />
-      <span>Processing time: 1-3 business days</span>
-      </div>
-      <div className="flex items-center gap-2">
-      <Mail className="h-4 w-4" />
-      <span>
-      Verification email sent to your TUP Manila email address
-      </span>
-      </div>
-      <div className="flex items-center gap-2">
-      <Shield className="h-4 w-4" />
-      <span>HR department will verify your employment</span>
-      </div>
-      </div>
+              <CardContent className="space-y-4">
+                <div className="space-y-3 text-sm text-[#8B1538]/80 dark:text-[#8B1538]/70">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    <span>Processing time: 1-3 business days</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    <span>
+                      Verification email sent to your{' '}
+                      {isEmployee ? 'TUP Manila email' : 'email'} address
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-4 w-4" />
+                    <span>
+                      {isEmployee
+                        ? 'HR department will verify your employment'
+                        : 'HR will review your application'}
+                    </span>
+                  </div>
+                </div>
 
-      <div className="pt-4 border-t border-[#8B1538]/20 dark:border-[#8B1538]/80">
-      <p className="text-xs text-[#8B1538]/70 dark:text-[#8B1538]/60 leading-relaxed">
-      You will receive an email notification once your account has
-      been verified and activated. Please check your TUP Manila
-      email regularly.
-      </p>
-      </div>
+                <div className="pt-4 border-t border-[#8B1538]/20 dark:border-[#8B1538]/80">
+                  <p className="text-xs text-[#8B1538]/70 dark:text-[#8B1538]/60 leading-relaxed">
+                    You will receive an email notification once your account has
+                    been verified and activated. Please check your email
+                    regularly.
+                  </p>
+                </div>
 
                 <Button asChild className="w-full" variant="outline">
                   <Link href="/auth/login">Return to Login</Link>
@@ -274,24 +289,22 @@ export default function RegisterPage() {
         duration={3}
         repeatDelay={1}
         className={cn(
-          "[mask-image:radial-gradient(800px_circle_at_center,white,transparent)]",
-          "inset-x-0 inset-y-[-30%] h-[200%] skew-y-12",
+          '[mask-image:radial-gradient(800px_circle_at_center,white,transparent)]',
+          'inset-x-0 inset-y-[-30%] h-[200%] skew-y-12'
         )}
       />
 
       {/* Main Content Container */}
       <div className="relative z-10 w-full max-w-7xl mx-auto grid lg:grid-cols-2 gap-8 lg:gap-12 items-start lg:items-center">
-
         {/* Hero Section - Left Side */}
         <div className="space-y-4 sm:space-y-6 lg:space-y-8 text-center lg:text-left order-2 lg:order-1">
           {/* Badge */}
           <div className="flex justify-center lg:justify-start">
             <Badge
               variant="secondary"
-              className="bg-[#8B1538]/10 text-[#8B1538] dark:bg-[#8B1538]/20 dark:text-[#8B1538]/90 border-[#8B1538]/20 dark:border-[#8B1538]/80 px-4 py-2"
-            >
+              className="bg-[#8B1538]/10 text-[#8B1538] dark:bg-[#8B1538]/20 dark:text-[#8B1538]/90 border-[#8B1538]/20 dark:border-[#8B1538]/80 px-4 py-2">
               <Shield className="w-4 h-4 mr-2" />
-              TUP Manila Employee Portal
+              TUP Manila Registration Portal
             </Badge>
           </div>
 
@@ -303,10 +316,18 @@ export default function RegisterPage() {
               </span>
             </AnimatedGradientText>
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-slate-700 dark:text-slate-300">
-              Employee Registration
+              {isEmployee
+                ? 'Employee Registration'
+                : isApplicant
+                ? 'Applicant Registration'
+                : 'Registration Portal'}
             </h2>
             <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 max-w-lg mx-auto lg:mx-0">
-              Join the secure digital platform for PDS and SALN submissions with complete audit trails and compliance management.
+              {isEmployee
+                ? 'Secure digital platform for TUP Manila employees'
+                : isApplicant
+                ? 'Apply for open positions at TUP Manila'
+                : 'Choose your registration type to get started'}
             </p>
           </div>
 
@@ -314,51 +335,57 @@ export default function RegisterPage() {
           <div className="hidden sm:grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto lg:mx-0">
             <div className="flex items-center space-x-3 p-4 rounded-lg bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border border-[#8B1538]/20 dark:border-slate-700">
               <FileText className="w-5 h-5 text-[#8B1538] dark:text-[#8B1538]/90" />
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">e-PDS Management</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                e-PDS Management
+              </span>
             </div>
             <div className="flex items-center space-x-3 p-4 rounded-lg bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border border-[#B8264D]/20 dark:border-slate-700">
               <Building2 className="w-5 h-5 text-[#B8264D] dark:text-[#B8264D]/90" />
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">e-SALN Compliance</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                e-SALN Compliance
+              </span>
             </div>
           </div>
 
           {/* Progress Steps */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 max-w-2xl mx-auto lg:mx-0">
-            {STEPS.map((step) => (
-              <div
-                key={step.id}
-                className="flex flex-col items-center space-y-2">
+          {userTypeSelection && (
+            <div className="grid grid-cols-5 gap-2 sm:gap-3 max-w-2xl mx-auto lg:mx-0">
+              {steps.map((step) => (
                 <div
-                  className={`
-                  w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 relative
-                  ${
-                    currentStep >= step.id
-                      ? 'bg-[#8B1538] border-[#8B1538] text-white shadow-lg scale-110'
-                      : 'border-slate-300 dark:border-slate-600 text-slate-400 dark:text-slate-500 hover:border-[#8B1538]/40'
-                  }
-                `}>
-                  {currentStep > step.id ? (
-                    <Check className="h-3 w-3 sm:h-4 sm:w-4" />
-                  ) : (
-                    <step.icon className="h-3 w-3 sm:h-4 sm:w-4" />
-                  )}
-                  {currentStep >= step.id && (
-                    <BorderBeam size={40} duration={12} delay={9} />
-                  )}
-                </div>
-                <div className="text-center">
+                  key={step.id}
+                  className="flex flex-col items-center space-y-2">
                   <div
-                    className={`text-[10px] sm:text-xs font-medium transition-colors leading-tight ${
+                    className={`
+                    w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 relative
+                    ${
                       currentStep >= step.id
-                        ? 'text-[#8B1538] dark:text-[#8B1538]/90'
-                        : 'text-slate-500 dark:text-slate-400'
-                    }`}>
-                    {step.title}
+                        ? 'bg-[#8B1538] border-[#8B1538] text-white shadow-lg scale-110'
+                        : 'border-slate-300 dark:border-slate-600 text-slate-400 dark:text-slate-500 hover:border-[#8B1538]/40'
+                    }
+                  `}>
+                    {currentStep > step.id ? (
+                      <Check className="h-3 w-3 sm:h-4 sm:w-4" />
+                    ) : (
+                      <step.icon className="h-3 w-3 sm:h-4 sm:w-4" />
+                    )}
+                    {currentStep >= step.id && (
+                      <BorderBeam size={40} duration={12} delay={9} />
+                    )}
+                  </div>
+                  <div className="text-center">
+                    <div
+                      className={`text-[10px] sm:text-xs font-medium transition-colors leading-tight ${
+                        currentStep >= step.id
+                          ? 'text-[#8B1538] dark:text-[#8B1538]/90'
+                          : 'text-slate-500 dark:text-slate-400'
+                      }`}>
+                      {step.title}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
           {/* Status Indicator */}
           <div className="hidden md:flex justify-center lg:justify-start">
@@ -376,509 +403,114 @@ export default function RegisterPage() {
             <MagicCard
               className="relative overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-[#8B1538]/20 dark:border-slate-700/50 shadow-2xl"
               gradientColor="rgba(139, 21, 56, 0.08)"
-              gradientOpacity={0.3}
-            >
+              gradientOpacity={0.3}>
               <BorderBeam size={280} duration={12} delay={9} />
 
               <div className="p-6 sm:p-8 space-y-5 sm:space-y-6">
                 {/* Form Header */}
                 <div className="text-center space-y-2">
                   <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
-                    {STEPS[currentStep - 1].title}
+                    {steps[currentStep].title}
                   </h3>
                   <p className="text-slate-600 dark:text-slate-400">
-                    {STEPS[currentStep - 1].description}
+                    {steps[currentStep].description}
                   </p>
                 </div>
 
-                {/* Registration Form */}
+                {/* Registration Form Content */}
                 <div className="space-y-4">
-                  <Form {...form}>
-                    <form
-                      onSubmit={form.handleSubmit(onSubmit)}
-                      className="space-y-5 sm:space-y-6">
-                  {/* Step 1: Personal Information */}
-                  {currentStep === 1 && (
-                    <div className="space-y-4 sm:space-y-5">
-                      <div className="grid grid-cols-1 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="firstName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>First Name *</FormLabel>
-                              <FormControl>
-                                <Input
-                                  {...field}
-                                  placeholder="Juan"
-                                  className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-[#8B1538] focus:ring-[#8B1538] text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-[#8B1538]/40 dark:hover:bg-slate-700/80 dark:hover:border-[#8B1538]/50"
-                                  aria-describedby="firstName-description"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="lastName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Last Name *</FormLabel>
-                              <FormControl>
-                                <Input
-                                  {...field}
-                                  placeholder="Dela Cruz"
-                                  className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-[#8B1538] focus:ring-[#8B1538] text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-[#8B1538]/40 dark:hover:bg-slate-700/80 dark:hover:border-[#8B1538]/50"
-                                  aria-describedby="lastName-description"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <FormField
-                        control={form.control}
-                        name="middleName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Middle Name</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                placeholder="Santos (optional)"
-                                className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-[#8B1538] focus:ring-[#8B1538] text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-[#8B1538]/40 dark:hover:bg-slate-700/80 dark:hover:border-[#8B1538]/50"
-                                aria-describedby="middleName-description"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Government Email *</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                  {...field}
-                                  type="email"
-                                  placeholder="juan.delacruz@tup.edu.ph"
-                                  className="pl-10 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-[#8B1538] focus:ring-[#8B1538] text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-[#8B1538]/40 dark:hover:bg-slate-700/80 dark:hover:border-[#8B1538]/50"
-                                  aria-describedby="email-description"
-                                />
-                              </div>
-                            </FormControl>
-                            <FormDescription id="email-description">
-                              Use your official TUP Manila email address
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="phoneNumber"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Phone Number *</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                  {...field}
-                                  type="tel"
-                                  placeholder="+639123456789 or 09123456789"
-                                  className="pl-10 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-[#8B1538] focus:ring-[#8B1538] text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-[#8B1538]/40 dark:hover:bg-slate-700/80 dark:hover:border-[#8B1538]/50"
-                                  aria-describedby="phone-description"
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                  {/* Step 0: User Type Selection */}
+                  {currentStep === 0 && (
+                    <UserTypeSelection
+                      value={userTypeSelection || undefined}
+                      onChange={handleUserTypeSelection}
+                      error={
+                        !userTypeSelection && currentStep > 0
+                          ? 'Please select your user type'
+                          : undefined
+                      }
+                    />
                   )}
 
-                  {/* Step 2: Employment Details */}
-                  {currentStep === 2 && (
-                    <div className="space-y-4 sm:space-y-5">
-                      <FormField
-                        control={form.control}
-                        name="department"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>TUP Department/College *</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-[#8B1538] focus:ring-[#8B1538] text-slate-900 dark:text-slate-100 transition-all duration-300 hover:bg-white hover:border-[#8B1538]/40 dark:hover:bg-slate-700/80 dark:hover:border-[#8B1538]/50">
-                                  <SelectValue placeholder="Select your department" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {TUP_DEPARTMENTS.map((dept: string) => (
-                                  <SelectItem key={dept} value={dept}>
-                                    {dept}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="position"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Position/Job Title *</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                  {...field}
-                                  placeholder="e.g., Professor, Instructor, Administrative Officer"
-                                  className="pl-10 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-[#8B1538] focus:ring-[#8B1538] text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-[#8B1538]/40 dark:hover:bg-slate-700/80 dark:hover:border-[#8B1538]/50"
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="grid grid-cols-1 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="employeeId"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Employee ID *</FormLabel>
-                              <FormControl>
-                                <Input
-                                  {...field}
-                                  placeholder="TUP-001234"
-                                  className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-[#8B1538] focus:ring-[#8B1538] text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-[#8B1538]/40 dark:hover:bg-slate-700/80 dark:hover:border-[#8B1538]/50"
-                                  onChange={(e) =>
-                                    field.onChange(e.target.value.toUpperCase())
-                                  }
-                                />
-                              </FormControl>
-                              <FormDescription>
-                                Your official TUP Manila employee/faculty ID
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="yearsOfService"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Years of Service</FormLabel>
-                              <FormControl>
-                                <Input
-                                  {...field}
-                                  type="number"
-                                  placeholder="0"
-                                  className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-[#8B1538] focus:ring-[#8B1538] text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-[#8B1538]/40 dark:hover:bg-slate-700/80 dark:hover:border-[#8B1538]/50"
-                                  onChange={(e) =>
-                                    field.onChange(
-                                      e.target.value
-                                        ? parseInt(e.target.value)
-                                        : undefined
-                                    )
-                                  }
-                                />
-                              </FormControl>
-                              <FormDescription>
-                                Total years of service at TUP Manila (optional)
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </div>
+                  {/* Employee Registration Form (Steps 1-4) */}
+                  {isEmployee && currentStep > 0 && (
+                    <EmployeeRegistrationForm
+                      employmentCategory={
+                        isFaculty ? 'faculty' : 'administrative'
+                      }
+                      currentStep={currentStep}
+                      onNextStep={nextStep}
+                      onPrevStep={prevStep}
+                      onSubmit={onSubmitEmployee}
+                      isLoading={isLoading}
+                      totalSteps={4}
+                    />
                   )}
 
-                  {/* Step 3: Security Setup */}
-                  {currentStep === 3 && (
-                    <div className="space-y-4 sm:space-y-5">
-                      <FormField
-                        control={form.control}
-                        name="password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Password *</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                  {...field}
-                                  type={showPassword ? 'text' : 'password'}
-                                  placeholder="Create a strong password"
-                                  className="pl-10 pr-10 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-[#8B1538] focus:ring-[#8B1538] text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-[#8B1538]/40 dark:hover:bg-slate-700/80 dark:hover:border-[#8B1538]/50"
-                                  aria-describedby="password-requirements"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => setShowPassword(!showPassword)}
-                                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                                  aria-label={
-                                    showPassword
-                                      ? 'Hide password'
-                                      : 'Show password'
-                                  }>
-                                  {showPassword ? (
-                                    <EyeOff className="h-4 w-4" />
-                                  ) : (
-                                    <Eye className="h-4 w-4" />
-                                  )}
-                                </button>
-                              </div>
-                            </FormControl>
-                            <FormDescription
-                              id="password-requirements"
-                              className="text-xs space-y-1">
-                              <div>Password must contain:</div>
-                              <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
-                                <li>At least 12 characters</li>
-                                <li>Upper and lowercase letters</li>
-                                <li>At least one number</li>
-                                <li>At least one special character</li>
-                              </ul>
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="confirmPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Confirm Password *</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                  {...field}
-                                  type={
-                                    showConfirmPassword ? 'text' : 'password'
-                                  }
-                                  placeholder="Confirm your password"
-                                  className="pl-10 pr-10 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-[#8B1538] focus:ring-[#8B1538] text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300 hover:bg-white hover:border-[#8B1538]/40 dark:hover:bg-slate-700/80 dark:hover:border-[#8B1538]/50"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setShowConfirmPassword(!showConfirmPassword)
-                                  }
-                                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                                  aria-label={
-                                    showConfirmPassword
-                                      ? 'Hide password confirmation'
-                                      : 'Show password confirmation'
-                                  }>
-                                  {showConfirmPassword ? (
-                                    <EyeOff className="h-4 w-4" />
-                                  ) : (
-                                    <Eye className="h-4 w-4" />
-                                  )}
-                                </button>
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                  {/* Applicant Registration Form (Steps 1-4) */}
+                  {isApplicant && currentStep > 0 && (
+                    <ApplicantRegistrationForm
+                      currentStep={currentStep}
+                      onNextStep={nextStep}
+                      onPrevStep={prevStep}
+                      onSubmit={onSubmitApplicant}
+                      isLoading={isLoading}
+                      totalSteps={4}
+                    />
                   )}
 
-                  {/* Step 4: Terms and Verification */}
+                  {/* Verification Info Card - Shown on Step 4 */}
                   {currentStep === 4 && (
-                    <div className="space-y-5 sm:space-y-6">
-                      <div className="space-y-4">
-                        <FormField
-                          control={form.control}
-                          name="termsAccepted"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                  className="data-[state=checked]:bg-[#8B1538] data-[state=checked]:border-[#8B1538] border-slate-300 dark:border-slate-600"
-                                  aria-describedby="terms-description"
-                                />
-                              </FormControl>
-                              <div className="space-y-1 leading-none">
-                                <FormLabel className="text-sm cursor-pointer hover:text-[#8B1538] dark:hover:text-[#8B1538]/90 transition-colors text-slate-700 dark:text-slate-300">
-                                  I accept the{' '}
-                                  <Link
-                                    href="/terms"
-                                    className="text-[#8B1538] dark:text-[#8B1538]/90 hover:underline focus:underline focus:outline-none hover:text-[#8B1538]/80 dark:hover:text-[#8B1538]/70">
-                                    Terms and Conditions
-                                  </Link>{' '}
-                                  *
-                                </FormLabel>
-                              </div>
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="privacyAccepted"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                  className="data-[state=checked]:bg-[#8B1538] data-[state=checked]:border-[#8B1538] border-slate-300 dark:border-slate-600"
-                                  aria-describedby="privacy-description"
-                                />
-                              </FormControl>
-                              <div className="space-y-1 leading-none">
-                                <FormLabel className="text-sm cursor-pointer hover:text-[#8B1538] dark:hover:text-[#8B1538]/90 transition-colors text-slate-700 dark:text-slate-300">
-                                  I accept the{' '}
-                                  <Link
-                                    href="/privacy"
-                                    className="text-[#8B1538] dark:text-[#8B1538]/90 hover:underline focus:underline focus:outline-none hover:text-[#8B1538]/80 dark:hover:text-[#8B1538]/70">
-                                    Privacy Policy
-                                  </Link>{' '}
-                                  *
-                                </FormLabel>
-                              </div>
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="dataProcessingConsent"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                  className="data-[state=checked]:bg-[#8B1538] data-[state=checked]:border-[#8B1538] border-slate-300 dark:border-slate-600"
-                                  aria-describedby="data-processing-description"
-                                />
-                              </FormControl>
-                              <div className="space-y-1 leading-none">
-                                <FormLabel className="text-sm cursor-pointer hover:text-[#8B1538] dark:hover:text-[#8B1538]/90 transition-colors text-slate-700 dark:text-slate-300">
-                                  I consent to the processing of my personal
-                                  data for university compliance purposes as
-                                  required by the Data Privacy Act of 2012 *
-                                </FormLabel>
-                              </div>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <Card className="border-[#8B1538]/20 bg-[#8B1538]/5 dark:border-[#8B1538]/80 dark:bg-[#8B1538]/20">
-                        <CardContent className="pt-6">
-                          <div className="flex items-start gap-3">
-                            <AlertCircle className="h-5 w-5 text-[#8B1538] dark:text-[#8B1538]/90 flex-shrink-0 mt-0.5" />
-                            <div className="space-y-2">
-                              <p className="text-sm font-medium text-[#8B1538] dark:text-[#8B1538]/90">
-                                Account Verification Process
-                              </p>
-                              <div className="text-xs text-[#8B1538]/80 dark:text-[#8B1538]/70 space-y-1">
-                                <p>
-                                  • Your registration will be reviewed by TUP HR
-                                  personnel
-                                </p>
-                                <p>
-                                  • Employment verification may take 1-3
-                                  business days
-                                </p>
-                                <p>
-                                  • You will receive email confirmation when
-                                  approved
-                                </p>
-                                <p>
-                                  • Ensure all information provided is accurate
-                                  and complete
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  )}
-
-                      {/* Navigation Buttons */}
-                      <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-4 pt-5 sm:pt-6 border-t border-slate-200 dark:border-slate-700">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={prevStep}
-                          disabled={currentStep === 1 || isLoading}
-                          className="flex items-center gap-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:border-[#8B1538]/30 transition-colors order-2 sm:order-1">
-                          <ArrowLeft className="h-4 w-4" />
-                          Previous
-                        </Button>
-
-                        {currentStep < 4 ? (
-                          <Button
-                            type="button"
-                            onClick={nextStep}
-                            disabled={isLoading}
-                            className="flex items-center gap-2 bg-gradient-to-r from-[#8B1538] to-[#B8264D] hover:from-[#8B1538]/90 hover:to-[#B8264D]/90 text-white relative overflow-hidden group order-1 sm:order-2">
-                            <span className="relative z-10 flex items-center gap-2">
-                              Next
-                              <ArrowRight className="h-4 w-4" />
-                            </span>
-                            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out" />
-                          </Button>
-                        ) : (
-                          <Button
-                            type="submit"
-                            disabled={isLoading}
-                            className="flex items-center gap-2 bg-gradient-to-r from-[#8B1538] to-[#B8264D] hover:from-[#8B1538]/90 hover:to-[#B8264D]/90 text-white relative overflow-hidden group order-1 sm:order-2">
-                            <span className="relative z-10">
-                              {isLoading ? (
+                    <Card className="border-[#8B1538]/20 bg-[#8B1538]/5 dark:border-[#8B1538]/80 dark:bg-[#8B1538]/20">
+                      <CardContent className="pt-6">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="h-5 w-5 text-[#8B1538] dark:text-[#8B1538]/90 flex-shrink-0 mt-0.5" />
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium text-[#8B1538] dark:text-[#8B1538]/90">
+                              {isEmployee
+                                ? 'Account Verification Process'
+                                : 'Application Review Process'}
+                            </p>
+                            <div className="text-xs text-[#8B1538]/80 dark:text-[#8B1538]/70 space-y-1">
+                              {isEmployee ? (
                                 <>
-                                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                  Submitting...
+                                  <p>
+                                    • Your registration will be reviewed by TUP
+                                    HR personnel
+                                  </p>
+                                  <p>
+                                    • Employment verification may take 1-3
+                                    business days
+                                  </p>
+                                  <p>
+                                    • You will receive email confirmation when
+                                    approved
+                                  </p>
+                                  <p>
+                                    • Ensure all information provided is
+                                    accurate and complete
+                                  </p>
                                 </>
                               ) : (
                                 <>
-                                  <Check className="h-4 w-4" />
-                                  Submit Registration
+                                  <p>
+                                    • Your application will be reviewed by the
+                                    hiring committee
+                                  </p>
+                                  <p>• Review process may take 1-2 weeks</p>
+                                  <p>• You will receive updates via email</p>
+                                  <p>
+                                    • Ensure all information matches your
+                                    resume/CV
+                                  </p>
                                 </>
                               )}
-                            </span>
-                            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out" />
-                          </Button>
-                        )}
-                      </div>
-                    </form>
-                  </Form>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
 
                 {/* Help Section */}

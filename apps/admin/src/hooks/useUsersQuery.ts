@@ -150,6 +150,7 @@ export function useUsersQuery(filters: UsersFilters = {}) {
         lastName: userData.lastName || '',
         middleName: userData.middleName || null,
         employeeId: userData.employeeId || `EMP-${Date.now()}`,
+        userType: 'employee',
         role: userData.role || 'employee',
         departmentId: userData.departmentId || null,
         positionId: userData.positionId || null,

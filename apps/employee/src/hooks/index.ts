@@ -205,6 +205,69 @@ export {
  * - User experience (perceived performance)
  */
 
+// ============================================================================
+// Organization Data Hooks
+// ============================================================================
+
+/**
+ * Organization Data Hooks for Registration and Applications
+ *
+ * Type-safe React Query hooks for fetching departments, colleges, offices,
+ * and open positions with optimized caching strategies.
+ *
+ * Features:
+ * - Automatic caching (1 hour for departments, 5 minutes for positions)
+ * - Conditional queries that only run when parameters are provided
+ * - Separate hooks for different use cases (colleges, offices, departments by college, etc.)
+ * - Featured positions filtering
+ * - Position-by-department queries
+ *
+ * @example
+ * ```tsx
+ * import { useCollegesQuery, useOpenPositionsQuery } from '@/hooks';
+ *
+ * function RegistrationForm() {
+ *   const { data: colleges, isLoading } = useCollegesQuery();
+ *   const { data: positions } = useOpenPositionsQuery();
+ *
+ *   return (
+ *     <form>
+ *       <Select options={colleges} />
+ *       <PositionList positions={positions} />
+ *     </form>
+ *   );
+ * }
+ * ```
+ */
+export {
+  // Department hooks
+  useCollegesQuery,
+  useOfficesQuery,
+  useDepartmentsByCollegeQuery,
+  useDepartmentsQuery,
+  // Position hooks
+  useOpenPositionsQuery,
+  useFeaturedPositionsQuery,
+  usePositionsByDepartmentQuery,
+  usePositionsQuery,
+  usePositionQuery,
+} from './useOrganizationQuery';
+
+// Export type-safe aliases for components that expect different hook names
+export { useCollegesQuery as useColleges } from './useOrganizationQuery';
+export { useOfficesQuery as useOffices } from './useOrganizationQuery';
+export { useDepartmentsByCollegeQuery as useDepartmentsByCollege } from './useOrganizationQuery';
+export { useOpenPositionsQuery as useOpenPositions } from './useOrganizationQuery';
+export { usePositionsByDepartmentQuery as usePositionsByOrganization } from './useOrganizationQuery';
+
+// Export types from the API types file
+export type { Department, Position } from '@/types/api';
+
+// Re-export College and Office types (these are Department types with specific officeType)
+export type College = import('@/types/api').Department;
+export type Office = import('@/types/api').Department;
+export type OpenPosition = import('@/types/api').Position;
+
 /**
  * Usage Examples
  *

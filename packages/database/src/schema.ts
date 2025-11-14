@@ -83,12 +83,51 @@ export const otpTypeEnum = pgEnum('otp_type', [
   'password_reset',
 ]);
 
+// Multi-user type system enums
+export const userTypeEnum = pgEnum('user_type', ['employee', 'applicant']);
+export const employmentCategoryEnum = pgEnum('employment_category', [
+  'faculty',
+  'administrative',
+  'contractual',
+  'not_applicable',
+]);
+export const applicationStatusEnum = pgEnum('application_status', [
+  'pending',
+  'under_review',
+  'shortlisted',
+  'for_interview',
+  'interviewed',
+  'for_final_review',
+  'accepted',
+  'rejected',
+  'withdrawn',
+  'hired',
+]);
+export const positionStatusEnum = pgEnum('position_status', [
+  'open',
+  'closed',
+  'filled',
+  'cancelled',
+]);
+export const officeTypeEnum = pgEnum('office_type', [
+  'academic',
+  'administrative',
+]);
+
 // Core User Management Tables
 export const profiles = pgTable(
   'profiles',
   {
     id: uuid('id').primaryKey(), // References Supabase auth.users.id
-    employeeId: text('employee_id').unique().notNull(),
+    // Multi-user type fields
+    userType: userTypeEnum('user_type').default('employee').notNull(),
+    employmentCategory: employmentCategoryEnum('employment_category').default(
+      'not_applicable'
+    ),
+    applicantId: text('applicant_id').unique(),
+    employeeId: text('employee_id').unique(), // Now nullable for applicants
+    hireDate: date('hire_date'),
+    // Basic info
     firstName: text('first_name').notNull(),
     lastName: text('last_name').notNull(),
     middleName: text('middle_name'),
@@ -102,7 +141,9 @@ export const profiles = pgTable(
     employmentType: text('employment_type'), // Full-time, part-time, adjunct
     campusAssignment: text('campus_assignment'), // Main campus or satellite campus
     // Auth-related fields
-    accountStatus: accountStatusEnum('account_status').default('pending').notNull(),
+    accountStatus: accountStatusEnum('account_status')
+      .default('pending')
+      .notNull(),
     emailVerifiedAt: timestamp('email_verified_at'),
     approvedBy: uuid('approved_by'),
     approvedAt: timestamp('approved_at'),
@@ -113,14 +154,28 @@ export const profiles = pgTable(
   },
   (table) => ({
     employeeIdIdx: index('profiles_employee_id_idx').on(table.employeeId),
+    applicantIdIdx: index('profiles_applicant_id_idx').on(table.applicantId),
+    userTypeIdx: index('profiles_user_type_idx').on(table.userType),
+    employmentCategoryIdx: index('profiles_employment_category_idx').on(
+      table.employmentCategory
+    ),
     roleIdx: index('profiles_role_idx').on(table.role),
     departmentIdIdx: index('profiles_department_id_idx').on(table.departmentId),
     isActiveIdx: index('profiles_is_active_idx').on(table.isActive),
-    accountStatusIdx: index('profiles_account_status_idx').on(table.accountStatus),
-    // Composite index for common queries
+    accountStatusIdx: index('profiles_account_status_idx').on(
+      table.accountStatus
+    ),
+    // Composite indexes for common queries
     roleDepartmentIdx: index('profiles_role_department_idx').on(
       table.role,
       table.departmentId
+    ),
+    userTypeEmploymentCategoryIdx: index(
+      'profiles_user_type_employment_category_idx'
+    ).on(table.userType, table.employmentCategory),
+    userTypeAccountStatusIdx: index('profiles_user_type_account_status_idx').on(
+      table.userType,
+      table.accountStatus
     ),
   })
 );
@@ -133,14 +188,25 @@ export const departments = pgTable(
       .$defaultFn(() => v7()),
     name: text('name').notNull(),
     code: text('code').unique().notNull(),
+    officeType: officeTypeEnum('office_type').default('academic'),
     parentId: uuid('parent_id'),
+    parentCollegeId: uuid('parent_college_id').references((): any => departments.id),
     isActive: boolean('is_active').default(true).notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => ({
     codeIdx: index('departments_code_idx').on(table.code),
+    officeTypeIdx: index('departments_office_type_idx').on(table.officeType),
     parentIdIdx: index('departments_parent_id_idx').on(table.parentId),
+    parentCollegeIdIdx: index('departments_parent_college_id_idx').on(
+      table.parentCollegeId
+    ),
     isActiveIdx: index('departments_is_active_idx').on(table.isActive),
+    // Composite indexes
+    officeTypeIsActiveIdx: index('departments_office_type_is_active_idx').on(
+      table.officeType,
+      table.isActive
+    ),
   })
 );
 
@@ -162,6 +228,221 @@ export const positions = pgTable(
     ),
     gradeLevelIdx: index('positions_grade_level_idx').on(table.gradeLevel),
     isActiveIdx: index('positions_is_active_idx').on(table.isActive),
+  })
+);
+
+// Job Application System Tables
+export const openPositions = pgTable(
+  'open_positions',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .$defaultFn(() => v7()),
+    positionTitle: text('position_title').notNull(),
+    positionCode: text('position_code').unique().notNull(),
+    departmentId: uuid('department_id').references(() => departments.id),
+    employmentCategory: employmentCategoryEnum('employment_category').notNull(),
+
+    description: text('description').notNull(),
+    qualifications: jsonb('qualifications')
+      .$type<string[]>()
+      .default([]),
+    responsibilities: jsonb('responsibilities')
+      .$type<string[]>()
+      .default([]),
+    requirements: jsonb('requirements')
+      .$type<{
+        education: string[];
+        experience: string[];
+        skills: string[];
+      }>()
+      .default({ education: [], experience: [], skills: [] }),
+
+    salaryGrade: text('salary_grade'),
+    salaryRangeMin: decimal('salary_range_min', { precision: 12, scale: 2 }),
+    salaryRangeMax: decimal('salary_range_max', { precision: 12, scale: 2 }),
+    employmentType: text('employment_type'),
+
+    status: positionStatusEnum('status').default('open'),
+    applicationDeadline: timestamp('application_deadline').notNull(),
+    numberOfOpenings: integer('number_of_openings').default(1),
+    applicationsReceived: integer('applications_received').default(0),
+
+    isActive: boolean('is_active').default(true),
+    isFeatured: boolean('is_featured').default(false),
+
+    postedBy: uuid('posted_by').references(() => profiles.id),
+    postedAt: timestamp('posted_at').defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow(),
+    closedAt: timestamp('closed_at'),
+  },
+  (table) => ({
+    positionCodeIdx: index('open_positions_position_code_idx').on(
+      table.positionCode
+    ),
+    departmentIdIdx: index('open_positions_department_id_idx').on(
+      table.departmentId
+    ),
+    employmentCategoryIdx: index('open_positions_employment_category_idx').on(
+      table.employmentCategory
+    ),
+    statusIdx: index('open_positions_status_idx').on(table.status),
+    applicationDeadlineIdx: index('open_positions_application_deadline_idx').on(
+      table.applicationDeadline
+    ),
+    isActiveIdx: index('open_positions_is_active_idx').on(table.isActive),
+    isFeaturedIdx: index('open_positions_is_featured_idx').on(table.isFeatured),
+    postedByIdx: index('open_positions_posted_by_idx').on(table.postedBy),
+    postedAtIdx: index('open_positions_posted_at_idx').on(table.postedAt),
+    // Composite indexes for common queries
+    statusIsActiveIdx: index('open_positions_status_is_active_idx').on(
+      table.status,
+      table.isActive
+    ),
+    statusDeadlineIdx: index('open_positions_status_deadline_idx').on(
+      table.status,
+      table.applicationDeadline
+    ),
+    employmentCategoryStatusIdx: index(
+      'open_positions_employment_category_status_idx'
+    ).on(table.employmentCategory, table.status),
+    isFeaturedStatusIdx: index('open_positions_is_featured_status_idx').on(
+      table.isFeatured,
+      table.status
+    ),
+  })
+);
+
+export const jobApplications = pgTable(
+  'job_applications',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .$defaultFn(() => v7()),
+    applicationNumber: text('application_number').unique().notNull(),
+
+    applicantId: uuid('applicant_id')
+      .notNull()
+      .references(() => profiles.id, { onDelete: 'cascade' }),
+    positionId: uuid('position_id')
+      .notNull()
+      .references(() => openPositions.id, { onDelete: 'restrict' }),
+
+    pdsSubmissionId: uuid('pds_submission_id').references(
+      () => pdsSubmissions.id
+    ),
+    coverLetter: text('cover_letter'),
+    resumeUrl: text('resume_url'),
+    additionalDocuments: jsonb('additional_documents')
+      .$type<string[]>()
+      .default([]),
+
+    status: applicationStatusEnum('status').default('pending'),
+    applicationDate: timestamp('application_date').defaultNow(),
+
+    reviewedBy: uuid('reviewed_by').references(() => profiles.id),
+    reviewedAt: timestamp('reviewed_at'),
+    reviewerNotes: text('reviewer_notes'),
+
+    interviewDate: timestamp('interview_date'),
+    interviewLocation: text('interview_location'),
+    interviewNotes: text('interview_notes'),
+
+    finalDecision: text('final_decision'),
+    decisionBy: uuid('decision_by').references(() => profiles.id),
+    decisionAt: timestamp('decision_at'),
+    rejectionReason: text('rejection_reason'),
+
+    convertedToEmployeeId: text('converted_to_employee_id'),
+    convertedHireDate: date('converted_hire_date'),
+    conversionDate: timestamp('conversion_date'),
+
+    createdAt: timestamp('created_at').defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow(),
+  },
+  (table) => ({
+    applicationNumberIdx: index('job_applications_application_number_idx').on(
+      table.applicationNumber
+    ),
+    applicantIdIdx: index('job_applications_applicant_id_idx').on(
+      table.applicantId
+    ),
+    positionIdIdx: index('job_applications_position_id_idx').on(
+      table.positionId
+    ),
+    statusIdx: index('job_applications_status_idx').on(table.status),
+    applicationDateIdx: index('job_applications_application_date_idx').on(
+      table.applicationDate
+    ),
+    reviewedByIdx: index('job_applications_reviewed_by_idx').on(
+      table.reviewedBy
+    ),
+    decisionByIdx: index('job_applications_decision_by_idx').on(
+      table.decisionBy
+    ),
+    convertedToEmployeeIdIdx: index(
+      'job_applications_converted_to_employee_id_idx'
+    ).on(table.convertedToEmployeeId),
+    createdAtIdx: index('job_applications_created_at_idx').on(table.createdAt),
+    // Composite indexes for common queries
+    applicantStatusIdx: index('job_applications_applicant_status_idx').on(
+      table.applicantId,
+      table.status
+    ),
+    positionStatusIdx: index('job_applications_position_status_idx').on(
+      table.positionId,
+      table.status
+    ),
+    statusApplicationDateIdx: index(
+      'job_applications_status_application_date_idx'
+    ).on(table.status, table.applicationDate),
+    reviewedByStatusIdx: index('job_applications_reviewed_by_status_idx').on(
+      table.reviewedBy,
+      table.status
+    ),
+  })
+);
+
+export const applicationStatusHistory = pgTable(
+  'application_status_history',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .$defaultFn(() => v7()),
+    applicationId: uuid('application_id')
+      .notNull()
+      .references(() => jobApplications.id, { onDelete: 'cascade' }),
+
+    previousStatus: applicationStatusEnum('previous_status'),
+    newStatus: applicationStatusEnum('new_status').notNull(),
+
+    changedBy: uuid('changed_by').references(() => profiles.id),
+    changedAt: timestamp('changed_at').defaultNow(),
+    notes: text('notes'),
+
+    ipAddress: inet('ip_address'),
+    userAgent: text('user_agent'),
+  },
+  (table) => ({
+    applicationIdIdx: index('application_status_history_application_id_idx').on(
+      table.applicationId
+    ),
+    newStatusIdx: index('application_status_history_new_status_idx').on(
+      table.newStatus
+    ),
+    changedByIdx: index('application_status_history_changed_by_idx').on(
+      table.changedBy
+    ),
+    changedAtIdx: index('application_status_history_changed_at_idx').on(
+      table.changedAt
+    ),
+    // Composite indexes for common queries
+    applicationIdChangedAtIdx: index(
+      'application_status_history_application_id_changed_at_idx'
+    ).on(table.applicationId, table.changedAt),
+    applicationIdNewStatusIdx: index(
+      'application_status_history_application_id_new_status_idx'
+    ).on(table.applicationId, table.newStatus),
   })
 );
 
@@ -771,16 +1052,34 @@ export const profilesRelations = relations(profiles, ({ one, many }) => ({
   pdsSubmissions: many(pdsSubmissions),
   salnSubmissions: many(salnSubmissions),
   notifications: many(notifications),
+  // Job application relations
+  jobApplications: many(jobApplications),
+  postedPositions: many(openPositions),
+  reviewedApplications: many(jobApplications, {
+    relationName: 'reviewer',
+  }),
+  decidedApplications: many(jobApplications, {
+    relationName: 'decision_maker',
+  }),
+  statusChanges: many(applicationStatusHistory),
 }));
 
 export const departmentsRelations = relations(departments, ({ one, many }) => ({
   parent: one(departments, {
     fields: [departments.parentId],
     references: [departments.id],
+    relationName: 'parent_child',
   }),
-  children: many(departments),
+  parentCollege: one(departments, {
+    fields: [departments.parentCollegeId],
+    references: [departments.id],
+    relationName: 'college_department',
+  }),
+  children: many(departments, { relationName: 'parent_child' }),
+  departmentsInCollege: many(departments, { relationName: 'college_department' }),
   profiles: many(profiles),
   positions: many(positions),
+  openPositions: many(openPositions),
 }));
 
 export const positionsRelations = relations(positions, ({ one, many }) => ({
@@ -834,6 +1133,64 @@ export const salnSubmissionsRelations = relations(
   })
 );
 
+// Job Application System Relations
+export const openPositionsRelations = relations(
+  openPositions,
+  ({ one, many }) => ({
+    department: one(departments, {
+      fields: [openPositions.departmentId],
+      references: [departments.id],
+    }),
+    postedBy: one(profiles, {
+      fields: [openPositions.postedBy],
+      references: [profiles.id],
+    }),
+    applications: many(jobApplications),
+  })
+);
+
+export const jobApplicationsRelations = relations(
+  jobApplications,
+  ({ one, many }) => ({
+    applicant: one(profiles, {
+      fields: [jobApplications.applicantId],
+      references: [profiles.id],
+    }),
+    position: one(openPositions, {
+      fields: [jobApplications.positionId],
+      references: [openPositions.id],
+    }),
+    pdsSubmission: one(pdsSubmissions, {
+      fields: [jobApplications.pdsSubmissionId],
+      references: [pdsSubmissions.id],
+    }),
+    reviewedBy: one(profiles, {
+      fields: [jobApplications.reviewedBy],
+      references: [profiles.id],
+      relationName: 'reviewer',
+    }),
+    decisionBy: one(profiles, {
+      fields: [jobApplications.decisionBy],
+      references: [profiles.id],
+      relationName: 'decision_maker',
+    }),
+    statusHistory: many(applicationStatusHistory),
+  })
+);
+
+export const applicationStatusHistoryRelations = relations(
+  applicationStatusHistory,
+  ({ one }) => ({
+    application: one(jobApplications, {
+      fields: [applicationStatusHistory.applicationId],
+      references: [jobApplications.id],
+    }),
+    changedBy: one(profiles, {
+      fields: [applicationStatusHistory.changedBy],
+      references: [profiles.id],
+    }),
+  })
+);
 
 // Auth System Tables
 
@@ -855,7 +1212,10 @@ export const otpVerifications = pgTable(
     userIdIdx: index('otp_verifications_user_id_idx').on(table.userId),
     expiresAtIdx: index('otp_verifications_expires_at_idx').on(table.expiresAt),
     typeIdx: index('otp_verifications_type_idx').on(table.type),
-    userTypeIdx: index('otp_verifications_user_type_idx').on(table.userId, table.type),
+    userTypeIdx: index('otp_verifications_user_type_idx').on(
+      table.userId,
+      table.type
+    ),
   })
 );
 
@@ -877,7 +1237,9 @@ export const pendingRegistrations = pgTable(
   (table) => ({
     userIdIdx: index('pending_registrations_user_id_idx').on(table.userId),
     statusIdx: index('pending_registrations_status_idx').on(table.status),
-    createdAtIdx: index('pending_registrations_created_at_idx').on(table.createdAt),
+    createdAtIdx: index('pending_registrations_created_at_idx').on(
+      table.createdAt
+    ),
   })
 );
 
@@ -898,9 +1260,14 @@ export const trustedDevices = pgTable(
   },
   (table) => ({
     userIdIdx: index('trusted_devices_user_id_idx').on(table.userId),
-    deviceFingerprintIdx: index('trusted_devices_device_fingerprint_idx').on(table.deviceFingerprint),
+    deviceFingerprintIdx: index('trusted_devices_device_fingerprint_idx').on(
+      table.deviceFingerprint
+    ),
     expiresAtIdx: index('trusted_devices_expires_at_idx').on(table.expiresAt),
-    userDeviceIdx: index('trusted_devices_user_device_idx').on(table.userId, table.deviceFingerprint),
+    userDeviceIdx: index('trusted_devices_user_device_idx').on(
+      table.userId,
+      table.deviceFingerprint
+    ),
   })
 );
 
@@ -916,7 +1283,9 @@ export const employeeIdRegistry = pgTable(
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => ({
-    employeeIdIdx: index('employee_id_registry_employee_id_idx').on(table.employeeId),
+    employeeIdIdx: index('employee_id_registry_employee_id_idx').on(
+      table.employeeId
+    ),
     userIdIdx: index('employee_id_registry_user_id_idx').on(table.userId),
   })
 );
@@ -926,6 +1295,11 @@ export const schema = {
   profiles,
   departments,
   positions,
+  // Job application system tables
+  openPositions,
+  jobApplications,
+  applicationStatusHistory,
+  // PDS tables
   pdsSubmissions,
   pdsPersonalInfo,
   pdsFamilyBackground,
@@ -936,12 +1310,14 @@ export const schema = {
   pdsVoluntaryWork,
   pdsTraining,
   pdsOtherInfo,
+  // SALN tables
   salnSubmissions,
   salnRealProperties,
   salnPersonalProperties,
   salnLiabilities,
   salnBusinessInterests,
   salnRelativesInGov,
+  // Administrative tables
   submissionDeadlines,
   approvalWorkflows,
   auditLogs,

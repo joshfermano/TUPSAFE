@@ -194,8 +194,8 @@ export default function EditUserPage() {
         lastName: user.profile.lastName,
         middleName: user.profile.middleName || '',
         suffix: 'none', // Not stored in mock data, default to none
-        employeeId: user.profile.employeeId,
-        email: `${user.profile.employeeId}@tup.edu.ph`, // Mock email
+        employeeId: user.profile.employeeId ?? '',
+        email: `${user.profile.employeeId ?? ''}@tup.edu.ph`, // Mock email
         role: user.profile.role,
         departmentId: user.profile.departmentId || 'none',
         positionId: user.profile.positionId || 'none',
