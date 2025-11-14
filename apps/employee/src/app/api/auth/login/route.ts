@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
     await createSession({
       userId,
       email,
-      employeeId: profile.employeeId || undefined,
+      ...(profile.employeeId ? { employeeId: profile.employeeId } : {}),
       role: profile.role,
       lastActivity: Date.now(),
       deviceFingerprint,

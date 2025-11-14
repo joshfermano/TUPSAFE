@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
     await createSession({
       userId,
       email: profile.firstName + '@' + profile.lastName, // We'll get actual email from Supabase
-      employeeId: profile.employeeId || undefined,
+      ...(profile.employeeId ? { employeeId: profile.employeeId } : {}),
       role: profile.role,
       lastActivity: Date.now(),
       deviceFingerprint,

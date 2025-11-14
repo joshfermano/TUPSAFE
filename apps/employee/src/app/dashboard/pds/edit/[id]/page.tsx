@@ -10,9 +10,9 @@
  * Features: Auto-save every 30s, change tracking, optimistic updates
  */
 
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, use } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { usePds, useAuth } from '@tupsafe/mock-data/api';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -163,8 +163,12 @@ const LoadingState = () => (
 // MAIN PAGE COMPONENT
 // ============================================================================
 
-export default function PDSEditDetailPage() {
-  const params = useParams();
+export default function PDSEditDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id: pdsId } = use(params);
   const router = useRouter();
   const { user } = useAuth();
   const {
@@ -174,8 +178,6 @@ export default function PDSEditDetailPage() {
     submitForReview,
     loading,
   } = usePds(user?.id || '');
-
-  const pdsId = params?.id as string;
   const submission = useMemo(
     () => submissions.find((s) => s.id === pdsId),
     [submissions, pdsId]

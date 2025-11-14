@@ -9,9 +9,9 @@
  * Theme: TUP red accent - oklch(0.55_0.22_15)
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, use } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { usePds, useAuth } from '@tupsafe/mock-data/api';
 import { format } from 'date-fns';
 import {
@@ -155,13 +155,15 @@ const LoadingState = () => (
 // MAIN PAGE COMPONENT
 // ============================================================================
 
-export default function PDSViewDetailPage() {
-  const params = useParams();
+export default function PDSViewDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id: pdsId } = use(params);
   const router = useRouter();
   const { user } = useAuth();
   const { submissions, getCompleteSubmission, loading } = usePds(user?.id || '');
-
-  const pdsId = params?.id as string;
   const submission = useMemo(
     () => submissions.find(s => s.id === pdsId),
     [submissions, pdsId]
