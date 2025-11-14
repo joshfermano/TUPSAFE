@@ -89,11 +89,13 @@
       "Bash(npx drizzle-kit push)",
       "Bash(timeout 120 npx drizzle-kit push:*)",
       "Bash(npx drizzle-kit:*)",
-      "Bash(timeout 45 bash:*)"
+      "Bash(timeout 45 bash:*)",
+      "Bash(npm run db:test:*)"
     ],
     "deny": [],
     "ask": []
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "shadcn",
     "magicui",
@@ -101,6 +103,7 @@
     "github",
     "memory",
     "sequential-thinking",
-    "serena"
+    "serena",
+    "supabase"
   ]
 }
