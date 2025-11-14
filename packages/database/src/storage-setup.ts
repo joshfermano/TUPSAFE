@@ -74,6 +74,22 @@ async function setupStorageBuckets() {
         description:
           'User uploaded documents (certifications, seminars, trainings, etc.)',
       },
+      {
+        name: 'job-application-documents',
+        public: false,
+        fileSizeLimit: 20971520, // 20MB per file (larger for resumes with portfolios)
+        allowedMimeTypes: [
+          'application/pdf',
+          'image/jpeg',
+          'image/jpg',
+          'image/png',
+          'image/webp',
+          'application/msword', // .doc
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+        ],
+        description:
+          'Job application documents (resumes, cover letters, certifications, portfolios)',
+      },
     ];
 
     // Create each bucket
@@ -160,6 +176,14 @@ async function setupStorageBuckets() {
     console.log('      - DELETE: Users can delete their own documents');
     console.log('      - Admin: Full access to all documents\n');
 
+    console.log('   6. Job Application Documents Bucket (job-application-documents):');
+    console.log('      - SELECT: Applicants can read their own documents');
+    console.log('      - SELECT: Admin/HR can view all application documents');
+    console.log('      - INSERT: Applicants can upload their own documents');
+    console.log('      - UPDATE: Applicants can update their own documents');
+    console.log('      - DELETE: Applicants can delete their own documents');
+    console.log('      - Admin/HR: Full access to all application documents\n');
+
     console.log('✅ Storage bucket setup completed!\n');
     console.log('📊 Summary:');
     console.log(`   - ${buckets.length} buckets configured`);
@@ -168,7 +192,8 @@ async function setupStorageBuckets() {
     console.log('   - saln-submissions: PDF only, 10MB limit');
     console.log('   - archives: PDF only, no limit');
     console.log('   - profile-pictures: Images only, 5MB limit');
-    console.log('   - user-documents: PDF & Images, 10MB limit\n');
+    console.log('   - user-documents: PDF & Images, 10MB limit');
+    console.log('   - job-application-documents: PDF, Images & Word docs, 20MB limit\n');
 
     console.log('🎯 Next Steps:');
     console.log('   1. Go to Supabase Dashboard → Storage → Policies');
@@ -207,7 +232,7 @@ async function setupStorageBuckets() {
     console.log('ON storage.objects FOR INSERT TO authenticated');
     console.log('WITH CHECK (');
     console.log(
-      "  bucket_id IN ('pds-submissions', 'saln-submissions', 'user-documents', 'profile-pictures') AND"
+      "  bucket_id IN ('pds-submissions', 'saln-submissions', 'user-documents', 'profile-pictures', 'job-application-documents') AND"
     );
     console.log('  (storage.foldername(name))[1] = auth.uid()::text');
     console.log(');\n');

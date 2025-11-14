@@ -93,7 +93,11 @@
       "Bash(npm run db:test:*)",
       "WebFetch(domain:tup.edu.ph)",
       "Bash(npx turbo build:*)",
-      "Bash(npm run clean:*)"
+      "Bash(npm run clean:*)",
+      "mcp__supabase__list_storage_buckets",
+      "mcp__supabase__get_storage_config",
+      "Bash(npm run setup:storage:*)",
+      "Bash(npx tsx:*)"
     ],
     "deny": [],
     "ask": []
