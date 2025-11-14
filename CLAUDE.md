@@ -8,15 +8,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Thesis project for a secure web-based system enabling **Technological University of the Philippines (TUP) Manila** employees—including professors, faculty members, and administrative staff—to submit and manage Personal Data Sheets (e-PDS) and Statements of Assets, Liabilities, and Net Worth (e-SALN) in compliance with Civil Service Commission (CSC) standards. Replaces paper workflows with a modern, auditable digital platform tailored for university operations.
+Thesis project for a secure web-based system enabling **Technological University of the Philippines (TUP) Manila)** to manage two core functions:
+
+1. **Employee Compliance**: Employees (professors, faculty, administrative staff) submit and manage Personal Data Sheets (e-PDS) and Statements of Assets, Liabilities, and Net Worth (e-SALN) in compliance with Civil Service Commission (CSC) standards.
+
+2. **Recruitment Management**: Applicants browse and apply for open positions, while HR personnel manage job postings, review applications, and convert hired applicants to employees.
+
+The system replaces paper-based workflows with a modern, auditable digital platform tailored for university operations, ensuring compliance, transparency, and efficiency.
 
 ### Target Users
 
+- **Applicants (Job Seekers)**: Browse open positions, submit job applications with PDS (employee portal)
 - **Faculty Members (Professors/Instructors)**: Submit and update PDS/SALN forms (employee portal)
 - **Administrative Staff**: Submit and update PDS/SALN forms (employee portal)
 - **Department Heads**: Review department submissions and manage department compliance
 - **College Deans**: Oversight of college-level submissions and compliance reporting
-- **HR Personnel/University Administrators**: Review all submissions, manage users, generate compliance reports (admin portal)
+- **HR Personnel/University Administrators**: Review all submissions, manage users, generate compliance reports, post job openings, review applications (admin portal)
 
 ## Development Principles
 
@@ -73,17 +80,21 @@ This is a Turbo-managed monorepo with separate applications and shared packages:
 
 ### Apps (apps/\*)
 
-- **employee**: Employee-facing portal (port 3000) for PDS/SALN submissions
+- **employee**: Multi-purpose portal (port 3000) serving both applicants and employees
 
   - **Design System**: Tailwind CSS 4 + Magic UI components for modern, engaging, and interactive user experience
   - **Component Library**: Magic UI animations, effects, and premium components
   - **Icons**: Radix UI icons only
-  - **Target Audience**: Faculty, staff, and administrators submitting forms
+  - **Target Audience**:
+    - **Applicants**: Browse open positions, submit job applications with PDS
+    - **Employees**: Submit and manage PDS/SALN forms, track compliance
+  - **Access Control**: UI adapts based on user type (applicant vs. employee)
 
-- **admin**: HR/Admin portal (port 3001) for reviewing and managing submissions
+- **admin**: HR/Admin portal (port 3001) for management and oversight
   - **Design System**: Tailwind CSS 4 + shadcn/ui for professional, clean, and enterprise-grade UI
   - **Component Library**: shadcn/ui components (built on Radix UI primitives)
   - **Target Audience**: HR personnel, department heads, college deans, and system administrators
+  - **Capabilities**: Review submissions, manage users, generate compliance reports, post job openings, review applications, convert applicants to employees
 
 ### Shared Packages (packages/\*)
 
@@ -95,6 +106,13 @@ The monorepo leverages shared packages for code reusability, consistency, and ma
   - Database migrations and seed scripts
   - Real-time hooks for live data synchronization
   - Database utilities and connection management
+  - **Schema Organization**:
+    - **User Management**: `profiles` (with userType enum), `departments`, `positions`
+    - **Job Application System**: `openPositions`, `jobApplications`, `applicationStatusHistory`
+    - **PDS Tables**: `pdsSubmissions`, `pdsPersonalInfo`, `pdsFamilyBackground`, `pdsChildren`, `pdsEducation`, `pdsCivilService`, `pdsWorkExperience`, `pdsVoluntaryWork`, `pdsTraining`, `pdsOtherInfo`
+    - **SALN Tables**: `salnSubmissions`, `salnRealProperties`, `salnPersonalProperties`, `salnLiabilities`, `salnBusinessInterests`, `salnRelativesInGov`
+    - **Administrative**: `submissionDeadlines`, `approvalWorkflows`, `auditLogs`, `notifications`, `archives`
+    - **Auth System**: `otpVerifications`, `pendingRegistrations`, `trustedDevices`, `employeeIdRegistry`
 
 - **@tupsafe/auth** (also accessible as @smartgov/auth):
 
@@ -294,23 +312,86 @@ packages/
 
 ## Role-Based Access Control (RBAC)
 
-The system implements hierarchical access control aligned with TUP Manila's organizational structure:
+The system implements hierarchical access control aligned with TUP Manila's organizational structure and supports a multi-user type system distinguishing between applicants and employees.
 
-### Access Levels
+### User Types
 
-| Role                | Access Scope                | Capabilities                                                         |
-| ------------------- | --------------------------- | -------------------------------------------------------------------- |
-| **Faculty/Staff**   | Own records only            | View/edit personal PDS/SALN, submit for review                       |
-| **Department Head** | Department records          | View all department submissions, approve/return for revision         |
-| **College Dean**    | College-level records       | View all college submissions across departments, oversight reporting |
-| **HR Personnel**    | All records                 | Full access to all submissions, user management, compliance reports  |
-| **System Admin**    | All records + system config | Full system access, user role management, system configuration       |
+The system supports two distinct user types, each with different access patterns and workflows:
+
+**1. Applicant User Type**
+
+- **Purpose**: External job seekers applying for positions at TUP Manila
+- **Registration**: Self-registration with email verification and admin approval
+- **Access**: Employee portal with limited functionality focused on job applications
+- **Unique Identifier**: `applicantId` (auto-generated, format: `APPL-YYYYMMDD-XXXX`)
+- **Portal**: Employee portal only
+- **Primary Use Cases**:
+  - Browse open job positions
+  - Submit job applications with required documents
+  - Track application status
+  - Fill out PDS for job applications
+  - Cannot access SALN functionality
+
+**2. Employee User Type**
+
+- **Purpose**: Current TUP Manila employees (faculty, staff, administrators)
+- **Registration**: Admin-created or converted from hired applicants
+- **Access**: Full employee portal functionality or admin portal (based on role)
+- **Unique Identifier**: `employeeId` (format: TUP-assigned employee number)
+- **Portal**: Employee portal and/or admin portal (role-dependent)
+- **Primary Use Cases**:
+  - Submit and manage PDS/SALN forms
+  - Track compliance deadlines
+  - View submission history
+  - (Role-dependent) Review submissions, manage users, generate reports
+
+### Access Levels by Role
+
+| User Type     | Role                     | Access Scope                | Capabilities                                                                                                  |
+| ------------- | ------------------------ | --------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| **Applicant** | applicant                | Own applications only       | Browse positions, submit applications, track application status, fill PDS for jobs                            |
+| **Employee**  | employee (Faculty/Staff) | Own records only            | View/edit personal PDS/SALN, submit for review, track compliance                                              |
+| **Employee**  | supervisor (Dept. Head)  | Department records          | View department submissions, approve/return for revision, department compliance reports                       |
+| **Employee**  | hr                       | All records                 | Full access to all submissions, user management, compliance reports, manage job postings, review applications |
+| **Employee**  | admin                    | All records + system config | Full system access, user role management, system configuration, applicant-to-employee conversion              |
+
+### Multi-User System Implementation
+
+**Database Schema Design:**
+
+- **profiles table** includes `userType` enum field: `'employee' | 'applicant'`
+- **Conditional Fields**:
+  - `employeeId` (nullable for applicants)
+  - `applicantId` (nullable for employees)
+  - `employmentCategory` (nullable for applicants)
+  - `hireDate` (null until applicant is converted to employee)
+- **Indexes**: Composite indexes on `userType` + `employmentCategory` and `userType` + `accountStatus` for efficient queries
+
+**RLS (Row Level Security) Policies:**
+
+- User type verified in all RLS policies
+- Applicants can only access their own applications and PDS submissions linked to applications
+- Employees access based on traditional role hierarchy
+- Cross-user-type access strictly controlled (e.g., HR can view applicant profiles, applicants cannot view employee data)
+
+**Account Status Flow:**
+
+```
+Applicant:    pending → active (after email verification & admin approval) → hired (converted to employee)
+Employee:     pending → active (admin-created or converted from applicant)
+```
 
 ### Implementation Notes
 
-- **RLS Policies**: Enforce at database level using Supabase RLS based on user role and organizational hierarchy
-- **Middleware**: Next.js middleware validates role before rendering protected routes
-- **Audit Logging**: All cross-user access logged with timestamp, role, and action
+- **RLS Policies**: Enforce at database level using Supabase RLS based on user type, user role, and organizational hierarchy
+- **Middleware**: Next.js middleware validates both user type and role before rendering protected routes
+- **Audit Logging**: All cross-user access logged with timestamp, user type, role, and action
+- **Type Guards**: Server-side validation ensures applicants cannot access employee-only features (SALN, compliance reports)
+- **Applicant Conversion**: HR/Admin can convert hired applicants to employees, triggering:
+  - User type change from `applicant` to `employee`
+  - Assignment of `employeeId` and `hireDate`
+  - Role assignment based on position
+  - Transfer of PDS data from application to employee record
 - **Future Integration**: Placeholder for university SSO/LDAP integration to sync roles with institutional directory
 
 ### University Organizational Hierarchy
@@ -455,13 +536,24 @@ small: text-sm font-sans (14px)
 ## Security Considerations
 
 - **Data Classification**: Handle TUP Manila institutional data with appropriate security controls
+  - **Employee Data**: PDS/SALN contain sensitive personal and financial information (CSC-regulated)
+  - **Applicant Data**: Resumes, cover letters, personal information (recruitment records)
+  - **Segregation**: Strict RLS policies prevent cross-contamination between applicant and employee data
 - **Input Validation**: All inputs must be validated with Zod schemas
-- **Row Level Security**: Use RLS for database access control based on user role and hierarchy
-- **Audit Logging**: Implement comprehensive audit trails for all PDS/SALN operations
+- **Row Level Security**: Use RLS for database access control based on user type, user role, and organizational hierarchy
+  - **Applicants**: Can only access their own applications and linked PDS
+  - **Employees**: Access based on role (own records, department records, or all records)
+  - **HR/Admin**: Can access applicant data for recruitment, employee data for compliance
+- **Audit Logging**: Implement comprehensive audit trails for all operations
+  - **PDS/SALN Operations**: Complete history of submissions, reviews, approvals
+  - **Application Operations**: Full audit trail of status changes, reviews, hiring decisions
+  - **Cross-User Access**: Log whenever HR/Admin accesses applicant or employee records
 - **Rate Limiting**: Apply rate limiting on API routes to prevent abuse
 - **Session Management**: Auto-logout after 30 minutes of inactivity (important for shared university computers)
 - **Encryption**: TLS 1.3 for data in transit, Supabase encryption for data at rest
+- **Document Storage**: Supabase Storage with secure bucket policies for resumes, additional documents, generated PDFs
 - **CSC Compliance**: This system handles sensitive government employee data—security is paramount
+- **Recruitment Compliance**: Equal opportunity hiring, rejection reasons tracked, no discriminatory data
 - **University Data Protection**: Comply with institutional data handling policies
 - **Future SSO Integration**: Prepare for integration with TUP Manila's identity management system
 
@@ -580,6 +672,231 @@ Annual financial disclosure requirements per CSC guidelines:
 - Comprehensive audit trail logging
 - PDF export capability
 - Digital signature verification
+
+## Job Application System
+
+The system includes a comprehensive job application and recruitment management system for TUP Manila to streamline hiring processes.
+
+### Open Positions Management
+
+**Position Posting (Admin Portal - HR/Admin only):**
+
+- Create and publish job openings with detailed information
+- Set application deadlines and number of openings
+- Define employment category (faculty, administrative, contractual)
+- Specify qualifications, responsibilities, and requirements
+- Set salary grade and range
+- Mark positions as featured for prominent display
+- Track number of applications received
+- Close or cancel positions
+
+**Position Browsing (Employee Portal - Applicants):**
+
+- Browse all active open positions
+- Filter by employment category (faculty, administrative, contractual)
+- Sort by deadline (soonest), salary (highest), or posted date (newest)
+- Search by position title, department, or description
+- View detailed job descriptions, requirements, and qualifications
+- See application deadlines with urgency indicators
+- View featured positions prominently
+- Check if already applied to a position
+
+### Job Application Workflow
+
+**Application Submission (Applicant):**
+
+1. **Browse Positions**: View open positions on `/dashboard/positions`
+2. **Apply**: Click "Apply Now" on desired position
+3. **Submit Application Package**:
+   - Link existing PDS submission or create new PDS
+   - Write cover letter
+   - Upload resume (PDF)
+   - Upload additional documents (certifications, portfolios, etc.)
+   - Auto-generated application number (format: `APP-YYYYMMDD-XXXX`)
+4. **Track Status**: Monitor application progress on `/dashboard/applications`
+
+**Application Review (HR/Admin):**
+
+1. **Initial Review**: View all applications, filter by position/status
+2. **Shortlisting**: Update status to `shortlisted`
+3. **Interview Scheduling**: Set interview date, location, and notes
+4. **Interview Conducted**: Update to `interviewed` with interview feedback
+5. **Final Decision**: Accept or reject with notes
+6. **Hiring**: Mark as `hired` and initiate applicant-to-employee conversion
+
+### Application Status Lifecycle
+
+Applications progress through the following statuses:
+
+```
+pending → under_review → shortlisted → for_interview → interviewed → for_final_review → accepted/rejected/withdrawn
+                                                                                              ↓
+                                                                                            hired
+```
+
+**Status Definitions:**
+
+- **pending**: Initial submission, awaiting HR review
+- **under_review**: HR actively reviewing application materials
+- **shortlisted**: Selected for further consideration
+- **for_interview**: Interview scheduled (date/location set)
+- **interviewed**: Interview completed, awaiting decision
+- **for_final_review**: Final review by department/college leadership
+- **accepted**: Offer extended to applicant
+- **rejected**: Application declined (rejection reason logged)
+- **withdrawn**: Applicant withdrew application
+- **hired**: Applicant accepted offer and onboarding initiated
+
+### Database Schema for Job Applications
+
+**Core Tables:**
+
+**1. `openPositions` table:**
+
+- Position details (title, code, description)
+- Department assignment and employment category
+- Qualifications, responsibilities, requirements (JSONB arrays)
+- Salary information (grade, min/max range)
+- Application deadline and number of openings
+- Status (open, closed, filled, cancelled)
+- Featured flag for highlighted positions
+- Posted by and posted date for audit trail
+- Comprehensive indexes for filtering and searching
+
+**2. `jobApplications` table:**
+
+- Application number (unique identifier)
+- Applicant ID (references profiles)
+- Position ID (references openPositions)
+- PDS submission ID (linked PDS)
+- Application materials (cover letter, resume URL, additional documents)
+- Status tracking (current status, status history)
+- Review information (reviewed by, reviewer notes)
+- Interview details (date, location, notes)
+- Final decision (decision by, decision date, rejection reason)
+- Conversion tracking (converted employee ID, hire date)
+- Created/updated timestamps
+
+**3. `applicationStatusHistory` table:**
+
+- Complete audit trail of all status changes
+- Previous status → new status
+- Changed by (user ID), changed at (timestamp)
+- Notes explaining the change
+- IP address and user agent for security audit
+- Comprehensive indexes for querying status transitions
+
+**Key Features:**
+
+- **Cascade Deletes**: Applications cascade deleted if applicant account deleted
+- **Restrict Deletes**: Positions cannot be deleted if applications exist
+- **Foreign Keys**: Strict referential integrity for applicants, positions, reviewers
+- **JSONB Fields**: Flexible storage for requirements, qualifications, additional documents
+- **Status Enums**: Type-safe status values prevent invalid states
+- **Composite Indexes**: Optimized queries for common filters (applicant+status, position+status, etc.)
+
+### Applicant Portal Features
+
+**Dashboard Overview:**
+
+- Quick stats: Total applications, pending/under review count
+- Recent applications with status
+- Upcoming interview dates
+- Action items (complete PDS if needed)
+
+**Browse Positions (`/dashboard/positions`):**
+
+- Grid view of all open positions
+- Featured positions displayed prominently with special styling
+- Filter by employment category
+- Sort by deadline, salary, or posted date
+- Search functionality
+- Position cards showing:
+  - Position title and code
+  - Department and employment category
+  - Salary range
+  - Application deadline with urgency indicator
+  - Number of openings
+  - "Applied" badge if already submitted
+  - "Apply Now" or "View Application" buttons
+
+**My Applications (`/dashboard/applications`):**
+
+- Grid view of all submitted applications
+- Filter by status
+- Search by position or department
+- Application cards showing:
+  - Position title and application number
+  - Department and employment category
+  - Application date
+  - Current status with color-coded badges
+  - Interview date (if scheduled)
+  - Click to view full application details
+
+**Application Details (`/dashboard/applications/[id]`):**
+
+- Complete application information
+- Linked PDS submission
+- Cover letter and resume
+- Additional documents
+- Status history timeline
+- Interview details (if scheduled)
+- Reviewer notes (if provided)
+- Withdrawal option (if not yet decided)
+
+### HR/Admin Portal Features
+
+**Job Posting Management:**
+
+- Create new job openings
+- Edit existing positions
+- Close/cancel positions
+- View applications per position
+- Export applicant data
+
+**Application Review:**
+
+- View all applications across positions
+- Filter by position, status, date range
+- Bulk status updates
+- Assign reviewers
+- Schedule interviews
+- Add reviewer notes
+- Make hiring decisions
+- Initiate applicant-to-employee conversion
+
+**Recruitment Analytics:**
+
+- Time-to-hire metrics
+- Applications per position
+- Conversion rates (applicant → interview → hire)
+- Source tracking
+- Department-level recruitment reports
+
+### Security & Compliance
+
+**Data Protection:**
+
+- Applicant data encrypted at rest (Supabase)
+- Resume and documents stored in secure Supabase Storage buckets
+- RLS policies restrict access to own applications (applicants) or authorized HR (employees)
+- Audit logging for all application access
+
+**Equal Opportunity:**
+
+- Consistent application process
+- Structured interview scoring (future enhancement)
+- Rejection reasons tracked for compliance
+- No discriminatory data collection
+
+**Integration with Employee Onboarding:**
+
+- Seamless conversion from applicant to employee
+- PDS data transferred automatically
+- Employee ID assignment
+- Hire date recorded
+- Role and department assignment
+- Account status updated to employee type
 
 ## Compliance Requirements
 
