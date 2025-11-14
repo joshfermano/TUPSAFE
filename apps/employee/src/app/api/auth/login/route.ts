@@ -178,6 +178,7 @@ export async function POST(request: NextRequest) {
     // Create session
     await createSession({
       userId,
+      id: userId,
       email,
       ...(profile.employeeId ? { employeeId: profile.employeeId } : {}),
       role: profile.role,

@@ -1,270 +1,123 @@
+/**
+ * User Management Page
+ *
+ * Comprehensive user management interface with:
+ * - Real-time statistics
+ * - Advanced filtering and search
+ * - Paginated data table
+ * - User details, edit, and actions
+ * - Complete API integration
+ */
+
 'use client';
 
-import React, { memo, useState, useMemo, useCallback } from 'react';
-import {
-  Search,
-  Filter,
-  UserPlus,
-  Eye,
-  Edit,
-  Trash2,
-  MoreVertical,
-  UserCheck,
-  UserX,
-  Users,
-} from 'lucide-react';
-import { motion } from 'framer-motion';
-import { Line, LineChart, XAxis, YAxis } from 'recharts';
-
-import {
-  useUsersQuery,
-  type UsersFilters,
-  type UserWithDetails,
-} from '@/hooks/useUsersQuery';
-import {
-  EmptyState,
-  ErrorAlert,
-  StatusBadge,
-  UserAvatar,
-} from '@/components/admin';
-import { PageTransition } from '@/components/PageTransition';
-import {
-  EnhancedTable,
-  EnhancedTableBody,
-  EnhancedTableCell,
-  EnhancedTableHead,
-  EnhancedTableHeader,
-  EnhancedTableRow,
-} from '@/components/admin/EnhancedTable';
-
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { useState, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { UserPlus, AlertCircle } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/components/ui/chart';
+  UserStatsCards,
+  DetailedUserStats,
+  UserFilters,
+  UsersDataTable,
+  UserDetailsDialog,
+  EditUserDialog,
+  ResetPasswordDialog,
+  UsersPagination,
+} from '@/components/users';
+import { useUsers, useToggleUserStatus, useDeleteUser } from '@/hooks/useUsers';
+import type { UserListQuery } from '@tupsafe/types';
 
-// Available roles for filtering
-const ROLES = [
-  { value: 'all', label: 'All Roles' },
-  { value: 'admin', label: 'Admin' },
-  { value: 'hr', label: 'HR Personnel' },
-  { value: 'dean', label: 'Dean' },
-  { value: 'department_head', label: 'Department Head' },
-  { value: 'faculty', label: 'Faculty' },
-  { value: 'staff', label: 'Staff' },
-];
-
-// Available departments for filtering
-const DEPARTMENTS = [
-  { value: 'all', label: 'All Departments' },
-  { value: 'engineering', label: 'Engineering' },
-  { value: 'science', label: 'Science' },
-  { value: 'liberal_arts', label: 'Liberal Arts' },
-  { value: 'industrial_technology', label: 'Industrial Technology' },
-  { value: 'hr', label: 'Human Resources' },
-  { value: 'administration', label: 'Administration' },
-];
-
-// Mock data for user growth chart (last 6 months)
-const getUserGrowthData = () => {
-  const months = ['Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov'];
-  return months.map((month, index) => ({
-    month,
-    users: 45 + index * 12 + Math.floor(Math.random() * 10),
-  }));
-};
-
-// User Row Component (memoized)
-const UserRow = memo(({ user, index }: { user: UserWithDetails; index: number }) => {
-  const handleAction = useCallback((action: string, userId: string) => {
-    switch (action) {
-      case 'view':
-        window.location.href = `/dashboard/users/view/${userId}`;
-        break;
-      case 'edit':
-        window.location.href = `/dashboard/users/edit/${userId}`;
-        break;
-      default:
-        console.log(`Action: ${action} for user:`, userId);
-    }
-  }, []);
-
-  const fullName = `${user.profile.firstName} ${user.profile.lastName}`;
-
-  return (
-    <EnhancedTableRow index={index}>
-      <EnhancedTableCell>
-        <div className="flex items-center gap-3">
-          <UserAvatar
-            user={{
-              firstName: user.profile.firstName,
-              lastName: user.profile.lastName,
-              avatarUrl: null,
-            }}
-            size="sm"
-          />
-          <div>
-            <p className="font-medium">{fullName}</p>
-            <p className="text-sm text-muted-foreground">{user.profile.employeeId}</p>
-          </div>
-        </div>
-      </EnhancedTableCell>
-      <EnhancedTableCell>
-        <Badge variant="outline" className="capitalize">
-          {user.profile.role.replace('_', ' ')}
-        </Badge>
-      </EnhancedTableCell>
-      <EnhancedTableCell className="hidden md:table-cell">
-        {user.department?.name || 'N/A'}
-      </EnhancedTableCell>
-      <EnhancedTableCell className="hidden lg:table-cell">
-        {user.position?.title || 'N/A'}
-      </EnhancedTableCell>
-      <EnhancedTableCell>
-        <StatusBadge
-          status={user.profile.isActive ? 'active' : 'inactive'}
-        />
-      </EnhancedTableCell>
-      <EnhancedTableCell>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreVertical className="h-4 w-4" />
-              <span className="sr-only">Actions</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="glass-dropdown">
-            <DropdownMenuItem onClick={() => handleAction('view', user.profile.id)}>
-              <Eye className="mr-2 h-4 w-4" />
-              View Details
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleAction('edit', user.profile.id)}>
-              <Edit className="mr-2 h-4 w-4" />
-              Edit User
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            {user.profile.isActive ? (
-              <DropdownMenuItem onClick={() => handleAction('deactivate', user.profile.id)}>
-                <UserX className="mr-2 h-4 w-4" />
-                Deactivate
-              </DropdownMenuItem>
-            ) : (
-              <DropdownMenuItem onClick={() => handleAction('activate', user.profile.id)}>
-                <UserCheck className="mr-2 h-4 w-4" />
-                Activate
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => handleAction('delete', user.profile.id)}
-              className="text-red-600 focus:text-red-600"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete User
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </EnhancedTableCell>
-    </EnhancedTableRow>
-  );
-});
-
-UserRow.displayName = 'UserRow';
-
-// Loading Skeleton
-const LoadingTable = memo(() => (
-  <div className="space-y-3">
-    {Array.from({ length: 5 }).map((_, i) => (
-      <div key={i} className="flex items-center gap-3">
-        <Skeleton className="h-10 w-10 rounded-full" />
-        <div className="flex-1 space-y-2">
-          <Skeleton className="h-4 w-[200px]" />
-          <Skeleton className="h-3 w-[150px]" />
-        </div>
-      </div>
-    ))}
-  </div>
-));
-
-LoadingTable.displayName = 'LoadingTable';
-
-// Main User Management Page Component
 export default function UsersPage() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState('all');
-  const [departmentFilter, setDepartmentFilter] = useState('all');
-  const [searchFocused, setSearchFocused] = useState(false);
+  const searchParams = useSearchParams();
 
-  // Build filters object
-  const filters = useMemo<UsersFilters>(
-    () => ({
-      search: searchQuery,
-      role: roleFilter !== 'all' ? roleFilter : undefined,
-      department: departmentFilter !== 'all' ? departmentFilter : undefined,
-    }),
-    [searchQuery, roleFilter, departmentFilter]
-  );
+  // Dialog states
+  const [detailsUserId, setDetailsUserId] = useState<string | null>(null);
+  const [editUserId, setEditUserId] = useState<string | null>(null);
+  const [resetPasswordUserId, setResetPasswordUserId] = useState<string | null>(null);
 
-  // Fetch users with filters
-  const { data: users, isLoading, isError, error } = useUsersQuery(filters);
+  // Mutations
+  const toggleStatus = useToggleUserStatus();
+  const deleteUser = useDeleteUser();
 
-  // Mock user growth data
-  const userGrowthData = useMemo(() => getUserGrowthData(), []);
+  // Build query params from URL
+  const queryParams = useMemo<Partial<UserListQuery>>(() => {
+    const params: Partial<UserListQuery> = {
+      page: Number(searchParams.get('page') || 1),
+      limit: Number(searchParams.get('limit') || 20),
+    };
 
-  // Handle search input with debounce effect
-  const handleSearchChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setSearchQuery(e.target.value);
-    },
-    []
-  );
+    const search = searchParams.get('search');
+    if (search) params.search = search;
 
-  const handleCreateUser = useCallback(() => {
-    window.location.href = '/dashboard/users/create';
-  }, []);
+    const role = searchParams.get('role');
+    if (role) params.role = role as any;
 
-  const handleResetFilters = useCallback(() => {
-    setSearchQuery('');
-    setRoleFilter('all');
-    setDepartmentFilter('all');
-  }, []);
+    const userType = searchParams.get('userType');
+    if (userType) params.userType = userType as any;
 
-  const hasActiveFilters =
-    searchQuery || roleFilter !== 'all' || departmentFilter !== 'all';
+    const accountStatus = searchParams.get('accountStatus');
+    if (accountStatus) params.accountStatus = accountStatus as any;
+
+    const isActive = searchParams.get('isActive');
+    if (isActive) params.isActive = isActive === 'true';
+
+    const departmentId = searchParams.get('departmentId');
+    if (departmentId) params.departmentId = departmentId;
+
+    const employmentCategory = searchParams.get('employmentCategory');
+    if (employmentCategory) params.employmentCategory = employmentCategory as any;
+
+    const sortBy = searchParams.get('sortBy');
+    if (sortBy) params.sortBy = sortBy as any;
+
+    const sortOrder = searchParams.get('sortOrder');
+    if (sortOrder) params.sortOrder = sortOrder as any;
+
+    return params;
+  }, [searchParams]);
+
+  // Fetch users with current filters
+  const { data, isLoading, isError, error } = useUsers(queryParams);
+
+  // Handle actions
+  const handleViewDetails = (userId: string) => {
+    setDetailsUserId(userId);
+  };
+
+  const handleEdit = (userId: string) => {
+    setEditUserId(userId);
+  };
+
+  const handleToggleStatus = (userId: string, isActive: boolean) => {
+    toggleStatus.mutate({ userId, isActive });
+  };
+
+  const handleResetPassword = (userId: string) => {
+    setResetPasswordUserId(userId);
+  };
+
+  const handleDelete = (userId: string) => {
+    if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+      deleteUser.mutate(userId);
+    }
+  };
+
+  const handleCreateUser = () => {
+    // TODO: Navigate to create user page or open create dialog
+    console.log('Create user functionality not implemented yet');
+  };
 
   return (
-    <PageTransition className="space-y-6">
-      {/* Header */}
+    <div className="space-y-6">
+      {/* Page Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
           <p className="text-muted-foreground">
-            Manage user accounts and permissions
+            Manage user accounts, permissions, and access control
           </p>
         </div>
         <Button onClick={handleCreateUser}>
@@ -273,213 +126,85 @@ export default function UsersPage() {
         </Button>
       </div>
 
-      {/* User Growth Chart */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary" />
-            <CardTitle>User Growth Trend</CardTitle>
-          </div>
-          <CardDescription>User registration over the last 6 months</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ChartContainer
-            config={{
-              users: {
-                label: 'Users',
-                color: '#8B1538',
-              },
+      {/* Statistics Cards */}
+      <UserStatsCards />
+
+      {/* Detailed Statistics (2-column layout) */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          {/* Filters */}
+          <UserFilters
+            onFilterChange={() => {
+              // Filters update via URL params automatically
             }}
-            className="h-[300px]"
-          >
-            <LineChart data={userGrowthData}>
-              <XAxis
-                dataKey="month"
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-              />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <Line
-                type="monotone"
-                dataKey="users"
-                stroke="var(--color-users)"
-                strokeWidth={2}
-                dot={{ fill: 'var(--color-users)', r: 4 }}
-                activeDot={{ r: 6 }}
-              />
-            </LineChart>
-          </ChartContainer>
-        </CardContent>
-      </Card>
+            totalResults={data?.pagination.total}
+          />
+        </div>
+        <div>
+          <DetailedUserStats />
+        </div>
+      </div>
 
-      {/* Filters Card - Fixed theme adaptivity */}
-      <Card className="border-muted/50 bg-card shadow-sm">
-        <CardHeader className="border-b border-subtle bg-muted/30">
-          <CardTitle className="text-base">Filters</CardTitle>
-          <CardDescription>Search and filter users</CardDescription>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <div className="flex flex-col gap-4">
-            <div className="grid gap-4 md:grid-cols-3">
-              {/* Search Input with animated icon */}
-              <div className="relative">
-                <motion.div
-                  animate={{
-                    scale: searchFocused ? 1.1 : 1,
-                    rotate: searchFocused ? 10 : 0,
-                  }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute left-3 top-1/2 -translate-y-1/2"
-                >
-                  <Search className="h-4 w-4 text-muted-foreground" />
-                </motion.div>
-                <Input
-                  placeholder="Search users..."
-                  value={searchQuery}
-                  onChange={handleSearchChange}
-                  onFocus={() => setSearchFocused(true)}
-                  onBlur={() => setSearchFocused(false)}
-                  className="pl-9 bg-background"
-                />
-              </div>
-
-              {/* Role Filter */}
-              <Select value={roleFilter} onValueChange={setRoleFilter}>
-                <SelectTrigger className="bg-background">
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent className="glass-dropdown">
-                  {ROLES.map((role) => (
-                    <SelectItem key={role.value} value={role.value}>
-                      {role.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Department Filter */}
-              <Select
-                value={departmentFilter}
-                onValueChange={setDepartmentFilter}
-              >
-                <SelectTrigger className="bg-background">
-                  <SelectValue placeholder="Select department" />
-                </SelectTrigger>
-                <SelectContent className="glass-dropdown">
-                  {DEPARTMENTS.map((dept) => (
-                    <SelectItem key={dept.value} value={dept.value}>
-                      {dept.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Reset Filters */}
-            {hasActiveFilters && (
-              <div className="flex items-center justify-between rounded-lg bg-muted/50 px-4 py-3 border border-subtle">
-                <p className="text-sm text-muted-foreground">
-                  {users?.length || 0} user(s) found
-                </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleResetFilters}
-                >
-                  <Filter className="mr-2 h-4 w-4" />
-                  Reset Filters
-                </Button>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Error State */}
+      {isError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error Loading Users</AlertTitle>
+          <AlertDescription>
+            {error?.message || 'Failed to load users. Please try again.'}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Users Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Users</CardTitle>
+          <CardTitle>All Users</CardTitle>
           <CardDescription>
-            {users?.length || 0} total user(s)
+            {data?.pagination.total || 0} total user(s)
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          {/* Loading State */}
-          {isLoading && <LoadingTable />}
+        <CardContent className="space-y-4">
+          <UsersDataTable
+            data={data?.users || []}
+            isLoading={isLoading}
+            onViewDetails={handleViewDetails}
+            onEdit={handleEdit}
+            onToggleStatus={handleToggleStatus}
+            onResetPassword={handleResetPassword}
+            onDelete={handleDelete}
+          />
 
-          {/* Error State */}
-          {isError && (
-            <ErrorAlert
-              error={error || 'Failed to load users'}
-              title="Failed to load users"
+          {/* Pagination */}
+          {data && data.pagination.totalPages > 1 && (
+            <UsersPagination
+              currentPage={data.pagination.page}
+              totalPages={data.pagination.totalPages}
+              pageSize={data.pagination.pageSize}
+              total={data.pagination.total}
             />
-          )}
-
-          {/* Empty State */}
-          {!isLoading && !isError && users?.length === 0 && (
-            <EmptyState
-              icon={hasActiveFilters ? Search : UserPlus}
-              title={
-                hasActiveFilters ? 'No users found' : 'No users available'
-              }
-              description={
-                hasActiveFilters
-                  ? 'Try adjusting your search or filter criteria'
-                  : 'Get started by creating your first user'
-              }
-              action={
-                hasActiveFilters
-                  ? {
-                      label: 'Clear Filters',
-                      onClick: handleResetFilters,
-                      variant: 'outline' as const,
-                    }
-                  : {
-                      label: 'Create User',
-                      onClick: handleCreateUser,
-                    }
-              }
-            />
-          )}
-
-          {/* Users Table */}
-          {!isLoading && !isError && users && users.length > 0 && (
-            <div className="overflow-x-auto">
-              <EnhancedTable>
-                <EnhancedTableHeader>
-                  <EnhancedTableRow animate={false}>
-                    <EnhancedTableHead>User</EnhancedTableHead>
-                    <EnhancedTableHead>Role</EnhancedTableHead>
-                    <EnhancedTableHead className="hidden md:table-cell">
-                      Department
-                    </EnhancedTableHead>
-                    <EnhancedTableHead className="hidden lg:table-cell">
-                      Position
-                    </EnhancedTableHead>
-                    <EnhancedTableHead>Status</EnhancedTableHead>
-                    <EnhancedTableHead className="w-[50px]">
-                      <span className="sr-only">Actions</span>
-                    </EnhancedTableHead>
-                  </EnhancedTableRow>
-                </EnhancedTableHeader>
-                <EnhancedTableBody>
-                  {users.map((user, index) => (
-                    <UserRow key={user.profile.id} user={user} index={index} />
-                  ))}
-                </EnhancedTableBody>
-              </EnhancedTable>
-            </div>
           )}
         </CardContent>
       </Card>
-    </PageTransition>
+
+      {/* Dialogs */}
+      <UserDetailsDialog
+        userId={detailsUserId}
+        open={!!detailsUserId}
+        onOpenChange={(open) => !open && setDetailsUserId(null)}
+      />
+
+      <EditUserDialog
+        userId={editUserId}
+        open={!!editUserId}
+        onOpenChange={(open) => !open && setEditUserId(null)}
+      />
+
+      <ResetPasswordDialog
+        userId={resetPasswordUserId}
+        open={!!resetPasswordUserId}
+        onOpenChange={(open) => !open && setResetPasswordUserId(null)}
+      />
+    </div>
   );
 }

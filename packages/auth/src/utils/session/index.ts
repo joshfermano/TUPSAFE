@@ -35,6 +35,7 @@ export function getSessionCookieOptions(
  */
 export interface SessionData {
   userId: string;
+  id: string; // Alias for userId for convenience
   email: string;
   employeeId?: string;
   role: string;
@@ -49,6 +50,7 @@ export async function createSession(sessionData: SessionData): Promise<void> {
   const cookieStore = await cookies();
   const sessionString = JSON.stringify({
     ...sessionData,
+    id: sessionData.userId, // Ensure id is set to userId
     lastActivity: Date.now(),
   });
 
@@ -215,6 +217,7 @@ export async function checkUserRole(allowedRoles: string[]): Promise<boolean> {
  */
 export async function getSessionUser(): Promise<{
   userId: string;
+  id: string;
   email: string;
   employeeId?: string;
   role: string;
@@ -226,5 +229,5 @@ export async function getSessionUser(): Promise<{
   }
 
   const { userId, email, employeeId, role } = validation.session;
-  return { userId, email, employeeId, role };
+  return { userId, id: userId, email, employeeId, role };
 }

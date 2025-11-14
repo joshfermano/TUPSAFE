@@ -1,0 +1,13 @@
+/**
+ * User Management Components
+ *
+ * Centralized exports for all user management components
+ */
+
+export { UserStatsCards, DetailedUserStats } from './UserStatsCards';
+export { UserFilters } from './UserFilters';
+export { UsersDataTable } from './UsersDataTable';
+export { UserDetailsDialog } from './UserDetailsDialog';
+export { EditUserDialog } from './EditUserDialog';
+export { ResetPasswordDialog } from './ResetPasswordDialog';
+export { UsersPagination } from './UsersPagination';

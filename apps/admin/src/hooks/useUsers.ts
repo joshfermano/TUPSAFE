@@ -1,0 +1,189 @@
+/**
+ * User Management React Query Hooks
+ *
+ * Provides type-safe React Query hooks for all user management operations.
+ * Includes automatic caching, optimistic updates, and error handling.
+ */
+
+'use client';
+
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import type {
+  UserListQuery,
+  UserListResponse,
+  UserDetail,
+  UserStatsResponse,
+  UpdateUserData,
+  PasswordResetData,
+} from '@tupsafe/types';
+import {
+  fetchUsers,
+  fetchUserDetails,
+  fetchUserStats,
+  updateUser,
+  deleteUser,
+  resetUserPassword,
+} from '@/lib/api/users';
+
+/**
+ * Query key factory for user-related queries
+ */
+export const userKeys = {
+  all: ['users'] as const,
+  lists: () => [...userKeys.all, 'list'] as const,
+  list: (params: Partial<UserListQuery>) => [...userKeys.lists(), params] as const,
+  details: () => [...userKeys.all, 'detail'] as const,
+  detail: (userId: string) => [...userKeys.details(), userId] as const,
+  stats: () => [...userKeys.all, 'stats'] as const,
+};
+
+/**
+ * Hook to fetch paginated list of users
+ */
+export function useUsers(params: Partial<UserListQuery> = {}) {
+  return useQuery<UserListResponse, Error>({
+    queryKey: userKeys.list(params),
+    queryFn: () => fetchUsers(params),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    placeholderData: keepPreviousData, // Keep previous data while fetching new
+  });
+}
+
+/**
+ * Hook to fetch user details
+ */
+export function useUserDetails(userId: string | null) {
+  return useQuery<UserDetail, Error>({
+    queryKey: userKeys.detail(userId || ''),
+    queryFn: () => fetchUserDetails(userId!),
+    enabled: !!userId,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+/**
+ * Hook to fetch user statistics
+ */
+export function useUserStats() {
+  return useQuery<UserStatsResponse, Error>({
+    queryKey: userKeys.stats(),
+    queryFn: fetchUserStats,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+}
+
+/**
+ * Hook to update user information
+ */
+export function useUpdateUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ userId, data }: { userId: string; data: UpdateUserData }) =>
+      updateUser(userId, data),
+    onMutate: async ({ userId }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: userKeys.details() });
+      await queryClient.cancelQueries({ queryKey: userKeys.lists() });
+
+      // Snapshot previous value
+      const previousUser = queryClient.getQueryData<UserDetail>(userKeys.detail(userId));
+
+      return { previousUser };
+    },
+    onSuccess: (updatedUser, { userId }) => {
+      // Update detail cache
+      queryClient.setQueryData(userKeys.detail(userId), updatedUser);
+
+      // Invalidate list queries to refetch
+      queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: userKeys.stats() });
+
+      toast.success('User updated successfully', {
+        description: `${updatedUser.firstName} ${updatedUser.lastName} has been updated.`,
+      });
+    },
+    onError: (error, { userId }, context) => {
+      // Rollback on error
+      if (context?.previousUser) {
+        queryClient.setQueryData(userKeys.detail(userId), context.previousUser);
+      }
+
+      toast.error('Failed to update user', {
+        description: error.message,
+      });
+    },
+  });
+}
+
+/**
+ * Hook to delete a user (soft delete)
+ */
+export function useDeleteUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteUser,
+    onSuccess: (_, userId) => {
+      // Invalidate all user queries
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
+
+      toast.success('User deleted successfully', {
+        description: 'The user account has been deactivated.',
+      });
+    },
+    onError: (error) => {
+      toast.error('Failed to delete user', {
+        description: error.message,
+      });
+    },
+  });
+}
+
+/**
+ * Hook to reset user password
+ */
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: ({ userId, data }: { userId: string; data: PasswordResetData }) =>
+      resetUserPassword(userId, data),
+    onSuccess: (response) => {
+      if (response.temporaryPassword) {
+        toast.success('Password reset successfully', {
+          description: 'A new temporary password has been generated.',
+        });
+      }
+    },
+    onError: (error) => {
+      toast.error('Failed to reset password', {
+        description: error.message,
+      });
+    },
+  });
+}
+
+/**
+ * Hook to toggle user active status
+ */
+export function useToggleUserStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ userId, isActive }: { userId: string; isActive: boolean }) =>
+      updateUser(userId, { isActive: !isActive }),
+    onSuccess: (updatedUser) => {
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
+
+      const action = updatedUser.isActive ? 'activated' : 'deactivated';
+      toast.success(`User ${action}`, {
+        description: `${updatedUser.firstName} ${updatedUser.lastName} has been ${action}.`,
+      });
+    },
+    onError: (error) => {
+      toast.error('Failed to update user status', {
+        description: error.message,
+      });
+    },
+  });
+}

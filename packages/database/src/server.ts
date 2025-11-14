@@ -7,6 +7,7 @@ export * from './schema';
 // Server-only utilities
 export * from './utils/storage';
 export * from './utils/audit-log';
+export * from './utils/admin-employee-id';
 
 // Re-export types for convenience
 export type * from './types';
