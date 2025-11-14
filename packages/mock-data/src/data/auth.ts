@@ -99,6 +99,14 @@ export const mockAuthUsers: MockUser[] = [
     lastSignIn: new Date('2025-01-06T09:30:00Z'),
     createdAt: new Date('2024-10-12T00:00:00Z'),
   },
+  {
+    id: '01927d4e-8b45-7f52-b123-456789abcde9',
+    email: 'maria.garcia@gmail.com',
+    password: 'password123',
+    emailConfirmed: true,
+    lastSignIn: new Date('2025-01-14T10:00:00Z'),
+    createdAt: new Date('2024-11-01T00:00:00Z'),
+  },
 ];
 
 // Mock session storage

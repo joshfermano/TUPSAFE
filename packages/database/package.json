@@ -26,6 +26,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx src/seed.ts",
+    "db:seed:tup": "tsx src/seed-tup-structure.ts",
     "db:test": "tsx src/test-connection.ts",
     "storage:setup": "tsx src/storage-setup.ts"
   },

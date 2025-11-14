@@ -215,7 +215,7 @@ export function searchUsers(query: string) {
       (profile) =>
         profile.firstName.toLowerCase().includes(lowercaseQuery) ||
         profile.lastName.toLowerCase().includes(lowercaseQuery) ||
-        profile.employeeId.toLowerCase().includes(lowercaseQuery) ||
+        (profile.employeeId && profile.employeeId.toLowerCase().includes(lowercaseQuery)) ||
         (profile.middleName && profile.middleName.toLowerCase().includes(lowercaseQuery))
     )
     .map((profile) => ({
@@ -294,7 +294,7 @@ export function searchSubmissionsByName<T extends PdsSubmission | SalnSubmission
     const fullName = `${user.firstName} ${user.lastName}`.toLowerCase();
     const firstName = user.firstName.toLowerCase();
     const lastName = user.lastName.toLowerCase();
-    const employeeId = user.employeeId.toLowerCase();
+    const employeeId = user.employeeId?.toLowerCase() ?? '';
 
     return (
       firstName.includes(lowercaseQuery) ||

@@ -36,7 +36,7 @@ export function getSessionCookieOptions(
 export interface SessionData {
   userId: string;
   email: string;
-  employeeId: string;
+  employeeId?: string;
   role: string;
   lastActivity: number;
   deviceFingerprint?: string;
@@ -216,7 +216,7 @@ export async function checkUserRole(allowedRoles: string[]): Promise<boolean> {
 export async function getSessionUser(): Promise<{
   userId: string;
   email: string;
-  employeeId: string;
+  employeeId?: string;
   role: string;
 } | null> {
   const validation = await validateSession();

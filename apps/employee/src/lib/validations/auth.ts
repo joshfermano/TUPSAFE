@@ -259,6 +259,189 @@ export const mfaSetupSchema = z.object({
     .regex(/^\d{6}$/, 'Verification code must be exactly 6 digits'),
 });
 
+// ============================================================================
+// Multi-User Type Registration Schemas (NEW)
+// ============================================================================
+
+// Step 0: User Type Selection Schema
+export const userTypeSelectionSchema = z.object({
+  userType: z.enum(['employee', 'applicant'], {
+    required_error: 'Please select whether you are an employee or applicant',
+  }),
+  employmentCategory: z.enum(['faculty', 'administrative']).optional(),
+});
+
+// Employee Registration Schema (Faculty/Staff)
+const employeeRegistrationSchema = z.object({
+  // User type identification
+  userType: z.literal('employee'),
+  employmentCategory: z.enum(['faculty', 'administrative'], {
+    required_error: 'Please select your employment category',
+  }),
+
+  // Personal Information
+  firstName: z
+    .string()
+    .min(1, 'First name is required')
+    .min(2, 'First name must be at least 2 characters')
+    .max(50, 'First name must not exceed 50 characters')
+    .regex(
+      /^[a-zA-Z\s\-\.]+$/,
+      'First name can only contain letters, spaces, hyphens, and periods'
+    ),
+
+  lastName: z
+    .string()
+    .min(1, 'Last name is required')
+    .min(2, 'Last name must be at least 2 characters')
+    .max(50, 'Last name must not exceed 50 characters')
+    .regex(
+      /^[a-zA-Z\s\-\.]+$/,
+      'Last name can only contain letters, spaces, hyphens, and periods'
+    ),
+
+  middleName: z
+    .string()
+    .max(50, 'Middle name must not exceed 50 characters')
+    .regex(
+      /^[a-zA-Z\s\-\.]*$/,
+      'Middle name can only contain letters, spaces, hyphens, and periods'
+    )
+    .optional(),
+
+  email: institutionalEmailSchema,
+
+  phoneNumber: z
+    .string()
+    .min(1, 'Phone number is required')
+    .regex(
+      /^(\+639|09)\d{9}$/,
+      'Please enter a valid Philippine phone number (e.g., +639123456789 or 09123456789)'
+    ),
+
+  // Employment Details
+  hireDate: z
+    .date({
+      required_error: 'Date of appointment is required',
+      invalid_type_error: 'Please enter a valid date',
+    })
+    .refine((date) => date <= new Date(), {
+      message: 'Hire date cannot be in the future',
+    }),
+
+  collegeOrOffice: z.string().uuid('Please select your college or office'),
+
+  department: z.string().uuid().optional(), // Only for faculty under colleges
+
+  position: z.string().uuid('Please select your position'),
+
+  // Security Setup
+  password: passwordSchema,
+  confirmPassword: z.string().min(1, 'Please confirm your password'),
+
+  // Terms and Privacy
+  termsAccepted: z
+    .boolean()
+    .refine((val) => val === true, 'You must accept the terms and conditions'),
+
+  privacyAccepted: z
+    .boolean()
+    .refine((val) => val === true, 'You must accept the privacy policy'),
+
+  dataProcessingConsent: z
+    .boolean()
+    .refine(
+      (val) => val === true,
+      'Consent for data processing is required for CSC compliance'
+    ),
+});
+
+// Applicant Registration Schema (Job Applicants)
+const applicantRegistrationSchema = z.object({
+  // User type identification
+  userType: z.literal('applicant'),
+
+  // Personal Information
+  firstName: z
+    .string()
+    .min(1, 'First name is required')
+    .min(2, 'First name must be at least 2 characters')
+    .max(50, 'First name must not exceed 50 characters')
+    .regex(
+      /^[a-zA-Z\s\-\.]+$/,
+      'First name can only contain letters, spaces, hyphens, and periods'
+    ),
+
+  lastName: z
+    .string()
+    .min(1, 'Last name is required')
+    .min(2, 'Last name must be at least 2 characters')
+    .max(50, 'Last name must not exceed 50 characters')
+    .regex(
+      /^[a-zA-Z\s\-\.]+$/,
+      'Last name can only contain letters, spaces, hyphens, and periods'
+    ),
+
+  middleName: z
+    .string()
+    .max(50, 'Middle name must not exceed 50 characters')
+    .regex(
+      /^[a-zA-Z\s\-\.]*$/,
+      'Middle name can only contain letters, spaces, hyphens, and periods'
+    )
+    .optional(),
+
+  email: z.string().email('Please enter a valid email address'),
+
+  phoneNumber: z
+    .string()
+    .min(1, 'Phone number is required')
+    .regex(
+      /^(\+639|09)\d{9}$/,
+      'Please enter a valid Philippine phone number (e.g., +639123456789 or 09123456789)'
+    ),
+
+  // Application Details
+  positionAppliedFor: z.string().uuid('Please select a position to apply for'),
+
+  // Security Setup
+  password: passwordSchema,
+  confirmPassword: z.string().min(1, 'Please confirm your password'),
+
+  // Terms and Privacy
+  termsAccepted: z
+    .boolean()
+    .refine((val) => val === true, 'You must accept the terms and conditions'),
+
+  privacyAccepted: z
+    .boolean()
+    .refine((val) => val === true, 'You must accept the privacy policy'),
+
+  dataProcessingConsent: z
+    .boolean()
+    .refine(
+      (val) => val === true,
+      'Consent for data processing is required for CSC compliance'
+    ),
+});
+
+// Combined registration schema with password confirmation
+export const employeeRegistrationSchemaWithConfirmation = employeeRegistrationSchema.refine(
+  (data) => data.password === data.confirmPassword,
+  {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  }
+);
+
+export const applicantRegistrationSchemaWithConfirmation = applicantRegistrationSchema.refine(
+  (data) => data.password === data.confirmPassword,
+  {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  }
+);
+
 // Type exports for use in components
 export type LoginFormData = z.infer<typeof loginSchema>;
 export type RegisterFormData = z.infer<typeof registerSchema>;
@@ -269,3 +452,10 @@ export type RegisterStep4Data = z.infer<typeof registerStep4Schema>;
 export type PasswordResetData = z.infer<typeof passwordResetSchema>;
 export type ChangePasswordData = z.infer<typeof changePasswordSchema>;
 export type MfaSetupData = z.infer<typeof mfaSetupSchema>;
+
+// New type exports for multi-user registration
+export type UserTypeSelectionData = z.infer<typeof userTypeSelectionSchema>;
+export type EmployeeRegistrationData = z.infer<typeof employeeRegistrationSchema>;
+export type ApplicantRegistrationData = z.infer<typeof applicantRegistrationSchema>;
+export type EmployeeRegistrationFormData = z.infer<typeof employeeRegistrationSchemaWithConfirmation>;
+export type ApplicantRegistrationFormData = z.infer<typeof applicantRegistrationSchemaWithConfirmation>;

@@ -587,7 +587,7 @@ const { profile, loading: profileLoading } = useProfile(id);
                             <FormLabel>Employee ID</FormLabel>
                             <div className="flex items-center gap-2">
                               <Input
-                                value={profile.employeeId}
+                                value={profile.employeeId ?? undefined}
                                 disabled
                                 className="bg-slate-50 dark:bg-slate-800/50"
                               />
