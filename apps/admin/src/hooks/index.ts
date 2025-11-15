@@ -60,4 +60,29 @@ export {
   usePrefetchAuditLogs,
   auditLogsKeys,
 } from './useAuditLogsQuery';
-export type { AuditLogsFilters, AuditLogsResult } from './useAuditLogsQuery';
+export type { AuditLogsFilters } from './useAuditLogsQuery';
+
+// Settings - User Profile Query Hook
+export {
+  useUserProfileQuery,
+  useInvalidateUserProfile,
+  userProfileKeys,
+} from './useUserProfileQuery';
+
+// Settings - User Preferences Query Hook
+export {
+  useUserPreferencesQuery,
+  useInvalidateUserPreferences,
+  userPreferencesKeys,
+} from './useUserPreferencesQuery';
+
+// Settings - Password Change Query Hook
+export { usePasswordChangeQuery } from './usePasswordChangeQuery';
+
+// Settings - Active Sessions Query Hook
+export {
+  useActiveSessionsQuery,
+  useInvalidateActiveSessions,
+  usePrefetchActiveSessions,
+  activeSessionsKeys,
+} from './useActiveSessionsQuery';

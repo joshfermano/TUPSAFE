@@ -4,25 +4,21 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import * as z from 'zod';
 import {
-  Save,
-  Settings as SettingsIcon,
-  User,
-  Shield,
-  Sliders,
-  Monitor,
-  Moon,
-  Sun,
-  Bell,
-  Clock,
-  Key,
-  Smartphone,
-  LogOut,
-  LayoutGrid,
-  FileDown,
-} from 'lucide-react';
-import { toast } from 'sonner';
+  PersonIcon,
+  LockClosedIcon,
+  MixerVerticalIcon,
+  MoonIcon,
+  SunIcon,
+  DesktopIcon,
+  BellIcon,
+  ClockIcon,
+  ReloadIcon,
+  ExclamationTriangleIcon,
+  EyeOpenIcon,
+  EyeNoneIcon,
+  Cross2Icon,
+} from '@radix-ui/react-icons';
 
 import { PageTransition } from '@/components/PageTransition';
 import {
@@ -32,6 +28,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -47,6 +49,7 @@ import {
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
   DialogContent,
@@ -65,129 +68,85 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Progress } from '@/components/ui/progress';
+
+import {
+  useUserProfileQuery,
+  useUserPreferencesQuery,
+  usePasswordChangeQuery,
+  useActiveSessionsQuery,
+} from '@/hooks';
+import {
+  updateProfileRequestSchema,
+  updatePreferencesRequestSchema,
+  changePasswordRequestSchema,
+  type UpdateProfileRequest,
+  type UpdatePreferencesRequest,
+  type ChangePasswordRequest,
+} from '@tupsafe/types';
 
 /**
- * Form Schemas
+ * Common Timezones for Philippines
  */
-
-const systemSettingsSchema = z.object({
-  theme: z.enum(['light', 'dark', 'system']),
-  notificationsEnabled: z.boolean(),
-  emailNotifications: z.boolean(),
-  pushNotifications: z.boolean(),
-  dataRefreshInterval: z.enum(['5', '10', '15', '30']),
-  defaultView: z.enum(['compact', 'comfortable', 'spacious']),
-});
-
-const accountSettingsSchema = z.object({
-  displayName: z.string().min(2, 'Display name must be at least 2 characters'),
-  email: z.string().email('Invalid email address'),
-});
-
-const securitySettingsSchema = z.object({
-  currentPassword: z.string().min(8, 'Password must be at least 8 characters'),
-  newPassword: z.string().min(8, 'Password must be at least 8 characters'),
-  confirmPassword: z.string().min(8, 'Password must be at least 8 characters'),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ['confirmPassword'],
-});
-
-const preferencesSchema = z.object({
-  dashboardLayout: z.enum(['compact', 'comfortable', 'spacious']),
-  itemsPerPage: z.enum(['10', '25', '50', '100']),
-  exportFormat: z.enum(['csv', 'pdf']),
-  showPendingOnly: z.boolean(),
-  showRecentActivity: z.boolean(),
-  sessionTimeout: z.enum(['15', '30', '60', '120']),
-});
-
-type SystemSettings = z.infer<typeof systemSettingsSchema>;
-type AccountSettings = z.infer<typeof accountSettingsSchema>;
-type SecuritySettings = z.infer<typeof securitySettingsSchema>;
-type Preferences = z.infer<typeof preferencesSchema>;
+const COMMON_TIMEZONES = [
+  { value: 'Asia/Manila', label: 'Manila (GMT+8)' },
+  { value: 'Asia/Tokyo', label: 'Tokyo (GMT+9)' },
+  { value: 'Asia/Singapore', label: 'Singapore (GMT+8)' },
+  { value: 'Asia/Shanghai', label: 'Shanghai (GMT+8)' },
+  { value: 'UTC', label: 'UTC (GMT+0)' },
+  { value: 'America/New_York', label: 'New York (GMT-5)' },
+  { value: 'America/Los_Angeles', label: 'Los Angeles (GMT-8)' },
+];
 
 /**
- * Mock user data
+ * Password Strength Indicator Component
  */
-const mockUser = {
-  displayName: 'Admin User',
-  email: 'admin@tupsafe.tup.edu.ph',
-  role: 'System Administrator',
-  department: 'Information Technology',
-};
-
-/**
- * Active Sessions Component
- */
-const ActiveSessions = () => {
-  const sessions = [
-    {
-      id: '1',
-      device: 'Chrome on Windows',
-      location: 'Manila, Philippines',
-      lastActive: '2 minutes ago',
-      current: true,
-    },
-    {
-      id: '2',
-      device: 'Safari on iPhone',
-      location: 'Manila, Philippines',
-      lastActive: '2 hours ago',
-      current: false,
-    },
-  ];
-
-  const handleRevokeSession = (sessionId: string) => {
-    toast.success('Session revoked successfully');
-    console.log('Revoking session:', sessionId);
+const PasswordStrengthIndicator = ({ password }: { password: string }) => {
+  const getStrength = (pwd: string): number => {
+    let strength = 0;
+    if (pwd.length >= 8) strength += 20;
+    if (pwd.length >= 12) strength += 20;
+    if (/[a-z]/.test(pwd)) strength += 15;
+    if (/[A-Z]/.test(pwd)) strength += 15;
+    if (/[0-9]/.test(pwd)) strength += 15;
+    if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)) strength += 15;
+    return Math.min(strength, 100);
   };
 
+  const strength = getStrength(password);
+  const getColor = () => {
+    if (strength < 40) return 'bg-red-500';
+    if (strength < 70) return 'bg-yellow-500';
+    return 'bg-green-500';
+  };
+
+  const getLabel = () => {
+    if (strength === 0) return '';
+    if (strength < 40) return 'Weak';
+    if (strength < 70) return 'Medium';
+    return 'Strong';
+  };
+
+  if (!password) return null;
+
   return (
-    <div className="space-y-4">
-      <div>
-        <h3 className="text-sm font-medium">Active Sessions</h3>
-        <p className="text-sm text-muted-foreground">
-          Manage devices that are currently logged in
-        </p>
+    <div className="space-y-1">
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-muted-foreground">Password Strength</span>
+        <span className="font-medium">{getLabel()}</span>
       </div>
-      <div className="space-y-3">
-        {sessions.map((session) => (
-          <Card key={session.id}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-primary/10 p-2">
-                    <Monitor className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">{session.device}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {session.location} • {session.lastActive}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {session.current && (
-                    <Badge variant="outline" className="text-xs">
-                      Current
-                    </Badge>
-                  )}
-                  {!session.current && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRevokeSession(session.id)}
-                    >
-                      <LogOut className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <Progress value={strength} className={`h-1.5 ${getColor()}`} />
     </div>
   );
 };
@@ -197,9 +156,15 @@ const ActiveSessions = () => {
  */
 const ChangePasswordDialog = () => {
   const [open, setOpen] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const form = useForm<SecuritySettings>({
-    resolver: zodResolver(securitySettingsSchema),
+  const { changePassword, isChanging, isSuccess, reset } =
+    usePasswordChangeQuery();
+
+  const form = useForm<ChangePasswordRequest>({
+    resolver: zodResolver(changePasswordRequestSchema),
     defaultValues: {
       currentPassword: '',
       newPassword: '',
@@ -207,26 +172,34 @@ const ChangePasswordDialog = () => {
     },
   });
 
-  const onSubmit = (data: SecuritySettings) => {
-    console.log('Changing password:', data);
-    toast.success('Password changed successfully');
-    setOpen(false);
-    form.reset();
+  const newPassword = form.watch('newPassword');
+
+  // Clear form on success
+  useEffect(() => {
+    if (isSuccess && open) {
+      form.reset();
+      setOpen(false);
+      reset();
+    }
+  }, [isSuccess, open, form, reset]);
+
+  const onSubmit = async (data: ChangePasswordRequest) => {
+    changePassword(data);
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline">
-          <Key className="mr-2 h-4 w-4" />
+          <LockClosedIcon className="mr-2 h-4 w-4" />
           Change Password
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Change Password</DialogTitle>
           <DialogDescription>
-            Enter your current password and choose a new one
+            Enter your current password and choose a new strong password
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -238,7 +211,26 @@ const ChangePasswordDialog = () => {
                 <FormItem>
                   <FormLabel>Current Password</FormLabel>
                   <FormControl>
-                    <Input type="password" {...field} />
+                    <div className="relative">
+                      <Input
+                        type={showCurrentPassword ? 'text' : 'password'}
+                        {...field}
+                        disabled={isChanging}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      >
+                        {showCurrentPassword ? (
+                          <EyeNoneIcon className="h-4 w-4" />
+                        ) : (
+                          <EyeOpenIcon className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -251,9 +243,29 @@ const ChangePasswordDialog = () => {
                 <FormItem>
                   <FormLabel>New Password</FormLabel>
                   <FormControl>
-                    <Input type="password" {...field} />
+                    <div className="relative">
+                      <Input
+                        type={showNewPassword ? 'text' : 'password'}
+                        {...field}
+                        disabled={isChanging}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                      >
+                        {showNewPassword ? (
+                          <EyeNoneIcon className="h-4 w-4" />
+                        ) : (
+                          <EyeOpenIcon className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
                   </FormControl>
                   <FormMessage />
+                  <PasswordStrengthIndicator password={newPassword} />
                 </FormItem>
               )}
             />
@@ -264,22 +276,747 @@ const ChangePasswordDialog = () => {
                 <FormItem>
                   <FormLabel>Confirm New Password</FormLabel>
                   <FormControl>
-                    <Input type="password" {...field} />
+                    <div className="relative">
+                      <Input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        {...field}
+                        disabled={isChanging}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                      >
+                        {showConfirmPassword ? (
+                          <EyeNoneIcon className="h-4 w-4" />
+                        ) : (
+                          <EyeOpenIcon className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <DialogFooter className="gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+                disabled={isChanging}
+              >
                 Cancel
               </Button>
-              <Button type="submit">Change Password</Button>
+              <Button type="submit" disabled={isChanging}>
+                {isChanging && <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />}
+                Change Password
+              </Button>
             </DialogFooter>
           </form>
         </Form>
       </DialogContent>
     </Dialog>
+  );
+};
+
+/**
+ * Active Sessions Component
+ */
+const ActiveSessions = () => {
+  const {
+    sessions,
+    otherSessions,
+    isLoading,
+    revokeSession,
+    isRevokingSession,
+    revokeAllSessions,
+    isRevokingAllSessions,
+  } = useActiveSessionsQuery();
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-24 w-full" />
+      </div>
+    );
+  }
+
+  const handleRevokeSession = (sessionId: string) => {
+    revokeSession({ sessionId });
+  };
+
+  const handleRevokeAllSessions = () => {
+    revokeAllSessions({ keepCurrent: true });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-medium">Active Sessions</h3>
+          <p className="text-sm text-muted-foreground">
+            Manage devices that are currently logged in ({sessions.length} active)
+          </p>
+        </div>
+        {otherSessions.length > 0 && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={isRevokingAllSessions}
+              >
+                {isRevokingAllSessions && (
+                  <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Revoke All Others
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Revoke all other sessions?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will log out all other devices ({otherSessions.length}{' '}
+                  session{otherSessions.length !== 1 ? 's' : ''}). Your current
+                  session will remain active.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleRevokeAllSessions}>
+                  Revoke All
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+      </div>
+
+      {sessions.length === 0 ? (
+        <Card>
+          <CardContent className="p-6 text-center text-sm text-muted-foreground">
+            No active sessions found
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {sessions.map((session) => (
+            <Card key={session.id}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className="rounded-lg bg-primary/10 p-2 shrink-0">
+                      <DesktopIcon className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-medium">{session.deviceName}</p>
+                        {session.isCurrent && (
+                          <Badge variant="default" className="text-xs">
+                            Current Session
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {session.browser} on {session.os}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {session.location} • {session.ipAddress}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Last active:{' '}
+                        {new Date(session.lastActive).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                  {!session.isCurrent && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={isRevokingSession}
+                        >
+                          <Cross2Icon className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Revoke this session?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will log out the device: {session.deviceName}. This
+                            action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleRevokeSession(session.id)}
+                          >
+                            Revoke Session
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/**
+ * Profile Section Component
+ */
+const ProfileSection = () => {
+  const { profile, isLoading, updateProfile, isUpdating } = useUserProfileQuery();
+
+  const form = useForm<UpdateProfileRequest>({
+    resolver: zodResolver(updateProfileRequestSchema),
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      middleName: '',
+      phoneNumber: '',
+    },
+  });
+
+  // Update form when profile loads
+  useEffect(() => {
+    if (profile) {
+      form.reset({
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        middleName: profile.middleName || '',
+        phoneNumber: profile.phoneNumber || '',
+      });
+    }
+  }, [profile, form]);
+
+  const onSubmit = (data: UpdateProfileRequest) => {
+    updateProfile(data);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="rounded-lg border border-destructive/50 p-4 text-sm">
+        <div className="flex items-center gap-2 text-destructive">
+          <ExclamationTriangleIcon className="h-4 w-4" />
+          <span className="font-medium">Unable to load profile</span>
+        </div>
+        <p className="text-muted-foreground mt-1">
+          Please refresh the page or contact support
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <Accordion type="multiple" className="w-full" defaultValue={['profile-info']}>
+      <AccordionItem value="profile-info">
+        <AccordionTrigger className="text-base font-medium">
+          Profile Information
+        </AccordionTrigger>
+        <AccordionContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} disabled={isUpdating} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} disabled={isUpdating} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="middleName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Middle Name (Optional)</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value || ''} disabled={isUpdating} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="phoneNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone Number</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value || ''}
+                        placeholder="09171234567"
+                        disabled={isUpdating}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Philippine mobile number format (e.g., 09171234567)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="space-y-4">
+                <div>
+                  <Label>Email Address</Label>
+                  <Input value={profile.email} disabled />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Email cannot be changed directly
+                  </p>
+                </div>
+
+                {profile.employeeId && (
+                  <div>
+                    <Label>Employee ID</Label>
+                    <Input value={profile.employeeId} disabled />
+                    <p className="text-xs text-muted-foreground mt-1">Read-only</p>
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium">Organizational Details</h3>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Role</Label>
+                    <div>
+                      <Badge variant="default" className="capitalize">
+                        {profile.role}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Account Status</Label>
+                    <div>
+                      <Badge
+                        variant={
+                          profile.accountStatus === 'active'
+                            ? 'default'
+                            : profile.accountStatus === 'suspended'
+                            ? 'destructive'
+                            : 'secondary'
+                        }
+                        className="capitalize"
+                      >
+                        {profile.accountStatus}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {profile.department && (
+                    <div className="space-y-2">
+                      <Label>Department</Label>
+                      <div>
+                        <Badge variant="outline">{profile.department.name}</Badge>
+                      </div>
+                    </div>
+                  )}
+
+                  {profile.position && (
+                    <div className="space-y-2">
+                      <Label>Position</Label>
+                      <div>
+                        <Badge variant="outline">{profile.position.title}</Badge>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <Button type="submit" disabled={isUpdating || !form.formState.isDirty}>
+                {isUpdating && <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />}
+                {isUpdating ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </form>
+          </Form>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  );
+};
+
+/**
+ * Preferences Section Component
+ */
+const PreferencesSection = () => {
+  const { preferences, isLoading, updatePreferences, isUpdating } =
+    useUserPreferencesQuery();
+
+  const form = useForm<UpdatePreferencesRequest>({
+    resolver: zodResolver(updatePreferencesRequestSchema),
+    defaultValues: {
+      emailNotificationsEnabled: true,
+      emailDigestFrequency: 'daily',
+      theme: 'system',
+      dashboardLayout: 'default',
+      language: 'en',
+      timezone: 'Asia/Manila',
+    },
+  });
+
+  // Update form when preferences load
+  useEffect(() => {
+    if (preferences) {
+      form.reset({
+        emailNotificationsEnabled: preferences.emailNotificationsEnabled,
+        emailDigestFrequency: preferences.emailDigestFrequency,
+        theme: preferences.theme,
+        dashboardLayout: preferences.dashboardLayout,
+        language: preferences.language,
+        timezone: preferences.timezone,
+      });
+    }
+  }, [preferences, form]);
+
+  const onSubmit = (data: UpdatePreferencesRequest) => {
+    updatePreferences(data);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-20 w-full" />
+      </div>
+    );
+  }
+
+  if (!preferences) {
+    return (
+      <div className="rounded-lg border border-destructive/50 p-4 text-sm">
+        <div className="flex items-center gap-2 text-destructive">
+          <ExclamationTriangleIcon className="h-4 w-4" />
+          <span className="font-medium">Unable to load preferences</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Accordion type="multiple" className="w-full" defaultValue={['notifications']}>
+      <AccordionItem value="notifications">
+        <AccordionTrigger className="text-base font-medium">
+          Notifications
+        </AccordionTrigger>
+        <AccordionContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="emailNotificationsEnabled"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="flex items-center gap-2">
+                        <BellIcon className="h-4 w-4" />
+                        Email Notifications
+                      </FormLabel>
+                      <FormDescription>
+                        Receive notifications via email
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={isUpdating}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="emailDigestFrequency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email Digest Frequency</FormLabel>
+                    <FormDescription>
+                      How often to receive email summaries
+                    </FormDescription>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={isUpdating}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select frequency" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="realtime">Real-time</SelectItem>
+                        <SelectItem value="daily">Daily</SelectItem>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                        <SelectItem value="never">Never</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button type="submit" disabled={isUpdating || !form.formState.isDirty}>
+                {isUpdating && <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />}
+                Save Notification Settings
+              </Button>
+            </form>
+          </Form>
+        </AccordionContent>
+      </AccordionItem>
+
+      <AccordionItem value="appearance">
+        <AccordionTrigger className="text-base font-medium">
+          Appearance & Display
+        </AccordionTrigger>
+        <AccordionContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="theme"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Theme</FormLabel>
+                    <FormDescription>
+                      Choose how the admin portal appears
+                    </FormDescription>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="grid grid-cols-3 gap-4"
+                        disabled={isUpdating}
+                      >
+                        <FormItem>
+                          <FormControl>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="light" id="light" />
+                              <Label htmlFor="light" className="flex items-center gap-2">
+                                <SunIcon className="h-4 w-4" />
+                                Light
+                              </Label>
+                            </div>
+                          </FormControl>
+                        </FormItem>
+                        <FormItem>
+                          <FormControl>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="dark" id="dark" />
+                              <Label htmlFor="dark" className="flex items-center gap-2">
+                                <MoonIcon className="h-4 w-4" />
+                                Dark
+                              </Label>
+                            </div>
+                          </FormControl>
+                        </FormItem>
+                        <FormItem>
+                          <FormControl>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="system" id="system" />
+                              <Label htmlFor="system" className="flex items-center gap-2">
+                                <DesktopIcon className="h-4 w-4" />
+                                System
+                              </Label>
+                            </div>
+                          </FormControl>
+                        </FormItem>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="dashboardLayout"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Dashboard Layout</FormLabel>
+                    <FormDescription>
+                      Choose your preferred dashboard density
+                    </FormDescription>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="grid grid-cols-3 gap-4"
+                        disabled={isUpdating}
+                      >
+                        <FormItem>
+                          <FormControl>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="compact" id="compact" />
+                              <Label htmlFor="compact">Compact</Label>
+                            </div>
+                          </FormControl>
+                        </FormItem>
+                        <FormItem>
+                          <FormControl>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="default" id="default" />
+                              <Label htmlFor="default">Default</Label>
+                            </div>
+                          </FormControl>
+                        </FormItem>
+                        <FormItem>
+                          <FormControl>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="detailed" id="detailed" />
+                              <Label htmlFor="detailed">Detailed</Label>
+                            </div>
+                          </FormControl>
+                        </FormItem>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button type="submit" disabled={isUpdating || !form.formState.isDirty}>
+                {isUpdating && <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />}
+                Save Appearance Settings
+              </Button>
+            </form>
+          </Form>
+        </AccordionContent>
+      </AccordionItem>
+
+      <AccordionItem value="regional">
+        <AccordionTrigger className="text-base font-medium">
+          Regional Settings
+        </AccordionTrigger>
+        <AccordionContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="language"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Language</FormLabel>
+                    <FormDescription>Select your preferred language</FormDescription>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={isUpdating}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select language" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="en">English</SelectItem>
+                        <SelectItem value="fil">Filipino</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="timezone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <ClockIcon className="h-4 w-4" />
+                      Timezone
+                    </FormLabel>
+                    <FormDescription>
+                      Select your timezone for accurate time display
+                    </FormDescription>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={isUpdating}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select timezone" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {COMMON_TIMEZONES.map((tz) => (
+                          <SelectItem key={tz.value} value={tz.value}>
+                            {tz.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button type="submit" disabled={isUpdating || !form.formState.isDirty}>
+                {isUpdating && <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />}
+                Save Regional Settings
+              </Button>
+            </form>
+          </Form>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   );
 };
 
@@ -293,56 +1030,6 @@ export default function SettingsPage() {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     setPrefersReducedMotion(mediaQuery.matches);
   }, []);
-
-  // System Settings Form
-  const systemForm = useForm<SystemSettings>({
-    resolver: zodResolver(systemSettingsSchema),
-    defaultValues: {
-      theme: 'system',
-      notificationsEnabled: true,
-      emailNotifications: true,
-      pushNotifications: false,
-      dataRefreshInterval: '15',
-      defaultView: 'comfortable',
-    },
-  });
-
-  // Account Settings Form
-  const accountForm = useForm<AccountSettings>({
-    resolver: zodResolver(accountSettingsSchema),
-    defaultValues: {
-      displayName: mockUser.displayName,
-      email: mockUser.email,
-    },
-  });
-
-  // Preferences Form
-  const preferencesForm = useForm<Preferences>({
-    resolver: zodResolver(preferencesSchema),
-    defaultValues: {
-      dashboardLayout: 'comfortable',
-      itemsPerPage: '25',
-      exportFormat: 'pdf',
-      showPendingOnly: false,
-      showRecentActivity: true,
-      sessionTimeout: '30',
-    },
-  });
-
-  const onSystemSettingsSave = (data: SystemSettings) => {
-    console.log('Saving system settings:', data);
-    toast.success('System settings saved successfully');
-  };
-
-  const onAccountSettingsSave = (data: AccountSettings) => {
-    console.log('Saving account settings:', data);
-    toast.success('Account settings saved successfully');
-  };
-
-  const onPreferencesSave = (data: Preferences) => {
-    console.log('Saving preferences:', data);
-    toast.success('Preferences saved successfully');
-  };
 
   const TabWrapper = ({
     children,
@@ -371,326 +1058,85 @@ export default function SettingsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
           <p className="text-muted-foreground">
-            Manage your system preferences and account settings
+            Manage your profile, preferences, and security settings
           </p>
         </div>
 
         {/* Settings Tabs */}
-        <Tabs defaultValue="system" className="w-full">
+        <Tabs defaultValue="profile" className="w-full">
           <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
-            <TabsTrigger value="system" className="gap-2">
-              <SettingsIcon className="h-4 w-4" />
-              <span className="hidden sm:inline">System</span>
-            </TabsTrigger>
-            <TabsTrigger value="account" className="gap-2">
-              <User className="h-4 w-4" />
-              <span className="hidden sm:inline">Account</span>
-            </TabsTrigger>
-            <TabsTrigger value="security" className="gap-2">
-              <Shield className="h-4 w-4" />
-              <span className="hidden sm:inline">Security</span>
+            <TabsTrigger value="profile" className="gap-2">
+              <PersonIcon className="h-4 w-4" />
+              <span className="hidden sm:inline">Profile</span>
             </TabsTrigger>
             <TabsTrigger value="preferences" className="gap-2">
-              <Sliders className="h-4 w-4" />
+              <MixerVerticalIcon className="h-4 w-4" />
               <span className="hidden sm:inline">Preferences</span>
+            </TabsTrigger>
+            <TabsTrigger value="security" className="gap-2">
+              <LockClosedIcon className="h-4 w-4" />
+              <span className="hidden sm:inline">Security</span>
+            </TabsTrigger>
+            <TabsTrigger value="sessions" className="gap-2">
+              <DesktopIcon className="h-4 w-4" />
+              <span className="hidden sm:inline">Sessions</span>
             </TabsTrigger>
           </TabsList>
 
-          {/* System Settings Tab */}
-          <TabsContent value="system" className="space-y-4">
+          {/* Profile Tab */}
+          <TabsContent value="profile" className="space-y-4">
             <TabWrapper>
               <Card>
                 <CardHeader>
-                  <CardTitle>System Settings</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <PersonIcon className="h-5 w-5" />
+                    Profile Settings
+                  </CardTitle>
                   <CardDescription>
-                    Configure system appearance and behavior
+                    Manage your account information and organizational details
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Form {...systemForm}>
-                    <form
-                      onSubmit={systemForm.handleSubmit(onSystemSettingsSave)}
-                      className="space-y-6"
-                    >
-                      {/* Theme Setting */}
-                      <FormField
-                        control={systemForm.control}
-                        name="theme"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Theme</FormLabel>
-                            <FormDescription>
-                              Choose how the admin portal appears
-                            </FormDescription>
-                            <FormControl>
-                              <RadioGroup
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                                className="grid grid-cols-3 gap-4"
-                              >
-                                <FormItem>
-                                  <FormControl>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="light" id="light" />
-                                      <Label htmlFor="light" className="flex items-center gap-2">
-                                        <Sun className="h-4 w-4" />
-                                        Light
-                                      </Label>
-                                    </div>
-                                  </FormControl>
-                                </FormItem>
-                                <FormItem>
-                                  <FormControl>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="dark" id="dark" />
-                                      <Label htmlFor="dark" className="flex items-center gap-2">
-                                        <Moon className="h-4 w-4" />
-                                        Dark
-                                      </Label>
-                                    </div>
-                                  </FormControl>
-                                </FormItem>
-                                <FormItem>
-                                  <FormControl>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="system" id="system" />
-                                      <Label htmlFor="system" className="flex items-center gap-2">
-                                        <Monitor className="h-4 w-4" />
-                                        System
-                                      </Label>
-                                    </div>
-                                  </FormControl>
-                                </FormItem>
-                              </RadioGroup>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <Separator />
-
-                      {/* Notification Preferences */}
-                      <div className="space-y-4">
-                        <div>
-                          <h3 className="text-sm font-medium">Notifications</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Configure notification preferences
-                          </p>
-                        </div>
-
-                        <FormField
-                          control={systemForm.control}
-                          name="notificationsEnabled"
-                          render={({ field }) => (
-                            <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                              <div className="space-y-0.5">
-                                <FormLabel className="flex items-center gap-2">
-                                  <Bell className="h-4 w-4" />
-                                  Enable Notifications
-                                </FormLabel>
-                                <FormDescription>
-                                  Receive system notifications
-                                </FormDescription>
-                              </div>
-                              <FormControl>
-                                <Switch
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={systemForm.control}
-                          name="emailNotifications"
-                          render={({ field }) => (
-                            <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                              <div className="space-y-0.5">
-                                <FormLabel>Email Notifications</FormLabel>
-                                <FormDescription>
-                                  Receive notifications via email
-                                </FormDescription>
-                              </div>
-                              <FormControl>
-                                <Switch
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={systemForm.control}
-                          name="pushNotifications"
-                          render={({ field }) => (
-                            <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                              <div className="space-y-0.5">
-                                <FormLabel>Push Notifications</FormLabel>
-                                <FormDescription>
-                                  Receive browser push notifications
-                                </FormDescription>
-                              </div>
-                              <FormControl>
-                                <Switch
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <Separator />
-
-                      {/* Data Refresh Interval */}
-                      <FormField
-                        control={systemForm.control}
-                        name="dataRefreshInterval"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="flex items-center gap-2">
-                              <Clock className="h-4 w-4" />
-                              Data Refresh Interval
-                            </FormLabel>
-                            <FormDescription>
-                              How often to refresh dashboard data
-                            </FormDescription>
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select interval" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="5">Every 5 minutes</SelectItem>
-                                <SelectItem value="10">Every 10 minutes</SelectItem>
-                                <SelectItem value="15">Every 15 minutes</SelectItem>
-                                <SelectItem value="30">Every 30 minutes</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <Button type="submit" className="w-full sm:w-auto">
-                        <Save className="mr-2 h-4 w-4" />
-                        Save System Settings
-                      </Button>
-                    </form>
-                  </Form>
+                  <ProfileSection />
                 </CardContent>
               </Card>
             </TabWrapper>
           </TabsContent>
 
-          {/* Account Settings Tab */}
-          <TabsContent value="account" className="space-y-4">
+          {/* Preferences Tab */}
+          <TabsContent value="preferences" className="space-y-4">
             <TabWrapper delay={0.1}>
               <Card>
                 <CardHeader>
-                  <CardTitle>Account Information</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <MixerVerticalIcon className="h-5 w-5" />
+                    User Preferences
+                  </CardTitle>
                   <CardDescription>
-                    Manage your account details
+                    Customize your experience and notification settings
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Form {...accountForm}>
-                    <form
-                      onSubmit={accountForm.handleSubmit(onAccountSettingsSave)}
-                      className="space-y-6"
-                    >
-                      <FormField
-                        control={accountForm.control}
-                        name="displayName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Display Name</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormDescription>
-                              This is how your name appears in the system
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={accountForm.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email Address</FormLabel>
-                            <FormControl>
-                              <Input {...field} disabled />
-                            </FormControl>
-                            <FormDescription>
-                              Your institutional email address (read-only)
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <Separator />
-
-                      <div className="space-y-4">
-                        <div>
-                          <h3 className="text-sm font-medium">Role & Department</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Your organizational assignment
-                          </p>
-                        </div>
-                        <div className="grid gap-4 sm:grid-cols-2">
-                          <div className="space-y-2">
-                            <Label>Role</Label>
-                            <div>
-                              <Badge variant="default">{mockUser.role}</Badge>
-                            </div>
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Department</Label>
-                            <div>
-                              <Badge variant="outline">{mockUser.department}</Badge>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <Button type="submit" className="w-full sm:w-auto">
-                        <Save className="mr-2 h-4 w-4" />
-                        Save Account Settings
-                      </Button>
-                    </form>
-                  </Form>
+                  <PreferencesSection />
                 </CardContent>
               </Card>
             </TabWrapper>
           </TabsContent>
 
-          {/* Security Settings Tab */}
+          {/* Security Tab */}
           <TabsContent value="security" className="space-y-4">
             <TabWrapper delay={0.2}>
               <Card>
                 <CardHeader>
-                  <CardTitle>Security Settings</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <LockClosedIcon className="h-5 w-5" />
+                    Security Settings
+                  </CardTitle>
                   <CardDescription>
-                    Manage your account security
+                    Manage your account security and password
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* Password Section */}
                   <div className="space-y-4">
                     <div>
                       <h3 className="text-sm font-medium">Password</h3>
@@ -700,281 +1146,26 @@ export default function SettingsPage() {
                     </div>
                     <ChangePasswordDialog />
                   </div>
-
-                  <Separator />
-
-                  {/* Session Timeout */}
-                  <Form {...preferencesForm}>
-                    <FormField
-                      control={preferencesForm.control}
-                      name="sessionTimeout"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center gap-2">
-                            <Clock className="h-4 w-4" />
-                            Session Timeout
-                          </FormLabel>
-                          <FormDescription>
-                            Auto-logout after period of inactivity
-                          </FormDescription>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select timeout" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="15">15 minutes</SelectItem>
-                              <SelectItem value="30">30 minutes</SelectItem>
-                              <SelectItem value="60">1 hour</SelectItem>
-                              <SelectItem value="120">2 hours</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </Form>
-
-                  <Separator />
-
-                  {/* Two-Factor Authentication */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-sm font-medium flex items-center gap-2">
-                          <Smartphone className="h-4 w-4" />
-                          Two-Factor Authentication
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          Add an extra layer of security
-                        </p>
-                      </div>
-                      <Badge variant="outline" className="text-yellow-600">
-                        Not Enabled
-                      </Badge>
-                    </div>
-                    <Button variant="outline">
-                      <Smartphone className="mr-2 h-4 w-4" />
-                      Setup 2FA
-                    </Button>
-                  </div>
-
-                  <Separator />
-
-                  {/* Active Sessions */}
-                  <ActiveSessions />
                 </CardContent>
               </Card>
             </TabWrapper>
           </TabsContent>
 
-          {/* Preferences Tab */}
-          <TabsContent value="preferences" className="space-y-4">
+          {/* Sessions Tab */}
+          <TabsContent value="sessions" className="space-y-4">
             <TabWrapper delay={0.3}>
               <Card>
                 <CardHeader>
-                  <CardTitle>User Preferences</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <DesktopIcon className="h-5 w-5" />
+                    Active Sessions
+                  </CardTitle>
                   <CardDescription>
-                    Customize your experience
+                    Manage devices and locations where you&apos;re logged in
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Form {...preferencesForm}>
-                    <form
-                      onSubmit={preferencesForm.handleSubmit(onPreferencesSave)}
-                      className="space-y-6"
-                    >
-                      {/* Dashboard Layout */}
-                      <FormField
-                        control={preferencesForm.control}
-                        name="dashboardLayout"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="flex items-center gap-2">
-                              <LayoutGrid className="h-4 w-4" />
-                              Dashboard Layout
-                            </FormLabel>
-                            <FormDescription>
-                              Choose your preferred dashboard density
-                            </FormDescription>
-                            <FormControl>
-                              <RadioGroup
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                                className="grid grid-cols-3 gap-4"
-                              >
-                                <FormItem>
-                                  <FormControl>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="compact" id="compact" />
-                                      <Label htmlFor="compact">Compact</Label>
-                                    </div>
-                                  </FormControl>
-                                </FormItem>
-                                <FormItem>
-                                  <FormControl>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="comfortable" id="comfortable" />
-                                      <Label htmlFor="comfortable">Comfortable</Label>
-                                    </div>
-                                  </FormControl>
-                                </FormItem>
-                                <FormItem>
-                                  <FormControl>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="spacious" id="spacious" />
-                                      <Label htmlFor="spacious">Spacious</Label>
-                                    </div>
-                                  </FormControl>
-                                </FormItem>
-                              </RadioGroup>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <Separator />
-
-                      {/* Items Per Page */}
-                      <FormField
-                        control={preferencesForm.control}
-                        name="itemsPerPage"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Items Per Page</FormLabel>
-                            <FormDescription>
-                              Number of items to display in tables
-                            </FormDescription>
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select items per page" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="10">10 items</SelectItem>
-                                <SelectItem value="25">25 items</SelectItem>
-                                <SelectItem value="50">50 items</SelectItem>
-                                <SelectItem value="100">100 items</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <Separator />
-
-                      {/* Export Format Preference */}
-                      <FormField
-                        control={preferencesForm.control}
-                        name="exportFormat"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="flex items-center gap-2">
-                              <FileDown className="h-4 w-4" />
-                              Default Export Format
-                            </FormLabel>
-                            <FormDescription>
-                              Preferred format for exporting reports
-                            </FormDescription>
-                            <FormControl>
-                              <RadioGroup
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                                className="grid grid-cols-2 gap-4"
-                              >
-                                <FormItem>
-                                  <FormControl>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="csv" id="csv" />
-                                      <Label htmlFor="csv">CSV</Label>
-                                    </div>
-                                  </FormControl>
-                                </FormItem>
-                                <FormItem>
-                                  <FormControl>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="pdf" id="pdf" />
-                                      <Label htmlFor="pdf">PDF</Label>
-                                    </div>
-                                  </FormControl>
-                                </FormItem>
-                              </RadioGroup>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <Separator />
-
-                      {/* Filter Preferences */}
-                      <div className="space-y-4">
-                        <div>
-                          <h3 className="text-sm font-medium">Default Filters</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Set default filters for dashboard views
-                          </p>
-                        </div>
-
-                        <FormField
-                          control={preferencesForm.control}
-                          name="showPendingOnly"
-                          render={({ field }) => (
-                            <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                              <div className="space-y-0.5">
-                                <FormLabel>Show Pending Only</FormLabel>
-                                <FormDescription>
-                                  Show only pending submissions by default
-                                </FormDescription>
-                              </div>
-                              <FormControl>
-                                <Switch
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={preferencesForm.control}
-                          name="showRecentActivity"
-                          render={({ field }) => (
-                            <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                              <div className="space-y-0.5">
-                                <FormLabel>Show Recent Activity</FormLabel>
-                                <FormDescription>
-                                  Display recent activity feed on dashboard
-                                </FormDescription>
-                              </div>
-                              <FormControl>
-                                <Switch
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <Button type="submit" className="w-full sm:w-auto">
-                        <Save className="mr-2 h-4 w-4" />
-                        Save Preferences
-                      </Button>
-                    </form>
-                  </Form>
+                  <ActiveSessions />
                 </CardContent>
               </Card>
             </TabWrapper>
