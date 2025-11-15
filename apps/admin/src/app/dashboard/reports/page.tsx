@@ -1,12 +1,13 @@
 'use client';
 
-import React, { memo, useState, useEffect } from 'react';
+import React, { memo, useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Download,
   FileText,
   Landmark,
   TrendingUp,
   TrendingDown,
+  AlertCircle,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import {
@@ -22,7 +23,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { formatDistanceToNow, subMonths, format } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 
 import { PageTransition } from '@/components/PageTransition';
 import {
@@ -35,6 +36,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   ChartContainer,
   ChartTooltip,
@@ -42,85 +44,17 @@ import {
   ChartLegend,
   ChartLegendContent,
 } from '@/components/ui/chart';
-
-/**
- * Mock Data Generators
- */
-
-// Generate 6-month submission trend data
-const generateSubmissionTrend = () => {
-  const months = [];
-  for (let i = 5; i >= 0; i--) {
-    const date = subMonths(new Date(), i);
-    months.push({
-      month: format(date, 'MMM yyyy'),
-      pds: Math.floor(Math.random() * 50) + 80, // 80-130 submissions
-      saln: Math.floor(Math.random() * 40) + 60, // 60-100 submissions
-    });
-  }
-  return months;
-};
-
-// Generate department compliance data
-const generateDepartmentCompliance = () => {
-  const departments = [
-    'Computer Science',
-    'Electrical Engineering',
-    'Mechanical Engineering',
-    'Civil Engineering',
-    'Industrial Engineering',
-    'Electronics Engineering',
-  ];
-
-  return departments.map((dept) => ({
-    department: dept,
-    compliance: Math.floor(Math.random() * 20) + 80, // 80-100%
-  })).sort((a, b) => b.compliance - a.compliance);
-};
-
-// Generate status distribution data
-const generateStatusDistribution = () => [
-  { name: 'Approved', value: 456, color: '#10b981' },
-  { name: 'Pending', value: 123, color: '#f59e0b' },
-  { name: 'In Review', value: 87, color: '#3b82f6' },
-  { name: 'Rejected', value: 34, color: '#ef4444' },
-];
-
-// Generate recent activity data
-const generateRecentActivity = () => {
-  const activities = [
-    {
-      type: 'approval',
-      title: 'PDS Approved',
-      description: 'Dr. Maria Santos - Computer Science',
-      timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 mins ago
-    },
-    {
-      type: 'submission',
-      title: 'SALN Submitted',
-      description: 'Prof. Juan Dela Cruz - Electrical Engineering',
-      timestamp: new Date(Date.now() - 15 * 60 * 1000), // 15 mins ago
-    },
-    {
-      type: 'review',
-      title: 'Review Started',
-      description: 'PDS - Engr. Ana Reyes - Mechanical Engineering',
-      timestamp: new Date(Date.now() - 30 * 60 * 1000), // 30 mins ago
-    },
-    {
-      type: 'approval',
-      title: 'SALN Approved',
-      description: 'Dr. Pedro Garcia - Civil Engineering',
-      timestamp: new Date(Date.now() - 45 * 60 * 1000), // 45 mins ago
-    },
-  ];
-  return activities;
-};
+import { useReportsOverview, useExportReport } from '@/hooks/useReports';
 
 /**
  * Compliance Overview Card Component
  */
-const ComplianceOverviewCard = memo(() => {
+interface ComplianceOverviewCardProps {
+  overallRate: number;
+  trendPercentage: number;
+}
+
+const ComplianceOverviewCard = memo(({ overallRate, trendPercentage }: ComplianceOverviewCardProps) => {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
@@ -128,16 +62,16 @@ const ComplianceOverviewCard = memo(() => {
     setPrefersReducedMotion(mediaQuery.matches);
   }, []);
 
-  const currentRate = 92.5;
-  const previousRate = 89.2;
-  const trend = currentRate - previousRate;
-  const isPositive = trend > 0;
+  const isPositive = trendPercentage > 0;
 
-  // 7-day mini trend data
-  const trendData = Array.from({ length: 7 }, (_, i) => ({
-    day: i + 1,
-    rate: Math.random() * 5 + 88,
-  }));
+  // 7-day mini trend data - visual representation only
+  const trendData = useMemo(() => {
+    const baseRate = overallRate;
+    return Array.from({ length: 7 }, (_, i) => ({
+      day: i + 1,
+      rate: baseRate + (Math.random() * 3 - 1.5),
+    }));
+  }, [overallRate]);
 
   const chartConfig = {
     rate: {
@@ -157,7 +91,7 @@ const ComplianceOverviewCard = memo(() => {
       <CardContent>
         <div className="space-y-4">
           <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-bold">{currentRate}%</span>
+            <span className="text-4xl font-bold">{overallRate.toFixed(1)}%</span>
             <div
               className={`flex items-center gap-1 text-sm ${
                 isPositive
@@ -170,10 +104,10 @@ const ComplianceOverviewCard = memo(() => {
               ) : (
                 <TrendingDown className="h-4 w-4" />
               )}
-              <span>{Math.abs(trend).toFixed(1)}%</span>
+              <span>{Math.abs(trendPercentage).toFixed(1)}%</span>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">vs previous period</p>
+          <p className="text-xs text-muted-foreground">7-day trend vs previous period</p>
 
           {/* Mini area chart */}
           <ChartContainer config={chartConfig} className="h-[60px]">
@@ -217,18 +151,20 @@ ComplianceOverviewCard.displayName = 'ComplianceOverviewCard';
 /**
  * Submission Statistics Card Component
  */
-const SubmissionStatsCard = memo(() => {
+interface SubmissionStatsCardProps {
+  pdsTotal: number;
+  salnTotal: number;
+  pdsRecent: number;
+  salnRecent: number;
+}
+
+const SubmissionStatsCard = memo(({ pdsTotal, salnTotal, pdsRecent, salnRecent }: SubmissionStatsCardProps) => {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     setPrefersReducedMotion(mediaQuery.matches);
   }, []);
-
-  const stats = {
-    pds: { current: 523, previous: 487, change: 7.4 },
-    saln: { current: 401, previous: 378, change: 6.1 },
-  };
 
   const content = (
     <Card>
@@ -248,11 +184,11 @@ const SubmissionStatsCard = memo(() => {
               </div>
               <div>
                 <p className="text-sm font-medium">PDS Submissions</p>
-                <p className="text-2xl font-bold">{stats.pds.current}</p>
+                <p className="text-2xl font-bold">{pdsTotal}</p>
               </div>
             </div>
-            <Badge variant="outline" className="text-green-600 dark:text-green-400">
-              +{stats.pds.change}%
+            <Badge variant="outline" className="text-blue-600 dark:text-blue-400">
+              {pdsRecent} recent
             </Badge>
           </div>
 
@@ -266,11 +202,11 @@ const SubmissionStatsCard = memo(() => {
               </div>
               <div>
                 <p className="text-sm font-medium">SALN Submissions</p>
-                <p className="text-2xl font-bold">{stats.saln.current}</p>
+                <p className="text-2xl font-bold">{salnTotal}</p>
               </div>
             </div>
-            <Badge variant="outline" className="text-green-600 dark:text-green-400">
-              +{stats.saln.change}%
+            <Badge variant="outline" className="text-purple-600 dark:text-purple-400">
+              {salnRecent} recent
             </Badge>
           </div>
         </div>
@@ -296,14 +232,20 @@ SubmissionStatsCard.displayName = 'SubmissionStatsCard';
 /**
  * Department Performance Card Component
  */
-const DepartmentPerformanceCard = memo(() => {
+interface DepartmentPerformanceCardProps {
+  departments: Array<{ name: string; rate: number }>;
+}
+
+const DepartmentPerformanceCard = memo(({ departments }: DepartmentPerformanceCardProps) => {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-  const [departmentData] = useState(generateDepartmentCompliance);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     setPrefersReducedMotion(mediaQuery.matches);
   }, []);
+
+  // Take top 4 departments for the card
+  const topDepartments = useMemo(() => departments.slice(0, 4), [departments]);
 
   const chartConfig = {
     compliance: {
@@ -322,11 +264,11 @@ const DepartmentPerformanceCard = memo(() => {
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[180px]">
-          <BarChart data={departmentData.slice(0, 4)} layout="vertical">
+          <BarChart data={topDepartments} layout="vertical">
             <XAxis type="number" domain={[0, 100]} hide />
             <YAxis
               type="category"
-              dataKey="department"
+              dataKey="name"
               width={120}
               tick={{ fontSize: 11 }}
               tickLine={false}
@@ -339,14 +281,14 @@ const DepartmentPerformanceCard = memo(() => {
                 />
               }
             />
-            <Bar dataKey="compliance" radius={[0, 4, 4, 0]}>
-              {departmentData.slice(0, 4).map((entry, index) => (
+            <Bar dataKey="rate" radius={[0, 4, 4, 0]}>
+              {topDepartments.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
                   fill={
-                    entry.compliance >= 95
+                    entry.rate >= 95
                       ? '#10b981'
-                      : entry.compliance >= 85
+                      : entry.rate >= 85
                         ? '#f59e0b'
                         : '#ef4444'
                   }
@@ -377,22 +319,33 @@ DepartmentPerformanceCard.displayName = 'DepartmentPerformanceCard';
 /**
  * Recent Activity Summary Card Component
  */
-const RecentActivityCard = memo(() => {
+interface RecentActivityCardProps {
+  activities: Array<{
+    id: string;
+    action: string;
+    user: string;
+    timestamp: Date;
+    type: 'pds' | 'saln' | 'user' | 'system';
+  }>;
+}
+
+const RecentActivityCard = memo(({ activities }: RecentActivityCardProps) => {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-  const [activities] = useState(generateRecentActivity);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     setPrefersReducedMotion(mediaQuery.matches);
   }, []);
 
-  const getActivityColor = (type: string) => {
+  const getActivityColor = (type: 'pds' | 'saln' | 'user' | 'system') => {
     switch (type) {
-      case 'approval':
-        return 'text-green-600 dark:text-green-400';
-      case 'submission':
+      case 'pds':
         return 'text-blue-600 dark:text-blue-400';
-      case 'review':
+      case 'saln':
+        return 'text-purple-600 dark:text-purple-400';
+      case 'user':
+        return 'text-green-600 dark:text-green-400';
+      case 'system':
         return 'text-yellow-600 dark:text-yellow-400';
       default:
         return 'text-muted-foreground';
@@ -409,22 +362,28 @@ const RecentActivityCard = memo(() => {
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {activities.map((activity, index) => (
-            <div key={index} className="flex gap-3">
-              <div className={`mt-0.5 h-2 w-2 rounded-full ${getActivityColor(activity.type).replace('text-', 'bg-')}`} />
-              <div className="flex-1 space-y-1">
-                <p className={`text-sm font-medium ${getActivityColor(activity.type)}`}>
-                  {activity.title}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {activity.description}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(activity.timestamp, { addSuffix: true })}
-                </p>
+          {activities.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No recent activity
+            </p>
+          ) : (
+            activities.map((activity) => (
+              <div key={activity.id} className="flex gap-3">
+                <div className={`mt-0.5 h-2 w-2 rounded-full ${getActivityColor(activity.type).replace('text-', 'bg-')}`} />
+                <div className="flex-1 space-y-1">
+                  <p className={`text-sm font-medium ${getActivityColor(activity.type)}`}>
+                    {activity.action}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {activity.user}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </CardContent>
     </Card>
@@ -446,12 +405,102 @@ const RecentActivityCard = memo(() => {
 RecentActivityCard.displayName = 'RecentActivityCard';
 
 /**
+ * Loading skeleton component
+ */
+function ReportsPageSkeleton() {
+  return (
+    <PageTransition>
+      <div className="space-y-6">
+        {/* Header skeleton */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+        </div>
+
+        {/* Stats grid skeleton */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Skeleton className="h-4 w-32" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-10 w-20 mb-2" />
+                <Skeleton className="h-3 w-40" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Charts skeleton */}
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-64" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-[300px] w-full" />
+          </CardContent>
+        </Card>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-64" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-[300px] w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </PageTransition>
+  );
+}
+
+/**
+ * Error state component
+ */
+function ReportsErrorState({ error }: { error: Error }) {
+  return (
+    <PageTransition>
+      <div className="p-6">
+        <Card className="border-destructive/50">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              <CardTitle className="text-destructive">Failed to Load Reports</CardTitle>
+            </div>
+            <CardDescription>
+              {error.message || 'An error occurred while loading the reports data.'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => window.location.reload()} variant="outline">
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    </PageTransition>
+  );
+}
+
+/**
  * Main Reports Page Component
  */
 export default function ReportsPage() {
-  const [submissionTrendData] = useState(generateSubmissionTrend);
-  const [departmentData] = useState(generateDepartmentCompliance);
-  const [statusData] = useState(generateStatusDistribution);
+  const { data: reports, isLoading, isError, error } = useReportsOverview();
+  const exportMutation = useExportReport();
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
@@ -459,45 +508,108 @@ export default function ReportsPage() {
     setPrefersReducedMotion(mediaQuery.matches);
   }, []);
 
-  const handleExport = (format: 'csv' | 'pdf') => {
-    // Mock export functionality
-    console.log(`Exporting report as ${format.toUpperCase()}...`);
-    // In production, this would trigger actual export logic
-  };
+  // Handle export actions - defined before early returns
+  const handleExportCSV = useCallback(() => {
+    exportMutation.mutate({ format: 'csv', type: 'reports' });
+  }, [exportMutation]);
 
-  const ChartCard = ({
-    children,
-    title,
-    description,
-    delay = 0,
-  }: {
-    children: React.ReactNode;
-    title: string;
-    description: string;
-    delay?: number;
-  }) => {
-    const content = (
-      <Card>
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
-        </CardHeader>
-        <CardContent>{children}</CardContent>
-      </Card>
-    );
+  const handleExportPDF = useCallback(() => {
+    exportMutation.mutate({ format: 'pdf', type: 'reports' });
+  }, [exportMutation]);
 
-    if (prefersReducedMotion) return content;
+  // Transform data - with null checks for TypeScript
+  const submissionTrendData = useMemo(
+    () =>
+      reports?.submissionTrends.map((item) => ({
+        month: format(new Date(item.month + '-01'), 'MMM yyyy'),
+        pds: item.pdsCount,
+        saln: item.salnCount,
+      })) ?? [],
+    [reports]
+  );
 
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay, ease: [0.4, 0, 0.2, 1] }}
-      >
-        {content}
-      </motion.div>
-    );
-  };
+  const departmentData = useMemo(
+    () =>
+      reports?.departmentCompliance.map((dept) => ({
+        department: dept.name,
+        compliance: dept.rate,
+      })) ?? [],
+    [reports]
+  );
+
+  const statusData = useMemo(
+    () =>
+      reports
+        ? [
+            { name: 'Approved', value: reports.statusDistribution.approved, color: '#10b981' },
+            { name: 'Pending', value: reports.statusDistribution.pending, color: '#f59e0b' },
+            { name: 'In Review', value: reports.statusDistribution.inReview, color: '#3b82f6' },
+            { name: 'Rejected', value: reports.statusDistribution.rejected, color: '#ef4444' },
+          ]
+        : [],
+    [reports]
+  );
+
+  // Memoize ChartCard for performance
+  const ChartCard = useCallback(
+    ({
+      children,
+      title,
+      description,
+      delay = 0,
+    }: {
+      children: React.ReactNode;
+      title: string;
+      description: string;
+      delay?: number;
+    }) => {
+      const content = (
+        <Card>
+          <CardHeader>
+            <CardTitle>{title}</CardTitle>
+            <CardDescription>{description}</CardDescription>
+          </CardHeader>
+          <CardContent>{children}</CardContent>
+        </Card>
+      );
+
+      if (prefersReducedMotion) return content;
+
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay, ease: [0.4, 0, 0.2, 1] }}
+        >
+          {content}
+        </motion.div>
+      );
+    },
+    [prefersReducedMotion]
+  );
+
+  // Loading state
+  if (isLoading) {
+    return <ReportsPageSkeleton />;
+  }
+
+  // Error state
+  if (isError) {
+    return <ReportsErrorState error={error} />;
+  }
+
+  // No data
+  if (!reports) {
+    return null;
+  }
+
+  // Destructure data
+  const {
+    complianceOverview,
+    submissionStats,
+    departmentCompliance,
+    recentActivity,
+  } = reports;
 
   const dualLineChartConfig = {
     pds: {
@@ -536,11 +648,18 @@ export default function ReportsPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => handleExport('csv')}>
+            <Button
+              variant="outline"
+              onClick={handleExportCSV}
+              disabled={exportMutation.isPending}
+            >
               <Download className="mr-2 h-4 w-4" />
               Export CSV
             </Button>
-            <Button onClick={() => handleExport('pdf')}>
+            <Button
+              onClick={handleExportPDF}
+              disabled={exportMutation.isPending}
+            >
               <Download className="mr-2 h-4 w-4" />
               Export PDF
             </Button>
@@ -549,10 +668,23 @@ export default function ReportsPage() {
 
         {/* Quick Stats Cards Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <ComplianceOverviewCard />
-          <SubmissionStatsCard />
-          <DepartmentPerformanceCard />
-          <RecentActivityCard />
+          <ComplianceOverviewCard
+            overallRate={complianceOverview.overallRate}
+            trendPercentage={complianceOverview.trendPercentage}
+          />
+          <SubmissionStatsCard
+            pdsTotal={submissionStats.pdsTotal}
+            salnTotal={submissionStats.salnTotal}
+            pdsRecent={submissionStats.pdsRecent}
+            salnRecent={submissionStats.salnRecent}
+          />
+          <DepartmentPerformanceCard
+            departments={departmentCompliance.map((d) => ({
+              name: d.name,
+              rate: d.rate,
+            }))}
+          />
+          <RecentActivityCard activities={recentActivity} />
         </div>
 
         {/* Interactive Charts Section */}
