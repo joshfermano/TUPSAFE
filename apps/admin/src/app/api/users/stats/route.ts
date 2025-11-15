@@ -25,16 +25,25 @@ import { eq, and, gte, sql, count } from 'drizzle-orm';
 import type { UserStatsResponse } from '@tupsafe/types';
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
   try {
+    console.log('[Stats API] Request received');
+
     // Verify permissions (using Supabase session)
+    const authStartTime = Date.now();
     const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr', 'supervisor']);
+    const authDuration = Date.now() - authStartTime;
+    console.log(`[Stats API] Permission check completed in ${authDuration}ms - result:`, hasPermission);
 
     if (!hasPermission) {
+      console.log('[Stats API] Permission denied - returning 403');
       return NextResponse.json(
         { error: 'Unauthorized. Admin, HR, or Supervisor role required.' },
         { status: 403 }
       );
     }
+
+    console.log('[Stats API] Permission granted - fetching stats');
 
     // Calculate date ranges for recent registration trends
     const now = new Date();
@@ -42,6 +51,7 @@ export async function GET(request: NextRequest) {
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     // Execute all statistics queries in parallel for optimal performance
+    const queryStartTime = Date.now();
     const [
       // Total counts
       [{ totalUsers }],
@@ -146,6 +156,8 @@ export async function GET(request: NextRequest) {
         .from(profiles)
         .where(gte(profiles.createdAt, thirtyDaysAgo)),
     ]);
+    const queryDuration = Date.now() - queryStartTime;
+    console.log(`[Stats API] All queries completed in ${queryDuration}ms`);
 
     // Transform role distribution into keyed object
     const roleDistributionMap = {
@@ -217,11 +229,17 @@ export async function GET(request: NextRequest) {
       byEmploymentCategory: employmentCategoryMap,
     };
 
+    // Performance logging
+    const totalDuration = Date.now() - startTime;
+    console.log(`[Stats API] Total request duration: ${totalDuration}ms (auth: ${authDuration}ms, queries: ${queryDuration}ms)`);
+    console.log('[Stats API] Returning stats:', JSON.stringify(stats, null, 2));
+
     // Add cache headers for performance (5 minute cache)
     return NextResponse.json(stats, {
       status: 200,
       headers: {
         'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'X-Response-Time': `${totalDuration}ms`,
       },
     });
   } catch (error) {

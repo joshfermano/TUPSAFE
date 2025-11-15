@@ -238,9 +238,10 @@ export async function getSessionUser(): Promise<{
  */
 export async function checkUserRoleFromSupabase(allowedRoles: string[]): Promise<boolean> {
   try {
-    const { createClient } = await import('../supabase/server');
-    const { db, profiles } = await import('@tupsafe/database/server');
-    const { eq } = await import('drizzle-orm');
+    // Use static imports for better performance and reliability
+    const { createClient } = require('../supabase/server');
+    const { db, profiles } = require('@tupsafe/database/server');
+    const { eq } = require('drizzle-orm');
 
     const supabase = await createClient();
     const {
@@ -249,6 +250,7 @@ export async function checkUserRoleFromSupabase(allowedRoles: string[]): Promise
     } = await supabase.auth.getSession();
 
     if (sessionError || !session) {
+      console.error('[checkUserRoleFromSupabase] Session error or no session:', sessionError?.message || 'No session');
       return false;
     }
 
@@ -262,12 +264,21 @@ export async function checkUserRoleFromSupabase(allowedRoles: string[]): Promise
       .limit(1);
 
     if (!profile) {
+      console.error('[checkUserRoleFromSupabase] No profile found for user:', userId);
       return false;
     }
 
-    return allowedRoles.includes(profile.role);
+    const hasRole = allowedRoles.includes(profile.role);
+    if (!hasRole) {
+      console.error('[checkUserRoleFromSupabase] User role not in allowed roles:', {
+        userRole: profile.role,
+        allowedRoles,
+      });
+    }
+
+    return hasRole;
   } catch (error) {
-    console.error('Error checking user role from Supabase:', error);
+    console.error('[checkUserRoleFromSupabase] Error checking user role:', error);
     return false;
   }
 }
@@ -291,9 +302,10 @@ export async function getUserFromSupabase(): Promise<{
   isActive?: boolean;
 } | null> {
   try {
-    const { createClient } = await import('../supabase/server');
-    const { db, profiles } = await import('@tupsafe/database/server');
-    const { eq } = await import('drizzle-orm');
+    // Use static imports for better performance and reliability
+    const { createClient } = require('../supabase/server');
+    const { db, profiles } = require('@tupsafe/database/server');
+    const { eq } = require('drizzle-orm');
 
     const supabase = await createClient();
     const {
@@ -334,7 +346,7 @@ export async function getUserFromSupabase(): Promise<{
       isActive: profile.isActive || undefined,
     };
   } catch (error) {
-    console.error('Error getting user from Supabase:', error);
+    console.error('[getUserFromSupabase] Error getting user:', error);
     return null;
   }
 }
