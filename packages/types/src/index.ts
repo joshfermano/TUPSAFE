@@ -227,3 +227,4 @@ export * from './admin/user-management';
 export * from './admin/registration-approval';
 export * from './admin/submission-review';
 export * from './admin/dashboard-analytics';
+export * from './admin/reports';

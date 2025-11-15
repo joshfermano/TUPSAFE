@@ -112,7 +112,10 @@
       "mcp__supabase__get_advisors",
       "mcp__supabase__get_logs",
       "mcp__supabase__apply_migration",
-      "Bash(PGPASSWORD=\"$DATABASE_PASSWORD\" psql:*)"
+      "Bash(PGPASSWORD=\"$DATABASE_PASSWORD\" psql:*)",
+      "Bash(chmod:*)",
+      "Bash(node scripts/apply-reports-indexes.js:*)",
+      "Bash(git reset:*)"
     ],
     "deny": [],
     "ask": []
