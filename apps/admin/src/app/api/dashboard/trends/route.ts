@@ -123,23 +123,31 @@ async function getUserTrends(
 ): Promise<[TrendDataPoint[], TrendDataPoint[]]> {
   const dateFormat = getDateFormat(groupBy);
 
+  // Convert dates to ISO strings for sql template
+  const endDateStr = endDate.toISOString();
+  const startDateStr = startDate.toISOString();
+
+  // Use sql.raw() to inline the date format string
+  // This ensures PostgreSQL sees the exact same expression in SELECT and GROUP BY
+  const dateExpression = sql.raw(`TO_CHAR("profiles"."created_at", '${dateFormat}')`);
+
   const [currentPeriod, previousPeriod] = await Promise.all([
     db
       .select({
-        date: sql<string>`TO_CHAR(${profiles.createdAt}, ${dateFormat})`,
+        date: sql<string>`${dateExpression}`,
         value: sql<number>`COUNT(*)`,
         userType: profiles.userType,
       })
       .from(profiles)
       .where(
-        and(gte(profiles.createdAt, startDate), sql`${profiles.createdAt} <= ${endDate}`)
+        and(gte(profiles.createdAt, startDate), sql`${profiles.createdAt} <= ${endDateStr}`)
       )
-      .groupBy(sql`TO_CHAR(${profiles.createdAt}, ${dateFormat})`, profiles.userType)
-      .orderBy(sql`TO_CHAR(${profiles.createdAt}, ${dateFormat})`),
+      .groupBy(sql`${dateExpression}`, profiles.userType)
+      .orderBy(sql`${dateExpression}`),
 
     db
       .select({
-        date: sql<string>`TO_CHAR(${profiles.createdAt}, ${dateFormat})`,
+        date: sql<string>`${dateExpression}`,
         value: sql<number>`COUNT(*)`,
         userType: profiles.userType,
       })
@@ -147,11 +155,11 @@ async function getUserTrends(
       .where(
         and(
           gte(profiles.createdAt, comparisonStartDate),
-          sql`${profiles.createdAt} < ${startDate}`
+          sql`${profiles.createdAt} < ${startDateStr}`
         )
       )
-      .groupBy(sql`TO_CHAR(${profiles.createdAt}, ${dateFormat})`, profiles.userType)
-      .orderBy(sql`TO_CHAR(${profiles.createdAt}, ${dateFormat})`),
+      .groupBy(sql`${dateExpression}`, profiles.userType)
+      .orderBy(sql`${dateExpression}`),
   ]);
 
   // Aggregate by date with breakdown
@@ -193,10 +201,17 @@ async function getRegistrationTrends(
 ): Promise<[TrendDataPoint[], TrendDataPoint[]]> {
   const dateFormat = getDateFormat(groupBy);
 
+  // Convert dates to ISO strings for sql template
+  const endDateStr = endDate.toISOString();
+  const startDateStr = startDate.toISOString();
+
+  // Use sql.raw() to inline the date format string
+  const dateExpression = sql.raw(`TO_CHAR("pending_registrations"."created_at", '${dateFormat}')`);
+
   const [currentPeriod, previousPeriod] = await Promise.all([
     db
       .select({
-        date: sql<string>`TO_CHAR(${pendingRegistrations.createdAt}, ${dateFormat})`,
+        date: sql<string>`${dateExpression}`,
         value: sql<number>`COUNT(*)`,
         status: pendingRegistrations.status,
       })
@@ -204,18 +219,15 @@ async function getRegistrationTrends(
       .where(
         and(
           gte(pendingRegistrations.createdAt, startDate),
-          sql`${pendingRegistrations.createdAt} <= ${endDate}`
+          sql`${pendingRegistrations.createdAt} <= ${endDateStr}`
         )
       )
-      .groupBy(
-        sql`TO_CHAR(${pendingRegistrations.createdAt}, ${dateFormat})`,
-        pendingRegistrations.status
-      )
-      .orderBy(sql`TO_CHAR(${pendingRegistrations.createdAt}, ${dateFormat})`),
+      .groupBy(sql`${dateExpression}`, pendingRegistrations.status)
+      .orderBy(sql`${dateExpression}`),
 
     db
       .select({
-        date: sql<string>`TO_CHAR(${pendingRegistrations.createdAt}, ${dateFormat})`,
+        date: sql<string>`${dateExpression}`,
         value: sql<number>`COUNT(*)`,
         status: pendingRegistrations.status,
       })
@@ -223,14 +235,11 @@ async function getRegistrationTrends(
       .where(
         and(
           gte(pendingRegistrations.createdAt, comparisonStartDate),
-          sql`${pendingRegistrations.createdAt} < ${startDate}`
+          sql`${pendingRegistrations.createdAt} < ${startDateStr}`
         )
       )
-      .groupBy(
-        sql`TO_CHAR(${pendingRegistrations.createdAt}, ${dateFormat})`,
-        pendingRegistrations.status
-      )
-      .orderBy(sql`TO_CHAR(${pendingRegistrations.createdAt}, ${dateFormat})`),
+      .groupBy(sql`${dateExpression}`, pendingRegistrations.status)
+      .orderBy(sql`${dateExpression}`),
   ]);
 
   return aggregateTrendData(currentPeriod, previousPeriod, 'status');
@@ -247,11 +256,19 @@ async function getSubmissionTrends(
 ): Promise<[TrendDataPoint[], TrendDataPoint[]]> {
   const dateFormat = getDateFormat(groupBy);
 
+  // Convert dates to ISO strings for sql template
+  const endDateStr = endDate.toISOString();
+  const startDateStr = startDate.toISOString();
+
+  // Use sql.raw() to inline the date format string
+  const pdsDateExpression = sql.raw(`TO_CHAR("pds_submissions"."created_at", '${dateFormat}')`);
+  const salnDateExpression = sql.raw(`TO_CHAR("saln_submissions"."created_at", '${dateFormat}')`);
+
   const [currentPDS, currentSALN, previousPDS, previousSALN] = await Promise.all([
     // Current period PDS
     db
       .select({
-        date: sql<string>`TO_CHAR(${pdsSubmissions.createdAt}, ${dateFormat})`,
+        date: sql<string>`${pdsDateExpression}`,
         value: sql<number>`COUNT(*)`,
         type: sql<string>`'pds'`,
       })
@@ -259,16 +276,16 @@ async function getSubmissionTrends(
       .where(
         and(
           gte(pdsSubmissions.createdAt, startDate),
-          sql`${pdsSubmissions.createdAt} <= ${endDate}`
+          sql`${pdsSubmissions.createdAt} <= ${endDateStr}`
         )
       )
-      .groupBy(sql`TO_CHAR(${pdsSubmissions.createdAt}, ${dateFormat})`)
-      .orderBy(sql`TO_CHAR(${pdsSubmissions.createdAt}, ${dateFormat})`),
+      .groupBy(sql`${pdsDateExpression}`)
+      .orderBy(sql`${pdsDateExpression}`),
 
     // Current period SALN
     db
       .select({
-        date: sql<string>`TO_CHAR(${salnSubmissions.createdAt}, ${dateFormat})`,
+        date: sql<string>`${salnDateExpression}`,
         value: sql<number>`COUNT(*)`,
         type: sql<string>`'saln'`,
       })
@@ -276,16 +293,16 @@ async function getSubmissionTrends(
       .where(
         and(
           gte(salnSubmissions.createdAt, startDate),
-          sql`${salnSubmissions.createdAt} <= ${endDate}`
+          sql`${salnSubmissions.createdAt} <= ${endDateStr}`
         )
       )
-      .groupBy(sql`TO_CHAR(${salnSubmissions.createdAt}, ${dateFormat})`)
-      .orderBy(sql`TO_CHAR(${salnSubmissions.createdAt}, ${dateFormat})`),
+      .groupBy(sql`${salnDateExpression}`)
+      .orderBy(sql`${salnDateExpression}`),
 
     // Previous period PDS
     db
       .select({
-        date: sql<string>`TO_CHAR(${pdsSubmissions.createdAt}, ${dateFormat})`,
+        date: sql<string>`${pdsDateExpression}`,
         value: sql<number>`COUNT(*)`,
         type: sql<string>`'pds'`,
       })
@@ -293,16 +310,16 @@ async function getSubmissionTrends(
       .where(
         and(
           gte(pdsSubmissions.createdAt, comparisonStartDate),
-          sql`${pdsSubmissions.createdAt} < ${startDate}`
+          sql`${pdsSubmissions.createdAt} < ${startDateStr}`
         )
       )
-      .groupBy(sql`TO_CHAR(${pdsSubmissions.createdAt}, ${dateFormat})`)
-      .orderBy(sql`TO_CHAR(${pdsSubmissions.createdAt}, ${dateFormat})`),
+      .groupBy(sql`${pdsDateExpression}`)
+      .orderBy(sql`${pdsDateExpression}`),
 
     // Previous period SALN
     db
       .select({
-        date: sql<string>`TO_CHAR(${salnSubmissions.createdAt}, ${dateFormat})`,
+        date: sql<string>`${salnDateExpression}`,
         value: sql<number>`COUNT(*)`,
         type: sql<string>`'saln'`,
       })
@@ -310,11 +327,11 @@ async function getSubmissionTrends(
       .where(
         and(
           gte(salnSubmissions.createdAt, comparisonStartDate),
-          sql`${salnSubmissions.createdAt} < ${startDate}`
+          sql`${salnSubmissions.createdAt} < ${startDateStr}`
         )
       )
-      .groupBy(sql`TO_CHAR(${salnSubmissions.createdAt}, ${dateFormat})`)
-      .orderBy(sql`TO_CHAR(${salnSubmissions.createdAt}, ${dateFormat})`),
+      .groupBy(sql`${salnDateExpression}`)
+      .orderBy(sql`${salnDateExpression}`),
   ]);
 
   const currentCombined = [...currentPDS, ...currentSALN];
@@ -336,10 +353,17 @@ async function getComplianceTrends(
   // This is more complex - calculate approved submissions vs total employees
   const dateFormat = getDateFormat(groupBy);
 
+  // Convert dates to ISO strings for sql template
+  const endDateStr = endDate.toISOString();
+  const startDateStr = startDate.toISOString();
+
+  // Use sql.raw() to inline the date format string
+  const dateExpression = sql.raw(`TO_CHAR("pds_submissions"."approved_at", '${dateFormat}')`);
+
   const [currentApproved, previousApproved] = await Promise.all([
     db
       .select({
-        date: sql<string>`TO_CHAR(${pdsSubmissions.approvedAt}, ${dateFormat})`,
+        date: sql<string>`${dateExpression}`,
         value: sql<number>`COUNT(*)`,
       })
       .from(pdsSubmissions)
@@ -347,15 +371,15 @@ async function getComplianceTrends(
         and(
           eq(pdsSubmissions.status, 'approved'),
           gte(pdsSubmissions.approvedAt, startDate),
-          sql`${pdsSubmissions.approvedAt} <= ${endDate}`
+          sql`${pdsSubmissions.approvedAt} <= ${endDateStr}`
         )
       )
-      .groupBy(sql`TO_CHAR(${pdsSubmissions.approvedAt}, ${dateFormat})`)
-      .orderBy(sql`TO_CHAR(${pdsSubmissions.approvedAt}, ${dateFormat})`),
+      .groupBy(sql`${dateExpression}`)
+      .orderBy(sql`${dateExpression}`),
 
     db
       .select({
-        date: sql<string>`TO_CHAR(${pdsSubmissions.approvedAt}, ${dateFormat})`,
+        date: sql<string>`${dateExpression}`,
         value: sql<number>`COUNT(*)`,
       })
       .from(pdsSubmissions)
@@ -363,11 +387,11 @@ async function getComplianceTrends(
         and(
           eq(pdsSubmissions.status, 'approved'),
           gte(pdsSubmissions.approvedAt, comparisonStartDate),
-          sql`${pdsSubmissions.approvedAt} < ${startDate}`
+          sql`${pdsSubmissions.approvedAt} < ${startDateStr}`
         )
       )
-      .groupBy(sql`TO_CHAR(${pdsSubmissions.approvedAt}, ${dateFormat})`)
-      .orderBy(sql`TO_CHAR(${pdsSubmissions.approvedAt}, ${dateFormat})`),
+      .groupBy(sql`${dateExpression}`)
+      .orderBy(sql`${dateExpression}`),
   ]);
 
   const trendData = currentApproved.map((row) => ({

@@ -65,8 +65,8 @@ export async function GET(request: NextRequest) {
     const previousMonthCompliance = await db
       .select({
         deptId: departments.id,
-        previousPdsCount: sql<number>`COUNT(DISTINCT CASE WHEN ${pdsSubmissions.status} = 'approved' AND ${pdsSubmissions.approvedAt} >= ${twoMonthsAgo} AND ${pdsSubmissions.approvedAt} < ${oneMonthAgo} THEN ${pdsSubmissions.userId} END)`,
-        previousSalnCount: sql<number>`COUNT(DISTINCT CASE WHEN ${salnSubmissions.status} = 'approved' AND ${salnSubmissions.year} = ${currentYear} AND ${salnSubmissions.approvedAt} >= ${twoMonthsAgo} AND ${salnSubmissions.approvedAt} < ${oneMonthAgo} THEN ${salnSubmissions.userId} END)`,
+        previousPdsCount: sql<number>`COUNT(DISTINCT CASE WHEN ${pdsSubmissions.status} = 'approved' AND ${pdsSubmissions.approvedAt} >= ${twoMonthsAgo.toISOString()} AND ${pdsSubmissions.approvedAt} < ${oneMonthAgo.toISOString()} THEN ${pdsSubmissions.userId} END)`,
+        previousSalnCount: sql<number>`COUNT(DISTINCT CASE WHEN ${salnSubmissions.status} = 'approved' AND ${salnSubmissions.year} = ${currentYear} AND ${salnSubmissions.approvedAt} >= ${twoMonthsAgo.toISOString()} AND ${salnSubmissions.approvedAt} < ${oneMonthAgo.toISOString()} THEN ${salnSubmissions.userId} END)`,
       })
       .from(departments)
       .leftJoin(profiles, and(

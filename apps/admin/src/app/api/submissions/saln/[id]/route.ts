@@ -291,7 +291,7 @@ export async function GET(
         action: log.action,
         performedBy: `${log.firstName || ''} ${log.lastName || ''}`.trim() || 'System',
         performedAt: log.createdAt,
-        details: log.changes,
+        details: log.changes as import('@tupsafe/types').AuditTrailDetails | undefined,
       })),
     };
 

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { db } from '@tupsafe/database/server';
 import {
   profiles,
@@ -7,7 +7,7 @@ import {
   salnSubmissions,
   submissionDeadlines,
 } from '@tupsafe/database/schema';
-import { eq, and, sql, desc, isNull } from 'drizzle-orm';
+import { eq, and, sql, isNull, gte, lt } from 'drizzle-orm';
 import type { DashboardComplianceResponse } from '@tupsafe/types';
 
 /**
@@ -25,7 +25,7 @@ import type { DashboardComplianceResponse } from '@tupsafe/types';
  *
  * Caching: 5 minutes (compliance data is time-sensitive)
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // TODO: Verify admin/HR role
     // const session = await getServerSession();
@@ -36,6 +36,9 @@ export async function GET(request: NextRequest) {
     const now = new Date();
     const currentYear = now.getFullYear();
     const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    // Convert dates to ISO strings for date string columns
+    const nowStr = now.toISOString().split('T')[0]; // YYYY-MM-DD format
 
     // Execute queries in parallel
     const [
@@ -60,7 +63,7 @@ export async function GET(request: NextRequest) {
           and(
             eq(submissionDeadlines.formType, 'pds'),
             eq(submissionDeadlines.isActive, true),
-            sql`${submissionDeadlines.deadlineDate} >= ${now}`
+            gte(submissionDeadlines.deadlineDate, nowStr)
           )
         )
         .orderBy(submissionDeadlines.deadlineDate)
@@ -202,7 +205,7 @@ export async function GET(request: NextRequest) {
             and(
               eq(profiles.userType, 'employee'),
               eq(pdsSubmissions.status, 'approved'),
-              sql`${pdsSubmissions.approvedAt} < ${oneMonthAgo}`
+              lt(pdsSubmissions.approvedAt, oneMonthAgo)
             )
           ),
         db
@@ -214,7 +217,7 @@ export async function GET(request: NextRequest) {
               eq(profiles.userType, 'employee'),
               eq(salnSubmissions.status, 'approved'),
               eq(salnSubmissions.year, currentYear),
-              sql`${salnSubmissions.approvedAt} < ${oneMonthAgo}`
+              lt(salnSubmissions.approvedAt, oneMonthAgo)
             )
           ),
       ]),

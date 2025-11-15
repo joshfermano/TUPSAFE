@@ -19,15 +19,15 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkUserRole } from '@tupsafe/auth/server';
+import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 import { db, profiles } from '@tupsafe/database/server';
 import { eq, and, gte, sql, count } from 'drizzle-orm';
 import type { UserStatsResponse } from '@tupsafe/types';
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify permissions
-    const hasPermission = await checkUserRole(['admin', 'hr', 'supervisor']);
+    // Verify permissions (using Supabase session)
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr', 'supervisor']);
 
     if (!hasPermission) {
       return NextResponse.json(

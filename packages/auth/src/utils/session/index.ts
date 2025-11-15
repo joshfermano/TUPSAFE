@@ -231,3 +231,110 @@ export async function getSessionUser(): Promise<{
   const { userId, email, employeeId, role } = validation.session;
   return { userId, id: userId, email, employeeId, role };
 }
+
+/**
+ * Check if user has required role using Supabase session directly
+ * This is the recommended approach for API routes
+ */
+export async function checkUserRoleFromSupabase(allowedRoles: string[]): Promise<boolean> {
+  try {
+    const { createClient } = await import('../supabase/server');
+    const { db, profiles } = await import('@tupsafe/database/server');
+    const { eq } = await import('drizzle-orm');
+
+    const supabase = await createClient();
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+
+    if (sessionError || !session) {
+      return false;
+    }
+
+    const userId = session.user.id;
+
+    // Fetch user profile to get role
+    const [profile] = await db
+      .select({ role: profiles.role })
+      .from(profiles)
+      .where(eq(profiles.id, userId))
+      .limit(1);
+
+    if (!profile) {
+      return false;
+    }
+
+    return allowedRoles.includes(profile.role);
+  } catch (error) {
+    console.error('Error checking user role from Supabase:', error);
+    return false;
+  }
+}
+
+/**
+ * Get user from Supabase session directly
+ * This is the recommended approach for API routes
+ */
+export async function getUserFromSupabase(): Promise<{
+  userId: string;
+  id: string;
+  email: string;
+  role: string;
+  employeeId?: string;
+  firstName?: string;
+  lastName?: string;
+  middleName?: string;
+  departmentId?: string;
+  positionId?: string;
+  accountStatus?: string;
+  isActive?: boolean;
+} | null> {
+  try {
+    const { createClient } = await import('../supabase/server');
+    const { db, profiles } = await import('@tupsafe/database/server');
+    const { eq } = await import('drizzle-orm');
+
+    const supabase = await createClient();
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+
+    if (sessionError || !session) {
+      return null;
+    }
+
+    const userId = session.user.id;
+    const email = session.user.email || '';
+
+    // Fetch full user profile
+    const [profile] = await db
+      .select()
+      .from(profiles)
+      .where(eq(profiles.id, userId))
+      .limit(1);
+
+    if (!profile) {
+      return null;
+    }
+
+    return {
+      userId,
+      id: userId,
+      email,
+      role: profile.role,
+      employeeId: profile.employeeId || undefined,
+      firstName: profile.firstName || undefined,
+      lastName: profile.lastName || undefined,
+      middleName: profile.middleName || undefined,
+      departmentId: profile.departmentId || undefined,
+      positionId: profile.positionId || undefined,
+      accountStatus: profile.accountStatus || undefined,
+      isActive: profile.isActive || undefined,
+    };
+  } catch (error) {
+    console.error('Error getting user from Supabase:', error);
+    return null;
+  }
+}
