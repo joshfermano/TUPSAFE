@@ -99,7 +99,7 @@ export default function SalnSubmissionViewPage() {
   const totalRealProperties = React.useMemo(() => {
     if (!completeSubmission?.realProperties) return 0;
     return completeSubmission.realProperties.reduce(
-      (sum, prop) => sum + (prop.acquisitionCost || 0),
+      (sum: number, prop: { acquisitionCost: string | null }) => sum + (prop.acquisitionCost ? parseFloat(prop.acquisitionCost) : 0),
       0
     );
   }, [completeSubmission?.realProperties]);
@@ -107,7 +107,7 @@ export default function SalnSubmissionViewPage() {
   const totalPersonalProperties = React.useMemo(() => {
     if (!completeSubmission?.personalProperties) return 0;
     return completeSubmission.personalProperties.reduce(
-      (sum, prop) => sum + (prop.acquisitionCost || 0),
+      (sum: number, prop: { acquisitionCost: string | null }) => sum + (prop.acquisitionCost ? parseFloat(prop.acquisitionCost) : 0),
       0
     );
   }, [completeSubmission?.personalProperties]);
@@ -119,7 +119,7 @@ export default function SalnSubmissionViewPage() {
   const totalLiabilities = React.useMemo(() => {
     if (!completeSubmission?.liabilities) return 0;
     return completeSubmission.liabilities.reduce(
-      (sum, liability) => sum + (liability.outstandingBalance || 0),
+      (sum: number, liability: { outstandingBalance: string | null }) => sum + (liability.outstandingBalance ? parseFloat(liability.outstandingBalance) : 0),
       0
     );
   }, [completeSubmission?.liabilities]);
@@ -383,7 +383,7 @@ export default function SalnSubmissionViewPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {completeSubmission.realProperties.map((property, index) => (
+                      {completeSubmission.realProperties.map((property: { description: string; kind: string; exactLocation: string; assessedValue: string | null; currentFairMarketValue: string | null; acquisitionCost: string | null; acquisitionYear: number; acquisitionMode: string }, index: number) => (
                         <TableRow key={index}>
                           <TableCell>{property.description}</TableCell>
                           <TableCell className="capitalize">{property.kind}</TableCell>
@@ -438,7 +438,7 @@ export default function SalnSubmissionViewPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {completeSubmission.personalProperties.map((property, index) => (
+                      {completeSubmission.personalProperties.map((property: { description: string; yearAcquired: number; acquisitionCost: string | null }, index: number) => (
                         <TableRow key={index}>
                           <TableCell>{property.description}</TableCell>
                           <TableCell>{property.yearAcquired}</TableCell>
@@ -518,7 +518,7 @@ export default function SalnSubmissionViewPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {completeSubmission.liabilities.map((liability, index) => (
+                      {completeSubmission.liabilities.map((liability: { nature: string; creditorName: string; outstandingBalance: string | null }, index: number) => (
                         <TableRow key={index}>
                           <TableCell>{liability.nature}</TableCell>
                           <TableCell>{liability.creditorName}</TableCell>
@@ -601,7 +601,7 @@ export default function SalnSubmissionViewPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {completeSubmission.businessInterests.map((business, index) => (
+                    {completeSubmission.businessInterests.map((business: { entityName: string; businessAddress: string; natureOfBusiness: string; dateOfAcquisition: string | null }, index: number) => (
                       <TableRow key={index}>
                         <TableCell>{business.entityName}</TableCell>
                         <TableCell>{business.businessAddress}</TableCell>
@@ -639,7 +639,7 @@ export default function SalnSubmissionViewPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {completeSubmission.relativesInGov.map((relative, index) => (
+                    {completeSubmission.relativesInGov.map((relative: { name: string; relationship: string; position: string; agencyAddress: string }, index: number) => (
                       <TableRow key={index}>
                         <TableCell>{relative.name}</TableCell>
                         <TableCell className="capitalize">{relative.relationship}</TableCell>

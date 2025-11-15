@@ -135,11 +135,11 @@ export default function UserViewPage() {
 
   // Mock submissions data (in production, filter by userId on the backend)
   const { submissions: allPdsSubmissions, isLoading: isPdsLoading } = usePdsSubmissionsQuery({});
-  const { data: allSalnSubmissions, isLoading: isSalnLoading } = useSalnSubmissionsQuery({});
+  const { submissions: allSalnSubmissions, isLoading: isSalnLoading } = useSalnSubmissionsQuery({});
 
   // Filter submissions by userId client-side
-  const pdsSubmissions = allPdsSubmissions?.filter((s) => s.employee.id === userId);
-  const salnSubmissions = allSalnSubmissions?.filter((s) => s.submission.userId === userId);
+  const pdsSubmissions = allPdsSubmissions.filter((s) => s.employee.id === userId);
+  const salnSubmissions = allSalnSubmissions.filter((s) => s.employee.id === userId);
 
   const [activeTab, setActiveTab] = useState('overview');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -161,7 +161,7 @@ export default function UserViewPage() {
     }
 
     const pendingPds = pdsSubmissions.filter((s) => s.status === 'submitted').length;
-    const pendingSaln = salnSubmissions.filter((s) => s.submission.status === 'submitted').length;
+    const pendingSaln = salnSubmissions.filter((s) => s.status === 'submitted').length;
 
     return {
       totalPds: pdsSubmissions.length,
@@ -416,9 +416,7 @@ export default function UserViewPage() {
             <div className="text-2xl font-bold">{stats.totalSaln}</div>
             <p className="text-xs text-muted-foreground">
               Latest:{' '}
-              {salnSubmissions?.[0]?.submission.createdAt
-                ? format(salnSubmissions[0].submission.createdAt, 'yyyy')
-                : 'N/A'}
+              {salnSubmissions?.[0]?.year || 'N/A'}
             </p>
           </CardContent>
         </Card>
@@ -666,23 +664,26 @@ export default function UserViewPage() {
                     </TableHeader>
                     <TableBody>
                       {salnSubmissions.map((submission) => (
-                        <TableRow key={submission.submission.id}>
+                        <TableRow key={submission.id}>
                           <TableCell className="font-medium">
-                            {format(submission.submission.createdAt, 'yyyy')}
+                            {submission.year}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="secondary">Mock Data</Badge>
+                            {new Intl.NumberFormat('en-PH', {
+                              style: 'currency',
+                              currency: 'PHP',
+                            }).format(parseFloat(submission.netWorth))}
                           </TableCell>
                           <TableCell>
-                            <StatusBadge status={submission.submission.status} />
+                            <StatusBadge status={submission.status} />
                           </TableCell>
                           <TableCell>
-                            {format(submission.submission.createdAt, 'MMM d, yyyy')}
+                            {format(submission.createdAt, 'MMM d, yyyy')}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button variant="ghost" size="sm" asChild>
-                                <Link href={`/dashboard/saln/${submission.submission.id}`}>
+                                <Link href={`/dashboard/submissions/saln/view/${submission.id}`}>
                                   <Eye className="mr-2 h-4 w-4" />
                                   View
                                 </Link>
@@ -691,7 +692,7 @@ export default function UserViewPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() =>
-                                  handleDownloadPdf('saln', submission.submission.id)
+                                  handleDownloadPdf('saln', submission.id)
                                 }
                               >
                                 <Download className="mr-2 h-4 w-4" />

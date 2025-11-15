@@ -137,10 +137,11 @@ export async function middleware(request: NextRequest) {
 
 /**
  * Middleware configuration
- * Only protect dashboard routes - everything else is public or handles its own auth
+ * Protect all routes except public ones (login, forgot-password, etc.)
+ * Also protect API routes that need authentication
  */
 export const config = {
   matcher: [
-    '/dashboard/:path*',
+    '/((?!auth|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

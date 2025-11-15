@@ -525,7 +525,7 @@ export default function PdsSubmissionViewPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {completeSubmission.children.map((child, index) => (
+                          {completeSubmission.children.map((child: { fullName: string; dateOfBirth: string }, index: number) => (
                             <TableRow key={index}>
                               <TableCell>{child.fullName}</TableCell>
                               <TableCell>
@@ -560,7 +560,7 @@ export default function PdsSubmissionViewPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {completeSubmission.education.map((edu, index) => (
+                    {completeSubmission.education.map((edu: { level: string; schoolName: string; degreeCourse: string | null; periodFrom: string | null; periodTo: string | null; highestLevelEarned: string | null; yearGraduated: number | null; honorsReceived: string | null }, index: number) => (
                       <TableRow key={index}>
                         <TableCell className="capitalize">{edu.level}</TableCell>
                         <TableCell>{edu.schoolName}</TableCell>
@@ -598,7 +598,7 @@ export default function PdsSubmissionViewPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {completeSubmission.civilService.map((exam, index) => (
+                    {completeSubmission.civilService.map((exam: { eligibilityName: string; rating: string | null; dateOfExam: string | null; placeOfExam: string | null; licenseNo: string | null; licenseValidityDate: string | null }, index: number) => (
                       <TableRow key={index}>
                         <TableCell>{exam.eligibilityName}</TableCell>
                         <TableCell>{exam.rating || '-'}</TableCell>
@@ -641,7 +641,7 @@ export default function PdsSubmissionViewPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {completeSubmission.workExperience.map((work, index) => (
+                    {completeSubmission.workExperience.map((work: { positionTitle: string; departmentAgency: string; monthlySalary: string | null; salaryGrade: string | null; dateFrom: string | null; dateTo: string | null; isGovernment: boolean | null }, index: number) => (
                       <TableRow key={index}>
                         <TableCell>{work.positionTitle}</TableCell>
                         <TableCell>{work.departmentAgency}</TableCell>
@@ -679,7 +679,7 @@ export default function PdsSubmissionViewPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {completeSubmission.voluntaryWork.map((work, index) => (
+                    {completeSubmission.voluntaryWork.map((work: { organizationName: string; organizationAddress: string | null; positionNature: string | null; dateFrom: string | null; dateTo: string | null; numberOfHours: number | null }, index: number) => (
                       <TableRow key={index}>
                         <TableCell>{work.organizationName}</TableCell>
                         <TableCell>{work.organizationAddress || '-'}</TableCell>
@@ -716,7 +716,7 @@ export default function PdsSubmissionViewPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {completeSubmission.training.map((training, index) => (
+                    {completeSubmission.training.map((training: { title: string; typeOfLd: string | null; hours: number | null; dateFrom: string | null; dateTo: string | null; conductedBy: string | null }, index: number) => (
                       <TableRow key={index}>
                         <TableCell>{training.title}</TableCell>
                         <TableCell>{training.typeOfLd || '-'}</TableCell>
@@ -754,7 +754,7 @@ export default function PdsSubmissionViewPage() {
                   value={
                     completeSubmission.otherInfo?.recognitions && completeSubmission.otherInfo.recognitions.length > 0
                       ? completeSubmission.otherInfo.recognitions
-                          .map((r) => `${r.title} (${r.year}) - ${r.organization}`)
+                          .map((r: { title: string; year: string; organization: string }) => `${r.title} (${r.year}) - ${r.organization}`)
                           .join(' | ')
                       : null
                   }
@@ -764,7 +764,7 @@ export default function PdsSubmissionViewPage() {
                   value={
                     completeSubmission.otherInfo?.associations && completeSubmission.otherInfo.associations.length > 0
                       ? completeSubmission.otherInfo.associations
-                          .map((a) => `${a.name}${a.position ? ` (${a.position})` : ''}`)
+                          .map((a: { name: string; position?: string }) => `${a.name}${a.position ? ` (${a.position})` : ''}`)
                           .join(' | ')
                       : null
                   }
