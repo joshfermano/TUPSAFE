@@ -104,7 +104,9 @@
       "Bash(timeout 30 npx turbo:*)",
       "mcp__supabase__execute_sql",
       "Bash(npm ci:*)",
-      "Bash(npm ls:*)"
+      "Bash(npm ls:*)",
+      "mcp__supabase__list_tables",
+      "Bash(netstat:*)"
     ],
     "deny": [],
     "ask": []

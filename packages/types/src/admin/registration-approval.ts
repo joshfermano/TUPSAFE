@@ -71,19 +71,21 @@ export type BulkApproveInput = z.infer<typeof bulkApproveRegistrationsSchema>;
 /**
  * Schema for listing registrations with filters
  * Note: API route handles 'pageSize' alias by mapping it to 'limit' before validation
+ * Uses .nullable().optional() to handle both null (from searchParams.get()) and undefined
  */
 export const listRegistrationsSchema = z.object({
-  page: z.coerce.number().int().min(1).optional().default(1),
-  limit: z.coerce.number().int().min(1).max(100).optional().default(20),
-  status: z.enum(['pending', 'approved', 'rejected']).optional(),
-  userType: z.enum(['employee', 'applicant']).optional(),
-  departmentId: z.string().uuid('Invalid department ID').optional(),
-  search: z.string().optional(),
+  page: z.coerce.number().int().min(1).nullable().optional().default(1),
+  limit: z.coerce.number().int().min(1).max(100).nullable().optional().default(20),
+  status: z.enum(['pending', 'approved', 'rejected']).nullable().optional(),
+  userType: z.enum(['employee', 'applicant']).nullable().optional(),
+  departmentId: z.string().uuid('Invalid department ID').nullable().optional(),
+  search: z.string().nullable().optional(),
   sortBy: z
     .enum(['requestedAt', 'createdAt', 'firstName', 'lastName', 'email'])
+    .nullable()
     .optional()
     .default('requestedAt'),
-  sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
+  sortOrder: z.enum(['asc', 'desc']).nullable().optional().default('desc'),
 });
 
 export type ListRegistrationsInput = z.infer<typeof listRegistrationsSchema>;
