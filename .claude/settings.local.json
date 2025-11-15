@@ -101,7 +101,10 @@
       "mcp__serena__think_about_collected_information",
       "Bash(npx turbo:*)",
       "Bash(killall:*)",
-      "Bash(timeout 30 npx turbo:*)"
+      "Bash(timeout 30 npx turbo:*)",
+      "mcp__supabase__execute_sql",
+      "Bash(npm ci:*)",
+      "Bash(npm ls:*)"
     ],
     "deny": [],
     "ask": []

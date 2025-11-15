@@ -70,15 +70,17 @@ export type BulkApproveInput = z.infer<typeof bulkApproveRegistrationsSchema>;
 
 /**
  * Schema for listing registrations with filters
+ * Note: API route handles 'pageSize' alias by mapping it to 'limit' before validation
  */
 export const listRegistrationsSchema = z.object({
   page: z.coerce.number().int().min(1).optional().default(1),
   limit: z.coerce.number().int().min(1).max(100).optional().default(20),
   status: z.enum(['pending', 'approved', 'rejected']).optional(),
+  userType: z.enum(['employee', 'applicant']).optional(),
   departmentId: z.string().uuid('Invalid department ID').optional(),
   search: z.string().optional(),
   sortBy: z
-    .enum(['requestedAt', 'firstName', 'lastName', 'email'])
+    .enum(['requestedAt', 'createdAt', 'firstName', 'lastName', 'email'])
     .optional()
     .default('requestedAt'),
   sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),

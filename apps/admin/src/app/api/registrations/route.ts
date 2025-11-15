@@ -49,6 +49,8 @@ export async function GET(request: NextRequest) {
       page: searchParams.get('page'),
       limit: searchParams.get('limit') || searchParams.get('pageSize'),
       status: searchParams.get('status'),
+      userType: searchParams.get('userType'),
+      departmentId: searchParams.get('departmentId'),
       search: searchParams.get('search'),
       sortBy: searchParams.get('sortBy'),
       sortOrder: searchParams.get('sortOrder'),
@@ -57,17 +59,23 @@ export async function GET(request: NextRequest) {
     const validationResult = listRegistrationsSchema.safeParse(queryParams);
 
     if (!validationResult.success) {
+      const fieldErrors = validationResult.error.flatten().fieldErrors;
+      console.error('[Registrations API] Validation failed:', {
+        queryParams,
+        fieldErrors,
+        fullError: validationResult.error.format(),
+      });
       return NextResponse.json(
         {
           success: false,
           error: 'Invalid query parameters',
-          details: validationResult.error.flatten().fieldErrors,
+          details: fieldErrors,
         },
         { status: 400 }
       );
     }
 
-    const { page, limit, status, search, sortBy, sortOrder } = validationResult.data;
+    const { page, limit, status, userType, departmentId, search, sortBy, sortOrder } = validationResult.data;
 
     // Build WHERE conditions
     const conditions = [];
@@ -82,7 +90,15 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(profiles.accountStatus, 'pending'));
     }
 
-    // Note: userType filter removed as it's not in the schema
+    // Filter by user type if provided
+    if (userType) {
+      conditions.push(eq(profiles.userType, userType));
+    }
+
+    // Filter by department if provided
+    if (departmentId) {
+      conditions.push(eq(profiles.departmentId, departmentId));
+    }
 
     // Search by name or email
     if (search) {
@@ -108,10 +124,11 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil(total / limit);
 
     // Determine sort field and direction
-    const sortField = sortBy === 'firstName'
-      ? profiles.firstName
-      : sortBy === 'lastName'
-      ? profiles.lastName
+    const sortField =
+      sortBy === 'firstName' ? profiles.firstName
+      : sortBy === 'lastName' ? profiles.lastName
+      : sortBy === 'email' ? profiles.id // TODO: would need to join with auth table for email
+      : sortBy === 'requestedAt' ? pendingRegistrations.createdAt
       : profiles.createdAt;
 
     const orderByClause = sortOrder === 'asc' ? asc(sortField) : desc(sortField);
