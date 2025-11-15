@@ -68,8 +68,19 @@ export function useUserDetails(userId: string | null) {
 export function useUserStats() {
   return useQuery<UserStatsResponse, Error>({
     queryKey: userKeys.stats(),
-    queryFn: fetchUserStats,
+    queryFn: async () => {
+      console.log('[useUserStats] Fetching stats...');
+      try {
+        const stats = await fetchUserStats();
+        console.log('[useUserStats] Stats loaded:', stats);
+        return stats;
+      } catch (error) {
+        console.error('[useUserStats] Error fetching stats:', error);
+        throw error;
+      }
+    },
     staleTime: 1000 * 60 * 2, // 2 minutes
+    retry: 1, // Only retry once
   });
 }
 

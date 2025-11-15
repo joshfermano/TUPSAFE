@@ -21,10 +21,25 @@ interface StatCard {
 }
 
 export function UserStatsCards() {
-  const { data: stats, isLoading, isError } = useUserStats();
+  const { data: stats, isLoading, isError, error } = useUserStats();
 
   if (isError) {
-    return null; // Silently fail - stats are not critical
+    console.error('[UserStatsCards] Error loading stats:', error);
+    // Show error state instead of silently failing
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-destructive/50">
+          <CardHeader>
+            <CardTitle className="text-sm text-destructive">Stats Unavailable</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground">
+              {error?.message || 'Failed to load statistics'}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   if (isLoading) {
