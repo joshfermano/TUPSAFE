@@ -42,18 +42,20 @@ export async function GET(request: NextRequest) {
     const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    // Query 1: Count pending registrations
+    // Query 1: Count pending registrations (only those in registration workflow)
     const [pendingResult] = await db
       .select({ count: count() })
       .from(profiles)
+      .innerJoin(pendingRegistrations, eq(profiles.id, pendingRegistrations.userId))
       .where(eq(profiles.accountStatus, 'pending'));
 
     const pending = pendingResult?.count || 0;
 
-    // Query 2: Count approved today
+    // Query 2: Count approved today (only registration workflow accounts)
     const [approvedTodayResult] = await db
       .select({ count: count() })
       .from(profiles)
+      .innerJoin(pendingRegistrations, eq(profiles.id, pendingRegistrations.userId))
       .where(
         and(
           eq(profiles.accountStatus, 'active'),
@@ -63,10 +65,11 @@ export async function GET(request: NextRequest) {
 
     const approvedToday = approvedTodayResult?.count || 0;
 
-    // Query 3: Count approved this week
+    // Query 3: Count approved this week (only registration workflow accounts)
     const [approvedWeekResult] = await db
       .select({ count: count() })
       .from(profiles)
+      .innerJoin(pendingRegistrations, eq(profiles.id, pendingRegistrations.userId))
       .where(
         and(
           eq(profiles.accountStatus, 'active'),
@@ -76,10 +79,11 @@ export async function GET(request: NextRequest) {
 
     const approvedWeek = approvedWeekResult?.count || 0;
 
-    // Query 4: Count approved this month
+    // Query 4: Count approved this month (only registration workflow accounts)
     const [approvedMonthResult] = await db
       .select({ count: count() })
       .from(profiles)
+      .innerJoin(pendingRegistrations, eq(profiles.id, pendingRegistrations.userId))
       .where(
         and(
           eq(profiles.accountStatus, 'active'),
@@ -128,7 +132,7 @@ export async function GET(request: NextRequest) {
 
     const rejectedMonth = rejectedMonthResult?.count || 0;
 
-    // Query 8: Calculate average approval time (in hours)
+    // Query 8: Calculate average approval time (in hours) - only registration workflow
     // This calculates the average time between account creation and approval
     const approvalTimeResult = await db
       .select({
@@ -139,6 +143,7 @@ export async function GET(request: NextRequest) {
         `.as('avg_hours'),
       })
       .from(profiles)
+      .innerJoin(pendingRegistrations, eq(profiles.id, pendingRegistrations.userId))
       .where(
         and(
           eq(profiles.accountStatus, 'active'),
@@ -192,18 +197,20 @@ export async function GET(request: NextRequest) {
       count: row.count,
     }));
 
-    // Query for total approved (active accounts)
+    // Query for total approved (only registration workflow accounts)
     const [approvedTotalResult] = await db
       .select({ count: count() })
       .from(profiles)
+      .innerJoin(pendingRegistrations, eq(profiles.id, pendingRegistrations.userId))
       .where(eq(profiles.accountStatus, 'active'));
 
     const approved = approvedTotalResult?.count || 0;
 
-    // Query for total rejected
+    // Query for total rejected (only registration workflow accounts)
     const [rejectedTotalResult] = await db
       .select({ count: count() })
       .from(profiles)
+      .innerJoin(pendingRegistrations, eq(profiles.id, pendingRegistrations.userId))
       .where(eq(profiles.accountStatus, 'rejected'));
 
     const rejected = rejectedTotalResult?.count || 0;

@@ -75,7 +75,23 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { page, limit, status, userType, departmentId, search, sortBy, sortOrder } = validationResult.data;
+    // Extract and ensure non-null values for required pagination fields
+    const {
+      page: rawPage,
+      limit: rawLimit,
+      status,
+      userType,
+      departmentId,
+      search,
+      sortBy: rawSortBy,
+      sortOrder: rawSortOrder
+    } = validationResult.data;
+
+    // Apply defaults for fields that can be null (schema has .default() but TS doesn't infer)
+    const page = rawPage ?? 1;
+    const limit = rawLimit ?? 20;
+    const sortBy = rawSortBy ?? 'requestedAt';
+    const sortOrder = rawSortOrder ?? 'desc';
 
     // Build WHERE conditions
     const conditions = [];
@@ -172,7 +188,7 @@ export async function GET(request: NextRequest) {
       .from(profiles)
       .leftJoin(departments, eq(profiles.departmentId, departments.id))
       .leftJoin(positions, eq(profiles.positionId, positions.id))
-      .leftJoin(pendingRegistrations, eq(profiles.id, pendingRegistrations.userId))
+      .innerJoin(pendingRegistrations, eq(profiles.id, pendingRegistrations.userId))
       .where(whereClause)
       .orderBy(orderByClause)
       .limit(limit)
