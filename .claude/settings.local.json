@@ -106,7 +106,13 @@
       "Bash(npm ci:*)",
       "Bash(npm ls:*)",
       "mcp__supabase__list_tables",
-      "Bash(netstat:*)"
+      "Bash(netstat:*)",
+      "Bash(PGPASSWORD='YU3tJhJsA5p0hfaD' psql:*)",
+      "Bash(ps:*)",
+      "mcp__supabase__get_advisors",
+      "mcp__supabase__get_logs",
+      "mcp__supabase__apply_migration",
+      "Bash(PGPASSWORD=\"$DATABASE_PASSWORD\" psql:*)"
     ],
     "deny": [],
     "ask": []

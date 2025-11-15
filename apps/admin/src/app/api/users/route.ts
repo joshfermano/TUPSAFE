@@ -50,19 +50,9 @@ export async function GET(request: NextRequest) {
 
     // Parse and validate query parameters
     const searchParams = request.nextUrl.searchParams;
-    const queryParams = {
-      page: searchParams.get('page'),
-      limit: searchParams.get('limit'),
-      search: searchParams.get('search'),
-      role: searchParams.get('role'),
-      userType: searchParams.get('userType'),
-      accountStatus: searchParams.get('accountStatus'),
-      isActive: searchParams.get('isActive'),
-      departmentId: searchParams.get('departmentId'),
-      employmentCategory: searchParams.get('employmentCategory'),
-      sortBy: searchParams.get('sortBy'),
-      sortOrder: searchParams.get('sortOrder'),
-    };
+
+    // Convert searchParams to plain object (missing params become undefined, not null)
+    const queryParams = Object.fromEntries(searchParams.entries());
 
     const validatedQuery = userListQuerySchema.parse(queryParams);
 
