@@ -19,6 +19,7 @@ import {
   type RejectRegistrationData,
   type BulkApproveData,
 } from '@/lib/api/registrations';
+import type { RegistrationDetail } from '@tupsafe/types';
 
 /**
  * Query key factory for type-safe cache management
@@ -99,11 +100,11 @@ export function useApproveRegistration() {
       const previousRegistration = queryClient.getQueryData(registrationKeys.detail(id));
 
       // Optimistically update to approved state
-      queryClient.setQueryData(registrationKeys.detail(id), (old: any) => {
+      queryClient.setQueryData(registrationKeys.detail(id), (old: RegistrationDetail | undefined) => {
         if (!old) return old;
         return {
           ...old,
-          status: 'approved',
+          status: 'approved' as const,
           reviewedAt: new Date().toISOString(),
         };
       });
@@ -154,7 +155,7 @@ export function useRejectRegistration() {
       const previousRegistration = queryClient.getQueryData(registrationKeys.detail(id));
 
       // Optimistically update to rejected state
-      queryClient.setQueryData(registrationKeys.detail(id), (old: any) => {
+      queryClient.setQueryData(registrationKeys.detail(id), (old: RegistrationDetail | undefined) => {
         if (!old) return old;
         return {
           ...old,

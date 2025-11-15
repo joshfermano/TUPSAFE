@@ -307,5 +307,6 @@ export async function fetchRegistrationStats(): Promise<RegistrationStats> {
     throw new Error(error.error || 'Failed to fetch statistics');
   }
 
-  return response.json();
+  const result = await response.json();
+  return result.data; // Unwrap the { success, data } response
 }

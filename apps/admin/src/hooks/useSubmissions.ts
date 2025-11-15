@@ -95,12 +95,12 @@ export function useApprovePDS() {
       const previousSubmissions = queryClient.getQueryData(['submissions']);
 
       // Optimistically update to approved state
-      queryClient.setQueryData(['submissions'], (old: any) => {
+      queryClient.setQueryData(['submissions'], (old: SubmissionListResponse | undefined) => {
         if (!old) return old;
         return {
           ...old,
-          submissions: old.submissions.map((sub: any) =>
-            sub.id === id ? { ...sub, status: 'approved' } : sub
+          submissions: old.submissions.map((sub) =>
+            sub.id === id ? { ...sub, status: 'approved' as const } : sub
           ),
         };
       });
@@ -144,12 +144,12 @@ export function useRejectPDS() {
 
       const previousSubmissions = queryClient.getQueryData(['submissions']);
 
-      queryClient.setQueryData(['submissions'], (old: any) => {
+      queryClient.setQueryData(['submissions'], (old: SubmissionListResponse | undefined) => {
         if (!old) return old;
         return {
           ...old,
-          submissions: old.submissions.map((sub: any) =>
-            sub.id === id ? { ...sub, status: 'rejected' } : sub
+          submissions: old.submissions.map((sub) =>
+            sub.id === id ? { ...sub, status: 'rejected' as const } : sub
           ),
         };
       });
@@ -191,12 +191,12 @@ export function useApproveSALN() {
 
       const previousSubmissions = queryClient.getQueryData(['submissions']);
 
-      queryClient.setQueryData(['submissions'], (old: any) => {
+      queryClient.setQueryData(['submissions'], (old: SubmissionListResponse | undefined) => {
         if (!old) return old;
         return {
           ...old,
-          submissions: old.submissions.map((sub: any) =>
-            sub.id === id ? { ...sub, status: 'approved' } : sub
+          submissions: old.submissions.map((sub) =>
+            sub.id === id ? { ...sub, status: 'approved' as const } : sub
           ),
         };
       });
@@ -238,12 +238,12 @@ export function useRejectSALN() {
 
       const previousSubmissions = queryClient.getQueryData(['submissions']);
 
-      queryClient.setQueryData(['submissions'], (old: any) => {
+      queryClient.setQueryData(['submissions'], (old: SubmissionListResponse | undefined) => {
         if (!old) return old;
         return {
           ...old,
-          submissions: old.submissions.map((sub: any) =>
-            sub.id === id ? { ...sub, status: 'rejected' } : sub
+          submissions: old.submissions.map((sub) =>
+            sub.id === id ? { ...sub, status: 'rejected' as const } : sub
           ),
         };
       });
