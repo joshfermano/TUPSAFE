@@ -134,11 +134,11 @@ export default function UserViewPage() {
   const { data: user, isLoading, isError, error } = useUserDetail(userId);
 
   // Mock submissions data (in production, filter by userId on the backend)
-  const { data: allPdsSubmissions, isLoading: isPdsLoading } = usePdsSubmissionsQuery({});
+  const { submissions: allPdsSubmissions, isLoading: isPdsLoading } = usePdsSubmissionsQuery({});
   const { data: allSalnSubmissions, isLoading: isSalnLoading } = useSalnSubmissionsQuery({});
 
   // Filter submissions by userId client-side
-  const pdsSubmissions = allPdsSubmissions?.filter((s) => s.submission.userId === userId);
+  const pdsSubmissions = allPdsSubmissions?.filter((s) => s.employee.id === userId);
   const salnSubmissions = allSalnSubmissions?.filter((s) => s.submission.userId === userId);
 
   const [activeTab, setActiveTab] = useState('overview');
@@ -160,7 +160,7 @@ export default function UserViewPage() {
       };
     }
 
-    const pendingPds = pdsSubmissions.filter((s) => s.submission.status === 'submitted').length;
+    const pendingPds = pdsSubmissions.filter((s) => s.status === 'submitted').length;
     const pendingSaln = salnSubmissions.filter((s) => s.submission.status === 'submitted').length;
 
     return {
@@ -401,7 +401,7 @@ export default function UserViewPage() {
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalPds}</div>
             <p className="text-xs text-muted-foreground">
-              {pdsSubmissions?.filter((s) => s.submission.status === 'approved').length || 0}{' '}
+              {pdsSubmissions?.filter((s) => s.status === 'approved').length || 0}{' '}
               approved
             </p>
           </CardContent>
@@ -578,20 +578,22 @@ export default function UserViewPage() {
                     </TableHeader>
                     <TableBody>
                       {pdsSubmissions.map((submission) => (
-                        <TableRow key={submission.submission.id}>
+                        <TableRow key={submission.id}>
                           <TableCell>
-                            <StatusBadge status={submission.submission.status} />
+                            <StatusBadge status={submission.status} />
                           </TableCell>
                           <TableCell>
-                            {format(submission.submission.createdAt, 'MMM d, yyyy')}
+                            {submission.submittedAt
+                              ? format(new Date(submission.submittedAt), 'MMM d, yyyy')
+                              : 'Not submitted'}
                           </TableCell>
                           <TableCell>
-                            {format(submission.submission.updatedAt, 'MMM d, yyyy')}
+                            {format(new Date(submission.updatedAt), 'MMM d, yyyy')}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button variant="ghost" size="sm" asChild>
-                                <Link href={`/dashboard/pds/${submission.submission.id}`}>
+                                <Link href={`/dashboard/submissions/pds/view/${submission.id}`}>
                                   <Eye className="mr-2 h-4 w-4" />
                                   View
                                 </Link>
@@ -600,7 +602,7 @@ export default function UserViewPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() =>
-                                  handleDownloadPdf('pds', submission.submission.id)
+                                  handleDownloadPdf('pds', submission.id)
                                 }
                               >
                                 <Download className="mr-2 h-4 w-4" />

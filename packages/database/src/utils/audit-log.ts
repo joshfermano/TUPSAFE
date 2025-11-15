@@ -23,6 +23,7 @@ export type AuditAction =
   | 'approve_pds_submission'
   | 'reject_pds_submission'
   | 'view_pds_submission'
+  | 'request_changes'
   | 'approve_saln_submission'
   | 'reject_saln_submission'
   | 'view_saln_submission'

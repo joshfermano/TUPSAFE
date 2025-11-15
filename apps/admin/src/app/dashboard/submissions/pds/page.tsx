@@ -20,8 +20,10 @@ import { Bar, BarChart, Legend, XAxis, YAxis } from 'recharts';
 import {
   usePdsSubmissionsQuery,
   type PdsSubmissionsFilters,
-  type PdsSubmissionWithDetails,
 } from '@/hooks/usePdsSubmissionsQuery';
+import { useDepartmentsQuery } from '@/hooks/useDepartmentsQuery';
+import { usePdsStatsQuery } from '@/hooks/usePdsStatsQuery';
+import type { PdsSubmissionListItem } from '@tupsafe/types';
 import {
   EmptyState,
   ErrorAlert,
@@ -78,42 +80,20 @@ import {
   ChartLegendContent,
 } from '@/components/ui/chart';
 
-// Available departments for filtering
-const DEPARTMENTS = [
-  { value: 'all', label: 'All Departments' },
-  { value: 'engineering', label: 'Engineering' },
-  { value: 'science', label: 'Science' },
-  { value: 'liberal_arts', label: 'Liberal Arts' },
-  { value: 'industrial_technology', label: 'Industrial Technology' },
-];
-
 // Status types
 type StatusType = 'all' | 'submitted' | 'reviewing' | 'approved' | 'rejected';
 
-// Mock data for submission timeline chart (monthly counts by status)
-const getSubmissionTimelineData = () => {
-  const months = ['Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov'];
-  return months.map((month) => ({
-    month,
-    submitted: Math.floor(Math.random() * 15) + 10,
-    approved: Math.floor(Math.random() * 12) + 5,
-    rejected: Math.floor(Math.random() * 5) + 1,
-  }));
-};
-
 // PDS Submission Row Component (memoized)
 const PdsSubmissionRow = memo(
-  ({ submission, index }: { submission: PdsSubmissionWithDetails; index: number }) => {
+  ({ submission, index }: { submission: PdsSubmissionListItem; index: number }) => {
     const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
 
     const handleAction = useCallback((action: string) => {
-      console.log(`Action: ${action} for submission:`, submission.submission.id);
+      console.log(`Action: ${action} for submission:`, submission.id);
       // TODO: Implement actions
-    }, [submission.submission.id]);
+    }, [submission.id]);
 
-    const employeeName = submission.user
-      ? `${submission.user.firstName} ${submission.user.lastName}`
-      : 'Unknown';
+    const employeeName = `${submission.employee.firstName} ${submission.employee.lastName}`;
 
     return (
       <>
@@ -122,8 +102,8 @@ const PdsSubmissionRow = memo(
             <div className="flex items-center gap-3">
               <UserAvatar
                 user={{
-                  firstName: submission.user?.firstName || 'Unknown',
-                  lastName: submission.user?.lastName || 'User',
+                  firstName: submission.employee.firstName,
+                  lastName: submission.employee.lastName,
                   avatarUrl: null,
                 }}
                 size="sm"
@@ -131,25 +111,27 @@ const PdsSubmissionRow = memo(
               <div>
                 <p className="font-medium">{employeeName}</p>
                 <p className="text-sm text-muted-foreground">
-                  {submission.user?.employeeId || 'N/A'}
+                  {submission.employee.employeeId || 'N/A'}
                 </p>
               </div>
             </div>
           </EnhancedTableCell>
           <EnhancedTableCell className="hidden md:table-cell">
-            {submission.department?.name || 'N/A'}
+            {submission.employee.department?.name || 'N/A'}
           </EnhancedTableCell>
           <EnhancedTableCell>
-            <StatusBadge status={submission.submission.status} />
+            <StatusBadge status={submission.status} />
           </EnhancedTableCell>
           <EnhancedTableCell className="hidden lg:table-cell">
-            {formatDistanceToNow(new Date(submission.submission.createdAt), {
-              addSuffix: true,
-            })}
+            {submission.submittedAt
+              ? formatDistanceToNow(new Date(submission.submittedAt), {
+                  addSuffix: true,
+                })
+              : 'Not submitted'}
           </EnhancedTableCell>
           <EnhancedTableCell className="hidden xl:table-cell">
-            {submission.submission.updatedAt
-              ? format(new Date(submission.submission.updatedAt), 'MMM d, yyyy')
+            {submission.approvedAt
+              ? format(new Date(submission.approvedAt), 'MMM d, yyyy')
               : 'N/A'}
           </EnhancedTableCell>
           <EnhancedTableCell>
@@ -166,7 +148,7 @@ const PdsSubmissionRow = memo(
                   Quick Review
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href={`/dashboard/submissions/pds/view/${submission.submission.id}`}>
+                  <Link href={`/dashboard/submissions/pds/view/${submission.id}`}>
                     View Details
                   </Link>
                 </DropdownMenuItem>
@@ -175,7 +157,7 @@ const PdsSubmissionRow = memo(
                   <Download className="mr-2 h-4 w-4" />
                   Download PDF
                 </DropdownMenuItem>
-                {submission.submission.status === 'submitted' && (
+                {submission.status === 'submitted' && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -205,7 +187,7 @@ const PdsSubmissionRow = memo(
             <DialogHeader>
               <DialogTitle>Quick Review - PDS Submission</DialogTitle>
               <DialogDescription>
-                {employeeName} - {submission.department?.name || 'N/A'}
+                {employeeName} - {submission.employee.department?.name || 'N/A'}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -213,20 +195,22 @@ const PdsSubmissionRow = memo(
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm font-medium">Status</p>
-                    <StatusBadge status={submission.submission.status} />
+                    <StatusBadge status={submission.status} />
                   </div>
                   <div>
                     <p className="text-sm font-medium">Submitted</p>
                     <p className="text-sm text-muted-foreground">
-                      {format(new Date(submission.submission.createdAt), 'PPP')}
+                      {submission.submittedAt
+                        ? format(new Date(submission.submittedAt), 'PPP')
+                        : 'Not submitted'}
                     </p>
                   </div>
                 </div>
-                {submission.submission.approvedBy && (
+                {submission.reviewer && (
                   <div>
-                    <p className="text-sm font-medium">Approved By</p>
+                    <p className="text-sm font-medium">Reviewed By</p>
                     <p className="text-sm text-muted-foreground">
-                      {submission.submission.approvedBy}
+                      {submission.reviewer.firstName} {submission.reviewer.lastName}
                     </p>
                   </div>
                 )}
@@ -239,7 +223,7 @@ const PdsSubmissionRow = memo(
                   Close
                 </Button>
                 <Button asChild>
-                  <Link href={`/dashboard/submissions/pds/view/${submission.submission.id}`}>
+                  <Link href={`/dashboard/submissions/pds/view/${submission.id}`}>
                     View Full Details
                   </Link>
                 </Button>
@@ -290,14 +274,41 @@ export default function PdsSubmissionsPage() {
 
   // Fetch submissions with filters
   const {
-    data: submissions,
+    submissions,
     isLoading,
     isError,
     error,
   } = usePdsSubmissionsQuery(filters);
 
-  // Mock submission timeline data
-  const timelineData = useMemo(() => getSubmissionTimelineData(), []);
+  // Fetch departments for filter dropdown
+  const { data: departmentsData, isLoading: departmentsLoading } =
+    useDepartmentsQuery();
+
+  // Fetch PDS statistics for timeline chart
+  const { data: pdsStats, isLoading: statsLoading } = usePdsStatsQuery();
+
+  // Format chart data from stats
+  const chartData = useMemo(() => {
+    if (!pdsStats?.monthlyData) return [];
+    return pdsStats.monthlyData.map((item) => ({
+      month: new Date(item.month).toLocaleDateString('en-US', { month: 'short' }),
+      submitted: item.submitted,
+      approved: item.approved,
+      rejected: item.rejected,
+    }));
+  }, [pdsStats]);
+
+  // Format departments for dropdown
+  const departments = useMemo(() => {
+    if (!departmentsData) return [{ value: 'all', label: 'All Departments' }];
+    return [
+      { value: 'all', label: 'All Departments' },
+      ...departmentsData.map((dept) => ({
+        value: dept.id,
+        label: dept.name,
+      })),
+    ];
+  }, [departmentsData]);
 
   // Handle search input
   const handleSearchChange = useCallback(
@@ -336,44 +347,59 @@ export default function PdsSubmissionsPage() {
           <CardDescription>Monthly submission counts by status</CardDescription>
         </CardHeader>
         <CardContent>
-          <ChartContainer
-            config={{
-              submitted: {
-                label: 'Submitted',
-                color: '#8B1538',
-              },
-              approved: {
-                label: 'Approved',
-                color: '#10b981',
-              },
-              rejected: {
-                label: 'Rejected',
-                color: '#ef4444',
-              },
-            }}
-            className="h-[300px]"
-          >
-            <BarChart data={timelineData}>
-              <XAxis
-                dataKey="month"
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-              />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <ChartLegend content={<ChartLegendContent />} />
-              <Bar dataKey="submitted" fill="var(--color-submitted)" />
-              <Bar dataKey="approved" fill="var(--color-approved)" />
-              <Bar dataKey="rejected" fill="var(--color-rejected)" />
-            </BarChart>
-          </ChartContainer>
+          {statsLoading ? (
+            <div className="h-[300px] flex items-center justify-center">
+              <div className="space-y-3 w-full">
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+              </div>
+            </div>
+          ) : chartData.length > 0 ? (
+            <ChartContainer
+              config={{
+                submitted: {
+                  label: 'Submitted',
+                  color: '#8B1538',
+                },
+                approved: {
+                  label: 'Approved',
+                  color: '#10b981',
+                },
+                rejected: {
+                  label: 'Rejected',
+                  color: '#ef4444',
+                },
+              }}
+              className="h-[300px]"
+            >
+              <BarChart data={chartData}>
+                <XAxis
+                  dataKey="month"
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <ChartLegend content={<ChartLegendContent />} />
+                <Bar dataKey="submitted" fill="var(--color-submitted)" />
+                <Bar dataKey="approved" fill="var(--color-approved)" />
+                <Bar dataKey="rejected" fill="var(--color-rejected)" />
+              </BarChart>
+            </ChartContainer>
+          ) : (
+            <div className="h-[300px] flex items-center justify-center">
+              <p className="text-sm text-muted-foreground">No data available</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -428,16 +454,23 @@ export default function PdsSubmissionsPage() {
               <Select
                 value={departmentFilter}
                 onValueChange={setDepartmentFilter}
+                disabled={departmentsLoading}
               >
                 <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Select department" />
                 </SelectTrigger>
                 <SelectContent className="glass-dropdown">
-                  {DEPARTMENTS.map((dept) => (
-                    <SelectItem key={dept.value} value={dept.value}>
-                      {dept.label}
+                  {departmentsLoading ? (
+                    <SelectItem value="loading" disabled>
+                      Loading departments...
                     </SelectItem>
-                  ))}
+                  ) : (
+                    departments.map((dept) => (
+                      <SelectItem key={dept.value} value={dept.value}>
+                        {dept.label}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -446,7 +479,7 @@ export default function PdsSubmissionsPage() {
             {hasActiveFilters && (
               <div className="flex items-center justify-between rounded-lg bg-muted/50 px-4 py-3 border border-subtle">
                 <p className="text-sm text-muted-foreground">
-                  {submissions?.length || 0} submission(s) found
+                  {submissions.length} submission(s) found
                 </p>
                 <Button
                   variant="outline"
@@ -467,7 +500,7 @@ export default function PdsSubmissionsPage() {
         <CardHeader>
           <CardTitle>Submissions</CardTitle>
           <CardDescription>
-            {submissions?.length || 0} total submission(s)
+            {submissions.length} total submission(s)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -483,7 +516,7 @@ export default function PdsSubmissionsPage() {
           )}
 
           {/* Empty State */}
-          {!isLoading && !isError && submissions?.length === 0 && (
+          {!isLoading && !isError && submissions.length === 0 && (
             <EmptyState
               icon={hasActiveFilters ? Search : FileText}
               title={
@@ -509,42 +542,39 @@ export default function PdsSubmissionsPage() {
           )}
 
           {/* Submissions Table */}
-          {!isLoading &&
-            !isError &&
-            submissions &&
-            submissions.length > 0 && (
-              <div className="overflow-x-auto">
-                <EnhancedTable>
-                  <EnhancedTableHeader>
-                    <EnhancedTableRow animate={false}>
-                      <EnhancedTableHead>Employee</EnhancedTableHead>
-                      <EnhancedTableHead className="hidden md:table-cell">
-                        Department
-                      </EnhancedTableHead>
-                      <EnhancedTableHead>Status</EnhancedTableHead>
-                      <EnhancedTableHead className="hidden lg:table-cell">
-                        Submitted
-                      </EnhancedTableHead>
-                      <EnhancedTableHead className="hidden xl:table-cell">
-                        Reviewed
-                      </EnhancedTableHead>
-                      <EnhancedTableHead className="w-[50px]">
-                        <span className="sr-only">Actions</span>
-                      </EnhancedTableHead>
-                    </EnhancedTableRow>
-                  </EnhancedTableHeader>
-                  <EnhancedTableBody>
-                    {submissions.map((submission, index) => (
-                      <PdsSubmissionRow
-                        key={submission.submission.id}
-                        submission={submission}
-                        index={index}
-                      />
-                    ))}
-                  </EnhancedTableBody>
-                </EnhancedTable>
-              </div>
-            )}
+          {!isLoading && !isError && submissions.length > 0 && (
+            <div className="overflow-x-auto">
+              <EnhancedTable>
+                <EnhancedTableHeader>
+                  <EnhancedTableRow animate={false}>
+                    <EnhancedTableHead>Employee</EnhancedTableHead>
+                    <EnhancedTableHead className="hidden md:table-cell">
+                      Department
+                    </EnhancedTableHead>
+                    <EnhancedTableHead>Status</EnhancedTableHead>
+                    <EnhancedTableHead className="hidden lg:table-cell">
+                      Submitted
+                    </EnhancedTableHead>
+                    <EnhancedTableHead className="hidden xl:table-cell">
+                      Reviewed
+                    </EnhancedTableHead>
+                    <EnhancedTableHead className="w-[50px]">
+                      <span className="sr-only">Actions</span>
+                    </EnhancedTableHead>
+                  </EnhancedTableRow>
+                </EnhancedTableHeader>
+                <EnhancedTableBody>
+                  {submissions.map((submission, index) => (
+                    <PdsSubmissionRow
+                      key={submission.id}
+                      submission={submission}
+                      index={index}
+                    />
+                  ))}
+                </EnhancedTableBody>
+              </EnhancedTable>
+            </div>
+          )}
         </CardContent>
       </Card>
     </PageTransition>
