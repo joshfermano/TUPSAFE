@@ -83,6 +83,21 @@ export const otpTypeEnum = pgEnum('otp_type', [
   'password_reset',
 ]);
 
+// User preferences enums
+export const emailDigestFrequencyEnum = pgEnum('email_digest_frequency', [
+  'realtime',
+  'daily',
+  'weekly',
+  'never',
+]);
+export const themeEnum = pgEnum('theme', ['light', 'dark', 'system']);
+export const dashboardLayoutEnum = pgEnum('dashboard_layout', [
+  'default',
+  'compact',
+  'detailed',
+]);
+export const languageEnum = pgEnum('language', ['en', 'fil']);
+
 // Multi-user type system enums
 export const userTypeEnum = pgEnum('user_type', ['employee', 'applicant']);
 export const employmentCategoryEnum = pgEnum('employment_category', [
@@ -1039,6 +1054,141 @@ export const archives = pgTable(
   })
 );
 
+// Auth System Tables
+
+// OTP Verifications table - for email verification and login challenges
+export const otpVerifications = pgTable(
+  'otp_verifications',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .$defaultFn(() => v7()),
+    userId: uuid('user_id').notNull(),
+    code: text('code').notNull(), // 6-digit code
+    type: otpTypeEnum('type').notNull(),
+    expiresAt: timestamp('expires_at').notNull(),
+    verifiedAt: timestamp('verified_at'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index('otp_verifications_user_id_idx').on(table.userId),
+    expiresAtIdx: index('otp_verifications_expires_at_idx').on(table.expiresAt),
+    typeIdx: index('otp_verifications_type_idx').on(table.type),
+    userTypeIdx: index('otp_verifications_user_type_idx').on(
+      table.userId,
+      table.type
+    ),
+  })
+);
+
+// Pending Registrations table - admin approval queue
+export const pendingRegistrations = pgTable(
+  'pending_registrations',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .$defaultFn(() => v7()),
+    userId: uuid('user_id').notNull().unique(),
+    status: approvalStatusEnum('status').default('pending').notNull(),
+    adminNotes: text('admin_notes'),
+    approvedBy: uuid('approved_by'),
+    approvedAt: timestamp('approved_at'),
+    rejectedAt: timestamp('rejected_at'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index('pending_registrations_user_id_idx').on(table.userId),
+    statusIdx: index('pending_registrations_status_idx').on(table.status),
+    createdAtIdx: index('pending_registrations_created_at_idx').on(
+      table.createdAt
+    ),
+  })
+);
+
+// Trusted Devices table - 30-day device trust
+export const trustedDevices = pgTable(
+  'trusted_devices',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .$defaultFn(() => v7()),
+    userId: uuid('user_id').notNull(),
+    deviceFingerprint: text('device_fingerprint').notNull(), // Hash of IP + User-Agent
+    browserInfo: text('browser_info'), // User-Agent string
+    ipAddress: inet('ip_address'),
+    trustedAt: timestamp('trusted_at').defaultNow().notNull(),
+    expiresAt: timestamp('expires_at').notNull(),
+    lastUsedAt: timestamp('last_used_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index('trusted_devices_user_id_idx').on(table.userId),
+    deviceFingerprintIdx: index('trusted_devices_device_fingerprint_idx').on(
+      table.deviceFingerprint
+    ),
+    expiresAtIdx: index('trusted_devices_expires_at_idx').on(table.expiresAt),
+    userDeviceIdx: index('trusted_devices_user_device_idx').on(
+      table.userId,
+      table.deviceFingerprint
+    ),
+  })
+);
+
+// Employee ID Registry table - prevent collisions
+export const employeeIdRegistry = pgTable(
+  'employee_id_registry',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .$defaultFn(() => v7()),
+    employeeId: text('employee_id').unique().notNull(),
+    userId: uuid('user_id').notNull().unique(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    employeeIdIdx: index('employee_id_registry_employee_id_idx').on(
+      table.employeeId
+    ),
+    userIdIdx: index('employee_id_registry_user_id_idx').on(table.userId),
+  })
+);
+
+// User Preferences table - admin portal settings
+export const userPreferences = pgTable(
+  'user_preferences',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .$defaultFn(() => v7()),
+    userId: uuid('user_id')
+      .notNull()
+      .unique()
+      .references(() => profiles.id, { onDelete: 'cascade' }),
+
+    // Notification preferences
+    emailNotificationsEnabled: boolean('email_notifications_enabled').default(
+      true
+    ),
+    emailDigestFrequency: emailDigestFrequencyEnum('email_digest_frequency')
+      .default('daily')
+      .notNull(),
+
+    // UI preferences
+    theme: themeEnum('theme').default('system').notNull(),
+    dashboardLayout: dashboardLayoutEnum('dashboard_layout')
+      .default('default')
+      .notNull(),
+    language: languageEnum('language').default('en').notNull(),
+    timezone: text('timezone').default('Asia/Manila').notNull(),
+
+    // Timestamps
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index('user_preferences_user_id_idx').on(table.userId),
+  })
+);
+
 // Relations
 export const profilesRelations = relations(profiles, ({ one, many }) => ({
   department: one(departments, {
@@ -1062,6 +1212,18 @@ export const profilesRelations = relations(profiles, ({ one, many }) => ({
     relationName: 'decision_maker',
   }),
   statusChanges: many(applicationStatusHistory),
+  // User preferences
+  userPreferences: one(userPreferences, {
+    fields: [profiles.id],
+    references: [userPreferences.userId],
+  }),
+}));
+
+export const userPreferencesRelations = relations(userPreferences, ({ one }) => ({
+  user: one(profiles, {
+    fields: [userPreferences.userId],
+    references: [profiles.id],
+  }),
 }));
 
 export const departmentsRelations = relations(departments, ({ one, many }) => ({
@@ -1192,104 +1354,6 @@ export const applicationStatusHistoryRelations = relations(
   })
 );
 
-// Auth System Tables
-
-// OTP Verifications table - for email verification and login challenges
-export const otpVerifications = pgTable(
-  'otp_verifications',
-  {
-    id: uuid('id')
-      .primaryKey()
-      .$defaultFn(() => v7()),
-    userId: uuid('user_id').notNull(),
-    code: text('code').notNull(), // 6-digit code
-    type: otpTypeEnum('type').notNull(),
-    expiresAt: timestamp('expires_at').notNull(),
-    verifiedAt: timestamp('verified_at'),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-  },
-  (table) => ({
-    userIdIdx: index('otp_verifications_user_id_idx').on(table.userId),
-    expiresAtIdx: index('otp_verifications_expires_at_idx').on(table.expiresAt),
-    typeIdx: index('otp_verifications_type_idx').on(table.type),
-    userTypeIdx: index('otp_verifications_user_type_idx').on(
-      table.userId,
-      table.type
-    ),
-  })
-);
-
-// Pending Registrations table - admin approval queue
-export const pendingRegistrations = pgTable(
-  'pending_registrations',
-  {
-    id: uuid('id')
-      .primaryKey()
-      .$defaultFn(() => v7()),
-    userId: uuid('user_id').notNull().unique(),
-    status: approvalStatusEnum('status').default('pending').notNull(),
-    adminNotes: text('admin_notes'),
-    approvedBy: uuid('approved_by'),
-    approvedAt: timestamp('approved_at'),
-    rejectedAt: timestamp('rejected_at'),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-  },
-  (table) => ({
-    userIdIdx: index('pending_registrations_user_id_idx').on(table.userId),
-    statusIdx: index('pending_registrations_status_idx').on(table.status),
-    createdAtIdx: index('pending_registrations_created_at_idx').on(
-      table.createdAt
-    ),
-  })
-);
-
-// Trusted Devices table - 30-day device trust
-export const trustedDevices = pgTable(
-  'trusted_devices',
-  {
-    id: uuid('id')
-      .primaryKey()
-      .$defaultFn(() => v7()),
-    userId: uuid('user_id').notNull(),
-    deviceFingerprint: text('device_fingerprint').notNull(), // Hash of IP + User-Agent
-    browserInfo: text('browser_info'), // User-Agent string
-    ipAddress: inet('ip_address'),
-    trustedAt: timestamp('trusted_at').defaultNow().notNull(),
-    expiresAt: timestamp('expires_at').notNull(),
-    lastUsedAt: timestamp('last_used_at').defaultNow().notNull(),
-  },
-  (table) => ({
-    userIdIdx: index('trusted_devices_user_id_idx').on(table.userId),
-    deviceFingerprintIdx: index('trusted_devices_device_fingerprint_idx').on(
-      table.deviceFingerprint
-    ),
-    expiresAtIdx: index('trusted_devices_expires_at_idx').on(table.expiresAt),
-    userDeviceIdx: index('trusted_devices_user_device_idx').on(
-      table.userId,
-      table.deviceFingerprint
-    ),
-  })
-);
-
-// Employee ID Registry table - prevent collisions
-export const employeeIdRegistry = pgTable(
-  'employee_id_registry',
-  {
-    id: uuid('id')
-      .primaryKey()
-      .$defaultFn(() => v7()),
-    employeeId: text('employee_id').unique().notNull(),
-    userId: uuid('user_id').notNull().unique(),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-  },
-  (table) => ({
-    employeeIdIdx: index('employee_id_registry_employee_id_idx').on(
-      table.employeeId
-    ),
-    userIdIdx: index('employee_id_registry_user_id_idx').on(table.userId),
-  })
-);
-
 // Export all tables for drizzle-kit
 export const schema = {
   profiles,
@@ -1328,4 +1392,6 @@ export const schema = {
   pendingRegistrations,
   trustedDevices,
   employeeIdRegistry,
+  // User preferences
+  userPreferences,
 };

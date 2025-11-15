@@ -1,17 +1,7 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { AuditLog } from '@tupsafe/types';
-import {
-  generateMockAuditLogs,
-  filterLogsByUser,
-  filterLogsByAction,
-  filterLogsByResource,
-  filterLogsByDateRange,
-  getAuditLogStats,
-  getUniqueActions,
-  getUniqueResources,
-} from '@/lib/mock-audit-logs';
+import type { AuditLogsListResponse } from '@tupsafe/types';
 
 /**
  * Audit logs query key factory
@@ -26,36 +16,16 @@ export const auditLogsKeys = {
  * Filters for audit logs queries
  */
 export interface AuditLogsFilters {
-  userId?: string | null;
+  page?: number;
+  limit?: number;
+  user?: string | null;
   action?: string | null;
   resource?: string | null;
+  search?: string | null;
   startDate?: Date | null;
   endDate?: Date | null;
-  limit?: number;
-  offset?: number;
-}
-
-/**
- * Extended audit log with computed fields for display
- */
-export interface ExtendedAuditLog extends AuditLog {
-  user: string;
-  user_email: string;
-  details: string | null;
-}
-
-/**
- * Audit logs query result with pagination
- */
-export interface AuditLogsResult {
-  logs: ExtendedAuditLog[];
-  total: number;
-  hasMore: boolean;
-  unique_users: number;
-  total_actions: number;
-  resources_affected: number;
-  uniqueActions: string[];
-  uniqueResources: string[];
+  sortBy?: 'createdAt' | 'action' | 'user';
+  sortOrder?: 'asc' | 'desc';
 }
 
 /**
@@ -73,11 +43,12 @@ export interface AuditLogsResult {
  *   logs,
  *   isLoading,
  *   stats,
- *   uniqueActions,
- *   uniqueResources,
+ *   pagination,
  * } = useAuditLogsQuery({
  *   resource: 'pds',
  *   startDate: new Date('2025-01-01'),
+ *   page: 1,
+ *   limit: 25,
  * });
  *
  * // Display logs
@@ -85,94 +56,157 @@ export interface AuditLogsResult {
  * ```
  */
 export function useAuditLogsQuery(filters: AuditLogsFilters = {}) {
-  const query = useQuery<AuditLogsResult, Error>({
+  // Main query for audit logs list
+  const query = useQuery<AuditLogsListResponse, Error>({
     queryKey: auditLogsKeys.list(filters),
     queryFn: async () => {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 250));
+      // Build query parameters
+      const params = new URLSearchParams();
 
-      // Generate mock audit logs (in production, this would be fetched from API)
-      let allLogs = generateMockAuditLogs(200);
+      if (filters.page) params.append('page', filters.page.toString());
+      if (filters.limit) params.append('limit', filters.limit.toString());
+      if (filters.user) params.append('user', filters.user);
+      if (filters.action) params.append('action', filters.action);
+      if (filters.resource) params.append('resource', filters.resource);
+      if (filters.search) params.append('search', filters.search);
+      if (filters.startDate) {
+        params.append('startDate', filters.startDate.toISOString());
+      }
+      if (filters.endDate) {
+        params.append('endDate', filters.endDate.toISOString());
+      }
+      if (filters.sortBy) params.append('sortBy', filters.sortBy);
+      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
 
-      // Apply filters
-      if (filters.userId) {
-        allLogs = filterLogsByUser(allLogs, filters.userId);
+      const response = await fetch(
+        `/api/audit-logs?${params.toString()}`
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.error ||
+            `Failed to fetch audit logs: ${response.statusText}`
+        );
       }
 
-      if (filters.action) {
-        allLogs = filterLogsByAction(allLogs, filters.action);
-      }
-
-      if (filters.resource) {
-        allLogs = filterLogsByResource(allLogs, filters.resource);
-      }
-
-      if (filters.startDate || filters.endDate) {
-        allLogs = filterLogsByDateRange(allLogs, filters.startDate || null, filters.endDate || null);
-      }
-
-      // Get unique values for filter dropdowns
-      const uniqueActions = getUniqueActions(allLogs);
-      const uniqueResources = getUniqueResources(allLogs);
-
-      // Apply pagination
-      const limit = filters.limit || 50;
-      const offset = filters.offset || 0;
-      const paginatedLogs = allLogs.slice(offset, offset + limit);
-
-      // Extend logs with computed fields for display
-      const extendedLogs: ExtendedAuditLog[] = paginatedLogs.map((log) => ({
-        ...log,
-        user: log.metadata?.userName as string || 'Unknown User',
-        user_email: log.metadata?.email as string || 'N/A',
-        details: log.metadata ? JSON.stringify(log.metadata, null, 2) : null,
-      }));
-
-      // Get unique users count
-      const uniqueUsers = new Set(allLogs.map((log) => log.userId)).size;
-      const resourcesAffected = new Set(
-        allLogs.filter((log) => log.resourceId).map((log) => log.resourceId)
-      ).size;
-
-      return {
-        logs: extendedLogs,
-        total: allLogs.length,
-        hasMore: offset + limit < allLogs.length,
-        unique_users: uniqueUsers,
-        total_actions: allLogs.length,
-        resources_affected: resourcesAffected,
-        uniqueActions,
-        uniqueResources,
-      };
+      const data: AuditLogsListResponse = await response.json();
+      return data;
     },
-    staleTime: 1 * 60 * 1000, // 1 minute - audit logs should be relatively fresh
-    gcTime: 5 * 60 * 1000, // 5 minutes garbage collection
+    staleTime: 3 * 60 * 1000, // 3 minutes - audit logs should be relatively fresh
+    gcTime: 10 * 60 * 1000, // 10 minutes garbage collection
     retry: 2,
-    retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retryDelay: (attemptIndex: number) =>
+      Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   /**
-   * Query for audit log statistics
+   * Export audit logs to CSV format
+   * Fetches all logs matching current filters (no pagination) and downloads as CSV
    */
-  const useAuditLogStats = () => {
-    return useQuery({
-      queryKey: auditLogsKeys.stats(),
-      queryFn: async () => {
-        await new Promise((resolve) => setTimeout(resolve, 150));
+  const exportAuditLogsToCSV = async () => {
+    try {
+      // Build query parameters for export (without pagination)
+      const params = new URLSearchParams();
 
-        const allLogs = generateMockAuditLogs(200);
-        return getAuditLogStats(allLogs);
-      },
-      staleTime: 3 * 60 * 1000,
-    });
-  };
+      // Include all filters except page/limit to get ALL matching records
+      if (filters.user) params.append('user', filters.user);
+      if (filters.action) params.append('action', filters.action);
+      if (filters.resource) params.append('resource', filters.resource);
+      if (filters.search) params.append('search', filters.search);
+      if (filters.startDate) {
+        params.append('startDate', filters.startDate.toISOString());
+      }
+      if (filters.endDate) {
+        params.append('endDate', filters.endDate.toISOString());
+      }
+      if (filters.sortBy) params.append('sortBy', filters.sortBy);
+      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
 
-  /**
-   * Get logs for a specific user with full details
-   */
-  const getLogsForUser = (userId: string) => {
-    const allLogs = generateMockAuditLogs(200);
-    return filterLogsByUser(allLogs, userId);
+      // Set a high limit to get all records (API max is 100, so we need multiple requests for large datasets)
+      params.append('limit', '100');
+
+      // Fetch all pages
+      let allLogs: AuditLogsListResponse['logs'] = [];
+      let currentPage = 1;
+      let totalPages = 1;
+
+      do {
+        params.set('page', currentPage.toString());
+        const response = await fetch(`/api/audit-logs?${params.toString()}`);
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch audit logs for export');
+        }
+
+        const data: AuditLogsListResponse = await response.json();
+        allLogs = [...allLogs, ...data.logs];
+        totalPages = data.pagination.totalPages;
+        currentPage++;
+      } while (currentPage <= totalPages);
+
+      // Convert to CSV
+      const headers = [
+        'Timestamp',
+        'User ID',
+        'User Name',
+        'Employee ID',
+        'Action',
+        'Resource Type',
+        'Resource ID',
+        'IP Address',
+        'User Agent',
+        'Changes Summary',
+      ];
+
+      const rows = allLogs.map((log) => {
+        const userName = `${log.user.firstName} ${log.user.lastName}`;
+        const changesSummary = log.changes
+          ? JSON.stringify(log.changes).substring(0, 200) // Limit to 200 chars
+          : '';
+
+        return [
+          new Date(log.createdAt).toISOString(),
+          log.user.id,
+          userName,
+          log.user.employeeId || 'N/A',
+          log.action,
+          log.entityType,
+          log.entityId || 'N/A',
+          log.ipAddress || 'N/A',
+          log.userAgent || 'N/A',
+          changesSummary,
+        ];
+      });
+
+      // Build CSV content
+      const csvContent = [
+        headers.join(','),
+        ...rows.map((row) =>
+          row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+        ),
+      ].join('\n');
+
+      // Create blob and download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+
+      link.setAttribute('href', url);
+      link.setAttribute(
+        'download',
+        `audit-logs-${new Date().toISOString().split('T')[0]}.csv`
+      );
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      return { success: true, recordCount: allLogs.length };
+    } catch (error) {
+      console.error('[Audit Logs Export] Error:', error);
+      throw error;
+    }
   };
 
   /**
@@ -188,32 +222,18 @@ export function useAuditLogsQuery(filters: AuditLogsFilters = {}) {
       'system.data_export',
     ];
 
-    return query.data.logs.filter((log) => criticalActionTypes.includes(log.action));
+    return query.data.logs.filter((log) =>
+      criticalActionTypes.includes(log.action)
+    );
   };
 
   /**
-   * Get activity summary by action type
-   */
-  const getActivitySummary = () => {
-    if (!query.data) return null;
-
-    const stats = getAuditLogStats(query.data.logs);
-
-    return {
-      totalActions: stats.total,
-      actionBreakdown: stats.byAction,
-      resourceBreakdown: stats.byResource,
-      dateRange: stats.dateRange,
-    };
-  };
-
-  /**
-   * Get timeline of activities (grouped by date)
+   * Get activity timeline (grouped by date)
    */
   const getActivityTimeline = () => {
     if (!query.data) return [];
 
-    const timeline: Record<string, AuditLog[]> = {};
+    const timeline: Record<string, typeof query.data.logs> = {};
 
     query.data.logs.forEach((log) => {
       const dateKey = new Date(log.createdAt).toLocaleDateString();
@@ -238,13 +258,18 @@ export function useAuditLogsQuery(filters: AuditLogsFilters = {}) {
   const getSuspiciousActivity = () => {
     if (!query.data) return [];
 
-    const suspiciousPatterns = [];
+    const suspiciousPatterns: Array<{
+      type: string;
+      userId?: string;
+      count: number;
+      severity: 'low' | 'medium' | 'high';
+    }> = [];
 
     // Check for multiple failed login attempts from same user
     const loginAttempts: Record<string, number> = {};
     query.data.logs.forEach((log) => {
       if (log.action === 'user.login') {
-        loginAttempts[log.userId] = (loginAttempts[log.userId] || 0) + 1;
+        loginAttempts[log.user.id] = (loginAttempts[log.user.id] || 0) + 1;
       }
     });
 
@@ -274,44 +299,20 @@ export function useAuditLogsQuery(filters: AuditLogsFilters = {}) {
     return suspiciousPatterns;
   };
 
-  /**
-   * Export audit logs to CSV format (returns CSV string)
-   */
-  const exportToCSV = () => {
-    if (!query.data) return '';
-
-    const headers = ['Timestamp', 'User ID', 'Action', 'Resource', 'Resource ID', 'IP Address'];
-    const rows = query.data.logs.map((log) => [
-      new Date(log.createdAt).toISOString(),
-      log.userId,
-      log.action,
-      log.resource,
-      log.resourceId || '',
-      log.ipAddress || '',
-    ]);
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
-    ].join('\n');
-
-    return csvContent;
-  };
-
   return {
     ...query,
     logs: query.data?.logs ?? [],
-    total: query.data?.total ?? 0,
-    hasMore: query.data?.hasMore ?? false,
-    uniqueActions: query.data?.uniqueActions ?? [],
-    uniqueResources: query.data?.uniqueResources ?? [],
-    useAuditLogStats,
-    getLogsForUser,
+    pagination: query.data?.pagination,
+    stats: query.data?.stats,
+    total: query.data?.pagination?.total ?? 0,
+    hasMore:
+      query.data?.pagination
+        ? query.data.pagination.page < query.data.pagination.totalPages
+        : false,
+    exportAuditLogsToCSV,
     getCriticalActions,
-    getActivitySummary,
     getActivityTimeline,
     getSuspiciousActivity,
-    exportToCSV,
   };
 }
 
@@ -338,39 +339,38 @@ export function usePrefetchAuditLogs() {
     queryClient.prefetchQuery({
       queryKey: auditLogsKeys.list(filters),
       queryFn: async () => {
-        await new Promise((resolve) => setTimeout(resolve, 250));
+        // Build query parameters
+        const params = new URLSearchParams();
 
-        let allLogs = generateMockAuditLogs(200);
+        if (filters.page) params.append('page', filters.page.toString());
+        if (filters.limit) params.append('limit', filters.limit.toString());
+        if (filters.user) params.append('user', filters.user);
+        if (filters.action) params.append('action', filters.action);
+        if (filters.resource) params.append('resource', filters.resource);
+        if (filters.search) params.append('search', filters.search);
+        if (filters.startDate) {
+          params.append('startDate', filters.startDate.toISOString());
+        }
+        if (filters.endDate) {
+          params.append('endDate', filters.endDate.toISOString());
+        }
+        if (filters.sortBy) params.append('sortBy', filters.sortBy);
+        if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
 
-        if (filters.userId) {
-          allLogs = filterLogsByUser(allLogs, filters.userId);
+        const response = await fetch(`/api/audit-logs?${params.toString()}`);
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          throw new Error(
+            errorData?.error ||
+              `Failed to fetch audit logs: ${response.statusText}`
+          );
         }
 
-        if (filters.action) {
-          allLogs = filterLogsByAction(allLogs, filters.action);
-        }
-
-        if (filters.resource) {
-          allLogs = filterLogsByResource(allLogs, filters.resource);
-        }
-
-        if (filters.startDate || filters.endDate) {
-          allLogs = filterLogsByDateRange(allLogs, filters.startDate || null, filters.endDate || null);
-        }
-
-        const limit = filters.limit || 50;
-        const offset = filters.offset || 0;
-        const paginatedLogs = allLogs.slice(offset, offset + limit);
-
-        return {
-          logs: paginatedLogs,
-          total: allLogs.length,
-          hasMore: offset + limit < allLogs.length,
-          uniqueActions: getUniqueActions(allLogs),
-          uniqueResources: getUniqueResources(allLogs),
-        };
+        const data: AuditLogsListResponse = await response.json();
+        return data;
       },
-      staleTime: 1 * 60 * 1000,
+      staleTime: 3 * 60 * 1000,
     });
   };
 }

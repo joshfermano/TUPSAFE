@@ -230,3 +230,5 @@ export * from './admin/dashboard-analytics';
 export * from './admin/reports';
 export * from './admin/pds-submissions';
 export * from './admin/saln-submissions';
+export * from './admin/audit-logs';
+export * from './admin/settings';

@@ -12,6 +12,14 @@ import {
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { Cell, Line, LineChart, Pie, PieChart, XAxis, YAxis } from 'recharts';
+import {
+  PersonIcon,
+  BarChartIcon,
+  ComponentInstanceIcon,
+  GlobeIcon,
+  CalendarIcon,
+  ReaderIcon,
+} from '@radix-ui/react-icons';
 
 import {
   useAuditLogsQuery,
@@ -52,6 +60,14 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import { Separator } from '@/components/ui/separator';
 
 // Action types for filtering
 const ACTIONS = [
@@ -108,22 +124,37 @@ const AuditLogRow = memo(
   ({
     log,
     index,
+    onClick,
   }: {
     log: {
       id: string;
       createdAt: Date;
-      user: string;
-      user_email: string;
+      user: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        employeeId: string | null;
+      };
       action: string;
-      resource: string;
-      resourceId?: string | null;
-      ipAddress?: string;
-      details: string | null;
+      entityType: string;
+      entityId?: string | null;
+      ipAddress?: string | null;
+      userAgent?: string | null;
+      changes: Record<string, unknown> | null;
     };
     index: number;
+    onClick: () => void;
   }) => {
+    const userName = `${log.user.firstName} ${log.user.lastName}`;
+    const userEmail = log.user.employeeId || log.user.id.substring(0, 8);
+    const changesSummary = log.changes ? JSON.stringify(log.changes).substring(0, 100) : null;
+
     return (
-      <EnhancedTableRow index={index}>
+      <EnhancedTableRow
+        index={index}
+        onClick={onClick}
+        className="cursor-pointer hover:bg-muted/50 transition-colors"
+      >
         <EnhancedTableCell className="hidden lg:table-cell">
           <div className="flex flex-col gap-1">
             <span className="text-sm">
@@ -136,9 +167,9 @@ const AuditLogRow = memo(
         </EnhancedTableCell>
         <EnhancedTableCell>
           <div className="flex flex-col gap-1">
-            <span className="font-medium">{log.user}</span>
+            <span className="font-medium">{userName}</span>
             <span className="text-xs text-muted-foreground">
-              {log.user_email}
+              {userEmail}
             </span>
           </div>
         </EnhancedTableCell>
@@ -154,10 +185,10 @@ const AuditLogRow = memo(
         </EnhancedTableCell>
         <EnhancedTableCell>
           <div className="flex flex-col gap-1">
-            <span className="capitalize">{log.resource}</span>
-            {log.resourceId && (
+            <span className="capitalize">{log.entityType}</span>
+            {log.entityId && (
               <span className="text-xs text-muted-foreground">
-                ID: {log.resourceId.substring(0, 8)}...
+                ID: {log.entityId.substring(0, 8)}...
               </span>
             )}
           </div>
@@ -168,7 +199,7 @@ const AuditLogRow = memo(
           </code>
         </EnhancedTableCell>
         <EnhancedTableCell className="max-w-[200px] truncate">
-          {log.details || 'N/A'}
+          {changesSummary || 'N/A'}
         </EnhancedTableCell>
       </EnhancedTableRow>
     );
@@ -192,6 +223,24 @@ const LoadingTable = memo(() => (
 
 LoadingTable.displayName = 'LoadingTable';
 
+// Type definition for the selected log
+type SelectedLog = {
+  id: string;
+  createdAt: Date;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    employeeId: string | null;
+  };
+  action: string;
+  entityType: string;
+  entityId?: string | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  changes: Record<string, unknown> | null;
+};
+
 // Main Audit Logs Page Component
 export default function AuditLogsPage() {
   const [userFilter, setUserFilter] = useState('all');
@@ -199,6 +248,8 @@ export default function AuditLogsPage() {
   const [resourceFilter, setResourceFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
+  const [selectedLog, setSelectedLog] = useState<SelectedLog | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   // Build filters object
   const filters = useMemo<AuditLogsFilters>(
@@ -212,7 +263,7 @@ export default function AuditLogsPage() {
   );
 
   // Fetch audit logs with filters
-  const { data, isLoading, isError, error } = useAuditLogsQuery(filters);
+  const { logs, stats, isLoading, isError, error, exportAuditLogsToCSV } = useAuditLogsQuery(filters);
 
   // Fetch analytics data for charts
   const {
@@ -240,9 +291,17 @@ export default function AuditLogsPage() {
     setSearchQuery('');
   }, []);
 
-  const handleExportCSV = useCallback(() => {
-    console.log('Export to CSV clicked');
-    // TODO: Implement CSV export
+  const handleExportCSV = useCallback(async () => {
+    try {
+      await exportAuditLogsToCSV();
+    } catch (error) {
+      console.error('Failed to export audit logs:', error);
+    }
+  }, [exportAuditLogsToCSV]);
+
+  const handleLogClick = useCallback((log: SelectedLog) => {
+    setSelectedLog(log);
+    setSheetOpen(true);
   }, []);
 
   const hasActiveFilters =
@@ -253,17 +312,17 @@ export default function AuditLogsPage() {
 
   // Extract unique users from logs for filter
   const availableUsers = useMemo(() => {
-    if (!data?.logs) return [{ value: 'all', label: 'All Users' }];
+    if (!logs || logs.length === 0) return [{ value: 'all', label: 'All Users' }];
 
     const uniqueUsers = Array.from(
-      new Set(data.logs.map((log) => log.user))
-    ).map((user) => ({
-      value: user,
-      label: user,
+      new Set(logs.map((log) => `${log.user.firstName} ${log.user.lastName}`))
+    ).map((userName) => ({
+      value: userName,
+      label: userName,
     }));
 
     return [{ value: 'all', label: 'All Users' }, ...uniqueUsers];
-  }, [data?.logs]);
+  }, [logs]);
 
   return (
     <PageTransition className="space-y-6">
@@ -282,14 +341,14 @@ export default function AuditLogsPage() {
       </div>
 
       {/* Stats Cards */}
-      {data && (
+      {stats && (
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">Total Logs</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{data.total}</div>
+              <div className="text-2xl font-bold">{stats.totalLogs}</div>
               <p className="text-xs text-muted-foreground">All audit entries</p>
             </CardContent>
           </Card>
@@ -301,7 +360,7 @@ export default function AuditLogsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{data.unique_users}</div>
+              <div className="text-2xl font-bold">{stats.uniqueUsers}</div>
               <p className="text-xs text-muted-foreground">Active in period</p>
             </CardContent>
           </Card>
@@ -313,7 +372,7 @@ export default function AuditLogsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{data.total_actions}</div>
+              <div className="text-2xl font-bold">{stats.totalActions}</div>
               <p className="text-xs text-muted-foreground">System activities</p>
             </CardContent>
           </Card>
@@ -326,7 +385,7 @@ export default function AuditLogsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {data.resources_affected}
+                {stats.resourcesAffected}
               </div>
               <p className="text-xs text-muted-foreground">Modified entities</p>
             </CardContent>
@@ -527,7 +586,7 @@ export default function AuditLogsPage() {
             {hasActiveFilters && (
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
-                  {data?.logs?.length || 0} log(s) found
+                  {logs?.length || 0} log(s) found
                 </p>
                 <Button
                   variant="outline"
@@ -547,7 +606,7 @@ export default function AuditLogsPage() {
         <CardHeader>
           <CardTitle>Audit Logs</CardTitle>
           <CardDescription>
-            {data?.logs?.length || 0} total log(s)
+            {logs?.length || 0} log(s) on this page
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -563,7 +622,7 @@ export default function AuditLogsPage() {
           )}
 
           {/* Empty State */}
-          {!isLoading && !isError && data?.logs?.length === 0 && (
+          {!isLoading && !isError && logs?.length === 0 && (
             <EmptyState
               icon={hasActiveFilters ? Search : FileSearch}
               title={
@@ -587,7 +646,7 @@ export default function AuditLogsPage() {
           )}
 
           {/* Audit Logs Table */}
-          {!isLoading && !isError && data?.logs && data.logs.length > 0 && (
+          {!isLoading && !isError && logs && logs.length > 0 && (
             <div className="overflow-x-auto">
               <EnhancedTable>
                 <EnhancedTableHeader>
@@ -605,8 +664,13 @@ export default function AuditLogsPage() {
                   </EnhancedTableRow>
                 </EnhancedTableHeader>
                 <EnhancedTableBody>
-                  {data.logs.map((log, index) => (
-                    <AuditLogRow key={log.id} log={log} index={index} />
+                  {logs.map((log, index) => (
+                    <AuditLogRow
+                      key={log.id}
+                      log={log}
+                      index={index}
+                      onClick={() => handleLogClick(log)}
+                    />
                   ))}
                 </EnhancedTableBody>
               </EnhancedTable>
@@ -614,6 +678,204 @@ export default function AuditLogsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Audit Log Details Sheet */}
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+          {selectedLog && (
+            <>
+              <SheetHeader>
+                <div className="flex items-center gap-2">
+                  <Badge variant={getActionBadgeVariant(selectedLog.action)}>
+                    {selectedLog.action}
+                  </Badge>
+                </div>
+                <SheetTitle className="text-2xl">Audit Log Details</SheetTitle>
+                <SheetDescription>
+                  {format(new Date(selectedLog.createdAt), 'MMMM d, yyyy \'at\' h:mm:ss a')}
+                </SheetDescription>
+              </SheetHeader>
+
+              <div className="space-y-6 py-6">
+                {/* User Section */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <PersonIcon className="h-5 w-5 text-primary" />
+                    <h3 className="text-lg font-semibold">User Information</h3>
+                  </div>
+                  <Separator />
+                  <div className="grid gap-3 pl-7">
+                    <div className="grid grid-cols-3 gap-2">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        Name:
+                      </span>
+                      <span className="col-span-2 text-sm">
+                        {selectedLog.user.firstName} {selectedLog.user.lastName}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        User ID:
+                      </span>
+                      <span className="col-span-2 text-sm font-mono">
+                        {selectedLog.user.id}
+                      </span>
+                    </div>
+                    {selectedLog.user.employeeId && (
+                      <div className="grid grid-cols-3 gap-2">
+                        <span className="text-sm font-medium text-muted-foreground">
+                          Employee ID:
+                        </span>
+                        <span className="col-span-2 text-sm font-mono">
+                          {selectedLog.user.employeeId}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Action Section */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <BarChartIcon className="h-5 w-5 text-primary" />
+                    <h3 className="text-lg font-semibold">Action Details</h3>
+                  </div>
+                  <Separator />
+                  <div className="grid gap-3 pl-7">
+                    <div className="grid grid-cols-3 gap-2">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        Action:
+                      </span>
+                      <span className="col-span-2 text-sm">
+                        <Badge variant={getActionBadgeVariant(selectedLog.action)}>
+                          {selectedLog.action}
+                        </Badge>
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        Log ID:
+                      </span>
+                      <span className="col-span-2 text-sm font-mono break-all">
+                        {selectedLog.id}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Resource Section */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <ComponentInstanceIcon className="h-5 w-5 text-primary" />
+                    <h3 className="text-lg font-semibold">Resource Information</h3>
+                  </div>
+                  <Separator />
+                  <div className="grid gap-3 pl-7">
+                    <div className="grid grid-cols-3 gap-2">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        Entity Type:
+                      </span>
+                      <span className="col-span-2 text-sm capitalize">
+                        {selectedLog.entityType}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        Entity ID:
+                      </span>
+                      <span className="col-span-2 text-sm font-mono break-all">
+                        {selectedLog.entityId || 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Changes Section */}
+                {selectedLog.changes && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <ReaderIcon className="h-5 w-5 text-primary" />
+                      <h3 className="text-lg font-semibold">Changes</h3>
+                    </div>
+                    <Separator />
+                    <div className="pl-7">
+                      <div className="rounded-md bg-muted p-4">
+                        <pre className="text-xs overflow-x-auto whitespace-pre-wrap wrap-break-word">
+                          {JSON.stringify(selectedLog.changes, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Metadata Section */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <GlobeIcon className="h-5 w-5 text-primary" />
+                    <h3 className="text-lg font-semibold">Metadata</h3>
+                  </div>
+                  <Separator />
+                  <div className="grid gap-3 pl-7">
+                    <div className="grid grid-cols-3 gap-2">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        IP Address:
+                      </span>
+                      <span className="col-span-2">
+                        <code className="rounded bg-muted px-2 py-1 text-xs">
+                          {selectedLog.ipAddress || 'N/A'}
+                        </code>
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        User Agent:
+                      </span>
+                      <span className="col-span-2 text-xs break-all">
+                        {selectedLog.userAgent || 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Timestamp Section */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon className="h-5 w-5 text-primary" />
+                    <h3 className="text-lg font-semibold">Timestamp</h3>
+                  </div>
+                  <Separator />
+                  <div className="grid gap-3 pl-7">
+                    <div className="grid grid-cols-3 gap-2">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        Date:
+                      </span>
+                      <span className="col-span-2 text-sm">
+                        {format(new Date(selectedLog.createdAt), 'MMMM d, yyyy')}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        Time:
+                      </span>
+                      <span className="col-span-2 text-sm">
+                        {format(new Date(selectedLog.createdAt), 'h:mm:ss a')}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        ISO 8601:
+                      </span>
+                      <span className="col-span-2 text-xs font-mono break-all">
+                        {new Date(selectedLog.createdAt).toISOString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
     </PageTransition>
   );
 }
