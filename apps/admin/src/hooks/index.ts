@@ -48,8 +48,10 @@ export {
 } from './useSalnSubmissionsQuery';
 export type {
   SalnSubmissionsFilters,
-  SalnSubmissionWithDetails,
 } from './useSalnSubmissionsQuery';
+
+// SALN Stats Query Hook
+export { useSalnStatsQuery } from './useSalnStatsQuery';
 
 // Audit Logs Query Hook
 export {

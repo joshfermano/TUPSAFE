@@ -103,7 +103,9 @@ export function RealAuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const response = await fetch('/api/auth/profile');
       if (!response.ok) {
-        throw new Error('Failed to fetch profile');
+        // Don't throw error - user might not be fully authenticated yet
+        console.warn('Profile fetch returned', response.status, '- user may need to login');
+        return null;
       }
       const data = await response.json();
       return data.profile as AdminProfile;

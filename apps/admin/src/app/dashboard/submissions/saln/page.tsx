@@ -21,8 +21,10 @@ import { Area, AreaChart, XAxis, YAxis } from 'recharts';
 import {
   useSalnSubmissionsQuery,
   type SalnSubmissionsFilters,
-  type SalnSubmissionWithDetails,
 } from '@/hooks/useSalnSubmissionsQuery';
+import { useSalnStatsQuery } from '@/hooks/useSalnStatsQuery';
+import { useDepartmentsQuery } from '@/hooks/useDepartmentsQuery';
+import type { SalnSubmissionListItem } from '@tupsafe/types';
 import {
   EmptyState,
   ErrorAlert,
@@ -78,14 +80,6 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 
-// Available departments for filtering
-const DEPARTMENTS = [
-  { value: 'all', label: 'All Departments' },
-  { value: 'engineering', label: 'Engineering' },
-  { value: 'science', label: 'Science' },
-  { value: 'liberal_arts', label: 'Liberal Arts' },
-  { value: 'industrial_technology', label: 'Industrial Technology' },
-];
 
 // Generate year options (current year and previous 5 years)
 const YEARS = (() => {
@@ -100,19 +94,6 @@ const YEARS = (() => {
 
 // Status types
 type StatusType = 'all' | 'submitted' | 'reviewing' | 'approved' | 'rejected';
-
-// Mock data for net worth trend chart (average net worth over years)
-const getNetWorthTrendData = () => {
-  const currentYear = new Date().getFullYear();
-  const years = [];
-  for (let i = 5; i >= 0; i--) {
-    years.push({
-      year: (currentYear - i).toString(),
-      avgNetWorth: 800000 + i * 150000 + Math.floor(Math.random() * 100000),
-    });
-  }
-  return years;
-};
 
 // Format currency
 const formatCurrency = (amount: number): string => {
@@ -156,19 +137,17 @@ const useCountingAnimation = (end: number, duration: number = 1500) => {
 
 // SALN Submission Row Component (memoized)
 const SalnSubmissionRow = memo(
-  ({ submission, index }: { submission: SalnSubmissionWithDetails; index: number }) => {
+  ({ submission, index }: { submission: SalnSubmissionListItem; index: number }) => {
     const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
 
     const handleAction = useCallback((action: string) => {
-      console.log(`Action: ${action} for submission:`, submission.submission.id);
+      console.log(`Action: ${action} for submission:`, submission.id);
       // TODO: Implement actions
-    }, [submission.submission.id]);
+    }, [submission.id]);
 
-    const employeeName = submission.user
-      ? `${submission.user.firstName} ${submission.user.lastName}`
-      : 'Unknown';
+    const employeeName = `${submission.employee.firstName} ${submission.employee.lastName}`;
 
-    const netWorth = parseFloat(submission.submission.netWorth || '0');
+    const netWorth = parseFloat(submission.netWorth || '0');
 
     return (
       <>
@@ -177,8 +156,8 @@ const SalnSubmissionRow = memo(
             <div className="flex items-center gap-3">
               <UserAvatar
                 user={{
-                  firstName: submission.user?.firstName || 'Unknown',
-                  lastName: submission.user?.lastName || 'User',
+                  firstName: submission.employee.firstName,
+                  lastName: submission.employee.lastName,
                   avatarUrl: null,
                 }}
                 size="sm"
@@ -186,13 +165,13 @@ const SalnSubmissionRow = memo(
               <div>
                 <p className="font-medium">{employeeName}</p>
                 <p className="text-sm text-muted-foreground">
-                  {submission.user?.employeeId || 'N/A'}
+                  {submission.employee.employeeId || 'N/A'}
                 </p>
               </div>
             </div>
           </EnhancedTableCell>
           <EnhancedTableCell className="hidden md:table-cell">
-            <Badge variant="outline">{submission.submission.year}</Badge>
+            <Badge variant="outline">{submission.year}</Badge>
           </EnhancedTableCell>
           <EnhancedTableCell className="hidden lg:table-cell">
             <span className="font-medium">
@@ -200,13 +179,13 @@ const SalnSubmissionRow = memo(
             </span>
           </EnhancedTableCell>
           <EnhancedTableCell className="hidden xl:table-cell">
-            {submission.department?.name || 'N/A'}
+            {submission.employee.department?.name || 'N/A'}
           </EnhancedTableCell>
           <EnhancedTableCell>
-            <StatusBadge status={submission.submission.status} />
+            <StatusBadge status={submission.status} />
           </EnhancedTableCell>
           <EnhancedTableCell className="hidden 2xl:table-cell">
-            {formatDistanceToNow(new Date(submission.submission.createdAt), {
+            {formatDistanceToNow(new Date(submission.createdAt), {
               addSuffix: true,
             })}
           </EnhancedTableCell>
@@ -224,7 +203,7 @@ const SalnSubmissionRow = memo(
                   Quick Review
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href={`/dashboard/submissions/saln/view/${submission.submission.id}`}>
+                  <Link href={`/dashboard/submissions/saln/view/${submission.id}`}>
                     View Details
                   </Link>
                 </DropdownMenuItem>
@@ -233,7 +212,7 @@ const SalnSubmissionRow = memo(
                   <Download className="mr-2 h-4 w-4" />
                   Download PDF
                 </DropdownMenuItem>
-                {submission.submission.status === 'submitted' && (
+                {submission.status === 'submitted' && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -263,7 +242,7 @@ const SalnSubmissionRow = memo(
             <DialogHeader>
               <DialogTitle>Quick Review - SALN Submission</DialogTitle>
               <DialogDescription>
-                {employeeName} - {submission.submission.year}
+                {employeeName} - {submission.year}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -277,28 +256,28 @@ const SalnSubmissionRow = memo(
                   </div>
                   <div>
                     <p className="text-sm font-medium">Status</p>
-                    <StatusBadge status={submission.submission.status} />
+                    <StatusBadge status={submission.status} />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm font-medium">Submitted</p>
                     <p className="text-sm text-muted-foreground">
-                      {format(new Date(submission.submission.createdAt), 'PPP')}
+                      {format(new Date(submission.createdAt), 'PPP')}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm font-medium">Department</p>
                     <p className="text-sm text-muted-foreground">
-                      {submission.department?.name || 'N/A'}
+                      {submission.employee.department?.name || 'N/A'}
                     </p>
                   </div>
                 </div>
-                {submission.submission.approvedBy && (
+                {submission.reviewer && (
                   <div>
-                    <p className="text-sm font-medium">Approved By</p>
+                    <p className="text-sm font-medium">Reviewed By</p>
                     <p className="text-sm text-muted-foreground">
-                      {submission.submission.approvedBy}
+                      {submission.reviewer.firstName} {submission.reviewer.lastName}
                     </p>
                   </div>
                 )}
@@ -311,7 +290,7 @@ const SalnSubmissionRow = memo(
                   Close
                 </Button>
                 <Button asChild>
-                  <Link href={`/dashboard/submissions/saln/view/${submission.submission.id}`}>
+                  <Link href={`/dashboard/submissions/saln/view/${submission.id}`}>
                     View Full Details
                   </Link>
                 </Button>
@@ -364,14 +343,39 @@ export default function SalnSubmissionsPage() {
 
   // Fetch submissions with filters
   const {
-    data: submissions,
+    submissions,
     isLoading,
     isError,
     error,
   } = useSalnSubmissionsQuery(filters);
 
-  // Mock net worth trend data
-  const netWorthTrendData = useMemo(() => getNetWorthTrendData(), []);
+  // Fetch SALN statistics for analytics
+  const { data: salnStats, isLoading: statsLoading } = useSalnStatsQuery();
+
+  // Fetch departments for filter dropdown
+  const { data: departmentsData, isLoading: departmentsLoading } =
+    useDepartmentsQuery();
+
+  // Format net worth trend data from yearly comparison
+  const netWorthTrendData = useMemo(() => {
+    if (!salnStats?.yearlyComparison) return [];
+    return salnStats.yearlyComparison.map((item) => ({
+      year: item.year.toString(),
+      avgNetWorth: parseFloat(item.avgNetWorth),
+    }));
+  }, [salnStats]);
+
+  // Format departments for dropdown
+  const departments = useMemo(() => {
+    if (!departmentsData) return [{ value: 'all', label: 'All Departments' }];
+    return [
+      { value: 'all', label: 'All Departments' },
+      ...departmentsData.map((dept) => ({
+        value: dept.id,
+        label: dept.name,
+      })),
+    ];
+  }, [departmentsData]);
 
   // Handle search input
   const handleSearchChange = useCallback(
@@ -415,16 +419,26 @@ export default function SalnSubmissionsPage() {
           <CardDescription>Year-over-year average net worth progression</CardDescription>
         </CardHeader>
         <CardContent>
-          <ChartContainer
-            config={{
-              avgNetWorth: {
-                label: 'Avg. Net Worth',
-                color: '#8B1538',
-              },
-            }}
-            className="h-[300px]"
-          >
-            <AreaChart data={netWorthTrendData}>
+          {statsLoading ? (
+            <div className="h-[300px] flex items-center justify-center">
+              <div className="space-y-3 w-full">
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+              </div>
+            </div>
+          ) : netWorthTrendData.length > 0 ? (
+            <ChartContainer
+              config={{
+                avgNetWorth: {
+                  label: 'Avg. Net Worth',
+                  color: '#8B1538',
+                },
+              }}
+              className="h-[300px]"
+            >
+              <AreaChart data={netWorthTrendData}>
               <defs>
                 <linearGradient id="netWorthGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#8B1538" stopOpacity={0.3}/>
@@ -462,6 +476,11 @@ export default function SalnSubmissionsPage() {
               />
             </AreaChart>
           </ChartContainer>
+          ) : (
+            <div className="h-[300px] flex items-center justify-center">
+              <p className="text-sm text-muted-foreground">No data available</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -528,16 +547,23 @@ export default function SalnSubmissionsPage() {
               <Select
                 value={departmentFilter}
                 onValueChange={setDepartmentFilter}
+                disabled={departmentsLoading}
               >
                 <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Select department" />
                 </SelectTrigger>
                 <SelectContent className="glass-dropdown">
-                  {DEPARTMENTS.map((dept) => (
-                    <SelectItem key={dept.value} value={dept.value}>
-                      {dept.label}
+                  {departmentsLoading ? (
+                    <SelectItem value="loading" disabled>
+                      Loading departments...
                     </SelectItem>
-                  ))}
+                  ) : (
+                    departments.map((dept) => (
+                      <SelectItem key={dept.value} value={dept.value}>
+                        {dept.label}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -546,7 +572,7 @@ export default function SalnSubmissionsPage() {
             {hasActiveFilters && (
               <div className="flex items-center justify-between rounded-lg bg-muted/50 px-4 py-3 border border-subtle">
                 <p className="text-sm text-muted-foreground">
-                  {submissions?.length || 0} submission(s) found
+                  {submissions.length} submission(s) found
                 </p>
                 <Button
                   variant="outline"
@@ -567,7 +593,7 @@ export default function SalnSubmissionsPage() {
         <CardHeader>
           <CardTitle>Submissions</CardTitle>
           <CardDescription>
-            {submissions?.length || 0} total submission(s)
+            {submissions.length} total submission(s)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -583,7 +609,7 @@ export default function SalnSubmissionsPage() {
           )}
 
           {/* Empty State */}
-          {!isLoading && !isError && submissions?.length === 0 && (
+          {!isLoading && !isError && submissions.length === 0 && (
             <EmptyState
               icon={hasActiveFilters ? Search : Landmark}
               title={
@@ -609,10 +635,7 @@ export default function SalnSubmissionsPage() {
           )}
 
           {/* Submissions Table */}
-          {!isLoading &&
-            !isError &&
-            submissions &&
-            submissions.length > 0 && (
+          {!isLoading && !isError && submissions.length > 0 && (
               <div className="overflow-x-auto">
                 <EnhancedTable>
                   <EnhancedTableHeader>
@@ -639,7 +662,7 @@ export default function SalnSubmissionsPage() {
                   <EnhancedTableBody>
                     {submissions.map((submission, index) => (
                       <SalnSubmissionRow
-                        key={submission.submission.id}
+                        key={submission.id}
                         submission={submission}
                         index={index}
                       />
