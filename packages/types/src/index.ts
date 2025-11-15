@@ -228,3 +228,4 @@ export * from './admin/registration-approval';
 export * from './admin/submission-review';
 export * from './admin/dashboard-analytics';
 export * from './admin/reports';
+export * from './admin/pds-submissions';

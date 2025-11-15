@@ -31,8 +31,14 @@ export {
 } from './usePdsSubmissionsQuery';
 export type {
   PdsSubmissionsFilters,
-  PdsSubmissionWithDetails,
 } from './usePdsSubmissionsQuery';
+
+// Departments Query Hook
+export { useDepartmentsQuery } from './useDepartmentsQuery';
+export type { Department } from './useDepartmentsQuery';
+
+// PDS Stats Query Hook
+export { usePdsStatsQuery } from './usePdsStatsQuery';
 
 // SALN Submissions Query Hook
 export {
