@@ -21,7 +21,7 @@ import {
   positions,
 } from '@tupsafe/database/server';
 import { eq, and, or, like, ilike, desc, asc, sql, count } from 'drizzle-orm';
-import { checkUserRole, createServerClient } from '@tupsafe/auth/server';
+import { checkUserRoleFromSupabase, createServerClient } from '@tupsafe/auth/server';
 import {
   listRegistrationsSchema,
   type RegistrationListItem,
@@ -30,8 +30,8 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    // Authorization check - HR or Admin only
-    const hasPermission = await checkUserRole(['hr', 'admin']);
+    // Authorization check - HR or Admin only (using Supabase session)
+    const hasPermission = await checkUserRoleFromSupabase(['hr', 'admin']);
 
     if (!hasPermission) {
       return NextResponse.json(

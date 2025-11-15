@@ -33,7 +33,7 @@ interface UserFiltersProps {
 }
 
 const ROLES = [
-  { value: '', label: 'All Roles' },
+  { value: 'all', label: 'All Roles' },
   { value: 'employee', label: 'Employee' },
   { value: 'hr', label: 'HR Personnel' },
   { value: 'admin', label: 'Admin' },
@@ -42,13 +42,13 @@ const ROLES = [
 ];
 
 const USER_TYPES = [
-  { value: '', label: 'All Types' },
+  { value: 'all', label: 'All Types' },
   { value: 'employee', label: 'Employee' },
   { value: 'applicant', label: 'Applicant' },
 ];
 
 const ACCOUNT_STATUSES = [
-  { value: '', label: 'All Statuses' },
+  { value: 'all', label: 'All Statuses' },
   { value: 'pending', label: 'Pending' },
   { value: 'active', label: 'Active' },
   { value: 'suspended', label: 'Suspended' },
@@ -56,13 +56,13 @@ const ACCOUNT_STATUSES = [
 ];
 
 const ACTIVE_STATUSES = [
-  { value: '', label: 'All' },
+  { value: 'all', label: 'All' },
   { value: 'true', label: 'Active Only' },
   { value: 'false', label: 'Inactive Only' },
 ];
 
 const EMPLOYMENT_CATEGORIES = [
-  { value: '', label: 'All Categories' },
+  { value: 'all', label: 'All Categories' },
   { value: 'faculty', label: 'Faculty' },
   { value: 'administrative', label: 'Administrative' },
   { value: 'contractual', label: 'Contractual' },
@@ -75,12 +75,12 @@ export function UserFilters({ onFilterChange, totalResults }: UserFiltersProps) 
 
   // Local state for immediate UI updates
   const [search, setSearch] = useState(searchParams.get('search') || '');
-  const [role, setRole] = useState(searchParams.get('role') || '');
-  const [userType, setUserType] = useState(searchParams.get('userType') || '');
-  const [accountStatus, setAccountStatus] = useState(searchParams.get('accountStatus') || '');
-  const [isActive, setIsActive] = useState(searchParams.get('isActive') || '');
+  const [role, setRole] = useState(searchParams.get('role') || 'all');
+  const [userType, setUserType] = useState(searchParams.get('userType') || 'all');
+  const [accountStatus, setAccountStatus] = useState(searchParams.get('accountStatus') || 'all');
+  const [isActive, setIsActive] = useState(searchParams.get('isActive') || 'all');
   const [employmentCategory, setEmploymentCategory] = useState(
-    searchParams.get('employmentCategory') || ''
+    searchParams.get('employmentCategory') || 'all'
   );
 
   // Debounced search effect
@@ -132,17 +132,17 @@ export function UserFilters({ onFilterChange, totalResults }: UserFiltersProps) 
 
   const handleRoleChange = (value: string) => {
     setRole(value);
-    updateFilters({ role: (value || undefined) as 'employee' | 'hr' | 'admin' | 'supervisor' | 'auditor' | undefined });
+    updateFilters({ role: (value === 'all' ? undefined : value) as 'employee' | 'hr' | 'admin' | 'supervisor' | 'auditor' | undefined });
   };
 
   const handleUserTypeChange = (value: string) => {
     setUserType(value);
-    updateFilters({ userType: (value || undefined) as 'employee' | 'applicant' | undefined });
+    updateFilters({ userType: (value === 'all' ? undefined : value) as 'employee' | 'applicant' | undefined });
   };
 
   const handleAccountStatusChange = (value: string) => {
     setAccountStatus(value);
-    updateFilters({ accountStatus: value as any });
+    updateFilters({ accountStatus: (value === 'all' ? undefined : value) as any });
   };
 
   const handleIsActiveChange = (value: string) => {
@@ -152,16 +152,16 @@ export function UserFilters({ onFilterChange, totalResults }: UserFiltersProps) 
 
   const handleEmploymentCategoryChange = (value: string) => {
     setEmploymentCategory(value);
-    updateFilters({ employmentCategory: value as any });
+    updateFilters({ employmentCategory: (value === 'all' ? undefined : value) as any });
   };
 
   const handleClearFilters = () => {
     setSearch('');
-    setRole('');
-    setUserType('');
-    setAccountStatus('');
-    setIsActive('');
-    setEmploymentCategory('');
+    setRole('all');
+    setUserType('all');
+    setAccountStatus('all');
+    setIsActive('all');
+    setEmploymentCategory('all');
     router.push('?page=1', { scroll: false });
     if (onFilterChange) {
       onFilterChange({ page: 1 });
@@ -169,7 +169,14 @@ export function UserFilters({ onFilterChange, totalResults }: UserFiltersProps) 
   };
 
   const activeFilterCount =
-    [search, role, userType, accountStatus, isActive, employmentCategory].filter(Boolean).length;
+    [
+      search,
+      role !== 'all' ? role : '',
+      userType !== 'all' ? userType : '',
+      accountStatus !== 'all' ? accountStatus : '',
+      isActive !== 'all' ? isActive : '',
+      employmentCategory !== 'all' ? employmentCategory : ''
+    ].filter(Boolean).length;
 
   return (
     <Card className="border-muted/50">

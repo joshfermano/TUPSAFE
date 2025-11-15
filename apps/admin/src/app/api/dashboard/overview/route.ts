@@ -7,7 +7,7 @@ import {
   salnSubmissions,
   auditLogs,
 } from '@tupsafe/database/schema';
-import { eq, and, gte, sql, desc, count, avg } from 'drizzle-orm';
+import { eq, and, gte, lt, sql, desc, count, avg } from 'drizzle-orm';
 import type { DashboardOverviewResponse } from '@tupsafe/types';
 
 /**
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
         .where(
           and(
             gte(profiles.createdAt, twoMonthsAgo),
-            sql`${profiles.createdAt} < ${oneMonthAgo}`
+            lt(profiles.createdAt, oneMonthAgo)
           )
         ),
 

@@ -18,7 +18,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkUserRole, getSessionUser } from '@tupsafe/auth/server';
+import { checkUserRoleFromSupabase, getUserFromSupabase } from '@tupsafe/auth/server';
 import { db, profiles, departments, positions } from '@tupsafe/database/server';
 import { and, eq, or, ilike, desc, asc, sql, count } from 'drizzle-orm';
 import {
@@ -29,8 +29,8 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify admin/HR/supervisor permissions
-    const hasPermission = await checkUserRole(['admin', 'hr', 'supervisor']);
+    // Verify admin/HR/supervisor permissions (using Supabase session)
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr', 'supervisor']);
 
     if (!hasPermission) {
       return NextResponse.json(
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get current user for audit logging
-    const sessionUser = await getSessionUser();
+    const sessionUser = await getUserFromSupabase();
     if (!sessionUser) {
       return NextResponse.json(
         { error: 'Session expired' },

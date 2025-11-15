@@ -8,6 +8,201 @@
 import { z } from 'zod';
 
 /**
+ * Base types for PDS data sections
+ * These represent the structured data from CSC forms
+ */
+export interface PDSPersonalInfo {
+  surname?: string;
+  firstName?: string;
+  middleName?: string;
+  nameExtension?: string;
+  dateOfBirth?: string;
+  placeOfBirth?: string;
+  sex?: string;
+  civilStatus?: string;
+  height?: number;
+  weight?: number;
+  bloodType?: string;
+  gsisNo?: string;
+  pagibigNo?: string;
+  philhealthNo?: string;
+  sssNo?: string;
+  tinNo?: string;
+  citizenship?: string;
+  residentialAddress?: {
+    houseNo?: string;
+    street?: string;
+    subdivision?: string;
+    barangay?: string;
+    city?: string;
+    province?: string;
+    zipCode?: string;
+  };
+  permanentAddress?: {
+    houseNo?: string;
+    street?: string;
+    subdivision?: string;
+    barangay?: string;
+    city?: string;
+    province?: string;
+    zipCode?: string;
+  };
+  telephoneNo?: string;
+  mobileNo?: string;
+  emailAddress?: string;
+}
+
+export interface PDSFamilyBackground {
+  spouse?: {
+    surname?: string;
+    firstName?: string;
+    middleName?: string;
+    nameExtension?: string;
+    occupation?: string;
+    employer?: string;
+    businessAddress?: string;
+    telephoneNo?: string;
+  };
+  father?: {
+    surname?: string;
+    firstName?: string;
+    middleName?: string;
+    nameExtension?: string;
+  };
+  mother?: {
+    maidenName?: string;
+    surname?: string;
+    firstName?: string;
+    middleName?: string;
+  };
+}
+
+export interface PDSChild {
+  name: string;
+  dateOfBirth: string;
+}
+
+export interface PDSEducation {
+  level: string;
+  schoolName: string;
+  basicEducation?: string;
+  periodFrom?: string;
+  periodTo?: string;
+  highestLevel?: string;
+  yearGraduated?: string;
+  scholarshipHonors?: string;
+}
+
+export interface PDSCivilService {
+  careerService?: string;
+  rating?: number;
+  dateOfExamination?: string;
+  placeOfExamination?: string;
+  licenseNumber?: string;
+  validity?: string;
+}
+
+export interface PDSWorkExperience {
+  positionTitle?: string;
+  department?: string;
+  monthlySalary?: number;
+  salaryGrade?: string;
+  statusOfAppointment?: string;
+  govService?: boolean;
+  periodFrom?: string;
+  periodTo?: string;
+}
+
+export interface PDSVoluntaryWork {
+  organization?: string;
+  position?: string;
+  periodFrom?: string;
+  periodTo?: string;
+  numberOfHours?: number;
+  natureOfWork?: string;
+}
+
+export interface PDSTraining {
+  title?: string;
+  periodFrom?: string;
+  periodTo?: string;
+  numberOfHours?: number;
+  type?: string;
+  conductedBy?: string;
+}
+
+export interface PDSOtherInfo {
+  skills?: string[];
+  recognitions?: Array<{
+    recognition?: string;
+    date?: string;
+  }>;
+  organizations?: Array<{
+    organization?: string;
+    role?: string;
+  }>;
+  references?: Array<{
+    name?: string;
+    address?: string;
+    telephoneNo?: string;
+  }>;
+}
+
+/**
+ * Base types for SALN data sections
+ */
+export interface SALNRealProperty {
+  description?: string;
+  kind?: string;
+  exactLocation?: string;
+  assessedValue?: string;
+  marketValue?: string;
+  acquisitionYear?: number;
+  acquisitionMode?: string;
+  acquisitionCost?: string;
+}
+
+export interface SALNPersonalProperty {
+  description?: string;
+  acquisitionYear?: number;
+  acquisitionCost?: string;
+}
+
+export interface SALNLiability {
+  nature?: string;
+  creditor?: string;
+  amount?: string;
+}
+
+export interface SALNBusinessInterest {
+  businessName?: string;
+  businessAddress?: string;
+  natureOfBusiness?: string;
+  dateOfAcquisition?: string;
+}
+
+export interface SALNRelativeInGov {
+  name?: string;
+  relationship?: string;
+  position?: string;
+  agency?: string;
+}
+
+/**
+ * Audit trail detail type - allows flexible structured data
+ */
+export type AuditTrailDetailValue =
+  | string
+  | number
+  | boolean
+  | null
+  | Date
+  | AuditTrailDetailValue[]
+  | { [key: string]: AuditTrailDetailValue };
+
+export type AuditTrailDetails = Record<string, AuditTrailDetailValue>;
+
+/**
  * Submission status values from database schema
  */
 export const SUBMISSION_STATUS = {
@@ -183,15 +378,15 @@ export interface PDSSubmissionDetail {
     } | null;
   };
   pdsData: {
-    personalInfo: any;
-    familyBackground: any;
-    children: any[];
-    education: any[];
-    civilService: any[];
-    workExperience: any[];
-    voluntaryWork: any[];
-    training: any[];
-    otherInfo: any;
+    personalInfo: PDSPersonalInfo;
+    familyBackground: PDSFamilyBackground;
+    children: PDSChild[];
+    education: PDSEducation[];
+    civilService: PDSCivilService[];
+    workExperience: PDSWorkExperience[];
+    voluntaryWork: PDSVoluntaryWork[];
+    training: PDSTraining[];
+    otherInfo: PDSOtherInfo;
   };
   previousVersions: Array<{
     id: string;
@@ -204,7 +399,7 @@ export interface PDSSubmissionDetail {
     action: string;
     performedBy: string;
     performedAt: Date;
-    details?: any;
+    details?: AuditTrailDetails;
   }>;
 }
 
@@ -244,11 +439,11 @@ export interface SALNSubmissionDetail {
     } | null;
   };
   salnData: {
-    realProperties: any[];
-    personalProperties: any[];
-    liabilities: any[];
-    businessInterests: any[];
-    relativesInGov: any[];
+    realProperties: SALNRealProperty[];
+    personalProperties: SALNPersonalProperty[];
+    liabilities: SALNLiability[];
+    businessInterests: SALNBusinessInterest[];
+    relativesInGov: SALNRelativeInGov[];
     totalAssets: string | null;
     totalLiabilities: string | null;
     netWorth: string | null;
@@ -264,7 +459,7 @@ export interface SALNSubmissionDetail {
     action: string;
     performedBy: string;
     performedAt: Date;
-    details?: any;
+    details?: AuditTrailDetails;
   }>;
 }
 

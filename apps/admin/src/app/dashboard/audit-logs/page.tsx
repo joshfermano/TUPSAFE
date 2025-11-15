@@ -17,6 +17,7 @@ import {
   useAuditLogsQuery,
   type AuditLogsFilters,
 } from '@/hooks/useAuditLogsQuery';
+import { useAuditLogsAnalytics } from '@/hooks/useAuditLogsAnalytics';
 import { EmptyState, ErrorAlert } from '@/components/admin';
 import { PageTransition } from '@/components/PageTransition';
 import {
@@ -76,33 +77,14 @@ const RESOURCES = [
 ];
 
 // Colors for charts (TUP Crimson shades)
-const CHART_COLORS = ['#8B1538', '#DC143C', '#FF6B6B', '#FFA07A', '#FFB6C1', '#FFC0CB'];
-
-// Mock data for activity timeline chart (last 30 days)
-const getActivityTimelineData = () => {
-  const days = [];
-  for (let i = 29; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    days.push({
-      date: format(date, 'MM/dd'),
-      count: Math.floor(Math.random() * 50) + 20,
-    });
-  }
-  return days;
-};
-
-// Mock data for action distribution (pie chart)
-const getActionDistributionData = () => {
-  return [
-    { name: 'View', value: 200 },
-    { name: 'Create', value: 120 },
-    { name: 'Update', value: 85 },
-    { name: 'Submit', value: 60 },
-    { name: 'Approve', value: 45 },
-    { name: 'Delete', value: 30 },
-  ];
-};
+const CHART_COLORS = [
+  '#8B1538',
+  '#DC143C',
+  '#FF6B6B',
+  '#FFA07A',
+  '#FFB6C1',
+  '#FFC0CB',
+];
 
 // Get badge variant based on action
 const getActionBadgeVariant = (
@@ -164,8 +146,7 @@ const AuditLogRow = memo(
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: index * 0.02 }}
-          >
+            transition={{ delay: index * 0.02 }}>
             <Badge variant={getActionBadgeVariant(log.action)}>
               {log.action}
             </Badge>
@@ -233,9 +214,16 @@ export default function AuditLogsPage() {
   // Fetch audit logs with filters
   const { data, isLoading, isError, error } = useAuditLogsQuery(filters);
 
-  // Mock chart data
-  const activityTimelineData = useMemo(() => getActivityTimelineData(), []);
-  const actionDistributionData = useMemo(() => getActionDistributionData(), []);
+  // Fetch analytics data for charts
+  const {
+    data: analyticsData,
+    isLoading: isAnalyticsLoading,
+    isError: isAnalyticsError,
+  } = useAuditLogsAnalytics();
+
+  // Use real data from analytics API
+  const activityTimelineData = analyticsData?.timeline || [];
+  const actionDistributionData = analyticsData?.distribution || [];
 
   // Handle search input
   const handleSearchChange = useCallback(
@@ -298,15 +286,11 @@ export default function AuditLogsPage() {
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total Logs
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">Total Logs</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{data.total}</div>
-              <p className="text-xs text-muted-foreground">
-                All audit entries
-              </p>
+              <p className="text-xs text-muted-foreground">All audit entries</p>
             </CardContent>
           </Card>
 
@@ -318,9 +302,7 @@ export default function AuditLogsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{data.unique_users}</div>
-              <p className="text-xs text-muted-foreground">
-                Active in period
-              </p>
+              <p className="text-xs text-muted-foreground">Active in period</p>
             </CardContent>
           </Card>
 
@@ -332,9 +314,7 @@ export default function AuditLogsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{data.total_actions}</div>
-              <p className="text-xs text-muted-foreground">
-                System activities
-              </p>
+              <p className="text-xs text-muted-foreground">System activities</p>
             </CardContent>
           </Card>
 
@@ -348,9 +328,7 @@ export default function AuditLogsPage() {
               <div className="text-2xl font-bold">
                 {data.resources_affected}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Modified entities
-              </p>
+              <p className="text-xs text-muted-foreground">Modified entities</p>
             </CardContent>
           </Card>
         </div>
@@ -365,43 +343,56 @@ export default function AuditLogsPage() {
               <Activity className="h-5 w-5 text-primary" />
               <CardTitle>Activity Timeline</CardTitle>
             </div>
-            <CardDescription>Log activity over the last 30 days</CardDescription>
+            <CardDescription>
+              Log activity over the last 30 days
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer
-              config={{
-                count: {
-                  label: 'Activity Count',
-                  color: '#8B1538',
-                },
-              }}
-              className="h-[300px]"
-            >
-              <LineChart data={activityTimelineData}>
-                <XAxis
-                  dataKey="date"
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Line
-                  type="monotone"
-                  dataKey="count"
-                  stroke="var(--color-count)"
-                  strokeWidth={2}
-                  dot={{ fill: 'var(--color-count)', r: 3 }}
-                  activeDot={{ r: 5 }}
-                />
-              </LineChart>
-            </ChartContainer>
+            {isAnalyticsLoading ? (
+              <div className="flex h-[300px] items-center justify-center">
+                <Skeleton className="h-full w-full" />
+              </div>
+            ) : isAnalyticsError ? (
+              <div className="flex h-[300px] items-center justify-center">
+                <p className="text-sm text-muted-foreground">
+                  Failed to load timeline data
+                </p>
+              </div>
+            ) : (
+              <ChartContainer
+                config={{
+                  count: {
+                    label: 'Activity Count',
+                    color: '#8B1538',
+                  },
+                }}
+                className="h-[300px]">
+                <LineChart data={activityTimelineData}>
+                  <XAxis
+                    dataKey="date"
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Line
+                    type="monotone"
+                    dataKey="count"
+                    stroke="var(--color-count)"
+                    strokeWidth={2}
+                    dot={{ fill: 'var(--color-count)', r: 3 }}
+                    activeDot={{ r: 5 }}
+                  />
+                </LineChart>
+              </ChartContainer>
+            )}
           </CardContent>
         </Card>
 
@@ -415,33 +406,46 @@ export default function AuditLogsPage() {
             <CardDescription>Breakdown of actions by type</CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer
-              config={{
-                value: {
-                  label: 'Count',
-                  color: '#8B1538',
-                },
-              }}
-              className="h-[300px]"
-            >
-              <PieChart>
-                <Pie
-                  data={actionDistributionData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={(entry) => entry.name}
-                  outerRadius={80}
-                  fill="var(--color-value)"
-                  dataKey="value"
-                >
-                  {actionDistributionData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                  ))}
-                </Pie>
-                <ChartTooltip content={<ChartTooltipContent />} />
-              </PieChart>
-            </ChartContainer>
+            {isAnalyticsLoading ? (
+              <div className="flex h-[300px] items-center justify-center">
+                <Skeleton className="h-full w-full" />
+              </div>
+            ) : isAnalyticsError ? (
+              <div className="flex h-[300px] items-center justify-center">
+                <p className="text-sm text-muted-foreground">
+                  Failed to load distribution data
+                </p>
+              </div>
+            ) : (
+              <ChartContainer
+                config={{
+                  value: {
+                    label: 'Count',
+                    color: '#8B1538',
+                  },
+                }}
+                className="h-[300px]">
+                <PieChart>
+                  <Pie
+                    data={actionDistributionData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={(entry) => entry.name}
+                    outerRadius={80}
+                    fill="var(--color-value)"
+                    dataKey="value">
+                    {actionDistributionData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={CHART_COLORS[index % CHART_COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                </PieChart>
+              </ChartContainer>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -463,8 +467,7 @@ export default function AuditLogsPage() {
                     rotate: searchFocused ? 10 : 0,
                   }}
                   transition={{ duration: 0.2 }}
-                  className="absolute left-3 top-1/2 -translate-y-1/2"
-                >
+                  className="absolute left-3 top-1/2 -translate-y-1/2">
                   <Search className="h-4 w-4 text-muted-foreground" />
                 </motion.div>
                 <Input
@@ -506,10 +509,7 @@ export default function AuditLogsPage() {
               </Select>
 
               {/* Resource Filter */}
-              <Select
-                value={resourceFilter}
-                onValueChange={setResourceFilter}
-              >
+              <Select value={resourceFilter} onValueChange={setResourceFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select resource" />
                 </SelectTrigger>
@@ -532,8 +532,7 @@ export default function AuditLogsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={handleResetFilters}
-                >
+                  onClick={handleResetFilters}>
                   <Filter className="mr-2 h-4 w-4" />
                   Reset Filters
                 </Button>

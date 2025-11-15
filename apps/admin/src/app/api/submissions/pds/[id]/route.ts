@@ -284,15 +284,136 @@ export async function GET(
           : null,
       },
       pdsData: {
-        personalInfo,
-        familyBackground,
-        children,
-        education,
-        civilService,
-        workExperience,
-        voluntaryWork,
-        training,
-        otherInfo,
+        personalInfo: personalInfo
+          ? {
+              surname: personalInfo.surname ?? undefined,
+              firstName: personalInfo.firstName ?? undefined,
+              middleName: personalInfo.middleName ?? undefined,
+              nameExtension: personalInfo.nameExtension ?? undefined,
+              dateOfBirth: personalInfo.dateOfBirth ?? undefined,
+              placeOfBirth: personalInfo.placeOfBirth ?? undefined,
+              sex: personalInfo.sex ?? undefined,
+              civilStatus: personalInfo.civilStatus ?? undefined,
+              height: personalInfo.heightM ? parseFloat(personalInfo.heightM) : undefined,
+              weight: personalInfo.weightKg ? parseFloat(personalInfo.weightKg) : undefined,
+              bloodType: personalInfo.bloodType ?? undefined,
+              gsisNo: personalInfo.gsisNo ?? undefined,
+              pagibigNo: personalInfo.pagibigNo ?? undefined,
+              philhealthNo: personalInfo.philhealthNo ?? undefined,
+              sssNo: personalInfo.sssNo ?? undefined,
+              tinNo: personalInfo.tinNo ?? undefined,
+              citizenship: personalInfo.citizenship as string | undefined,
+              residentialAddress: personalInfo.residentialAddress as {
+                houseNo?: string;
+                street?: string;
+                subdivision?: string;
+                barangay?: string;
+                city?: string;
+                province?: string;
+                zipCode?: string;
+              } | undefined,
+              permanentAddress: personalInfo.permanentAddress as {
+                houseNo?: string;
+                street?: string;
+                subdivision?: string;
+                barangay?: string;
+                city?: string;
+                province?: string;
+                zipCode?: string;
+              } | undefined,
+              telephoneNo: personalInfo.telephoneNo ?? undefined,
+              mobileNo: personalInfo.mobileNo ?? undefined,
+              emailAddress: personalInfo.emailAddress ?? undefined,
+            }
+          : {},
+        familyBackground: familyBackground
+          ? {
+              spouse: {
+                surname: familyBackground.spouseSurname ?? undefined,
+                firstName: familyBackground.spouseFirstName ?? undefined,
+                middleName: familyBackground.spouseMiddleName ?? undefined,
+                nameExtension: familyBackground.spouseNameExtension ?? undefined,
+                occupation: familyBackground.spouseOccupation ?? undefined,
+                employer: familyBackground.spouseEmployer ?? undefined,
+                businessAddress: familyBackground.spouseBusinessAddress ?? undefined,
+                telephoneNo: familyBackground.spouseTelephoneNo ?? undefined,
+              },
+              father: {
+                surname: familyBackground.fatherSurname ?? undefined,
+                firstName: familyBackground.fatherFirstName ?? undefined,
+                middleName: familyBackground.fatherMiddleName ?? undefined,
+                nameExtension: undefined, // Not in DB schema
+              },
+              mother: {
+                maidenName: familyBackground.motherMaidenSurname ?? undefined,
+                surname: undefined, // Not in DB schema
+                firstName: familyBackground.motherFirstName ?? undefined,
+                middleName: familyBackground.motherMiddleName ?? undefined,
+              },
+            }
+          : {},
+        children: children.map((child) => ({
+          name: child.fullName,
+          dateOfBirth: child.dateOfBirth,
+        })),
+        education: education.map((edu) => ({
+          level: edu.level,
+          schoolName: edu.schoolName,
+          basicEducation: edu.degreeCourse ?? undefined,
+          periodFrom: edu.periodFrom ?? undefined,
+          periodTo: edu.periodTo ?? undefined,
+          highestLevel: edu.highestLevelEarned ?? undefined,
+          yearGraduated: edu.yearGraduated?.toString() ?? undefined,
+          scholarshipHonors: edu.honorsReceived ?? undefined,
+        })),
+        civilService: civilService.map((cs) => ({
+          careerService: cs.eligibilityName ?? undefined,
+          rating: cs.rating ? parseFloat(cs.rating) : undefined,
+          dateOfExamination: cs.dateOfExam ?? undefined,
+          placeOfExamination: cs.placeOfExam ?? undefined,
+          licenseNumber: cs.licenseNo ?? undefined,
+          validity: cs.licenseValidityDate ?? undefined,
+        })),
+        workExperience: workExperience.map((we) => ({
+          positionTitle: we.positionTitle ?? undefined,
+          department: we.departmentAgency ?? undefined,
+          monthlySalary: we.monthlySalary ? parseFloat(we.monthlySalary) : undefined,
+          salaryGrade: we.salaryGrade ?? undefined,
+          statusOfAppointment: we.statusOfAppointment ?? undefined,
+          govService: we.isGovernment ?? undefined,
+          periodFrom: we.dateFrom ?? undefined,
+          periodTo: we.dateTo ?? undefined,
+        })),
+        voluntaryWork: voluntaryWork.map((vw) => ({
+          organization: vw.organizationName ?? undefined,
+          position: vw.positionNature ?? undefined,
+          periodFrom: vw.dateFrom ?? undefined,
+          periodTo: vw.dateTo ?? undefined,
+          numberOfHours: vw.numberOfHours ?? undefined,
+          natureOfWork: vw.organizationAddress ?? undefined,
+        })),
+        training: training.map((t) => ({
+          title: t.title ?? undefined,
+          periodFrom: t.dateFrom ?? undefined,
+          periodTo: t.dateTo ?? undefined,
+          numberOfHours: t.hours ?? undefined,
+          type: t.typeOfLd ?? undefined,
+          conductedBy: t.conductedBy ?? undefined,
+        })),
+        otherInfo: otherInfo
+          ? {
+              skills: Array.isArray(otherInfo.skills) ? (otherInfo.skills as string[]) : undefined,
+              recognitions: Array.isArray(otherInfo.recognitions)
+                ? (otherInfo.recognitions as Array<{ recognition?: string; date?: string }>)
+                : undefined,
+              organizations: Array.isArray(otherInfo.associations)
+                ? (otherInfo.associations as Array<{ organization?: string; role?: string }>)
+                : undefined,
+              references: Array.isArray(otherInfo.references)
+                ? (otherInfo.references as Array<{ name?: string; address?: string; telephoneNo?: string }>)
+                : undefined,
+            }
+          : {},
       },
       previousVersions,
       auditTrail: auditTrail.map((log) => ({
@@ -300,7 +421,7 @@ export async function GET(
         action: log.action,
         performedBy: `${log.firstName || ''} ${log.lastName || ''}`.trim() || 'System',
         performedAt: log.createdAt,
-        details: log.changes,
+        details: log.changes as import('@tupsafe/types').AuditTrailDetails | undefined,
       })),
     };
 

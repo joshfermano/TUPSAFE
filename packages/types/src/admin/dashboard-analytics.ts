@@ -200,6 +200,19 @@ export interface DashboardComplianceResponse {
   };
 }
 
+/**
+ * Metadata value types allowed in activity logs
+ * Uses a union of primitive types and nested structures for type safety
+ */
+export type ActivityMetadataValue =
+  | string
+  | number
+  | boolean
+  | null
+  | Date
+  | ActivityMetadataValue[]
+  | { [key: string]: ActivityMetadataValue };
+
 export interface ActivityLogEntry {
   id: string;
   type: string;
@@ -210,7 +223,7 @@ export interface ActivityLogEntry {
   userRole: string;
   resourceType?: string;
   resourceId?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, ActivityMetadataValue>;
   ipAddress?: string;
   timestamp: Date;
 }

@@ -8,27 +8,33 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient, getSessionUser } from '@tupsafe/auth/server';
+import { createServerClient } from '@tupsafe/auth/server';
 import { db, profiles } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   try {
-    // Get current session
-    const sessionUser = await getSessionUser();
+    // Get Supabase session directly
+    const supabase = await createServerClient();
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
 
-    if (!sessionUser) {
+    if (sessionError || !session) {
       return NextResponse.json(
         { error: 'Not authenticated' },
         { status: 401 }
       );
     }
 
+    const userId = session.user.id;
+
     // Fetch full profile from database
     const [profile] = await db
       .select()
       .from(profiles)
-      .where(eq(profiles.id, sessionUser.userId))
+      .where(eq(profiles.id, userId))
       .limit(1);
 
     if (!profile) {
@@ -42,7 +48,7 @@ export async function GET(request: NextRequest) {
       success: true,
       profile: {
         id: profile.id,
-        email: sessionUser.email,
+        email: session.user.email,
         firstName: profile.firstName,
         lastName: profile.lastName,
         middleName: profile.middleName,

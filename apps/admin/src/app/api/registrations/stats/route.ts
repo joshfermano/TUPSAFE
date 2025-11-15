@@ -19,13 +19,13 @@ import {
   departments,
 } from '@tupsafe/database/server';
 import { eq, and, gte, sql, count } from 'drizzle-orm';
-import { checkUserRole } from '@tupsafe/auth/server';
+import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 import type { RegistrationStats, ApiResponse } from '@tupsafe/types';
 
 export async function GET(request: NextRequest) {
   try {
-    // Authorization check - HR or Admin only
-    const hasPermission = await checkUserRole(['hr', 'admin']);
+    // Authorization check - HR or Admin only (using Supabase session)
+    const hasPermission = await checkUserRoleFromSupabase(['hr', 'admin']);
 
     if (!hasPermission) {
       return NextResponse.json(
