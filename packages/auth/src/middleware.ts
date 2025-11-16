@@ -99,7 +99,7 @@ export async function createAuthMiddleware() {
           .from('profiles')
           .select('role, is_active')
           .eq('id', user.id)
-          .single();
+          .single() as { data: { role: string; is_active: boolean } | null; error: any };
 
         if (profileError || !profile) {
           console.error('Profile fetch error:', profileError);
