@@ -12,6 +12,9 @@ QWEN.md
 
 # Dependencies
 node_modules/
+**/node_modules/
+packages/*/node_modules/
+apps/*/node_modules/
 .pnp
 .pnp.*
 .yarn/*
@@ -19,6 +22,10 @@ node_modules/
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+
+# Package Lock Files (Use root lock only)
+packages/*/package-lock.json
+apps/*/package-lock.json
 
 # Testing
 coverage/
@@ -45,11 +52,18 @@ apps/*/.turbo/
 packages/*/.turbo/
 *.turbo/
 
-# TypeScript
+# TypeScript Build Artifacts
 *.tsbuildinfo
-tsconfig.tsbuildinfo
+**/tsconfig.tsbuildinfo
+packages/*/tsconfig.tsbuildinfo
+apps/*/tsconfig.tsbuildinfo
 next-env.d.ts
 *.d.ts.map
+
+# TypeScript Compiled Output (should never be tracked)
+packages/*/dist/**/*.js
+packages/*/dist/**/*.d.ts
+packages/*/dist/**/*.map
 
 # Environment Variables
 .env
