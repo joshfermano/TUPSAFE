@@ -1,44 +1,28 @@
-import { type NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { db } from '@tupsafe/database/server';
-import { profiles } from '@tupsafe/database/server';
-import { eq } from 'drizzle-orm';
-
 /**
- * Route protection configuration based on user type
+ * Employee Portal Authentication Middleware (Edge Runtime Compatible)
  *
- * Applicants can access:
- * - /dashboard (main dashboard)
- * - /dashboard/profile
- * - /dashboard/pds (only PDS, not SALN)
- * - /dashboard/applications (their job applications)
- * - /dashboard/positions (browse open positions)
- * - /dashboard/settings
+ * Protects employee portal routes with Supabase authentication.
+ * User type and profile verification is handled by API routes and server components
+ * to maintain Edge Runtime compatibility (middleware cannot use Node.js modules).
  *
- * Employees can access:
- * - /dashboard (main dashboard)
- * - /dashboard/profile
- * - /dashboard/pds
- * - /dashboard/saln (all SALN routes)
- * - /dashboard/settings
+ * Security Features:
+ * - Supabase session validation (edge-compatible)
+ * - Session timeout management
+ * - Redirects to login for unauthenticated users
+ * - User type-based routing delegated to API routes/server components
+ *
+ * Note: This middleware runs in Edge Runtime and cannot access database directly.
+ * User type (applicant/employee), profile data, and permissions are verified in
+ * API routes and server components using the @tupsafe/database package.
+ *
+ * Route Protection:
+ * - Applicants: /dashboard, /profile, /pds, /applications, /positions, /settings
+ * - Employees: /dashboard, /profile, /pds, /saln, /settings
+ * - Enforcement happens in server components and API routes based on user metadata
  */
 
-// Routes accessible by applicants only
-const APPLICANT_ONLY_ROUTES = [
-  '/dashboard/applications',
-  '/dashboard/positions',
-];
-
-// Routes accessible by employees only
-const EMPLOYEE_ONLY_ROUTES = ['/dashboard/saln'];
-
-// Routes accessible by both user types
-const SHARED_ROUTES = [
-  '/dashboard',
-  '/dashboard/profile',
-  '/dashboard/pds',
-  '/dashboard/settings',
-];
+import { type NextRequest, NextResponse } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
 
 // Public routes that don't require authentication
 const PUBLIC_ROUTES = [
@@ -52,42 +36,30 @@ const PUBLIC_ROUTES = [
 ];
 
 /**
- * Check if the route is accessible by the given user type
+ * Check if the route is public (doesn't require authentication)
  */
-function isRouteAccessible(pathname: string, userType: string): boolean {
-  // Check if it's a shared route
-  const isSharedRoute = SHARED_ROUTES.some(
+function isPublicRoute(pathname: string): boolean {
+  return PUBLIC_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   );
-  if (isSharedRoute) return true;
-
-  // Check applicant-only routes
-  const isApplicantRoute = APPLICANT_ONLY_ROUTES.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`)
-  );
-  if (isApplicantRoute) return userType === 'applicant';
-
-  // Check employee-only routes
-  const isEmployeeRoute = EMPLOYEE_ONLY_ROUTES.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`)
-  );
-  if (isEmployeeRoute) return userType === 'employee';
-
-  // Default: allow if not explicitly restricted
-  return true;
 }
 
 /**
- * Main middleware function for route protection and user context injection
+ * Main middleware function for employee portal route protection
+ *
+ * Edge Runtime Compatible:
+ * - Only validates Supabase session existence
+ * - Does NOT query database (database uses Node.js modules)
+ * - User type and profile verification happens in API routes and server components
  */
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Fast path: Check if it's a public route
-  const isPublicRoute = PUBLIC_ROUTES.some((route) => pathname === route);
+  // Fast path: Allow public routes
+  const isPublic = isPublicRoute(pathname);
   const isAuthRoute = pathname.startsWith('/auth');
 
-  if (isPublicRoute || isAuthRoute) {
+  if (isPublic || isAuthRoute) {
     return NextResponse.next();
   }
 
@@ -97,7 +69,7 @@ export async function middleware(request: NextRequest) {
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !supabaseAnonKey) {
-      console.error('[Middleware] Missing Supabase environment variables');
+      console.error('[Employee Middleware] Missing Supabase environment variables');
       const redirectUrl = new URL('/auth/login', request.url);
       redirectUrl.searchParams.set('error', 'configuration_error');
       return NextResponse.redirect(redirectUrl);
@@ -140,95 +112,45 @@ export async function middleware(request: NextRequest) {
 
     const userId = session.user.id;
 
-    // Fetch user profile from database
-    let userProfile;
-    try {
-      const profileResult = await db
-        .select({
-          id: profiles.id,
-          userType: profiles.userType,
-          employeeId: profiles.employeeId,
-          applicantId: profiles.applicantId,
-          accountStatus: profiles.accountStatus,
-          isActive: profiles.isActive,
-        })
-        .from(profiles)
-        .where(eq(profiles.id, userId))
-        .limit(1);
+    /**
+     * User Type and Profile Verification:
+     *
+     * User type (applicant vs employee) and profile data verification is enforced in:
+     * 1. API routes using @tupsafe/database to query user profile
+     * 2. Server components using @tupsafe/database for user type checks
+     * 3. Client-side AuthContext/RealtimeProvider for UI rendering
+     *
+     * Route-level protection based on user type:
+     * - Applicant-only routes: /dashboard/applications, /dashboard/positions
+     * - Employee-only routes: /dashboard/saln
+     * - Shared routes: /dashboard, /profile, /pds, /settings
+     *
+     * This approach maintains Edge Runtime compatibility while ensuring security.
+     * Users without proper permissions will be redirected when they access protected resources.
+     */
 
-      userProfile = profileResult[0];
-    } catch (dbError) {
-      // Database query failed - log error but allow request to continue (fail open)
-      console.error('[Middleware] Database query error:', dbError);
-
-      // Still try to continue with just session data
-      response.headers.set('x-user-id', userId);
-      return response;
-    }
-
-    // If profile doesn't exist, redirect to logout (data inconsistency)
-    if (!userProfile) {
-      console.error(
-        '[Middleware] Profile not found for authenticated user:',
-        userId
-      );
-      const redirectUrl = new URL('/auth/login', request.url);
-      redirectUrl.searchParams.set('error', 'profile_not_found');
-      return NextResponse.redirect(redirectUrl);
-    }
-
-    // Check if account is active and approved
-    if (!userProfile.isActive || userProfile.accountStatus !== 'active') {
-      const redirectUrl = new URL('/auth/login', request.url);
-      if (userProfile.accountStatus === 'pending') {
-        redirectUrl.searchParams.set('error', 'account_pending_approval');
-      } else if (userProfile.accountStatus === 'suspended') {
-        redirectUrl.searchParams.set('error', 'account_suspended');
-      } else if (userProfile.accountStatus === 'rejected') {
-        redirectUrl.searchParams.set('error', 'account_rejected');
-      } else {
-        redirectUrl.searchParams.set('error', 'account_inactive');
-      }
-      return NextResponse.redirect(redirectUrl);
-    }
-
-    // Check route access based on user type
-    const userType = userProfile.userType;
-    const hasAccess = isRouteAccessible(pathname, userType);
-
-    if (!hasAccess) {
-      // User trying to access forbidden route - redirect to dashboard with error
-      const redirectUrl = new URL('/dashboard', request.url);
-
-      if (userType === 'applicant' && pathname.startsWith('/dashboard/saln')) {
-        redirectUrl.searchParams.set('error', 'applicants_cannot_access_saln');
-      } else if (
-        userType === 'employee' &&
-        (pathname.startsWith('/dashboard/applications') ||
-          pathname.startsWith('/dashboard/positions'))
-      ) {
-        redirectUrl.searchParams.set(
-          'error',
-          'employees_cannot_access_applications'
-        );
-      } else {
-        redirectUrl.searchParams.set('error', 'access_denied');
-      }
-
-      return NextResponse.redirect(redirectUrl);
-    }
-
-    // User has access - add user context headers to response
+    // Add minimal user context headers to response
     response.headers.set('x-user-id', userId);
-    response.headers.set('x-user-type', userType);
-    response.headers.set('x-employee-id', userProfile.employeeId || '');
-    response.headers.set('x-applicant-id', userProfile.applicantId || '');
-    response.headers.set('x-account-status', userProfile.accountStatus);
+    response.headers.set('x-user-email', session.user.email || '');
+    response.headers.set('x-portal', 'employee');
+
+    // Extract user metadata if available (optional, for optimization)
+    // Actual verification still happens in API routes as the source of truth
+    const userType = session.user.user_metadata?.user_type;
+    const accountStatus = session.user.user_metadata?.account_status;
+
+    if (userType) {
+      response.headers.set('x-user-type', userType);
+    }
+
+    if (accountStatus) {
+      response.headers.set('x-account-status', accountStatus);
+    }
 
     return response;
   } catch (error) {
     // Unexpected error - log and redirect to login
-    console.error('[Middleware] Unexpected error:', error);
+    console.error('[Employee Middleware] Unexpected error:', error);
 
     const redirectUrl = new URL('/auth/login', request.url);
     redirectUrl.searchParams.set('error', 'internal_error');
