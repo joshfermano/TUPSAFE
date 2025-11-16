@@ -115,7 +115,10 @@
       "Bash(PGPASSWORD=\"$DATABASE_PASSWORD\" psql:*)",
       "Bash(chmod:*)",
       "Bash(node scripts/apply-reports-indexes.js:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(git rm:*)",
+      "Bash(git commit:*)",
+      "Bash(bash:*)"
     ],
     "deny": [],
     "ask": []
