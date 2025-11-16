@@ -28,6 +28,7 @@
     "dist",
     "src/seed.ts",
     "src/test-connection.ts",
-    "src/storage-setup.ts"
+    "src/storage-setup.ts",
+    "src/scripts/**/*"
   ]
 }
