@@ -205,7 +205,9 @@ export const departments = pgTable(
     code: text('code').unique().notNull(),
     officeType: officeTypeEnum('office_type').default('academic'),
     parentId: uuid('parent_id'),
-    parentCollegeId: uuid('parent_college_id').references((): any => departments.id),
+    parentCollegeId: uuid('parent_college_id').references(
+      (): any => departments.id
+    ),
     isActive: boolean('is_active').default(true).notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
@@ -259,12 +261,8 @@ export const openPositions = pgTable(
     employmentCategory: employmentCategoryEnum('employment_category').notNull(),
 
     description: text('description').notNull(),
-    qualifications: jsonb('qualifications')
-      .$type<string[]>()
-      .default([]),
-    responsibilities: jsonb('responsibilities')
-      .$type<string[]>()
-      .default([]),
+    qualifications: jsonb('qualifications').$type<string[]>().default([]),
+    responsibilities: jsonb('responsibilities').$type<string[]>().default([]),
     requirements: jsonb('requirements')
       .$type<{
         education: string[];
@@ -1219,12 +1217,15 @@ export const profilesRelations = relations(profiles, ({ one, many }) => ({
   }),
 }));
 
-export const userPreferencesRelations = relations(userPreferences, ({ one }) => ({
-  user: one(profiles, {
-    fields: [userPreferences.userId],
-    references: [profiles.id],
-  }),
-}));
+export const userPreferencesRelations = relations(
+  userPreferences,
+  ({ one }) => ({
+    user: one(profiles, {
+      fields: [userPreferences.userId],
+      references: [profiles.id],
+    }),
+  })
+);
 
 export const departmentsRelations = relations(departments, ({ one, many }) => ({
   parent: one(departments, {
@@ -1238,7 +1239,9 @@ export const departmentsRelations = relations(departments, ({ one, many }) => ({
     relationName: 'college_department',
   }),
   children: many(departments, { relationName: 'parent_child' }),
-  departmentsInCollege: many(departments, { relationName: 'college_department' }),
+  departmentsInCollege: many(departments, {
+    relationName: 'college_department',
+  }),
   profiles: many(profiles),
   positions: many(positions),
   openPositions: many(openPositions),
