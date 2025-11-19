@@ -20,7 +20,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkUserRoleFromSupabase, getUserFromSupabase } from '@tupsafe/auth/server';
 import { db, profiles, departments, positions, pdsSubmissions } from '@tupsafe/database/server';
-import { and, eq, sql, count, inArray } from 'drizzle-orm';
+import { and, eq, sql, count, inArray, or, ilike, asc, desc } from 'drizzle-orm';
 import {
   pdsSubmissionsQuerySchema,
   type PdsSubmissionsListResponse,
