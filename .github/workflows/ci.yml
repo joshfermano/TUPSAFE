@@ -75,13 +75,14 @@ jobs:
       - name: Build packages first
         run: |
           echo "🔨 Building shared packages..."
-          # Build all packages (dependencies for apps)
-          for pkg in auth database types shared-ui mock-data; do
-            echo "Building packages/$pkg..."
-            cd packages/$pkg
-            npm run build
-            cd ../..
-          done
+          # Use Turbo to build all packages with proper dependency resolution
+          # Turbo automatically handles the dependency graph:
+          # - @tupsafe/database (no deps)
+          # - @tupsafe/types (no deps)
+          # - @tupsafe/shared-ui (no deps)
+          # - @tupsafe/auth (depends on database, types)
+          # - @tupsafe/mock-data (depends on database, types)
+          npx turbo build --filter="./packages/*"
 
       - name: Verify package builds
         run: |
