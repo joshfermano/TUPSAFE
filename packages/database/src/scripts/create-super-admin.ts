@@ -53,8 +53,9 @@ function isValidTupEmail(email: string): boolean {
 
 /**
  * Validates password strength (minimum 16 characters)
+ * Note: Currently using length-based validation via prompts validation function
  */
-function isStrongPassword(password: string): boolean {
+function _isStrongPassword(password: string): boolean {
   return password.length >= 16;
 }
 
@@ -420,7 +421,7 @@ async function main() {
     try {
       await createAuditLog(authData.user.id, responses.email, employeeId);
       auditSpinner.succeed('Audit log created');
-    } catch (error) {
+    } catch (_error) {
       auditSpinner.warn('Audit log creation skipped (non-critical)');
     }
 

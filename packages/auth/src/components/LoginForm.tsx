@@ -9,7 +9,7 @@ interface LoginFormProps {
   redirectTo?: string;
 }
 
-export function LoginForm({ onSuccess, onError, redirectTo }: LoginFormProps) {
+export function LoginForm({ onSuccess, onError, redirectTo: _redirectTo }: LoginFormProps) {
   const [formData, setFormData] = useState({
     loginIdentifier: '',
     password: '',
@@ -18,7 +18,7 @@ export function LoginForm({ onSuccess, onError, redirectTo }: LoginFormProps) {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [needsMfa, setNeedsMfa] = useState(false);
+  const [_needsMfa, _setNeedsMfa] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 

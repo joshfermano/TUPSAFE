@@ -14,7 +14,7 @@
 
 import { db } from '../db';
 import { employeeIdRegistry } from '../schema';
-import { desc, like, sql } from 'drizzle-orm';
+import { desc, like } from 'drizzle-orm';
 
 /**
  * Generates the next available admin employee ID for the current year.

@@ -14,7 +14,7 @@
 
 import { db } from '../db';
 import { profiles } from '../schema';
-import { desc, like, sql, and, gte, lt } from 'drizzle-orm';
+import { desc, like, and, gte, lt } from 'drizzle-orm';
 
 /**
  * Generates the next available applicant ID for the current date.
