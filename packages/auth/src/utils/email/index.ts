@@ -75,8 +75,8 @@ export async function sendOTPEmail(
       password_reset: 'Password Reset',
     }[type];
 
-    const subject = `${typeText} - TUPSAFE`;
-    const html = generateOTPEmailHTML(code, typeText);
+    const _subject = `${typeText} - TUPSAFE`;
+    const _html = generateOTPEmailHTML(code, typeText);
 
     // Use Supabase's built-in email service
     // In production, this would be replaced with Resend API
@@ -128,7 +128,7 @@ export async function sendWelcomeEmail(
 ): Promise<EmailResult> {
   try {
     const subject = 'Welcome to TUPSAFE - Account Approved';
-    const html = generateWelcomeEmailHTML(firstName, employeeId);
+    const _html = generateWelcomeEmailHTML(firstName, employeeId);
 
     // Implementation would use Resend or Supabase email
     console.log('Sending welcome email to:', to);
@@ -161,7 +161,7 @@ export async function sendRejectionEmail(
 ): Promise<EmailResult> {
   try {
     const subject = 'TUPSAFE - Registration Status Update';
-    const html = generateRejectionEmailHTML(firstName, reason);
+    const _html = generateRejectionEmailHTML(firstName, reason);
 
     console.log('Sending rejection email to:', to);
     console.log('Subject:', subject);
@@ -194,7 +194,7 @@ export async function sendCredentialsEmail(
 ): Promise<EmailResult> {
   try {
     const subject = 'TUPSAFE - Your Account Credentials';
-    const html = generateCredentialsEmailHTML(
+    const _html = generateCredentialsEmailHTML(
       firstName,
       employeeId,
       temporaryPassword

@@ -1,0 +1,25 @@
+# Build outputs
+dist/
+.next/
+out/
+build/
+
+# Dependencies
+node_modules/
+
+# Turbo
+.turbo/
+
+# TypeScript
+*.tsbuildinfo
+
+# Next.js
+apps/*/.next/
+apps/*/out/
+
+# Packages
+packages/*/dist/
+packages/*/build/
+
+# Cache
+.cache/

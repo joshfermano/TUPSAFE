@@ -1,4 +1,4 @@
-import { v7 as uuidv7 } from 'uuid';
+// UUID import removed - not used in this file
 
 // Type definitions based on the database schema
 export type SubmissionStatus =
