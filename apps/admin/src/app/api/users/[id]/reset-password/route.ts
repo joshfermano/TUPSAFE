@@ -146,7 +146,7 @@ export async function POST(
 
     try {
       // Update password
-      const { data: updateData, error: updateError } =
+      const { data: _updateData, error: updateError } =
         await adminClient.auth.admin.updateUserById(userId, {
           password: temporaryPassword,
         });

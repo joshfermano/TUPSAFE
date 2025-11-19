@@ -6,7 +6,7 @@ import {
   pdsSubmissions,
   salnSubmissions,
 } from '@tupsafe/database/schema';
-import { eq, and, sql, count } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import type { DashboardDepartmentsResponse, DepartmentMetrics } from '@tupsafe/types';
 
 /**
@@ -23,7 +23,7 @@ import type { DashboardDepartmentsResponse, DepartmentMetrics } from '@tupsafe/t
  *
  * Caching: 10 minutes
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // TODO: Verify admin/HR role
     // const session = await getServerSession();

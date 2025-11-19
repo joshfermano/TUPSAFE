@@ -117,7 +117,7 @@ export const Family = memo(function Family() {
           <h4 className="text-base font-medium text-foreground mb-6">Parents Information</h4>
           <div className="space-y-8">
             <div>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">Father's Name</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">Father&apos;s Name</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <FormField
                   control={form.control}
@@ -164,7 +164,7 @@ export const Family = memo(function Family() {
             </div>
 
             <div>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">Mother's Maiden Name</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">Mother&apos;s Maiden Name</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <FormField
                   control={form.control}
@@ -237,7 +237,7 @@ export const Family = memo(function Family() {
           {fields.length === 0 ? (
             <div className="text-center py-12 text-slate-600 dark:text-slate-400">
               <p className="text-sm">No children added yet</p>
-              <p className="text-sm mt-1">Click "Add Child" to add your children</p>
+              <p className="text-sm mt-1">Click &quot;Add Child&quot; to add your children</p>
             </div>
           ) : (
             <div className="space-y-4">

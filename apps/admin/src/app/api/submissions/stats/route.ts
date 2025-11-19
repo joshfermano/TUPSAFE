@@ -34,7 +34,7 @@ import {
 import { eq, and, gte, count, sql, desc } from 'drizzle-orm';
 import type { SubmissionStatsResponse } from '@tupsafe/types';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Verify admin/HR permissions
     const hasPermission = await checkUserRole(['admin', 'hr']);

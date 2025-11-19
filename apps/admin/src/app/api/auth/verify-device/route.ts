@@ -14,7 +14,6 @@ import { z } from 'zod';
 import {
   db,
   profiles,
-  trustedDevices,
   createAuditLog,
 } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
@@ -76,7 +75,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify admin privileges
-    if (!ADMIN_ROLES.includes(profile.role as any)) {
+    if (!ADMIN_ROLES.includes(profile.role as (typeof ADMIN_ROLES)[number])) {
       return NextResponse.json(
         {
           error: 'Access denied',

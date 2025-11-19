@@ -35,7 +35,7 @@ import {
 import { eq, and, gte, lt, sql, desc, count } from 'drizzle-orm';
 import type { ReportsOverviewResponse } from '@tupsafe/types';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const startTime = Date.now();
   try {
     console.log('[Reports API] Request received');

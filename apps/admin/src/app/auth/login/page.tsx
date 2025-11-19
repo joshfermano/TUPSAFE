@@ -40,7 +40,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { resolvedTheme } = useTheme();
+  const { resolvedTheme: _resolvedTheme } = useTheme();
   const { signIn, verifyOTP } = useRealAuth();
 
   const [email, setEmail] = useState('');
@@ -384,7 +384,7 @@ function LoginPageContent() {
                   <Alert className="bg-primary/5 border-primary/20">
                     <KeyRound className="h-4 w-4 text-primary" />
                     <AlertDescription className="text-xs">
-                      We've sent a 6-digit verification code to <strong>{email}</strong>.
+                      We&apos;ve sent a 6-digit verification code to <strong>{email}</strong>.
                       Please check your email and enter the code below.
                     </AlertDescription>
                   </Alert>

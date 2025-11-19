@@ -127,7 +127,7 @@ export function PDSDetailsDialog({
                 <TabsContent value="family" className="space-y-4 mt-4">
                   <FamilyBackgroundSection
                     familyData={pdsData.pdsData.familyBackground}
-                    children={pdsData.pdsData.children}
+                    childrenData={pdsData.pdsData.children}
                   />
                 </TabsContent>
 
@@ -212,10 +212,10 @@ function PersonalInfoSection({ data }: { data: any }) {
 
 function FamilyBackgroundSection({
   familyData,
-  children,
+  childrenData,
 }: {
   familyData: any;
-  children: any[];
+  childrenData: any[];
 }) {
   return (
     <div className="space-y-6">
@@ -231,11 +231,11 @@ function FamilyBackgroundSection({
         </div>
       )}
 
-      {children && children.length > 0 && (
+      {childrenData && childrenData.length > 0 && (
         <div>
           <h3 className="font-semibold mb-3">Children</h3>
           <div className="space-y-2">
-            {children.map((child: any, idx: number) => (
+            {childrenData.map((child: any, idx: number) => (
               <div key={idx} className="border rounded-lg p-3 grid grid-cols-2 gap-4">
                 <InfoField label="Name" value={child.name} />
                 <InfoField label="Date of Birth" value={child.dateOfBirth} />

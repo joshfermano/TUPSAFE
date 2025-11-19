@@ -24,7 +24,7 @@ import {
   createAuditLogFromRequest,
   generateChanges,
 } from '@tupsafe/database/server';
-import { eq, desc, and, sql, count } from 'drizzle-orm';
+import { eq, desc, and, count } from 'drizzle-orm';
 import {
   updateUserSchema,
   type UserDetail,

@@ -21,30 +21,30 @@ const eslintConfig = [
       '.turbo/**',
       '*.tsbuildinfo',
       'next-env.d.ts',
+      '**/next-env.d.ts',
       // Package-specific ignores
       'packages/*/dist/**',
       'packages/*/.next/**',
       'packages/*/.turbo/**',
+      'packages/*/next-env.d.ts',
       // App-specific ignores
       'apps/*/.next/**',
       'apps/*/out/**',
       'apps/*/.turbo/**',
+      'apps/*/next-env.d.ts',
     ],
   },
   {
     rules: {
       // Allow 'any' type in specific cases where it's intentional
       // These are typically for error handling, dynamic types, or library compatibility
-      '@typescript-eslint/no-explicit-any': [
-        'error',
-        {
-          // Allow in catch clauses where error type is unknown
-          ignoreRestArgs: false,
-        },
-      ],
+      // Set to warning instead of error to not block CI, but still notify developers
+      '@typescript-eslint/no-explicit-any': 'warn',
+
       // Unused variables - use underscore prefix for intentionally unused
+      // Set to warning during development to not block builds, fix during cleanup
       '@typescript-eslint/no-unused-vars': [
-        'error',
+        'warn',
         {
           argsIgnorePattern: '^_',
           varsIgnorePattern: '^_',

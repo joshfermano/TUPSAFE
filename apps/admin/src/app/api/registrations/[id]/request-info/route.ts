@@ -27,7 +27,6 @@ import {
 } from '@tupsafe/auth/server';
 import {
   requestInfoSchema,
-  type RequestInfoInput,
   type ApiResponse,
 } from '@tupsafe/types';
 

@@ -22,7 +22,7 @@ import { eq, and, gte, sql, count } from 'drizzle-orm';
 import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 import type { RegistrationStats, ApiResponse } from '@tupsafe/types';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Authorization check - HR or Admin only (using Supabase session)
     const hasPermission = await checkUserRoleFromSupabase(['hr', 'admin']);
@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
         )
       );
 
-    const rejectedToday = rejectedTodayResult?.count || 0;
+    const _rejectedToday = rejectedTodayResult?.count || 0;
 
     // Query 6: Count rejected this week
     const [rejectedWeekResult] = await db

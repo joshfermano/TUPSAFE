@@ -25,7 +25,7 @@ import type { DashboardOverviewResponse } from '@tupsafe/types';
  * Caching: 5 minutes (s-maxage=300)
  * Performance: Parallel query execution
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // TODO: Verify admin/HR role from session
     // const session = await getServerSession();

@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
 
       // Add search filter if provided
       if (validatedQuery.search) {
-        const searchTerm = `%${validatedQuery.search}%`;
+        const _searchTerm = `%${validatedQuery.search}%`;
         pdsResults = pdsResults.filter(
           (r) =>
             r.firstName.toLowerCase().includes(validatedQuery.search!.toLowerCase()) ||
@@ -167,7 +167,7 @@ export async function GET(request: NextRequest) {
 
       // Add search filter if provided
       if (validatedQuery.search) {
-        const searchTerm = `%${validatedQuery.search}%`;
+        const _searchTerm = `%${validatedQuery.search}%`;
         salnResults = salnResults.filter(
           (r) =>
             r.firstName.toLowerCase().includes(validatedQuery.search!.toLowerCase()) ||

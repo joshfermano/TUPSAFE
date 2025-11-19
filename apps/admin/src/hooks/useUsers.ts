@@ -136,7 +136,7 @@ export function useDeleteUser() {
 
   return useMutation({
     mutationFn: deleteUser,
-    onSuccess: (_, userId) => {
+    onSuccess: (_, _userId) => {
       // Invalidate all user queries
       queryClient.invalidateQueries({ queryKey: userKeys.all });
 

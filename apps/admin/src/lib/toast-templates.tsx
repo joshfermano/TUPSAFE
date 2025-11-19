@@ -37,8 +37,6 @@ import {
   Database,
   Mail,
   Bell,
-  Eye,
-  Users,
   Building2,
   type LucideIcon,
 } from 'lucide-react';
@@ -66,10 +64,10 @@ export type SystemNotificationType = 'info' | 'success' | 'warning' | 'error';
 /**
  * Toast action callback
  */
-interface ToastAction {
-  label: string;
-  onClick: () => void;
-}
+// interface ToastAction {
+//   label: string;
+//   onClick: () => void;
+// }
 
 /**
  * Base toast options
