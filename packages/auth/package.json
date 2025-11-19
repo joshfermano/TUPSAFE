@@ -17,7 +17,9 @@
     }
   },
   "scripts": {
+    "prebuild": "rm -rf dist *.tsbuildinfo",
     "build": "tsc --build",
+    "postbuild": "test -f dist/middleware.js || (echo '❌ ERROR: middleware.js not generated!' && exit 1)",
     "dev": "tsc --watch",
     "lint": "eslint src/",
     "type-check": "tsc --noEmit"

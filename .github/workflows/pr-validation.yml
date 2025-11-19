@@ -1,0 +1,357 @@
+name: PR Validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+      - dev
+      - 'feature/**'
+
+concurrency:
+  group: pr-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+      actions: read
+
+    outputs:
+      build-status: ${{ steps.build.outcome }}
+      type-check-status: ${{ steps.type-check.outcome }}
+      lint-status: ${{ steps.lint.outcome }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        run: echo "dir=$(npm config get cache)" >> $GITHUB_OUTPUT
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        id: npm-cache
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-node-22-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-22-
+
+      - name: Cache Turbo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-pr-${{ github.ref_name }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-pr-${{ github.ref_name }}-
+            ${{ runner.os }}-turbo-pr-
+
+      - name: Install dependencies
+        run: |
+          echo "📦 Installing dependencies..."
+          npm ci
+
+      - name: Check for build artifacts in PR
+        id: artifact-check
+        run: |
+          echo "🔍 Checking for build artifacts in PR changes..."
+
+          # Get list of changed files
+          git diff --name-only origin/${{ github.base_ref }}...HEAD > changed_files.txt
+
+          # Check for build artifacts
+          ARTIFACTS_FOUND=0
+          ARTIFACT_PATHS=""
+
+          if grep -E "^packages/.*/dist/" changed_files.txt; then
+            echo "❌ ERROR: Package dist files found in PR"
+            ARTIFACT_PATHS="${ARTIFACT_PATHS}\n- Package dist files"
+            ARTIFACTS_FOUND=1
+          fi
+
+          if grep -E "^apps/.*/.next/" changed_files.txt; then
+            echo "❌ ERROR: Next.js build files found in PR"
+            ARTIFACT_PATHS="${ARTIFACT_PATHS}\n- Next.js .next directories"
+            ARTIFACTS_FOUND=1
+          fi
+
+          if grep -E "\.tsbuildinfo$" changed_files.txt; then
+            echo "❌ ERROR: TypeScript build info files found in PR"
+            ARTIFACT_PATHS="${ARTIFACT_PATHS}\n- TypeScript .tsbuildinfo files"
+            ARTIFACTS_FOUND=1
+          fi
+
+          if grep -E "^\.turbo/" changed_files.txt; then
+            echo "❌ ERROR: Turbo cache files found in PR"
+            ARTIFACT_PATHS="${ARTIFACT_PATHS}\n- Turbo cache files"
+            ARTIFACTS_FOUND=1
+          fi
+
+          if grep -E "node_modules/" changed_files.txt; then
+            echo "❌ ERROR: node_modules found in PR"
+            ARTIFACT_PATHS="${ARTIFACT_PATHS}\n- node_modules directories"
+            ARTIFACTS_FOUND=1
+          fi
+
+          if [ $ARTIFACTS_FOUND -eq 1 ]; then
+            echo "artifacts_found=true" >> $GITHUB_OUTPUT
+            echo "artifact_paths<<EOF" >> $GITHUB_OUTPUT
+            echo -e "$ARTIFACT_PATHS" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+
+            echo ""
+            echo "❌ Build artifacts detected in PR!"
+            echo "Please remove them using:"
+            echo "  npm run clean:all"
+            echo "  git add -u"
+            echo "  git commit -m 'chore: remove build artifacts'"
+            exit 1
+          fi
+
+          echo "artifacts_found=false" >> $GITHUB_OUTPUT
+          echo "✅ No build artifacts found in PR"
+
+      - name: Clean build artifacts
+        run: |
+          echo "🧹 Cleaning all build artifacts for fresh build..."
+          npm run clean:all
+
+      - name: Build all packages and apps
+        id: build
+        run: |
+          echo "🔨 Building from scratch with Turbo..."
+          npm run build
+
+      - name: Verify critical files generated
+        id: verify
+        run: |
+          echo "✅ Verifying critical build outputs..."
+
+          MISSING_FILES=""
+          ALL_OK=true
+
+          # Verify auth package middleware.js exists
+          if [ ! -f "packages/auth/dist/middleware.js" ]; then
+            echo "❌ ERROR: packages/auth/dist/middleware.js not generated!"
+            MISSING_FILES="${MISSING_FILES}\n- packages/auth/dist/middleware.js"
+            ALL_OK=false
+          fi
+
+          # Check all package dist directories
+          for pkg in auth database types shared-ui mock-data; do
+            if [ ! -d "packages/$pkg/dist" ]; then
+              echo "❌ ERROR: packages/$pkg/dist directory missing"
+              MISSING_FILES="${MISSING_FILES}\n- packages/$pkg/dist/"
+              ALL_OK=false
+            fi
+          done
+
+          # Check Next.js builds
+          if [ ! -d "apps/admin/.next" ]; then
+            echo "❌ ERROR: Admin app .next directory missing"
+            MISSING_FILES="${MISSING_FILES}\n- apps/admin/.next/"
+            ALL_OK=false
+          fi
+
+          if [ ! -d "apps/employee/.next" ]; then
+            echo "❌ ERROR: Employee app .next directory missing"
+            MISSING_FILES="${MISSING_FILES}\n- apps/employee/.next/"
+            ALL_OK=false
+          fi
+
+          if [ "$ALL_OK" = false ]; then
+            echo "missing_files<<EOF" >> $GITHUB_OUTPUT
+            echo -e "$MISSING_FILES" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          echo "✅ All critical files verified successfully"
+
+      - name: Type check
+        id: type-check
+        run: |
+          echo "📝 Running TypeScript type checks..."
+          npm run type-check
+
+      - name: Lint
+        id: lint
+        run: |
+          echo "🔍 Running linters..."
+          npm run lint
+
+      - name: Upload build artifacts for debugging
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-${{ github.run_id }}
+          path: |
+            .turbo/runs/*.json
+            apps/admin/.next/build-manifest.json
+            apps/employee/.next/build-manifest.json
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Calculate build metrics
+        id: metrics
+        if: success()
+        run: |
+          echo "📊 Calculating build metrics..."
+
+          # Calculate total dist size
+          TOTAL_SIZE=$(du -sh packages/*/dist 2>/dev/null | awk '{sum+=$1} END {print sum}' || echo "0")
+
+          # Count files in Next.js builds
+          ADMIN_FILES=$(find apps/admin/.next -type f 2>/dev/null | wc -l || echo "0")
+          EMPLOYEE_FILES=$(find apps/employee/.next -type f 2>/dev/null | wc -l || echo "0")
+
+          # Get package sizes
+          for pkg in auth database types shared-ui mock-data; do
+            if [ -d "packages/$pkg/dist" ]; then
+              SIZE=$(du -sh "packages/$pkg/dist" 2>/dev/null | cut -f1 || echo "N/A")
+              echo "${pkg}_size=$SIZE" >> $GITHUB_OUTPUT
+            fi
+          done
+
+          echo "admin_files=$ADMIN_FILES" >> $GITHUB_OUTPUT
+          echo "employee_files=$EMPLOYEE_FILES" >> $GITHUB_OUTPUT
+
+      - name: Comment on PR with results
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const buildStatus = '${{ steps.build.outcome }}';
+            const typeCheckStatus = '${{ steps.type-check.outcome }}';
+            const lintStatus = '${{ steps.lint.outcome }}';
+            const artifactsFound = '${{ steps.artifact-check.outputs.artifacts_found }}' === 'true';
+
+            let statusEmoji = '✅';
+            let statusText = 'All checks passed';
+
+            if (buildStatus !== 'success' || typeCheckStatus !== 'success' || lintStatus !== 'success' || artifactsFound) {
+              statusEmoji = '❌';
+              statusText = 'Some checks failed';
+            }
+
+            let comment = `## ${statusEmoji} PR Validation Results\n\n`;
+            comment += `### 📋 Check Status\n\n`;
+            comment += `| Check | Status |\n`;
+            comment += `|-------|--------|\n`;
+            comment += `| Build Artifacts | ${artifactsFound ? '❌ Found' : '✅ Clean'} |\n`;
+            comment += `| Build | ${buildStatus === 'success' ? '✅ Passed' : '❌ Failed'} |\n`;
+            comment += `| Type Check | ${typeCheckStatus === 'success' ? '✅ Passed' : '❌ Failed'} |\n`;
+            comment += `| Lint | ${lintStatus === 'success' ? '✅ Passed' : '❌ Failed'} |\n\n`;
+
+            if (artifactsFound) {
+              comment += `### ⚠️ Build Artifacts Detected\n\n`;
+              comment += `The following artifacts were found in your PR:\n`;
+              comment += `${{ steps.artifact-check.outputs.artifact_paths }}\n\n`;
+              comment += `**Please remove them:**\n`;
+              comment += `\`\`\`bash\n`;
+              comment += `npm run clean:all\n`;
+              comment += `git add -u\n`;
+              comment += `git commit -m 'chore: remove build artifacts'\n`;
+              comment += `\`\`\`\n\n`;
+            }
+
+            if (buildStatus === 'success' && typeCheckStatus === 'success' && lintStatus === 'success' && !artifactsFound) {
+              comment += `### 📊 Build Metrics\n\n`;
+              comment += `- **Auth package:** ${{ steps.metrics.outputs.auth_size }}\n`;
+              comment += `- **Database package:** ${{ steps.metrics.outputs.database_size }}\n`;
+              comment += `- **Types package:** ${{ steps.metrics.outputs.types_size }}\n`;
+              comment += `- **Shared UI package:** ${{ steps.metrics.outputs.shared-ui_size }}\n`;
+              comment += `- **Admin app files:** ${{ steps.metrics.outputs.admin_files }}\n`;
+              comment += `- **Employee app files:** ${{ steps.metrics.outputs.employee_files }}\n\n`;
+            }
+
+            comment += `### 💡 Tips\n\n`;
+            comment += `- Keep build artifacts out of git\n`;
+            comment += `- Run \`npm run clean:all\` before switching branches\n`;
+            comment += `- Use \`npm run rebuild\` for a clean build locally\n\n`;
+            comment += `---\n`;
+            comment += `*Workflow run: [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})*`;
+
+            // Find existing comment and update or create new
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('PR Validation Results')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+            }
+
+      - name: Build summary
+        if: always()
+        run: |
+          echo "## 📋 PR Validation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.build.outcome }}" = "success" ] && [ "${{ steps.type-check.outcome }}" = "success" ] && [ "${{ steps.lint.outcome }}" = "success" ]; then
+            echo "### ✅ All Checks Passed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- ✅ No build artifacts in PR" >> $GITHUB_STEP_SUMMARY
+            echo "- ✅ Clean build successful" >> $GITHUB_STEP_SUMMARY
+            echo "- ✅ Type checks passed" >> $GITHUB_STEP_SUMMARY
+            echo "- ✅ Linting passed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 📊 Build Metrics" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Package | Size |" >> $GITHUB_STEP_SUMMARY
+            echo "|---------|------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Auth | ${{ steps.metrics.outputs.auth_size }} |" >> $GITHUB_STEP_SUMMARY
+            echo "| Database | ${{ steps.metrics.outputs.database_size }} |" >> $GITHUB_STEP_SUMMARY
+            echo "| Types | ${{ steps.metrics.outputs.types_size }} |" >> $GITHUB_STEP_SUMMARY
+            echo "| Shared UI | ${{ steps.metrics.outputs.shared-ui_size }} |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Next.js Builds:**" >> $GITHUB_STEP_SUMMARY
+            echo "- Admin: ${{ steps.metrics.outputs.admin_files }} files" >> $GITHUB_STEP_SUMMARY
+            echo "- Employee: ${{ steps.metrics.outputs.employee_files }} files" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Some Checks Failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- Artifact Check: ${{ steps.artifact-check.outputs.artifacts_found == 'true' && '❌ Failed' || '✅ Passed' }}" >> $GITHUB_STEP_SUMMARY
+            echo "- Build: ${{ steps.build.outcome == 'success' && '✅ Passed' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
+            echo "- Type Check: ${{ steps.type-check.outcome == 'success' && '✅ Passed' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
+            echo "- Lint: ${{ steps.lint.outcome == 'success' && '✅ Passed' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Links" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- [View PR](${{ github.event.pull_request.html_url }})" >> $GITHUB_STEP_SUMMARY
+          echo "- [View Changes](${{ github.event.pull_request.html_url }}/files)" >> $GITHUB_STEP_SUMMARY
