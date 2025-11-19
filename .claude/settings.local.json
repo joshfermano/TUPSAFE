@@ -126,7 +126,8 @@
       "Bash(git config:*)",
       "Bash(for file in .github/workflows/*.yml)",
       "Bash(do echo \"=== Checking $file ===\")",
-      "Bash(python3 -c \"import yaml; yaml.safe_load(open(''$file''))\")"
+      "Bash(python3 -c \"import yaml; yaml.safe_load(open(''$file''))\")",
+      "Bash(npm run clean:dist:*)"
     ],
     "deny": [],
     "ask": []
