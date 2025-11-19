@@ -101,7 +101,7 @@ function detectChangedFields(
  */
 function getProfileChangeMessage(
   change: FieldChange,
-  profile: Partial<Profile>
+  _profile: Partial<Profile>
 ): {
   title: string;
   description: string;
@@ -442,7 +442,7 @@ export async function updateProfile(
   updates: Partial<Profile>
 ): Promise<Profile> {
   // Remove fields that shouldn't be updated via this method
-  const { id, createdAt, ...safeUpdates } = updates as any;
+  const { id: _id, createdAt: _createdAt, ...safeUpdates } = updates as any;
 
   const { data, error } = await supabase
     .from('profiles')

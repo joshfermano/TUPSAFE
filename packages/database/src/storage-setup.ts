@@ -96,7 +96,7 @@ async function setupStorageBuckets() {
     for (const config of buckets) {
       console.log(`📦 Creating bucket: ${config.name}...`);
 
-      const { data: existingBucket, error: checkError } =
+      const { data: existingBucket } =
         await supabase.storage.getBucket(config.name);
 
       if (existingBucket) {
@@ -106,7 +106,7 @@ async function setupStorageBuckets() {
         continue;
       }
 
-      const { data, error } = await supabase.storage.createBucket(config.name, {
+      const { error } = await supabase.storage.createBucket(config.name, {
         public: config.public,
         fileSizeLimit: config.fileSizeLimit,
         allowedMimeTypes: config.allowedMimeTypes,

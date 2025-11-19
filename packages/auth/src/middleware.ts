@@ -47,7 +47,7 @@ export async function createAuthMiddleware() {
             return req.cookies.getAll();
           },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
+            cookiesToSet.forEach(({ name, value, options: _options }) =>
               req.cookies.set(name, value)
             );
             supabaseResponse = NextResponse.next({
