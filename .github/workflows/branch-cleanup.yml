@@ -1,0 +1,188 @@
+name: Branch Cleanup
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  cleanup:
+    name: Cleanup Branch Resources
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Delete branch caches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_REF: refs/heads/${{ github.head_ref }}
+        run: |
+          echo "🧹 Cleaning up caches for branch: ${{ github.head_ref }}"
+
+          # Get all caches for this branch
+          CACHES=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "/repos/${{ github.repository }}/actions/caches?ref=$BRANCH_REF" \
+            --jq '.actions_caches[]')
+
+          if [ -z "$CACHES" ]; then
+            echo "✅ No caches found for this branch"
+            echo "cache_count=0" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          DELETED_COUNT=0
+          DELETED_SIZE=0
+
+          echo "$CACHES" | jq -c '.' | while IFS= read -r cache; do
+            CACHE_ID=$(echo "$cache" | jq -r '.id')
+            CACHE_KEY=$(echo "$cache" | jq -r '.key')
+            CACHE_SIZE=$(echo "$cache" | jq -r '.size_in_bytes')
+
+            echo "🗑️  Deleting cache: $CACHE_KEY (ID: $CACHE_ID)"
+
+            gh api \
+              --method DELETE \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              /repos/${{ github.repository }}/actions/caches/$CACHE_ID || true
+
+            DELETED_COUNT=$((DELETED_COUNT + 1))
+            DELETED_SIZE=$((DELETED_SIZE + CACHE_SIZE))
+          done
+
+          DELETED_SIZE_MB=$((DELETED_SIZE / 1024 / 1024))
+
+          echo "✅ Deleted $DELETED_COUNT caches (${DELETED_SIZE_MB} MB)"
+          echo "cache_count=$DELETED_COUNT" >> $GITHUB_OUTPUT
+          echo "cache_size_mb=$DELETED_SIZE_MB" >> $GITHUB_OUTPUT
+
+      - name: Add PR comment
+        if: github.event.pull_request.merged == true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branchName = context.payload.pull_request.head.ref;
+            const baseBranch = context.payload.pull_request.base.ref;
+
+            const comment = `## ✅ PR Merged Successfully
+
+            ### 🎉 Branch \`${branchName}\` has been merged into \`${baseBranch}\`
+
+            #### 🧹 Cleanup Actions:
+            - ✅ Branch caches have been cleaned up
+            - ✅ GitHub Actions artifacts will expire per retention policy
+
+            #### 🔄 Next Steps:
+            ${baseBranch === 'main' ? `
+            - 🚀 Changes are now in production
+            - 📊 Monitor deployment status
+            - 🔍 Check production logs for any issues
+            ` : baseBranch === 'dev' ? `
+            - 🧪 Changes are now in staging
+            - ✅ Test thoroughly before merging to main
+            - 📝 Update documentation if needed
+            ` : `
+            - 🔄 Branch \`${baseBranch}\` has been updated
+            - ✅ Verify changes in your local environment
+            - 📋 Continue with your workflow
+            `}
+
+            #### 💡 Local Cleanup Reminder:
+            To keep your local repository clean, consider:
+            \`\`\`bash
+            # Update your local main/dev branch
+            git checkout ${baseBranch}
+            git pull origin ${baseBranch}
+
+            # Delete the merged branch locally
+            git branch -d ${branchName}
+
+            # Clean build artifacts
+            npm run clean:all
+
+            # Fresh build
+            npm run build
+            \`\`\`
+
+            ---
+            *This is an automated message from the Branch Cleanup workflow.*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Add PR comment for closed (not merged)
+        if: github.event.pull_request.merged == false
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branchName = context.payload.pull_request.head.ref;
+
+            const comment = `## 🔒 PR Closed Without Merging
+
+            ### Branch \`${branchName}\` was not merged
+
+            #### 🧹 Cleanup Actions:
+            - ✅ Branch caches have been cleaned up
+            - ✅ GitHub Actions artifacts will expire per retention policy
+
+            #### 💡 Local Cleanup Reminder:
+            If you're done with this branch locally:
+            \`\`\`bash
+            # Switch to another branch
+            git checkout main
+
+            # Delete the branch locally
+            git branch -D ${branchName}
+
+            # Delete the remote branch (if you have permissions)
+            git push origin --delete ${branchName}
+            \`\`\`
+
+            #### 🔄 Want to Reopen?
+            If you closed this by mistake:
+            1. Reopen this PR
+            2. Push new commits if needed
+            3. Caches will be rebuilt automatically
+
+            ---
+            *This is an automated message from the Branch Cleanup workflow.*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Generate summary
+        if: always()
+        run: |
+          echo "## 🧹 Branch Cleanup Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Branch: \`${{ github.head_ref }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ github.event.pull_request.merged }}" = "true" ]; then
+            echo "✅ **Status:** Merged into \`${{ github.base_ref }}\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "🔒 **Status:** Closed without merging" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🧹 Cleanup Actions:" >> $GITHUB_STEP_SUMMARY
+          echo "- Deleted branch-specific caches" >> $GITHUB_STEP_SUMMARY
+          echo "- Added guidance comment to PR" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 💡 Reminder:" >> $GITHUB_STEP_SUMMARY
+          echo "Team members should update their local repositories and clean build artifacts." >> $GITHUB_STEP_SUMMARY
