@@ -12,7 +12,7 @@ import { createServerClient } from '@tupsafe/auth/server';
 import { db, profiles } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Get Supabase session directly
     const supabase = await createServerClient();

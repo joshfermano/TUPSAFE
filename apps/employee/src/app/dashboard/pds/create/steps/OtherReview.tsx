@@ -242,7 +242,7 @@ export const OtherReview = memo(function OtherReview() {
                           <FormLabel>Address</FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="Complete address"
+                              placeholder='Complete address'
                               {...field}
                               className="resize-none bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                             />
@@ -268,7 +268,7 @@ export const OtherReview = memo(function OtherReview() {
               <h4 className="text-base font-medium text-foreground">Ready to Submit?</h4>
             </div>
             <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-              Please review all the information you've provided. Once submitted, your Personal Data
+              Please review all the information you&apos;ve provided. Once submitted, your Personal Data
               Sheet will be forwarded to HR for review. You can still save as draft if you need more time.
             </p>
             <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-2 list-disc list-inside">

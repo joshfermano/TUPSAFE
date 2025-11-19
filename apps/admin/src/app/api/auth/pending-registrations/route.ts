@@ -11,7 +11,7 @@ import {
   createServerClient,
 } from '@tupsafe/auth/server';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Check if user has HR or admin role
     const hasPermission = await checkUserRole(['hr', 'admin']);

@@ -123,7 +123,7 @@ function ApplicationCard({ application }: { application: Application }) {
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="h-4 w-4 text-green-600" />
                   <span className="font-medium text-green-700 dark:text-green-400">
-                    Interview: {format(new Date(application.interviewDate), 'MMM dd, yyyy')}
+                    Interview: {format(new Date(application.interviewDate), "MMM dd, yyyy")}
                   </span>
                 </div>
               )}
@@ -161,7 +161,7 @@ function EmptyState() {
               No Applications Yet
             </h3>
             <p className="text-sm text-slate-600 dark:text-slate-400 max-w-sm">
-              You haven't submitted any job applications yet. Browse open positions to get
+              You haven&apos;t submitted any job applications yet. Browse open positions to get
               started.
             </p>
           </div>

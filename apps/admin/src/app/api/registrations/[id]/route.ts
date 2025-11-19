@@ -18,7 +18,7 @@ import {
   departments,
   positions,
 } from '@tupsafe/database/server';
-import { eq, and, or } from 'drizzle-orm';
+import { eq, or } from 'drizzle-orm';
 import { checkUserRole, createServerClient } from '@tupsafe/auth/server';
 import type { RegistrationDetail, ApiResponse } from '@tupsafe/types';
 

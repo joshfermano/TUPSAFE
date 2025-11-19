@@ -24,7 +24,7 @@ import { db, profiles } from '@tupsafe/database/server';
 import { eq, and, gte, sql, count } from 'drizzle-orm';
 import type { UserStatsResponse } from '@tupsafe/types';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const startTime = Date.now();
   try {
     console.log('[Stats API] Request received');

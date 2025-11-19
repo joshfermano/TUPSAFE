@@ -20,7 +20,7 @@ import {
   departments,
   positions,
 } from '@tupsafe/database/server';
-import { eq, and, or, like, ilike, desc, asc, sql, count } from 'drizzle-orm';
+import { eq, and, or, sql, count } from 'drizzle-orm';
 import { checkUserRoleFromSupabase, createServerClient } from '@tupsafe/auth/server';
 import {
   listRegistrationsSchema,
