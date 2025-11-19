@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@tupsafe/auth/server';
 import { db } from '@tupsafe/database/server';
-import { jobApplications, openPositions, departments, applicationStatusHistory } from '@tupsafe/database/server';
-import { eq, desc, and } from 'drizzle-orm';
+import { jobApplications, openPositions, departments } from '@tupsafe/database/server';
+import { eq, desc } from 'drizzle-orm';
 
 /**
  * GET /api/applications
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
 
     // Get filter params
     const searchParams = request.nextUrl.searchParams;
-    const statusFilter = searchParams.get('status');
+    const _statusFilter = searchParams.get('status');
 
     // Fetch applications with position and department details
     const applicationsQuery = db

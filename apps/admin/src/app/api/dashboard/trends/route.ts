@@ -410,33 +410,39 @@ async function getComplianceTrends(
 /**
  * Aggregate trend data with breakdown
  */
+interface TrendRow {
+  date: string;
+  value: number;
+  [key: string]: string | number;
+}
+
 function aggregateTrendData(
-  current: any[],
-  previous: any[],
+  current: TrendRow[],
+  previous: TrendRow[],
   breakdownKey: string
 ): [TrendDataPoint[], TrendDataPoint[]] {
   const trendMap = new Map<string, TrendDataPoint>();
-  current.forEach((row: any) => {
+  current.forEach((row: TrendRow) => {
     const existing = trendMap.get(row.date) || {
       date: row.date,
       value: 0,
       breakdown: {} as Record<string, number>,
     };
     existing.value += Number(row.value);
-    const breakdownKeyValue = row[breakdownKey as keyof typeof row] as string;
+    const breakdownKeyValue = row[breakdownKey] as string;
     (existing.breakdown as Record<string, number>)[breakdownKeyValue] = Number(row.value);
     trendMap.set(row.date, existing);
   });
 
   const comparisonMap = new Map<string, TrendDataPoint>();
-  previous.forEach((row: any) => {
+  previous.forEach((row: TrendRow) => {
     const existing = comparisonMap.get(row.date) || {
       date: row.date,
       value: 0,
       breakdown: {} as Record<string, number>,
     };
     existing.value += Number(row.value);
-    const breakdownKeyValue = row[breakdownKey as keyof typeof row] as string;
+    const breakdownKeyValue = row[breakdownKey] as string;
     (existing.breakdown as Record<string, number>)[breakdownKeyValue] = Number(row.value);
     comparisonMap.set(row.date, existing);
   });

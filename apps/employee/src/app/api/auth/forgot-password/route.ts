@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
  *
  * Initiates password reset flow by sending reset link to user's email
  */
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   return NextResponse.json(
     {
       error: 'Not Implemented',

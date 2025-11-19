@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     const { userId, type } = validationResult.data;
 
     // Check rate limit (5 OTP requests per hour per user)
-    const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || 'unknown';
+    const _ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || 'unknown';
 
     // Get user profile
     const [profile] = await db

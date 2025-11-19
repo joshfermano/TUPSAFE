@@ -38,9 +38,9 @@ export function AnimatedGridPattern({
   ...props
 }: AnimatedGridPatternProps) {
   const id = useId();
-  const containerRef = useRef(null);
+  const containerRef = useRef<SVGSVGElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-  const [squares, setSquares] = useState(() => generateSquares(numSquares));
+  const [squares, setSquares] = useState<Array<{ id: number; pos: number[] }>>(() => []);
 
   function getPos() {
     return [
@@ -76,6 +76,7 @@ export function AnimatedGridPattern({
     if (dimensions.width && dimensions.height) {
       setSquares(generateSquares(numSquares));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dimensions, numSquares]);
 
   // Resize observer to update container dimensions

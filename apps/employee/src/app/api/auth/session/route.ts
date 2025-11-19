@@ -9,7 +9,7 @@ import {
   getRemainingSessionTime,
 } from '@tupsafe/auth/server';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Validate current session
     const validation = await validateSession();

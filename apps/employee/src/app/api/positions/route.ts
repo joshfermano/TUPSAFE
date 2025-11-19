@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
 
     // Build query conditions
     const conditions = [];
-    conditions.push(eq(openPositions.status, status as any));
+    conditions.push(eq(openPositions.status, status as 'open' | 'closed' | 'filled' | 'cancelled'));
     conditions.push(eq(openPositions.isActive, true));
 
     // Only show positions with future deadlines for 'open' status
@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (employmentCategoryFilter) {
-      conditions.push(eq(openPositions.employmentCategory, employmentCategoryFilter as any));
+      conditions.push(eq(openPositions.employmentCategory, employmentCategoryFilter as 'faculty' | 'administrative' | 'contractual' | 'not_applicable'));
     }
 
     // Fetch positions with department information using a join

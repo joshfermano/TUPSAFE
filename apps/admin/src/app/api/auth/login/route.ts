@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ADMIN PORTAL SECURITY: Verify user has admin privileges
-    if (!ADMIN_ROLES.includes(profile.role as any)) {
+    if (!ADMIN_ROLES.includes(profile.role as 'admin' | 'hr' | 'super_admin')) {
       // Log unauthorized access attempt
       try {
         await createAuditLog({

@@ -18,7 +18,7 @@ export function LoginForm({ onSuccess, onError, redirectTo: _redirectTo }: Login
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [needsMfa, setNeedsMfa] = useState(false);
+  const [needsMfa, _setNeedsMfa] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 

@@ -72,9 +72,11 @@ export function Globe({
   };
 
   useEffect(() => {
+    let _width = width;
     const onResize = () => {
       if (canvasRef.current) {
-        width = canvasRef.current.offsetWidth;
+        _width = canvasRef.current.offsetWidth;
+        width = _width;
       }
     };
 
