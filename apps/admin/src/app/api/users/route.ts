@@ -20,7 +20,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkUserRoleFromSupabase, getUserFromSupabase } from '@tupsafe/auth/server';
 import { db, profiles, departments, positions } from '@tupsafe/database/server';
-import { and, eq, sql, count } from 'drizzle-orm';
+import { and, eq, sql, count, or, ilike, asc, desc } from 'drizzle-orm';
 import {
   userListQuerySchema,
   type UserListResponse,
