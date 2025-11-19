@@ -118,7 +118,15 @@
       "Bash(git reset:*)",
       "Bash(git rm:*)",
       "Bash(git commit:*)",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(kill:*)",
+      "Bash(npm run verify:no-artifacts:*)",
+      "Bash(git config:*)",
+      "Bash(for file in .github/workflows/*.yml)",
+      "Bash(do echo \"=== Checking $file ===\")",
+      "Bash(python3 -c \"import yaml; yaml.safe_load(open(''$file''))\")"
     ],
     "deny": [],
     "ask": []
