@@ -172,7 +172,7 @@ export class MockDatabase {
   }
 
   // Get submissions requiring approval (for HR/Admin/Supervisor roles)
-  static getPendingApprovals(approverId?: string) {
+  static getPendingApprovals(_approverId?: string) {
     const pendingPds = mockPdsSubmissions.filter(
       (pds) => pds.status === 'submitted' || pds.status === 'reviewing'
     );
