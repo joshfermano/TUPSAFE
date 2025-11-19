@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
  *
  * Updates user password using reset token
  */
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   return NextResponse.json(
     {
       error: 'Not Implemented',

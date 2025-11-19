@@ -149,13 +149,21 @@ export async function GET(request: NextRequest) {
 /**
  * Generate human-readable activity description
  */
-function generateActivityDescription(log: any): string {
+interface ActivityLogRecord {
+  action: string;
+  metadata?: Record<string, string | number | boolean>;
+  resourceType?: string;
+  userFirstName?: string | null;
+  userLastName?: string | null;
+}
+
+function generateActivityDescription(log: ActivityLogRecord): string {
   const action = log.action;
   const metadata = log.metadata || {};
   const resourceType = log.resourceType;
   const userName = log.userFirstName && log.userLastName
     ? `${log.userFirstName} ${log.userLastName}`
-    : metadata.userName || 'User';
+    : (metadata.userName as string) || 'User';
 
   // User management actions
   if (action.includes('user.created') || action.includes('user_created')) {
@@ -185,17 +193,17 @@ function generateActivityDescription(log: any): string {
 
   // Submission actions
   if (action.includes('submission.approved') || action.includes('submission_approved')) {
-    const type = metadata.submissionType || resourceType || 'submission';
+    const type = String(metadata.submissionType || resourceType || 'submission');
     return `${userName} approved ${type.toUpperCase()} submission`;
   }
 
   if (action.includes('submission.rejected') || action.includes('submission_rejected')) {
-    const type = metadata.submissionType || resourceType || 'submission';
+    const type = String(metadata.submissionType || resourceType || 'submission');
     return `${userName} rejected ${type.toUpperCase()} submission`;
   }
 
   if (action.includes('submission.submitted') || action.includes('submission_submitted')) {
-    const type = metadata.submissionType || resourceType || 'submission';
+    const type = String(metadata.submissionType || resourceType || 'submission');
     return `${userName} submitted ${type.toUpperCase()} form`;
   }
 
@@ -232,12 +240,12 @@ function generateActivityDescription(log: any): string {
 
   // Deadline actions
   if (action.includes('deadline.created') || action.includes('deadline_created')) {
-    const type = metadata.submissionType || 'submission';
+    const type = String(metadata.submissionType || 'submission');
     return `${userName} set ${type.toUpperCase()} deadline`;
   }
 
   if (action.includes('deadline.updated') || action.includes('deadline_updated')) {
-    const type = metadata.submissionType || 'submission';
+    const type = String(metadata.submissionType || 'submission');
     return `${userName} updated ${type.toUpperCase()} deadline`;
   }
 

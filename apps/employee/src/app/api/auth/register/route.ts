@@ -31,8 +31,9 @@ import {
 
 /**
  * Registration request payload - discriminated union based on userType
+ * Note: Currently unused but kept for future type safety improvements
  */
-type RegistrationPayload =
+type _RegistrationPayload =
   | EmployeeRegistrationFormData
   | ApplicantRegistrationFormData;
 

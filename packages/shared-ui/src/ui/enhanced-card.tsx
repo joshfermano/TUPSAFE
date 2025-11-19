@@ -82,7 +82,7 @@ const EnhancedCard = React.forwardRef<HTMLDivElement, EnhancedCardProps>(
       gradientOpacity = 0.8,
       gradientFrom = "#9b1c1c",
       gradientTo = "#dc2626",
-      neonSize = 300,
+      neonSize: _neonSize = 300,
       neonColors = {
         firstColor: "#9b1c1c",
         secondColor: "#dc2626",

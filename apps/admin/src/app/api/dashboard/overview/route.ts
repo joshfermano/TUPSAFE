@@ -447,7 +447,12 @@ function mapActionToType(action: string): DashboardOverviewResponse['recentActiv
 /**
  * Generates human-readable activity description
  */
-function generateActivityDescription(log: any): string {
+interface AuditLogRecord {
+  action: string;
+  metadata?: Record<string, string | number | boolean>;
+}
+
+function generateActivityDescription(log: AuditLogRecord): string {
   const action = log.action;
   const metadata = log.metadata || {};
 

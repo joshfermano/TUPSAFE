@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     const { reportType, startDate, endDate, format, departmentId } = params;
 
     // Fetch data based on report type
-    let data: any[] = [];
+    let data: Record<string, string | number>[] = [];
     let headers: string[] = [];
 
     switch (reportType) {
@@ -417,13 +417,13 @@ async function exportComplianceReport(
 /**
  * Convert data to CSV format
  */
-function convertToCSV(data: any[], headers: string[]): string {
+function convertToCSV(data: Record<string, string | number>[], headers: string[]): string {
   if (data.length === 0) {
     return headers.join(',');
   }
 
   // Escape CSV values
-  const escapeCSV = (value: any): string => {
+  const escapeCSV = (value: string | number | null | undefined): string => {
     if (value === null || value === undefined) {
       return '';
     }

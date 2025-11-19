@@ -1,11 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "../lib/utils"
-import { Button, buttonVariants } from "./button"
+import { Button } from "./button"
 import { ShimmerButton } from "./shimmer-button"
 import { ShinyButton } from "./shiny-button"
 import { PulsatingButton } from "./pulsating-button"
