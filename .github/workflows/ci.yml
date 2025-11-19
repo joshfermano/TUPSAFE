@@ -103,6 +103,32 @@ jobs:
             echo "✅ packages/$pkg/dist exists"
           done
 
+      - name: Setup environment variables for ${{ matrix.target.name }}
+        run: |
+          echo "🔧 Setting up environment variables for ${{ matrix.target.name }}..."
+
+          # Copy .env.example to .env.local for build
+          if [ -f "${{ matrix.target.path }}/.env.example" ]; then
+            cp ${{ matrix.target.path }}/.env.example ${{ matrix.target.path }}/.env.local
+            echo "✅ Created .env.local from .env.example"
+          else
+            echo "⚠️ WARNING: .env.example not found, creating minimal .env.local"
+            cat > ${{ matrix.target.path }}/.env.local << 'EOF'
+          NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder-anon-key
+          SUPABASE_SERVICE_ROLE_KEY=placeholder-service-role-key
+          DATABASE_URL=postgresql://postgres:password@localhost:5432/tupsafe
+          EOF
+          fi
+
+          # Verify .env.local exists
+          if [ -f "${{ matrix.target.path }}/.env.local" ]; then
+            echo "✅ .env.local verified"
+          else
+            echo "❌ ERROR: Failed to create .env.local"
+            exit 1
+          fi
+
       - name: Build ${{ matrix.target.name }} app
         run: |
           echo "🔨 Building ${{ matrix.target.name }} app..."
@@ -233,6 +259,22 @@ jobs:
         run: |
           echo "🧹 Performing deep clean..."
           npm run clean:all
+
+      - name: Setup environment variables for all apps
+        run: |
+          echo "🔧 Setting up environment variables for all apps..."
+
+          # Setup employee app
+          if [ -f "apps/employee/.env.example" ]; then
+            cp apps/employee/.env.example apps/employee/.env.local
+            echo "✅ Created apps/employee/.env.local"
+          fi
+
+          # Setup admin app
+          if [ -f "apps/admin/.env.example" ]; then
+            cp apps/admin/.env.example apps/admin/.env.local
+            echo "✅ Created apps/admin/.env.local"
+          fi
 
       - name: Build from scratch
         id: build
