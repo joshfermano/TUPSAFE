@@ -127,7 +127,14 @@
       "Bash(for file in .github/workflows/*.yml)",
       "Bash(do echo \"=== Checking $file ===\")",
       "Bash(python3 -c \"import yaml; yaml.safe_load(open(''$file''))\")",
-      "Bash(npm run clean:dist:*)"
+      "Bash(npm run clean:dist:*)",
+      "Bash(git -C /home/joshfermano/Thesis/smart-gov status --short)",
+      "Bash(git -C /home/joshfermano/Thesis/smart-gov log --oneline -5)",
+      "Bash(timeout 120 npx turbo:*)",
+      "Bash(timeout 90 npm run build:admin:*)",
+      "Bash(while read file)",
+      "Bash(do echo \"=== $file ===\" head -30 \"$file\")",
+      "Bash(git -C /home/joshfermano/Thesis/smart-gov add:*)"
     ],
     "deny": [],
     "ask": []
