@@ -46,7 +46,7 @@ export async function GET(_request: NextRequest) {
       'admin',
       'hr',
       'supervisor',
-    ]);
+    ], 'admin');
     const authDuration = Date.now() - authStartTime;
     console.log(
       `[Reports API] Permission check completed in ${authDuration}ms - result:`,
