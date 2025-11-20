@@ -25,7 +25,7 @@ import type { RegistrationStats, ApiResponse } from '@tupsafe/types';
 export async function GET(_request: NextRequest) {
   try {
     // Authorization check - HR or Admin only (using Supabase session)
-    const hasPermission = await checkUserRoleFromSupabase(['hr', 'admin']);
+    const hasPermission = await checkUserRoleFromSupabase(['hr', 'admin'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(

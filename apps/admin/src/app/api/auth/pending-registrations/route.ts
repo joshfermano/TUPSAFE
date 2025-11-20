@@ -55,7 +55,7 @@ export async function GET(_request: NextRequest) {
     const usersWithEmails = await Promise.all(
       pendingUsers.map(async (user) => {
         try {
-          const supabase = await createServerClient();
+          const supabase = await createServerClient('admin');
           const { data: userData } = await supabase.auth.admin.getUserById(user.userId);
 
           return {

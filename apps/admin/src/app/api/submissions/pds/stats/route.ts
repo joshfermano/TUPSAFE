@@ -31,7 +31,7 @@ export async function GET() {
 
     // Verify admin/HR permissions
     const authStartTime = Date.now();
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr']);
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
     const authDuration = Date.now() - authStartTime;
 
     if (!hasPermission) {

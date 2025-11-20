@@ -5,7 +5,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db, profiles, trustedDevices, createAuditLog } from '@tupsafe/database/server';
+import {
+  db,
+  profiles,
+  trustedDevices,
+  createAuditLog,
+} from '@tupsafe/database/server';
 import { eq, and } from 'drizzle-orm';
 import {
   createServerClient,
@@ -40,8 +45,9 @@ export async function POST(request: NextRequest) {
 
     const { email, password } = validationResult.data;
 
-    // Initialize Supabase client
-    const supabase = await createServerClient();
+    // Initialize Supabase client with portal-specific cookie isolation
+    // CRITICAL: Pass 'employee' portal to ensure session isolation from admin portal
+    const supabase = await createServerClient('employee');
 
     // Authenticate with Supabase
     const { data: authData, error: authError } =
@@ -73,18 +79,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check account status
-    if (profile.accountStatus === 'pending') {
+    // Check if email is verified
+    if (!profile.emailVerifiedAt) {
       return NextResponse.json(
         {
-          error: 'Account pending approval',
+          error: 'Email not verified',
           message:
-            'Your account is pending admin approval. Please wait for confirmation.',
-          status: 'pending_approval',
+            'Please verify your email address before logging in. Check your inbox for the verification code.',
+          status: 'email_not_verified',
         },
         { status: 403 }
       );
     }
+
+    // Note: Allow pending users to log in - middleware will redirect them to pending-approval page
+    // This prevents infinite redirect loops while maintaining proper access control
 
     if (profile.accountStatus === 'suspended') {
       return NextResponse.json(
@@ -122,13 +131,11 @@ export async function POST(request: NextRequest) {
       request.headers.get('x-forwarded-for')?.split(',')[0] ||
       request.headers.get('x-real-ip') ||
       '';
-    const deviceFingerprint = await generateDeviceFingerprint(
-      userAgent,
-      ipAddress
-    );
+    const deviceFingerprint = generateDeviceFingerprint(ipAddress, userAgent);
 
     // Check if device is trusted
-    const isTrusted = await checkTrustedDevice(userId, deviceFingerprint);
+    const deviceCheck = await checkTrustedDevice(userId, deviceFingerprint);
+    const isTrusted = deviceCheck.trusted;
 
     // If device is not trusted, require OTP
     if (!isTrusted) {
@@ -137,6 +144,10 @@ export async function POST(request: NextRequest) {
         if (otpResult.code) {
           await sendOTPEmail(email, otpResult.code, 'login_challenge');
         }
+
+        // CRITICAL: Sign out from Supabase to prevent session persistence
+        // The session will be re-established after OTP verification
+        await supabase.auth.signOut();
 
         return NextResponse.json({
           success: false,
@@ -204,13 +215,24 @@ export async function POST(request: NextRequest) {
       // Non-critical, continue
     }
 
+    // Return session data so the client can establish a Supabase session
     return NextResponse.json({
       success: true,
       message: 'Login successful',
+      session: {
+        access_token: authData.session.access_token,
+        refresh_token: authData.session.refresh_token,
+        expires_at: authData.session.expires_at,
+        expires_in: authData.session.expires_in,
+        token_type: authData.session.token_type,
+        user: authData.session.user,
+      },
       data: {
         userId,
         email,
         employeeId: profile.employeeId,
+        applicantId: profile.applicantId,
+        userType: profile.userType,
         firstName: profile.firstName,
         lastName: profile.lastName,
         role: profile.role,

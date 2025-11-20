@@ -1,6 +1,10 @@
 // Client utilities
 export { createClient } from './utils/supabase/client';
 
+// Cookie configuration utilities
+export { getPortalCookieName, getCookieOptions, createCookieInterceptor } from './utils/supabase/cookie-config';
+export type { Portal } from './utils/supabase/cookie-config';
+
 // Legacy client export for backward compatibility
 // Re-export directly from client.ts instead of as a module path
 import { supabase as supabaseClient } from './client';

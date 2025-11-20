@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     const data: CreateUserData = validationResult.data;
 
     // Initialize Supabase client
-    const supabase = await createServerClient();
+    const supabase = await createServerClient('admin');
 
     // Check if email already exists
     const { data: existingUser, error: checkError } =

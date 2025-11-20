@@ -24,6 +24,7 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRegistrationDetails } from '@/hooks/useRegistrations';
 import type { Registration } from '@/lib/api/registrations';
+import { capitalize } from '@/lib/formatting-helpers';
 
 interface RegistrationDetailsDialogProps {
   registration: Registration | null;
@@ -46,7 +47,7 @@ export function RegistrationDetailsDialog({
     registration?.id || ''
   );
 
-  const isPending = details?.status === 'pending';
+  const isPending = details?.status === 'pending' || details?.accountStatus === 'pending';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -85,56 +86,64 @@ export function RegistrationDetailsDialog({
             <TabsContent value="profile" className="space-y-4 mt-4">
               <div className="space-y-4">
                 {/* Status Banner */}
-                <div
-                  className={`rounded-lg p-4 ${
-                    details.status === 'pending'
-                      ? 'bg-blue-50 border border-blue-200'
-                      : details.status === 'approved'
-                      ? 'bg-green-50 border border-green-200'
-                      : 'bg-red-50 border border-red-200'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {details.status === 'pending' ? (
-                        <Clock className="h-5 w-5 text-blue-600" />
-                      ) : details.status === 'approved' ? (
-                        <CheckCircle className="h-5 w-5 text-green-600" />
-                      ) : (
-                        <XCircle className="h-5 w-5 text-red-600" />
-                      )}
-                      <div>
-                        <div className="font-semibold">
-                          Status: {details.status.charAt(0).toUpperCase() + details.status.slice(1)}
+                {(() => {
+                  const status = details?.status || details?.accountStatus;
+                  const isPending = status === 'pending';
+                  const isApproved = details?.status === 'approved' || details?.accountStatus === 'active';
+                  
+                  return (
+                    <div
+                      className={`rounded-lg p-4 border ${
+                        isPending
+                          ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900'
+                          : isApproved
+                          ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900'
+                          : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          {isPending ? (
+                            <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                          ) : isApproved ? (
+                            <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                          ) : (
+                            <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                          )}
+                          <div>
+                            <div className="font-semibold text-foreground">
+                              Status: {capitalize(status, 'Unknown')}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              Requested {details?.requestedAt ? formatDistanceToNow(new Date(details.requestedAt), { addSuffix: true }) : 'Unknown'}
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          Requested {formatDistanceToNow(new Date(details.requestedAt), { addSuffix: true })}
-                        </div>
+                        <Badge
+                          variant={details?.userType === 'employee' ? 'default' : 'secondary'}
+                          className={
+                            details?.userType === 'employee'
+                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
+                              : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100'
+                          }
+                        >
+                          {details?.userType === 'employee' ? 'Employee' : 'Applicant'}
+                        </Badge>
                       </div>
                     </div>
-                    <Badge
-                      variant={details.userType === 'employee' ? 'default' : 'secondary'}
-                      className={
-                        details.userType === 'employee'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-orange-100 text-orange-800'
-                      }
-                    >
-                      {details.userType === 'employee' ? 'Employee' : 'Applicant'}
-                    </Badge>
-                  </div>
-                </div>
+                  );
+                })()}
 
                 {/* Personal Information */}
                 <div className="grid gap-4 md:grid-cols-2">
-                  <InfoField label="First Name" value={details.firstName} />
-                  <InfoField label="Middle Name" value={details.middleName} />
-                  <InfoField label="Last Name" value={details.lastName} />
-                  <InfoField label="Email" value={details.email} />
-                  <InfoField label="Phone Number" value={details.phoneNumber} />
+                  <InfoField label="First Name" value={details?.firstName} />
+                  <InfoField label="Middle Name" value={details?.middleName} />
+                  <InfoField label="Last Name" value={details?.lastName} />
+                  <InfoField label="Email" value={details?.email} />
+                  <InfoField label="Phone Number" value={details?.phoneNumber} />
                   <InfoField
-                    label={details.userType === 'employee' ? 'Employee ID' : 'Applicant ID'}
-                    value={details.userType === 'employee' ? details.employeeId : details.applicantId}
+                    label={details?.userType === 'employee' ? 'Employee ID' : 'Applicant ID'}
+                    value={details?.userType === 'employee' ? details?.employeeId : details?.applicantId}
                   />
                 </div>
 
@@ -144,16 +153,17 @@ export function RegistrationDetailsDialog({
                 <div>
                   <h4 className="font-semibold mb-3">Employment Details</h4>
                   <div className="grid gap-4 md:grid-cols-2">
-                    <InfoField label="Role" value={details.role} />
-                    <InfoField label="Department" value={details.department?.name} />
-                    <InfoField label="Position" value={details.position?.title} />
-                    <InfoField label="Academic Rank" value={details.academicRank} />
-                    <InfoField label="Tenure Status" value={details.tenureStatus} />
-                    <InfoField label="Employment Type" value={details.employmentType} />
-                    <InfoField label="Campus Assignment" value={details.campusAssignment} />
+                    <InfoField label="Role" value={capitalize(details?.role, '—')} />
+                    <InfoField label="Department" value={details?.department?.name} />
+                    <InfoField label="College" value={details?.department?.code?.startsWith('COL') ? details?.department?.name : undefined} />
+                    <InfoField label="Position" value={details?.position?.title} />
+                    <InfoField label="Academic Rank" value={details?.academicRank} />
+                    <InfoField label="Tenure Status" value={details?.tenureStatus} />
+                    <InfoField label="Employment Type" value={details?.employmentType} />
+                    <InfoField label="Campus Assignment" value={details?.campusAssignment} />
                     <InfoField
                       label="Account Status"
-                      value={details.accountStatus}
+                      value={capitalize(details?.accountStatus, '—')}
                       badge
                     />
                   </div>
@@ -167,21 +177,21 @@ export function RegistrationDetailsDialog({
                   <div className="grid gap-4 md:grid-cols-2">
                     <InfoField
                       label="Email Verified"
-                      value={details.emailVerifiedAt ? 'Yes' : 'No'}
+                      value={details?.emailVerifiedAt ? 'Yes' : 'No'}
                       badge
                     />
                     <InfoField
                       label="Account Active"
-                      value={details.isActive ? 'Yes' : 'No'}
+                      value={details?.isActive ? 'Yes' : 'No'}
                       badge
                     />
                     <InfoField
                       label="Created At"
-                      value={format(new Date(details.createdAt), 'PPpp')}
+                      value={details?.createdAt ? format(new Date(details.createdAt), 'PPpp') : '—'}
                     />
                     <InfoField
                       label="Updated At"
-                      value={format(new Date(details.updatedAt), 'PPpp')}
+                      value={details?.updatedAt ? format(new Date(details.updatedAt), 'PPpp') : '—'}
                     />
                   </div>
                 </div>
@@ -190,7 +200,7 @@ export function RegistrationDetailsDialog({
 
             {/* Review History Tab */}
             <TabsContent value="review" className="space-y-4 mt-4">
-              {details.reviewedBy && (
+              {details?.reviewedBy ? (
                 <div className="space-y-4">
                   <div className="grid gap-4 md:grid-cols-2">
                     <InfoField label="Reviewed By" value={details.reviewedBy.name} />
@@ -204,7 +214,7 @@ export function RegistrationDetailsDialog({
                     />
                     <InfoField
                       label="Decision"
-                      value={details.status}
+                      value={capitalize(details?.status || details?.accountStatus, 'N/A')}
                       badge
                     />
                     {details.rejectedAt && (
@@ -226,6 +236,10 @@ export function RegistrationDetailsDialog({
                       </div>
                     </>
                   )}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  No review information available yet. Registration is pending approval.
                 </div>
               )}
             </TabsContent>

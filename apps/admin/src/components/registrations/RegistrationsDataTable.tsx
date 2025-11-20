@@ -37,6 +37,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Registration } from '@/lib/api/registrations';
+import { capitalize } from '@/lib/formatting-helpers';
 
 interface RegistrationsDataTableProps {
   registrations: Registration[];
@@ -183,11 +184,16 @@ export function RegistrationsDataTable({
             rejected: { variant: 'secondary', className: 'bg-red-100 text-red-800' },
           } as const;
 
+          // Safety check for undefined status
+          if (!status) {
+            return <Badge variant="secondary">Unknown</Badge>;
+          }
+
           const config = variants[status];
 
           return (
             <Badge variant="secondary" className={config.className}>
-              {status.charAt(0).toUpperCase() + status.slice(1)}
+              {capitalize(status, 'Unknown')}
             </Badge>
           );
         },

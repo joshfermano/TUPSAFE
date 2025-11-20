@@ -10,18 +10,15 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from 'drizzle-orm';
+import { sql, eq } from 'drizzle-orm';
 import {
   db,
   profiles,
   jobApplications,
+  pendingRegistrations,
   createAuditLog,
 } from '@tupsafe/database/server';
-import {
-  generateOTP,
-  sendOTPEmail,
-  createServerClient,
-} from '@tupsafe/auth/server';
+import { createAdminClient } from '@tupsafe/auth/server';
 import {
   employeeRegistrationSchemaWithConfirmation,
   applicantRegistrationSchemaWithConfirmation,
@@ -96,10 +93,11 @@ async function generateApplicationNumber(): Promise<string> {
 
 /**
  * Cleanup helper: Delete Supabase user if registration fails
+ * Note: Currently unused but kept for potential future rollback scenarios
  */
-async function cleanupSupabaseUser(userId: string): Promise<void> {
+async function _cleanupSupabaseUser(userId: string): Promise<void> {
   try {
-    const supabase = await createServerClient();
+    const supabase = createAdminClient();
     await supabase.auth.admin.deleteUser(userId);
   } catch (error) {
     console.error('Failed to cleanup Supabase user:', error);
@@ -119,30 +117,50 @@ function getClientIp(request: NextRequest): string | undefined {
 
 /**
  * Handle employee registration flow
+ * Note: Email verification must be completed before calling this endpoint
  */
 async function handleEmployeeRegistration(
   data: EmployeeRegistrationFormData,
   request: NextRequest
 ): Promise<RegistrationSuccessResponse> {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
 
-  // 1. Check if email already exists
-  const { data: existingUsers, error: checkError } =
-    await supabase.auth.admin.listUsers();
+  // 1. Query auth.users table directly by email for better performance
+  // This is more efficient than listUsers() which retrieves ALL users
+  const { data: authUsers, error: queryError } = await supabase
+    .from('auth.users')
+    .select('id, email, email_confirmed_at')
+    .ilike('email', data.email)
+    .limit(1)
+    .single();
 
-  if (checkError) {
-    throw new Error('Failed to verify email availability');
+  if (queryError || !authUsers) {
+    console.error('Failed to find user by email:', queryError);
+    throw new Error(
+      'User not found. Please start registration from the beginning.'
+    );
   }
 
-  const emailExists = existingUsers.users.some(
-    (user) => user.email?.toLowerCase() === data.email.toLowerCase()
-  );
+  const userId = authUsers.id;
 
-  if (emailExists) {
-    throw new Error('Email address is already registered');
+  // 2. Verify email was verified
+  const [profile] = await db
+    .select()
+    .from(profiles)
+    .where(eq(profiles.id, userId))
+    .limit(1);
+
+  // Check if profile exists and email is verified
+  if (profile && !profile.emailVerifiedAt) {
+    throw new Error('Email verification required. Please verify your email.');
   }
 
-  // 2. Generate employee ID using database function
+  // If profile exists, registration already completed
+  if (profile) {
+    throw new Error('Registration already completed for this email.');
+  }
+
+  // 3. Generate employee ID using database function
   const hireDateStr = data.hireDate.toISOString().split('T')[0]; // Format: YYYY-MM-DD
   const employeeIdResult = await db.execute<{ generate_employee_id: string }>(
     sql`SELECT generate_employee_id(${hireDateStr}::DATE) as generate_employee_id`
@@ -154,30 +172,6 @@ async function handleEmployeeRegistration(
 
   const employeeId = employeeIdResult[0].generate_employee_id;
 
-  // 3. Create Supabase user
-  const { data: newUser, error: createError } =
-    await supabase.auth.admin.createUser({
-      email: data.email,
-      password: data.password,
-      email_confirm: false, // Will be confirmed via OTP
-      user_metadata: {
-        first_name: data.firstName,
-        last_name: data.lastName,
-        middle_name: data.middleName,
-        user_type: 'employee',
-        employment_category: data.employmentCategory,
-      },
-    });
-
-  if (createError || !newUser.user) {
-    console.error('Supabase user creation error:', createError);
-    throw new Error(
-      createError?.message || 'Failed to create user account'
-    );
-  }
-
-  const userId = newUser.user.id;
-
   try {
     // 4. Determine department assignment
     // For faculty: use department if provided, otherwise use collegeOrOffice
@@ -187,7 +181,8 @@ async function handleEmployeeRegistration(
         ? data.department
         : data.collegeOrOffice;
 
-    // 5. Create user profile
+    // 5. Create user profile (email already verified from step 2)
+    // Note: positionId is null - HR will assign position during approval process
     await db.insert(profiles).values({
       id: userId,
       userType: 'employee',
@@ -199,25 +194,31 @@ async function handleEmployeeRegistration(
       middleName: data.middleName || null,
       phoneNumber: data.phoneNumber,
       departmentId,
-      positionId: data.position,
+      positionId: null, // HR assigns position later
       role: 'employee',
       accountStatus: 'pending',
       isActive: true,
       temporaryPassword: false,
+      emailVerifiedAt: new Date(), // Email verified in step 2
     });
 
-    // 6. Send OTP verification email
-    try {
-      const otpResult = await generateOTP(userId, 'email_verification');
-      if (otpResult.code) {
-        await sendOTPEmail(data.email, otpResult.code, 'email_verification');
-      }
-    } catch (otpError) {
-      console.error('OTP generation/sending failed:', otpError);
-      // Don't fail registration - user can request resend
-    }
+    // 6. Create pending registration entry for admin approval
+    await db.insert(pendingRegistrations).values({
+      userId,
+      status: 'pending',
+    });
 
-    // 7. Create audit log
+    // 7. Update auth user metadata with account status for middleware checks
+    await supabase.auth.admin.updateUserById(userId, {
+      user_metadata: {
+        account_status: 'pending',
+        user_type: 'employee',
+        employment_category: data.employmentCategory,
+        email_verified_at: new Date().toISOString(),
+      },
+    });
+
+    // 8. Create audit log
     await createAuditLog({
       userId,
       action: 'CREATE',
@@ -245,38 +246,58 @@ async function handleEmployeeRegistration(
       },
     };
   } catch (error) {
-    // Cleanup on failure
-    await cleanupSupabaseUser(userId);
+    // Don't cleanup user - they already verified email
+    // Just re-throw the error
     throw error;
   }
 }
 
 /**
  * Handle applicant registration flow
+ * Note: Email verification must be completed before calling this endpoint
  */
 async function handleApplicantRegistration(
   data: ApplicantRegistrationFormData,
   request: NextRequest
 ): Promise<RegistrationSuccessResponse> {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
 
-  // 1. Check if email already exists
-  const { data: existingUsers, error: checkError } =
-    await supabase.auth.admin.listUsers();
+  // 1. Query auth.users table directly by email for better performance
+  // This is more efficient than listUsers() which retrieves ALL users
+  const { data: authUsers, error: queryError } = await supabase
+    .from('auth.users')
+    .select('id, email, email_confirmed_at')
+    .ilike('email', data.email)
+    .limit(1)
+    .single();
 
-  if (checkError) {
-    throw new Error('Failed to verify email availability');
+  if (queryError || !authUsers) {
+    console.error('Failed to find user by email:', queryError);
+    throw new Error(
+      'User not found. Please start registration from the beginning.'
+    );
   }
 
-  const emailExists = existingUsers.users.some(
-    (user) => user.email?.toLowerCase() === data.email.toLowerCase()
-  );
+  const userId = authUsers.id;
 
-  if (emailExists) {
-    throw new Error('Email address is already registered');
+  // 2. Verify email was verified
+  const [profile] = await db
+    .select()
+    .from(profiles)
+    .where(eq(profiles.id, userId))
+    .limit(1);
+
+  // Check if profile exists and email is verified
+  if (profile && !profile.emailVerifiedAt) {
+    throw new Error('Email verification required. Please verify your email.');
   }
 
-  // 2. Generate applicant ID using database function
+  // If profile exists, registration already completed
+  if (profile) {
+    throw new Error('Registration already completed for this email.');
+  }
+
+  // 3. Generate applicant ID using database function
   const applicantIdResult = await db.execute<{
     generate_applicant_id: string;
   }>(sql`SELECT generate_applicant_id() as generate_applicant_id`);
@@ -287,31 +308,8 @@ async function handleApplicantRegistration(
 
   const applicantId = applicantIdResult[0].generate_applicant_id;
 
-  // 3. Create Supabase user
-  const { data: newUser, error: createError } =
-    await supabase.auth.admin.createUser({
-      email: data.email,
-      password: data.password,
-      email_confirm: false, // Will be confirmed via OTP
-      user_metadata: {
-        first_name: data.firstName,
-        last_name: data.lastName,
-        middle_name: data.middleName,
-        user_type: 'applicant',
-      },
-    });
-
-  if (createError || !newUser.user) {
-    console.error('Supabase user creation error:', createError);
-    throw new Error(
-      createError?.message || 'Failed to create user account'
-    );
-  }
-
-  const userId = newUser.user.id;
-
   try {
-    // 4. Create user profile
+    // 4. Create user profile (email already verified from step 2)
     await db.insert(profiles).values({
       id: userId,
       userType: 'applicant',
@@ -325,6 +323,7 @@ async function handleApplicantRegistration(
       accountStatus: 'pending',
       isActive: true,
       temporaryPassword: false,
+      emailVerifiedAt: new Date(), // Email verified in step 2
     });
 
     // 5. Generate application number
@@ -339,18 +338,22 @@ async function handleApplicantRegistration(
       applicationDate: new Date(),
     });
 
-    // 7. Send OTP verification email
-    try {
-      const otpResult = await generateOTP(userId, 'email_verification');
-      if (otpResult.code) {
-        await sendOTPEmail(data.email, otpResult.code, 'email_verification');
-      }
-    } catch (otpError) {
-      console.error('OTP generation/sending failed:', otpError);
-      // Don't fail registration - user can request resend
-    }
+    // 7. Create pending registration entry for admin approval
+    await db.insert(pendingRegistrations).values({
+      userId,
+      status: 'pending',
+    });
 
-    // 8. Create audit log
+    // 8. Update auth user metadata with account status for middleware checks
+    await supabase.auth.admin.updateUserById(userId, {
+      user_metadata: {
+        account_status: 'pending',
+        user_type: 'applicant',
+        email_verified_at: new Date().toISOString(),
+      },
+    });
+
+    // 9. Create audit log
     await createAuditLog({
       userId,
       action: 'CREATE',
@@ -379,8 +382,8 @@ async function handleApplicantRegistration(
       },
     };
   } catch (error) {
-    // Cleanup on failure
-    await cleanupSupabaseUser(userId);
+    // Don't cleanup user - they already verified email
+    // Just re-throw the error
     throw error;
   }
 }
@@ -392,7 +395,9 @@ async function handleApplicantRegistration(
  */
 export async function POST(
   request: NextRequest
-): Promise<NextResponse<RegistrationSuccessResponse | RegistrationErrorResponse>> {
+): Promise<
+  NextResponse<RegistrationSuccessResponse | RegistrationErrorResponse>
+> {
   try {
     // Parse request body
     const body = await request.json();
@@ -499,9 +504,7 @@ export async function POST(
         success: false,
         error: 'An unexpected error occurred during registration',
         details: {
-          message: [
-            error instanceof Error ? error.message : 'Unknown error',
-          ],
+          message: [error instanceof Error ? error.message : 'Unknown error'],
         },
       },
       { status: 500 }

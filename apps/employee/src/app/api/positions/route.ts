@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get authenticated user (optional for positions endpoint)
-    const supabase = await createServerClient();
+    const supabase = await createServerClient('employee');
     const {
       data: { user },
     } = await supabase.auth.getUser();

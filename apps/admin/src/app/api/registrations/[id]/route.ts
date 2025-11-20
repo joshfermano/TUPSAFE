@@ -125,7 +125,7 @@ export async function GET(
     }
 
     // Fetch email from Supabase Auth
-    const supabase = await createServerClient();
+    const supabase = await createServerClient('admin');
     let email: string | null = null;
 
     try {

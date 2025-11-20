@@ -110,8 +110,8 @@ export function RejectRegistrationDialog({
                 }
                 className={
                   registration.userType === 'employee'
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-orange-100 text-orange-800'
+                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
+                    : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100'
                 }
               >
                 {registration.userType === 'employee' ? 'Employee' : 'Applicant'}
@@ -120,9 +120,9 @@ export function RejectRegistrationDialog({
           </div>
 
           {/* Warning */}
-          <div className="bg-red-50 border border-red-200 p-3 rounded-md flex gap-3">
-            <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0" />
-            <div className="text-sm text-red-800">
+          <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 p-3 rounded-md flex gap-3">
+            <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+            <div className="text-sm text-red-800 dark:text-red-200">
               <strong>Warning:</strong> Rejecting this registration will permanently
               deny access. The applicant will be notified via email with the reason
               you provide below.
@@ -195,7 +195,7 @@ export function RejectRegistrationDialog({
 
           {/* Email Preview */}
           {sendEmail && (
-            <div className="bg-blue-50 border border-blue-200 p-3 rounded-md text-sm">
+            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 p-3 rounded-md text-sm">
               <strong>Email Preview:</strong>
               <p className="mt-2 text-muted-foreground">
                 The applicant will receive an email notification with the rejection

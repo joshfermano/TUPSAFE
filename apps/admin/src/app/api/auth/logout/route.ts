@@ -43,8 +43,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Sign out from Supabase
-    const supabase = await createServerClient();
+    // Sign out from Supabase with portal-specific cookie isolation
+    const supabase = await createServerClient('admin');
     await supabase.auth.signOut();
 
     // Destroy session cookie

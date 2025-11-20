@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
 
     // Verify admin/HR permissions
     const authStartTime = Date.now();
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr']);
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
     const authDuration = Date.now() - authStartTime;
     console.log(
       `[PDS Submissions API] Permission check completed in ${authDuration}ms - result:`,

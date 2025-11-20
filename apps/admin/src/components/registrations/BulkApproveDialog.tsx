@@ -118,7 +118,7 @@ export function BulkApproveDialog({
                   {employeeRegistrations.length > 0 && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">Employees:</span>
-                      <Badge className="bg-blue-100 text-blue-800">
+                      <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
                         {employeeRegistrations.length}
                       </Badge>
                     </div>
@@ -126,7 +126,7 @@ export function BulkApproveDialog({
                   {applicantRegistrations.length > 0 && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">Applicants:</span>
-                      <Badge className="bg-orange-100 text-orange-800">
+                      <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100">
                         {applicantRegistrations.length}
                       </Badge>
                     </div>
@@ -134,9 +134,9 @@ export function BulkApproveDialog({
                 </div>
 
                 {/* Warning */}
-                <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-md flex gap-3">
-                  <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0" />
-                  <div className="text-sm text-yellow-800">
+                <div className="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-900 p-3 rounded-md flex gap-3">
+                  <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+                  <div className="text-sm text-yellow-800 dark:text-yellow-200">
                     <strong>Bulk Action:</strong> All selected registrations will be
                     processed simultaneously. Each will receive a welcome email with
                     login credentials.
@@ -168,8 +168,8 @@ export function BulkApproveDialog({
                               }
                               className={
                                 reg.userType === 'employee'
-                                  ? 'bg-blue-100 text-blue-800'
-                                  : 'bg-orange-100 text-orange-800'
+                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
+                                  : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100'
                               }
                             >
                               {reg.userType === 'employee' ? 'Employee' : 'Applicant'}
@@ -236,14 +236,14 @@ export function BulkApproveDialog({
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">Successful:</span>
-                        <Badge className="bg-green-100 text-green-800">
+                        <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
                           {summary.successful}
                         </Badge>
                       </div>
                       {summary.failed > 0 && (
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium">Failed:</span>
-                          <Badge className="bg-red-100 text-red-800">
+                          <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100">
                             {summary.failed}
                           </Badge>
                         </div>
@@ -261,14 +261,14 @@ export function BulkApproveDialog({
                             key={index}
                             className={`flex items-center justify-between text-sm p-3 rounded ${
                               result.status === 'approved'
-                                ? 'bg-green-50 border border-green-200'
-                                : 'bg-red-50 border border-red-200'
+                                ? 'bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900'
+                                : 'bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900'
                             }`}
                           >
                             <div className="flex-1">
                               <div className="font-medium">{result.email}</div>
                               {result.error && (
-                                <div className="text-xs text-red-600 mt-1">
+                                <div className="text-xs text-red-600 dark:text-red-400 mt-1">
                                   Error: {result.error}
                                 </div>
                               )}
@@ -277,8 +277,8 @@ export function BulkApproveDialog({
                               variant="secondary"
                               className={
                                 result.status === 'approved'
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-red-100 text-red-800'
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+                                  : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
                               }
                             >
                               {result.status === 'approved' ? (

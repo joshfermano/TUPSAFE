@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { ThemeWrapper, ThemeScript } from '@/components/theme';
-import { MockDataProvider } from '@tupsafe/mock-data/providers';
+import { AuthProvider } from '@/providers/AuthProvider';
 import { QueryProvider } from '@/providers/QueryProvider';
 import { ToastProvider } from '@/providers/ToastProvider';
 import { RealtimeProvider } from '@/providers/RealtimeProvider';
@@ -74,14 +74,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <QueryProvider>
-          <RealtimeProvider>
-            <MockDataProvider>
+          <AuthProvider>
+            <RealtimeProvider>
               <ThemeWrapper>
                 {children}
               </ThemeWrapper>
-            </MockDataProvider>
-            <ToastProvider />
-          </RealtimeProvider>
+              <ToastProvider />
+            </RealtimeProvider>
+          </AuthProvider>
         </QueryProvider>
       </body>
     </html>

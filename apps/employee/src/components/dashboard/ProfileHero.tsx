@@ -9,12 +9,12 @@ import { BlurFade } from '@/components/ui/blur-fade';
 import { TextAnimate } from '@/components/ui/text-animate';
 import { cn } from '@/lib/utils';
 import { Shield, Briefcase } from 'lucide-react';
-import type { Profile, Department, Position } from '@tupsafe/mock-data';
+import type { ProfileData } from '@/hooks/useProfile';
 
 interface ProfileHeroProps {
-  profile: Profile;
-  department: Department | null;
-  position: Position | null;
+  profile: ProfileData;
+  department: ProfileData['department'];
+  position: ProfileData['position'];
 }
 
 // Static constants extracted outside component to prevent recreation on every render
@@ -135,7 +135,7 @@ export const ProfileHero = memo(function ProfileHero({ profile, department, posi
                   transition={{ type: 'spring', stiffness: 400 }}
                 >
                   <Badge className="px-3 py-1 bg-white/10 text-white border-white/20 backdrop-blur-sm hover:bg-white/20 transition-colors shadow-sm">
-                    ID: {profile.employeeId}
+                    ID: {profile.userType === 'employee' ? profile.employeeId : profile.applicantId}
                   </Badge>
                 </motion.div>
                 {department && (

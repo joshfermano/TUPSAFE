@@ -31,7 +31,7 @@ import {
 export async function GET(request: NextRequest) {
   try {
     // Authorization check - HR or Admin only (using Supabase session)
-    const hasPermission = await checkUserRoleFromSupabase(['hr', 'admin']);
+    const hasPermission = await checkUserRoleFromSupabase(['hr', 'admin'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(
@@ -195,7 +195,7 @@ export async function GET(request: NextRequest) {
       .offset((page - 1) * limit);
 
     // Fetch emails from Supabase Auth (batch operation)
-    const supabase = await createServerClient();
+    const supabase = await createServerClient('admin');
     const userIds = registrations.map(r => r.userId);
 
     const emailMap = new Map<string, string | null>();

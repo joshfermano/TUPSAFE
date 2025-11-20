@@ -50,7 +50,7 @@ export async function GET() {
     console.log(`[Profile Settings API] Fetching profile for user: ${user.userId}`);
 
     // Get Supabase client for email
-    const supabase = await createServerClient();
+    const supabase = await createServerClient('admin');
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -257,7 +257,7 @@ export async function PUT(request: NextRequest) {
     });
 
     // Fetch updated profile with department and position
-    const supabase = await createServerClient();
+    const supabase = await createServerClient('admin');
     const {
       data: { session },
     } = await supabase.auth.getSession();

@@ -12,7 +12,7 @@ import {
   createAuditLog,
 } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
-import { verifyOTP, createSession } from '@tupsafe/auth/server';
+import { verifyOTP, createSession, trustDevice, createAdminClient, createServerClient } from '@tupsafe/auth/server';
 
 // Device verification validation schema
 const deviceVerificationSchema = z.object({
@@ -40,12 +40,12 @@ export async function POST(request: NextRequest) {
     const { userId, code, deviceFingerprint } = validationResult.data;
 
     // Verify OTP
-    const isValid = await verifyOTP(userId, code, 'login_challenge');
+    const otpResult = await verifyOTP(userId, code, 'login_challenge');
 
-    if (!isValid) {
+    if (!otpResult.success) {
       return NextResponse.json(
         {
-          error:
+          error: otpResult.error ||
             'Invalid or expired verification code. Please request a new code.',
         },
         { status: 400 }
@@ -66,34 +66,78 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Trust the device (30 days)
-    const trustedAt = new Date();
-    const expiresAt = new Date(trustedAt.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
+    // Trust the device (30 days) using utility function
+    const userAgent = request.headers.get('user-agent') || '';
+    const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0] ||
+                      request.headers.get('x-real-ip') || '';
 
-    try {
-      await db.insert(trustedDevices).values({
-        userId,
-        deviceFingerprint,
-        browserInfo: request.headers.get('user-agent') || '',
-        ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || '',
-        trustedAt,
-        expiresAt,
-        lastUsedAt: trustedAt,
-      });
-    } catch (error) {
-      console.error('Error trusting device:', error);
+    const trustResult = await trustDevice(
+      userId,
+      deviceFingerprint,
+      userAgent,
+      ipAddress
+    );
+
+    if (!trustResult.success) {
       return NextResponse.json(
         { error: 'Failed to trust device' },
         { status: 500 }
       );
     }
 
-    // Create session
+    // Get user email from Supabase auth (not stored in profiles table)
+    const adminClient = createAdminClient();
+    const { data: userData, error: userError } =
+      await adminClient.auth.admin.getUserById(userId);
+
+    if (userError || !userData.user || !userData.user.email) {
+      return NextResponse.json(
+        { error: 'Failed to retrieve user email' },
+        { status: 500 }
+      );
+    }
+
+    const email = userData.user.email;
+
+    // Generate a magic link using admin client to get hashed_token
+    // This is needed because the login route signed out when OTP was required
+    const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
+      type: 'magiclink',
+      email,
+    });
+
+    if (linkError || !linkData) {
+      console.error('Failed to generate magic link:', linkError);
+      return NextResponse.json(
+        { error: 'Failed to create session token' },
+        { status: 500 }
+      );
+    }
+
+    // Use server client (with portal-specific cookies) to verify the token and create session
+    // CRITICAL: Pass 'employee' portal to ensure session isolation from admin portal
+    const supabase = await createServerClient('employee');
+    const { data: sessionData, error: sessionError } = await supabase.auth.verifyOtp({
+      type: 'magiclink',
+      token_hash: linkData.properties.hashed_token,
+      email,
+    });
+
+    if (sessionError || !sessionData.session) {
+      console.error('Failed to create session:', sessionError);
+      return NextResponse.json(
+        { error: 'Failed to establish session' },
+        { status: 500 }
+      );
+    }
+
+    // Create application session
     await createSession({
       userId,
       id: userId,
-      email: profile.firstName + '@' + profile.lastName, // We'll get actual email from Supabase
+      email,
       ...(profile.employeeId ? { employeeId: profile.employeeId } : {}),
+      ...(profile.applicantId ? { applicantId: profile.applicantId } : {}),
       role: profile.role,
       lastActivity: Date.now(),
       deviceFingerprint,
@@ -108,23 +152,36 @@ export async function POST(request: NextRequest) {
         entityId: userId,
         metadata: {
           deviceFingerprint,
-          trustedAt: trustedAt.toISOString(),
-          expiresAt: expiresAt.toISOString(),
+          deviceTrusted: true,
+          trustedAt: new Date(Date.now()).toISOString(),
+          expiresAt: trustResult.expiresAt?.toISOString(),
         },
-        ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || undefined,
-        userAgent: request.headers.get('user-agent') || undefined,
+        ipAddress,
+        userAgent,
       });
     } catch (error) {
       console.error('Error logging audit event:', error);
       // Non-critical, continue
     }
 
+    // Return success with session information
     return NextResponse.json({
       success: true,
       message: 'Device verified and trusted successfully',
+      session: {
+        access_token: sessionData.session.access_token,
+        refresh_token: sessionData.session.refresh_token,
+        expires_at: sessionData.session.expires_at,
+        expires_in: sessionData.session.expires_in,
+        token_type: sessionData.session.token_type,
+        user: sessionData.session.user,
+      },
       data: {
         userId,
+        email,
         employeeId: profile.employeeId,
+        applicantId: profile.applicantId,
+        userType: profile.userType,
         firstName: profile.firstName,
         lastName: profile.lastName,
         role: profile.role,

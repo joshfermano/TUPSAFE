@@ -2,13 +2,13 @@ import { z } from 'zod';
 
 // TUP Manila institutional email domains for validation
 const INSTITUTIONAL_EMAIL_DOMAINS = [
-  'tup.edu.ph',           // Primary TUP Manila institutional domain
-  'gsb.tup.edu.ph',       // Graduate School of Business
-  'manila.tup.edu.ph',    // Manila campus specific
-  'gov.ph',               // Government institutions
+  'tup.edu.ph', // Primary TUP Manila institutional domain
+  'gsb.tup.edu.ph', // Graduate School of Business
+  'manila.tup.edu.ph', // Manila campus specific
+  'gov.ph', // Government institutions
   'deped.gov.ph',
-  'ched.gov.ph',          // Commission on Higher Education
-  'dost.gov.ph',          // Department of Science and Technology
+  'ched.gov.ph', // Commission on Higher Education
+  'dost.gov.ph', // Department of Science and Technology
 ];
 
 // TUP Manila colleges and administrative offices
@@ -47,7 +47,7 @@ const employeeIdRegex = /^[A-Z0-9]{3,15}$/;
 // Strong password requirements for institutional security
 const passwordSchema = z
   .string()
-  .min(12, 'Password must be at least 12 characters long')
+  .min(8, 'Password must be at least 8 characters long')
   .max(128, 'Password must not exceed 128 characters')
   .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
   .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
@@ -65,7 +65,9 @@ const institutionalEmailSchema = z
   .email('Please enter a valid email address')
   .refine((email) => {
     const domain = email.split('@')[1]?.toLowerCase();
-    return INSTITUTIONAL_EMAIL_DOMAINS.some((instDomain) => domain?.endsWith(instDomain));
+    return INSTITUTIONAL_EMAIL_DOMAINS.some((instDomain) =>
+      domain?.endsWith(instDomain)
+    );
   }, 'Please use your TUP Manila institutional email address (e.g., @tup.edu.ph)');
 
 // Login form validation schema
@@ -329,11 +331,17 @@ const employeeRegistrationSchema = z.object({
       message: 'Hire date cannot be in the future',
     }),
 
-  collegeOrOffice: z.string().uuid('Please select your college or office'),
-
-  department: z.string().uuid().optional(), // Only for faculty under colleges
-
-  position: z.string().uuid('Please select your position'),
+  collegeOrOffice: z
+    .string({
+      required_error:
+        'College (for faculty) or administrative office is required',
+    })
+    .uuid('Invalid college or office selection'),
+  department: z
+    .string()
+    .uuid('Invalid department selection')
+    .optional()
+    .or(z.literal('')),
 
   // Security Setup
   password: passwordSchema,
@@ -425,22 +433,36 @@ const applicantRegistrationSchema = z.object({
     ),
 });
 
-// Combined registration schema with password confirmation
-export const employeeRegistrationSchemaWithConfirmation = employeeRegistrationSchema.refine(
-  (data) => data.password === data.confirmPassword,
-  {
-    message: 'Passwords do not match',
-    path: ['confirmPassword'],
-  }
-);
+// Combined registration schema with password confirmation and faculty department validation
+export const employeeRegistrationSchemaWithConfirmation =
+  employeeRegistrationSchema
+    .refine((data) => data.password === data.confirmPassword, {
+      message: 'Passwords do not match',
+      path: ['confirmPassword'],
+    })
+    .refine(
+      (data) => {
+        // Faculty members must select a specific department under their college
+        if (data.employmentCategory === 'faculty') {
+          return !!data.department && data.department.length > 0;
+        }
+        return true;
+      },
+      {
+        message:
+          'Faculty members must select a specific department under their college',
+        path: ['department'],
+      }
+    );
 
-export const applicantRegistrationSchemaWithConfirmation = applicantRegistrationSchema.refine(
-  (data) => data.password === data.confirmPassword,
-  {
-    message: 'Passwords do not match',
-    path: ['confirmPassword'],
-  }
-);
+export const applicantRegistrationSchemaWithConfirmation =
+  applicantRegistrationSchema.refine(
+    (data) => data.password === data.confirmPassword,
+    {
+      message: 'Passwords do not match',
+      path: ['confirmPassword'],
+    }
+  );
 
 // Type exports for use in components
 export type LoginFormData = z.infer<typeof loginSchema>;
@@ -455,7 +477,15 @@ export type MfaSetupData = z.infer<typeof mfaSetupSchema>;
 
 // New type exports for multi-user registration
 export type UserTypeSelectionData = z.infer<typeof userTypeSelectionSchema>;
-export type EmployeeRegistrationData = z.infer<typeof employeeRegistrationSchema>;
-export type ApplicantRegistrationData = z.infer<typeof applicantRegistrationSchema>;
-export type EmployeeRegistrationFormData = z.infer<typeof employeeRegistrationSchemaWithConfirmation>;
-export type ApplicantRegistrationFormData = z.infer<typeof applicantRegistrationSchemaWithConfirmation>;
+export type EmployeeRegistrationData = z.infer<
+  typeof employeeRegistrationSchema
+>;
+export type ApplicantRegistrationData = z.infer<
+  typeof applicantRegistrationSchema
+>;
+export type EmployeeRegistrationFormData = z.infer<
+  typeof employeeRegistrationSchemaWithConfirmation
+>;
+export type ApplicantRegistrationFormData = z.infer<
+  typeof applicantRegistrationSchemaWithConfirmation
+>;

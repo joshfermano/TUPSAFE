@@ -1,5 +1,16 @@
+/**
+ * Server-only exports
+ *
+ * WARNING: These utilities use Node.js modules and are NOT compatible with Edge Runtime.
+ * For Edge Runtime (middleware), use direct imports from './utils/supabase/cookie-config'
+ */
+
 // Server-only Supabase client
 export { createClient as createServerClient } from './utils/supabase/server';
+
+// Cookie configuration utilities for portal-specific session isolation
+// NOTE: For Edge Runtime compatibility, import directly from './utils/supabase/cookie-config'
+export { getCookieOptions, type Portal } from './utils/supabase/cookie-config';
 
 // Admin Supabase client (server-only, bypasses RLS)
 export { createAdminClient } from './utils/supabase/admin';
@@ -9,7 +20,7 @@ export type { AdminClient } from './utils/supabase/admin';
 export { updateSession } from './utils/supabase/middleware';
 export { createAuthMiddleware, getUserFromHeaders } from './middleware';
 
-// Auth System Modules (all server-only)
+// Auth System Modules (all server-only, use Node.js modules like crypto, database)
 export * from './utils/otp';
 export * from './utils/employee-id';
 export * from './utils/device';
