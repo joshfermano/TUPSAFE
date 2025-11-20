@@ -13,7 +13,7 @@ import {
   createAuditLog,
 } from '@tupsafe/database/server';
 import { eq, and, or } from 'drizzle-orm';
-import { verifyOTP } from '@tupsafe/auth/server';
+import { verifyOTP, createServerClient } from '@tupsafe/auth/server';
 
 // Verification validation schema
 const verificationSchema = z.object({
@@ -40,12 +40,13 @@ export async function POST(request: NextRequest) {
     const { userId, code } = validationResult.data;
 
     // Verify OTP
-    const isValid = await verifyOTP(userId, code, 'email_verification');
+    const otpResult = await verifyOTP(userId, code, 'email_verification');
 
-    if (!isValid) {
+    if (!otpResult.success) {
       return NextResponse.json(
         {
           error:
+            otpResult.error ||
             'Invalid or expired verification code. Please request a new code.',
         },
         { status: 400 }
@@ -67,6 +68,27 @@ export async function POST(request: NextRequest) {
         { error: 'Failed to update verification status' },
         { status: 500 }
       );
+    }
+
+    // CRITICAL: Also confirm email in Supabase auth.users table
+    // This is required for signInWithPassword() to work
+    // Without this, users will get 401 errors when trying to log in
+    try {
+      const supabase = await createServerClient('employee');
+      const { error: confirmError } = await supabase.auth.admin.updateUserById(
+        userId,
+        {
+          email_confirm: true,
+        }
+      );
+
+      if (confirmError) {
+        console.error('Error confirming email in Supabase:', confirmError);
+        // Don't fail the entire request - user can still be manually fixed
+      }
+    } catch (error) {
+      console.error('Error updating Supabase email confirmation:', error);
+      // Non-critical for user experience, but should be monitored
     }
 
     // Create pending registration entry for admin approval
@@ -127,7 +149,10 @@ export async function POST(request: NextRequest) {
         metadata: {
           emailVerifiedAt: new Date().toISOString(),
         },
-        ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || undefined,
+        ipAddress:
+          request.headers.get('x-forwarded-for')?.split(',')[0] ||
+          request.headers.get('x-real-ip') ||
+          undefined,
         userAgent: request.headers.get('user-agent') || undefined,
       });
     } catch (error) {

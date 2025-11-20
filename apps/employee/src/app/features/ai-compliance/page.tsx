@@ -240,9 +240,9 @@ const UseCasesSection = () => {
       description:
         'Get instant clarification on complex government policies and procedures.',
       examples: [
-        '"What are the requirements for filing a SALN?"',
-        '"How do I report business interests in my PDS?"',
-        '"What is the deadline for submitting my annual forms?"',
+        '&quot;What are the requirements for filing a SALN?&quot;',
+        '&quot;How do I report business interests in my PDS?&quot;',
+        '&quot;What is the deadline for submitting my annual forms?&quot;',
       ],
       icon: Search,
     },
@@ -251,9 +251,9 @@ const UseCasesSection = () => {
       description:
         'Receive step-by-step guidance for completing government forms.',
       examples: [
-        '"How do I calculate my net worth for SALN?"',
-        '"What should I include in my work experience section?"',
-        '"Help me understand this form field"',
+        '&quot;How do I calculate my net worth for SALN?&quot;',
+        '&quot;What should I include in my work experience section?&quot;',
+        '&quot;Help me understand this form field&quot;',
       ],
       icon: FileText,
     },
@@ -262,9 +262,9 @@ const UseCasesSection = () => {
       description:
         'Verify that your submissions meet all regulatory requirements.',
       examples: [
-        '"Is my PDS complete and compliant?"',
-        '"Did I miss any required disclosures?"',
-        '"Are there any errors in my submission?"',
+        '&quot;Is my PDS complete and compliant?&quot;',
+        '&quot;Did I miss any required disclosures?&quot;',
+        '&quot;Are there any errors in my submission?&quot;',
       ],
       icon: CheckCircle,
     },

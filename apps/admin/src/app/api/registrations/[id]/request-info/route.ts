@@ -171,7 +171,7 @@ export async function POST(
       .where(eq(pendingRegistrations.id, pendingReg.id));
 
     // Get user email for notification
-    const supabase = await createServerClient();
+    const supabase = await createServerClient('admin');
     let userEmail: string | null = null;
 
     try {

@@ -30,7 +30,7 @@ import {
 export async function GET(request: NextRequest) {
   try {
     // Verify admin/HR/supervisor permissions (using Supabase session)
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr', 'supervisor']);
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr', 'supervisor'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(

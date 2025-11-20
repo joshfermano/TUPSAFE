@@ -8,9 +8,9 @@ import { z } from 'zod';
 import { db, profiles } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
 import {
-  generateOTP,
+  resendOTP,
   sendOTPEmail,
-  createServerClient,
+  createAdminClient,
 } from '@tupsafe/auth/server';
 
 // Resend OTP validation schema
@@ -37,25 +37,9 @@ export async function POST(request: NextRequest) {
 
     const { userId, type } = validationResult.data;
 
-    // Check rate limit (5 OTP requests per hour per user)
-    const _ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || 'unknown';
-
-    // Get user profile
-    const [profile] = await db
-      .select()
-      .from(profiles)
-      .where(eq(profiles.id, userId))
-      .limit(1);
-
-    if (!profile) {
-      return NextResponse.json(
-        { error: 'User profile not found' },
-        { status: 404 }
-      );
-    }
-
     // Get user email from Supabase
-    const supabase = await createServerClient();
+    // Note: During registration, user may not have a profile yet
+    const supabase = createAdminClient();
     const { data: userData, error: userError } =
       await supabase.auth.admin.getUserById(userId);
 
@@ -68,18 +52,30 @@ export async function POST(request: NextRequest) {
 
     const email = userData.user.email;
 
-    // Generate and send new OTP
-    try {
-      const otpResult = await generateOTP(userId, type);
-      if (otpResult.code) {
-        await sendOTPEmail(email, otpResult.code, type);
-      }
-    } catch (error) {
-      console.error('Error generating/sending OTP:', error);
+    // Resend OTP with built-in rate limiting (max 5 per hour)
+    const otpResult = await resendOTP(userId, type);
+
+    if (!otpResult.success) {
       return NextResponse.json(
-        { error: 'Failed to send verification code' },
-        { status: 500 }
+        {
+          error: otpResult.error || 'Failed to send verification code',
+          remaining: otpResult.remaining,
+        },
+        { status: 429 } // Too Many Requests
       );
+    }
+
+    // Send OTP email
+    if (otpResult.code) {
+      try {
+        await sendOTPEmail(email, otpResult.code, type);
+      } catch (error) {
+        console.error('Error sending OTP email:', error);
+        return NextResponse.json(
+          { error: 'Failed to send verification code' },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json({
@@ -88,6 +84,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId,
         type,
+        remaining: otpResult.remaining,
       },
     });
   } catch (error) {

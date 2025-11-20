@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
     console.log(`[Sessions API] Fetching sessions for user: ${user.userId}`);
 
     // Get Supabase client and current session
-    const supabase = await createServerClient();
+    const supabase = await createServerClient('admin');
     const {
       data: { session: currentSession },
     } = await supabase.auth.getSession();
@@ -226,7 +226,7 @@ export async function DELETE(request: NextRequest) {
     const body = await request.json();
 
     // Get Supabase client
-    const supabase = await createServerClient();
+    const supabase = await createServerClient('admin');
 
     // Get client IP and user agent for audit log
     const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';

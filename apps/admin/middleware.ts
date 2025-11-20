@@ -7,6 +7,7 @@
  *
  * Security Features:
  * - Supabase session validation (edge-compatible)
+ * - Portal-specific session isolation via custom cookie names
  * - Session timeout management
  * - Redirects to login for unauthenticated users
  * - Role-based access control delegated to API routes
@@ -18,6 +19,7 @@
 
 import { type NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import { getPortalCookieName, getDefaultSupabaseCookiePattern, type Portal } from '@tupsafe/auth/edge';
 
 // Public routes that don't require authentication
 const PUBLIC_ROUTES = [
@@ -64,22 +66,46 @@ export async function middleware(request: NextRequest) {
     }
 
     // Create response object for cookie management
-    let response = NextResponse.next({ request });
+    const response = NextResponse.next({ request });
 
-    // Create Supabase client with request context
+    // Portal-specific cookie configuration
+    const portal: Portal = 'admin';
+    const portalCookieName = getPortalCookieName(portal);
+    const defaultCookieName = getDefaultSupabaseCookiePattern();
+
+    // Create Supabase client with portal-specific cookie interceptor
     const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
+        /**
+         * Read portal-specific cookies and rename them to default Supabase names
+         * so Supabase can read them correctly
+         */
         getAll() {
-          return request.cookies.getAll();
+          const allCookies = request.cookies.getAll();
+
+          return allCookies
+            .filter(cookie => cookie.name.startsWith(portalCookieName))
+            .map(cookie => ({
+              name: cookie.name.replace(portalCookieName, defaultCookieName),
+              value: cookie.value,
+            }));
         },
+
+        /**
+         * Supabase wants to set cookies with default names
+         * We intercept and rename them to portal-specific names
+         */
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          response = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
+          cookiesToSet.forEach(({ name, value, options }) => {
+            // Rename from default Supabase name to portal-specific name
+            const portalSpecificName = name.replace(defaultCookieName, portalCookieName);
+
+            // Set in request for immediate reading
+            request.cookies.set(portalSpecificName, value);
+
+            // Set in response to send to browser
+            response.cookies.set(portalSpecificName, value, options);
+          });
         },
       },
     });

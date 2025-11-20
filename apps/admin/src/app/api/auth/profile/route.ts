@@ -15,7 +15,7 @@ import { eq } from 'drizzle-orm';
 export async function GET(_request: NextRequest) {
   try {
     // Get Supabase session directly
-    const supabase = await createServerClient();
+    const supabase = await createServerClient('admin');
     const {
       data: { session },
       error: sessionError,

@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     const validatedData = changePasswordRequestSchema.parse(body);
 
     // Get Supabase client
-    const supabase = await createServerClient();
+    const supabase = await createServerClient('admin');
 
     // Step 1: Verify current password by attempting to sign in
     // This is the secure way to validate current password

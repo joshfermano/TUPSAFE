@@ -38,7 +38,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     console.log('[SALN Request Changes API] Request received');
 
     // Verify admin/HR permissions
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr']);
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
     if (!hasPermission) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin or HR role required.' },

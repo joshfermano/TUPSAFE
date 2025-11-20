@@ -19,7 +19,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createServerClient();
+    const supabase = await createServerClient('employee');
 
     // Get authenticated user
     const {

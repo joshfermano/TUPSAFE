@@ -25,7 +25,9 @@
     "dev:employee": "turbo dev --filter=employee",
     "dev:admin": "turbo dev --filter=admin",
     "build:employee": "turbo build --filter=employee",
-    "build:admin": "turbo build --filter=admin"
+    "build:admin": "turbo build --filter=admin",
+    "cleanup:registrations": "tsx scripts/cleanup-incomplete-registrations.ts",
+    "cleanup:registrations:live": "tsx scripts/cleanup-incomplete-registrations.ts --live"
   },
   "devDependencies": {
     "drizzle-kit": "^0.18.1",

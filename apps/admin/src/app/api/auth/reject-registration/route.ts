@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
       .where(eq(pendingRegistrations.userId, userId));
 
     // Get user email for notification
-    const supabase = await createServerClient();
+    const supabase = await createServerClient('admin');
     const { data: userData } = await supabase.auth.admin.getUserById(userId);
     const userEmail = userData?.user?.email;
 

@@ -2,8 +2,8 @@
 
 import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '@tupsafe/mock-data/api';
-import { MockLoginForm } from '@/components/auth/MockLoginForm';
+import { useAuth } from '@/providers/AuthProvider';
+import { LoginForm } from '@/components/auth/LoginForm';
 import { Badge } from '@/components/ui/badge';
 import { MagicCard } from '@/components/ui/magic-card';
 import { BorderBeam } from '@/components/ui/border-beam';
@@ -22,7 +22,17 @@ function LoginContent() {
   // Redirect if already authenticated
   useEffect(() => {
     if (!loading && user) {
-      router.push(redirectTo);
+      // Check account status from user metadata
+      const accountStatus = user.user_metadata?.account_status;
+
+      // If account is pending, redirect to pending approval page instead of dashboard
+      if (accountStatus === 'pending') {
+        router.push('/auth/pending-approval');
+      } else if (accountStatus === 'active') {
+        // Only redirect to dashboard if account is active
+        router.push(redirectTo);
+      }
+      // If status is suspended/rejected, stay on login page (will show error)
     }
   }, [user, loading, router, redirectTo]);
 
@@ -137,7 +147,7 @@ function LoginContent() {
                 </div>
 
                 {/* Login Form Component */}
-                <MockLoginForm
+                <LoginForm
                   redirectTo={redirectTo}
                   onSuccess={() => {
                     router.push(redirectTo);

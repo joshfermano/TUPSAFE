@@ -1,28 +1,26 @@
 /**
  * Employee Portal Authentication Middleware (Edge Runtime Compatible)
  *
- * Protects employee portal routes with Supabase authentication.
- * User type and profile verification is handled by API routes and server components
- * to maintain Edge Runtime compatibility (middleware cannot use Node.js modules).
+ * Protects employee and applicant routes with Supabase authentication.
+ * User type verification is handled by API routes and server components to maintain
+ * Edge Runtime compatibility (middleware cannot use Node.js modules).
  *
  * Security Features:
  * - Supabase session validation (edge-compatible)
+ * - Portal-specific session isolation via custom cookie names
+ * - Email verification enforcement
+ * - Account status checks (pending vs active)
  * - Session timeout management
  * - Redirects to login for unauthenticated users
- * - User type-based routing delegated to API routes/server components
  *
  * Note: This middleware runs in Edge Runtime and cannot access database directly.
- * User type (applicant/employee), profile data, and permissions are verified in
+ * User type (employee/applicant) and detailed profile verification happen in
  * API routes and server components using the @tupsafe/database package.
- *
- * Route Protection:
- * - Applicants: /dashboard, /profile, /pds, /applications, /positions, /settings
- * - Employees: /dashboard, /profile, /pds, /saln, /settings
- * - Enforcement happens in server components and API routes based on user metadata
  */
 
 import { type NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import { getPortalCookieName, getDefaultSupabaseCookiePattern, type Portal } from '@tupsafe/auth/edge';
 
 // Public routes that don't require authentication
 const PUBLIC_ROUTES = [
@@ -55,10 +53,11 @@ function isPublicRoute(pathname: string): boolean {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Fast path: Allow public routes
+  // Fast path: Allow public routes and ALL auth routes (no auth check needed)
   const isPublic = isPublicRoute(pathname);
   const isAuthRoute = pathname.startsWith('/auth');
 
+  // Always allow auth routes without any checks to prevent loops
   if (isPublic || isAuthRoute) {
     return NextResponse.next();
   }
@@ -69,29 +68,55 @@ export async function middleware(request: NextRequest) {
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !supabaseAnonKey) {
-      console.error('[Employee Middleware] Missing Supabase environment variables');
+      console.error(
+        '[Employee Middleware] Missing Supabase environment variables'
+      );
       const redirectUrl = new URL('/auth/login', request.url);
       redirectUrl.searchParams.set('error', 'configuration_error');
       return NextResponse.redirect(redirectUrl);
     }
 
     // Create response object for cookie management
-    let response = NextResponse.next({ request });
+    const response = NextResponse.next({ request });
 
-    // Create Supabase client with request context
+    // Portal-specific cookie configuration
+    const portal: Portal = 'employee';
+    const portalCookieName = getPortalCookieName(portal);
+    const defaultCookieName = getDefaultSupabaseCookiePattern();
+
+    // Create Supabase client with portal-specific cookie interceptor
     const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
+        /**
+         * Read portal-specific cookies and rename them to default Supabase names
+         * so Supabase can read them correctly
+         */
         getAll() {
-          return request.cookies.getAll();
+          const allCookies = request.cookies.getAll();
+
+          return allCookies
+            .filter(cookie => cookie.name.startsWith(portalCookieName))
+            .map(cookie => ({
+              name: cookie.name.replace(portalCookieName, defaultCookieName),
+              value: cookie.value,
+            }));
         },
+
+        /**
+         * Supabase wants to set cookies with default names
+         * We intercept and rename them to portal-specific names
+         */
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          response = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
+          cookiesToSet.forEach(({ name, value, options }) => {
+            // Rename from default Supabase name to portal-specific name
+            const portalSpecificName = name.replace(defaultCookieName, portalCookieName);
+
+            // Set in request for immediate reading
+            request.cookies.set(portalSpecificName, value);
+
+            // Set in response to send to browser
+            response.cookies.set(portalSpecificName, value, options);
+          });
         },
       },
     });
@@ -129,6 +154,29 @@ export async function middleware(request: NextRequest) {
      * Users without proper permissions will be redirected when they access protected resources.
      */
 
+    // Extract user metadata for account status and email verification checks
+    const accountStatus = session.user.user_metadata?.account_status;
+    const emailVerifiedAt = session.user.user_metadata?.email_verified_at;
+
+    // Check email verification first - if not verified, redirect to verification page
+    if (pathname.startsWith('/dashboard') && !emailVerifiedAt) {
+      const redirectUrl = new URL('/auth/verify-email', request.url);
+      redirectUrl.searchParams.set('email', session.user.email || '');
+      return NextResponse.redirect(redirectUrl);
+    }
+
+    // Check account status - must be 'active' to access dashboard routes
+    // Allow access to /auth/pending-approval itself to prevent redirect loop
+    if (
+      pathname.startsWith('/dashboard') &&
+      accountStatus !== 'active' &&
+      pathname !== '/auth/pending-approval'
+    ) {
+      const redirectUrl = new URL('/auth/pending-approval', request.url);
+      redirectUrl.searchParams.set('status', accountStatus || 'pending');
+      return NextResponse.redirect(redirectUrl);
+    }
+
     // Add minimal user context headers to response
     response.headers.set('x-user-id', userId);
     response.headers.set('x-user-email', session.user.email || '');
@@ -137,7 +185,6 @@ export async function middleware(request: NextRequest) {
     // Extract user metadata if available (optional, for optimization)
     // Actual verification still happens in API routes as the source of truth
     const userType = session.user.user_metadata?.user_type;
-    const accountStatus = session.user.user_metadata?.account_status;
 
     if (userType) {
       response.headers.set('x-user-type', userType);

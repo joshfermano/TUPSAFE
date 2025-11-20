@@ -392,8 +392,8 @@ export const Header: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Hide header on dashboard routes
-  const shouldHideHeader = pathname.startsWith('/dashboard');
+  // Hide header on dashboard routes and pending approval page
+  const shouldHideHeader = pathname.startsWith('/dashboard') || pathname === '/auth/pending-approval';
 
   // Handle logout with navigation
   const handleLogout = async () => {

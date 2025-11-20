@@ -35,6 +35,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { MoreVertical, Eye, CheckCircle, XCircle, FileText } from 'lucide-react';
 import type { SubmissionListItem } from '@tupsafe/types';
 import { formatDistanceToNow } from 'date-fns';
+import { capitalize } from '@/lib/formatting-helpers';
 
 interface SubmissionsDataTableProps {
   data: SubmissionListItem[];
@@ -147,9 +148,14 @@ export function SubmissionsDataTable({
             rejected: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
           };
 
+          // Safety check for undefined status
+          if (!status) {
+            return <Badge variant="secondary">Unknown</Badge>;
+          }
+
           return (
             <Badge variant={variants[status]} className={colors[status]}>
-              {status.charAt(0).toUpperCase() + status.slice(1)}
+              {capitalize(status, 'Unknown')}
             </Badge>
           );
         },

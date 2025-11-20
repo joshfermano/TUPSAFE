@@ -224,7 +224,7 @@ function SummarySection({
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold">Year-over-Year Comparison</h3>
             {isSignificant && (
-              <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+              <Badge variant="secondary" className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100">
                 Significant Change
               </Badge>
             )}

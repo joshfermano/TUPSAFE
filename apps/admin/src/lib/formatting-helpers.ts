@@ -122,3 +122,22 @@ export function capitalizeWords(str: string | undefined | null): string {
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
 }
+
+/**
+ * Safely capitalize the first letter of a string with null/undefined handling
+ * @param str - The string to capitalize
+ * @param fallback - Fallback value if str is null/undefined (default: 'N/A')
+ * @returns Capitalized string or fallback value
+ *
+ * @example
+ * capitalize('pending') // 'Pending'
+ * capitalize(null) // 'N/A'
+ * capitalize(undefined, 'Unknown') // 'Unknown'
+ */
+export function capitalize(
+  str: string | undefined | null,
+  fallback: string = 'N/A'
+): string {
+  if (!str || typeof str !== 'string') return fallback;
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}

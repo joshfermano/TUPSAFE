@@ -10,7 +10,7 @@ import { eq, desc } from 'drizzle-orm';
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient();
+    const supabase = await createServerClient('employee');
 
     // Get authenticated user
     const {

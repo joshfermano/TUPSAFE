@@ -15,11 +15,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import {
-  db,
-  profiles,
-  createAuditLog,
-} from '@tupsafe/database/server';
+import { db, profiles, createAuditLog } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
 import {
   createServerClient,
@@ -54,8 +50,9 @@ export async function POST(request: NextRequest) {
 
     const { email, password } = validationResult.data;
 
-    // Initialize Supabase client
-    const supabase = await createServerClient();
+    // Initialize Supabase client with portal-specific cookie isolation
+    // CRITICAL: Pass 'admin' portal to ensure session isolation from employee portal
+    const supabase = await createServerClient('admin');
 
     // Authenticate with Supabase
     const { data: authData, error: authError } =

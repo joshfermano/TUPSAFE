@@ -1,7 +1,8 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useAuth, useProfile } from '@tupsafe/mock-data/api';
+import { useAuth } from '@/providers/AuthProvider';
+import { useProfile } from '@/hooks/useProfile';
 import { ProfileHero } from '@/components/dashboard/ProfileHero';
 import { InfoCard, InfoItem } from '@/components/dashboard/InfoCard';
 import { Badge } from '@/components/ui/badge';
@@ -46,9 +47,14 @@ const BLUR_FADE_VARIANTS = {
 
 export default function ProfilePage() {
   const { user } = useAuth();
-  const { profile, department, position, loading, error } = useProfile(
-    user?.id || ''
-  );
+  const { data: profileData, isLoading: loading, error: queryError } = useProfile();
+
+  // Extract data from the query response
+  const profile = profileData;
+  const department = profileData?.department;
+  const college = profileData?.college;
+  const position = profileData?.position;
+  const error = queryError?.message;
 
   // Memoize memberSince calculation - MUST be before conditional returns to maintain hook order
   const memberSince = useMemo(
@@ -60,6 +66,15 @@ export default function ProfilePage() {
           })
         : '',
     [profile?.createdAt]
+  );
+
+  // Memoize full name
+  const fullName = useMemo(
+    () =>
+      profile
+        ? `${profile.firstName} ${profile.middleName ? profile.middleName + ' ' : ''}${profile.lastName}`
+        : '',
+    [profile]
   );
 
   if (loading) {
@@ -139,8 +154,8 @@ export default function ProfilePage() {
       >
         <ProfileHero
           profile={profile}
-          department={department}
-          position={position}
+          department={department || null}
+          position={position || null}
         />
       </motion.div>
 
@@ -157,20 +172,24 @@ export default function ProfilePage() {
             <div className="space-y-3">
               <InfoItem
                 label="Full Name"
-                value={`${profile.firstName} ${
-                  profile.middleName ? profile.middleName + ' ' : ''
-                }${profile.lastName}`}
+                value={fullName}
               />
               <InfoItem
-                label="Employee ID"
-                value={profile.employeeId}
+                label={profile.userType === 'employee' ? 'Employee ID' : 'Applicant ID'}
+                value={profile.userType === 'employee' ? profile.employeeId || '—' : profile.applicantId || '—'}
                 icon={Shield}
               />
               <InfoItem
                 label="Email Address"
-                value={user?.email || '—'}
+                value={profile.email || '—'}
                 icon={Mail}
               />
+              {profile.phoneNumber && (
+                <InfoItem
+                  label="Phone Number"
+                  value={profile.phoneNumber}
+                />
+              )}
             </div>
           </InfoCard>
         </motion.div>
@@ -184,20 +203,52 @@ export default function ProfilePage() {
         >
           <InfoCard title="Employment Details" icon={Briefcase}>
             <div className="space-y-3">
-              <InfoItem
-                label="Department"
-                value={department?.name || '—'}
-                icon={Building2}
-              />
-              <InfoItem
-                label="Position"
-                value={position?.title || '—'}
-                icon={Award}
-              />
-              <InfoItem
-                label="Salary Grade"
-                value={position?.gradeLevel ? `SG-${position.gradeLevel}` : '—'}
-              />
+              {profile.userType === 'employee' && (
+                <>
+                  <InfoItem
+                    label="Department"
+                    value={department?.name || '—'}
+                    icon={Building2}
+                  />
+                  {college && (
+                    <InfoItem
+                      label="College"
+                      value={college.name || '—'}
+                    />
+                  )}
+                  <InfoItem
+                    label="Position"
+                    value={position?.title || '—'}
+                    icon={Award}
+                  />
+                  <InfoItem
+                    label="Salary Grade"
+                    value={position?.gradeLevel ? `SG-${position.gradeLevel}` : '—'}
+                  />
+                  {profile.hireDate && (
+                    <InfoItem
+                      label="Hire Date"
+                      value={new Date(profile.hireDate).toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    />
+                  )}
+                  {profile.tenureYears !== null && (
+                    <InfoItem
+                      label="Years of Service"
+                      value={`${profile.tenureYears} ${profile.tenureYears === 1 ? 'year' : 'years'}`}
+                    />
+                  )}
+                </>
+              )}
+              {profile.userType === 'applicant' && (
+                <InfoItem
+                  label="User Type"
+                  value="Applicant"
+                />
+              )}
             </div>
           </InfoCard>
         </motion.div>
@@ -327,14 +378,10 @@ export default function ProfilePage() {
                 label="Department Status"
                 value={
                   <Badge
-                    variant={department.isActive ? 'default' : 'secondary'}
-                    className={cn(
-                      department.isActive
-                        ? 'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400'
-                        : ''
-                    )}
+                    variant="default"
+                    className="bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400"
                   >
-                    {department.isActive ? 'Active' : 'Inactive'}
+                    Active
                   </Badge>
                 }
               />

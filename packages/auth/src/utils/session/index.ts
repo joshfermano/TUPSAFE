@@ -4,6 +4,7 @@
  */
 
 import { cookies } from 'next/headers';
+import type { Portal } from '../supabase/cookie-config';
 
 /**
  * Session configuration constants
@@ -235,22 +236,31 @@ export async function getSessionUser(): Promise<{
 /**
  * Check if user has required role using Supabase session directly
  * This is the recommended approach for API routes
+ *
+ * @param allowedRoles - Array of roles that are allowed
+ * @param portal - Portal identifier ('admin' or 'employee') for portal-specific session isolation
  */
-export async function checkUserRoleFromSupabase(allowedRoles: string[]): Promise<boolean> {
+export async function checkUserRoleFromSupabase(
+  allowedRoles: string[],
+  portal?: Portal
+): Promise<boolean> {
   try {
     // Use static imports for better performance and reliability
     const { createClient } = require('../supabase/server');
     const { db, profiles } = require('@tupsafe/database/server');
     const { eq } = require('drizzle-orm');
 
-    const supabase = await createClient();
+    const supabase = await createClient(portal);
     const {
       data: { session },
       error: sessionError,
     } = await supabase.auth.getSession();
 
     if (sessionError || !session) {
-      console.error('[checkUserRoleFromSupabase] Session error or no session:', sessionError?.message || 'No session');
+      console.error(
+        '[checkUserRoleFromSupabase] Session error or no session:',
+        sessionError?.message || 'No session'
+      );
       return false;
     }
 
@@ -264,21 +274,30 @@ export async function checkUserRoleFromSupabase(allowedRoles: string[]): Promise
       .limit(1);
 
     if (!profile) {
-      console.error('[checkUserRoleFromSupabase] No profile found for user:', userId);
+      console.error(
+        '[checkUserRoleFromSupabase] No profile found for user:',
+        userId
+      );
       return false;
     }
 
     const hasRole = allowedRoles.includes(profile.role);
     if (!hasRole) {
-      console.error('[checkUserRoleFromSupabase] User role not in allowed roles:', {
-        userRole: profile.role,
-        allowedRoles,
-      });
+      console.error(
+        '[checkUserRoleFromSupabase] User role not in allowed roles:',
+        {
+          userRole: profile.role,
+          allowedRoles,
+        }
+      );
     }
 
     return hasRole;
   } catch (error) {
-    console.error('[checkUserRoleFromSupabase] Error checking user role:', error);
+    console.error(
+      '[checkUserRoleFromSupabase] Error checking user role:',
+      error
+    );
     return false;
   }
 }
