@@ -76,19 +76,25 @@ export function ApproveRegistrationDialog({
       }
     }
 
-    approveMutation.mutate(
-      { id: registration.id, data },
-      {
-        onSuccess: () => {
-          onOpenChange(false);
-          // Reset form
-          setRole('employee');
-          setDepartmentId('');
-          setPositionId('');
-          setNotes('');
-        },
-      }
-    );
+    try {
+      await approveMutation.mutateAsync({ id: registration.id, data });
+
+      // Success - close dialog and reset form
+      // The cache invalidation and success toast happens in the useApproveRegistration hook
+      onOpenChange(false);
+      setRole('employee');
+      setDepartmentId('');
+      setPositionId('');
+      setNotes('');
+    } catch (error) {
+      // Error is handled by the mutation's onError callback which:
+      // 1. Shows error toast with details
+      // 2. Rolls back optimistic updates
+      // 3. Logs error to console
+      // Dialog stays open so user can retry or cancel
+      console.error('[ApproveDialog] Approval failed:', error);
+      // Dialog remains open for user to retry or cancel
+    }
   };
 
   if (!registration) return null;

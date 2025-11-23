@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createBrowserClient } from '@supabase/ssr';
+import { createClient } from '@tupsafe/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -74,11 +74,8 @@ export function LoginForm({
 
   const router = useRouter();
 
-  // Create Supabase client
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  // Create Supabase client with portal-specific cookie configuration
+  const supabase = createClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,16 +116,31 @@ export function LoginForm({
           refresh_token: data.session.refresh_token,
         });
 
+        // Wait for cookies to be fully persisted
+        await new Promise(resolve => setTimeout(resolve, 150));
+
+        // Verify session was set correctly
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session) {
+          console.error('[Login] Session verification failed after setSession');
+          toast.error('Session Error', {
+            description: 'Failed to establish session. Please try again.',
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        console.log('[Login] ✅ Session verified successfully');
+
         toast.success('Login Successful', {
           description: 'Welcome back!',
         });
 
         onSuccess?.();
 
-        // Redirect
-        setTimeout(() => {
-          window.location.href = redirectTo;
-        }, 500);
+        // Use Next.js router for navigation instead of hard redirect
+        router.push(redirectTo);
       }
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Login failed');

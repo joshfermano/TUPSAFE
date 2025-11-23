@@ -12,17 +12,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useTheme } from '@/context/ThemeContext';
 import { useRealAuth, type OTPVerificationState } from '@/context/RealAuthContext';
 
-// Demo credentials display (for UI only)
-const demoCredentials = [
-  {
-    email: 'admin@tup.edu.ph',
-    password: 'admin123',
-    name: 'Admin User',
-    role: 'super_admin',
-    title: 'System Administrator'
-  },
-];
-
 // Error message mapping
 const ERROR_MESSAGES: Record<string, string> = {
   authentication_required: 'Please sign in to access this page',
@@ -89,7 +78,8 @@ function LoginPageContent() {
       }
 
       if (!result.success) {
-        setError(result.error || 'Login failed');
+        // Display a user-friendly error message
+        setError(result.error || 'Invalid email or password. Please try again.');
         setIsLoading(false);
         return;
       }
@@ -143,16 +133,6 @@ function LoginPageContent() {
       setError(errorMessage);
       setIsLoading(false);
     }
-  };
-
-  const handleDemoLogin = (email: string, password: string) => {
-    setEmail(email);
-    setPassword(password);
-    // Auto-submit after a short delay
-    setTimeout(() => {
-      const event = new Event('submit', { bubbles: true, cancelable: true });
-      document.querySelector('form')?.dispatchEvent(event);
-    }, 300);
   };
 
   const handleBackToLogin = () => {
@@ -246,46 +226,9 @@ function LoginPageContent() {
             </CardHeader>
 
             <CardContent className="space-y-6">
-              {!showOTPInput && (
-                <>
-                  {/* Demo Credentials Info */}
-                  <Alert className="bg-primary/5 border-primary/20">
-                    <AlertCircle className="h-4 w-4 text-primary" />
-                    <AlertDescription className="text-xs">
-                      <strong className="font-semibold">Demo Credentials:</strong>
-                      <div className="mt-2 space-y-2">
-                        {demoCredentials.map((cred) => (
-                          <div key={cred.email} className="flex flex-col space-y-0.5">
-                            <div className="flex items-center justify-between">
-                              <span className="text-muted-foreground font-medium">
-                                {cred.name}
-                              </span>
-                              <span className="text-[10px] text-muted-foreground/70 uppercase">
-                                {cred.role}
-                              </span>
-                            </div>
-                            <Button
-                              variant="link"
-                              size="sm"
-                              className="h-auto p-0 text-xs text-primary hover:text-primary/80 justify-start"
-                              onClick={() => handleDemoLogin(cred.email, cred.password)}
-                            >
-                              {cred.email} / {cred.password}
-                            </Button>
-                            <span className="text-[10px] text-muted-foreground/60">
-                              {cred.title}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </AlertDescription>
-                  </Alert>
-                </>
-              )}
-
               {/* Error Alert */}
               {error && (
-                <Alert variant="destructive">
+                <Alert variant="destructive" className="animate-in fade-in slide-in-from-top-2 duration-300">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>

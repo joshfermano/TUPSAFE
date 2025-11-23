@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@tupsafe/mock-data/api';
+import { useAuth } from '@/providers/AuthProvider';
 import dynamic from 'next/dynamic';
 
 // Dynamically import sections to avoid SSR issues

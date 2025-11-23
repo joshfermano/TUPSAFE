@@ -62,7 +62,8 @@ import {
 } from '@/lib/validations/profile';
 
 // Mock data (replace with actual API calls)
-import { useAuth, useProfile } from '@tupsafe/mock-data/api';
+import { useAuth } from '@/providers/AuthProvider';
+import { useProfile } from '@tupsafe/mock-data/api';
 
 // Animation variants - extracted to prevent recreation on each render
 const FADE_IN_UP_VARIANTS = {

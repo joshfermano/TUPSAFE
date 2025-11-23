@@ -21,8 +21,8 @@ import {
 } from '@tupsafe/database/server';
 import { eq, or } from 'drizzle-orm';
 import {
-  checkUserRole,
-  getSessionUser,
+  checkUserRoleFromSupabase,
+  getUserFromSupabase,
   sendEmail,
   createServerClient,
 } from '@tupsafe/auth/server';
@@ -44,7 +44,7 @@ export async function POST(
 ) {
   try {
     // Authorization check - HR or Admin only
-    const hasPermission = await checkUserRole(['hr', 'admin']);
+    const hasPermission = await checkUserRoleFromSupabase(['hr', 'admin'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(
@@ -57,7 +57,7 @@ export async function POST(
     }
 
     // Get current admin user
-    const adminUser = await getSessionUser();
+    const adminUser = await getUserFromSupabase();
 
     if (!adminUser) {
       return NextResponse.json(

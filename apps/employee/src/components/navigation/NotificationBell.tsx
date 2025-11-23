@@ -45,7 +45,7 @@ import {
 import { createClient } from '@tupsafe/auth';
 
 // Mock auth (replace with real auth)
-import { useAuth } from '@tupsafe/mock-data/api';
+import { useAuth } from '@/providers/AuthProvider';
 
 /**
  * Skeleton loader for notifications

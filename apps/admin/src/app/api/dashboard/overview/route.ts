@@ -210,7 +210,10 @@ export async function GET(_request: NextRequest) {
 
       // PDS compliance (employees only)
       Promise.all([
-        db.select({ count: count() }).from(profiles).where(eq(profiles.userType, 'employee')),
+        db
+          .select({ count: count() })
+          .from(profiles)
+          .where(eq(profiles.userType, 'employee')),
         db
           .select({ count: count() })
           .from(pdsSubmissions)
@@ -225,7 +228,10 @@ export async function GET(_request: NextRequest) {
 
       // SALN compliance (employees only, current fiscal year)
       Promise.all([
-        db.select({ count: count() }).from(profiles).where(eq(profiles.userType, 'employee')),
+        db
+          .select({ count: count() })
+          .from(profiles)
+          .where(eq(profiles.userType, 'employee')),
         db
           .select({ count: count() })
           .from(salnSubmissions)
@@ -267,13 +273,18 @@ export async function GET(_request: NextRequest) {
     const totalUsers = usersByType.employee + usersByType.applicant;
     const newThisMonth = newUsersMonth[0]?.count ?? 0;
     const previousMonth = previousMonthUsers[0]?.count ?? 0;
-    const growthValue = previousMonth > 0 ? ((newThisMonth - previousMonth) / previousMonth) * 100 : 0;
+    const growthValue =
+      previousMonth > 0
+        ? ((newThisMonth - previousMonth) / previousMonth) * 100
+        : 0;
 
     // Calculate average approval time
     const avgHours = Number(avgApprovalTime[0]?.avgHours ?? 0);
     const avgDays = avgHours / 24;
     const averageApprovalTime =
-      avgDays < 1 ? `${avgHours.toFixed(1)} hours` : `${avgDays.toFixed(1)} days`;
+      avgDays < 1
+        ? `${avgHours.toFixed(1)} hours`
+        : `${avgDays.toFixed(1)} days`;
 
     // Calculate compliance rates
     const [expectedPDS, submittedPDS] = pdsCompliance;
@@ -291,9 +302,11 @@ export async function GET(_request: NextRequest) {
     const totalPendingSubmissions =
       (pendingPDS[0]?.count ?? 0) + (pendingSALN[0]?.count ?? 0);
     const totalApprovedWeek =
-      (approvedSubmissionsWeek[0][0]?.count ?? 0) + (approvedSubmissionsWeek[1][0]?.count ?? 0);
+      (approvedSubmissionsWeek[0][0]?.count ?? 0) +
+      (approvedSubmissionsWeek[1][0]?.count ?? 0);
     const totalApprovedMonth =
-      (approvedSubmissionsMonth[0][0]?.count ?? 0) + (approvedSubmissionsMonth[1][0]?.count ?? 0);
+      (approvedSubmissionsMonth[0][0]?.count ?? 0) +
+      (approvedSubmissionsMonth[1][0]?.count ?? 0);
     const overallComplianceRate = (pdsRate + salnRate) / 2;
 
     // Generate alerts based on metrics
@@ -345,7 +358,9 @@ export async function GET(_request: NextRequest) {
         id: 'low-saln-compliance',
         type: 'error',
         title: 'Low SALN Compliance',
-        message: `Only ${salnRate.toFixed(1)}% of employees have submitted SALN for ${now.getFullYear()}`,
+        message: `Only ${salnRate.toFixed(
+          1
+        )}% of employees have submitted SALN for ${now.getFullYear()}`,
         action: {
           label: 'View Report',
           url: '/dashboard/compliance',
@@ -428,17 +443,28 @@ export async function GET(_request: NextRequest) {
 /**
  * Maps audit log action to activity type
  */
-function mapActionToType(action: string): DashboardOverviewResponse['recentActivity'][0]['type'] {
+function mapActionToType(
+  action: string
+): DashboardOverviewResponse['recentActivity'][0]['type'] {
   if (action.includes('user_created') || action.includes('user.created')) {
     return 'user_created';
   }
-  if (action.includes('registration_approved') || action.includes('registration.approved')) {
+  if (
+    action.includes('registration_approved') ||
+    action.includes('registration.approved')
+  ) {
     return 'registration_approved';
   }
-  if (action.includes('submission_approved') || action.includes('submission.approved')) {
+  if (
+    action.includes('submission_approved') ||
+    action.includes('submission.approved')
+  ) {
     return 'submission_approved';
   }
-  if (action.includes('submission_rejected') || action.includes('submission.rejected')) {
+  if (
+    action.includes('submission_rejected') ||
+    action.includes('submission.rejected')
+  ) {
     return 'submission_rejected';
   }
   return 'user_created'; // Default

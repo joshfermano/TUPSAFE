@@ -2,8 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback, memo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useAuth } from '@tupsafe/mock-data/api';
-import { useProfileQuery } from '@/hooks/useProfileQuery';
+import { useAuth } from '@/providers/AuthProvider';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -358,12 +357,8 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const [mounted, setMounted] = useState(false);
-
-  // Fetch user profile to get userType (employee | applicant)
-  // This determines which navigation items are shown in the sidebar
-  const { profile, isLoading: profileLoading } = useProfileQuery(user?.id || '');
 
   useEffect(() => {
     setMounted(true);
@@ -378,13 +373,13 @@ export default function DashboardLayout({
     }
   }, [user, loading, router, mounted]);
 
-  // Determine user type from profile
-  // Profile now includes userType field (employee | applicant)
+  // Determine user type from profile (now fetched from AuthProvider)
+  // Profile includes userType field (employee | applicant)
   // This determines which navigation items are shown in the sidebar
   const userType: 'employee' | 'applicant' = profile?.userType || 'employee';
 
   // Show loading state while checking authentication
-  if (!mounted || loading || profileLoading) {
+  if (!mounted || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-900">
         <div className="flex flex-col items-center gap-4">

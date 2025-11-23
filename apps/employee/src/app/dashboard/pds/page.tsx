@@ -8,7 +8,8 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 
 // API Hooks
-import { useAuth, usePds } from '@tupsafe/mock-data/api';
+import { useAuth } from '@/providers/AuthProvider';
+import { usePds } from '@tupsafe/mock-data/api';
 
 // Enhanced UI Components from shared-ui
 import {

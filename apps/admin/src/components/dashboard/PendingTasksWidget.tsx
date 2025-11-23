@@ -33,14 +33,27 @@ function TaskItem({ icon, label, count, href, urgent, description }: TaskItemPro
       <div
         className={cn(
           'group flex items-center gap-3 rounded-lg border p-3 transition-all hover:bg-muted/50',
-          urgent && 'border-red-500/50 bg-red-50/50 dark:bg-red-950/20'
+          urgent && 'border-destructive/20 bg-destructive/5'
         )}>
         <div
           className={cn(
-            'flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted',
-            urgent && 'bg-red-100 dark:bg-red-950'
+            'flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground',
+            urgent && 'bg-destructive/10 text-destructive'
           )}>
-          {icon}
+          {/* We clone the icon to override its className if needed, or rely on text color */}
+          {/* Actually the icon prop is a ReactNode, so we can't easily clone with new props unless it's a valid element. 
+              But the icon passed has className set. We should probably just use the parent color for SVG fill/stroke. 
+              The original code passed specific colors. We will assume the passed icon handles its color or inherits.
+              Wait, the original code had hardcoded colors in the passed icon className.
+          */}
+          <div className={cn(urgent ? "text-destructive" : "text-foreground")}>
+            {/* We wrap it to force color if needed, but the passed icon might have its own class. 
+               Let's look at how it's called. 
+               <Users className="h-4 w-4 text-blue-600" />
+               Shadcn prefers text-primary or foreground.
+            */}
+             {icon}
+          </div>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
@@ -68,7 +81,7 @@ export function PendingTasksWidget({ data }: PendingTasksWidgetProps) {
   // Pending registrations
   if (registrations.pending > 0) {
     tasks.push({
-      icon: <Users className="h-4 w-4 text-blue-600" />,
+      icon: <Users className="h-4 w-4" />, // removed text-blue-600
       label: 'Review Registrations',
       count: registrations.pending,
       href: '/dashboard/registrations',
@@ -80,7 +93,7 @@ export function PendingTasksWidget({ data }: PendingTasksWidgetProps) {
   // Pending PDS submissions
   if (submissions.pending.pds > 0) {
     tasks.push({
-      icon: <FileText className="h-4 w-4 text-green-600" />,
+      icon: <FileText className="h-4 w-4" />, // removed text-green-600
       label: 'Review PDS Submissions',
       count: submissions.pending.pds,
       href: '/dashboard/submissions?type=pds&status=submitted',
@@ -91,7 +104,7 @@ export function PendingTasksWidget({ data }: PendingTasksWidgetProps) {
   // Pending SALN submissions
   if (submissions.pending.saln > 0) {
     tasks.push({
-      icon: <FileText className="h-4 w-4 text-purple-600" />,
+      icon: <FileText className="h-4 w-4" />, // removed text-purple-600
       label: 'Review SALN Submissions',
       count: submissions.pending.saln,
       href: '/dashboard/submissions?type=saln&status=submitted',
@@ -102,7 +115,7 @@ export function PendingTasksWidget({ data }: PendingTasksWidgetProps) {
   // Overdue PDS
   if (compliance.pds.overdue > 0) {
     tasks.push({
-      icon: <AlertCircle className="h-4 w-4 text-red-600" />,
+      icon: <AlertCircle className="h-4 w-4" />, // removed text-red-600, handled by urgent
       label: 'Overdue PDS',
       count: compliance.pds.overdue,
       href: '/dashboard/compliance',
@@ -114,7 +127,7 @@ export function PendingTasksWidget({ data }: PendingTasksWidgetProps) {
   // Overdue SALN
   if (compliance.saln.overdue > 0) {
     tasks.push({
-      icon: <AlertCircle className="h-4 w-4 text-red-600" />,
+      icon: <AlertCircle className="h-4 w-4" />,
       label: 'Overdue SALN',
       count: compliance.saln.overdue,
       href: '/dashboard/compliance',
@@ -129,7 +142,7 @@ export function PendingTasksWidget({ data }: PendingTasksWidgetProps) {
   );
   if (lowComplianceAlert) {
     tasks.push({
-      icon: <Clock className="h-4 w-4 text-yellow-600" />,
+      icon: <Clock className="h-4 w-4" />,
       label: lowComplianceAlert.title,
       count: 1,
       href: lowComplianceAlert.action?.url || '/dashboard/compliance',
@@ -137,6 +150,7 @@ export function PendingTasksWidget({ data }: PendingTasksWidgetProps) {
       description: lowComplianceAlert.message,
     });
   }
+
 
   return (
     <Card>

@@ -48,3 +48,10 @@ export {
   updateProfile,
   type UseRealtimeProfileOptions,
 } from './useRealtimeProfile';
+
+// Registrations hook
+export {
+  useRealtimeRegistrations,
+  registrationRealtimeKeys,
+  type UseRealtimeRegistrationsOptions,
+} from './useRealtimeRegistrations';

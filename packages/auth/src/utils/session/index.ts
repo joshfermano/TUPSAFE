@@ -252,19 +252,19 @@ export async function checkUserRoleFromSupabase(
 
     const supabase = await createClient(portal);
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (sessionError || !session) {
+    if (userError || !user) {
       console.error(
-        '[checkUserRoleFromSupabase] Session error or no session:',
-        sessionError?.message || 'No session'
+        '[checkUserRoleFromSupabase] User error or no user:',
+        userError?.message || 'No user'
       );
       return false;
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
 
     // Fetch user profile to get role
     const [profile] = await db
@@ -328,16 +328,16 @@ export async function getUserFromSupabase(): Promise<{
 
     const supabase = await createClient();
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (sessionError || !session) {
+    if (userError || !user) {
       return null;
     }
 
-    const userId = session.user.id;
-    const email = session.user.email || '';
+    const userId = user.id;
+    const email = user.email || '';
 
     // Fetch full user profile
     const [profile] = await db

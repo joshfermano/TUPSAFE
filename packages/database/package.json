@@ -15,9 +15,17 @@
       "types": "./dist/server.d.ts",
       "default": "./dist/server.js"
     },
+    "./hooks": {
+      "types": "./dist/hooks/index.d.ts",
+      "default": "./dist/hooks/index.js"
+    },
     "./schema": {
       "types": "./dist/schema.d.ts",
       "default": "./dist/schema.js"
+    },
+    "./queries": {
+      "types": "./dist/queries/index.d.ts",
+      "default": "./dist/queries/index.js"
     },
     "./utils/audit-log": {
       "types": "./dist/utils/audit-log.d.ts",

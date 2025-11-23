@@ -17,7 +17,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { getUserFromSupabase } from '@tupsafe/auth/server';
+import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 import { db, departments } from '@tupsafe/database/server';
 import { eq, asc } from 'drizzle-orm';
 
@@ -44,8 +44,8 @@ export async function GET() {
     console.log('[Departments API] Request received');
 
     // Verify user is authenticated (any role)
-    const sessionUser = await getUserFromSupabase();
-    if (!sessionUser) {
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr', 'supervisor', 'employee'], 'admin');
+    if (!hasPermission) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 

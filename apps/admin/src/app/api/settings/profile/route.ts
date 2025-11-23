@@ -18,8 +18,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserFromSupabase, createServerClient } from '@tupsafe/auth/server';
-import { db, profiles, departments, positions, auditLogs } from '@tupsafe/database/server';
+import { checkUserRoleFromSupabase, createServerClient } from '@tupsafe/auth/server';
+import {
+  db,
+  profiles,
+  departments,
+  positions,
+  auditLogs,
+} from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
 import {
   updateProfileRequestSchema,
@@ -37,30 +43,28 @@ export async function GET() {
   try {
     console.log('[Profile Settings API] GET request received');
 
-    // Get current user from Supabase session
-    const user = await getUserFromSupabase();
-    if (!user) {
+    // Verify authentication using portal-specific session
+    const hasPermission = await checkUserRoleFromSupabase(
+      ['admin', 'hr', 'supervisor', 'employee'],
+      'admin'
+    );
+    if (!hasPermission) {
       console.log('[Profile Settings API] No authenticated session');
-      return NextResponse.json(
-        { error: 'Not authenticated' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    console.log(`[Profile Settings API] Fetching profile for user: ${user.userId}`);
-
-    // Get Supabase client for email
+    // Get Supabase client for email and user details
     const supabase = await createServerClient('admin');
     const {
       data: { session },
     } = await supabase.auth.getSession();
 
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Session expired' },
-        { status: 401 }
-      );
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Session expired' }, { status: 401 });
     }
+
+    const userId = session.user.id;
+    console.log(`[Profile Settings API] Fetching profile for user: ${userId}`);
 
     // Fetch profile with joined department and position
     const profileData = await db
@@ -89,14 +93,11 @@ export async function GET() {
       .from(profiles)
       .leftJoin(departments, eq(profiles.departmentId, departments.id))
       .leftJoin(positions, eq(profiles.positionId, positions.id))
-      .where(eq(profiles.id, user.userId))
+      .where(eq(profiles.id, userId))
       .limit(1);
 
     if (!profileData || profileData.length === 0) {
-      return NextResponse.json(
-        { error: 'Profile not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
     const data = profileData[0];
@@ -136,7 +137,9 @@ export async function GET() {
     };
 
     const duration = Date.now() - startTime;
-    console.log(`[Profile Settings API] Profile fetched successfully in ${duration}ms`);
+    console.log(
+      `[Profile Settings API] Profile fetched successfully in ${duration}ms`
+    );
 
     return NextResponse.json(
       {
@@ -175,17 +178,28 @@ export async function PUT(request: NextRequest) {
   try {
     console.log('[Profile Settings API] PUT request received');
 
-    // Get current user from Supabase session
-    const user = await getUserFromSupabase();
-    if (!user) {
+    // Verify authentication using portal-specific session
+    const hasPermission = await checkUserRoleFromSupabase(
+      ['admin', 'hr', 'supervisor', 'employee'],
+      'admin'
+    );
+    if (!hasPermission) {
       console.log('[Profile Settings API] No authenticated session');
-      return NextResponse.json(
-        { error: 'Not authenticated' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    console.log(`[Profile Settings API] Updating profile for user: ${user.userId}`);
+    // Get Supabase client for user details
+    const supabase = await createServerClient('admin');
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Session expired' }, { status: 401 });
+    }
+
+    const userId = session.user.id;
+    console.log(`[Profile Settings API] Updating profile for user: ${userId}`);
 
     // Parse and validate request body
     const body = await request.json();
@@ -195,14 +209,11 @@ export async function PUT(request: NextRequest) {
     const [currentProfile] = await db
       .select()
       .from(profiles)
-      .where(eq(profiles.id, user.userId))
+      .where(eq(profiles.id, userId))
       .limit(1);
 
     if (!currentProfile) {
-      return NextResponse.json(
-        { error: 'Profile not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
     // Update profile
@@ -215,7 +226,7 @@ export async function PUT(request: NextRequest) {
         phoneNumber: validatedData.phoneNumber || null,
         updatedAt: new Date(),
       })
-      .where(eq(profiles.id, user.userId))
+      .where(eq(profiles.id, userId))
       .returning();
 
     if (!updatedProfile) {
@@ -229,15 +240,18 @@ export async function PUT(request: NextRequest) {
     }
 
     // Get client IP and user agent for audit log
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const ip =
+      request.headers.get('x-forwarded-for') ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
     const userAgent = request.headers.get('user-agent') || 'unknown';
 
     // Create audit log entry with before/after state
     await db.insert(auditLogs).values({
-      userId: user.userId,
+      userId: userId,
       action: 'update_profile',
       entityType: 'profile',
-      entityId: user.userId,
+      entityId: userId,
       changes: {
         before: {
           firstName: currentProfile.firstName,
@@ -257,11 +271,6 @@ export async function PUT(request: NextRequest) {
     });
 
     // Fetch updated profile with department and position
-    const supabase = await createServerClient('admin');
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
     const profileData = await db
       .select({
         id: profiles.id,
@@ -283,7 +292,7 @@ export async function PUT(request: NextRequest) {
       .from(profiles)
       .leftJoin(departments, eq(profiles.departmentId, departments.id))
       .leftJoin(positions, eq(profiles.positionId, positions.id))
-      .where(eq(profiles.id, user.userId))
+      .where(eq(profiles.id, userId))
       .limit(1);
 
     const data = profileData[0];
@@ -318,7 +327,9 @@ export async function PUT(request: NextRequest) {
     };
 
     const duration = Date.now() - startTime;
-    console.log(`[Profile Settings API] Profile updated successfully in ${duration}ms`);
+    console.log(
+      `[Profile Settings API] Profile updated successfully in ${duration}ms`
+    );
 
     return NextResponse.json(
       {

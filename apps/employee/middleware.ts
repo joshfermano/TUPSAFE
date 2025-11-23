@@ -20,7 +20,7 @@
 
 import { type NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-import { getPortalCookieName, getDefaultSupabaseCookiePattern, type Portal } from '@tupsafe/auth/edge';
+import { createCookieInterceptor, type Portal } from '@tupsafe/auth/edge';
 
 // Public routes that don't require authentication
 const PUBLIC_ROUTES = [
@@ -81,61 +81,28 @@ export async function middleware(request: NextRequest) {
 
     // Portal-specific cookie configuration
     const portal: Portal = 'employee';
-    const portalCookieName = getPortalCookieName(portal);
-    const defaultCookieName = getDefaultSupabaseCookiePattern();
 
     // Create Supabase client with portal-specific cookie interceptor
     const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-      cookies: {
-        /**
-         * Read portal-specific cookies and rename them to default Supabase names
-         * so Supabase can read them correctly
-         */
-        getAll() {
-          const allCookies = request.cookies.getAll();
-
-          return allCookies
-            .filter(cookie => cookie.name.startsWith(portalCookieName))
-            .map(cookie => ({
-              name: cookie.name.replace(portalCookieName, defaultCookieName),
-              value: cookie.value,
-            }));
-        },
-
-        /**
-         * Supabase wants to set cookies with default names
-         * We intercept and rename them to portal-specific names
-         */
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            // Rename from default Supabase name to portal-specific name
-            const portalSpecificName = name.replace(defaultCookieName, portalCookieName);
-
-            // Set in request for immediate reading
-            request.cookies.set(portalSpecificName, value);
-
-            // Set in response to send to browser
-            response.cookies.set(portalSpecificName, value, options);
-          });
-        },
-      },
+      cookies: createCookieInterceptor(portal, request, response),
     });
 
-    // Check authentication
+    // Check authentication - Use getUser() to fetch FRESH user data from auth server
+    // This ensures we get the latest metadata including account_status updates
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    // If no session and accessing protected route, redirect to login
-    if (!session || sessionError) {
+    // If no user and accessing protected route, redirect to login
+    if (!user || userError) {
       const redirectUrl = new URL('/auth/login', request.url);
       redirectUrl.searchParams.set('redirect', pathname);
       redirectUrl.searchParams.set('error', 'authentication_required');
       return NextResponse.redirect(redirectUrl);
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
 
     /**
      * User Type and Profile Verification:
@@ -155,13 +122,26 @@ export async function middleware(request: NextRequest) {
      */
 
     // Extract user metadata for account status and email verification checks
-    const accountStatus = session.user.user_metadata?.account_status;
-    const emailVerifiedAt = session.user.user_metadata?.email_verified_at;
+    // getUser() returns FRESH metadata from the auth server, not cached session data
+    const accountStatus = user.user_metadata?.account_status;
+    const emailVerifiedAt = user.user_metadata?.email_verified_at;
+
+    // Detailed metadata inspection for debugging
+    console.log(`[Middleware] 🔍 User ${userId} metadata inspection:`, {
+      accountStatus,
+      emailVerified: !!emailVerifiedAt,
+      userType: user.user_metadata?.user_type,
+      employeeId: user.user_metadata?.employee_id,
+      isActive: user.user_metadata?.is_active,
+      rawMetadata: JSON.stringify(user.user_metadata, null, 2),
+      requestPath: pathname,
+    });
 
     // Check email verification first - if not verified, redirect to verification page
     if (pathname.startsWith('/dashboard') && !emailVerifiedAt) {
+      console.log(`[Middleware] Redirecting ${userId} to verify-email (email not verified)`);
       const redirectUrl = new URL('/auth/verify-email', request.url);
-      redirectUrl.searchParams.set('email', session.user.email || '');
+      redirectUrl.searchParams.set('email', user.email || '');
       return NextResponse.redirect(redirectUrl);
     }
 
@@ -172,19 +152,37 @@ export async function middleware(request: NextRequest) {
       accountStatus !== 'active' &&
       pathname !== '/auth/pending-approval'
     ) {
+      // Log before redirect with detailed context
+      console.log(`[Middleware] ⚠️ REDIRECTING to pending-approval:`, {
+        userId,
+        email: user.email,
+        currentStatus: accountStatus,
+        expectedStatus: 'active',
+        requestedPath: pathname,
+        reason: 'accountStatus !== "active"',
+      });
       const redirectUrl = new URL('/auth/pending-approval', request.url);
       redirectUrl.searchParams.set('status', accountStatus || 'pending');
       return NextResponse.redirect(redirectUrl);
     }
 
+    // Log successful access with detailed context
+    console.log(`[Middleware] ✅ Allowing access:`, {
+      userId,
+      email: user.email,
+      accountStatus,
+      path: pathname,
+      userType: user.user_metadata?.user_type,
+    });
+
     // Add minimal user context headers to response
     response.headers.set('x-user-id', userId);
-    response.headers.set('x-user-email', session.user.email || '');
+    response.headers.set('x-user-email', user.email || '');
     response.headers.set('x-portal', 'employee');
 
     // Extract user metadata if available (optional, for optimization)
     // Actual verification still happens in API routes as the source of truth
-    const userType = session.user.user_metadata?.user_type;
+    const userType = user.user_metadata?.user_type;
 
     if (userType) {
       response.headers.set('x-user-type', userType);

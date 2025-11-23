@@ -13,7 +13,8 @@
 
 import React, { useMemo, useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSaln, useAuth } from '@tupsafe/mock-data/api';
+import { useAuth } from '@/providers/AuthProvider';
+import { useSaln } from '@tupsafe/mock-data/api';
 import { differenceInYears, format, formatDistanceToNow } from 'date-fns';
 import {
   FileText,

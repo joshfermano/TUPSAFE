@@ -19,7 +19,7 @@ import {
   positions,
 } from '@tupsafe/database/server';
 import { eq, or } from 'drizzle-orm';
-import { checkUserRole, createServerClient } from '@tupsafe/auth/server';
+import { checkUserRoleFromSupabase, createServerClient } from '@tupsafe/auth/server';
 import type { RegistrationDetail, ApiResponse } from '@tupsafe/types';
 
 interface RouteParams {
@@ -34,7 +34,7 @@ export async function GET(
 ) {
   try {
     // Authorization check - HR or Admin only
-    const hasPermission = await checkUserRole(['hr', 'admin']);
+    const hasPermission = await checkUserRoleFromSupabase(['hr', 'admin'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(

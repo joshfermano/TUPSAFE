@@ -114,6 +114,8 @@ export type EmployeeIdRegistry = InferSelectModel<
 export type NewEmployeeIdRegistry = InferInsertModel<
   typeof schema.employeeIdRegistry
 >;
+export type UserPreference = InferSelectModel<typeof schema.userPreferences>;
+export type NewUserPreference = InferInsertModel<typeof schema.userPreferences>;
 
 // Enum Types
 export type Role = 'employee' | 'hr' | 'admin' | 'supervisor' | 'auditor';
@@ -155,6 +157,10 @@ export type OtpType =
   | 'email_verification'
   | 'login_challenge'
   | 'password_reset';
+export type EmailDigestFrequency = 'realtime' | 'daily' | 'weekly' | 'never';
+export type Theme = 'light' | 'dark' | 'system';
+export type DashboardLayout = 'default' | 'compact' | 'detailed';
+export type Language = 'en' | 'fil';
 
 // Complex Types for JSONB fields
 export interface Citizenship {
@@ -387,6 +393,11 @@ export interface Database {
         Insert: NewEmployeeIdRegistry;
         Update: Partial<NewEmployeeIdRegistry>;
       };
+      user_preferences: {
+        Row: UserPreference;
+        Insert: NewUserPreference;
+        Update: Partial<NewUserPreference>;
+      };
     };
     Views: {
       [_ in never]: never;
@@ -407,6 +418,10 @@ export interface Database {
       notification_type: NotificationType;
       account_status: AccountStatus;
       otp_type: OtpType;
+      email_digest_frequency: EmailDigestFrequency;
+      theme: Theme;
+      dashboard_layout: DashboardLayout;
+      language: Language;
     };
     CompositeTypes: {
       [_ in never]: never;

@@ -6,30 +6,53 @@
 
 'use client';
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { useDepartmentAnalytics } from '@/hooks/useDashboard';
 import { Building2 } from 'lucide-react';
 
 /**
- * Get color based on compliance rate
+ * Get color based on compliance rate using Shadcn chart variables
  */
 function getComplianceColor(rate: number): string {
-  if (rate >= 90) return 'hsl(142, 76%, 36%)'; // Green
-  if (rate >= 70) return 'hsl(38, 92%, 50%)'; // Yellow
-  return 'hsl(0, 84%, 60%)'; // Red
+  if (rate >= 90) return 'var(--chart-2)'; // Green-ish
+  if (rate >= 70) return 'var(--chart-4)'; // Yellow-ish
+  return 'var(--chart-1)'; // Red-ish (destructive)
 }
 
-/**
- * Get badge variant based on compliance rate
- */
-function getComplianceBadgeVariant(rate: number): 'default' | 'secondary' | 'destructive' {
-  if (rate >= 90) return 'default';
-  if (rate >= 70) return 'secondary';
-  return 'destructive';
-}
+const chartConfig = {
+  compliance: {
+    label: 'Compliance',
+  },
+  pds: {
+    label: 'PDS',
+  },
+  saln: {
+    label: 'SALN',
+  },
+} satisfies ChartConfig;
 
 export function ComplianceByDeptChart() {
   const { data, isLoading, isError } = useDepartmentAnalytics();
@@ -56,41 +79,22 @@ export function ComplianceByDeptChart() {
 
   // Calculate average compliance rate for each department
   const chartData = data.departments
-    .map(( dept: any) => ({
+    .map((dept: any) => ({
       name: dept.code || dept.name.substring(0, 20),
       fullName: dept.name,
-      compliance: Math.round((dept.submissions.pdsCompliance + dept.submissions.salnCompliance) / 2),
+      compliance: Math.round(
+        (dept.submissions.pdsCompliance + dept.submissions.salnCompliance) / 2
+      ),
       pds: dept.submissions.pdsCompliance,
       saln: dept.submissions.salnCompliance,
+      fill: getComplianceColor(
+        Math.round(
+          (dept.submissions.pdsCompliance + dept.submissions.salnCompliance) / 2
+        )
+      ),
     }))
     .sort((a: any, b: any) => b.compliance - a.compliance)
     .slice(0, 10); // Top 10 departments
-
-  // Custom tooltip
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (!active || !payload || !payload.length) return null;
-
-    const data = payload[0].payload;
-    return (
-      <div className="rounded-lg border bg-background p-3 shadow-lg">
-        <p className="mb-2 font-medium">{data.fullName}</p>
-        <div className="space-y-1">
-          <div className="flex items-center justify-between gap-4 text-sm">
-            <span className="text-muted-foreground">Overall:</span>
-            <span className="font-medium">{data.compliance}%</span>
-          </div>
-          <div className="flex items-center justify-between gap-4 text-sm">
-            <span className="text-muted-foreground">PDS:</span>
-            <span className="font-medium">{Math.round(data.pds)}%</span>
-          </div>
-          <div className="flex items-center justify-between gap-4 text-sm">
-            <span className="text-muted-foreground">SALN:</span>
-            <span className="font-medium">{Math.round(data.saln)}%</span>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   // Custom label showing percentage on bars
   const CustomLabel = (props: any) => {
@@ -128,73 +132,80 @@ export function ComplianceByDeptChart() {
         {chartData.length === 0 ? (
           <div className="flex h-[300px] flex-col items-center justify-center text-center">
             <Building2 className="mb-4 h-12 w-12 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">No department data available</p>
+            <p className="text-sm text-muted-foreground">
+              No department data available
+            </p>
           </div>
         ) : (
-          <>
-            <ResponsiveContainer width="100%" height={Math.max(300, chartData.length * 40)}>
-              <BarChart
-                data={chartData}
-                layout="vertical"
-                margin={{ top: 5, right: 50, left: 10, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" horizontal={false} />
-                <XAxis
-                  type="number"
-                  domain={[0, 100]}
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  width={100}
-                />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))' }} />
-                <Bar dataKey="compliance" radius={[0, 4, 4, 0]} label={<CustomLabel />}>
-                  {chartData.map((entry: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={getComplianceColor(entry.compliance)} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-
-            {/* Best and Worst Performers */}
-            <div className="mt-4 grid grid-cols-2 gap-4 border-t pt-4">
-              <div>
-                <p className="mb-2 text-sm font-medium text-green-600 dark:text-green-400">
-                  Best Performing
-                </p>
-                <p className="text-sm font-medium">{data.summary.bestPerforming.name}</p>
-                <Badge variant="default" className="mt-1">
-                  {Math.round(data.summary.bestPerforming.compliance)}%
-                </Badge>
-              </div>
-              {data.summary.needsAttention.length > 0 && (
-                <div>
-                  <p className="mb-2 text-sm font-medium text-red-600 dark:text-red-400">
-                    Needs Attention
-                  </p>
-                  <div className="space-y-1">
-                    {data.summary.needsAttention.slice(0, 2).map((dept: any, idx: number) => (
-                      <div key={idx} className="flex items-center justify-between">
-                        <p className="text-sm">{dept.name}</p>
-                        <Badge variant="destructive" className="text-xs">
-                          {Math.round(dept.compliance)}%
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </>
+          <ChartContainer config={chartConfig} className="h-[300px] w-full">
+            <BarChart
+              data={chartData}
+              layout="vertical"
+              margin={{ top: 5, right: 50, left: 10, bottom: 5 }}>
+              <CartesianGrid horizontal={false} />
+              <XAxis
+                type="number"
+                domain={[0, 100]}
+                tickLine={false}
+                axisLine={false}
+                hide
+              />
+              <YAxis
+                type="category"
+                dataKey="name"
+                tickLine={false}
+                axisLine={false}
+                width={100}
+              />
+              <ChartTooltip
+                content={<ChartTooltipContent hideLabel />}
+                cursor={{ fill: 'hsl(var(--muted))' }}
+              />
+              <Bar
+                dataKey="compliance"
+                radius={[0, 4, 4, 0]}
+                label={<CustomLabel />}>
+                {/* Colors are handled by the data payload 'fill' property or we can map cells if needed, but chartData includes fill now */}
+              </Bar>
+            </BarChart>
+          </ChartContainer>
         )}
+
+        {/* Best and Worst Performers */}
+        <div className="mt-4 grid grid-cols-2 gap-4 border-t pt-4">
+          <div>
+            <p className="mb-2 text-sm font-medium text-green-600 dark:text-green-400">
+              Best Performing
+            </p>
+            <p className="text-sm font-medium">
+              {data.summary.bestPerforming.name}
+            </p>
+            <Badge variant="default" className="mt-1">
+              {Math.round(data.summary.bestPerforming.compliance)}%
+            </Badge>
+          </div>
+          {data.summary.needsAttention.length > 0 && (
+            <div>
+              <p className="mb-2 text-sm font-medium text-red-600 dark:text-red-400">
+                Needs Attention
+              </p>
+              <div className="space-y-1">
+                {data.summary.needsAttention
+                  .slice(0, 2)
+                  .map((dept: any, idx: number) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between">
+                      <p className="text-sm">{dept.name}</p>
+                      <Badge variant="destructive" className="text-xs">
+                        {Math.round(dept.compliance)}%
+                      </Badge>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

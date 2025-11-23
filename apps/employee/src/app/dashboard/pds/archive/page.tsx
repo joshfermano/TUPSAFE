@@ -2,7 +2,8 @@
 
 import React, { useMemo, useCallback, useState, memo } from 'react';
 import { useRouter } from 'next/navigation';
-import { usePds, useAuth } from '@tupsafe/mock-data/api';
+import { useAuth } from '@/providers/AuthProvider';
+import { usePds } from '@tupsafe/mock-data/api';
 import type { PdsSubmission } from '@tupsafe/mock-data';
 import { differenceInYears, format } from 'date-fns';
 import {

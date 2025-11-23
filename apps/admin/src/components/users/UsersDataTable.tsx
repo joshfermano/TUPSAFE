@@ -19,7 +19,7 @@ import {
   useReactTable,
   type ColumnDef,
 } from '@tanstack/react-table';
-import { MoreVertical, Eye, Edit, UserCheck, UserX, Key, Trash2 } from 'lucide-react';
+import { MoreVertical, Eye, Edit, UserCheck, UserX, Key, Trash2, RefreshCw } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -48,6 +48,7 @@ interface UsersDataTableProps {
   onEdit?: (userId: string) => void;
   onToggleStatus?: (userId: string, isActive: boolean) => void;
   onResetPassword?: (userId: string) => void;
+  onSyncMetadata?: (userId: string) => void;
   onDelete?: (userId: string) => void;
 }
 
@@ -88,6 +89,7 @@ export function UsersDataTable({
   onEdit,
   onToggleStatus,
   onResetPassword,
+  onSyncMetadata,
   onDelete,
 }: UsersDataTableProps) {
   const [rowSelection, setRowSelection] = useState({});
@@ -210,6 +212,10 @@ export function UsersDataTable({
               <DropdownMenuItem onClick={() => onResetPassword?.(user.id)}>
                 <Key className="mr-2 h-4 w-4" />
                 Reset Password
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onSyncMetadata?.(user.id)}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Sync Metadata
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onToggleStatus?.(user.id, user.isActive)}>
                 {user.isActive ? (

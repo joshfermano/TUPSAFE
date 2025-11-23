@@ -75,7 +75,9 @@ export function BulkApproveDialog({
           <DialogDescription>
             {showResults
               ? 'Review the results of the bulk approval operation.'
-              : `You are about to approve ${totalCount} submission${totalCount > 1 ? 's' : ''}.`}
+              : `You are about to approve ${totalCount} submission${
+                  totalCount > 1 ? 's' : ''
+                }.`}
           </DialogDescription>
         </DialogHeader>
 
@@ -107,8 +109,7 @@ export function BulkApproveDialog({
                   {submissions.slice(0, 10).map((submission) => (
                     <div
                       key={submission.id}
-                      className="flex items-center justify-between py-2"
-                    >
+                      className="flex items-center justify-between py-2">
                       <div className="flex items-center gap-3">
                         {submission.type === 'pds' ? (
                           <FileText className="h-4 w-4 text-blue-600" />
@@ -117,7 +118,8 @@ export function BulkApproveDialog({
                         )}
                         <div>
                           <div className="font-medium text-sm">
-                            {submission.employee.firstName} {submission.employee.lastName}
+                            {submission.employee.firstName}{' '}
+                            {submission.employee.lastName}
                           </div>
                           {submission.employee.employeeId && (
                             <div className="text-xs text-muted-foreground">
@@ -126,14 +128,18 @@ export function BulkApproveDialog({
                           )}
                         </div>
                       </div>
-                      <Badge variant={submission.type === 'pds' ? 'default' : 'secondary'}>
+                      <Badge
+                        variant={
+                          submission.type === 'pds' ? 'default' : 'secondary'
+                        }>
                         {submission.type.toUpperCase()}
                       </Badge>
                     </div>
                   ))}
                   {totalCount > 10 && (
                     <div className="text-sm text-muted-foreground text-center py-2 border-t">
-                      +{totalCount - 10} more submission{totalCount - 10 > 1 ? 's' : ''}
+                      +{totalCount - 10} more submission
+                      {totalCount - 10 > 1 ? 's' : ''}
                     </div>
                   )}
                 </div>
@@ -143,7 +149,8 @@ export function BulkApproveDialog({
             {/* Bulk Notes */}
             <div className="space-y-2">
               <Label htmlFor="bulk-notes">
-                Bulk Approval Notes <span className="text-muted-foreground">(Optional)</span>
+                Bulk Approval Notes{' '}
+                <span className="text-muted-foreground">(Optional)</span>
               </Label>
               <Textarea
                 id="bulk-notes"
@@ -175,7 +182,9 @@ export function BulkApproveDialog({
               </div>
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <div className="text-2xl font-bold">{results.summary.total}</div>
+                  <div className="text-2xl font-bold">
+                    {results.summary.total}
+                  </div>
                   <div className="text-sm text-muted-foreground">Total</div>
                 </div>
                 <div>
@@ -199,7 +208,9 @@ export function BulkApproveDialog({
               <ScrollArea className="h-[300px] rounded-md border p-4">
                 <div className="space-y-2">
                   {results.results.map((result) => {
-                    const submission = submissions.find((s) => s.id === result.id);
+                    const submission = submissions.find(
+                      (s) => s.id === result.id
+                    );
                     const isSuccess = result.status === 'approved';
 
                     return (
@@ -209,8 +220,7 @@ export function BulkApproveDialog({
                           isSuccess
                             ? 'bg-green-50 dark:bg-green-950'
                             : 'bg-red-50 dark:bg-red-950'
-                        }`}
-                      >
+                        }`}>
                         <div className="flex items-center gap-3">
                           {isSuccess ? (
                             <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -219,14 +229,20 @@ export function BulkApproveDialog({
                           )}
                           <div>
                             <div className="font-medium text-sm">
-                              {submission?.employee.firstName} {submission?.employee.lastName}
+                              {submission?.employee.firstName}{' '}
+                              {submission?.employee.lastName}
                             </div>
                             {result.error && (
-                              <div className="text-xs text-red-600">{result.error}</div>
+                              <div className="text-xs text-red-600">
+                                {result.error}
+                              </div>
                             )}
                           </div>
                         </div>
-                        <Badge variant={result.type === 'pds' ? 'default' : 'secondary'}>
+                        <Badge
+                          variant={
+                            result.type === 'pds' ? 'default' : 'secondary'
+                          }>
                           {result.type.toUpperCase()}
                         </Badge>
                       </div>
@@ -241,17 +257,21 @@ export function BulkApproveDialog({
         <DialogFooter>
           {!showResults ? (
             <>
-              <Button variant="outline" onClick={handleClose} disabled={isProcessing}>
+              <Button
+                variant="outline"
+                onClick={handleClose}
+                disabled={isProcessing}>
                 Cancel
               </Button>
               <Button
                 onClick={handleConfirm}
                 disabled={isProcessing || totalCount === 0}
-                className="bg-green-600 hover:bg-green-700"
-              >
+                className="bg-green-600 hover:bg-green-700">
                 {isProcessing
                   ? 'Approving...'
-                  : `Approve ${totalCount} Submission${totalCount > 1 ? 's' : ''}`}
+                  : `Approve ${totalCount} Submission${
+                      totalCount > 1 ? 's' : ''
+                    }`}
               </Button>
             </>
           ) : (

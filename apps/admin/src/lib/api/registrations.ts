@@ -191,12 +191,26 @@ export async function fetchRegistrations(
     credentials: 'include',
   });
 
+  // Parse response body once
+  const responseData = await response.json().catch(() => ({
+    success: false,
+    error: 'Failed to fetch registrations'
+  }));
+
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Failed to fetch registrations' }));
-    throw new Error(error.error || 'Failed to fetch registrations');
+    const errorMessage = responseData.error || 'Failed to fetch registrations';
+    const errorDetails = responseData.details ? ` (${responseData.details})` : '';
+
+    console.error('[fetchRegistrations] API Error:', {
+      status: response.status,
+      error: responseData.error,
+      details: responseData.details,
+    });
+
+    throw new Error(`${errorMessage}${errorDetails}`);
   }
 
-  return response.json();
+  return responseData;
 }
 
 /**
@@ -211,12 +225,26 @@ export async function fetchRegistrationDetails(id: string): Promise<Registration
     credentials: 'include',
   });
 
+  // Parse response body once
+  const responseData = await response.json().catch(() => ({
+    success: false,
+    error: 'Failed to fetch registration details'
+  }));
+
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Failed to fetch registration details' }));
-    throw new Error(error.error || 'Failed to fetch registration details');
+    const errorMessage = responseData.error || 'Failed to fetch registration details';
+    const errorDetails = responseData.details ? ` (${responseData.details})` : '';
+
+    console.error('[fetchRegistrationDetails] API Error:', {
+      status: response.status,
+      error: responseData.error,
+      details: responseData.details,
+    });
+
+    throw new Error(`${errorMessage}${errorDetails}`);
   }
 
-  return response.json();
+  return responseData;
 }
 
 /**
@@ -235,12 +263,28 @@ export async function approveRegistration(
     body: JSON.stringify(data),
   });
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Failed to approve registration' }));
-    throw new Error(error.error || 'Failed to approve registration');
+  // Parse response body once to avoid consuming it twice
+  const responseData = await response.json().catch(() => ({
+    success: false,
+    error: 'Failed to approve registration'
+  }));
+
+  // CRITICAL: Check both HTTP status AND data.success
+  if (!response.ok || !responseData.success) {
+    const errorMessage = responseData.error || 'Failed to approve registration';
+    const errorDetails = responseData.details ? ` (${responseData.details})` : '';
+
+    console.error('[approveRegistration] API Error:', {
+      status: response.status,
+      error: responseData.error,
+      details: responseData.details,
+    });
+
+    // Include details in error message for better user feedback
+    throw new Error(`${errorMessage}${errorDetails}`);
   }
 
-  return response.json();
+  return responseData;
 }
 
 /**
@@ -259,12 +303,28 @@ export async function rejectRegistration(
     body: JSON.stringify(data),
   });
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Failed to reject registration' }));
-    throw new Error(error.error || 'Failed to reject registration');
+  // Parse response body once to avoid consuming it twice
+  const responseData = await response.json().catch(() => ({
+    success: false,
+    error: 'Failed to reject registration'
+  }));
+
+  // CRITICAL: Check both HTTP status AND data.success
+  if (!response.ok || !responseData.success) {
+    const errorMessage = responseData.error || 'Failed to reject registration';
+    const errorDetails = responseData.details ? ` (${responseData.details})` : '';
+
+    console.error('[rejectRegistration] API Error:', {
+      status: response.status,
+      error: responseData.error,
+      details: responseData.details,
+    });
+
+    // Include details in error message for better user feedback
+    throw new Error(`${errorMessage}${errorDetails}`);
   }
 
-  return response.json();
+  return responseData;
 }
 
 /**
@@ -282,12 +342,28 @@ export async function bulkApproveRegistrations(
     body: JSON.stringify(data),
   });
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Failed to bulk approve registrations' }));
-    throw new Error(error.error || 'Failed to bulk approve registrations');
+  // Parse response body once
+  const responseData = await response.json().catch(() => ({
+    success: false,
+    error: 'Failed to bulk approve registrations'
+  }));
+
+  // CRITICAL: Check both HTTP status AND data.success
+  if (!response.ok || !responseData.success) {
+    const errorMessage = responseData.error || 'Failed to bulk approve registrations';
+    const errorDetails = responseData.details ? ` (${responseData.details})` : '';
+
+    console.error('[bulkApproveRegistrations] API Error:', {
+      status: response.status,
+      error: responseData.error,
+      details: responseData.details,
+    });
+
+    // Include details in error message for better user feedback
+    throw new Error(`${errorMessage}${errorDetails}`);
   }
 
-  return response.json();
+  return responseData;
 }
 
 /**
@@ -302,11 +378,25 @@ export async function fetchRegistrationStats(): Promise<RegistrationStats> {
     credentials: 'include',
   });
 
+  // Parse response body once
+  const responseData = await response.json().catch(() => ({
+    success: false,
+    error: 'Failed to fetch statistics'
+  }));
+
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Failed to fetch statistics' }));
-    throw new Error(error.error || 'Failed to fetch statistics');
+    const errorMessage = responseData.error || 'Failed to fetch statistics';
+    const errorDetails = responseData.details ? ` (${responseData.details})` : '';
+
+    console.error('[fetchRegistrationStats] API Error:', {
+      status: response.status,
+      error: responseData.error,
+      details: responseData.details,
+    });
+
+    throw new Error(`${errorMessage}${errorDetails}`);
   }
 
-  const result = await response.json();
-  return result.data; // Unwrap the { success, data } response
+  // Unwrap the { success, data } response
+  return responseData.data || responseData;
 }

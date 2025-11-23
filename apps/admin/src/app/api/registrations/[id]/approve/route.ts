@@ -24,15 +24,13 @@ import {
 } from '@tupsafe/database/server';
 import { eq, or } from 'drizzle-orm';
 import {
-  checkUserRole,
-  getSessionUser,
-  sendEmail,
+  checkUserRoleFromSupabase,
+  sendWelcomeEmail,
   createServerClient,
 } from '@tupsafe/auth/server';
 import {
   approveRegistrationSchema,
   type ApproveRegistrationInput,
-  type ApiResponse,
 } from '@tupsafe/types';
 
 interface RouteParams {
@@ -46,8 +44,20 @@ export async function POST(
   { params }: RouteParams
 ) {
   try {
+    // Verify critical environment variables
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('❌ CRITICAL: SUPABASE_SERVICE_ROLE_KEY not configured!');
+      return NextResponse.json({
+        success: false,
+        error: 'Server configuration error - missing service role key'
+      }, { status: 500 });
+    }
+
+    const { id } = await params;
+    console.log(`[Approve] Starting approval process for registration ID: ${id}`);
+
     // Authorization check - HR or Admin only
-    const hasPermission = await checkUserRole(['hr', 'admin']);
+    const hasPermission = await checkUserRoleFromSupabase(['hr', 'admin'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(
@@ -60,9 +70,11 @@ export async function POST(
     }
 
     // Get current admin user
-    const adminUser = await getSessionUser();
+    const supabase = await createServerClient('admin');
+    const { data: { session } } = await supabase.auth.getSession();
+    const adminUserId = session?.user?.id;
 
-    if (!adminUser) {
+    if (!adminUserId) {
       return NextResponse.json(
         {
           success: false,
@@ -71,8 +83,6 @@ export async function POST(
         { status: 401 }
       );
     }
-
-    const { id } = await params;
 
     // Validate ID
     if (!id || typeof id !== 'string') {
@@ -176,10 +186,10 @@ export async function POST(
     }
 
     // Prepare profile update
-    const profileUpdate: any = {
+    const profileUpdate: Record<string, unknown> = {
       accountStatus: 'active',
       isActive: true,
-      approvedBy: adminUser.userId,
+      approvedBy: adminUserId,
       approvedAt: now,
       updatedAt: now,
     };
@@ -201,62 +211,122 @@ export async function POST(
       .update(pendingRegistrations)
       .set({
         status: 'approved',
-        approvedBy: adminUser.userId,
+        approvedBy: adminUserId,
         approvedAt: now,
         adminNotes: notes || null,
       })
       .where(eq(pendingRegistrations.id, pendingReg.id));
 
-    // Get user email for notification
-    const supabase = await createServerClient('admin');
+    // Get user email and update auth metadata
     let userEmail: string | null = null;
 
     try {
-      const { data: userData } = await supabase.auth.admin.getUserById(userId);
+      const { data: userData, error: userDataError } = await supabase.auth.admin.getUserById(userId);
+      
+      if (userDataError) {
+        console.error(`❌ Error fetching user data for ${userId}:`, userDataError);
+        throw userDataError;
+      }
+      
       userEmail = userData?.user?.email || null;
+
+      // CRITICAL: Update user metadata to sync account status with auth
+      // This ensures the pending-approval page correctly detects approval
+      if (userData?.user) {
+        console.log(`[Approve] Updating metadata for user ${userId}:`, {
+          account_status: 'active',
+          employee_id: employeeId,
+        });
+
+        const { data: updateData, error: updateError } = await supabase.auth.admin.updateUserById(userId, {
+          user_metadata: {
+            ...userData.user.user_metadata,
+            account_status: 'active',
+            employee_id: employeeId,
+            user_type: profile.userType,
+            updated_at: now.toISOString(),
+          },
+        });
+
+        if (updateError) {
+          console.error(`❌ CRITICAL: Failed to update user metadata for ${userId}:`, updateError);
+          // This is critical - return error to admin
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'Failed to update user authentication metadata',
+              details: updateError.message,
+            },
+            { status: 500 }
+          );
+        }
+
+        console.log(`✅ Metadata update completed for ${userId}:`, {
+          success: !updateError,
+          account_status: 'active',
+          employee_id: employeeId,
+          user_type: profile.userType,
+        });
+
+        // Log the actual updated metadata
+        if (updateData?.user?.user_metadata) {
+          console.log(`[Approve] New metadata values:`, updateData.user.user_metadata);
+        }
+
+        // CRITICAL: Verify metadata was actually updated
+        console.log(`🔍 Verifying metadata update for user ${userId}...`);
+        const { data: verifyData, error: verifyError } = await supabase.auth.admin.getUserById(userId);
+
+        if (verifyError) {
+          console.error(`❌ Verification failed - cannot fetch user:`, verifyError);
+          return NextResponse.json({
+            success: false,
+            error: 'Failed to verify metadata update',
+            details: verifyError.message
+          }, { status: 500 });
+        }
+
+        const currentMetadata = verifyData?.user?.user_metadata;
+        console.log(`[Approve] Verified current metadata:`, currentMetadata);
+
+        if (currentMetadata?.account_status !== 'active') {
+          console.error(`❌ VERIFICATION FAILED: account_status is "${currentMetadata?.account_status}", expected "active"`);
+          return NextResponse.json({
+            success: false,
+            error: 'Metadata verification failed - account_status not updated',
+            details: `Current status: ${currentMetadata?.account_status}`,
+          }, { status: 500 });
+        }
+
+        console.log(`✅ Metadata verification PASSED - account_status is "active"`);
+      }
     } catch (error) {
-      console.error(`Error fetching email for user ${userId}:`, error);
+      console.error(`❌ CRITICAL: Error updating user metadata for ${userId}:`, error);
+      // Don't silently fail - this is critical for user login
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to sync user authentication data',
+          details: error instanceof Error ? error.message : 'Unknown error',
+        },
+        { status: 500 }
+      );
     }
 
-    // Send welcome email
+    // Send welcome email using proper email function
     if (userEmail) {
       try {
-        const emailContent = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #0066cc;">Welcome to TUPSAFE!</h2>
-            <p>Dear ${profile.firstName} ${profile.lastName},</p>
+        const result = await sendWelcomeEmail(
+          userEmail,
+          employeeId || profile.applicantId || 'N/A',
+          profile.firstName
+        );
 
-            <p>Congratulations! Your account has been approved and is now active.</p>
-
-            <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-              ${employeeId ? `<p><strong>Employee ID:</strong> ${employeeId}</p>` : ''}
-              ${assignedRole ? `<p><strong>Role:</strong> ${assignedRole.toUpperCase()}</p>` : ''}
-              ${departmentId ? '<p><strong>Department:</strong> Assigned</p>' : ''}
-              ${positionId ? '<p><strong>Position:</strong> Assigned</p>' : ''}
-            </div>
-
-            <p>You can now log in to your account and start using the system to:</p>
-            <ul>
-              <li>Submit and manage your Personal Data Sheet (PDS)</li>
-              <li>File your Statement of Assets, Liabilities, and Net Worth (SALN)</li>
-              <li>Track submission status and deadlines</li>
-              <li>Update your profile information</li>
-            </ul>
-
-            ${notes ? `<p><strong>Note from HR:</strong> ${notes}</p>` : ''}
-
-            <p>If you have any questions, please contact the HR department.</p>
-
-            <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
-            <p style="color: #6b7280; font-size: 14px;">
-              Best regards,<br>
-              <strong>TUPSAFE Team</strong><br>
-              Technological University of the Philippines - Manila
-            </p>
-          </div>
-        `;
-
-        await sendEmail(userEmail, 'Account Approved - TUPSAFE', emailContent);
+        if (!result.success) {
+          console.error('Failed to send welcome email:', result.error);
+        } else {
+          console.log(`✓ Welcome email sent to ${userEmail}`);
+        }
       } catch (error) {
         console.error('Error sending welcome email:', error);
         // Non-critical, continue
@@ -281,7 +351,7 @@ export async function POST(
     // Create audit log
     try {
       await createAuditLog({
-        userId: adminUser.userId,
+        userId: adminUserId,
         action: 'APPROVE_REGISTRATION',
         entityType: 'registration',
         entityId: pendingReg.id,
@@ -299,7 +369,7 @@ export async function POST(
             assignedRole,
             departmentId,
             positionId,
-            approvedBy: adminUser.userId,
+            approvedBy: adminUserId,
             notes,
           },
         },
@@ -314,21 +384,16 @@ export async function POST(
       // Non-critical, continue
     }
 
-    const response: ApiResponse<{
-      userId: string;
-      employeeId: string | null;
-      assignedRole?: string;
-      approvedBy: string;
-      approvedAt: Date;
-    }> = {
+    // Return response matching ApproveRegistrationResponse type expected by frontend
+    const response = {
       success: true,
-      data: {
-        userId,
-        employeeId,
-        assignedRole,
-        approvedBy: adminUser.userId,
-        approvedAt: now,
+      user: {
+        id: userId,
+        email: userEmail || '',
+        employeeId: employeeId || '',
+        role: assignedRole || profile.role || 'employee',
       },
+      message: 'Registration approved successfully',
     };
 
     return NextResponse.json(response);

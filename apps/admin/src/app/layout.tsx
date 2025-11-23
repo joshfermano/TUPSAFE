@@ -3,7 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { RealAuthProvider } from '@/context/RealAuthContext';
 import { MockDataProvider } from '@tupsafe/mock-data/providers';
-import { QueryProvider, ToastProvider } from '@/providers';
+import { QueryProvider, ToastProvider, RealtimeProvider } from '@/providers';
 import { ThemeProvider, ThemeScript } from '@/context/ThemeContext';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -27,10 +27,12 @@ export default function RootLayout({
         <ThemeProvider>
           <RealAuthProvider>
             <QueryProvider>
-              <MockDataProvider>
-                {children}
-                <ToastProvider />
-              </MockDataProvider>
+              <RealtimeProvider>
+                <MockDataProvider>
+                  {children}
+                  <ToastProvider />
+                </MockDataProvider>
+              </RealtimeProvider>
             </QueryProvider>
           </RealAuthProvider>
         </ThemeProvider>

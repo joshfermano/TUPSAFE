@@ -385,8 +385,8 @@ export function ApplicantRegistrationForm({
                         <div className="p-2 text-sm text-slate-500">
                           Loading open positions...
                         </div>
-                      ) : openPositions && openPositions.length > 0 ? (
-                        openPositions.map((position: OpenPosition) => (
+                      ) : openPositions && openPositions.positions && openPositions.positions.length > 0 ? (
+                        openPositions.positions.map((position) => (
                           <SelectItem key={position.id} value={position.id}>
                             <div className="flex flex-col py-1">
                               <div className="flex items-center gap-2">

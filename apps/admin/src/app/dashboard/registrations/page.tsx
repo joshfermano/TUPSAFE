@@ -9,7 +9,9 @@
 
 import { useState } from 'react';
 import { CheckCircle, UserPlus } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import {
   Pagination,
@@ -33,10 +35,20 @@ import type { RegistrationFiltersState } from '@/components/registrations/Regist
 import {
   useRegistrations,
   useRegistrationStats,
+  registrationKeys,
 } from '@/hooks/useRegistrations';
 import type { Registration } from '@/lib/api/registrations';
+import {
+  useRealtimeRegistrations,
+  type UseRealtimeRegistrationsOptions,
+} from '@tupsafe/database';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import type { PendingRegistration } from '@tupsafe/database';
 
 export default function RegistrationsPage() {
+  // Query client for Realtime integration
+  const queryClient = useQueryClient();
+
   // State
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
@@ -69,6 +81,37 @@ export default function RegistrationsPage() {
     page,
     limit: pageSize,
     ...filters,
+  });
+
+  // Real-time subscription for live updates
+  const { isConnected: isRealtimeConnected } = useRealtimeRegistrations({
+    queryClient,
+    queryKeys: [
+      ['registrations', 'list'],
+      ['registrations', 'stats'],
+    ],
+    showNotifications: true,
+    onNotification: (
+      eventType: 'INSERT' | 'UPDATE' | 'DELETE',
+      payload: RealtimePostgresChangesPayload<PendingRegistration>
+    ) => {
+      console.log('[Registrations] Real-time event:', eventType, payload);
+
+      // Clear selection if a selected registration was updated by another admin
+      if (eventType === 'UPDATE' || eventType === 'DELETE') {
+        const newRecord = payload.new as PendingRegistration | undefined;
+        const oldRecord = payload.old as PendingRegistration | undefined;
+        const updatedId = newRecord?.id || oldRecord?.id;
+
+        if (updatedId && selectedRows.has(updatedId)) {
+          setSelectedRows((prev) => {
+            const next = new Set(prev);
+            next.delete(updatedId);
+            return next;
+          });
+        }
+      }
+    },
   });
 
   const registrations = data?.registrations || [];
@@ -148,17 +191,16 @@ export default function RegistrationsPage() {
 
       {/* Bulk Actions Bar */}
       {selectedRows.size > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-4 flex items-center justify-between">
+        <Card className="p-4 flex items-center justify-between bg-muted/50 border-primary/20">
           <div className="flex items-center gap-2">
             <span className="font-semibold">
-              {selectedRows.size} registration{selectedRows.size !== 1 ? 's' : ''}{' '}
-              selected
+              {selectedRows.size} registration
+              {selectedRows.size !== 1 ? 's' : ''} selected
             </span>
             <Button
               variant="link"
               onClick={() => setSelectedRows(new Set())}
-              className="h-auto p-0 text-sm"
-            >
+              className="h-auto p-0 text-sm">
               Clear selection
             </Button>
           </div>
@@ -166,13 +208,12 @@ export default function RegistrationsPage() {
             <Button
               onClick={handleBulkApprove}
               disabled={!canBulkApprove}
-              className="gap-2"
-            >
+              className="gap-2">
               <CheckCircle className="h-4 w-4" />
               Bulk Approve ({selectedRows.size})
             </Button>
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Data Table */}
@@ -195,7 +236,9 @@ export default function RegistrationsPage() {
                 <PaginationPrevious
                   onClick={() => handlePageChange(Math.max(1, page - 1))}
                   className={
-                    page === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'
+                    page === 1
+                      ? 'pointer-events-none opacity-50'
+                      : 'cursor-pointer'
                   }
                 />
               </PaginationItem>
@@ -221,8 +264,7 @@ export default function RegistrationsPage() {
                       <PaginationLink
                         onClick={() => handlePageChange(p)}
                         isActive={page === p}
-                        className="cursor-pointer"
-                      >
+                        className="cursor-pointer">
                         {p}
                       </PaginationLink>
                     </PaginationItem>
@@ -260,7 +302,10 @@ export default function RegistrationsPage() {
         registration={detailsDialog.registration}
         open={detailsDialog.open}
         onOpenChange={(open) =>
-          setDetailsDialog({ open, registration: open ? detailsDialog.registration : null })
+          setDetailsDialog({
+            open,
+            registration: open ? detailsDialog.registration : null,
+          })
         }
         onApprove={handleApprove}
         onReject={handleReject}
@@ -270,7 +315,10 @@ export default function RegistrationsPage() {
         registration={approveDialog.registration}
         open={approveDialog.open}
         onOpenChange={(open) =>
-          setApproveDialog({ open, registration: open ? approveDialog.registration : null })
+          setApproveDialog({
+            open,
+            registration: open ? approveDialog.registration : null,
+          })
         }
         departments={[]} // TODO: Fetch departments from API
         positions={[]} // TODO: Fetch positions from API
@@ -280,7 +328,10 @@ export default function RegistrationsPage() {
         registration={rejectDialog.registration}
         open={rejectDialog.open}
         onOpenChange={(open) =>
-          setRejectDialog({ open, registration: open ? rejectDialog.registration : null })
+          setRejectDialog({
+            open,
+            registration: open ? rejectDialog.registration : null,
+          })
         }
       />
 

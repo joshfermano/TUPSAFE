@@ -19,7 +19,8 @@
 
 import { useMemo, memo, useCallback } from 'react';
 import Link from 'next/link';
-import { useAuth, useSaln } from '@tupsafe/mock-data/api';
+import { useAuth } from '@/providers/AuthProvider';
+import { useSaln } from '@tupsafe/mock-data/api';
 import { InfoCard } from '@/components/dashboard/InfoCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
