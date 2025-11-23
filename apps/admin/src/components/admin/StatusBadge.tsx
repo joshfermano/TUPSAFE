@@ -1,5 +1,4 @@
 import { memo } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import {
   CheckCircle2,
@@ -20,44 +19,41 @@ const statusConfig = {
   draft: {
     label: 'Draft',
     icon: FileText,
-    className:
-      'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200 border-gray-300 dark:border-gray-700',
+    className: 'bg-secondary text-secondary-foreground border-secondary',
   },
   submitted: {
     label: 'Submitted',
     icon: Clock,
     className:
-      'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 border-blue-300 dark:border-blue-700',
+      'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 border-blue-200 dark:border-blue-800',
   },
   reviewing: {
     label: 'Reviewing',
     icon: Eye,
     className:
-      'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 border-yellow-300 dark:border-yellow-700',
+      'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 border-yellow-200 dark:border-yellow-800 animate-pulse',
   },
   approved: {
     label: 'Approved',
     icon: CheckCircle2,
     className:
-      'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-300 dark:border-green-700',
+      'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-200 dark:border-green-800',
   },
   rejected: {
     label: 'Rejected',
     icon: XCircle,
-    className:
-      'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 border-red-300 dark:border-red-700',
+    className: 'bg-destructive/10 text-destructive border-destructive/20',
   },
   active: {
     label: 'Active',
     icon: UserCheck,
     className:
-      'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-300 dark:border-green-700',
+      'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-200 dark:border-green-800',
   },
   inactive: {
     label: 'Inactive',
     icon: UserX,
-    className:
-      'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200 border-gray-300 dark:border-gray-700',
+    className: 'bg-muted text-muted-foreground border-muted',
   },
 } as const;
 
@@ -91,40 +87,18 @@ export const StatusBadge = memo(function StatusBadge({
 }: StatusBadgeProps) {
   const config = statusConfig[status];
   const Icon = config.icon;
-  const shouldReduceMotion = useReducedMotion();
-
-  // Pulse animation for "reviewing" status
-  const pulseAnimation =
-    status === 'reviewing' && !shouldReduceMotion
-      ? {
-          scale: [1, 1.02, 1],
-          transition: {
-            duration: 2,
-            repeat: Infinity,
-            ease: 'easeInOut' as const,
-          },
-        }
-      : {};
 
   return (
-    <motion.span
-      layout
-      animate={pulseAnimation}
-      transition={{ duration: 0.3 }}
-      style={{ display: 'inline-flex' }}
-    >
-      <Badge
-        variant="outline"
-        className={cn(
-          'inline-flex items-center gap-1 font-medium transition-colors duration-300',
-          config.className,
-          className,
-        )}
-      >
-        {showIcon && <Icon className="h-3 w-3" />}
-        {config.label}
-      </Badge>
-    </motion.span>
+    <Badge
+      variant="outline"
+      className={cn(
+        'inline-flex items-center gap-1.5 font-medium transition-colors',
+        config.className,
+        className
+      )}>
+      {showIcon && <Icon className="h-3.5 w-3.5" />}
+      {config.label}
+    </Badge>
   );
 });
 

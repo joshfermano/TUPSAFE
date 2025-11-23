@@ -1,0 +1,1183 @@
+/**
+ * PDS (Personal Data Sheet) Queries
+ *
+ * Production-ready Drizzle ORM queries for PDS submission operations with comprehensive
+ * support for all 10 related tables, proper transaction handling, and version control.
+ *
+ * All write operations use database transactions to ensure data consistency across
+ * multiple related tables. Ownership validation is enforced on all operations.
+ *
+ * @module queries/pds
+ */
+
+import { db } from '../db';
+import {
+  pdsSubmissions,
+  pdsPersonalInfo,
+  pdsFamilyBackground,
+  pdsChildren,
+  pdsEducation,
+  pdsCivilService,
+  pdsWorkExperience,
+  pdsVoluntaryWork,
+  pdsTraining,
+  pdsOtherInfo,
+  archives,
+} from '../schema';
+import { eq, and, desc } from 'drizzle-orm';
+import type {
+  PdsSubmission,
+  PdsPersonalInfo,
+  PdsFamilyBackground,
+  PdsChild,
+  PdsEducation,
+  PdsCivilService,
+  PdsWorkExperience,
+  PdsVoluntaryWork,
+  PdsTraining,
+  PdsOtherInfo,
+} from '../types';
+
+/**
+ * Pagination options for list queries
+ */
+export interface PaginationOptions {
+  limit?: number;
+  offset?: number;
+}
+
+/**
+ * Filter options for PDS submission lists
+ */
+export interface PDSFilterOptions extends PaginationOptions {
+  status?: 'draft' | 'submitted' | 'reviewing' | 'approved' | 'rejected';
+}
+
+/**
+ * Complete PDS submission with all related sections
+ */
+export interface CompletePDSSubmission {
+  submission: PdsSubmission;
+  personalInfo: PdsPersonalInfo | null;
+  familyBackground: PdsFamilyBackground | null;
+  children: PdsChild[];
+  education: PdsEducation[];
+  civilService: PdsCivilService[];
+  workExperience: PdsWorkExperience[];
+  voluntaryWork: PdsVoluntaryWork[];
+  training: PdsTraining[];
+  otherInfo: PdsOtherInfo | null;
+}
+
+/**
+ * Data structure for creating a new PDS submission
+ */
+export interface CreatePDSData {
+  version?: number;
+  personalInfo?: Omit<PdsPersonalInfo, 'id' | 'pdsSubmissionId'>;
+  familyBackground?: Omit<PdsFamilyBackground, 'id' | 'pdsSubmissionId'>;
+  children?: Omit<PdsChild, 'id' | 'pdsSubmissionId'>[];
+  education?: Omit<PdsEducation, 'id' | 'pdsSubmissionId'>[];
+  civilService?: Omit<PdsCivilService, 'id' | 'pdsSubmissionId'>[];
+  workExperience?: Omit<PdsWorkExperience, 'id' | 'pdsSubmissionId'>[];
+  voluntaryWork?: Omit<PdsVoluntaryWork, 'id' | 'pdsSubmissionId'>[];
+  training?: Omit<PdsTraining, 'id' | 'pdsSubmissionId'>[];
+  otherInfo?: Omit<PdsOtherInfo, 'id' | 'pdsSubmissionId'>;
+}
+
+/**
+ * Data structure for updating an existing PDS submission
+ */
+export type UpdatePDSData = Partial<CreatePDSData>;
+
+/**
+ * Statistics for PDS submissions
+ */
+export interface PDSStatistics {
+  total: number;
+  draft: number;
+  submitted: number;
+  reviewing: number;
+  approved: number;
+  rejected: number;
+}
+
+/**
+ * Get all PDS submissions for a specific user
+ *
+ * Retrieves a paginated list of PDS submissions with optional status filtering.
+ * Uses composite index: pds_submissions_user_status_idx
+ *
+ * @param userId - User UUID
+ * @param filters - Optional pagination and status filters
+ * @returns Promise<PdsSubmission[]> Array of PDS submissions
+ * @throws Error if userId is invalid or database query fails
+ *
+ * @example
+ * const submissions = await getPDSSubmissions(userId, { status: 'approved', limit: 10 });
+ * console.log(`User has ${submissions.length} approved submissions`);
+ */
+export async function getPDSSubmissions(
+  userId: string,
+  filters?: PDSFilterOptions
+): Promise<PdsSubmission[]> {
+  try {
+    if (!userId || typeof userId !== 'string') {
+      throw new Error('Valid user ID is required');
+    }
+
+    const conditions = [eq(pdsSubmissions.userId, userId)];
+
+    if (filters?.status) {
+      conditions.push(eq(pdsSubmissions.status, filters.status));
+    }
+
+    const baseQuery = db
+      .select()
+      .from(pdsSubmissions)
+      .where(and(...conditions))
+      .orderBy(desc(pdsSubmissions.createdAt));
+
+    // Build final query with limit/offset if provided
+    const query = filters?.offset
+      ? filters?.limit
+        ? baseQuery.limit(filters.limit).offset(filters.offset)
+        : baseQuery.offset(filters.offset)
+      : filters?.limit
+        ? baseQuery.limit(filters.limit)
+        : baseQuery;
+
+    const submissions = await query;
+    return submissions;
+  } catch (error) {
+    console.error('[getPDSSubmissions] Database error:', error);
+    throw new Error(
+      `Failed to fetch PDS submissions for user ${userId}: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
+    );
+  }
+}
+
+/**
+ * Get a complete PDS submission by ID with all related sections
+ *
+ * Retrieves a single PDS submission along with all 9 related section tables using
+ * Drizzle's relational queries for efficient eager loading. Validates user ownership.
+ *
+ * Uses primary key index on pdsSubmissions and foreign key indexes on all child tables.
+ *
+ * @param id - PDS submission UUID
+ * @param userId - User UUID for ownership validation
+ * @returns Promise<CompletePDSSubmission | null> Complete PDS or null if not found
+ * @throws Error if IDs are invalid, ownership validation fails, or database query fails
+ *
+ * @example
+ * const pds = await getPDSSubmissionById(submissionId, userId);
+ * if (pds) {
+ *   console.log(`PDS has ${pds.education.length} education entries`);
+ * }
+ */
+export async function getPDSSubmissionById(
+  id: string,
+  userId: string
+): Promise<CompletePDSSubmission | null> {
+  try {
+    if (!id || typeof id !== 'string') {
+      throw new Error('Valid PDS submission ID is required');
+    }
+
+    if (!userId || typeof userId !== 'string') {
+      throw new Error('Valid user ID is required');
+    }
+
+    // Fetch main submission with ownership validation
+    const [submission] = await db
+      .select()
+      .from(pdsSubmissions)
+      .where(and(eq(pdsSubmissions.id, id), eq(pdsSubmissions.userId, userId)))
+      .limit(1);
+
+    if (!submission) {
+      return null;
+    }
+
+    // Fetch all related sections in parallel for optimal performance
+    const [
+      personalInfo,
+      familyBackground,
+      children,
+      education,
+      civilService,
+      workExperience,
+      voluntaryWork,
+      training,
+      otherInfo,
+    ] = await Promise.all([
+      // One-to-one relations
+      db
+        .select()
+        .from(pdsPersonalInfo)
+        .where(eq(pdsPersonalInfo.pdsSubmissionId, id))
+        .limit(1)
+        .then((rows) => rows[0] || null),
+
+      db
+        .select()
+        .from(pdsFamilyBackground)
+        .where(eq(pdsFamilyBackground.pdsSubmissionId, id))
+        .limit(1)
+        .then((rows) => rows[0] || null),
+
+      // One-to-many relations
+      db
+        .select()
+        .from(pdsChildren)
+        .where(eq(pdsChildren.pdsSubmissionId, id))
+        .orderBy(pdsChildren.dateOfBirth),
+
+      db
+        .select()
+        .from(pdsEducation)
+        .where(eq(pdsEducation.pdsSubmissionId, id))
+        .orderBy(pdsEducation.level),
+
+      db
+        .select()
+        .from(pdsCivilService)
+        .where(eq(pdsCivilService.pdsSubmissionId, id))
+        .orderBy(desc(pdsCivilService.dateOfExam)),
+
+      db
+        .select()
+        .from(pdsWorkExperience)
+        .where(eq(pdsWorkExperience.pdsSubmissionId, id))
+        .orderBy(desc(pdsWorkExperience.dateFrom)),
+
+      db
+        .select()
+        .from(pdsVoluntaryWork)
+        .where(eq(pdsVoluntaryWork.pdsSubmissionId, id))
+        .orderBy(desc(pdsVoluntaryWork.dateFrom)),
+
+      db
+        .select()
+        .from(pdsTraining)
+        .where(eq(pdsTraining.pdsSubmissionId, id))
+        .orderBy(desc(pdsTraining.dateFrom)),
+
+      db
+        .select()
+        .from(pdsOtherInfo)
+        .where(eq(pdsOtherInfo.pdsSubmissionId, id))
+        .limit(1)
+        .then((rows) => rows[0] || null),
+    ]);
+
+    return {
+      submission,
+      personalInfo,
+      familyBackground,
+      children,
+      education,
+      civilService,
+      workExperience,
+      voluntaryWork,
+      training,
+      otherInfo,
+    };
+  } catch (error) {
+    console.error('[getPDSSubmissionById] Database error:', error);
+    throw new Error(
+      `Failed to fetch PDS submission ${id}: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
+    );
+  }
+}
+
+/**
+ * Get the latest PDS submission for a user
+ *
+ * Retrieves the most recent PDS submission marked as 'latest' (isLatest=true).
+ * Uses composite index: pds_submissions_user_latest_idx
+ *
+ * @param userId - User UUID
+ * @returns Promise<CompletePDSSubmission | null> Latest PDS or null if none exists
+ * @throws Error if userId is invalid or database query fails
+ *
+ * @example
+ * const latestPDS = await getLatestPDSSubmission(userId);
+ * if (latestPDS) {
+ *   console.log(`Latest PDS version: ${latestPDS.submission.version}`);
+ * }
+ */
+export async function getLatestPDSSubmission(
+  userId: string
+): Promise<CompletePDSSubmission | null> {
+  try {
+    if (!userId || typeof userId !== 'string') {
+      throw new Error('Valid user ID is required');
+    }
+
+    const [submission] = await db
+      .select()
+      .from(pdsSubmissions)
+      .where(
+        and(
+          eq(pdsSubmissions.userId, userId),
+          eq(pdsSubmissions.isLatest, true)
+        )
+      )
+      .limit(1);
+
+    if (!submission) {
+      return null;
+    }
+
+    // Reuse getPDSSubmissionById for consistency
+    return getPDSSubmissionById(submission.id, userId);
+  } catch (error) {
+    console.error('[getLatestPDSSubmission] Database error:', error);
+    throw new Error(
+      `Failed to fetch latest PDS for user ${userId}: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
+    );
+  }
+}
+
+/**
+ * Create a new PDS submission with all related sections
+ *
+ * Creates a complete PDS submission within a database transaction to ensure atomicity.
+ * Automatically sets all existing submissions to isLatest=false before creating the new one.
+ * Calculates version number based on existing submissions.
+ *
+ * TRANSACTION OPERATIONS:
+ * 1. Set all existing user submissions to isLatest=false
+ * 2. Create main PDS submission record
+ * 3. Insert all provided sections (personal info, family, education, etc.)
+ *
+ * @param userId - User UUID
+ * @param data - Complete PDS data including all sections
+ * @returns Promise<string> The ID of the newly created PDS submission
+ * @throws Error if userId is invalid, data validation fails, or transaction fails
+ *
+ * @example
+ * const newPDSId = await createPDSSubmission(userId, {
+ *   personalInfo: { surname: 'Doe', firstName: 'John', ... },
+ *   education: [{ level: 'college', schoolName: 'TUP Manila', ... }],
+ *   // ... other sections
+ * });
+ */
+export async function createPDSSubmission(
+  userId: string,
+  data: CreatePDSData
+): Promise<string> {
+  try {
+    if (!userId || typeof userId !== 'string') {
+      throw new Error('Valid user ID is required');
+    }
+
+    return await db.transaction(async (tx) => {
+      // Calculate next version number
+      const existingSubmissions = await tx
+        .select({ version: pdsSubmissions.version })
+        .from(pdsSubmissions)
+        .where(eq(pdsSubmissions.userId, userId))
+        .orderBy(desc(pdsSubmissions.version))
+        .limit(1);
+
+      const nextVersion =
+        data.version ||
+        (existingSubmissions.length > 0
+          ? (existingSubmissions[0].version || 0) + 1
+          : 1);
+
+      // Set all existing submissions to isLatest=false
+      await tx
+        .update(pdsSubmissions)
+        .set({ isLatest: false, updatedAt: new Date() })
+        .where(eq(pdsSubmissions.userId, userId));
+
+      // Create main submission
+      const [submission] = await tx
+        .insert(pdsSubmissions)
+        .values({
+          userId,
+          version: nextVersion,
+          status: 'draft',
+          isLatest: true,
+        })
+        .returning();
+
+      const submissionId = submission.id;
+
+      // Insert personal info if provided
+      if (data.personalInfo) {
+        await tx.insert(pdsPersonalInfo).values({
+          ...data.personalInfo,
+          pdsSubmissionId: submissionId,
+        } as typeof pdsPersonalInfo.$inferInsert);
+      }
+
+      // Insert family background if provided
+      if (data.familyBackground) {
+        await tx.insert(pdsFamilyBackground).values({
+          ...data.familyBackground,
+          pdsSubmissionId: submissionId,
+        } as typeof pdsFamilyBackground.$inferInsert);
+      }
+
+      // Insert children if provided
+      if (data.children && data.children.length > 0) {
+        await tx.insert(pdsChildren).values(
+          data.children.map((child) => ({
+            ...child,
+            pdsSubmissionId: submissionId,
+          })) as (typeof pdsChildren.$inferInsert)[]
+        );
+      }
+
+      // Insert education if provided
+      if (data.education && data.education.length > 0) {
+        await tx.insert(pdsEducation).values(
+          data.education.map((edu) => ({
+            ...edu,
+            pdsSubmissionId: submissionId,
+          })) as (typeof pdsEducation.$inferInsert)[]
+        );
+      }
+
+      // Insert civil service eligibility if provided
+      if (data.civilService && data.civilService.length > 0) {
+        await tx.insert(pdsCivilService).values(
+          data.civilService.map((cs) => ({
+            ...cs,
+            pdsSubmissionId: submissionId,
+          })) as (typeof pdsCivilService.$inferInsert)[]
+        );
+      }
+
+      // Insert work experience if provided
+      if (data.workExperience && data.workExperience.length > 0) {
+        await tx.insert(pdsWorkExperience).values(
+          data.workExperience.map((we) => ({
+            ...we,
+            pdsSubmissionId: submissionId,
+          })) as (typeof pdsWorkExperience.$inferInsert)[]
+        );
+      }
+
+      // Insert voluntary work if provided
+      if (data.voluntaryWork && data.voluntaryWork.length > 0) {
+        await tx.insert(pdsVoluntaryWork).values(
+          data.voluntaryWork.map((vw) => ({
+            ...vw,
+            pdsSubmissionId: submissionId,
+          })) as (typeof pdsVoluntaryWork.$inferInsert)[]
+        );
+      }
+
+      // Insert training if provided
+      if (data.training && data.training.length > 0) {
+        await tx.insert(pdsTraining).values(
+          data.training.map((tr) => ({
+            ...tr,
+            pdsSubmissionId: submissionId,
+          })) as (typeof pdsTraining.$inferInsert)[]
+        );
+      }
+
+      // Insert other info if provided
+      if (data.otherInfo) {
+        await tx.insert(pdsOtherInfo).values({
+          ...data.otherInfo,
+          pdsSubmissionId: submissionId,
+        } as typeof pdsOtherInfo.$inferInsert);
+      }
+
+      return submissionId;
+    });
+  } catch (error) {
+    console.error('[createPDSSubmission] Transaction error:', error);
+    throw new Error(
+      `Failed to create PDS submission for user ${userId}: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
+    );
+  }
+}
+
+/**
+ * Update an existing PDS submission
+ *
+ * Updates a PDS submission and its related sections within a transaction.
+ * Only updates sections that are provided in the data parameter.
+ * Validates user ownership before performing updates.
+ * Increments version number if status is not 'draft'.
+ *
+ * TRANSACTION OPERATIONS:
+ * 1. Validate ownership
+ * 2. Update main submission metadata
+ * 3. Delete and recreate one-to-many sections if provided
+ * 4. Update or insert one-to-one sections if provided
+ *
+ * @param id - PDS submission UUID
+ * @param userId - User UUID for ownership validation
+ * @param data - Partial PDS data to update
+ * @returns Promise<void>
+ * @throws Error if ownership validation fails or transaction fails
+ *
+ * @example
+ * await updatePDSSubmission(submissionId, userId, {
+ *   personalInfo: { mobileNo: '+639171234567' },
+ *   education: [updatedEducationList],
+ * });
+ */
+export async function updatePDSSubmission(
+  id: string,
+  userId: string,
+  data: UpdatePDSData
+): Promise<void> {
+  try {
+    if (!id || typeof id !== 'string') {
+      throw new Error('Valid PDS submission ID is required');
+    }
+
+    if (!userId || typeof userId !== 'string') {
+      throw new Error('Valid user ID is required');
+    }
+
+    await db.transaction(async (tx) => {
+      // Validate ownership
+      const [submission] = await tx
+        .select()
+        .from(pdsSubmissions)
+        .where(
+          and(eq(pdsSubmissions.id, id), eq(pdsSubmissions.userId, userId))
+        )
+        .limit(1);
+
+      if (!submission) {
+        throw new Error('PDS submission not found or access denied');
+      }
+
+      // Determine if we should increment version
+      const shouldIncrementVersion = submission.status !== 'draft';
+      const nextVersion = shouldIncrementVersion
+        ? submission.version + 1
+        : submission.version;
+
+      // Update main submission
+      await tx
+        .update(pdsSubmissions)
+        .set({
+          version: nextVersion,
+          updatedAt: new Date(),
+        })
+        .where(eq(pdsSubmissions.id, id));
+
+      // Update personal info if provided
+      if (data.personalInfo) {
+        // Check if exists
+        const [existing] = await tx
+          .select()
+          .from(pdsPersonalInfo)
+          .where(eq(pdsPersonalInfo.pdsSubmissionId, id))
+          .limit(1);
+
+        if (existing) {
+          await tx
+            .update(pdsPersonalInfo)
+            .set(data.personalInfo)
+            .where(eq(pdsPersonalInfo.pdsSubmissionId, id));
+        } else {
+          await tx.insert(pdsPersonalInfo).values({
+            ...data.personalInfo,
+            pdsSubmissionId: id,
+          } as typeof pdsPersonalInfo.$inferInsert);
+        }
+      }
+
+      // Update family background if provided
+      if (data.familyBackground) {
+        const [existing] = await tx
+          .select()
+          .from(pdsFamilyBackground)
+          .where(eq(pdsFamilyBackground.pdsSubmissionId, id))
+          .limit(1);
+
+        if (existing) {
+          await tx
+            .update(pdsFamilyBackground)
+            .set(data.familyBackground)
+            .where(eq(pdsFamilyBackground.pdsSubmissionId, id));
+        } else {
+          await tx.insert(pdsFamilyBackground).values({
+            ...data.familyBackground,
+            pdsSubmissionId: id,
+          } as typeof pdsFamilyBackground.$inferInsert);
+        }
+      }
+
+      // Update children if provided (delete and recreate)
+      if (data.children !== undefined) {
+        await tx.delete(pdsChildren).where(eq(pdsChildren.pdsSubmissionId, id));
+        if (data.children.length > 0) {
+          await tx.insert(pdsChildren).values(
+            data.children.map((child) => ({
+              ...child,
+              pdsSubmissionId: id,
+            })) as (typeof pdsChildren.$inferInsert)[]
+          );
+        }
+      }
+
+      // Update education if provided (delete and recreate)
+      if (data.education !== undefined) {
+        await tx
+          .delete(pdsEducation)
+          .where(eq(pdsEducation.pdsSubmissionId, id));
+        if (data.education.length > 0) {
+          await tx.insert(pdsEducation).values(
+            data.education.map((edu) => ({
+              ...edu,
+              pdsSubmissionId: id,
+            })) as (typeof pdsEducation.$inferInsert)[]
+          );
+        }
+      }
+
+      // Update civil service if provided (delete and recreate)
+      if (data.civilService !== undefined) {
+        await tx
+          .delete(pdsCivilService)
+          .where(eq(pdsCivilService.pdsSubmissionId, id));
+        if (data.civilService.length > 0) {
+          await tx.insert(pdsCivilService).values(
+            data.civilService.map((cs) => ({
+              ...cs,
+              pdsSubmissionId: id,
+            })) as (typeof pdsCivilService.$inferInsert)[]
+          );
+        }
+      }
+
+      // Update work experience if provided (delete and recreate)
+      if (data.workExperience !== undefined) {
+        await tx
+          .delete(pdsWorkExperience)
+          .where(eq(pdsWorkExperience.pdsSubmissionId, id));
+        if (data.workExperience.length > 0) {
+          await tx.insert(pdsWorkExperience).values(
+            data.workExperience.map((we) => ({
+              ...we,
+              pdsSubmissionId: id,
+            })) as (typeof pdsWorkExperience.$inferInsert)[]
+          );
+        }
+      }
+
+      // Update voluntary work if provided (delete and recreate)
+      if (data.voluntaryWork !== undefined) {
+        await tx
+          .delete(pdsVoluntaryWork)
+          .where(eq(pdsVoluntaryWork.pdsSubmissionId, id));
+        if (data.voluntaryWork.length > 0) {
+          await tx.insert(pdsVoluntaryWork).values(
+            data.voluntaryWork.map((vw) => ({
+              ...vw,
+              pdsSubmissionId: id,
+            })) as (typeof pdsVoluntaryWork.$inferInsert)[]
+          );
+        }
+      }
+
+      // Update training if provided (delete and recreate)
+      if (data.training !== undefined) {
+        await tx.delete(pdsTraining).where(eq(pdsTraining.pdsSubmissionId, id));
+        if (data.training.length > 0) {
+          await tx.insert(pdsTraining).values(
+            data.training.map((tr) => ({
+              ...tr,
+              pdsSubmissionId: id,
+            })) as (typeof pdsTraining.$inferInsert)[]
+          );
+        }
+      }
+
+      // Update other info if provided
+      if (data.otherInfo) {
+        const [existing] = await tx
+          .select()
+          .from(pdsOtherInfo)
+          .where(eq(pdsOtherInfo.pdsSubmissionId, id))
+          .limit(1);
+
+        if (existing) {
+          await tx
+            .update(pdsOtherInfo)
+            .set(data.otherInfo)
+            .where(eq(pdsOtherInfo.pdsSubmissionId, id));
+        } else {
+          await tx.insert(pdsOtherInfo).values({
+            ...data.otherInfo,
+            pdsSubmissionId: id,
+          } as typeof pdsOtherInfo.$inferInsert);
+        }
+      }
+    });
+  } catch (error) {
+    console.error('[updatePDSSubmission] Transaction error:', error);
+    throw new Error(
+      `Failed to update PDS submission ${id}: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
+    );
+  }
+}
+
+/**
+ * Submit a PDS for approval
+ *
+ * Changes the status of a PDS submission from 'draft' to 'submitted'.
+ * Sets the submittedAt timestamp. Validates user ownership.
+ *
+ * @param id - PDS submission UUID
+ * @param userId - User UUID for ownership validation
+ * @returns Promise<void>
+ * @throws Error if PDS is not in draft status, ownership validation fails, or update fails
+ *
+ * @example
+ * await submitPDSForApproval(submissionId, userId);
+ * console.log('PDS submitted for review');
+ */
+export async function submitPDSForApproval(
+  id: string,
+  userId: string
+): Promise<void> {
+  try {
+    if (!id || typeof id !== 'string') {
+      throw new Error('Valid PDS submission ID is required');
+    }
+
+    if (!userId || typeof userId !== 'string') {
+      throw new Error('Valid user ID is required');
+    }
+
+    const [submission] = await db
+      .select()
+      .from(pdsSubmissions)
+      .where(and(eq(pdsSubmissions.id, id), eq(pdsSubmissions.userId, userId)))
+      .limit(1);
+
+    if (!submission) {
+      throw new Error('PDS submission not found or access denied');
+    }
+
+    if (submission.status !== 'draft') {
+      throw new Error(
+        `Cannot submit PDS with status '${submission.status}'. Only draft submissions can be submitted.`
+      );
+    }
+
+    await db
+      .update(pdsSubmissions)
+      .set({
+        status: 'submitted',
+        submittedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(pdsSubmissions.id, id));
+  } catch (error) {
+    console.error('[submitPDSForApproval] Database error:', error);
+    throw new Error(
+      `Failed to submit PDS ${id}: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
+    );
+  }
+}
+
+/**
+ * Approve a PDS submission
+ *
+ * Changes the status to 'approved' and records the approver and approval timestamp.
+ * This function should only be called by users with HR or admin roles.
+ * Role validation should be performed at the application layer.
+ *
+ * @param id - PDS submission UUID
+ * @param approverId - UUID of the user approving the submission
+ * @returns Promise<void>
+ * @throws Error if PDS is not in submitted/reviewing status or update fails
+ *
+ * @example
+ * await approvePDS(submissionId, hrUserId);
+ * console.log('PDS approved successfully');
+ */
+export async function approvePDS(
+  id: string,
+  approverId: string
+): Promise<void> {
+  try {
+    if (!id || typeof id !== 'string') {
+      throw new Error('Valid PDS submission ID is required');
+    }
+
+    if (!approverId || typeof approverId !== 'string') {
+      throw new Error('Valid approver ID is required');
+    }
+
+    const [submission] = await db
+      .select()
+      .from(pdsSubmissions)
+      .where(eq(pdsSubmissions.id, id))
+      .limit(1);
+
+    if (!submission) {
+      throw new Error('PDS submission not found');
+    }
+
+    if (
+      submission.status !== 'submitted' &&
+      submission.status !== 'reviewing'
+    ) {
+      throw new Error(
+        `Cannot approve PDS with status '${submission.status}'. Only submitted or reviewing submissions can be approved.`
+      );
+    }
+
+    await db
+      .update(pdsSubmissions)
+      .set({
+        status: 'approved',
+        approvedBy: approverId,
+        approvedAt: new Date(),
+        updatedAt: new Date(),
+        rejectionReason: null, // Clear any previous rejection reason
+      })
+      .where(eq(pdsSubmissions.id, id));
+  } catch (error) {
+    console.error('[approvePDS] Database error:', error);
+    throw new Error(
+      `Failed to approve PDS ${id}: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
+    );
+  }
+}
+
+/**
+ * Reject a PDS submission with a reason
+ *
+ * Changes the status to 'rejected' and records the rejection reason.
+ * This function should only be called by users with HR or admin roles.
+ * Role validation should be performed at the application layer.
+ *
+ * @param id - PDS submission UUID
+ * @param approverId - UUID of the user rejecting the submission
+ * @param reason - Detailed reason for rejection
+ * @returns Promise<void>
+ * @throws Error if reason is empty, PDS is not in submitted/reviewing status, or update fails
+ *
+ * @example
+ * await rejectPDS(submissionId, hrUserId, 'Missing required civil service eligibility documents');
+ */
+export async function rejectPDS(
+  id: string,
+  approverId: string,
+  reason: string
+): Promise<void> {
+  try {
+    if (!id || typeof id !== 'string') {
+      throw new Error('Valid PDS submission ID is required');
+    }
+
+    if (!approverId || typeof approverId !== 'string') {
+      throw new Error('Valid approver ID is required');
+    }
+
+    if (!reason || reason.trim().length === 0) {
+      throw new Error('Rejection reason is required');
+    }
+
+    const [submission] = await db
+      .select()
+      .from(pdsSubmissions)
+      .where(eq(pdsSubmissions.id, id))
+      .limit(1);
+
+    if (!submission) {
+      throw new Error('PDS submission not found');
+    }
+
+    if (
+      submission.status !== 'submitted' &&
+      submission.status !== 'reviewing'
+    ) {
+      throw new Error(
+        `Cannot reject PDS with status '${submission.status}'. Only submitted or reviewing submissions can be rejected.`
+      );
+    }
+
+    await db
+      .update(pdsSubmissions)
+      .set({
+        status: 'rejected',
+        approvedBy: approverId,
+        approvedAt: new Date(),
+        rejectionReason: reason.trim(),
+        updatedAt: new Date(),
+      })
+      .where(eq(pdsSubmissions.id, id));
+  } catch (error) {
+    console.error('[rejectPDS] Database error:', error);
+    throw new Error(
+      `Failed to reject PDS ${id}: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
+    );
+  }
+}
+
+/**
+ * Archive a PDS submission
+ *
+ * Moves a complete PDS submission and all its related sections to the archives table,
+ * then deletes the original records. This operation is performed in a transaction
+ * to ensure data consistency.
+ *
+ * TRANSACTION OPERATIONS:
+ * 1. Fetch complete PDS with all sections
+ * 2. Create archive record with complete data
+ * 3. Delete all related section records
+ * 4. Delete main submission record
+ *
+ * @param id - PDS submission UUID
+ * @param userId - User UUID for ownership validation
+ * @returns Promise<void>
+ * @throws Error if ownership validation fails or transaction fails
+ *
+ * @example
+ * await archivePDSSubmission(oldSubmissionId, userId);
+ * console.log('PDS archived successfully');
+ */
+export async function archivePDSSubmission(
+  id: string,
+  userId: string
+): Promise<void> {
+  try {
+    if (!id || typeof id !== 'string') {
+      throw new Error('Valid PDS submission ID is required');
+    }
+
+    if (!userId || typeof userId !== 'string') {
+      throw new Error('Valid user ID is required');
+    }
+
+    await db.transaction(async (tx) => {
+      // Validate ownership
+      const [submission] = await tx
+        .select()
+        .from(pdsSubmissions)
+        .where(
+          and(eq(pdsSubmissions.id, id), eq(pdsSubmissions.userId, userId))
+        )
+        .limit(1);
+
+      if (!submission) {
+        throw new Error('PDS submission not found or access denied');
+      }
+
+      // Fetch complete PDS data for archival
+      const completePDS = await getPDSSubmissionById(id, userId);
+
+      if (!completePDS) {
+        throw new Error('Failed to fetch complete PDS data for archival');
+      }
+
+      // Create archive record
+      await tx.insert(archives).values({
+        originalTable: 'pds_submissions',
+        originalId: id,
+        data: completePDS,
+        archivedBy: userId,
+      });
+
+      // Delete all child records (cascade will handle this in most cases, but being explicit)
+      await tx.delete(pdsChildren).where(eq(pdsChildren.pdsSubmissionId, id));
+      await tx.delete(pdsEducation).where(eq(pdsEducation.pdsSubmissionId, id));
+      await tx
+        .delete(pdsCivilService)
+        .where(eq(pdsCivilService.pdsSubmissionId, id));
+      await tx
+        .delete(pdsWorkExperience)
+        .where(eq(pdsWorkExperience.pdsSubmissionId, id));
+      await tx
+        .delete(pdsVoluntaryWork)
+        .where(eq(pdsVoluntaryWork.pdsSubmissionId, id));
+      await tx.delete(pdsTraining).where(eq(pdsTraining.pdsSubmissionId, id));
+      await tx
+        .delete(pdsPersonalInfo)
+        .where(eq(pdsPersonalInfo.pdsSubmissionId, id));
+      await tx
+        .delete(pdsFamilyBackground)
+        .where(eq(pdsFamilyBackground.pdsSubmissionId, id));
+      await tx.delete(pdsOtherInfo).where(eq(pdsOtherInfo.pdsSubmissionId, id));
+
+      // Delete main submission
+      await tx.delete(pdsSubmissions).where(eq(pdsSubmissions.id, id));
+    });
+  } catch (error) {
+    console.error('[archivePDSSubmission] Transaction error:', error);
+    throw new Error(
+      `Failed to archive PDS submission ${id}: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
+    );
+  }
+}
+
+/**
+ * Get archived PDS submissions for a user
+ *
+ * Retrieves all archived PDS submissions from the archives table.
+ * Uses composite index: archives_original_table_idx
+ *
+ * @param userId - User UUID
+ * @param options - Optional pagination parameters
+ * @returns Promise<Array> Array of archived PDS data
+ * @throws Error if userId is invalid or database query fails
+ *
+ * @example
+ * const archivedPDS = await getArchivedPDS(userId, { limit: 20 });
+ * console.log(`User has ${archivedPDS.length} archived submissions`);
+ */
+export async function getArchivedPDS(
+  userId: string,
+  options?: PaginationOptions
+): Promise<
+  Array<{
+    id: string;
+    archivedAt: Date;
+    data: CompletePDSSubmission;
+  }>
+> {
+  try {
+    if (!userId || typeof userId !== 'string') {
+      throw new Error('Valid user ID is required');
+    }
+
+    const baseQuery = db
+      .select({
+        id: archives.id,
+        archivedAt: archives.archivedAt,
+        data: archives.data,
+      })
+      .from(archives)
+      .where(
+        and(
+          eq(archives.originalTable, 'pds_submissions'),
+          eq(archives.archivedBy, userId)
+        )
+      )
+      .orderBy(desc(archives.archivedAt));
+
+    // Build final query with limit/offset if provided
+    const query = options?.offset
+      ? options?.limit
+        ? baseQuery.limit(options.limit).offset(options.offset)
+        : baseQuery.offset(options.offset)
+      : options?.limit
+        ? baseQuery.limit(options.limit)
+        : baseQuery;
+
+    const results = await query;
+
+    return results.map((record) => ({
+      id: record.id,
+      archivedAt: record.archivedAt,
+      data: record.data as unknown as CompletePDSSubmission,
+    }));
+  } catch (error) {
+    console.error('[getArchivedPDS] Database error:', error);
+    throw new Error(
+      `Failed to fetch archived PDS for user ${userId}: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
+    );
+  }
+}
+
+/**
+ * Get PDS submission statistics for a user
+ *
+ * Retrieves aggregate statistics about a user's PDS submissions including
+ * counts by status. This is useful for dashboard displays.
+ *
+ * Uses index: pds_submissions_user_status_idx
+ *
+ * @param userId - User UUID
+ * @returns Promise<PDSStatistics> Submission statistics
+ * @throws Error if userId is invalid or database query fails
+ *
+ * @example
+ * const stats = await getPDSStatistics(userId);
+ * console.log(`Total: ${stats.total}, Approved: ${stats.approved}, Draft: ${stats.draft}`);
+ */
+export async function getPDSStatistics(userId: string): Promise<PDSStatistics> {
+  try {
+    if (!userId || typeof userId !== 'string') {
+      throw new Error('Valid user ID is required');
+    }
+
+    // Get all submissions for the user
+    const submissions = await db
+      .select({
+        status: pdsSubmissions.status,
+      })
+      .from(pdsSubmissions)
+      .where(eq(pdsSubmissions.userId, userId));
+
+    // Count by status
+    const stats: PDSStatistics = {
+      total: submissions.length,
+      draft: 0,
+      submitted: 0,
+      reviewing: 0,
+      approved: 0,
+      rejected: 0,
+    };
+
+    submissions.forEach((sub) => {
+      switch (sub.status) {
+        case 'draft':
+          stats.draft++;
+          break;
+        case 'submitted':
+          stats.submitted++;
+          break;
+        case 'reviewing':
+          stats.reviewing++;
+          break;
+        case 'approved':
+          stats.approved++;
+          break;
+        case 'rejected':
+          stats.rejected++;
+          break;
+      }
+    });
+
+    return stats;
+  } catch (error) {
+    console.error('[getPDSStatistics] Database error:', error);
+    throw new Error(
+      `Failed to fetch PDS statistics for user ${userId}: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
+    );
+  }
+}

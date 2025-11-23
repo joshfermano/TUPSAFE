@@ -93,13 +93,15 @@ export function useApproveRegistration() {
       approveRegistration(id, data),
 
     onMutate: async ({ id }) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: registrationKeys.detail(id) });
+      // Cancel all outgoing refetches for registrations
+      await queryClient.cancelQueries({ queryKey: registrationKeys.all });
 
-      // Snapshot previous value
-      const previousRegistration = queryClient.getQueryData(registrationKeys.detail(id));
+      // Snapshot previous values
+      const previousDetail = queryClient.getQueryData(registrationKeys.detail(id));
+      const previousLists = queryClient.getQueriesData({ queryKey: registrationKeys.lists() });
+      const previousStats = queryClient.getQueryData(registrationKeys.stats());
 
-      // Optimistically update to approved state
+      // Optimistically update detail view
       queryClient.setQueryData(registrationKeys.detail(id), (old: RegistrationDetail | undefined) => {
         if (!old) return old;
         return {
@@ -109,17 +111,61 @@ export function useApproveRegistration() {
         };
       });
 
-      return { previousRegistration };
+      // Optimistically update all list queries (remove from pending, add to approved)
+      queryClient.setQueriesData(
+        { queryKey: registrationKeys.lists() },
+        (old: any) => {
+          if (!old?.registrations) return old;
+
+          return {
+            ...old,
+            registrations: old.registrations.map((reg: any) =>
+              reg.id === id
+                ? { ...reg, status: 'approved', reviewedAt: new Date().toISOString() }
+                : reg
+            ),
+          };
+        }
+      );
+
+      // Optimistically update stats
+      queryClient.setQueryData(registrationKeys.stats(), (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pending: Math.max(0, (old.pending || 0) - 1),
+          approved: (old.approved || 0) + 1,
+        };
+      });
+
+      return { previousDetail, previousLists, previousStats };
     },
 
     onError: (error, { id }, context) => {
-      // Rollback on error
-      if (context?.previousRegistration) {
-        queryClient.setQueryData(registrationKeys.detail(id), context.previousRegistration);
+      // Rollback all optimistic updates on error
+      if (context?.previousDetail) {
+        queryClient.setQueryData(registrationKeys.detail(id), context.previousDetail);
       }
 
+      if (context?.previousLists) {
+        context.previousLists.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+
+      if (context?.previousStats) {
+        queryClient.setQueryData(registrationKeys.stats(), context.previousStats);
+      }
+
+      // Show error with longer duration and detailed message
       toast.error('Failed to approve registration', {
         description: error.message || 'An unexpected error occurred',
+        duration: 6000, // 6 seconds for errors (vs default 4s)
+      });
+
+      console.error('[useApproveRegistration] Approval failed:', {
+        registrationId: id,
+        error: error.message,
       });
     },
 
@@ -128,7 +174,7 @@ export function useApproveRegistration() {
         description: `Welcome email sent to ${data.user.email}`,
       });
 
-      // Invalidate and refetch
+      // Invalidate and refetch to ensure data consistency
       queryClient.invalidateQueries({ queryKey: registrationKeys.lists() });
       queryClient.invalidateQueries({ queryKey: registrationKeys.detail(id) });
       queryClient.invalidateQueries({ queryKey: registrationKeys.stats() });
@@ -151,10 +197,15 @@ export function useRejectRegistration() {
       rejectRegistration(id, data),
 
     onMutate: async ({ id }) => {
-      await queryClient.cancelQueries({ queryKey: registrationKeys.detail(id) });
-      const previousRegistration = queryClient.getQueryData(registrationKeys.detail(id));
+      // Cancel all outgoing refetches for registrations
+      await queryClient.cancelQueries({ queryKey: registrationKeys.all });
 
-      // Optimistically update to rejected state
+      // Snapshot previous values
+      const previousDetail = queryClient.getQueryData(registrationKeys.detail(id));
+      const previousLists = queryClient.getQueriesData({ queryKey: registrationKeys.lists() });
+      const previousStats = queryClient.getQueryData(registrationKeys.stats());
+
+      // Optimistically update detail view
       queryClient.setQueryData(registrationKeys.detail(id), (old: RegistrationDetail | undefined) => {
         if (!old) return old;
         return {
@@ -164,16 +215,61 @@ export function useRejectRegistration() {
         };
       });
 
-      return { previousRegistration };
+      // Optimistically update all list queries
+      queryClient.setQueriesData(
+        { queryKey: registrationKeys.lists() },
+        (old: any) => {
+          if (!old?.registrations) return old;
+
+          return {
+            ...old,
+            registrations: old.registrations.map((reg: any) =>
+              reg.id === id
+                ? { ...reg, status: 'rejected', rejectedAt: new Date().toISOString() }
+                : reg
+            ),
+          };
+        }
+      );
+
+      // Optimistically update stats
+      queryClient.setQueryData(registrationKeys.stats(), (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pending: Math.max(0, (old.pending || 0) - 1),
+          rejected: (old.rejected || 0) + 1,
+        };
+      });
+
+      return { previousDetail, previousLists, previousStats };
     },
 
     onError: (error, { id }, context) => {
-      if (context?.previousRegistration) {
-        queryClient.setQueryData(registrationKeys.detail(id), context.previousRegistration);
+      // Rollback all optimistic updates on error
+      if (context?.previousDetail) {
+        queryClient.setQueryData(registrationKeys.detail(id), context.previousDetail);
       }
 
+      if (context?.previousLists) {
+        context.previousLists.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+
+      if (context?.previousStats) {
+        queryClient.setQueryData(registrationKeys.stats(), context.previousStats);
+      }
+
+      // Show error with longer duration and detailed message
       toast.error('Failed to reject registration', {
         description: error.message || 'An unexpected error occurred',
+        duration: 6000, // 6 seconds for errors (vs default 4s)
+      });
+
+      console.error('[useRejectRegistration] Rejection failed:', {
+        registrationId: id,
+        error: error.message,
       });
     },
 
@@ -182,6 +278,7 @@ export function useRejectRegistration() {
         description: 'Notification email has been sent',
       });
 
+      // Invalidate and refetch to ensure data consistency
       queryClient.invalidateQueries({ queryKey: registrationKeys.lists() });
       queryClient.invalidateQueries({ queryKey: registrationKeys.detail(id) });
       queryClient.invalidateQueries({ queryKey: registrationKeys.stats() });

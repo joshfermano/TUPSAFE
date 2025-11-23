@@ -25,6 +25,7 @@ import {
   UserDetailsDialog,
   EditUserDialog,
   ResetPasswordDialog,
+  SyncMetadataDialog,
   UsersPagination,
 } from '@/components/users';
 import { useUsers, useToggleUserStatus, useDeleteUser } from '@/hooks/useUsers';
@@ -37,6 +38,7 @@ export default function UsersPage() {
   const [detailsUserId, setDetailsUserId] = useState<string | null>(null);
   const [editUserId, setEditUserId] = useState<string | null>(null);
   const [resetPasswordUserId, setResetPasswordUserId] = useState<string | null>(null);
+  const [syncMetadataUserId, setSyncMetadataUserId] = useState<string | null>(null);
 
   // Mutations
   const toggleStatus = useToggleUserStatus();
@@ -97,6 +99,10 @@ export default function UsersPage() {
 
   const handleResetPassword = (userId: string) => {
     setResetPasswordUserId(userId);
+  };
+
+  const handleSyncMetadata = (userId: string) => {
+    setSyncMetadataUserId(userId);
   };
 
   const handleDelete = (userId: string) => {
@@ -172,6 +178,7 @@ export default function UsersPage() {
             onEdit={handleEdit}
             onToggleStatus={handleToggleStatus}
             onResetPassword={handleResetPassword}
+            onSyncMetadata={handleSyncMetadata}
             onDelete={handleDelete}
           />
 
@@ -204,6 +211,12 @@ export default function UsersPage() {
         userId={resetPasswordUserId}
         open={!!resetPasswordUserId}
         onOpenChange={(open) => !open && setResetPasswordUserId(null)}
+      />
+
+      <SyncMetadataDialog
+        userId={syncMetadataUserId}
+        open={!!syncMetadataUserId}
+        onOpenChange={(open) => !open && setSyncMetadataUserId(null)}
       />
     </div>
   );

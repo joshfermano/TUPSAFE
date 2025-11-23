@@ -1,0 +1,244 @@
+/**
+ * PDS API Route - List and Create
+ * GET /api/pds - List all PDS submissions for current user
+ * POST /api/pds - Create new PDS submission
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import {
+  getPDSSubmissions,
+  createPDSSubmission,
+  type PDSFilterOptions,
+  type CreatePDSData,
+} from '@tupsafe/database/server';
+import { createServerClient } from '@tupsafe/auth/server';
+
+/**
+ * GET /api/pds
+ * Retrieve all PDS submissions for the authenticated user
+ *
+ * Query Parameters:
+ * - status: Filter by submission status (draft | submitted | reviewing | approved | rejected)
+ * - page: Page number for pagination (default: 1)
+ * - limit: Items per page (default: 10, max: 100)
+ *
+ * Returns:
+ * {
+ *   success: true,
+ *   data: PdsSubmission[],
+ *   pagination: { page, limit, total }
+ * }
+ */
+export async function GET(request: NextRequest) {
+  try {
+    // Authenticate user
+    const supabase = await createServerClient('employee');
+    const {
+      data: { session },
+      error: authError,
+    } = await supabase.auth.getSession();
+
+    if (authError || !session) {
+      console.error('[GET /api/pds] Authentication failed:', authError);
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized. Please log in.' },
+        { status: 401 }
+      );
+    }
+
+    // Extract query parameters
+    const searchParams = request.nextUrl.searchParams;
+    const status = searchParams.get('status') as
+      | 'draft'
+      | 'submitted'
+      | 'reviewing'
+      | 'approved'
+      | 'rejected'
+      | null;
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = Math.min(
+      parseInt(searchParams.get('limit') || '10', 10),
+      100
+    );
+
+    // Validate pagination parameters
+    if (page < 1 || limit < 1) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid pagination parameters. Page and limit must be positive integers.',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Build filter options
+    const filters: PDSFilterOptions = {
+      limit,
+      offset: (page - 1) * limit,
+    };
+
+    if (status) {
+      // Validate status
+      const validStatuses = [
+        'draft',
+        'submitted',
+        'reviewing',
+        'approved',
+        'rejected',
+      ];
+      if (!validStatuses.includes(status)) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
+          },
+          { status: 400 }
+        );
+      }
+      filters.status = status;
+    }
+
+    // Fetch PDS submissions
+    const submissions = await getPDSSubmissions(session.user.id, filters);
+
+    console.log(
+      `[GET /api/pds] Retrieved ${submissions.length} PDS submissions for user ${session.user.id}`
+    );
+
+    return NextResponse.json({
+      success: true,
+      data: submissions,
+      pagination: {
+        page,
+        limit,
+        total: submissions.length,
+        hasMore: submissions.length === limit,
+      },
+    });
+  } catch (error) {
+    console.error('[GET /api/pds] Error fetching PDS submissions:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to fetch PDS submissions',
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/pds
+ * Create a new PDS submission
+ *
+ * Body: CreatePDSData
+ * {
+ *   version?: number,
+ *   personalInfo?: {...},
+ *   familyBackground?: {...},
+ *   children?: [...],
+ *   education?: [...],
+ *   civilService?: [...],
+ *   workExperience?: [...],
+ *   voluntaryWork?: [...],
+ *   training?: [...],
+ *   otherInfo?: {...}
+ * }
+ *
+ * Returns:
+ * {
+ *   success: true,
+ *   data: { id: string }
+ * }
+ */
+export async function POST(request: NextRequest) {
+  try {
+    // Authenticate user
+    const supabase = await createServerClient('employee');
+    const {
+      data: { session },
+      error: authError,
+    } = await supabase.auth.getSession();
+
+    if (authError || !session) {
+      console.error('[POST /api/pds] Authentication failed:', authError);
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized. Please log in.' },
+        { status: 401 }
+      );
+    }
+
+    // Parse request body
+    let body: CreatePDSData;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      console.error('[POST /api/pds] Invalid JSON body:', parseError);
+      return NextResponse.json(
+        { success: false, error: 'Invalid request body. Expected valid JSON.' },
+        { status: 400 }
+      );
+    }
+
+    // Validate required sections (at minimum, personal info should be present)
+    if (!body.personalInfo) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Personal information is required to create a PDS submission.',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate personal info required fields
+    const { personalInfo } = body;
+    const requiredFields = ['surname', 'firstName', 'dateOfBirth', 'sex'];
+    const missingFields = requiredFields.filter(
+      (field) => !personalInfo[field as keyof typeof personalInfo]
+    );
+
+    if (missingFields.length > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Missing required personal information fields: ${missingFields.join(', ')}`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Create PDS submission
+    const pdsId = await createPDSSubmission(session.user.id, body);
+
+    console.log(
+      `[POST /api/pds] Created new PDS submission ${pdsId} for user ${session.user.id}`
+    );
+
+    return NextResponse.json(
+      {
+        success: true,
+        data: { id: pdsId },
+        message: 'PDS submission created successfully',
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error('[POST /api/pds] Error creating PDS submission:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to create PDS submission',
+      },
+      { status: 500 }
+    );
+  }
+}

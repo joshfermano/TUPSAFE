@@ -76,7 +76,7 @@ import { DotPattern } from '@/components/ui/dot-pattern';
 
 // Hooks
 import { useAutoSave, getSavedDraft } from '@/hooks/useAutoSave';
-import { useAuth } from '@tupsafe/mock-data/api';
+import { useAuth } from '@/providers/AuthProvider';
 
 // Step components
 import {

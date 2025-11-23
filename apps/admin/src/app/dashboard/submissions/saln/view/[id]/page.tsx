@@ -99,7 +99,8 @@ export default function SalnSubmissionViewPage() {
   const totalRealProperties = React.useMemo(() => {
     if (!completeSubmission?.realProperties) return 0;
     return completeSubmission.realProperties.reduce(
-      (sum: number, prop: { acquisitionCost: string | null }) => sum + (prop.acquisitionCost ? parseFloat(prop.acquisitionCost) : 0),
+      (sum: number, prop: { acquisitionCost: string | null }) =>
+        sum + (prop.acquisitionCost ? parseFloat(prop.acquisitionCost) : 0),
       0
     );
   }, [completeSubmission?.realProperties]);
@@ -107,7 +108,8 @@ export default function SalnSubmissionViewPage() {
   const totalPersonalProperties = React.useMemo(() => {
     if (!completeSubmission?.personalProperties) return 0;
     return completeSubmission.personalProperties.reduce(
-      (sum: number, prop: { acquisitionCost: string | null }) => sum + (prop.acquisitionCost ? parseFloat(prop.acquisitionCost) : 0),
+      (sum: number, prop: { acquisitionCost: string | null }) =>
+        sum + (prop.acquisitionCost ? parseFloat(prop.acquisitionCost) : 0),
       0
     );
   }, [completeSubmission?.personalProperties]);
@@ -119,7 +121,11 @@ export default function SalnSubmissionViewPage() {
   const totalLiabilities = React.useMemo(() => {
     if (!completeSubmission?.liabilities) return 0;
     return completeSubmission.liabilities.reduce(
-      (sum: number, liability: { outstandingBalance: string | null }) => sum + (liability.outstandingBalance ? parseFloat(liability.outstandingBalance) : 0),
+      (sum: number, liability: { outstandingBalance: string | null }) =>
+        sum +
+        (liability.outstandingBalance
+          ? parseFloat(liability.outstandingBalance)
+          : 0),
       0
     );
   }, [completeSubmission?.liabilities]);
@@ -227,8 +233,14 @@ export default function SalnSubmissionViewPage() {
     );
   }
 
-  const { submission, user: submissionUser, department, position } = completeSubmission;
-  const canReview = submission.status === 'submitted' || submission.status === 'reviewing';
+  const {
+    submission,
+    user: submissionUser,
+    department,
+    position,
+  } = completeSubmission;
+  const canReview =
+    submission.status === 'submitted' || submission.status === 'reviewing';
 
   return (
     <>
@@ -261,23 +273,24 @@ export default function SalnSubmissionViewPage() {
                   variant="ghost"
                   size="sm"
                   onClick={() => router.push('/dashboard/submissions/saln')}
-                  className="gap-2"
-                >
+                  className="gap-2">
                   <ArrowLeft className="h-4 w-4" />
                   Back
                 </Button>
                 <div className="flex items-center gap-3">
-                  <h1 className="text-3xl font-bold tracking-tight">SALN Review</h1>
+                  <h1 className="text-3xl font-bold tracking-tight">
+                    SALN Review
+                  </h1>
                   <Badge
                     variant="outline"
-                    className="bg-tup-primary/10 text-tup-primary border-tup-primary/20 text-lg px-3 py-1"
-                  >
+                    className="bg-tup-primary/10 text-tup-primary border-tup-primary/20 text-lg px-3 py-1">
                     {submission.year}
                   </Badge>
                 </div>
               </div>
               <p className="text-muted-foreground">
-                Submitted on {format(new Date(submission.createdAt), 'MMMM d, yyyy')}
+                Submitted on{' '}
+                {format(new Date(submission.createdAt), 'MMMM d, yyyy')}
               </p>
             </div>
 
@@ -289,15 +302,13 @@ export default function SalnSubmissionViewPage() {
                     variant="outline"
                     size="sm"
                     onClick={handleExportPdf}
-                    className="gap-2"
-                  >
+                    className="gap-2">
                     <Download className="h-4 w-4" />
                     Export PDF
                   </Button>
                   <Button
                     onClick={() => setIsReviewDialogOpen(true)}
-                    className="gap-2 bg-tup-primary hover:bg-tup-primary/90"
-                  >
+                    className="gap-2 bg-tup-primary hover:bg-tup-primary/90">
                     Review Submission
                   </Button>
                 </>
@@ -365,7 +376,9 @@ export default function SalnSubmissionViewPage() {
           {/* Main Content */}
           <div className="space-y-6">
             {/* Real Properties Section */}
-            <SectionCard title="Real Properties" icon={<Home className="h-5 w-5" />}>
+            <SectionCard
+              title="Real Properties"
+              icon={<Home className="h-5 w-5" />}>
               {completeSubmission.realProperties &&
               completeSubmission.realProperties.length > 0 ? (
                 <div className="overflow-x-auto">
@@ -375,38 +388,62 @@ export default function SalnSubmissionViewPage() {
                         <TableHead>Description</TableHead>
                         <TableHead>Kind</TableHead>
                         <TableHead>Location</TableHead>
-                        <TableHead className="text-right">Assessed Value</TableHead>
-                        <TableHead className="text-right">Market Value</TableHead>
-                        <TableHead className="text-right">Acquisition Cost</TableHead>
+                        <TableHead className="text-right">
+                          Assessed Value
+                        </TableHead>
+                        <TableHead className="text-right">
+                          Market Value
+                        </TableHead>
+                        <TableHead className="text-right">
+                          Acquisition Cost
+                        </TableHead>
                         <TableHead>Year Acquired</TableHead>
                         <TableHead>Mode</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {completeSubmission.realProperties.map((property: { description: string; kind: string; exactLocation: string; assessedValue: string | null; currentFairMarketValue: string | null; acquisitionCost: string | null; acquisitionYear: number; acquisitionMode: string }, index: number) => (
-                        <TableRow key={index}>
-                          <TableCell>{property.description}</TableCell>
-                          <TableCell className="capitalize">{property.kind}</TableCell>
-                          <TableCell>{property.exactLocation}</TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(property.assessedValue)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(property.currentFairMarketValue)}
-                          </TableCell>
-                          <TableCell className="text-right font-medium">
-                            {formatCurrency(property.acquisitionCost)}
-                          </TableCell>
-                          <TableCell>{property.acquisitionYear}</TableCell>
-                          <TableCell className="capitalize">
-                            {property.acquisitionMode}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {completeSubmission.realProperties.map(
+                        (
+                          property: {
+                            description: string;
+                            kind: string;
+                            exactLocation: string;
+                            assessedValue: string | null;
+                            currentFairMarketValue: string | null;
+                            acquisitionCost: string | null;
+                            acquisitionYear: number;
+                            acquisitionMode: string;
+                          },
+                          index: number
+                        ) => (
+                          <TableRow key={index}>
+                            <TableCell>{property.description}</TableCell>
+                            <TableCell className="capitalize">
+                              {property.kind}
+                            </TableCell>
+                            <TableCell>{property.exactLocation}</TableCell>
+                            <TableCell className="text-right">
+                              {formatCurrency(property.assessedValue)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {formatCurrency(property.currentFairMarketValue)}
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              {formatCurrency(property.acquisitionCost)}
+                            </TableCell>
+                            <TableCell>{property.acquisitionYear}</TableCell>
+                            <TableCell className="capitalize">
+                              {property.acquisitionMode}
+                            </TableCell>
+                          </TableRow>
+                        )
+                      )}
                     </TableBody>
                     <TableFooter>
                       <TableRow>
-                        <TableCell colSpan={5} className="text-right font-semibold">
+                        <TableCell
+                          colSpan={5}
+                          className="text-right font-semibold">
                           Total Real Properties:
                         </TableCell>
                         <TableCell className="text-right font-bold text-emerald-700 dark:text-emerald-400">
@@ -425,7 +462,9 @@ export default function SalnSubmissionViewPage() {
             </SectionCard>
 
             {/* Personal Properties Section */}
-            <SectionCard title="Personal Properties" icon={<Car className="h-5 w-5" />}>
+            <SectionCard
+              title="Personal Properties"
+              icon={<Car className="h-5 w-5" />}>
               {completeSubmission.personalProperties &&
               completeSubmission.personalProperties.length > 0 ? (
                 <div className="overflow-x-auto">
@@ -434,19 +473,30 @@ export default function SalnSubmissionViewPage() {
                       <TableRow>
                         <TableHead>Description</TableHead>
                         <TableHead>Year Acquired</TableHead>
-                        <TableHead className="text-right">Acquisition Cost</TableHead>
+                        <TableHead className="text-right">
+                          Acquisition Cost
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {completeSubmission.personalProperties.map((property: { description: string; yearAcquired: number; acquisitionCost: string | null }, index: number) => (
-                        <TableRow key={index}>
-                          <TableCell>{property.description}</TableCell>
-                          <TableCell>{property.yearAcquired}</TableCell>
-                          <TableCell className="text-right font-medium">
-                            {formatCurrency(property.acquisitionCost)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {completeSubmission.personalProperties.map(
+                        (
+                          property: {
+                            description: string;
+                            yearAcquired: number;
+                            acquisitionCost: string | null;
+                          },
+                          index: number
+                        ) => (
+                          <TableRow key={index}>
+                            <TableCell>{property.description}</TableCell>
+                            <TableCell>{property.yearAcquired}</TableCell>
+                            <TableCell className="text-right font-medium">
+                              {formatCurrency(property.acquisitionCost)}
+                            </TableCell>
+                          </TableRow>
+                        )
+                      )}
                     </TableBody>
                     <TableFooter>
                       <TableRow>
@@ -506,31 +556,47 @@ export default function SalnSubmissionViewPage() {
             </Card>
 
             {/* Liabilities Section */}
-            <SectionCard title="Liabilities" icon={<CreditCard className="h-5 w-5" />}>
-              {completeSubmission.liabilities && completeSubmission.liabilities.length > 0 ? (
+            <SectionCard
+              title="Liabilities"
+              icon={<CreditCard className="h-5 w-5" />}>
+              {completeSubmission.liabilities &&
+              completeSubmission.liabilities.length > 0 ? (
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Nature of Liability</TableHead>
                         <TableHead>Name of Creditors</TableHead>
-                        <TableHead className="text-right">Outstanding Balance</TableHead>
+                        <TableHead className="text-right">
+                          Outstanding Balance
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {completeSubmission.liabilities.map((liability: { nature: string; creditorName: string; outstandingBalance: string | null }, index: number) => (
-                        <TableRow key={index}>
-                          <TableCell>{liability.nature}</TableCell>
-                          <TableCell>{liability.creditorName}</TableCell>
-                          <TableCell className="text-right font-medium">
-                            {formatCurrency(liability.outstandingBalance)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {completeSubmission.liabilities.map(
+                        (
+                          liability: {
+                            nature: string;
+                            creditorName: string;
+                            outstandingBalance: string | null;
+                          },
+                          index: number
+                        ) => (
+                          <TableRow key={index}>
+                            <TableCell>{liability.nature}</TableCell>
+                            <TableCell>{liability.creditorName}</TableCell>
+                            <TableCell className="text-right font-medium">
+                              {formatCurrency(liability.outstandingBalance)}
+                            </TableCell>
+                          </TableRow>
+                        )
+                      )}
                     </TableBody>
                     <TableFooter>
                       <TableRow>
-                        <TableCell colSpan={2} className="text-right font-semibold">
+                        <TableCell
+                          colSpan={2}
+                          className="text-right font-semibold">
                           Total Liabilities:
                         </TableCell>
                         <TableCell className="text-right font-bold text-amber-700 dark:text-amber-400">
@@ -587,8 +653,7 @@ export default function SalnSubmissionViewPage() {
             {/* Business Interests Section */}
             <SectionCard
               title="Business Interests & Financial Connections"
-              icon={<Building2 className="h-5 w-5" />}
-            >
+              icon={<Building2 className="h-5 w-5" />}>
               {completeSubmission.businessInterests &&
               completeSubmission.businessInterests.length > 0 ? (
                 <Table>
@@ -601,18 +666,31 @@ export default function SalnSubmissionViewPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {completeSubmission.businessInterests.map((business: { entityName: string; businessAddress: string; natureOfBusiness: string; dateOfAcquisition: string | null }, index: number) => (
-                      <TableRow key={index}>
-                        <TableCell>{business.entityName}</TableCell>
-                        <TableCell>{business.businessAddress}</TableCell>
-                        <TableCell>{business.natureOfBusiness}</TableCell>
-                        <TableCell>
-                          {business.dateOfAcquisition
-                            ? format(new Date(business.dateOfAcquisition), 'MMM d, yyyy')
-                            : '-'}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {completeSubmission.businessInterests.map(
+                      (
+                        business: {
+                          entityName: string;
+                          businessAddress: string;
+                          natureOfBusiness: string;
+                          dateOfAcquisition: string | null;
+                        },
+                        index: number
+                      ) => (
+                        <TableRow key={index}>
+                          <TableCell>{business.entityName}</TableCell>
+                          <TableCell>{business.businessAddress}</TableCell>
+                          <TableCell>{business.natureOfBusiness}</TableCell>
+                          <TableCell>
+                            {business.dateOfAcquisition
+                              ? format(
+                                  new Date(business.dateOfAcquisition),
+                                  'MMM d, yyyy'
+                                )
+                              : '-'}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    )}
                   </TableBody>
                 </Table>
               ) : (
@@ -625,8 +703,7 @@ export default function SalnSubmissionViewPage() {
             {/* Relatives in Government Section */}
             <SectionCard
               title="Relatives in Government Service"
-              icon={<Users className="h-5 w-5" />}
-            >
+              icon={<Users className="h-5 w-5" />}>
               {completeSubmission.relativesInGov &&
               completeSubmission.relativesInGov.length > 0 ? (
                 <Table>
@@ -639,14 +716,26 @@ export default function SalnSubmissionViewPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {completeSubmission.relativesInGov.map((relative: { name: string; relationship: string; position: string; agencyAddress: string }, index: number) => (
-                      <TableRow key={index}>
-                        <TableCell>{relative.name}</TableCell>
-                        <TableCell className="capitalize">{relative.relationship}</TableCell>
-                        <TableCell>{relative.position}</TableCell>
-                        <TableCell>{relative.agencyAddress}</TableCell>
-                      </TableRow>
-                    ))}
+                    {completeSubmission.relativesInGov.map(
+                      (
+                        relative: {
+                          name: string;
+                          relationship: string;
+                          position: string;
+                          agencyAddress: string;
+                        },
+                        index: number
+                      ) => (
+                        <TableRow key={index}>
+                          <TableCell>{relative.name}</TableCell>
+                          <TableCell className="capitalize">
+                            {relative.relationship}
+                          </TableCell>
+                          <TableCell>{relative.position}</TableCell>
+                          <TableCell>{relative.agencyAddress}</TableCell>
+                        </TableRow>
+                      )
+                    )}
                   </TableBody>
                 </Table>
               ) : (
@@ -667,7 +756,11 @@ export default function SalnSubmissionViewPage() {
                 {/* Avatar & Name */}
                 <div className="flex flex-col items-center text-center space-y-3">
                   {submissionUser && (
-                    <UserAvatar user={submissionUser} size="lg" className="h-20 w-20" />
+                    <UserAvatar
+                      user={submissionUser}
+                      size="lg"
+                      className="h-20 w-20"
+                    />
                   )}
                   <div>
                     <h3 className="font-semibold text-lg">
@@ -696,8 +789,7 @@ export default function SalnSubmissionViewPage() {
                     <dd>
                       <Badge
                         variant="outline"
-                        className="bg-tup-primary/10 text-tup-primary border-tup-primary/20"
-                      >
+                        className="bg-tup-primary/10 text-tup-primary border-tup-primary/20">
                         {submission.year}
                       </Badge>
                     </dd>
@@ -711,14 +803,20 @@ export default function SalnSubmissionViewPage() {
                   <div>
                     <dt className="text-muted-foreground">Submitted</dt>
                     <dd className="font-medium">
-                      {format(new Date(submission.createdAt), 'MMM d, yyyy h:mm a')}
+                      {format(
+                        new Date(submission.createdAt),
+                        'MMM d, yyyy h:mm a'
+                      )}
                     </dd>
                   </div>
                   {submission.updatedAt && (
                     <div>
                       <dt className="text-muted-foreground">Last Updated</dt>
                       <dd className="font-medium">
-                        {format(new Date(submission.updatedAt), 'MMM d, yyyy h:mm a')}
+                        {format(
+                          new Date(submission.updatedAt),
+                          'MMM d, yyyy h:mm a'
+                        )}
                       </dd>
                     </div>
                   )}
@@ -759,16 +857,14 @@ export default function SalnSubmissionViewPage() {
                     <div className="space-y-2">
                       <Button
                         onClick={() => setIsReviewDialogOpen(true)}
-                        className="w-full bg-emerald-600 hover:bg-emerald-700 gap-2"
-                      >
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 gap-2">
                         <CheckCircle2 className="h-4 w-4" />
                         Review Submission
                       </Button>
                       <Button
                         variant="outline"
                         onClick={handleExportPdf}
-                        className="w-full gap-2"
-                      >
+                        className="w-full gap-2">
                         <Download className="h-4 w-4" />
                         Export PDF
                       </Button>

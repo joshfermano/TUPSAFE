@@ -1,10 +1,3 @@
-/**
- * Server-only exports
- *
- * WARNING: These utilities use Node.js modules and are NOT compatible with Edge Runtime.
- * For Edge Runtime (middleware), use direct imports from './utils/supabase/cookie-config'
- */
-
 // Server-only Supabase client
 export { createClient as createServerClient } from './utils/supabase/server';
 

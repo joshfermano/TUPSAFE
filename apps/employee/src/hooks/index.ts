@@ -21,18 +21,18 @@ export {
   profileKeys,
 } from './useProfileQuery';
 
-// PDS hooks
+// PDS hooks (legacy - use usePDS.ts hooks instead)
 export {
   usePdsQuery,
   useInvalidatePds,
-  pdsKeys,
+  pdsKeys as legacyPdsKeys,
 } from './usePdsQuery';
 
-// SALN hooks
+// SALN hooks (legacy - use useSALN.ts hooks instead)
 export {
   useSalnQuery,
   useInvalidateSaln,
-  salnKeys,
+  salnKeys as legacySalnKeys,
 } from './useSalnQuery';
 
 // Dashboard hooks
@@ -246,18 +246,17 @@ export {
   useDepartmentsByCollegeQuery,
   useDepartmentsQuery,
   // Position hooks
-  useOpenPositionsQuery,
   useFeaturedPositionsQuery,
   usePositionsByDepartmentQuery,
   usePositionsQuery,
   usePositionQuery,
 } from './useOrganizationQuery';
 
-// Export type-safe aliases for components that expect different hook names
-export { useCollegesQuery as useColleges } from './useOrganizationQuery';
-export { useOfficesQuery as useOffices } from './useOrganizationQuery';
-export { useDepartmentsByCollegeQuery as useDepartmentsByCollege } from './useOrganizationQuery';
-export { useOpenPositionsQuery as useOpenPositions } from './useOrganizationQuery';
+// Export legacy hook aliases
+export { useCollegesQuery as useCollegesLegacy } from './useOrganizationQuery';
+export { useOfficesQuery as useOfficesLegacy } from './useOrganizationQuery';
+export { useDepartmentsByCollegeQuery as useDepartmentsByCollegeLegacy } from './useOrganizationQuery';
+export { useOpenPositionsQuery as useOpenPositionsLegacy } from './useOrganizationQuery';
 export { usePositionsByDepartmentQuery as usePositionsByOrganization } from './useOrganizationQuery';
 
 // Export types from the API types file
@@ -267,6 +266,154 @@ export type { Department, Position } from '@/types/api';
 export type College = import('@/types/api').Department;
 export type Office = import('@/types/api').Department;
 export type OpenPosition = import('@/types/api').Position;
+
+// ============================================================================
+// New API-Connected Hooks (Replace Mock Data)
+// ============================================================================
+
+/**
+ * Dashboard Statistics Hooks
+ *
+ * Real-time dashboard data for employees and applicants including
+ * compliance status, deadlines, and application tracking.
+ */
+export {
+  useDashboardStats,
+  isEmployeeStats,
+  isApplicantStats,
+  type DashboardStats,
+  type EmployeeStats,
+  type ApplicantStats,
+} from './useDashboardStats';
+
+/**
+ * User Profile Hooks
+ *
+ * Manage user profile data with optimistic updates and cache invalidation.
+ */
+export {
+  useProfile,
+  useUpdateProfile,
+  type ProfileData,
+  type ProfileUpdateData,
+} from './useProfile';
+
+/**
+ * Job Applications Hooks (Applicants)
+ *
+ * Complete application management for job seekers including
+ * browsing positions, tracking applications, and withdrawing.
+ */
+export {
+  useApplicationsQuery,
+  useApplicationQuery,
+  useOpenPositionsQuery,
+  useWithdrawApplicationMutation,
+  useInvalidateApplications,
+  useInvalidatePositions,
+  applicationsKeys,
+  positionsKeys,
+  type Application,
+  type ApplicationDetails,
+} from './useApplicationsQuery';
+
+/**
+ * Organization Structure Hooks
+ *
+ * Real API-connected hooks for colleges, departments, offices, and positions.
+ * Replaces all mock data with actual database queries.
+ */
+export {
+  useColleges,
+  useDepartmentsByCollege,
+  useDepartment,
+  useOffices,
+  usePositionsByDepartment,
+  organizationKeys,
+  type College as OrgCollege,
+  type Department as OrgDepartment,
+  type Office as OrgOffice,
+  type Position as OrgPosition,
+} from './useOrganizationData';
+
+// Create alias for useOpenPositions (points to useApplicationsQuery)
+export { useOpenPositionsQuery as useOpenPositions } from './useApplicationsQuery';
+
+/**
+ * PDS (Personal Data Sheet) Hooks
+ *
+ * Complete PDS lifecycle management including creation, updates,
+ * submission workflow, and archiving.
+ */
+export {
+  usePDSSubmissions,
+  usePDSSubmission,
+  useArchivedPDS,
+  useCreatePDS,
+  useUpdatePDS,
+  useSubmitPDS,
+  useArchivePDS,
+  pdsKeys,
+  type PDSStatus,
+  type PDSSubmission,
+  type PDSFilters,
+  type CreatePDSData,
+  type UpdatePDSData,
+} from './usePDS';
+
+/**
+ * SALN (Statement of Assets, Liabilities, Net Worth) Hooks
+ *
+ * SALN submission management with year-over-year comparison,
+ * financial tracking, and compliance monitoring.
+ */
+export {
+  useSALNSubmissions,
+  useSALNSubmission,
+  useArchivedSALN,
+  useCompareSALN,
+  useCreateSALN,
+  useUpdateSALN,
+  useSubmitSALN,
+  useArchiveSALN,
+  salnKeys,
+  type SALNStatus,
+  type FilingType,
+  type SALNSubmission,
+  type SALNFilters,
+  type CreateSALNData,
+  type UpdateSALNData,
+  type SALNComparison,
+  type RealProperty,
+  type PersonalProperty,
+  type Liability,
+  type BusinessInterest,
+  type RelativeInGov,
+} from './useSALN';
+
+/**
+ * User Settings and Preferences Hooks
+ *
+ * User preference management including theme, language, layout,
+ * notifications, and timezone with optimistic updates.
+ */
+export {
+  useUserSettings,
+  useUpdateSettings,
+  useResetSettings,
+  useUpdateTheme,
+  useUpdateLanguage,
+  useUpdateDashboardLayout,
+  useToggleEmailNotifications,
+  useUpdateEmailDigest,
+  settingsKeys,
+  type Theme,
+  type DashboardLayout,
+  type Language,
+  type EmailDigestFrequency,
+  type UserPreferences,
+  type PreferencesUpdate,
+} from './useSettings';
 
 /**
  * Usage Examples

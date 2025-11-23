@@ -13,7 +13,8 @@
 import React, { useMemo, useState, useEffect, useCallback, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSaln, useAuth } from '@tupsafe/mock-data/api';
+import { useAuth } from '@/providers/AuthProvider';
+import { useSaln } from '@tupsafe/mock-data/api';
 import { toast } from 'sonner';
 import {
   AlertCircle,

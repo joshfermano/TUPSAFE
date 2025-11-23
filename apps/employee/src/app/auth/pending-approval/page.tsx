@@ -19,12 +19,14 @@ import {
   ReloadIcon,
 } from '@radix-ui/react-icons';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 import { MagicCard } from '@/components/ui/magic-card';
 import { BorderBeam } from '@/components/ui/border-beam';
 import { AnimatedGradientText } from '@/components/ui/animated-gradient-text';
 import AnimatedGridPattern from '@/components/ui/animated-grid-pattern';
 import { ShimmerButton } from '@/components/ui/shimmer-button';
 import { cn } from '@/lib/utils';
+import { useRealtimeProfile, type Profile } from '@tupsafe/database';
 
 type AccountStatus = 'pending' | 'active' | 'rejected' | 'suspended';
 
@@ -46,6 +48,69 @@ function PendingApprovalContent() {
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState<string>('');
   const [refreshing, setRefreshing] = useState(false);
+  const [userId, setUserId] = useState<string>('');
+
+  // Set up Realtime subscription for profile changes
+  // This will automatically detect when accountStatus changes to 'active'
+  useRealtimeProfile(userId, {
+    showToast: false, // We'll handle toast manually for better UX
+    notifyOnFields: ['isActive'], // Monitor significant changes
+    onProfileUpdate: (
+      oldProfile: Partial<Profile>,
+      newProfile: Partial<Profile>,
+      changedFields: string[]
+    ) => {
+      // Check if accountStatus changed to 'active'
+      if (
+        changedFields.includes('accountStatus') &&
+        newProfile.accountStatus === 'active'
+      ) {
+        console.log('[Realtime] Account approved, redirecting to dashboard...');
+
+        // Show success toast
+        toast.success('Your account has been approved!', {
+          description: 'Redirecting to dashboard...',
+          duration: 3000,
+        });
+
+        // Update local state
+        setStatus('active');
+
+        // Redirect to dashboard after a short delay to show the toast
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 1500);
+      } else if (
+        changedFields.includes('accountStatus') &&
+        newProfile.accountStatus === 'rejected'
+      ) {
+        console.log('[Realtime] Account rejected');
+
+        // Show error toast
+        toast.error('Registration Not Approved', {
+          description: 'Your registration could not be approved. Please contact HR for more information.',
+          duration: 5000,
+        });
+
+        // Update local state
+        setStatus('rejected');
+      } else if (
+        changedFields.includes('accountStatus') &&
+        newProfile.accountStatus === 'suspended'
+      ) {
+        console.log('[Realtime] Account suspended');
+
+        // Show warning toast
+        toast.error('Account Suspended', {
+          description: 'Your account has been suspended. Please contact the administrator.',
+          duration: 5000,
+        });
+
+        // Update local state
+        setStatus('suspended');
+      }
+    },
+  });
 
   const checkStatus = async () => {
     setRefreshing(true);
@@ -57,24 +122,41 @@ function PendingApprovalContent() {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
+    // Use getUser() to fetch FRESH user data from auth server
+    // This ensures we get the latest metadata including account_status updates
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    if (!session) {
+    if (!user) {
       router.push('/auth/login');
       return;
     }
 
-    const sessionStatus = session.user.user_metadata?.account_status as AccountStatus;
-    const finalStatus = urlStatus || sessionStatus || 'pending';
+    // Set userId for Realtime subscription
+    setUserId(user.id);
+
+    // Get FRESH account status from user metadata (just fetched from auth server)
+    const userStatus = user.user_metadata?.account_status as AccountStatus;
+    const finalStatus = urlStatus || userStatus || 'pending';
+
+    console.log(`[Pending Approval] User ${user.id} - status: ${finalStatus} (url: ${urlStatus}, metadata: ${userStatus})`);
 
     setStatus(finalStatus);
-    setUserEmail(session.user.email || '');
+    setUserEmail(user.email || '');
 
     // If approved, redirect to dashboard
     if (finalStatus === 'active') {
-      router.push('/dashboard');
+      console.log(`[Pending Approval] Account is active, redirecting to dashboard...`);
+      toast.success('Your account has been approved!', {
+        description: 'Redirecting to dashboard...',
+        duration: 2000,
+      });
+
+      // Small delay to show the toast
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 500);
       return;
     }
 

@@ -148,8 +148,8 @@ export const profiles = pgTable(
     middleName: text('middle_name'),
     phoneNumber: text('phone_number'),
     role: roleEnum('role').default('employee').notNull(),
-    departmentId: uuid('department_id'),
-    positionId: uuid('position_id'),
+    departmentId: uuid('department_id').references(() => departments.id),
+    positionId: uuid('position_id').references(() => positions.id),
     // TUP Manila-specific fields
     academicRank: text('academic_rank'), // Professor, Associate Professor, Assistant Professor, Instructor
     tenureStatus: text('tenure_status'), // Tenured, tenure-track, non-tenure track, contractual
@@ -160,7 +160,7 @@ export const profiles = pgTable(
       .default('pending')
       .notNull(),
     emailVerifiedAt: timestamp('email_verified_at'),
-    approvedBy: uuid('approved_by'),
+    approvedBy: uuid('approved_by').references((): any => profiles.id),
     approvedAt: timestamp('approved_at'),
     temporaryPassword: boolean('temporary_password').default(false).notNull(),
     isActive: boolean('is_active').default(true).notNull(),

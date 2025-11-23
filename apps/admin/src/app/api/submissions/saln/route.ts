@@ -19,7 +19,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkUserRoleFromSupabase, getUserFromSupabase } from '@tupsafe/auth/server';
+import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 import { db, profiles, departments, positions, salnSubmissions } from '@tupsafe/database/server';
 import { and, eq, sql, count, inArray, or, ilike, asc, desc } from 'drizzle-orm';
 import {
@@ -49,12 +49,6 @@ export async function GET(request: NextRequest) {
         { error: 'Unauthorized. Admin or HR role required.' },
         { status: 403 }
       );
-    }
-
-    // Get current user for audit logging
-    const sessionUser = await getUserFromSupabase();
-    if (!sessionUser) {
-      return NextResponse.json({ error: 'Session expired' }, { status: 401 });
     }
 
     console.log('[SALN Submissions API] Permission granted - fetching submissions');

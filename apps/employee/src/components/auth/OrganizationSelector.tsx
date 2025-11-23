@@ -58,7 +58,7 @@ export function OrganizationSelector({
     isLoading: isLoadingDepartments,
     isError: isErrorDepartments,
     refetch: refetchDepartments,
-  } = useDepartmentsByCollege(collegeValue ?? null);
+  } = useDepartmentsByCollege(collegeValue ?? undefined);
 
   // Staff: Fetch offices
   const {

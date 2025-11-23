@@ -198,3 +198,38 @@ export function useToggleUserStatus() {
     },
   });
 }
+
+/**
+ * Hook to sync user metadata with database profile
+ */
+export function useSyncMetadata() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await fetch(`/api/users/${userId}/sync-metadata`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to sync metadata');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate all user queries to refresh data
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
+
+      toast.success('Metadata synced successfully', {
+        description: 'User authentication data has been synchronized with database.',
+      });
+    },
+    onError: (error) => {
+      toast.error('Failed to sync metadata', {
+        description: error instanceof Error ? error.message : 'An error occurred',
+      });
+    },
+  });
+}

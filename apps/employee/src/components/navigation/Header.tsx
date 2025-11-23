@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu, Shield, FileText, Users, LogOut, User as UserIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@tupsafe/mock-data/api';
+import { useAuth } from '@/providers/AuthProvider';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -117,7 +117,7 @@ const handleNavClick = (
 const MobileNavigation: React.FC<{
   isOpen: boolean;
   onClose: () => void;
-  user: { email: string } | null;
+  user: { email?: string } | null;
   onLogout: () => void;
 }> = ({ isOpen, onClose, user, onLogout }) => {
   const pathname = usePathname();

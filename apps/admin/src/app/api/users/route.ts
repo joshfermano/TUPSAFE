@@ -18,7 +18,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkUserRoleFromSupabase, getUserFromSupabase } from '@tupsafe/auth/server';
+import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 import { db, profiles, departments, positions } from '@tupsafe/database/server';
 import { and, eq, sql, count, or, ilike, asc, desc } from 'drizzle-orm';
 import {
@@ -36,15 +36,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin, HR, or Supervisor role required.' },
         { status: 403 }
-      );
-    }
-
-    // Get current user for audit logging
-    const sessionUser = await getUserFromSupabase();
-    if (!sessionUser) {
-      return NextResponse.json(
-        { error: 'Session expired' },
-        { status: 401 }
       );
     }
 

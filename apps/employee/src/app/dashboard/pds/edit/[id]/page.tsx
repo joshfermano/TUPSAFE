@@ -13,7 +13,8 @@
 import React, { useMemo, useState, useEffect, useCallback, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { usePds, useAuth } from '@tupsafe/mock-data/api';
+import { useAuth } from '@/providers/AuthProvider';
+import { usePds } from '@tupsafe/mock-data/api';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
