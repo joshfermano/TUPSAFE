@@ -6,6 +6,14 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./admin/jobs": {
+      "types": "./dist/admin/jobs.d.ts",
+      "default": "./dist/admin/jobs.js"
+    },
+    "./admin/submission-review": {
+      "types": "./dist/admin/submission-review.d.ts",
+      "default": "./dist/admin/submission-review.js"
     }
   },
   "scripts": {

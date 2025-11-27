@@ -21,6 +21,8 @@ import {
 import { toast } from 'sonner';
 
 import { useUsersQuery } from '@/hooks/useUsersQuery';
+import { useDepartmentsQuery } from '@/hooks/useDepartmentsQuery';
+import { usePositionsQuery } from '@/hooks/usePositionsQuery';
 import { PageTransition } from '@/components/PageTransition';
 
 import { Button } from '@/components/ui/button';
@@ -88,26 +90,7 @@ const ROLES = [
   { value: 'auditor', label: 'Auditor' },
 ];
 
-// Available departments
-const DEPARTMENTS = [
-  { value: 'none', label: 'None' },
-  { value: 'engineering', label: 'Engineering' },
-  { value: 'science', label: 'Science' },
-  { value: 'liberal_arts', label: 'Liberal Arts' },
-  { value: 'industrial_technology', label: 'Industrial Technology' },
-  { value: 'hr', label: 'Human Resources' },
-  { value: 'administration', label: 'Administration' },
-];
-
-// Available positions
-const POSITIONS = [
-  { value: 'none', label: 'None' },
-  { value: 'professor', label: 'Professor' },
-  { value: 'associate_professor', label: 'Associate Professor' },
-  { value: 'assistant_professor', label: 'Assistant Professor' },
-  { value: 'instructor', label: 'Instructor' },
-  { value: 'admin_staff', label: 'Administrative Staff' },
-];
+// Note: DEPARTMENTS and POSITIONS are now fetched from the API via hooks
 
 // Suffix options
 const SUFFIXES = [
@@ -146,6 +129,19 @@ function sendCredentialsEmail(email: string, username: string, password: string)
 export default function CreateUserPage() {
   const router = useRouter();
   const { createUserAsync, isCreating } = useUsersQuery();
+
+  // Fetch departments and positions from API
+  const {
+    data: departments = [],
+    isLoading: isDepartmentsLoading,
+    error: departmentsError
+  } = useDepartmentsQuery();
+
+  const {
+    data: positions = [],
+    isLoading: isPositionsLoading,
+    error: positionsError
+  } = usePositionsQuery();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -289,6 +285,44 @@ export default function CreateUserPage() {
   const roleRequiresDepartment = useMemo(() => {
     return ['employee', 'supervisor'].includes(watchRole || '');
   }, [watchRole]);
+
+  // Transform API data into dropdown format
+  const departmentOptions = useMemo(() => {
+    return [
+      { value: 'none', label: 'None' },
+      ...departments.map((dept) => ({
+        value: dept.id,
+        label: dept.name,
+      })),
+    ];
+  }, [departments]);
+
+  const positionOptions = useMemo(() => {
+    return [
+      { value: 'none', label: 'None' },
+      ...positions.map((pos) => ({
+        value: pos.id,
+        label: pos.title,
+      })),
+    ];
+  }, [positions]);
+
+  // Show error toasts for API failures
+  React.useEffect(() => {
+    if (departmentsError) {
+      toast.error('Failed to load departments', {
+        description: departmentsError.message,
+      });
+    }
+  }, [departmentsError]);
+
+  React.useEffect(() => {
+    if (positionsError) {
+      toast.error('Failed to load positions', {
+        description: positionsError.message,
+      });
+    }
+  }, [positionsError]);
 
   return (
     <PageTransition className="space-y-6">
@@ -504,20 +538,33 @@ export default function CreateUserPage() {
                       <FormLabel>
                         Department {roleRequiresDepartment && '*'}
                       </FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={isDepartmentsLoading}
+                      >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select department" />
+                            <SelectValue
+                              placeholder={
+                                isDepartmentsLoading
+                                  ? 'Loading departments...'
+                                  : 'Select department'
+                              }
+                            />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {DEPARTMENTS.map((dept) => (
+                          {departmentOptions.map((dept) => (
                             <SelectItem key={dept.value} value={dept.value}>
                               {dept.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                      {isDepartmentsLoading && (
+                        <FormDescription>Loading departments...</FormDescription>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -529,20 +576,31 @@ export default function CreateUserPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Position</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={isPositionsLoading}
+                      >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select position" />
+                            <SelectValue
+                              placeholder={
+                                isPositionsLoading ? 'Loading positions...' : 'Select position'
+                              }
+                            />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {POSITIONS.map((position) => (
+                          {positionOptions.map((position) => (
                             <SelectItem key={position.value} value={position.value}>
                               {position.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                      {isPositionsLoading && (
+                        <FormDescription>Loading positions...</FormDescription>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -747,12 +805,12 @@ export default function CreateUserPage() {
                       </Badge>
                       <span className="text-muted-foreground">Department:</span>
                       <span className="font-medium">
-                        {DEPARTMENTS.find((d) => d.value === watch('departmentId'))?.label ||
-                          'Not assigned'}
+                        {departmentOptions.find((d) => d.value === watch('departmentId'))
+                          ?.label || 'Not assigned'}
                       </span>
                       <span className="text-muted-foreground">Position:</span>
                       <span className="font-medium">
-                        {POSITIONS.find((p) => p.value === watch('positionId'))?.label ||
+                        {positionOptions.find((p) => p.value === watch('positionId'))?.label ||
                           'Not assigned'}
                       </span>
                       <span className="text-muted-foreground">Status:</span>

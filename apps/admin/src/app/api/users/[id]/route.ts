@@ -430,26 +430,17 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Authorization check - Admin or HR role required
-    const { checkUserRoleFromSupabase, createServerClient } = await import('@tupsafe/auth/server');
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
-
-    if (!hasPermission) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized. Admin or HR role required.' },
-        { status: 403 }
-      );
+    // Verify permissions
+    const sessionUser = await getSessionUser();
+    if (!sessionUser) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    // Get admin user ID for audit logging
-    const supabase = await createServerClient('admin');
-    const { data: { session } } = await supabase.auth.getSession();
-    const adminUserId = session?.user?.id;
-
-    if (!adminUserId) {
+    const hasPermission = await checkUserRole(['admin', 'hr']);
+    if (!hasPermission) {
       return NextResponse.json(
-        { success: false, error: 'Session expired. Please login again.' },
-        { status: 401 }
+        { error: 'Unauthorized. Admin or HR role required.' },
+        { status: 403 }
       );
     }
 
@@ -466,7 +457,7 @@ export async function DELETE(
     }
 
     // Prevent self-deletion
-    if (userId === adminUserId) {
+    if (userId === sessionUser.userId) {
       return NextResponse.json(
         { error: 'Cannot delete your own account' },
         { status: 400 }
@@ -484,22 +475,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Get admin user role for hierarchy validation
-    const [adminProfile] = await db
-      .select({ role: profiles.role })
-      .from(profiles)
-      .where(eq(profiles.id, adminUserId))
-      .limit(1);
-
-    if (!adminProfile) {
-      return NextResponse.json(
-        { error: 'Admin profile not found' },
-        { status: 500 }
-      );
-    }
-
     // Role hierarchy validation - prevent deleting higher privilege users
-    const currentUserRole = adminProfile.role;
+    const currentUserRole = sessionUser.role;
     const targetRole = currentUser.role;
 
     if (
@@ -527,7 +504,7 @@ export async function DELETE(
 
     // Create audit log
     await createAuditLogFromRequest(
-      adminUserId,
+      sessionUser.userId,
       'DELETE',
       'profile',
       userId,

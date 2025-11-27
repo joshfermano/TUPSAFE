@@ -38,10 +38,15 @@ import {
   TableRow,
   TableFooter,
 } from '@/components/ui/table';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 
 import { StatusBadge } from '@/components/admin/StatusBadge';
 import { UserAvatar } from '@/components/admin/UserAvatar';
-import { SectionCard } from '@/components/admin/SectionCard';
 import { ReviewDialog } from '@/components/admin/ReviewDialog';
 import { LoadingCard } from '@/components/admin/LoadingCard';
 import { ErrorAlert } from '@/components/admin/ErrorAlert';
@@ -95,32 +100,62 @@ export default function SalnSubmissionViewPage() {
 
   const isSubmitting = isApproving || isRejecting || isRequestingChanges;
 
+  // Extract data from the API response structure
+  const salnData = completeSubmission?.salnData;
+
+  // Memoize arrays to prevent hook dependency issues
+  const realProperties = React.useMemo(
+    () => salnData?.realProperties || [],
+    [salnData?.realProperties]
+  );
+  const personalProperties = React.useMemo(
+    () => salnData?.personalProperties || [],
+    [salnData?.personalProperties]
+  );
+  const liabilities = React.useMemo(
+    () => salnData?.liabilities || [],
+    [salnData?.liabilities]
+  );
+  const businessInterests = React.useMemo(
+    () => salnData?.businessInterests || [],
+    [salnData?.businessInterests]
+  );
+  const relativesInGov = React.useMemo(
+    () => salnData?.relativesInGov || [],
+    [salnData?.relativesInGov]
+  );
+
   // Calculate totals
   const totalRealProperties = React.useMemo(() => {
-    if (!completeSubmission?.realProperties) return 0;
-    return completeSubmission.realProperties.reduce(
+    return realProperties.reduce(
       (sum: number, prop: { acquisitionCost: string | null }) =>
         sum + (prop.acquisitionCost ? parseFloat(prop.acquisitionCost) : 0),
       0
     );
-  }, [completeSubmission?.realProperties]);
+  }, [realProperties]);
 
   const totalPersonalProperties = React.useMemo(() => {
-    if (!completeSubmission?.personalProperties) return 0;
-    return completeSubmission.personalProperties.reduce(
+    return personalProperties.reduce(
       (sum: number, prop: { acquisitionCost: string | null }) =>
         sum + (prop.acquisitionCost ? parseFloat(prop.acquisitionCost) : 0),
       0
     );
-  }, [completeSubmission?.personalProperties]);
+  }, [personalProperties]);
 
   const totalAssets = React.useMemo(() => {
+    // Use API-calculated total if available, otherwise calculate
+    if (salnData?.totalAssets) {
+      return parseFloat(salnData.totalAssets);
+    }
     return totalRealProperties + totalPersonalProperties;
-  }, [totalRealProperties, totalPersonalProperties]);
+  }, [salnData?.totalAssets, totalRealProperties, totalPersonalProperties]);
 
   const totalLiabilities = React.useMemo(() => {
-    if (!completeSubmission?.liabilities) return 0;
-    return completeSubmission.liabilities.reduce(
+    // Use API-calculated total if available, otherwise calculate
+    if (salnData?.totalLiabilities) {
+      return parseFloat(salnData.totalLiabilities);
+    }
+    return liabilities.reduce(
       (sum: number, liability: { outstandingBalance: string | null }) =>
         sum +
         (liability.outstandingBalance
@@ -128,11 +163,15 @@ export default function SalnSubmissionViewPage() {
           : 0),
       0
     );
-  }, [completeSubmission?.liabilities]);
+  }, [salnData?.totalLiabilities, liabilities]);
 
   const netWorth = React.useMemo(() => {
+    // Use API-calculated net worth if available, otherwise calculate
+    if (salnData?.netWorth) {
+      return parseFloat(salnData.netWorth);
+    }
     return totalAssets - totalLiabilities;
-  }, [totalAssets, totalLiabilities]);
+  }, [salnData?.netWorth, totalAssets, totalLiabilities]);
 
   // Handle approval
   const handleApprove = React.useCallback(
@@ -233,14 +272,14 @@ export default function SalnSubmissionViewPage() {
     );
   }
 
-  const {
-    submission,
-    user: submissionUser,
-    department,
-    position,
-  } = completeSubmission;
+  // Extract data from the correct API response structure
+  const submission = completeSubmission?.submission;
+  const employee = completeSubmission?.employee;
+  const previousYear = completeSubmission?.previousYear;
+  // Note: auditTrail is available in completeSubmission?.auditTrail if needed
+
   const canReview =
-    submission.status === 'submitted' || submission.status === 'reviewing';
+    submission?.status === 'submitted' || submission?.status === 'reviewing';
 
   return (
     <>
@@ -284,18 +323,20 @@ export default function SalnSubmissionViewPage() {
                   <Badge
                     variant="outline"
                     className="bg-tup-primary/10 text-tup-primary border-tup-primary/20 text-lg px-3 py-1">
-                    {submission.year}
+                    {submission?.fiscalYear}
                   </Badge>
                 </div>
               </div>
               <p className="text-muted-foreground">
                 Submitted on{' '}
-                {format(new Date(submission.createdAt), 'MMMM d, yyyy')}
+                {submission?.submittedAt
+                  ? format(new Date(submission.submittedAt), 'MMMM d, yyyy')
+                  : 'N/A'}
               </p>
             </div>
 
             <div className="flex items-center gap-3">
-              <StatusBadge status={submission.status} />
+              <StatusBadge status={submission?.status || 'draft'} />
               {canReview && (
                 <>
                   <Button
@@ -375,375 +416,535 @@ export default function SalnSubmissionViewPage() {
         <div className="grid gap-6 lg:grid-cols-[1fr_350px]">
           {/* Main Content */}
           <div className="space-y-6">
-            {/* Real Properties Section */}
-            <SectionCard
-              title="Real Properties"
-              icon={<Home className="h-5 w-5" />}>
-              {completeSubmission.realProperties &&
-              completeSubmission.realProperties.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Kind</TableHead>
-                        <TableHead>Location</TableHead>
-                        <TableHead className="text-right">
-                          Assessed Value
-                        </TableHead>
-                        <TableHead className="text-right">
-                          Market Value
-                        </TableHead>
-                        <TableHead className="text-right">
-                          Acquisition Cost
-                        </TableHead>
-                        <TableHead>Year Acquired</TableHead>
-                        <TableHead>Mode</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {completeSubmission.realProperties.map(
-                        (
-                          property: {
-                            description: string;
-                            kind: string;
-                            exactLocation: string;
-                            assessedValue: string | null;
-                            currentFairMarketValue: string | null;
-                            acquisitionCost: string | null;
-                            acquisitionYear: number;
-                            acquisitionMode: string;
-                          },
-                          index: number
-                        ) => (
-                          <TableRow key={index}>
-                            <TableCell>{property.description}</TableCell>
-                            <TableCell className="capitalize">
-                              {property.kind}
+            {/* Collapsible Sections for All SALN Data */}
+            <Accordion
+              type="multiple"
+              defaultValue={[
+                'assets-real',
+                'assets-personal',
+                'liabilities',
+                'net-worth',
+              ]}
+              className="space-y-4">
+              {/* Real Properties Section */}
+              <AccordionItem
+                value="assets-real"
+                className="border rounded-lg bg-card">
+                <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                  <div className="flex items-center gap-3">
+                    <Home className="h-5 w-5 text-tup-primary" />
+                    <span className="text-lg font-semibold">
+                      Assets - Real Properties
+                    </span>
+                    <Badge variant="secondary" className="ml-2">
+                      {realProperties.length} item
+                      {realProperties.length !== 1 ? 's' : ''}
+                    </Badge>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-6">
+                  {realProperties.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Description</TableHead>
+                            <TableHead>Kind</TableHead>
+                            <TableHead>Location</TableHead>
+                            <TableHead className="text-right">
+                              Assessed Value
+                            </TableHead>
+                            <TableHead className="text-right">
+                              Market Value
+                            </TableHead>
+                            <TableHead className="text-right">
+                              Acquisition Cost
+                            </TableHead>
+                            <TableHead>Year</TableHead>
+                            <TableHead>Mode</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {realProperties.map(
+                            (
+                              property: {
+                                description: string;
+                                kind: string;
+                                exactLocation: string;
+                                assessedValue: string | null;
+                                currentFairMarketValue: string | null;
+                                acquisitionCost: string | null;
+                                acquisitionYear: number;
+                                acquisitionMode: string;
+                              },
+                              index: number
+                            ) => (
+                              <TableRow key={index}>
+                                <TableCell className="font-medium">
+                                  {property.description}
+                                </TableCell>
+                                <TableCell className="capitalize">
+                                  {property.kind}
+                                </TableCell>
+                                <TableCell className="max-w-xs truncate">
+                                  {property.exactLocation}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {formatCurrency(property.assessedValue)}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {formatCurrency(
+                                    property.currentFairMarketValue
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-right font-semibold text-emerald-700 dark:text-emerald-400">
+                                  {formatCurrency(property.acquisitionCost)}
+                                </TableCell>
+                                <TableCell>{property.acquisitionYear}</TableCell>
+                                <TableCell className="capitalize">
+                                  {property.acquisitionMode}
+                                </TableCell>
+                              </TableRow>
+                            )
+                          )}
+                        </TableBody>
+                        <TableFooter>
+                          <TableRow>
+                            <TableCell
+                              colSpan={5}
+                              className="text-right font-semibold">
+                              Total Real Properties:
                             </TableCell>
-                            <TableCell>{property.exactLocation}</TableCell>
-                            <TableCell className="text-right">
-                              {formatCurrency(property.assessedValue)}
+                            <TableCell className="text-right font-bold text-emerald-700 dark:text-emerald-400">
+                              {formatCurrency(totalRealProperties)}
                             </TableCell>
-                            <TableCell className="text-right">
-                              {formatCurrency(property.currentFairMarketValue)}
+                            <TableCell colSpan={2} />
+                          </TableRow>
+                        </TableFooter>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <Home className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+                      <p className="text-sm text-muted-foreground italic">
+                        No real properties declared
+                      </p>
+                    </div>
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+
+              {/* Personal Properties Section */}
+              <AccordionItem
+                value="assets-personal"
+                className="border rounded-lg bg-card">
+                <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                  <div className="flex items-center gap-3">
+                    <Car className="h-5 w-5 text-tup-primary" />
+                    <span className="text-lg font-semibold">
+                      Assets - Personal Properties
+                    </span>
+                    <Badge variant="secondary" className="ml-2">
+                      {personalProperties.length} item
+                      {personalProperties.length !== 1 ? 's' : ''}
+                    </Badge>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-6">
+                  {personalProperties.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Description</TableHead>
+                            <TableHead>Year Acquired</TableHead>
+                            <TableHead className="text-right">
+                              Acquisition Cost
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {personalProperties.map(
+                            (
+                              property: {
+                                description: string;
+                                yearAcquired: number;
+                                acquisitionCost: string | null;
+                              },
+                              index: number
+                            ) => (
+                              <TableRow key={index}>
+                                <TableCell className="font-medium">
+                                  {property.description}
+                                </TableCell>
+                                <TableCell>{property.yearAcquired}</TableCell>
+                                <TableCell className="text-right font-semibold text-emerald-700 dark:text-emerald-400">
+                                  {formatCurrency(property.acquisitionCost)}
+                                </TableCell>
+                              </TableRow>
+                            )
+                          )}
+                        </TableBody>
+                        <TableFooter>
+                          <TableRow>
+                            <TableCell className="text-right font-semibold">
+                              Total Personal Properties:
                             </TableCell>
-                            <TableCell className="text-right font-medium">
-                              {formatCurrency(property.acquisitionCost)}
-                            </TableCell>
-                            <TableCell>{property.acquisitionYear}</TableCell>
-                            <TableCell className="capitalize">
-                              {property.acquisitionMode}
+                            <TableCell />
+                            <TableCell className="text-right font-bold text-emerald-700 dark:text-emerald-400">
+                              {formatCurrency(totalPersonalProperties)}
                             </TableCell>
                           </TableRow>
-                        )
-                      )}
-                    </TableBody>
-                    <TableFooter>
-                      <TableRow>
-                        <TableCell
-                          colSpan={5}
-                          className="text-right font-semibold">
-                          Total Real Properties:
-                        </TableCell>
-                        <TableCell className="text-right font-bold text-emerald-700 dark:text-emerald-400">
-                          {formatCurrency(totalRealProperties)}
-                        </TableCell>
-                        <TableCell colSpan={2} />
-                      </TableRow>
-                    </TableFooter>
-                  </Table>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground italic text-center py-8">
-                  No real properties declared
-                </p>
-              )}
-            </SectionCard>
+                        </TableFooter>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <Car className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+                      <p className="text-sm text-muted-foreground italic">
+                        No personal properties declared
+                      </p>
+                    </div>
+                  )}
+                </AccordionContent>
+              </AccordionItem>
 
-            {/* Personal Properties Section */}
-            <SectionCard
-              title="Personal Properties"
-              icon={<Car className="h-5 w-5" />}>
-              {completeSubmission.personalProperties &&
-              completeSubmission.personalProperties.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Year Acquired</TableHead>
-                        <TableHead className="text-right">
-                          Acquisition Cost
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {completeSubmission.personalProperties.map(
-                        (
-                          property: {
-                            description: string;
-                            yearAcquired: number;
-                            acquisitionCost: string | null;
-                          },
-                          index: number
-                        ) => (
-                          <TableRow key={index}>
-                            <TableCell>{property.description}</TableCell>
-                            <TableCell>{property.yearAcquired}</TableCell>
-                            <TableCell className="text-right font-medium">
-                              {formatCurrency(property.acquisitionCost)}
+              {/* Assets Summary Section */}
+              <AccordionItem
+                value="assets-summary"
+                className="border rounded-lg bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950">
+                <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                  <div className="flex items-center gap-3">
+                    <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-lg font-semibold text-emerald-800 dark:text-emerald-200">
+                      Total Assets Summary
+                    </span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-6">
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center p-3 bg-white/50 dark:bg-black/20 rounded-lg">
+                      <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                        Real Properties
+                      </span>
+                      <span className="text-base font-semibold text-emerald-900 dark:text-emerald-100">
+                        {formatCurrency(totalRealProperties)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-white/50 dark:bg-black/20 rounded-lg">
+                      <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                        Personal Properties
+                      </span>
+                      <span className="text-base font-semibold text-emerald-900 dark:text-emerald-100">
+                        {formatCurrency(totalPersonalProperties)}
+                      </span>
+                    </div>
+                    <Separator className="bg-emerald-300 dark:bg-emerald-700" />
+                    <div className="flex justify-between items-center p-4 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg">
+                      <span className="text-base font-bold text-emerald-800 dark:text-emerald-200">
+                        Total Assets
+                      </span>
+                      <span className="text-xl font-bold text-emerald-900 dark:text-emerald-100">
+                        {formatCurrency(totalAssets)}
+                      </span>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              {/* Liabilities Section */}
+              <AccordionItem
+                value="liabilities"
+                className="border rounded-lg bg-card">
+                <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                  <div className="flex items-center gap-3">
+                    <CreditCard className="h-5 w-5 text-tup-primary" />
+                    <span className="text-lg font-semibold">Liabilities</span>
+                    <Badge variant="secondary" className="ml-2">
+                      {liabilities.length} item{liabilities.length !== 1 ? 's' : ''}
+                    </Badge>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-6">
+                  {liabilities.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Nature of Liability</TableHead>
+                            <TableHead>Name of Creditors</TableHead>
+                            <TableHead className="text-right">
+                              Outstanding Balance
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {liabilities.map(
+                            (
+                              liability: {
+                                nature: string;
+                                creditorName: string;
+                                outstandingBalance: string | null;
+                              },
+                              index: number
+                            ) => (
+                              <TableRow key={index}>
+                                <TableCell className="font-medium">
+                                  {liability.nature}
+                                </TableCell>
+                                <TableCell>{liability.creditorName}</TableCell>
+                                <TableCell className="text-right font-semibold text-amber-700 dark:text-amber-400">
+                                  {formatCurrency(liability.outstandingBalance)}
+                                </TableCell>
+                              </TableRow>
+                            )
+                          )}
+                        </TableBody>
+                        <TableFooter>
+                          <TableRow>
+                            <TableCell
+                              colSpan={2}
+                              className="text-right font-semibold">
+                              Total Liabilities:
+                            </TableCell>
+                            <TableCell className="text-right font-bold text-amber-700 dark:text-amber-400">
+                              {formatCurrency(totalLiabilities)}
                             </TableCell>
                           </TableRow>
-                        )
-                      )}
-                    </TableBody>
-                    <TableFooter>
-                      <TableRow>
-                        <TableCell className="text-right font-semibold">
-                          Total Personal Properties:
-                        </TableCell>
-                        <TableCell />
-                        <TableCell className="text-right font-bold text-emerald-700 dark:text-emerald-400">
-                          {formatCurrency(totalPersonalProperties)}
-                        </TableCell>
-                      </TableRow>
-                    </TableFooter>
-                  </Table>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground italic text-center py-8">
-                  No personal properties declared
-                </p>
-              )}
-            </SectionCard>
+                        </TableFooter>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <CreditCard className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+                      <p className="text-sm text-muted-foreground italic">
+                        No liabilities declared
+                      </p>
+                    </div>
+                  )}
+                </AccordionContent>
+              </AccordionItem>
 
-            {/* Assets Summary Card */}
-            <Card className="gradient-emerald-summary border-emerald-200 dark:border-emerald-800">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2 text-emerald-800 dark:text-emerald-200">
-                  <TrendingUp className="h-5 w-5" />
-                  Total Assets Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-                    Real Properties
-                  </span>
-                  <span className="text-base font-semibold text-emerald-900 dark:text-emerald-100">
-                    {formatCurrency(totalRealProperties)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-                    Personal Properties
-                  </span>
-                  <span className="text-base font-semibold text-emerald-900 dark:text-emerald-100">
-                    {formatCurrency(totalPersonalProperties)}
-                  </span>
-                </div>
-                <Separator className="bg-emerald-200 dark:bg-emerald-800" />
-                <div className="flex justify-between items-center">
-                  <span className="text-base font-bold text-emerald-800 dark:text-emerald-200">
-                    Total Assets
-                  </span>
-                  <span className="text-xl font-bold text-emerald-900 dark:text-emerald-100">
-                    {formatCurrency(totalAssets)}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Liabilities Section */}
-            <SectionCard
-              title="Liabilities"
-              icon={<CreditCard className="h-5 w-5" />}>
-              {completeSubmission.liabilities &&
-              completeSubmission.liabilities.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nature of Liability</TableHead>
-                        <TableHead>Name of Creditors</TableHead>
-                        <TableHead className="text-right">
-                          Outstanding Balance
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {completeSubmission.liabilities.map(
-                        (
-                          liability: {
-                            nature: string;
-                            creditorName: string;
-                            outstandingBalance: string | null;
-                          },
-                          index: number
-                        ) => (
-                          <TableRow key={index}>
-                            <TableCell>{liability.nature}</TableCell>
-                            <TableCell>{liability.creditorName}</TableCell>
-                            <TableCell className="text-right font-medium">
-                              {formatCurrency(liability.outstandingBalance)}
-                            </TableCell>
-                          </TableRow>
-                        )
-                      )}
-                    </TableBody>
-                    <TableFooter>
-                      <TableRow>
-                        <TableCell
-                          colSpan={2}
-                          className="text-right font-semibold">
-                          Total Liabilities:
-                        </TableCell>
-                        <TableCell className="text-right font-bold text-amber-700 dark:text-amber-400">
-                          {formatCurrency(totalLiabilities)}
-                        </TableCell>
-                      </TableRow>
-                    </TableFooter>
-                  </Table>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground italic text-center py-8">
-                  No liabilities declared
-                </p>
-              )}
-            </SectionCard>
-
-            {/* Net Worth Summary Card */}
-            <Card className="gradient-blue-card border-blue-200 dark:border-blue-800">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2 text-blue-800 dark:text-blue-200">
-                  <Wallet className="h-5 w-5" />
-                  Net Worth Calculation
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center text-lg">
-                  <span className="font-medium text-blue-700 dark:text-blue-300">
-                    Total Assets
-                  </span>
-                  <span className="font-semibold text-blue-900 dark:text-blue-100">
-                    {formatCurrency(totalAssets)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-lg">
-                  <span className="font-medium text-blue-700 dark:text-blue-300">
-                    Less: Total Liabilities
-                  </span>
-                  <span className="font-semibold text-blue-900 dark:text-blue-100">
-                    ({formatCurrency(totalLiabilities)})
-                  </span>
-                </div>
-                <Separator className="bg-blue-200 dark:bg-blue-800" />
-                <div className="flex justify-between items-center">
-                  <span className="text-xl font-bold text-blue-800 dark:text-blue-200">
-                    Net Worth
-                  </span>
-                  <span className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                    {formatCurrency(netWorth)}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Business Interests Section */}
-            <SectionCard
-              title="Business Interests & Financial Connections"
-              icon={<Building2 className="h-5 w-5" />}>
-              {completeSubmission.businessInterests &&
-              completeSubmission.businessInterests.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Entity Name</TableHead>
-                      <TableHead>Business Address</TableHead>
-                      <TableHead>Nature of Business</TableHead>
-                      <TableHead>Date Acquired</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {completeSubmission.businessInterests.map(
-                      (
-                        business: {
-                          entityName: string;
-                          businessAddress: string;
-                          natureOfBusiness: string;
-                          dateOfAcquisition: string | null;
-                        },
-                        index: number
-                      ) => (
-                        <TableRow key={index}>
-                          <TableCell>{business.entityName}</TableCell>
-                          <TableCell>{business.businessAddress}</TableCell>
-                          <TableCell>{business.natureOfBusiness}</TableCell>
-                          <TableCell>
-                            {business.dateOfAcquisition
-                              ? format(
-                                  new Date(business.dateOfAcquisition),
-                                  'MMM d, yyyy'
-                                )
-                              : '-'}
-                          </TableCell>
-                        </TableRow>
-                      )
+              {/* Net Worth Calculation Section */}
+              <AccordionItem
+                value="net-worth"
+                className="border rounded-lg bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950">
+                <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                  <div className="flex items-center gap-3">
+                    <Wallet className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <span className="text-lg font-semibold text-blue-800 dark:text-blue-200">
+                      Net Worth Calculation
+                    </span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-6">
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center p-3 bg-white/50 dark:bg-black/20 rounded-lg">
+                      <span className="text-base font-medium text-blue-700 dark:text-blue-300">
+                        Total Assets
+                      </span>
+                      <span className="text-lg font-semibold text-blue-900 dark:text-blue-100">
+                        {formatCurrency(totalAssets)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-white/50 dark:bg-black/20 rounded-lg">
+                      <span className="text-base font-medium text-blue-700 dark:text-blue-300">
+                        Less: Total Liabilities
+                      </span>
+                      <span className="text-lg font-semibold text-blue-900 dark:text-blue-100">
+                        ({formatCurrency(totalLiabilities)})
+                      </span>
+                    </div>
+                    <Separator className="bg-blue-300 dark:bg-blue-700" />
+                    <div className="flex justify-between items-center p-4 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
+                      <span className="text-xl font-bold text-blue-800 dark:text-blue-200">
+                        Net Worth
+                      </span>
+                      <span className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                        {formatCurrency(netWorth)}
+                      </span>
+                    </div>
+                    {previousYear && (
+                      <>
+                        <Separator className="bg-blue-200 dark:bg-blue-800" />
+                        <div className="space-y-2 p-3 bg-white/50 dark:bg-black/20 rounded-lg">
+                          <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                            Year-over-Year Comparison
+                          </p>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">
+                              {previousYear.fiscalYear} Net Worth:
+                            </span>
+                            <span className="font-semibold">
+                              {formatCurrency(
+                                parseFloat(previousYear.netWorth)
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Change:</span>
+                            <span
+                              className={`font-semibold ${
+                                parseFloat(previousYear.netWorthChange) >= 0
+                                  ? 'text-emerald-600 dark:text-emerald-400'
+                                  : 'text-red-600 dark:text-red-400'
+                              }`}>
+                              {parseFloat(previousYear.netWorthChange) >= 0
+                                ? '+'
+                                : ''}
+                              {formatCurrency(
+                                parseFloat(previousYear.netWorthChange)
+                              )}{' '}
+                              ({previousYear.netWorthChangePercent >= 0 ? '+' : ''}
+                              {previousYear.netWorthChangePercent.toFixed(2)}%)
+                            </span>
+                          </div>
+                        </div>
+                      </>
                     )}
-                  </TableBody>
-                </Table>
-              ) : (
-                <p className="text-sm text-muted-foreground italic text-center py-8">
-                  No business interests declared
-                </p>
-              )}
-            </SectionCard>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
 
-            {/* Relatives in Government Section */}
-            <SectionCard
-              title="Relatives in Government Service"
-              icon={<Users className="h-5 w-5" />}>
-              {completeSubmission.relativesInGov &&
-              completeSubmission.relativesInGov.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Relationship</TableHead>
-                      <TableHead>Position</TableHead>
-                      <TableHead>Agency/Office Address</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {completeSubmission.relativesInGov.map(
-                      (
-                        relative: {
-                          name: string;
-                          relationship: string;
-                          position: string;
-                          agencyAddress: string;
-                        },
-                        index: number
-                      ) => (
-                        <TableRow key={index}>
-                          <TableCell>{relative.name}</TableCell>
-                          <TableCell className="capitalize">
-                            {relative.relationship}
-                          </TableCell>
-                          <TableCell>{relative.position}</TableCell>
-                          <TableCell>{relative.agencyAddress}</TableCell>
-                        </TableRow>
-                      )
-                    )}
-                  </TableBody>
-                </Table>
-              ) : (
-                <p className="text-sm text-muted-foreground italic text-center py-8">
-                  No relatives in government service declared
-                </p>
-              )}
-            </SectionCard>
+              {/* Business Interests Section */}
+              <AccordionItem
+                value="business-interests"
+                className="border rounded-lg bg-card">
+                <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                  <div className="flex items-center gap-3">
+                    <Building2 className="h-5 w-5 text-tup-primary" />
+                    <span className="text-lg font-semibold">
+                      Business Interests & Financial Connections
+                    </span>
+                    <Badge variant="secondary" className="ml-2">
+                      {businessInterests.length} item
+                      {businessInterests.length !== 1 ? 's' : ''}
+                    </Badge>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-6">
+                  {businessInterests.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Entity Name</TableHead>
+                            <TableHead>Business Address</TableHead>
+                            <TableHead>Nature of Business</TableHead>
+                            <TableHead>Date Acquired</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {businessInterests.map(
+                            (
+                              business: {
+                                entityName: string;
+                                businessAddress: string;
+                                natureOfBusiness: string;
+                                dateOfAcquisition: string | null;
+                              },
+                              index: number
+                            ) => (
+                              <TableRow key={index}>
+                                <TableCell className="font-medium">
+                                  {business.entityName}
+                                </TableCell>
+                                <TableCell className="max-w-xs truncate">
+                                  {business.businessAddress}
+                                </TableCell>
+                                <TableCell>{business.natureOfBusiness}</TableCell>
+                                <TableCell>
+                                  {business.dateOfAcquisition
+                                    ? format(
+                                        new Date(business.dateOfAcquisition),
+                                        'MMM d, yyyy'
+                                      )
+                                    : '-'}
+                                </TableCell>
+                              </TableRow>
+                            )
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <Building2 className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+                      <p className="text-sm text-muted-foreground italic">
+                        No business interests declared
+                      </p>
+                    </div>
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+
+              {/* Relatives in Government Section */}
+              <AccordionItem
+                value="relatives-in-gov"
+                className="border rounded-lg bg-card">
+                <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                  <div className="flex items-center gap-3">
+                    <Users className="h-5 w-5 text-tup-primary" />
+                    <span className="text-lg font-semibold">
+                      Relatives in Government Service
+                    </span>
+                    <Badge variant="secondary" className="ml-2">
+                      {relativesInGov.length} relative
+                      {relativesInGov.length !== 1 ? 's' : ''}
+                    </Badge>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-6">
+                  {relativesInGov.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Relationship</TableHead>
+                            <TableHead>Position</TableHead>
+                            <TableHead>Agency/Office Address</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {relativesInGov.map(
+                            (
+                              relative: {
+                                name: string;
+                                relationship: string;
+                                position: string;
+                                agencyAddress: string;
+                              },
+                              index: number
+                            ) => (
+                              <TableRow key={index}>
+                                <TableCell className="font-medium">
+                                  {relative.name}
+                                </TableCell>
+                                <TableCell className="capitalize">
+                                  {relative.relationship}
+                                </TableCell>
+                                <TableCell>{relative.position}</TableCell>
+                                <TableCell className="max-w-xs truncate">
+                                  {relative.agencyAddress}
+                                </TableCell>
+                              </TableRow>
+                            )
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <Users className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+                      <p className="text-sm text-muted-foreground italic">
+                        No relatives in government service declared
+                      </p>
+                    </div>
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </div>
 
           {/* Sidebar - Employee Info */}
@@ -755,20 +956,28 @@ export default function SalnSubmissionViewPage() {
               <CardContent className="space-y-6">
                 {/* Avatar & Name */}
                 <div className="flex flex-col items-center text-center space-y-3">
-                  {submissionUser && (
+                  {employee && (
                     <UserAvatar
-                      user={submissionUser}
+                      user={{
+                        firstName: employee.firstName,
+                        lastName: employee.lastName,
+                      }}
                       size="lg"
                       className="h-20 w-20"
                     />
                   )}
                   <div>
                     <h3 className="font-semibold text-lg">
-                      {submissionUser?.firstName} {submissionUser?.lastName}
+                      {employee?.firstName} {employee?.lastName}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {submissionUser?.employeeId}
+                      {employee?.employeeId || 'N/A'}
                     </p>
+                    {employee?.email && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {employee.email}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -778,11 +987,20 @@ export default function SalnSubmissionViewPage() {
                 <div className="space-y-3 text-sm">
                   <div>
                     <dt className="text-muted-foreground">Department</dt>
-                    <dd className="font-medium">{department?.name || 'N/A'}</dd>
+                    <dd className="font-medium">
+                      {employee?.department?.name || 'N/A'}
+                    </dd>
+                    {employee?.department?.code && (
+                      <dd className="text-xs text-muted-foreground">
+                        {employee.department.code}
+                      </dd>
+                    )}
                   </div>
                   <div>
                     <dt className="text-muted-foreground">Position</dt>
-                    <dd className="font-medium">{position?.title || 'N/A'}</dd>
+                    <dd className="font-medium">
+                      {employee?.position?.title || 'N/A'}
+                    </dd>
                   </div>
                   <div>
                     <dt className="text-muted-foreground">Year</dt>
@@ -790,31 +1008,37 @@ export default function SalnSubmissionViewPage() {
                       <Badge
                         variant="outline"
                         className="bg-tup-primary/10 text-tup-primary border-tup-primary/20">
-                        {submission.year}
+                        {submission?.fiscalYear}
                       </Badge>
                     </dd>
                   </div>
                   <div>
                     <dt className="text-muted-foreground">Status</dt>
                     <dd>
-                      <StatusBadge status={submission.status} />
+                      <StatusBadge status={submission?.status || 'draft'} />
                     </dd>
                   </div>
                   <div>
                     <dt className="text-muted-foreground">Submitted</dt>
                     <dd className="font-medium">
-                      {format(
-                        new Date(submission.createdAt),
-                        'MMM d, yyyy h:mm a'
-                      )}
+                      {submission?.submittedAt
+                        ? format(
+                            new Date(submission.submittedAt),
+                            'MMM d, yyyy h:mm a'
+                          )
+                        : 'N/A'}
                     </dd>
                   </div>
-                  {submission.updatedAt && (
+                  {submission?.reviewedAt && submission?.reviewedBy && (
                     <div>
-                      <dt className="text-muted-foreground">Last Updated</dt>
+                      <dt className="text-muted-foreground">Reviewed By</dt>
                       <dd className="font-medium">
+                        {submission.reviewedBy.firstName}{' '}
+                        {submission.reviewedBy.lastName}
+                      </dd>
+                      <dd className="text-xs text-muted-foreground">
                         {format(
-                          new Date(submission.updatedAt),
+                          new Date(submission.reviewedAt),
                           'MMM d, yyyy h:mm a'
                         )}
                       </dd>
@@ -878,18 +1102,20 @@ export default function SalnSubmissionViewPage() {
       </div>
 
       {/* Review Dialog */}
-      <ReviewDialog
-        open={isReviewDialogOpen}
-        onOpenChange={setIsReviewDialogOpen}
-        submissionId={submissionId}
-        submissionType="saln"
-        currentStatus={submission.status}
-        employeeName={`${submissionUser?.firstName} ${submissionUser?.lastName}`}
-        onApprove={handleApprove}
-        onReject={handleReject}
-        onRequestChanges={handleRequestChanges}
-        isSubmitting={isSubmitting}
-      />
+      {submission && employee && (
+        <ReviewDialog
+          open={isReviewDialogOpen}
+          onOpenChange={setIsReviewDialogOpen}
+          submissionId={submissionId}
+          submissionType="saln"
+          currentStatus={submission.status}
+          employeeName={`${employee.firstName} ${employee.lastName}`}
+          onApprove={handleApprove}
+          onReject={handleReject}
+          onRequestChanges={handleRequestChanges}
+          isSubmitting={isSubmitting}
+        />
+      )}
     </>
   );
 }

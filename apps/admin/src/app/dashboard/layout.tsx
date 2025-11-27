@@ -17,6 +17,7 @@ import {
   Moon,
   ChevronRight,
   UserCheck,
+  Briefcase,
 } from 'lucide-react';
 
 import { useAuth } from '@/context/AuthContext';
@@ -84,6 +85,12 @@ const navItems: NavItem[] = [
     href: '/dashboard/submissions/saln',
     icon: Landmark,
     badge: '8', // TODO: Replace with actual count from API
+    section: 'management',
+  },
+  {
+    name: 'Jobs',
+    href: '/dashboard/jobs',
+    icon: Briefcase,
     section: 'management',
   },
   // System Section

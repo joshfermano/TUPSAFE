@@ -45,7 +45,17 @@
       "Bash(node -e:*)",
       "Bash(npm ls:*)",
       "Bash(npm install)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "mcp__serena__list_dir",
+      "mcp__serena__get_symbols_overview",
+      "mcp__serena__initial_instructions",
+      "mcp__serena__list_memories",
+      "mcp__serena__read_memory",
+      "mcp__filesystem__write_file",
+      "mcp__shadcn__get_project_registries",
+      "mcp__shadcn__list_items_in_registries",
+      "Bash(npm run lint:admin:*)",
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": []

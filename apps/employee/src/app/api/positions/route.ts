@@ -1,53 +1,41 @@
 /**
- * Positions API Route
+ * Open Positions API Route
+ * GET /api/positions
  *
- * Comprehensive endpoint for fetching organizational positions (not job openings).
- * These are the official positions within departments (e.g., Professor, Department Head).
+ * Fetches open job positions for applicants with filtering and sorting.
+ * This endpoint returns job openings (from openPositions table), not organizational positions.
  *
  * @module api/positions
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@tupsafe/auth/server';
-import {
-  getPositionsByDepartment,
-  type PaginationOptions,
-} from '@tupsafe/database/server';
-import { db, positions } from '@tupsafe/database/server';
-import { eq, and } from 'drizzle-orm';
+import { db } from '@tupsafe/database/server';
+import { openPositions, departments, jobApplications } from '@tupsafe/database/server';
+import { eq, and, desc, asc, sql } from 'drizzle-orm';
 
 /**
  * GET /api/positions
  *
- * Get organizational positions with optional filtering and pagination.
- * Returns positions within the organizational structure, not job openings.
- *
- * Note: For job openings/vacancies, use the /api/open-positions endpoint instead.
+ * Get open job positions with optional filtering and sorting.
+ * Returns positions that are actively recruiting (status='open').
  *
  * @authentication Required - Employee or Applicant
  *
- * @queryparam {string} departmentId - UUID of department to filter positions
- * @queryparam {string} organizationId - Alias for departmentId (for compatibility)
- * @queryparam {number} page - Page number for pagination (default: 1, min: 1)
- * @queryparam {number} limit - Items per page (default: 20, min: 1, max: 100)
+ * @queryparam {string} status - Filter by status (default: 'open')
+ * @queryparam {string} orgId - Filter by department/organization ID
+ * @queryparam {string} employmentCategory - Filter by employment category (faculty, administrative, contractual)
+ * @queryparam {string} sort - Sort order: deadline, salary, posted (default: deadline)
  *
- * @returns {object} JSON response with positions and pagination metadata
- *
- * @example
- * // Get all positions (paginated)
- * GET /api/positions?page=1&limit=20
+ * @returns {object} JSON response with open positions
  *
  * @example
- * // Get positions for specific department
- * GET /api/positions?departmentId=550e8400-e29b-41d4-a716-446655440000
+ * // Get all open positions
+ * GET /api/positions?status=open
  *
  * @example
- * // Using organizationId alias
- * GET /api/positions?organizationId=550e8400-e29b-41d4-a716-446655440000&limit=50
- *
- * @throws {401} Unauthorized - Missing or invalid authentication
- * @throws {400} Bad Request - Invalid query parameters
- * @throws {500} Internal Server Error - Database or server error
+ * // Get open faculty positions sorted by deadline
+ * GET /api/positions?status=open&employmentCategory=faculty&sort=deadline
  */
 export async function GET(request: NextRequest) {
   try {
@@ -63,7 +51,7 @@ export async function GET(request: NextRequest) {
         {
           success: false,
           error: 'Unauthorized',
-          message: 'Authentication required. Please log in to access this resource.'
+          message: 'Authentication required. Please log in to access this resource.',
         },
         { status: 401 }
       );
@@ -81,7 +69,7 @@ export async function GET(request: NextRequest) {
         {
           success: false,
           error: 'Forbidden',
-          message: 'User profile not found or invalid.'
+          message: 'User profile not found or invalid.',
         },
         { status: 403 }
       );
@@ -92,124 +80,129 @@ export async function GET(request: NextRequest) {
         {
           success: false,
           error: 'Forbidden',
-          message: 'Account is not active. Please contact support.'
+          message: 'Account is not active. Please contact support.',
         },
         { status: 403 }
       );
     }
 
-    // 3. Parse and validate query parameters
+    // 3. Parse query parameters
     const searchParams = request.nextUrl.searchParams;
+    const statusFilter = (searchParams.get('status') || 'open') as 'open' | 'closed' | 'filled' | 'cancelled';
+    const orgId = searchParams.get('orgId');
+    const employmentCategory = searchParams.get('employmentCategory') as 'faculty' | 'administrative' | 'contractual' | 'not_applicable' | null;
+    const sortBy = searchParams.get('sort') || 'deadline';
 
-    // Support both departmentId and organizationId for compatibility
-    const departmentId = searchParams.get('departmentId') || searchParams.get('organizationId');
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20')));
+    // 4. Build WHERE conditions
+    const conditions = [eq(openPositions.status, statusFilter)];
 
-    // Validate departmentId format if provided
-    if (departmentId) {
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(departmentId)) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Bad Request',
-            message: 'Invalid department ID format. Must be a valid UUID.'
-          },
-          { status: 400 }
-        );
-      }
+    if (orgId) {
+      conditions.push(eq(openPositions.departmentId, orgId));
     }
 
-    // 4. Prepare pagination options
-    const paginationOptions: PaginationOptions = {
-      limit,
-      offset: (page - 1) * limit,
-    };
+    if (employmentCategory && ['faculty', 'administrative', 'contractual', 'not_applicable'].includes(employmentCategory)) {
+      conditions.push(eq(openPositions.employmentCategory, employmentCategory));
+    }
 
-    // 5. Fetch positions based on query parameters
-    let positionsList;
-    let totalCount = 0;
+    // 5. Determine sort order
+    let orderByClause;
+    switch (sortBy) {
+      case 'salary':
+        orderByClause = desc(openPositions.salaryRangeMax);
+        break;
+      case 'posted':
+        orderByClause = desc(openPositions.postedAt);
+        break;
+      case 'deadline':
+      default:
+        orderByClause = asc(openPositions.applicationDeadline);
+        break;
+    }
 
-    try {
-      if (departmentId) {
-        // Fetch positions for specific department
-        positionsList = await getPositionsByDepartment(departmentId, paginationOptions);
+    // 6. Fetch positions with department details
+    const positionsQuery = await db
+      .select({
+        // Position fields
+        id: openPositions.id,
+        positionTitle: openPositions.positionTitle,
+        positionCode: openPositions.positionCode,
+        departmentId: openPositions.departmentId,
+        employmentCategory: openPositions.employmentCategory,
+        salaryGrade: openPositions.salaryGrade,
+        salaryRangeMin: openPositions.salaryRangeMin,
+        salaryRangeMax: openPositions.salaryRangeMax,
+        employmentType: openPositions.employmentType,
+        description: openPositions.description,
+        qualifications: openPositions.qualifications,
+        responsibilities: openPositions.responsibilities,
+        requirements: openPositions.requirements,
+        numberOfOpenings: openPositions.numberOfOpenings,
+        applicationsReceived: openPositions.applicationsReceived,
+        applicationDeadline: openPositions.applicationDeadline,
+        isFeatured: openPositions.isFeatured,
+        status: openPositions.status,
+        postedAt: openPositions.postedAt,
+        updatedAt: openPositions.updatedAt,
+        // Department fields
+        departmentName: departments.name,
+        departmentCode: departments.code,
+      })
+      .from(openPositions)
+      .leftJoin(departments, eq(openPositions.departmentId, departments.id))
+      .where(and(...conditions))
+      .orderBy(orderByClause);
 
-        // Get total count for this department
-        const countResult = await db
-          .select({ count: positions.id })
-          .from(positions)
+    // 7. Check application status for each position (if applicant)
+    const positionsWithStatus = await Promise.all(
+      positionsQuery.map(async (position) => {
+        // Check if user has applied
+        const applicationQuery = await db
+          .select({
+            id: jobApplications.id,
+            status: jobApplications.status,
+          })
+          .from(jobApplications)
           .where(
             and(
-              eq(positions.departmentId, departmentId),
-              eq(positions.isActive, true)
+              eq(jobApplications.applicantId, user.id),
+              eq(jobApplications.positionId, position.id)
             )
-          );
-        totalCount = countResult.length;
-      } else {
-        // Fetch all active positions (paginated)
-        positionsList = await db
-          .select()
-          .from(positions)
-          .where(eq(positions.isActive, true))
-          .orderBy(positions.title)
-          .limit(paginationOptions.limit || 20)
-          .offset(paginationOptions.offset || 0);
+          )
+          .limit(1);
 
-        // Get total count of all active positions
-        const countResult = await db
-          .select({ count: positions.id })
-          .from(positions)
-          .where(eq(positions.isActive, true));
-        totalCount = countResult.length;
-      }
-    } catch (dbError) {
-      console.error('[GET /api/positions] Database error:', dbError);
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Database Error',
-          message: 'Failed to retrieve positions from database.',
-          details: dbError instanceof Error ? dbError.message : 'Unknown database error'
-        },
-        { status: 500 }
-      );
-    }
+        const hasApplied = applicationQuery.length > 0;
+        const applicationStatus = hasApplied ? applicationQuery[0].status : null;
 
-    // 6. Calculate pagination metadata
-    const totalPages = Math.ceil(totalCount / limit);
-    const hasNextPage = page < totalPages;
-    const hasPrevPage = page > 1;
+        return {
+          ...position,
+          hasApplied,
+          applicationStatus,
+        };
+      })
+    );
 
-    // 7. Return successful response with cache headers
+    // 8. Return successful response
     return NextResponse.json(
       {
         success: true,
-        data: positionsList,
-        pagination: {
-          page,
-          limit,
-          total: totalCount,
-          totalPages,
-          hasNextPage,
-          hasPrevPage,
-        },
-        meta: {
-          departmentId: departmentId || null,
+        data: positionsWithStatus,
+        total: positionsWithStatus.length,
+        filters: {
+          status: statusFilter,
+          orgId: orgId || null,
+          employmentCategory: employmentCategory || null,
+          sort: sortBy,
         },
       },
       {
         status: 200,
         headers: {
-          // Cache for 1 hour (positions are relatively static)
-          // Allow stale content for 1 day while revalidating
-          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+          // Cache for 3 minutes (positions change frequently during recruitment)
+          'Cache-Control': 'public, s-maxage=180, stale-while-revalidate=600',
         },
       }
     );
   } catch (error) {
-    // 8. Handle unexpected errors
     console.error('[GET /api/positions] Unexpected error:', error);
     return NextResponse.json(
       {
