@@ -77,14 +77,12 @@ const navItems: NavItem[] = [
     name: 'PDS Submissions',
     href: '/dashboard/submissions/pds',
     icon: FileText,
-    badge: '12', // TODO: Replace with actual count from API
     section: 'management',
   },
   {
     name: 'SALN Submissions',
     href: '/dashboard/submissions/saln',
     icon: Landmark,
-    badge: '8', // TODO: Replace with actual count from API
     section: 'management',
   },
   {
@@ -144,7 +142,7 @@ const SidebarNav = memo(
       ? `${profile.firstName} ${profile.lastName}`
       : user?.email || 'Admin User';
     const userRole =
-      (profile?.role === 'admin' ? 'Administrator' : 'HR Personnel');
+      profile?.role === 'admin' ? 'Administrator' : 'HR Personnel';
 
     // Group navigation items by section
     const groupedNavItems = navItems.reduce((acc, item) => {
