@@ -1,13 +1,10 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { MockDatabase, type Profile } from '@tupsafe/mock-data';
-import {
-  searchUsers,
-  filterUsersByRole,
-  filterUsersByDepartment,
-  filterUsersByActiveStatus,
-} from '@/lib/mock-helpers';
+import type {
+  UserListResponse,
+  UpdateUserData,
+} from '@tupsafe/types';
 
 /**
  * Users query key factory
@@ -16,25 +13,51 @@ export const usersKeys = {
   all: ['users'] as const,
   list: (filters: UsersFilters) => [...usersKeys.all, 'list', filters] as const,
   detail: (userId: string) => [...usersKeys.all, 'detail', userId] as const,
+  stats: () => [...usersKeys.all, 'stats'] as const,
 };
 
 /**
- * Filters for user queries
+ * Filters for user queries (aligned with API query params)
  */
 export interface UsersFilters {
-  role?: string | null;
-  department?: string | null;
-  query?: string;
-  activeOnly?: boolean;
+  page?: number;
+  limit?: number;
+  search?: string;
+  role?: string;
+  userType?: 'employee' | 'applicant';
+  accountStatus?: 'pending' | 'active' | 'suspended' | 'rejected';
+  isActive?: boolean;
+  departmentId?: string;
+  employmentCategory?: 'faculty' | 'administrative' | 'contractual' | 'not_applicable';
+  sortBy?: 'firstName' | 'lastName' | 'createdAt' | 'updatedAt' | 'role';
+  sortOrder?: 'asc' | 'desc';
 }
 
 /**
- * User with related data
+ * Create user data for POST /api/auth/create-user
  */
-export interface UserWithDetails {
-  profile: Profile;
-  department: ReturnType<typeof MockDatabase.getDepartment> | null;
-  position: ReturnType<typeof MockDatabase.getPosition> | null;
+export interface CreateUserData {
+  email: string;
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  phoneNumber?: string;
+  role: 'employee' | 'hr' | 'admin' | 'supervisor' | 'auditor';
+  departmentId?: string;
+  positionId?: string;
+  academicRank?: string;
+  tenureStatus?: string;
+  employmentType?: string;
+  campusAssignment?: string;
+  sendCredentials?: boolean;
+}
+
+/**
+ * Password reset data for POST /api/users/[id]/reset-password
+ */
+export interface PasswordResetData {
+  sendEmail?: boolean;
+  temporaryPassword?: string;
 }
 
 /**
@@ -51,10 +74,11 @@ export interface UserWithDetails {
  * const {
  *   users,
  *   isLoading,
+ *   pagination,
  *   createUser,
  *   updateUser,
  *   deleteUser,
- * } = useUsersQuery({ role: 'employee', activeOnly: true });
+ * } = useUsersQuery({ role: 'employee', isActive: true });
  *
  * // Create a new user
  * await createUser({
@@ -69,41 +93,35 @@ export function useUsersQuery(filters: UsersFilters = {}) {
   const queryClient = useQueryClient();
 
   // Main query for users list
-  const query = useQuery<UserWithDetails[], Error>({
+  const query = useQuery<UserListResponse, Error>({
     queryKey: usersKeys.list(filters),
     queryFn: async () => {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      // Build query parameters
+      const params = new URLSearchParams();
 
-      let users = MockDatabase.profiles;
+      if (filters.page) params.append('page', filters.page.toString());
+      if (filters.limit) params.append('limit', filters.limit.toString());
+      if (filters.search) params.append('search', filters.search);
+      if (filters.role) params.append('role', filters.role);
+      if (filters.userType) params.append('userType', filters.userType);
+      if (filters.accountStatus) params.append('accountStatus', filters.accountStatus);
+      if (filters.isActive !== undefined) params.append('isActive', filters.isActive.toString());
+      if (filters.departmentId) params.append('departmentId', filters.departmentId);
+      if (filters.employmentCategory) params.append('employmentCategory', filters.employmentCategory);
+      if (filters.sortBy) params.append('sortBy', filters.sortBy);
+      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
 
-      // Apply search filter
-      if (filters.query) {
-        const searchResults = searchUsers(filters.query);
-        return searchResults;
+      const response = await fetch(`/api/users?${params.toString()}`);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.error || `Failed to fetch users: ${response.statusText}`
+        );
       }
 
-      // Apply role filter
-      if (filters.role) {
-        users = filterUsersByRole(users, filters.role);
-      }
-
-      // Apply department filter
-      if (filters.department) {
-        users = filterUsersByDepartment(users, filters.department);
-      }
-
-      // Apply active status filter
-      if (filters.activeOnly) {
-        users = filterUsersByActiveStatus(users, filters.activeOnly);
-      }
-
-      // Map to include related data
-      return users.map((profile) => ({
-        profile,
-        department: profile.departmentId ? MockDatabase.getDepartment(profile.departmentId) : null,
-        position: profile.positionId ? MockDatabase.getPosition(profile.positionId) : null,
-      }));
+      const data: UserListResponse = await response.json();
+      return data;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes garbage collection
@@ -112,7 +130,7 @@ export function useUsersQuery(filters: UsersFilters = {}) {
   });
 
   /**
-   * Query for a single user's details
+   * Query for a single user's detailed information
    */
   const useUserDetail = (userId: string | null) => {
     return useQuery({
@@ -120,109 +138,106 @@ export function useUsersQuery(filters: UsersFilters = {}) {
       queryFn: async () => {
         if (!userId) return null;
 
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        const response = await fetch(`/api/users/${userId}`);
 
-        const profile = MockDatabase.getProfile(userId);
-        if (!profile) return null;
+        if (!response.ok) {
+          if (response.status === 404) {
+            return null;
+          }
+          const errorData = await response.json().catch(() => null);
+          throw new Error(
+            errorData?.error || `Failed to fetch user: ${response.statusText}`
+          );
+        }
 
-        return {
-          profile,
-          department: profile.departmentId ? MockDatabase.getDepartment(profile.departmentId) : null,
-          position: profile.positionId ? MockDatabase.getPosition(profile.positionId) : null,
-        };
+        const result = await response.json();
+        return result.data;
       },
       enabled: !!userId,
       staleTime: 5 * 60 * 1000,
+      retry: 2,
     });
   };
 
   /**
-   * Mutation to create a new user
+   * Mutation to create a new user via POST /api/auth/create-user
    */
   const createUserMutation = useMutation({
-    mutationFn: async (userData: Partial<Profile>) => {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
+    mutationFn: async (userData: CreateUserData) => {
+      const response = await fetch('/api/auth/create-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
 
-      const newUser: Profile = {
-        id: crypto.randomUUID(),
-        firstName: userData.firstName || '',
-        lastName: userData.lastName || '',
-        middleName: userData.middleName || null,
-        employeeId: userData.employeeId || `EMP-${Date.now()}`,
-        userType: 'employee',
-        role: userData.role || 'employee',
-        departmentId: userData.departmentId || null,
-        positionId: userData.positionId || null,
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.error || `Failed to create user: ${response.statusText}`
+        );
+      }
 
-      // Add to mock database
-      MockDatabase.profiles.push(newUser);
-
-      return {
-        profile: newUser,
-        department: newUser.departmentId ? MockDatabase.getDepartment(newUser.departmentId) : null,
-        position: newUser.positionId ? MockDatabase.getPosition(newUser.positionId) : null,
-      };
+      const result = await response.json();
+      return result.data;
     },
-    onSuccess: (newUser) => {
-      // Add to cache optimistically
-      queryClient.setQueryData<UserWithDetails[]>(
-        usersKeys.list(filters),
-        (old = []) => [newUser, ...old]
-      );
-    },
-    onSettled: () => {
-      // Invalidate all user queries to ensure consistency
+    onSuccess: () => {
+      // Invalidate all user queries to refetch with new user
       queryClient.invalidateQueries({ queryKey: usersKeys.all });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+    onError: (error) => {
+      console.error('Create user error:', error);
     },
   });
 
   /**
-   * Mutation to update an existing user
+   * Mutation to update an existing user via PATCH /api/users/[id]
    */
   const updateUserMutation = useMutation({
-    mutationFn: async ({ userId, data }: { userId: string; data: Partial<Profile> }) => {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
+    mutationFn: async ({ userId, data }: { userId: string; data: UpdateUserData }) => {
+      const response = await fetch(`/api/users/${userId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
 
-      const userIndex = MockDatabase.profiles.findIndex((u) => u.id === userId);
-      if (userIndex === -1) {
-        throw new Error('User not found');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.error || `Failed to update user: ${response.statusText}`
+        );
       }
 
-      const updatedUser: Profile = {
-        ...MockDatabase.profiles[userIndex],
-        ...data,
-        updatedAt: new Date(),
-      };
-
-      MockDatabase.profiles[userIndex] = updatedUser;
-
-      return {
-        profile: updatedUser,
-        department: updatedUser.departmentId ? MockDatabase.getDepartment(updatedUser.departmentId) : null,
-        position: updatedUser.positionId ? MockDatabase.getPosition(updatedUser.positionId) : null,
-      };
+      const result = await response.json();
+      return result.data;
     },
     onMutate: async ({ userId }) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: usersKeys.all });
 
       // Snapshot previous value
-      const previousUsers = queryClient.getQueryData<UserWithDetails[]>(usersKeys.list(filters));
+      const previousUsers = queryClient.getQueryData<UserListResponse>(
+        usersKeys.list(filters)
+      );
 
       // Optimistically update
-      queryClient.setQueryData<UserWithDetails[]>(
+      queryClient.setQueryData<UserListResponse>(
         usersKeys.list(filters),
-        (old = []) => old.map((user) =>
-          user.profile.id === userId
-            ? { ...user, profile: { ...user.profile, updatedAt: new Date() } }
-            : user
-        )
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            users: old.users.map((user) =>
+              user.id === userId
+                ? { ...user, updatedAt: new Date() }
+                : user
+            ),
+          };
+        }
       );
 
       return { previousUsers };
@@ -240,34 +255,52 @@ export function useUsersQuery(filters: UsersFilters = {}) {
   });
 
   /**
-   * Mutation to delete a user
+   * Mutation to soft delete a user via DELETE /api/users/[id]
+   * Sets isActive=false and accountStatus='rejected'
    */
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const response = await fetch(`/api/users/${userId}`, {
+        method: 'DELETE',
+      });
 
-      const userIndex = MockDatabase.profiles.findIndex((u) => u.id === userId);
-      if (userIndex === -1) {
-        throw new Error('User not found');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.error || `Failed to delete user: ${response.statusText}`
+        );
       }
 
-      // In production, this might be a soft delete
-      MockDatabase.profiles.splice(userIndex, 1);
-
-      return userId;
+      const result = await response.json();
+      return result.data;
     },
     onMutate: async (userId) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: usersKeys.all });
 
       // Snapshot previous value
-      const previousUsers = queryClient.getQueryData<UserWithDetails[]>(usersKeys.list(filters));
+      const previousUsers = queryClient.getQueryData<UserListResponse>(
+        usersKeys.list(filters)
+      );
 
-      // Optimistically remove from cache
-      queryClient.setQueryData<UserWithDetails[]>(
+      // Optimistically remove from cache (or mark as inactive)
+      queryClient.setQueryData<UserListResponse>(
         usersKeys.list(filters),
-        (old = []) => old.filter((user) => user.profile.id !== userId)
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            users: old.users.map((user) =>
+              user.id === userId
+                ? { ...user, isActive: false, accountStatus: 'rejected' as const }
+                : user
+            ),
+            pagination: {
+              ...old.pagination,
+              total: old.pagination.total - 1,
+            },
+          };
+        }
       );
 
       return { previousUsers };
@@ -281,44 +314,82 @@ export function useUsersQuery(filters: UsersFilters = {}) {
     onSettled: () => {
       // Refetch to ensure consistency
       queryClient.invalidateQueries({ queryKey: usersKeys.all });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
 
   /**
    * Mutation to toggle user active status
+   * Uses the update mutation but specifically for isActive field
    */
   const toggleUserStatusMutation = useMutation({
     mutationFn: async (userId: string) => {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      // First fetch current user to get their isActive status
+      const response = await fetch(`/api/users/${userId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch user status');
+      }
+      const result = await response.json();
+      const currentStatus = result.data.isActive;
 
-      const userIndex = MockDatabase.profiles.findIndex((u) => u.id === userId);
-      if (userIndex === -1) {
-        throw new Error('User not found');
+      // Update with opposite status
+      const updateResponse = await fetch(`/api/users/${userId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isActive: !currentStatus }),
+      });
+
+      if (!updateResponse.ok) {
+        const errorData = await updateResponse.json().catch(() => null);
+        throw new Error(
+          errorData?.error || `Failed to toggle user status: ${updateResponse.statusText}`
+        );
       }
 
-      const updatedUser: Profile = {
-        ...MockDatabase.profiles[userIndex],
-        isActive: !MockDatabase.profiles[userIndex].isActive,
-        updatedAt: new Date(),
-      };
-
-      MockDatabase.profiles[userIndex] = updatedUser;
-
-      return {
-        profile: updatedUser,
-        department: updatedUser.departmentId ? MockDatabase.getDepartment(updatedUser.departmentId) : null,
-        position: updatedUser.positionId ? MockDatabase.getPosition(updatedUser.positionId) : null,
-      };
+      const updateResult = await updateResponse.json();
+      return updateResult.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: usersKeys.all });
     },
   });
 
+  /**
+   * Mutation to reset user password via POST /api/users/[id]/reset-password
+   */
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ userId, data }: { userId: string; data: PasswordResetData }) => {
+      const response = await fetch(`/api/users/${userId}/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.error || `Failed to reset password: ${response.statusText}`
+        );
+      }
+
+      const result = await response.json();
+      return result;
+    },
+    onSuccess: () => {
+      // Invalidate user detail query to reflect temporary password flag
+      queryClient.invalidateQueries({ queryKey: usersKeys.all });
+    },
+  });
+
   return {
     ...query,
-    users: query.data ?? [],
+    users: query.data?.users ?? [],
+    pagination: query.data?.pagination,
+    filterOptions: query.data?.filters,
     useUserDetail,
     createUser: createUserMutation.mutate,
     createUserAsync: createUserMutation.mutateAsync,
@@ -336,6 +407,10 @@ export function useUsersQuery(filters: UsersFilters = {}) {
     toggleUserStatusAsync: toggleUserStatusMutation.mutateAsync,
     isTogglingStatus: toggleUserStatusMutation.isPending,
     toggleStatusError: toggleUserStatusMutation.error,
+    resetPassword: resetPasswordMutation.mutate,
+    resetPasswordAsync: resetPasswordMutation.mutateAsync,
+    isResettingPassword: resetPasswordMutation.isPending,
+    resetPasswordError: resetPasswordMutation.error,
   };
 }
 

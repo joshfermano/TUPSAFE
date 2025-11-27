@@ -15,6 +15,11 @@ import {
   Heart,
   BookOpen,
   Info,
+  FileText,
+  HelpCircle,
+  UserCheck,
+  AlertCircle,
+  Check,
 } from 'lucide-react';
 
 import {
@@ -36,14 +41,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import { Badge } from '@/components/ui/badge';
 
 import { StatusBadge } from '@/components/admin/StatusBadge';
 import { UserAvatar } from '@/components/admin/UserAvatar';
-import {
-  SectionCard,
-  SectionCardField,
-  SectionCardGrid,
-} from '@/components/admin/SectionCard';
+import { SectionCardField, SectionCardGrid } from '@/components/admin/SectionCard';
 import { ReviewDialog } from '@/components/admin/ReviewDialog';
 import { LoadingCard } from '@/components/admin/LoadingCard';
 import { ErrorAlert } from '@/components/admin/ErrorAlert';
@@ -61,15 +69,21 @@ import {
   formatBoolean,
   formatHeight,
   formatWeight,
+  capitalize,
 } from '@/lib/formatting-helpers';
+import type { PDSSubmissionDetail } from '@tupsafe/types';
 
 /**
- * PDS Submission View Page
+ * PDS Submission View Page - Enhanced with Full CSC Format Sections
  *
  * Comprehensive view page for reviewing PDS submissions in the admin portal.
+ * Features complete CSC format with all 10 sections, validation indicators,
+ * and collapsible accordions for better organization.
  *
  * Features:
- * - Complete PDS data display with all sections
+ * - Complete PDS data display with all CSC sections
+ * - Collapsible accordion sections for easy navigation
+ * - Validation indicators (complete/incomplete)
  * - Employee information sidebar
  * - Review actions (Approve, Reject, Request Changes)
  * - Breadcrumb navigation
@@ -165,6 +179,34 @@ export default function PdsSubmissionViewPage() {
     });
   }, []);
 
+  // Validation helper functions
+  const isSectionComplete = (sectionData: unknown): boolean => {
+    if (!sectionData) return false;
+    if (Array.isArray(sectionData)) return sectionData.length > 0;
+    if (typeof sectionData === 'object') {
+      return Object.values(sectionData).some((val) => {
+        if (val === null || val === undefined) return false;
+        if (typeof val === 'object') return Object.keys(val).length > 0;
+        return true;
+      });
+    }
+    return !!sectionData;
+  };
+
+  const ValidationBadge = ({ isComplete }: { isComplete: boolean }) => {
+    return isComplete ? (
+      <Badge variant="outline" className="gap-1 bg-emerald-50 text-emerald-700 border-emerald-200">
+        <Check className="h-3 w-3" />
+        Complete
+      </Badge>
+    ) : (
+      <Badge variant="outline" className="gap-1 bg-amber-50 text-amber-700 border-amber-200">
+        <AlertCircle className="h-3 w-3" />
+        Incomplete
+      </Badge>
+    );
+  };
+
   // Loading state
   if (isLoading) {
     return (
@@ -203,8 +245,17 @@ export default function PdsSubmissionViewPage() {
     );
   }
 
-  const { submission, user: submissionUser, department, position } = completeSubmission;
-  const canReview = submission.status === 'submitted' || submission.status === 'reviewing';
+  const {
+    submission,
+    employee: submissionUser,
+    pdsData,
+  } = completeSubmission as PDSSubmissionDetail;
+  const canReview =
+    submission.status === 'submitted' || submission.status === 'reviewing';
+
+  // Department and position info
+  const department = submissionUser?.department;
+  const position = submissionUser?.position;
 
   return (
     <>
@@ -245,12 +296,25 @@ export default function PdsSubmissionViewPage() {
                 <h1 className="text-3xl font-bold tracking-tight">PDS Submission Review</h1>
               </div>
               <p className="text-muted-foreground">
-                Submitted on {format(new Date(submission.createdAt), 'MMMM d, yyyy')}
+                Submitted on{' '}
+                {submission.submittedAt
+                  ? format(new Date(submission.submittedAt), 'MMMM d, yyyy')
+                  : 'N/A'}
+                {' • '}Version {submission.version}
               </p>
             </div>
 
             <div className="flex items-center gap-3">
-              <StatusBadge status={submission.status} />
+              <StatusBadge
+                status={
+                  submission.status as
+                    | 'draft'
+                    | 'submitted'
+                    | 'reviewing'
+                    | 'approved'
+                    | 'rejected'
+                }
+              />
               {canReview && (
                 <>
                   <Button
@@ -278,499 +342,811 @@ export default function PdsSubmissionViewPage() {
         <div className="grid gap-6 lg:grid-cols-[1fr_350px]">
           {/* Main Content */}
           <div className="space-y-6">
-            {/* Personal Information Section */}
-            <SectionCard title="Personal Information" icon={<User className="h-5 w-5" />}>
-              <div className="space-y-6">
-                {/* Basic Info */}
-                <div>
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-3">
-                    Basic Information
-                  </h4>
-                  <SectionCardGrid columns={3}>
-                    <SectionCardField
-                      label="Surname"
-                      value={completeSubmission.personalInfo?.surname}
-                    />
-                    <SectionCardField
-                      label="First Name"
-                      value={completeSubmission.personalInfo?.firstName}
-                    />
-                    <SectionCardField
-                      label="Middle Name"
-                      value={completeSubmission.personalInfo?.middleName}
-                    />
-                    <SectionCardField
-                      label="Name Extension"
-                      value={completeSubmission.personalInfo?.nameExtension}
-                    />
-                    <SectionCardField
-                      label="Date of Birth"
-                      value={
-                        completeSubmission.personalInfo?.dateOfBirth
-                          ? format(
-                              new Date(completeSubmission.personalInfo.dateOfBirth),
-                              'MMMM d, yyyy'
-                            )
-                          : null
-                      }
-                    />
-                    <SectionCardField
-                      label="Place of Birth"
-                      value={completeSubmission.personalInfo?.placeOfBirth}
-                    />
-                  </SectionCardGrid>
-                </div>
+            {/* CSC Format Sections - Collapsible Accordions */}
+            <Card className="gradient-card-subtle backdrop-blur-sm border-primary-subtle">
+              <CardHeader>
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Personal Data Sheet (CSC Revised 2017)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Accordion type="multiple" defaultValue={['section-1']} className="w-full">
+                  {/* I. PERSONAL INFORMATION */}
+                  <AccordionItem value="section-1">
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <div className="flex items-center gap-3">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-semibold">I. PERSONAL INFORMATION</span>
+                        </div>
+                        <ValidationBadge isComplete={isSectionComplete(pdsData.personalInfo)} />
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-6 pt-4">
+                        {/* Name */}
+                        <div>
+                          <h4 className="text-sm font-semibold text-muted-foreground mb-3">
+                            1. Full Name
+                          </h4>
+                          <SectionCardGrid columns={4}>
+                            <SectionCardField
+                              label="Surname"
+                              value={pdsData.personalInfo?.surname}
+                            />
+                            <SectionCardField
+                              label="First Name"
+                              value={pdsData.personalInfo?.firstName}
+                            />
+                            <SectionCardField
+                              label="Middle Name"
+                              value={pdsData.personalInfo?.middleName}
+                            />
+                            <SectionCardField
+                              label="Name Extension"
+                              value={pdsData.personalInfo?.nameExtension}
+                            />
+                          </SectionCardGrid>
+                        </div>
 
-                <Separator />
+                        <Separator />
 
-                {/* Address Information */}
-                <div>
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-3">
-                    Address & Contact
-                  </h4>
-                  <SectionCardGrid columns={2}>
-                    <SectionCardField
-                      label="Residential Address"
-                      value={formatAddress(completeSubmission.personalInfo?.residentialAddress)}
-                    />
-                    <SectionCardField
-                      label="Permanent Address"
-                      value={formatAddress(completeSubmission.personalInfo?.permanentAddress)}
-                    />
-                    <SectionCardField
-                      label="Telephone Number"
-                      value={completeSubmission.personalInfo?.telephoneNo}
-                    />
-                    <SectionCardField
-                      label="Mobile Number"
-                      value={completeSubmission.personalInfo?.mobileNo}
-                    />
-                    <SectionCardField
-                      label="Email Address"
-                      value={completeSubmission.personalInfo?.emailAddress}
-                    />
-                  </SectionCardGrid>
-                </div>
+                        {/* Birth Information */}
+                        <div>
+                          <h4 className="text-sm font-semibold text-muted-foreground mb-3">
+                            2. Birth Information
+                          </h4>
+                          <SectionCardGrid columns={3}>
+                            <SectionCardField
+                              label="Date of Birth"
+                              value={
+                                pdsData.personalInfo?.dateOfBirth
+                                  ? format(new Date(pdsData.personalInfo.dateOfBirth), 'MMMM d, yyyy')
+                                  : null
+                              }
+                            />
+                            <SectionCardField
+                              label="Place of Birth"
+                              value={pdsData.personalInfo?.placeOfBirth}
+                            />
+                            <SectionCardField label="Sex" value={capitalize(pdsData.personalInfo?.sex)} />
+                          </SectionCardGrid>
+                        </div>
 
-                <Separator />
+                        <Separator />
 
-                {/* Civil Status & Citizenship */}
-                <div>
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-3">
-                    Civil Status & Citizenship
-                  </h4>
-                  <SectionCardGrid columns={2}>
-                    <SectionCardField
-                      label="Civil Status"
-                      value={completeSubmission.personalInfo?.civilStatus}
-                    />
-                    <SectionCardField
-                      label="Citizenship"
-                      value={formatCitizenship(completeSubmission.personalInfo?.citizenship)}
-                    />
-                  </SectionCardGrid>
-                </div>
+                        {/* Civil Status & Citizenship */}
+                        <div>
+                          <h4 className="text-sm font-semibold text-muted-foreground mb-3">
+                            3. Civil Status & Citizenship
+                          </h4>
+                          <SectionCardGrid columns={2}>
+                            <SectionCardField
+                              label="Civil Status"
+                              value={capitalize(pdsData.personalInfo?.civilStatus)}
+                            />
+                            <SectionCardField
+                              label="Citizenship"
+                              value={
+                                pdsData.personalInfo?.citizenship
+                                  ? formatCitizenship(pdsData.personalInfo.citizenship as never)
+                                  : 'N/A'
+                              }
+                            />
+                          </SectionCardGrid>
+                        </div>
 
-                <Separator />
+                        <Separator />
 
-                {/* Additional Information */}
-                <div>
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-3">
-                    Additional Information
-                  </h4>
-                  <SectionCardGrid columns={4}>
-                    <SectionCardField
-                      label="Height"
-                      value={formatHeight(completeSubmission.personalInfo?.heightM)}
-                    />
-                    <SectionCardField
-                      label="Weight"
-                      value={formatWeight(completeSubmission.personalInfo?.weightKg)}
-                    />
-                    <SectionCardField
-                      label="Blood Type"
-                      value={completeSubmission.personalInfo?.bloodType}
-                    />
-                    <SectionCardField
-                      label="Sex"
-                      value={completeSubmission.personalInfo?.sex}
-                    />
-                    <SectionCardField
-                      label="GSIS ID No."
-                      value={completeSubmission.personalInfo?.gsisNo}
-                    />
-                    <SectionCardField
-                      label="PAG-IBIG ID No."
-                      value={completeSubmission.personalInfo?.pagibigNo}
-                    />
-                    <SectionCardField
-                      label="PhilHealth No."
-                      value={completeSubmission.personalInfo?.philhealthNo}
-                    />
-                    <SectionCardField
-                      label="SSS No."
-                      value={completeSubmission.personalInfo?.sssNo}
-                    />
-                    <SectionCardField
-                      label="TIN"
-                      value={completeSubmission.personalInfo?.tinNo}
-                    />
-                    <SectionCardField
-                      label="Agency Employee No."
-                      value={completeSubmission.personalInfo?.agencyEmployeeNo}
-                    />
-                  </SectionCardGrid>
-                </div>
-              </div>
-            </SectionCard>
+                        {/* Physical Attributes */}
+                        <div>
+                          <h4 className="text-sm font-semibold text-muted-foreground mb-3">
+                            4. Physical Attributes
+                          </h4>
+                          <SectionCardGrid columns={4}>
+                            <SectionCardField
+                              label="Height"
+                              value={formatHeight(pdsData.personalInfo?.height)}
+                            />
+                            <SectionCardField
+                              label="Weight"
+                              value={formatWeight(pdsData.personalInfo?.weight)}
+                            />
+                            <SectionCardField
+                              label="Blood Type"
+                              value={pdsData.personalInfo?.bloodType}
+                            />
+                          </SectionCardGrid>
+                        </div>
 
-            {/* Family Background */}
-            <SectionCard title="Family Background" icon={<Users className="h-5 w-5" />}>
-              <div className="space-y-6">
-                {/* Spouse Information */}
-                {completeSubmission.familyBackground?.spouseSurname && (
-                  <>
-                    <div>
-                      <h4 className="text-sm font-semibold text-muted-foreground mb-3">
-                        Spouse Information
-                      </h4>
-                      <SectionCardGrid columns={2}>
-                        <SectionCardField
-                          label="Surname"
-                          value={completeSubmission.familyBackground.spouseSurname}
+                        <Separator />
+
+                        {/* Address & Contact */}
+                        <div>
+                          <h4 className="text-sm font-semibold text-muted-foreground mb-3">
+                            5. Address & Contact Information
+                          </h4>
+                          <SectionCardGrid columns={2}>
+                            <SectionCardField
+                              label="Residential Address"
+                              value={formatAddress(pdsData.personalInfo?.residentialAddress)}
+                            />
+                            <SectionCardField
+                              label="Permanent Address"
+                              value={formatAddress(pdsData.personalInfo?.permanentAddress)}
+                            />
+                            <SectionCardField
+                              label="Telephone Number"
+                              value={pdsData.personalInfo?.telephoneNo}
+                            />
+                            <SectionCardField
+                              label="Mobile Number"
+                              value={pdsData.personalInfo?.mobileNo}
+                            />
+                            <SectionCardField
+                              label="Email Address"
+                              value={pdsData.personalInfo?.emailAddress}
+                            />
+                          </SectionCardGrid>
+                        </div>
+
+                        <Separator />
+
+                        {/* Government IDs */}
+                        <div>
+                          <h4 className="text-sm font-semibold text-muted-foreground mb-3">
+                            6. Government Issued IDs
+                          </h4>
+                          <SectionCardGrid columns={3}>
+                            <SectionCardField label="GSIS ID No." value={pdsData.personalInfo?.gsisNo} />
+                            <SectionCardField
+                              label="PAG-IBIG ID No."
+                              value={pdsData.personalInfo?.pagibigNo}
+                            />
+                            <SectionCardField
+                              label="PhilHealth No."
+                              value={pdsData.personalInfo?.philhealthNo}
+                            />
+                            <SectionCardField label="SSS No." value={pdsData.personalInfo?.sssNo} />
+                            <SectionCardField label="TIN" value={pdsData.personalInfo?.tinNo} />
+                          </SectionCardGrid>
+                        </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  {/* II. FAMILY BACKGROUND */}
+                  <AccordionItem value="section-2">
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <div className="flex items-center gap-3">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-semibold">II. FAMILY BACKGROUND</span>
+                        </div>
+                        <ValidationBadge isComplete={isSectionComplete(pdsData.familyBackground)} />
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-6 pt-4">
+                        {/* Spouse Information */}
+                        {pdsData.familyBackground?.spouse?.surname && (
+                          <>
+                            <div>
+                              <h4 className="text-sm font-semibold text-muted-foreground mb-3">
+                                Spouse Information
+                              </h4>
+                              <SectionCardGrid columns={2}>
+                                <SectionCardField
+                                  label="Surname"
+                                  value={pdsData.familyBackground.spouse.surname}
+                                />
+                                <SectionCardField
+                                  label="First Name"
+                                  value={pdsData.familyBackground.spouse.firstName}
+                                />
+                                <SectionCardField
+                                  label="Middle Name"
+                                  value={pdsData.familyBackground.spouse.middleName}
+                                />
+                                <SectionCardField
+                                  label="Name Extension"
+                                  value={pdsData.familyBackground.spouse.nameExtension}
+                                />
+                                <SectionCardField
+                                  label="Occupation"
+                                  value={pdsData.familyBackground.spouse.occupation}
+                                />
+                                <SectionCardField
+                                  label="Employer/Business Name"
+                                  value={pdsData.familyBackground.spouse.employer}
+                                />
+                                <SectionCardField
+                                  label="Business Address"
+                                  value={pdsData.familyBackground.spouse.businessAddress}
+                                />
+                                <SectionCardField
+                                  label="Telephone No."
+                                  value={pdsData.familyBackground.spouse.telephoneNo}
+                                />
+                              </SectionCardGrid>
+                            </div>
+                            <Separator />
+                          </>
+                        )}
+
+                        {/* Father Information */}
+                        <div>
+                          <h4 className="text-sm font-semibold text-muted-foreground mb-3">
+                            Father&apos;s Name
+                          </h4>
+                          <SectionCardGrid columns={3}>
+                            <SectionCardField
+                              label="Surname"
+                              value={pdsData.familyBackground?.father?.surname}
+                            />
+                            <SectionCardField
+                              label="First Name"
+                              value={pdsData.familyBackground?.father?.firstName}
+                            />
+                            <SectionCardField
+                              label="Middle Name"
+                              value={pdsData.familyBackground?.father?.middleName}
+                            />
+                          </SectionCardGrid>
+                        </div>
+
+                        <Separator />
+
+                        {/* Mother Information */}
+                        <div>
+                          <h4 className="text-sm font-semibold text-muted-foreground mb-3">
+                            Mother&apos;s Maiden Name
+                          </h4>
+                          <SectionCardGrid columns={3}>
+                            <SectionCardField
+                              label="Maiden Surname"
+                              value={pdsData.familyBackground?.mother?.maidenName}
+                            />
+                            <SectionCardField
+                              label="First Name"
+                              value={pdsData.familyBackground?.mother?.firstName}
+                            />
+                            <SectionCardField
+                              label="Middle Name"
+                              value={pdsData.familyBackground?.mother?.middleName}
+                            />
+                          </SectionCardGrid>
+                        </div>
+
+                        {/* Children */}
+                        {pdsData.children && pdsData.children.length > 0 && (
+                          <>
+                            <Separator />
+                            <div>
+                              <h4 className="text-sm font-semibold text-muted-foreground mb-3">
+                                Children (List all children&apos;s names in chronological order)
+                              </h4>
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="w-12">#</TableHead>
+                                    <TableHead>Name of Children</TableHead>
+                                    <TableHead>Date of Birth</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {pdsData.children.map((child, index) => (
+                                    <TableRow key={index}>
+                                      <TableCell>{index + 1}</TableCell>
+                                      <TableCell className="font-medium">{child.name}</TableCell>
+                                      <TableCell>
+                                        {format(new Date(child.dateOfBirth), 'MMMM d, yyyy')}
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          </>
+                        )}
+
+                        {(!pdsData.children || pdsData.children.length === 0) && (
+                          <>
+                            <Separator />
+                            <p className="text-sm text-muted-foreground italic text-center py-4">
+                              No children listed
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  {/* III. EDUCATIONAL BACKGROUND */}
+                  <AccordionItem value="section-3">
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <div className="flex items-center gap-3">
+                          <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-semibold">III. EDUCATIONAL BACKGROUND</span>
+                        </div>
+                        <ValidationBadge isComplete={isSectionComplete(pdsData.education)} />
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="pt-4">
+                        {pdsData.education && pdsData.education.length > 0 ? (
+                          <div className="overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="min-w-[120px]">Level</TableHead>
+                                  <TableHead className="min-w-[200px]">
+                                    Name of School
+                                  </TableHead>
+                                  <TableHead className="min-w-[180px]">
+                                    Basic Education/Degree/Course
+                                  </TableHead>
+                                  <TableHead className="min-w-[120px]">Period of Attendance</TableHead>
+                                  <TableHead className="min-w-[140px]">
+                                    Highest Level/Units Earned
+                                  </TableHead>
+                                  <TableHead className="min-w-[100px]">Year Graduated</TableHead>
+                                  <TableHead className="min-w-[180px]">
+                                    Scholarship/Academic Honors
+                                  </TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {pdsData.education.map((edu, index) => (
+                                  <TableRow key={index}>
+                                    <TableCell className="font-medium capitalize">
+                                      {edu.level}
+                                    </TableCell>
+                                    <TableCell>{edu.schoolName}</TableCell>
+                                    <TableCell>{edu.basicEducation || '-'}</TableCell>
+                                    <TableCell>
+                                      {formatYearRange(edu.periodFrom, edu.periodTo)}
+                                    </TableCell>
+                                    <TableCell>{edu.highestLevel || '-'}</TableCell>
+                                    <TableCell>{edu.yearGraduated || '-'}</TableCell>
+                                    <TableCell>{edu.scholarshipHonors || '-'}</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic text-center py-8">
+                            No educational background provided
+                          </p>
+                        )}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  {/* IV. CIVIL SERVICE ELIGIBILITY */}
+                  <AccordionItem value="section-4">
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <div className="flex items-center gap-3">
+                          <Award className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-semibold">IV. CIVIL SERVICE ELIGIBILITY</span>
+                        </div>
+                        <ValidationBadge isComplete={isSectionComplete(pdsData.civilService)} />
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="pt-4">
+                        {pdsData.civilService && pdsData.civilService.length > 0 ? (
+                          <div className="overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="min-w-[240px]">
+                                    Career Service/RA 1080 (Board/Bar) Under Special Laws/CES/CSEE
+                                  </TableHead>
+                                  <TableHead className="min-w-[100px]">Rating</TableHead>
+                                  <TableHead className="min-w-[120px]">Date of Examination</TableHead>
+                                  <TableHead className="min-w-[180px]">Place of Examination</TableHead>
+                                  <TableHead className="min-w-[140px]">License Number</TableHead>
+                                  <TableHead className="min-w-[120px]">Date of Validity</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {pdsData.civilService.map((exam, index) => (
+                                  <TableRow key={index}>
+                                    <TableCell className="font-medium">
+                                      {exam.careerService || 'N/A'}
+                                    </TableCell>
+                                    <TableCell>
+                                      {exam.rating ? `${exam.rating.toFixed(2)}%` : '-'}
+                                    </TableCell>
+                                    <TableCell>
+                                      {exam.dateOfExamination
+                                        ? format(new Date(exam.dateOfExamination), 'MMM d, yyyy')
+                                        : '-'}
+                                    </TableCell>
+                                    <TableCell>{exam.placeOfExamination || '-'}</TableCell>
+                                    <TableCell>{exam.licenseNumber || '-'}</TableCell>
+                                    <TableCell>
+                                      {exam.validity
+                                        ? format(new Date(exam.validity), 'MMM d, yyyy')
+                                        : '-'}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic text-center py-8">
+                            No civil service eligibility provided
+                          </p>
+                        )}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  {/* V. WORK EXPERIENCE */}
+                  <AccordionItem value="section-5">
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <div className="flex items-center gap-3">
+                          <Briefcase className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-semibold">V. WORK EXPERIENCE</span>
+                        </div>
+                        <ValidationBadge isComplete={isSectionComplete(pdsData.workExperience)} />
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="pt-4">
+                        {pdsData.workExperience && pdsData.workExperience.length > 0 ? (
+                          <div className="overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="min-w-[120px]">
+                                    Inclusive Dates
+                                  </TableHead>
+                                  <TableHead className="min-w-[200px]">Position Title</TableHead>
+                                  <TableHead className="min-w-[240px]">
+                                    Department/Agency/Office/Company
+                                  </TableHead>
+                                  <TableHead className="min-w-[120px]">Monthly Salary</TableHead>
+                                  <TableHead className="min-w-[100px]">Salary Grade</TableHead>
+                                  <TableHead className="min-w-[160px]">Status of Appointment</TableHead>
+                                  <TableHead className="min-w-[100px]">Gov&apos;t Service</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {pdsData.workExperience.map((work, index) => (
+                                  <TableRow key={index}>
+                                    <TableCell>
+                                      {formatDateRange(work.periodFrom, work.periodTo)}
+                                    </TableCell>
+                                    <TableCell className="font-medium">
+                                      {work.positionTitle || 'N/A'}
+                                    </TableCell>
+                                    <TableCell>{work.department || 'N/A'}</TableCell>
+                                    <TableCell>{formatCurrency(work.monthlySalary)}</TableCell>
+                                    <TableCell>{work.salaryGrade || '-'}</TableCell>
+                                    <TableCell>{work.statusOfAppointment || '-'}</TableCell>
+                                    <TableCell>
+                                      {work.govService !== undefined
+                                        ? formatBoolean(work.govService)
+                                        : '-'}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic text-center py-8">
+                            No work experience provided
+                          </p>
+                        )}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  {/* VI. VOLUNTARY WORK */}
+                  <AccordionItem value="section-6">
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <div className="flex items-center gap-3">
+                          <Heart className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-semibold">
+                            VI. VOLUNTARY WORK OR INVOLVEMENT IN CIVIC/NON-GOVERNMENT/PEOPLE/VOLUNTARY
+                            ORGANIZATIONS
+                          </span>
+                        </div>
+                        <ValidationBadge isComplete={isSectionComplete(pdsData.voluntaryWork)} />
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="pt-4">
+                        {pdsData.voluntaryWork && pdsData.voluntaryWork.length > 0 ? (
+                          <div className="overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="min-w-[240px]">
+                                    Name & Address of Organization
+                                  </TableHead>
+                                  <TableHead className="min-w-[120px]">
+                                    Inclusive Dates
+                                  </TableHead>
+                                  <TableHead className="min-w-[100px]">Number of Hours</TableHead>
+                                  <TableHead className="min-w-[180px]">
+                                    Position/Nature of Work
+                                  </TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {pdsData.voluntaryWork.map((work, index) => (
+                                  <TableRow key={index}>
+                                    <TableCell className="font-medium">
+                                      <div>
+                                        <p>{work.organization || 'N/A'}</p>
+                                        {work.natureOfWork && (
+                                          <p className="text-xs text-muted-foreground mt-1">
+                                            {work.natureOfWork}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      {formatDateRange(work.periodFrom, work.periodTo)}
+                                    </TableCell>
+                                    <TableCell>{work.numberOfHours || '-'}</TableCell>
+                                    <TableCell>{work.position || '-'}</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic text-center py-8">
+                            No voluntary work or involvement provided
+                          </p>
+                        )}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  {/* VII. LEARNING AND DEVELOPMENT */}
+                  <AccordionItem value="section-7">
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <div className="flex items-center gap-3">
+                          <BookOpen className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-semibold">
+                            VII. LEARNING AND DEVELOPMENT (L&D) INTERVENTIONS/TRAINING PROGRAMS ATTENDED
+                          </span>
+                        </div>
+                        <ValidationBadge isComplete={isSectionComplete(pdsData.training)} />
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="pt-4">
+                        {pdsData.training && pdsData.training.length > 0 ? (
+                          <div className="overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="min-w-[240px]">
+                                    Title of Learning and Development Interventions/Training Programs
+                                  </TableHead>
+                                  <TableHead className="min-w-[120px]">
+                                    Inclusive Dates
+                                  </TableHead>
+                                  <TableHead className="min-w-[100px]">Number of Hours</TableHead>
+                                  <TableHead className="min-w-[140px]">Type of LD</TableHead>
+                                  <TableHead className="min-w-[240px]">Conducted/Sponsored By</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {pdsData.training.map((training, index) => (
+                                  <TableRow key={index}>
+                                    <TableCell className="font-medium">
+                                      {training.title || 'N/A'}
+                                    </TableCell>
+                                    <TableCell>
+                                      {training.periodFrom && training.periodTo
+                                        ? `${format(new Date(training.periodFrom), 'MMM dd, yyyy')} - ${format(new Date(training.periodTo), 'MMM dd, yyyy')}`
+                                        : '-'}
+                                    </TableCell>
+                                    <TableCell>{training.numberOfHours || '-'}</TableCell>
+                                    <TableCell>{training.type || '-'}</TableCell>
+                                    <TableCell>{training.conductedBy || '-'}</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic text-center py-8">
+                            No training or development programs provided
+                          </p>
+                        )}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  {/* VIII. OTHER INFORMATION */}
+                  <AccordionItem value="section-8">
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <div className="flex items-center gap-3">
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-semibold">VIII. OTHER INFORMATION</span>
+                        </div>
+                        <ValidationBadge isComplete={isSectionComplete(pdsData.otherInfo)} />
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-6 pt-4">
+                        <div>
+                          <h4 className="text-sm font-semibold text-muted-foreground mb-3">
+                            31. Special Skills and Hobbies
+                          </h4>
+                          <div className="p-4 bg-muted/30 rounded-md min-h-[60px]">
+                            {pdsData.otherInfo?.skills && pdsData.otherInfo.skills.length > 0 ? (
+                              <div className="flex flex-wrap gap-2">
+                                {pdsData.otherInfo.skills.map((skill, index) => (
+                                  <Badge key={index} variant="secondary">
+                                    {skill}
+                                  </Badge>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-muted-foreground italic">
+                                No special skills or hobbies listed
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <Separator />
+
+                        <div>
+                          <h4 className="text-sm font-semibold text-muted-foreground mb-3">
+                            32. Non-Academic Distinctions/Recognition
+                          </h4>
+                          <div className="p-4 bg-muted/30 rounded-md min-h-[60px]">
+                            {pdsData.otherInfo?.recognitions &&
+                            pdsData.otherInfo.recognitions.length > 0 ? (
+                              <ul className="space-y-2">
+                                {pdsData.otherInfo.recognitions.map((recog, index) => (
+                                  <li key={index} className="text-sm">
+                                    <span className="font-medium">
+                                      {recog.recognition || 'Recognition'}
+                                    </span>
+                                    {recog.date && (
+                                      <span className="text-muted-foreground"> ({recog.date})</span>
+                                    )}
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="text-sm text-muted-foreground italic">
+                                No recognitions listed
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <Separator />
+
+                        <div>
+                          <h4 className="text-sm font-semibold text-muted-foreground mb-3">
+                            33. Membership in Association/Organization
+                          </h4>
+                          <div className="p-4 bg-muted/30 rounded-md min-h-[60px]">
+                            {pdsData.otherInfo?.organizations &&
+                            pdsData.otherInfo.organizations.length > 0 ? (
+                              <ul className="space-y-2">
+                                {pdsData.otherInfo.organizations.map((org, index) => (
+                                  <li key={index} className="text-sm">
+                                    <span className="font-medium">
+                                      {org.organization || 'Organization'}
+                                    </span>
+                                    {org.role && (
+                                      <span className="text-muted-foreground"> - {org.role}</span>
+                                    )}
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="text-sm text-muted-foreground italic">
+                                No memberships listed
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  {/* IX. QUESTIONS (Placeholder - would need questions data from schema) */}
+                  <AccordionItem value="section-9">
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <div className="flex items-center gap-3">
+                          <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-semibold">IX. QUESTIONS (34-40)</span>
+                        </div>
+                        <Badge variant="outline" className="gap-1 bg-gray-50 text-gray-600 border-gray-200">
+                          <Info className="h-3 w-3" />
+                          Not Available
+                        </Badge>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="pt-4">
+                        <p className="text-sm text-muted-foreground italic text-center py-8">
+                          Questions section data not available in current submission
+                        </p>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  {/* X. REFERENCES */}
+                  <AccordionItem value="section-10">
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <div className="flex items-center gap-3">
+                          <UserCheck className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-semibold">X. REFERENCES</span>
+                        </div>
+                        <ValidationBadge
+                          isComplete={
+                            pdsData.otherInfo?.references
+                              ? pdsData.otherInfo.references.length > 0
+                              : false
+                          }
                         />
-                        <SectionCardField
-                          label="First Name"
-                          value={completeSubmission.familyBackground.spouseFirstName}
-                        />
-                        <SectionCardField
-                          label="Middle Name"
-                          value={completeSubmission.familyBackground.spouseMiddleName}
-                        />
-                        <SectionCardField
-                          label="Occupation"
-                          value={completeSubmission.familyBackground.spouseOccupation}
-                        />
-                        <SectionCardField
-                          label="Employer/Business"
-                          value={completeSubmission.familyBackground.spouseEmployer}
-                        />
-                        <SectionCardField
-                          label="Business Address"
-                          value={completeSubmission.familyBackground.spouseBusinessAddress}
-                        />
-                      </SectionCardGrid>
-                    </div>
-                    <Separator />
-                  </>
-                )}
-
-                {/* Father Information */}
-                <div>
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-3">
-                    Father Information
-                  </h4>
-                  <SectionCardGrid columns={2}>
-                    <SectionCardField
-                      label="Surname"
-                      value={completeSubmission.familyBackground?.fatherSurname}
-                    />
-                    <SectionCardField
-                      label="First Name"
-                      value={completeSubmission.familyBackground?.fatherFirstName}
-                    />
-                    <SectionCardField
-                      label="Middle Name"
-                      value={completeSubmission.familyBackground?.fatherMiddleName}
-                    />
-                  </SectionCardGrid>
-                </div>
-
-                <Separator />
-
-                {/* Mother Information */}
-                <div>
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-3">
-                    Mother Information
-                  </h4>
-                  <SectionCardGrid columns={2}>
-                    <SectionCardField
-                      label="Maiden Surname"
-                      value={completeSubmission.familyBackground?.motherMaidenSurname}
-                    />
-                    <SectionCardField
-                      label="First Name"
-                      value={completeSubmission.familyBackground?.motherFirstName}
-                    />
-                    <SectionCardField
-                      label="Middle Name"
-                      value={completeSubmission.familyBackground?.motherMiddleName}
-                    />
-                  </SectionCardGrid>
-                </div>
-
-                {/* Children */}
-                {completeSubmission.children && completeSubmission.children.length > 0 && (
-                  <>
-                    <Separator />
-                    <div>
-                      <h4 className="text-sm font-semibold text-muted-foreground mb-3">
-                        Children
-                      </h4>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Date of Birth</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {completeSubmission.children.map((child: { fullName: string; dateOfBirth: string }, index: number) => (
-                            <TableRow key={index}>
-                              <TableCell>{child.fullName}</TableCell>
-                              <TableCell>
-                                {format(new Date(child.dateOfBirth), 'MMMM d, yyyy')}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </>
-                )}
-              </div>
-            </SectionCard>
-
-            {/* Educational Background */}
-            <SectionCard
-              title="Educational Background"
-              icon={<GraduationCap className="h-5 w-5" />}
-            >
-              {completeSubmission.education && completeSubmission.education.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Level</TableHead>
-                      <TableHead>School Name</TableHead>
-                      <TableHead>Degree/Course</TableHead>
-                      <TableHead>Period</TableHead>
-                      <TableHead>Highest Level/Units</TableHead>
-                      <TableHead>Year Graduated</TableHead>
-                      <TableHead>Honors</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {completeSubmission.education.map((edu: { level: string; schoolName: string; degreeCourse: string | null; periodFrom: string | null; periodTo: string | null; highestLevelEarned: string | null; yearGraduated: number | null; honorsReceived: string | null }, index: number) => (
-                      <TableRow key={index}>
-                        <TableCell className="capitalize">{edu.level}</TableCell>
-                        <TableCell>{edu.schoolName}</TableCell>
-                        <TableCell>{edu.degreeCourse || '-'}</TableCell>
-                        <TableCell>
-                          {formatYearRange(edu.periodFrom, edu.periodTo)}
-                        </TableCell>
-                        <TableCell>{edu.highestLevelEarned || '-'}</TableCell>
-                        <TableCell>{edu.yearGraduated || '-'}</TableCell>
-                        <TableCell>{edu.honorsReceived || '-'}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <p className="text-sm text-muted-foreground italic text-center py-8">
-                  No educational background provided
-                </p>
-              )}
-            </SectionCard>
-
-            {/* Civil Service Eligibility */}
-            <SectionCard title="Civil Service Eligibility" icon={<Award className="h-5 w-5" />}>
-              {completeSubmission.civilService &&
-              completeSubmission.civilService.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Eligibility Name</TableHead>
-                      <TableHead>Rating</TableHead>
-                      <TableHead>Date of Exam</TableHead>
-                      <TableHead>Place of Exam</TableHead>
-                      <TableHead>License No.</TableHead>
-                      <TableHead>License Validity</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {completeSubmission.civilService.map((exam: { eligibilityName: string; rating: string | null; dateOfExam: string | null; placeOfExam: string | null; licenseNo: string | null; licenseValidityDate: string | null }, index: number) => (
-                      <TableRow key={index}>
-                        <TableCell>{exam.eligibilityName}</TableCell>
-                        <TableCell>{exam.rating || '-'}</TableCell>
-                        <TableCell>
-                          {exam.dateOfExam
-                            ? format(new Date(exam.dateOfExam), 'MMM d, yyyy')
-                            : '-'}
-                        </TableCell>
-                        <TableCell>{exam.placeOfExam || '-'}</TableCell>
-                        <TableCell>{exam.licenseNo || '-'}</TableCell>
-                        <TableCell>
-                          {exam.licenseValidityDate
-                            ? format(new Date(exam.licenseValidityDate), 'MMM d, yyyy')
-                            : '-'}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <p className="text-sm text-muted-foreground italic text-center py-8">
-                  No civil service eligibility provided
-                </p>
-              )}
-            </SectionCard>
-
-            {/* Work Experience */}
-            <SectionCard title="Work Experience" icon={<Briefcase className="h-5 w-5" />}>
-              {completeSubmission.workExperience &&
-              completeSubmission.workExperience.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Position</TableHead>
-                      <TableHead>Department/Agency</TableHead>
-                      <TableHead>Salary</TableHead>
-                      <TableHead>Salary Grade</TableHead>
-                      <TableHead>Period</TableHead>
-                      <TableHead>Gov&apos;t Service</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {completeSubmission.workExperience.map((work: { positionTitle: string; departmentAgency: string; monthlySalary: string | null; salaryGrade: string | null; dateFrom: string | null; dateTo: string | null; isGovernment: boolean | null }, index: number) => (
-                      <TableRow key={index}>
-                        <TableCell>{work.positionTitle}</TableCell>
-                        <TableCell>{work.departmentAgency}</TableCell>
-                        <TableCell>
-                          {formatCurrency(work.monthlySalary)}
-                        </TableCell>
-                        <TableCell>{work.salaryGrade || '-'}</TableCell>
-                        <TableCell>
-                          {formatDateRange(work.dateFrom, work.dateTo)}
-                        </TableCell>
-                        <TableCell>{formatBoolean(work.isGovernment)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <p className="text-sm text-muted-foreground italic text-center py-8">
-                  No work experience provided
-                </p>
-              )}
-            </SectionCard>
-
-            {/* Voluntary Work */}
-            <SectionCard title="Voluntary Work" icon={<Heart className="h-5 w-5" />}>
-              {completeSubmission.voluntaryWork &&
-              completeSubmission.voluntaryWork.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Organization</TableHead>
-                      <TableHead>Address</TableHead>
-                      <TableHead>Position/Nature</TableHead>
-                      <TableHead>Period</TableHead>
-                      <TableHead>Hours</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {completeSubmission.voluntaryWork.map((work: { organizationName: string; organizationAddress: string | null; positionNature: string | null; dateFrom: string | null; dateTo: string | null; numberOfHours: number | null }, index: number) => (
-                      <TableRow key={index}>
-                        <TableCell>{work.organizationName}</TableCell>
-                        <TableCell>{work.organizationAddress || '-'}</TableCell>
-                        <TableCell>{work.positionNature || '-'}</TableCell>
-                        <TableCell>
-                          {formatDateRange(work.dateFrom, work.dateTo)}
-                        </TableCell>
-                        <TableCell>{work.numberOfHours || '-'}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <p className="text-sm text-muted-foreground italic text-center py-8">
-                  No voluntary work provided
-                </p>
-              )}
-            </SectionCard>
-
-            {/* Learning & Development */}
-            <SectionCard
-              title="Learning & Development"
-              icon={<BookOpen className="h-5 w-5" />}
-            >
-              {completeSubmission.training && completeSubmission.training.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Training Title</TableHead>
-                      <TableHead>Type of LD</TableHead>
-                      <TableHead>Hours</TableHead>
-                      <TableHead>Period</TableHead>
-                      <TableHead>Conducted By</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {completeSubmission.training.map((training: { title: string; typeOfLd: string | null; hours: number | null; dateFrom: string | null; dateTo: string | null; conductedBy: string | null }, index: number) => (
-                      <TableRow key={index}>
-                        <TableCell>{training.title}</TableCell>
-                        <TableCell>{training.typeOfLd || '-'}</TableCell>
-                        <TableCell>{training.hours || '-'}</TableCell>
-                        <TableCell>
-                          {training.dateFrom && training.dateTo
-                            ? `${format(new Date(training.dateFrom), 'MMM dd, yyyy')} - ${format(new Date(training.dateTo), 'MMM dd, yyyy')}`
-                            : '-'}
-                        </TableCell>
-                        <TableCell>{training.conductedBy || '-'}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <p className="text-sm text-muted-foreground italic text-center py-8">
-                  No training or development programs provided
-                </p>
-              )}
-            </SectionCard>
-
-            {/* Other Information */}
-            <SectionCard title="Other Information" icon={<Info className="h-5 w-5" />}>
-              <div className="space-y-4">
-                <SectionCardField
-                  label="Special Skills & Hobbies"
-                  value={
-                    completeSubmission.otherInfo?.skills && completeSubmission.otherInfo.skills.length > 0
-                      ? completeSubmission.otherInfo.skills.join(', ')
-                      : null
-                  }
-                />
-                <SectionCardField
-                  label="Non-Academic Distinctions & Recognition"
-                  value={
-                    completeSubmission.otherInfo?.recognitions && completeSubmission.otherInfo.recognitions.length > 0
-                      ? completeSubmission.otherInfo.recognitions
-                          .map((r: { title: string; year: string; organization: string }) => `${r.title} (${r.year}) - ${r.organization}`)
-                          .join(' | ')
-                      : null
-                  }
-                />
-                <SectionCardField
-                  label="Membership in Organizations"
-                  value={
-                    completeSubmission.otherInfo?.associations && completeSubmission.otherInfo.associations.length > 0
-                      ? completeSubmission.otherInfo.associations
-                          .map((a: { name: string; position?: string }) => `${a.name}${a.position ? ` (${a.position})` : ''}`)
-                          .join(' | ')
-                      : null
-                  }
-                />
-              </div>
-            </SectionCard>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="pt-4">
+                        {pdsData.otherInfo?.references && pdsData.otherInfo.references.length > 0 ? (
+                          <div className="overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="min-w-[200px]">Name</TableHead>
+                                  <TableHead className="min-w-[240px]">Address</TableHead>
+                                  <TableHead className="min-w-[140px]">Telephone No.</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {pdsData.otherInfo.references.map((ref, index) => (
+                                  <TableRow key={index}>
+                                    <TableCell className="font-medium">
+                                      {ref.name || 'N/A'}
+                                    </TableCell>
+                                    <TableCell>{ref.address || '-'}</TableCell>
+                                    <TableCell>{ref.telephoneNo || '-'}</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic text-center py-8">
+                            No references provided
+                          </p>
+                        )}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Sidebar - Employee Info */}
@@ -783,14 +1159,27 @@ export default function PdsSubmissionViewPage() {
                 {/* Avatar & Name */}
                 <div className="flex flex-col items-center text-center space-y-3">
                   {submissionUser && (
-                    <UserAvatar user={submissionUser} size="lg" className="h-20 w-20" />
+                    <UserAvatar
+                      user={
+                        {
+                          ...submissionUser,
+                          email: submissionUser.email || '',
+                        } as {
+                          firstName: string;
+                          lastName: string;
+                          email: string;
+                        }
+                      }
+                      size="lg"
+                      className="h-20 w-20"
+                    />
                   )}
                   <div>
                     <h3 className="font-semibold text-lg">
                       {submissionUser?.firstName} {submissionUser?.lastName}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {submissionUser?.employeeId}
+                      {submissionUser?.employeeId || 'N/A'}
                     </p>
                   </div>
                 </div>
@@ -810,20 +1199,35 @@ export default function PdsSubmissionViewPage() {
                   <div>
                     <dt className="text-muted-foreground">Status</dt>
                     <dd>
-                      <StatusBadge status={submission.status} />
+                      <StatusBadge
+                        status={
+                          submission.status as
+                            | 'draft'
+                            | 'submitted'
+                            | 'reviewing'
+                            | 'approved'
+                            | 'rejected'
+                        }
+                      />
                     </dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Version</dt>
+                    <dd className="font-medium">v{submission.version}</dd>
                   </div>
                   <div>
                     <dt className="text-muted-foreground">Submitted</dt>
                     <dd className="font-medium">
-                      {format(new Date(submission.createdAt), 'MMM d, yyyy h:mm a')}
+                      {submission.submittedAt
+                        ? format(new Date(submission.submittedAt), 'MMM d, yyyy h:mm a')
+                        : 'N/A'}
                     </dd>
                   </div>
-                  {submission.updatedAt && (
+                  {submission.reviewedAt && (
                     <div>
-                      <dt className="text-muted-foreground">Last Updated</dt>
+                      <dt className="text-muted-foreground">Reviewed</dt>
                       <dd className="font-medium">
-                        {format(new Date(submission.updatedAt), 'MMM d, yyyy h:mm a')}
+                        {format(new Date(submission.reviewedAt), 'MMM d, yyyy h:mm a')}
                       </dd>
                     </div>
                   )}
@@ -841,11 +1245,7 @@ export default function PdsSubmissionViewPage() {
                         <CheckCircle2 className="h-4 w-4" />
                         Review Submission
                       </Button>
-                      <Button
-                        variant="outline"
-                        onClick={handleExportPdf}
-                        className="w-full gap-2"
-                      >
+                      <Button variant="outline" onClick={handleExportPdf} className="w-full gap-2">
                         <Download className="h-4 w-4" />
                         Export PDF
                       </Button>

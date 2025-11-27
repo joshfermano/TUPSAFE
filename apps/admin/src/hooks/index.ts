@@ -21,7 +21,11 @@ export {
   useInvalidateUsers,
   usersKeys,
 } from './useUsersQuery';
-export type { UsersFilters, UserWithDetails } from './useUsersQuery';
+export type {
+  UsersFilters,
+  CreateUserData,
+  PasswordResetData,
+} from './useUsersQuery';
 
 // PDS Submissions Query Hook
 export {
@@ -86,3 +90,19 @@ export {
   usePrefetchActiveSessions,
   activeSessionsKeys,
 } from './useActiveSessionsQuery';
+
+// Jobs Management Query Hooks
+export {
+  useOpenPositions,
+  useOpenPositionDetails,
+  usePositionApplications,
+  useApplicationDetails,
+  useJobApplications,
+  useInvalidateJobs,
+  jobsKeys,
+} from './useJobsQuery';
+export type {
+  OpenPositionsFilters,
+  ApplicationsFilters,
+  PositionApplicationsFilters,
+} from './useJobsQuery';

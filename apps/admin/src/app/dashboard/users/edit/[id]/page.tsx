@@ -219,12 +219,16 @@ export default function EditUserPage() {
   const onSubmit = useCallback(
     async (values: EditUserFormValues) => {
       try {
-        // Convert suffix 'none' to empty string/null for storage
+        // Filter out non-updatable fields (email, employeeId, suffix)
+        // and convert 'none' values to undefined (API expects string | undefined, not null)
         const dataToSubmit = {
-          ...values,
+          firstName: values.firstName,
+          lastName: values.lastName,
           middleName: values.middleName || null,
-          departmentId: values.departmentId === 'none' ? null : values.departmentId,
-          positionId: values.positionId === 'none' ? null : values.positionId,
+          role: values.role,
+          departmentId: values.departmentId === 'none' ? undefined : values.departmentId,
+          positionId: values.positionId === 'none' ? undefined : values.positionId,
+          isActive: values.isActive,
         };
 
         await updateUserAsync({

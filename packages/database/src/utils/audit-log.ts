@@ -40,7 +40,9 @@ export type AuditEntityType =
   | 'approval_workflow'
   | 'file'
   | 'auth'
-  | 'registration';
+  | 'registration'
+  | 'application'
+  | 'open_position';
 
 export interface AuditLogData {
   userId: string;
