@@ -10,12 +10,24 @@
 'use client';
 
 import { format, isValid, parseISO } from 'date-fns';
-import { Mail, Phone, Building, Briefcase, Calendar, Shield, CheckCircle2, XCircle } from 'lucide-react';
+import {
+  Mail,
+  Phone,
+  Building,
+  Briefcase,
+  Calendar,
+  Shield,
+  CheckCircle2,
+  XCircle,
+} from 'lucide-react';
 
 /**
  * Safely format a date value that may be null, undefined, or invalid
  */
-function formatDate(value: string | Date | null | undefined, formatStr: string = 'PPP'): string {
+function formatDate(
+  value: string | Date | null | undefined,
+  formatStr: string = 'PPP'
+): string {
   if (!value) return 'N/A';
 
   try {
@@ -45,7 +57,11 @@ interface UserDetailsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function UserDetailsDialog({ userId, open, onOpenChange }: UserDetailsDialogProps) {
+export function UserDetailsDialog({
+  userId,
+  open,
+  onOpenChange,
+}: UserDetailsDialogProps) {
   const { data: user, isLoading } = useUserDetails(userId);
 
   return (
@@ -94,8 +110,16 @@ export function UserDetailsDialog({ userId, open, onOpenChange }: UserDetailsDia
 
               {/* Basic Information */}
               <div className="grid gap-4 md:grid-cols-2">
-                <InfoItem icon={Mail} label="Email" value={user.email || 'No email'} />
-                <InfoItem icon={Phone} label="Phone" value={user.phoneNumber || 'N/A'} />
+                <InfoItem
+                  icon={Mail}
+                  label="Email"
+                  value={user.email || 'No email'}
+                />
+                <InfoItem
+                  icon={Phone}
+                  label="Phone"
+                  value={user.phoneNumber || 'N/A'}
+                />
                 <InfoItem
                   icon={Building}
                   label="Department"
@@ -131,10 +155,22 @@ export function UserDetailsDialog({ userId, open, onOpenChange }: UserDetailsDia
                     value={user.employmentCategory?.replace('_', ' ')}
                     className="capitalize"
                   />
-                  <InfoItem label="Academic Rank" value={user.academicRank || 'N/A'} />
-                  <InfoItem label="Tenure Status" value={user.tenureStatus || 'N/A'} />
-                  <InfoItem label="Employment Type" value={user.employmentType || 'N/A'} />
-                  <InfoItem label="Campus Assignment" value={user.campusAssignment || 'N/A'} />
+                  <InfoItem
+                    label="Academic Rank"
+                    value={user.academicRank || 'N/A'}
+                  />
+                  <InfoItem
+                    label="Tenure Status"
+                    value={user.tenureStatus || 'N/A'}
+                  />
+                  <InfoItem
+                    label="Employment Type"
+                    value={user.employmentType || 'N/A'}
+                  />
+                  <InfoItem
+                    label="Campus Assignment"
+                    value={user.campusAssignment || 'N/A'}
+                  />
                   <InfoItem
                     label="Hire Date"
                     value={formatDate(user.hireDate)}
@@ -194,7 +230,9 @@ export function UserDetailsDialog({ userId, open, onOpenChange }: UserDetailsDia
                   {user.lastPdsSubmission && (
                     <div className="space-y-1 text-sm">
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Last Submission</span>
+                        <span className="text-muted-foreground">
+                          Last Submission
+                        </span>
                         <Badge variant="outline" className="capitalize">
                           {user.lastPdsSubmission.status}
                         </Badge>
@@ -239,26 +277,30 @@ export function UserDetailsDialog({ userId, open, onOpenChange }: UserDetailsDia
             <TabsContent value="activity" className="space-y-4">
               {user.recentAuditLogs && user.recentAuditLogs.length > 0 ? (
                 <div className="space-y-2">
-                  {user.recentAuditLogs.map((log: typeof user.recentAuditLogs[0]) => (
-                    <div key={log.id} className="flex items-start gap-3 rounded-lg border p-3">
-                      <div className="mt-0.5">
-                        <div className="h-2 w-2 rounded-full bg-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium capitalize">
-                            {log.action.replace('_', ' ')}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            {formatDate(log.createdAt, 'PPp')}
-                          </span>
+                  {user.recentAuditLogs.map(
+                    (log: (typeof user.recentAuditLogs)[0]) => (
+                      <div
+                        key={log.id}
+                        className="flex items-start gap-3 rounded-lg border p-3">
+                        <div className="mt-0.5">
+                          <div className="h-2 w-2 rounded-full bg-primary" />
                         </div>
-                        <p className="text-sm text-muted-foreground capitalize">
-                          {log.entityType.replace('_', ' ')}
-                        </p>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium capitalize">
+                              {log.action.replace('_', ' ')}
+                            </span>
+                            <span className="text-sm text-muted-foreground">
+                              {formatDate(log.createdAt, 'PPp')}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground capitalize">
+                            {log.entityType.replace('_', ' ')}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
@@ -286,7 +328,7 @@ function InfoItem({ icon: Icon, label, value, className }: InfoItemProps) {
       {Icon && <Icon className="h-4 w-4 mt-1 text-muted-foreground" />}
       <div className="flex-1">
         <p className="text-sm font-medium text-muted-foreground">{label}</p>
-        <p className={`text-sm ${className || ''}`}>{value}</p>
+        <div className={`text-sm ${className || ''}`}>{value}</div>
       </div>
     </div>
   );
