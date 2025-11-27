@@ -1,19 +1,18 @@
 /**
  * User Filters Component
  *
- * Provides comprehensive filtering UI for user management with:
+ * Compact filtering UI for user management with:
  * - Real-time search with debouncing
- * - Multiple filter dropdowns (role, status, user type, etc.)
+ * - Inline filter dropdowns
  * - Active filter badges
- * - URL query param synchronization for shareable links
- * - Clear all filters functionality
+ * - URL query param synchronization
  */
 
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Search, X, Filter } from 'lucide-react';
+import { Search, X, Filter, SlidersHorizontal } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,7 +23,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import type { UserListQuery } from '@tupsafe/types';
 
 interface UserFiltersProps {
@@ -90,6 +93,7 @@ export function UserFilters({ onFilterChange, totalResults }: UserFiltersProps) 
     }, 300);
 
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
   // Update URL and trigger filter change
@@ -117,11 +121,11 @@ export function UserFilters({ onFilterChange, totalResults }: UserFiltersProps) 
         const filterObj: Partial<UserListQuery> = {};
         params.forEach((value, key) => {
           if (key === 'page' || key === 'limit') {
-            (filterObj as any)[key] = Number(value);
+            (filterObj as Record<string, unknown>)[key] = Number(value);
           } else if (key === 'isActive') {
             filterObj.isActive = value === 'true';
-          } else if (key === 'role' || key === 'userType' || key === 'accountStatus' || key === 'sortBy' || key === 'sortOrder' || key === 'employmentCategory') {
-            (filterObj as any)[key] = value;
+          } else {
+            (filterObj as Record<string, unknown>)[key] = value;
           }
         });
         onFilterChange(filterObj);
@@ -142,7 +146,7 @@ export function UserFilters({ onFilterChange, totalResults }: UserFiltersProps) 
 
   const handleAccountStatusChange = (value: string) => {
     setAccountStatus(value);
-    updateFilters({ accountStatus: (value === 'all' ? undefined : value) as any });
+    updateFilters({ accountStatus: (value === 'all' ? undefined : value) as 'pending' | 'active' | 'suspended' | 'rejected' | undefined });
   };
 
   const handleIsActiveChange = (value: string) => {
@@ -152,7 +156,7 @@ export function UserFilters({ onFilterChange, totalResults }: UserFiltersProps) 
 
   const handleEmploymentCategoryChange = (value: string) => {
     setEmploymentCategory(value);
-    updateFilters({ employmentCategory: (value === 'all' ? undefined : value) as any });
+    updateFilters({ employmentCategory: (value === 'all' ? undefined : value) as 'faculty' | 'administrative' | 'contractual' | 'not_applicable' | undefined });
   };
 
   const handleClearFilters = () => {
@@ -179,29 +183,17 @@ export function UserFilters({ onFilterChange, totalResults }: UserFiltersProps) 
     ].filter(Boolean).length;
 
   return (
-    <Card className="border-muted/50">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-base">Filters</CardTitle>
-            <CardDescription>Search and filter users</CardDescription>
-          </div>
-          {activeFilterCount > 0 && (
-            <Badge variant="secondary" className="font-normal">
-              {activeFilterCount} active
-            </Badge>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="space-y-3">
+      {/* Search + Quick Filters Row */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         {/* Search Input */}
-        <div className="relative">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by name, email, or employee ID..."
+            placeholder="Search by name or ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
+            className="pl-9 h-9"
           />
           {search && (
             <Button
@@ -215,107 +207,168 @@ export function UserFilters({ onFilterChange, totalResults }: UserFiltersProps) 
           )}
         </div>
 
-        {/* Filter Grid */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {/* Role Filter */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Role</label>
-            <Select value={role} onValueChange={handleRoleChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select role" />
-              </SelectTrigger>
-              <SelectContent>
-                {ROLES.map((r) => (
-                  <SelectItem key={r.value} value={r.value}>
-                    {r.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Quick Filter: Role */}
+        <Select value={role} onValueChange={handleRoleChange}>
+          <SelectTrigger className="w-full sm:w-[140px] h-9">
+            <SelectValue placeholder="Role" />
+          </SelectTrigger>
+          <SelectContent>
+            {ROLES.map((r) => (
+              <SelectItem key={r.value} value={r.value}>
+                {r.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-          {/* User Type Filter */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">User Type</label>
-            <Select value={userType} onValueChange={handleUserTypeChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                {USER_TYPES.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>
-                    {t.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Quick Filter: Status */}
+        <Select value={accountStatus} onValueChange={handleAccountStatusChange}>
+          <SelectTrigger className="w-full sm:w-[140px] h-9">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            {ACCOUNT_STATUSES.map((s) => (
+              <SelectItem key={s.value} value={s.value}>
+                {s.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-          {/* Account Status Filter */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Account Status</label>
-            <Select value={accountStatus} onValueChange={handleAccountStatusChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                {ACCOUNT_STATUSES.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>
-                    {s.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Active Status Filter */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Active Status</label>
-            <Select value={isActive} onValueChange={handleIsActiveChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                {ACTIVE_STATUSES.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>
-                    {s.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Employment Category Filter */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Employment Category</label>
-            <Select value={employmentCategory} onValueChange={handleEmploymentCategoryChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                {EMPLOYMENT_CATEGORIES.map((c) => (
-                  <SelectItem key={c.value} value={c.value}>
-                    {c.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* Active Filters Summary */}
-        {activeFilterCount > 0 && (
-          <div className="flex items-center justify-between rounded-lg bg-muted/50 px-4 py-3 border border-muted">
-            <p className="text-sm text-muted-foreground">
-              {totalResults !== undefined && `${totalResults} user(s) found`}
-            </p>
-            <Button variant="outline" size="sm" onClick={handleClearFilters}>
-              <Filter className="mr-2 h-4 w-4" />
-              Clear Filters
+        {/* More Filters Popover */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="h-9 gap-2">
+              <SlidersHorizontal className="h-4 w-4" />
+              <span className="hidden sm:inline">More</span>
+              {(userType !== 'all' || isActive !== 'all' || employmentCategory !== 'all') && (
+                <Badge variant="secondary" className="h-5 w-5 p-0 justify-center">
+                  {[userType !== 'all', isActive !== 'all', employmentCategory !== 'all'].filter(Boolean).length}
+                </Badge>
+              )}
             </Button>
-          </div>
+          </PopoverTrigger>
+          <PopoverContent className="w-72" align="end">
+            <div className="space-y-4">
+              <h4 className="font-medium text-sm">Additional Filters</h4>
+
+              {/* User Type */}
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">User Type</label>
+                <Select value={userType} onValueChange={handleUserTypeChange}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {USER_TYPES.map((t) => (
+                      <SelectItem key={t.value} value={t.value}>
+                        {t.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Active Status */}
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Active Status</label>
+                <Select value={isActive} onValueChange={handleIsActiveChange}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ACTIVE_STATUSES.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>
+                        {s.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Employment Category */}
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Employment Category</label>
+                <Select value={employmentCategory} onValueChange={handleEmploymentCategoryChange}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EMPLOYMENT_CATEGORIES.map((c) => (
+                      <SelectItem key={c.value} value={c.value}>
+                        {c.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Clear All */}
+        {activeFilterCount > 0 && (
+          <Button variant="ghost" size="sm" onClick={handleClearFilters} className="h-9 gap-1">
+            <X className="h-3 w-3" />
+            Clear
+          </Button>
         )}
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Active Filters Badges */}
+      {activeFilterCount > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-muted-foreground">Active filters:</span>
+          {search && (
+            <Badge variant="secondary" className="gap-1 text-xs">
+              Search: {search}
+              <button onClick={() => setSearch('')} className="ml-1 hover:text-destructive">
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
+          {role !== 'all' && (
+            <Badge variant="secondary" className="gap-1 text-xs capitalize">
+              {role}
+              <button onClick={() => handleRoleChange('all')} className="ml-1 hover:text-destructive">
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
+          {accountStatus !== 'all' && (
+            <Badge variant="secondary" className="gap-1 text-xs capitalize">
+              {accountStatus}
+              <button onClick={() => handleAccountStatusChange('all')} className="ml-1 hover:text-destructive">
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
+          {userType !== 'all' && (
+            <Badge variant="secondary" className="gap-1 text-xs capitalize">
+              {userType}
+              <button onClick={() => handleUserTypeChange('all')} className="ml-1 hover:text-destructive">
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
+          {isActive !== 'all' && (
+            <Badge variant="secondary" className="gap-1 text-xs">
+              {isActive === 'true' ? 'Active' : 'Inactive'}
+              <button onClick={() => handleIsActiveChange('all')} className="ml-1 hover:text-destructive">
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
+          {employmentCategory !== 'all' && (
+            <Badge variant="secondary" className="gap-1 text-xs capitalize">
+              {employmentCategory.replace('_', ' ')}
+              <button onClick={() => handleEmploymentCategoryChange('all')} className="ml-1 hover:text-destructive">
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

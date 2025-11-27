@@ -12,7 +12,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkUserRole, getSessionUser } from '@tupsafe/auth/server';
+import { checkUserRoleFromSupabase, getUserFromSupabase } from '@tupsafe/auth/server';
 import {
   db,
   profiles,
@@ -40,8 +40,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Verify permissions
-    const hasPermission = await checkUserRole(['admin', 'hr', 'supervisor']);
+    // Verify permissions using Supabase auth
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr', 'supervisor'], 'admin');
     if (!hasPermission) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin, HR, or Supervisor role required.' },
@@ -249,13 +249,13 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Verify permissions
-    const sessionUser = await getSessionUser();
+    // Verify permissions using Supabase auth
+    const sessionUser = await getUserFromSupabase();
     if (!sessionUser) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const hasPermission = await checkUserRole(['admin', 'hr']);
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
     if (!hasPermission) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin or HR role required.' },
@@ -430,13 +430,13 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Verify permissions
-    const sessionUser = await getSessionUser();
+    // Verify permissions using Supabase auth
+    const sessionUser = await getUserFromSupabase();
     if (!sessionUser) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const hasPermission = await checkUserRole(['admin', 'hr']);
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
     if (!hasPermission) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin or HR role required.' },

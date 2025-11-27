@@ -65,7 +65,9 @@ export async function fetchUserDetails(userId: string): Promise<UserDetail> {
     throw new Error(error.error || 'Failed to fetch user details');
   }
 
-  return response.json();
+  // API returns { success: true, data: UserDetail }
+  const result = await response.json();
+  return result.data;
 }
 
 /**
@@ -108,7 +110,9 @@ export async function updateUser(
     throw new Error(error.error || 'Failed to update user');
   }
 
-  return response.json();
+  // API returns { success: true, message: '...', data: updatedUser }
+  const result = await response.json();
+  return result.data;
 }
 
 /**
@@ -127,7 +131,9 @@ export async function deleteUser(userId: string): Promise<{ success: true }> {
     throw new Error(error.error || 'Failed to delete user');
   }
 
-  return response.json();
+  // API returns { success: true, message: '...', data: deletedUser }
+  const result = await response.json();
+  return { success: result.success };
 }
 
 /**
