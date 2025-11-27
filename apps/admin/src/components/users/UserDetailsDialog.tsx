@@ -9,8 +9,23 @@
 
 'use client';
 
-import { format } from 'date-fns';
-import { User, Mail, Phone, Building, Briefcase, Calendar, Shield, CheckCircle2, XCircle } from 'lucide-react';
+import { format, isValid, parseISO } from 'date-fns';
+import { Mail, Phone, Building, Briefcase, Calendar, Shield, CheckCircle2, XCircle } from 'lucide-react';
+
+/**
+ * Safely format a date value that may be null, undefined, or invalid
+ */
+function formatDate(value: string | Date | null | undefined, formatStr: string = 'PPP'): string {
+  if (!value) return 'N/A';
+
+  try {
+    const date = typeof value === 'string' ? parseISO(value) : value;
+    if (!isValid(date)) return 'N/A';
+    return format(date, formatStr);
+  } catch {
+    return 'N/A';
+  }
+}
 import {
   Dialog,
   DialogContent,
@@ -122,7 +137,7 @@ export function UserDetailsDialog({ userId, open, onOpenChange }: UserDetailsDia
                   <InfoItem label="Campus Assignment" value={user.campusAssignment || 'N/A'} />
                   <InfoItem
                     label="Hire Date"
-                    value={user.hireDate ? format(new Date(user.hireDate), 'PPP') : 'N/A'}
+                    value={formatDate(user.hireDate)}
                   />
                 </div>
               </div>
@@ -136,12 +151,12 @@ export function UserDetailsDialog({ userId, open, onOpenChange }: UserDetailsDia
                   <InfoItem
                     icon={Calendar}
                     label="Created"
-                    value={format(new Date(user.createdAt), 'PPP')}
+                    value={formatDate(user.createdAt)}
                   />
                   <InfoItem
                     icon={Calendar}
                     label="Last Updated"
-                    value={format(new Date(user.updatedAt), 'PPP')}
+                    value={formatDate(user.updatedAt)}
                   />
                   <InfoItem
                     label="Email Verified"
@@ -149,7 +164,7 @@ export function UserDetailsDialog({ userId, open, onOpenChange }: UserDetailsDia
                       user.emailVerifiedAt ? (
                         <div className="flex items-center gap-2">
                           <CheckCircle2 className="h-4 w-4 text-green-600" />
-                          {format(new Date(user.emailVerifiedAt), 'PPP')}
+                          {formatDate(user.emailVerifiedAt)}
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
@@ -186,7 +201,7 @@ export function UserDetailsDialog({ userId, open, onOpenChange }: UserDetailsDia
                       </div>
                       {user.lastPdsSubmission.submittedAt && (
                         <p className="text-muted-foreground">
-                          {format(new Date(user.lastPdsSubmission.submittedAt), 'PPP')}
+                          {formatDate(user.lastPdsSubmission.submittedAt)}
                         </p>
                       )}
                     </div>
@@ -211,7 +226,7 @@ export function UserDetailsDialog({ userId, open, onOpenChange }: UserDetailsDia
                       </div>
                       {user.lastSalnSubmission.submittedAt && (
                         <p className="text-muted-foreground">
-                          {format(new Date(user.lastSalnSubmission.submittedAt), 'PPP')}
+                          {formatDate(user.lastSalnSubmission.submittedAt)}
                         </p>
                       )}
                     </div>
@@ -235,7 +250,7 @@ export function UserDetailsDialog({ userId, open, onOpenChange }: UserDetailsDia
                             {log.action.replace('_', ' ')}
                           </span>
                           <span className="text-sm text-muted-foreground">
-                            {format(new Date(log.createdAt), 'PPp')}
+                            {formatDate(log.createdAt, 'PPp')}
                           </span>
                         </div>
                         <p className="text-sm text-muted-foreground capitalize">

@@ -18,7 +18,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkUserRole, getSessionUser } from '@tupsafe/auth/server';
+import { checkUserRoleFromSupabase, getUserFromSupabase } from '@tupsafe/auth/server';
 import { db, profiles, createAuditLogFromRequest } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
 import { passwordResetSchema, ROLE_HIERARCHY } from '@tupsafe/types';
@@ -62,13 +62,13 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Verify permissions
-    const sessionUser = await getSessionUser();
+    // Verify permissions using Supabase auth
+    const sessionUser = await getUserFromSupabase();
     if (!sessionUser) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const hasPermission = await checkUserRole(['admin', 'hr']);
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
     if (!hasPermission) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin or HR role required.' },
