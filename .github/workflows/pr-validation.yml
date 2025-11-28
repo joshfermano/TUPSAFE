@@ -68,41 +68,42 @@ jobs:
       - name: Check for build artifacts in PR
         id: artifact-check
         run: |
-          echo "🔍 Checking for build artifacts in PR changes..."
+          echo "🔍 Checking for ADDED build artifacts in PR changes..."
 
-          # Get list of changed files
-          git diff --name-only origin/${{ github.base_ref }}...HEAD > changed_files.txt
+          # Get list of ADDED files only (not deleted or modified)
+          # This prevents false positives when removing artifacts from main
+          git diff --name-only --diff-filter=A origin/${{ github.base_ref }}...HEAD > added_files.txt
 
-          # Check for build artifacts
+          # Check for build artifacts in ADDED files only
           ARTIFACTS_FOUND=0
           ARTIFACT_PATHS=""
 
-          if grep -E "^packages/.*/dist/" changed_files.txt; then
-            echo "❌ ERROR: Package dist files found in PR"
+          if grep -E "^packages/.*/dist/" added_files.txt 2>/dev/null; then
+            echo "❌ ERROR: Package dist files being added in PR"
             ARTIFACT_PATHS="${ARTIFACT_PATHS}\n- Package dist files"
             ARTIFACTS_FOUND=1
           fi
 
-          if grep -E "^apps/.*/.next/" changed_files.txt; then
-            echo "❌ ERROR: Next.js build files found in PR"
+          if grep -E "^apps/.*/.next/" added_files.txt 2>/dev/null; then
+            echo "❌ ERROR: Next.js build files being added in PR"
             ARTIFACT_PATHS="${ARTIFACT_PATHS}\n- Next.js .next directories"
             ARTIFACTS_FOUND=1
           fi
 
-          if grep -E "\.tsbuildinfo$" changed_files.txt; then
-            echo "❌ ERROR: TypeScript build info files found in PR"
+          if grep -E "\.tsbuildinfo$" added_files.txt 2>/dev/null; then
+            echo "❌ ERROR: TypeScript build info files being added in PR"
             ARTIFACT_PATHS="${ARTIFACT_PATHS}\n- TypeScript .tsbuildinfo files"
             ARTIFACTS_FOUND=1
           fi
 
-          if grep -E "^\.turbo/" changed_files.txt; then
-            echo "❌ ERROR: Turbo cache files found in PR"
+          if grep -E "^\.turbo/" added_files.txt 2>/dev/null; then
+            echo "❌ ERROR: Turbo cache files being added in PR"
             ARTIFACT_PATHS="${ARTIFACT_PATHS}\n- Turbo cache files"
             ARTIFACTS_FOUND=1
           fi
 
-          if grep -E "node_modules/" changed_files.txt; then
-            echo "❌ ERROR: node_modules found in PR"
+          if grep -E "node_modules/" added_files.txt 2>/dev/null; then
+            echo "❌ ERROR: node_modules being added in PR"
             ARTIFACT_PATHS="${ARTIFACT_PATHS}\n- node_modules directories"
             ARTIFACTS_FOUND=1
           fi
@@ -114,7 +115,7 @@ jobs:
             echo "EOF" >> $GITHUB_OUTPUT
 
             echo ""
-            echo "❌ Build artifacts detected in PR!"
+            echo "❌ Build artifacts being added in PR!"
             echo "Please remove them using:"
             echo "  npm run clean:all"
             echo "  git add -u"
@@ -123,7 +124,7 @@ jobs:
           fi
 
           echo "artifacts_found=false" >> $GITHUB_OUTPUT
-          echo "✅ No build artifacts found in PR"
+          echo "✅ No build artifacts being added in PR"
 
       - name: Clean build artifacts
         run: |
