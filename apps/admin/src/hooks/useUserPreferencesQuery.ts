@@ -55,7 +55,17 @@ export function useUserPreferencesQuery() {
   const query = useQuery<UserPreferences, Error>({
     queryKey: userPreferencesKeys.detail(),
     queryFn: async () => {
-      const response = await fetch('/api/settings/preferences');
+      const response = await fetch('/api/settings/preferences', {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      // Handle auth errors gracefully - return null to show loading state
+      if (response.status === 401) {
+        throw new Error('Session expired. Please log in again.');
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
@@ -75,7 +85,16 @@ export function useUserPreferencesQuery() {
     },
     staleTime: 10 * 60 * 1000, // 10 minutes (preferences change less frequently)
     gcTime: 30 * 60 * 1000, // 30 minutes garbage collection
-    retry: 2,
+    retry: (failureCount, error) => {
+      // Don't retry on auth errors
+      if (
+        error.message.includes('Session expired') ||
+        error.message.includes('401')
+      ) {
+        return false;
+      }
+      return failureCount < 2;
+    },
     retryDelay: (attemptIndex: number) =>
       Math.min(1000 * 2 ** attemptIndex, 30000),
   });
@@ -87,11 +106,16 @@ export function useUserPreferencesQuery() {
     mutationFn: async (data: UpdatePreferencesRequest) => {
       const response = await fetch('/api/settings/preferences', {
         method: 'PUT',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(data),
       });
+
+      if (response.status === 401) {
+        throw new Error('Session expired. Please log in again.');
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
@@ -144,7 +168,9 @@ export function useUserPreferencesQuery() {
       // Show error toast
       toast.error('Failed to save preferences', {
         description:
-          error instanceof Error ? error.message : 'An unexpected error occurred',
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred',
       });
     },
     onSuccess: (updatedPreferences) => {

@@ -41,20 +41,33 @@ export async function fetchReportsOverview(): Promise<ReportsOverviewResponse> {
  * Triggers a file download with the specified format
  *
  * @param format - Export format ('csv' | 'pdf')
- * @param type - Report type identifier
+ * @param reportType - Report type identifier ('users' | 'registrations' | 'submissions' | 'compliance')
  * @returns Blob containing the exported file
  */
 export async function exportReport(
   format: 'csv' | 'pdf',
-  type: string
+  reportType: 'users' | 'registrations' | 'submissions' | 'compliance'
 ): Promise<Blob> {
-  const response = await fetch(`/api/dashboard/export?format=${format}&type=${type}`, {
+  // Build query params with required fields
+  const now = new Date();
+  const startDate = new Date(now.getFullYear(), 0, 1); // Start of year
+  const endDate = now;
+
+  const searchParams = new URLSearchParams({
+    format,
+    reportType,
+    startDate: startDate.toISOString(),
+    endDate: endDate.toISOString(),
+  });
+
+  const response = await fetch(`/api/dashboard/export?${searchParams}`, {
     method: 'GET',
     credentials: 'include',
   });
 
   if (!response.ok) {
-    throw new Error('Failed to export report');
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.error || 'Failed to export report');
   }
 
   return response.blob();

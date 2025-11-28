@@ -23,6 +23,7 @@ import {
 } from '@/hooks/usePdsSubmissionsQuery';
 import { useDepartmentsQuery } from '@/hooks/useDepartmentsQuery';
 import { usePdsStatsQuery } from '@/hooks/usePdsStatsQuery';
+import { DeadlineManagementCard } from '@/components/deadlines';
 import type { PdsSubmissionListItem } from '@tupsafe/types';
 import {
   EmptyState,
@@ -336,6 +337,9 @@ export default function PdsSubmissionsPage() {
           Review and manage Personal Data Sheet submissions
         </p>
       </div>
+
+      {/* Deadline Management Section */}
+      <DeadlineManagementCard formType="pds" />
 
       {/* Submission Timeline Chart */}
       <Card>

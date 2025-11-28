@@ -422,7 +422,19 @@ export function CreateJobDialog({
                       <FormItem>
                         <FormLabel>Minimum Salary</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="0" {...field} />
+                          <Input
+                            type="number"
+                            placeholder="0"
+                            {...field}
+                            value={field.value ?? ''}
+                            onChange={(e) =>
+                              field.onChange(
+                                e.target.value === ''
+                                  ? undefined
+                                  : Number(e.target.value)
+                              )
+                            }
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -436,7 +448,19 @@ export function CreateJobDialog({
                       <FormItem>
                         <FormLabel>Maximum Salary</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="0" {...field} />
+                          <Input
+                            type="number"
+                            placeholder="0"
+                            {...field}
+                            value={field.value ?? ''}
+                            onChange={(e) =>
+                              field.onChange(
+                                e.target.value === ''
+                                  ? undefined
+                                  : Number(e.target.value)
+                              )
+                            }
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

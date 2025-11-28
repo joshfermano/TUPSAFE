@@ -225,6 +225,7 @@ export async function GET(request: NextRequest) {
       firstName: reg.firstName,
       lastName: reg.lastName,
       middleName: reg.middleName,
+      userType: reg.userType,
       employeeId: reg.employeeId,
       applicantId: reg.applicantId,
       accountStatus: reg.accountStatus,

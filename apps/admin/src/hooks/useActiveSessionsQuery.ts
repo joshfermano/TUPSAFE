@@ -63,7 +63,17 @@ export function useActiveSessionsQuery() {
   const query = useQuery<ActiveSessionsResponse, Error>({
     queryKey: activeSessionsKeys.list(),
     queryFn: async () => {
-      const response = await fetch('/api/settings/sessions');
+      const response = await fetch('/api/settings/sessions', {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      // Handle auth errors gracefully
+      if (response.status === 401) {
+        throw new Error('Session expired. Please log in again.');
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
@@ -83,7 +93,13 @@ export function useActiveSessionsQuery() {
     },
     staleTime: 1 * 60 * 1000, // 1 minute (sessions are dynamic)
     gcTime: 5 * 60 * 1000, // 5 minutes garbage collection
-    retry: 2,
+    retry: (failureCount, error) => {
+      // Don't retry on auth errors
+      if (error.message.includes('Session expired') || error.message.includes('401')) {
+        return false;
+      }
+      return failureCount < 2;
+    },
     retryDelay: (attemptIndex: number) =>
       Math.min(1000 * 2 ** attemptIndex, 30000),
   });
@@ -95,11 +111,16 @@ export function useActiveSessionsQuery() {
     mutationFn: async (data: RevokeSessionRequest) => {
       const response = await fetch('/api/settings/sessions', {
         method: 'DELETE',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(data),
       });
+
+      if (response.status === 401) {
+        throw new Error('Session expired. Please log in again.');
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
@@ -181,11 +202,16 @@ export function useActiveSessionsQuery() {
     mutationFn: async (data: RevokeAllSessionsRequest = { keepCurrent: true }) => {
       const response = await fetch('/api/settings/sessions', {
         method: 'DELETE',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ ...data, revokeAll: true }),
       });
+
+      if (response.status === 401) {
+        throw new Error('Session expired. Please log in again.');
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
@@ -315,7 +341,16 @@ export function usePrefetchActiveSessions() {
     queryClient.prefetchQuery({
       queryKey: activeSessionsKeys.list(),
       queryFn: async () => {
-        const response = await fetch('/api/settings/sessions');
+        const response = await fetch('/api/settings/sessions', {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.status === 401) {
+          throw new Error('Session expired');
+        }
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => null);

@@ -44,14 +44,19 @@ export function useReportsOverview() {
  */
 export function useExportReport() {
   return useMutation({
-    mutationFn: ({ format, type }: { format: 'csv' | 'pdf'; type: string }) =>
-      exportReport(format, type),
-    onSuccess: (blob, { format }) => {
+    mutationFn: ({
+      format,
+      reportType,
+    }: {
+      format: 'csv' | 'pdf';
+      reportType: 'users' | 'registrations' | 'submissions' | 'compliance';
+    }) => exportReport(format, reportType),
+    onSuccess: (blob, { format, reportType }) => {
       // Create download link
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `tupsafe-report-${Date.now()}.${format}`;
+      a.download = `tupsafe-${reportType}-report-${Date.now()}.${format}`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -63,7 +68,7 @@ export function useExportReport() {
     },
     onError: (error) => {
       toast.error('Failed to export report', {
-        description: error.message,
+        description: error instanceof Error ? error.message : 'An error occurred',
       });
     },
   });

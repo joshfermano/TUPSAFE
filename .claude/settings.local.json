@@ -55,7 +55,8 @@
       "mcp__shadcn__get_project_registries",
       "mcp__shadcn__list_items_in_registries",
       "Bash(npm run lint:admin:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(timeout 180 npm run build:admin)"
     ],
     "deny": [],
     "ask": []

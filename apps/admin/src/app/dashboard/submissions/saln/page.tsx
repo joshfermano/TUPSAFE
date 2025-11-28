@@ -24,6 +24,7 @@ import {
 } from '@/hooks/useSalnSubmissionsQuery';
 import { useSalnStatsQuery } from '@/hooks/useSalnStatsQuery';
 import { useDepartmentsQuery } from '@/hooks/useDepartmentsQuery';
+import { DeadlineManagementCard } from '@/components/deadlines';
 import type { SalnSubmissionListItem } from '@tupsafe/types';
 import {
   EmptyState,
@@ -408,6 +409,9 @@ export default function SalnSubmissionsPage() {
           submissions
         </p>
       </div>
+
+      {/* Deadline Management Section */}
+      <DeadlineManagementCard formType="saln" />
 
       {/* Net Worth Trend Chart */}
       <Card>

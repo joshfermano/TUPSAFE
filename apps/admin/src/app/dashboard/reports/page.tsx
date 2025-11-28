@@ -510,11 +510,11 @@ export default function ReportsPage() {
 
   // Handle export actions - defined before early returns
   const handleExportCSV = useCallback(() => {
-    exportMutation.mutate({ format: 'csv', type: 'reports' });
+    exportMutation.mutate({ format: 'csv', reportType: 'compliance' });
   }, [exportMutation]);
 
   const handleExportPDF = useCallback(() => {
-    exportMutation.mutate({ format: 'pdf', type: 'reports' });
+    exportMutation.mutate({ format: 'pdf', reportType: 'compliance' });
   }, [exportMutation]);
 
   // Transform data - with null checks for TypeScript

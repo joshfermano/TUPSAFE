@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 
 // Local Components
 import { InfoCard } from '@/components/dashboard/InfoCard';
+import { DeadlineSection } from '@/components/dashboard/DeadlineSection';
 
 // Utils
 import { cn } from '@/lib/utils';
@@ -390,6 +391,9 @@ export default function PDSPage() {
 
         </div>
       </BlurFade>
+
+      {/* Deadline Section - Persistent */}
+      <DeadlineSection formType="pds" />
 
       {/* Quick Actions */}
       <BlurFade delay={0.2} duration={0.5}>

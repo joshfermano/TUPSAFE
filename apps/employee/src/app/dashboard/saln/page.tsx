@@ -22,6 +22,7 @@ import Link from 'next/link';
 import { useAuth } from '@/providers/AuthProvider';
 import { useSaln } from '@tupsafe/mock-data/api';
 import { InfoCard } from '@/components/dashboard/InfoCard';
+import { DeadlineSection } from '@/components/dashboard/DeadlineSection';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -351,6 +352,9 @@ export default function SalnPage() {
 
         </div>
       </BlurFade>
+
+      {/* Deadline Section - Persistent */}
+      <DeadlineSection formType="saln" />
 
       {/* Quick Actions */}
       <BlurFade delay={0.2}>
