@@ -126,6 +126,21 @@ jobs:
           echo "artifacts_found=false" >> $GITHUB_OUTPUT
           echo "✅ No build artifacts being added in PR"
 
+      - name: Setup environment variables
+        run: |
+          for app in admin employee; do
+            if [ -f "apps/$app/.env.example" ]; then
+              cp "apps/$app/.env.example" "apps/$app/.env.local"
+            else
+              cat > "apps/$app/.env.local" << 'EOF'
+          NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder-anon-key
+          SUPABASE_SERVICE_ROLE_KEY=placeholder-service-role-key
+          DATABASE_URL=postgresql://postgres:password@localhost:5432/tupsafe
+          EOF
+            fi
+          done
+
       - name: Clean build artifacts
         run: |
           echo "🧹 Cleaning all build artifacts for fresh build..."
