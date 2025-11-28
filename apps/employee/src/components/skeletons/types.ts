@@ -273,7 +273,7 @@ export interface SkeletonTheme {
 /**
  * Utility type for skeleton component variants
  */
-export type SkeletonComponent<T = {}> = React.FC<T>;
+export type SkeletonComponent<T = Record<string, never>> = React.FC<T>;
 
 /**
  * Skeleton component collection
