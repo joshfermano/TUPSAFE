@@ -87,12 +87,24 @@ jobs:
           FAILED=false
 
           for app in admin employee; do
-            # Sum all JS files in static chunks (First Load JS)
-            BUNDLE_BYTES=$(find "apps/$app/.next/static/chunks" -name "*.js" -exec stat -c%s {} + 2>/dev/null | awk '{s+=$1}END{print s}')
-            BUNDLE_KB=$((BUNDLE_BYTES / 1024))
+            # Calculate First Load JS (gzipped) from rootMainFiles in build-manifest.json
+            # This matches what Next.js reports as "First Load JS shared by all"
+            TOTAL_GZIP=0
+            ROOT_FILES=$(cat "apps/$app/.next/build-manifest.json" | jq -r '.rootMainFiles[]' 2>/dev/null || echo "")
+
+            if [ -z "$ROOT_FILES" ]; then
+              echo "::warning::Could not read build-manifest.json for $app"
+              BUNDLE_KB=0
+            else
+              for file in $ROOT_FILES; do
+                GZIP_SIZE=$(gzip -c "apps/$app/.next/$file" 2>/dev/null | wc -c || echo 0)
+                TOTAL_GZIP=$((TOTAL_GZIP + GZIP_SIZE))
+              done
+              BUNDLE_KB=$((TOTAL_GZIP / 1024))
+            fi
 
             echo "${app}_bundle=${BUNDLE_KB}" >> $GITHUB_OUTPUT
-            echo "$app First Load JS: ${BUNDLE_KB}KB"
+            echo "$app First Load JS (gzip): ${BUNDLE_KB}KB"
 
             if [ "$BUNDLE_KB" -gt 200 ]; then
               echo "::error::$app bundle (${BUNDLE_KB}KB) exceeds 200KB limit"
@@ -118,13 +130,22 @@ jobs:
         run: |
           echo "## CI Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Bundle Sizes" >> $GITHUB_STEP_SUMMARY
+          echo "### Bundle Sizes (gzipped)" >> $GITHUB_STEP_SUMMARY
           echo "| App | First Load JS | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-----|---------------|--------|" >> $GITHUB_STEP_SUMMARY
 
           for app in admin employee; do
-            BUNDLE_BYTES=$(find "apps/$app/.next/static/chunks" -name "*.js" -exec stat -c%s {} + 2>/dev/null | awk '{s+=$1}END{print s}')
-            BUNDLE_KB=$((BUNDLE_BYTES / 1024))
+            # Calculate First Load JS (gzipped) from rootMainFiles
+            TOTAL_GZIP=0
+            ROOT_FILES=$(cat "apps/$app/.next/build-manifest.json" | jq -r '.rootMainFiles[]' 2>/dev/null || echo "")
+
+            if [ -n "$ROOT_FILES" ]; then
+              for file in $ROOT_FILES; do
+                GZIP_SIZE=$(gzip -c "apps/$app/.next/$file" 2>/dev/null | wc -c || echo 0)
+                TOTAL_GZIP=$((TOTAL_GZIP + GZIP_SIZE))
+              done
+            fi
+            BUNDLE_KB=$((TOTAL_GZIP / 1024))
 
             if [ "$BUNDLE_KB" -le 200 ]; then
               echo "| $app | ${BUNDLE_KB}KB | :white_check_mark: Pass |" >> $GITHUB_STEP_SUMMARY
@@ -134,4 +155,4 @@ jobs:
           done
 
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "> Bundle limit: 200KB per CLAUDE.md" >> $GITHUB_STEP_SUMMARY
+          echo "> Bundle limit: 200KB (gzipped) per CLAUDE.md" >> $GITHUB_STEP_SUMMARY
