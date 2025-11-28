@@ -106,3 +106,21 @@ export type {
   ApplicationsFilters,
   PositionApplicationsFilters,
 } from './useJobsQuery';
+
+// Deadlines Management Query Hooks
+export {
+  useDeadlines,
+  useDeadlineById,
+  useDeadlineByFormType,
+  useCreateDeadline,
+  useUpdateDeadline,
+  useDeleteDeadline,
+  useToggleDeadlineStatus,
+  useInvalidateDeadlines,
+  usePrefetchDeadline,
+  deadlineKeys,
+} from './useDeadlines';
+export type {
+  DeadlinesListParams,
+  FormType,
+} from '@/lib/api/deadlines';

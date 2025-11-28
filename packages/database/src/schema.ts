@@ -98,7 +98,7 @@ export const dashboardLayoutEnum = pgEnum('dashboard_layout', [
 ]);
 export const languageEnum = pgEnum('language', ['en', 'fil']);
 
-// Multi-user type system enums
+// Multi-user type system enums 
 export const userTypeEnum = pgEnum('user_type', ['employee', 'applicant']);
 export const employmentCategoryEnum = pgEnum('employment_category', [
   'faculty',

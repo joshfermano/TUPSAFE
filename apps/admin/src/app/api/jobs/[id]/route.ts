@@ -13,7 +13,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkUserRole, getSessionUser } from '@tupsafe/auth/server';
+import { checkUserRoleFromSupabase, getSessionUser } from '@tupsafe/auth/server';
 import {
   db,
   openPositions,
@@ -42,7 +42,7 @@ export async function GET(
 ) {
   try {
     // Verify permissions
-    const hasPermission = await checkUserRole(['admin', 'hr', 'supervisor']);
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr', 'supervisor'], 'admin');
     if (!hasPermission) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin, HR, or Supervisor role required.' },
@@ -259,7 +259,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const hasPermission = await checkUserRole(['admin', 'hr']);
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
     if (!hasPermission) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin or HR role required.' },
@@ -400,7 +400,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const hasPermission = await checkUserRole(['admin']);
+    const hasPermission = await checkUserRoleFromSupabase(['admin'], 'admin');
     if (!hasPermission) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin role required.' },

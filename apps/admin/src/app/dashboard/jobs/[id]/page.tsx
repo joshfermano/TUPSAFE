@@ -176,9 +176,10 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
   }
 
   const statusInfo = statusConfig[position.status as keyof typeof statusConfig];
-  const deadline = new Date(position.applicationDeadline);
-  const isOverdue = deadline < new Date();
-  const daysUntil = Math.ceil((deadline.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+  const deadlineDate = position.applicationDeadline ? new Date(position.applicationDeadline) : null;
+  const deadline = deadlineDate && !isNaN(deadlineDate.getTime()) ? deadlineDate : null;
+  const isOverdue = deadline ? deadline < new Date() : false;
+  const daysUntil = deadline ? Math.ceil((deadline.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 0;
 
   return (
     <div className="space-y-6">
@@ -256,15 +257,17 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
               </div>
               <div>
                 <div className="text-sm font-medium">
-                  {format(deadline, 'MMM dd, yyyy')}
+                  {deadline ? format(deadline, 'MMM dd, yyyy') : 'No deadline'}
                 </div>
                 <div className={cn(
                   'text-xs',
+                  !deadline ? 'text-muted-foreground' :
                   isOverdue ? 'text-red-600 dark:text-red-400' :
                   daysUntil <= 7 ? 'text-orange-600 dark:text-orange-400' :
                   'text-muted-foreground'
                 )}>
-                  {isOverdue ? 'Overdue' :
+                  {!deadline ? 'Not set' :
+                   isOverdue ? 'Overdue' :
                    daysUntil === 0 ? 'Today' :
                    daysUntil === 1 ? 'Tomorrow' :
                    `${daysUntil} days left`}

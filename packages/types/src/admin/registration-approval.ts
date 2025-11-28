@@ -104,6 +104,7 @@ export interface RegistrationListItem {
   firstName: string;
   lastName: string;
   middleName: string | null;
+  userType: 'employee' | 'applicant';
   employeeId: string | null;
   applicantId?: string | null;
   accountStatus: 'pending' | 'active' | 'suspended' | 'rejected';
@@ -132,7 +133,6 @@ export interface RegistrationListItem {
 export interface RegistrationDetail extends RegistrationListItem {
   emailVerifiedAt: Date | null;
   phoneNumber: string | null;
-  userType: 'employee' | 'applicant';
   employmentCategory: 'faculty' | 'administrative' | 'contractual' | 'not_applicable';
   role: 'employee' | 'hr' | 'admin' | 'supervisor' | 'auditor';
   requestedRole?: 'employee' | 'hr' | 'admin' | 'supervisor' | 'auditor';

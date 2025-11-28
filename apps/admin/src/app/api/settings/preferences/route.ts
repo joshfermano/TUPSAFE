@@ -18,7 +18,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserFromSupabase } from '@tupsafe/auth/server';
+import { checkUserRoleFromSupabase, createServerClient } from '@tupsafe/auth/server';
 import { db, auditLogs } from '@tupsafe/database/server';
 import { userPreferences } from '@tupsafe/database/schema';
 import { eq } from 'drizzle-orm';
@@ -50,9 +50,12 @@ export async function GET() {
   try {
     console.log('[Preferences Settings API] GET request received');
 
-    // Get current user from Supabase session
-    const user = await getUserFromSupabase();
-    if (!user) {
+    // Verify authentication using portal-specific session
+    const hasPermission = await checkUserRoleFromSupabase(
+      ['admin', 'hr', 'supervisor', 'employee'],
+      'admin'
+    );
+    if (!hasPermission) {
       console.log('[Preferences Settings API] No authenticated session');
       return NextResponse.json(
         { error: 'Not authenticated' },
@@ -60,13 +63,24 @@ export async function GET() {
       );
     }
 
-    console.log(`[Preferences Settings API] Fetching preferences for user: ${user.userId}`);
+    // Get Supabase client for user details
+    const supabase = await createServerClient('admin');
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Session expired' }, { status: 401 });
+    }
+
+    const userId = session.user.id;
+    console.log(`[Preferences Settings API] Fetching preferences for user: ${userId}`);
 
     // Fetch existing preferences
     const [existingPrefs] = await db
       .select()
       .from(userPreferences)
-      .where(eq(userPreferences.userId, user.userId))
+      .where(eq(userPreferences.userId, userId))
       .limit(1);
 
     let preferences: UserPreferences;
@@ -78,7 +92,7 @@ export async function GET() {
       const [newPrefs] = await db
         .insert(userPreferences)
         .values({
-          userId: user.userId,
+          userId: userId,
           ...DEFAULT_PREFERENCES,
         })
         .returning();
@@ -160,9 +174,12 @@ export async function PUT(request: NextRequest) {
   try {
     console.log('[Preferences Settings API] PUT request received');
 
-    // Get current user from Supabase session
-    const user = await getUserFromSupabase();
-    if (!user) {
+    // Verify authentication using portal-specific session
+    const hasPermission = await checkUserRoleFromSupabase(
+      ['admin', 'hr', 'supervisor', 'employee'],
+      'admin'
+    );
+    if (!hasPermission) {
       console.log('[Preferences Settings API] No authenticated session');
       return NextResponse.json(
         { error: 'Not authenticated' },
@@ -170,7 +187,18 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    console.log(`[Preferences Settings API] Updating preferences for user: ${user.userId}`);
+    // Get Supabase client for user details
+    const supabase = await createServerClient('admin');
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Session expired' }, { status: 401 });
+    }
+
+    const userId = session.user.id;
+    console.log(`[Preferences Settings API] Updating preferences for user: ${userId}`);
 
     // Parse and validate request body
     const body = await request.json();
@@ -180,7 +208,7 @@ export async function PUT(request: NextRequest) {
     const [currentPrefs] = await db
       .select()
       .from(userPreferences)
-      .where(eq(userPreferences.userId, user.userId))
+      .where(eq(userPreferences.userId, userId))
       .limit(1);
 
     // Prepare update data (only include fields that were provided)
@@ -215,14 +243,14 @@ export async function PUT(request: NextRequest) {
       [updatedPrefs] = await db
         .update(userPreferences)
         .set(updateData)
-        .where(eq(userPreferences.userId, user.userId))
+        .where(eq(userPreferences.userId, userId))
         .returning();
     } else {
       // Insert new preferences with defaults for fields not provided
       [updatedPrefs] = await db
         .insert(userPreferences)
         .values({
-          userId: user.userId,
+          userId: userId,
           ...DEFAULT_PREFERENCES,
           ...updateData,
         })
@@ -245,7 +273,7 @@ export async function PUT(request: NextRequest) {
 
     // Create audit log entry
     await db.insert(auditLogs).values({
-      userId: user.userId,
+      userId: userId,
       action: currentPrefs ? 'update_preferences' : 'create_preferences',
       entityType: 'user_preferences',
       entityId: updatedPrefs.id,

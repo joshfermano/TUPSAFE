@@ -72,6 +72,8 @@ export interface RegistrationListItem {
   lastName: string;
   middleName: string | null;
   userType: 'employee' | 'applicant';
+  employeeId: string | null;
+  applicantId: string | null;
   accountStatus: 'pending' | 'active' | 'suspended' | 'rejected';
   department?: {
     id: string;
@@ -94,8 +96,6 @@ export interface RegistrationListItem {
  * Detailed registration data for single registration view
  */
 export interface RegistrationDetail extends RegistrationListItem {
-  employeeId: string | null;
-  applicantId: string | null;
   emailVerifiedAt: Date | null;
   campusAssignment: string | null;
   employmentCategory: 'faculty' | 'administrative' | 'contractual' | 'not_applicable' | null;

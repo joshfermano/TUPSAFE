@@ -20,7 +20,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserFromSupabase, createServerClient } from '@tupsafe/auth/server';
+import { checkUserRoleFromSupabase, createServerClient } from '@tupsafe/auth/server';
 import { db, auditLogs } from '@tupsafe/database/server';
 import {
   revokeSessionRequestSchema,
@@ -111,9 +111,12 @@ export async function GET(request: NextRequest) {
   try {
     console.log('[Sessions API] GET request received');
 
-    // Get current user from Supabase session
-    const user = await getUserFromSupabase();
-    if (!user) {
+    // Verify authentication using portal-specific session
+    const hasPermission = await checkUserRoleFromSupabase(
+      ['admin', 'hr', 'supervisor', 'employee'],
+      'admin'
+    );
+    if (!hasPermission) {
       console.log('[Sessions API] No authenticated session');
       return NextResponse.json(
         { error: 'Not authenticated' },
@@ -121,20 +124,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log(`[Sessions API] Fetching sessions for user: ${user.userId}`);
-
     // Get Supabase client and current session
     const supabase = await createServerClient('admin');
     const {
       data: { session: currentSession },
     } = await supabase.auth.getSession();
 
-    if (!currentSession) {
+    if (!currentSession?.user) {
       return NextResponse.json(
         { error: 'Session expired' },
         { status: 401 }
       );
     }
+
+    const userId = currentSession.user.id;
+    console.log(`[Sessions API] Fetching sessions for user: ${userId}`);
 
     // Get all sessions for the user from Supabase Admin API
     // Note: This requires admin privileges to list all user sessions
@@ -210,9 +214,12 @@ export async function DELETE(request: NextRequest) {
   try {
     console.log('[Sessions API] DELETE request received');
 
-    // Get current user from Supabase session
-    const user = await getUserFromSupabase();
-    if (!user) {
+    // Verify authentication using portal-specific session
+    const hasPermission = await checkUserRoleFromSupabase(
+      ['admin', 'hr', 'supervisor', 'employee'],
+      'admin'
+    );
+    if (!hasPermission) {
       console.log('[Sessions API] No authenticated session');
       return NextResponse.json(
         { error: 'Not authenticated' },
@@ -220,13 +227,21 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    console.log(`[Sessions API] Revoking session(s) for user: ${user.userId}`);
+    // Get Supabase client for user details
+    const supabase = await createServerClient('admin');
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Session expired' }, { status: 401 });
+    }
+
+    const userId = session.user.id;
+    console.log(`[Sessions API] Revoking session(s) for user: ${userId}`);
 
     // Parse request body
     const body = await request.json();
-
-    // Get Supabase client
-    const supabase = await createServerClient('admin');
 
     // Get client IP and user agent for audit log
     const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
@@ -245,10 +260,10 @@ export async function DELETE(request: NextRequest) {
         // For now, we'll just log the action
 
         await db.insert(auditLogs).values({
-          userId: user.userId,
+          userId: userId,
           action: 'revoke_all_other_sessions',
           entityType: 'auth',
-          entityId: user.userId,
+          entityId: userId,
           changes: {
             revokedAll: true,
             keptCurrent: true,
@@ -292,10 +307,10 @@ export async function DELETE(request: NextRequest) {
         }
 
         await db.insert(auditLogs).values({
-          userId: user.userId,
+          userId: userId,
           action: 'revoke_all_sessions',
           entityType: 'auth',
-          entityId: user.userId,
+          entityId: userId,
           changes: {
             revokedAll: true,
             keptCurrent: false,
@@ -335,7 +350,7 @@ export async function DELETE(request: NextRequest) {
       // 3. The session would be invalidated on next refresh
 
       await db.insert(auditLogs).values({
-        userId: user.userId,
+        userId: userId,
         action: 'revoke_session',
         entityType: 'auth',
         entityId: validatedData.sessionId,

@@ -44,6 +44,43 @@ export {
 } from './useDashboardQuery';
 
 // ============================================================================
+// Deadline Hooks
+// ============================================================================
+
+/**
+ * Deadline Hooks
+ *
+ * React Query hooks for fetching and managing submission deadlines.
+ * Includes urgency level calculations and helper functions.
+ *
+ * Features:
+ * - 5-minute stale time for balanced freshness
+ * - Auto-refetch on window focus
+ * - Computed urgency levels (critical/warning/normal)
+ * - Form-type specific deadline queries
+ *
+ * @example
+ * ```tsx
+ * import { useUpcomingDeadlines, useDeadlineForForm } from '@/hooks';
+ *
+ * // Get all deadlines
+ * const { deadlines, hasUrgentDeadlines } = useUpcomingDeadlines();
+ *
+ * // Get PDS-specific deadline
+ * const { deadline, urgencyLevel } = useDeadlineForForm('pds');
+ * ```
+ */
+export {
+  useUpcomingDeadlines,
+  useDeadlineForForm,
+  useInvalidateDeadlines,
+  deadlinesKeys,
+  type Deadline,
+  type DeadlinesSummary,
+  type UrgencyLevel,
+} from './useDeadlines';
+
+// ============================================================================
 // Performance-Optimized Theme & Color Hooks
 // ============================================================================
 
