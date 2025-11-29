@@ -47,16 +47,16 @@ import {
   createEmptySaln,
   calculateSalnSummary,
   type CompleteSalnData,
-} from '@/lib/validations/saln-schema';
+} from '../../../../lib/validations/saln-schema';
 
 // Form components
 import {
   FormStepIndicator,
   FormStepSkeleton,
   type FormStep,
-} from '@/components/forms/shared';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+} from '../../../../components/forms/shared';
+import { Button } from '../../../../components/ui/button';
+import { Badge } from '../../../../components/ui/badge';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -66,17 +66,17 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from '../../../../components/ui/alert-dialog';
 
 // Magic UI components
-import { ShimmerButton } from '@/components/ui/shimmer-button';
-import { AnimatedGradientText } from '@/components/ui/animated-gradient-text';
-import { BlurFade } from '@/components/ui/blur-fade';
-import { DotPattern } from '@/components/ui/dot-pattern';
+import { ShimmerButton } from '../../../../components/ui/shimmer-button';
+import { AnimatedGradientText } from '../../../../components/ui/animated-gradient-text';
+import { BlurFade } from '../../../../components/ui/blur-fade';
+import { DotPattern } from '../../../../components/ui/dot-pattern';
 
 // Hooks
-import { useAutoSave, getSavedDraft } from '@/hooks/useAutoSave';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAutoSave, getSavedDraft } from '../../../../hooks/useAutoSave';
+import { useAuth } from '../../../../providers/AuthProvider';
 
 // Step components
 import {
@@ -183,8 +183,12 @@ export default function SALNCreatePage() {
   useEffect(() => {
     const currentCalculations = form.getValues('calculations');
     // Only update if calculations have actually changed
-    if (JSON.stringify(currentCalculations) !== JSON.stringify(financialSummary)) {
-      form.setValue('calculations', financialSummary, { shouldValidate: false });
+    if (
+      JSON.stringify(currentCalculations) !== JSON.stringify(financialSummary)
+    ) {
+      form.setValue('calculations', financialSummary, {
+        shouldValidate: false,
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [financialSummary]);
@@ -387,7 +391,9 @@ export default function SALNCreatePage() {
                 <AnimatedGradientText className="text-2xl sm:text-3xl font-semibold">
                   Create SALN Statement
                 </AnimatedGradientText>
-                <Badge variant="outline" className="text-xs font-normal border-slate-300/50 dark:border-slate-700/50 w-fit">
+                <Badge
+                  variant="outline"
+                  className="text-xs font-normal border-slate-300/50 dark:border-slate-700/50 w-fit">
                   CSC Form No. SALN 2019
                 </Badge>
               </div>
@@ -420,7 +426,7 @@ export default function SALNCreatePage() {
 
         {/* Form */}
         <FormProvider {...form}>
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          {}
           {/* Type assertion needed: Complex nested form schema type inference */}
           <form onSubmit={form.handleSubmit(handleSubmit as any)}>
             <BlurFade delay={0.2} key={currentStep}>

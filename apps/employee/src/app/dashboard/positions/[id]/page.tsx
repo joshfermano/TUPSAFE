@@ -22,20 +22,23 @@ import {
   Award,
   Target,
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
-import { BlurFade } from '@/components/ui/blur-fade';
-import { ShineBorder } from '@/components/ui/shine-border';
-import { ShimmerButton } from '@/components/ui/shimmer-button';
-import AnimatedGradientText from '@/components/ui/animated-gradient-text';
-import { BorderBeam } from '@/components/ui/border-beam';
-import { usePositionQuery, useApplyForPositionMutation } from '@/hooks/usePositionsQuery';
+import { Badge } from '../../../../components/ui/badge';
+import { Button } from '../../../../components/ui/button';
+import { Card } from '../../../../components/ui/card';
+import { Separator } from '../../../../components/ui/separator';
+import { Textarea } from '../../../../components/ui/textarea';
+import { Input } from '../../../../components/ui/input';
+import { Label } from '../../../../components/ui/label';
+import { cn } from '../../../../lib/utils';
+import { BlurFade } from '../../../../components/ui/blur-fade';
+import { ShineBorder } from '../../../../components/ui/shine-border';
+import { ShimmerButton } from '../../../../components/ui/shimmer-button';
+import AnimatedGradientText from '../../../../components/ui/animated-gradient-text';
+import { BorderBeam } from '../../../../components/ui/border-beam';
+import {
+  usePositionQuery,
+  useApplyForPositionMutation,
+} from '../../../../hooks/usePositionsQuery';
 import { toast } from 'sonner';
 
 /**
@@ -140,7 +143,12 @@ export default function PositionDetailsPage({
   const router = useRouter();
   const [showApplicationForm, setShowApplicationForm] = useState(false);
 
-  const { data: position, isLoading, error, refetch } = usePositionQuery(resolvedParams.id);
+  const {
+    data: position,
+    isLoading,
+    error,
+    refetch,
+  } = usePositionQuery(resolvedParams.id);
 
   if (isLoading) {
     return (
@@ -205,7 +213,9 @@ export default function PositionDetailsPage({
                 </Badge>
               )}
               {position.hasApplied && (
-                <Badge className="bg-green-100 text-green-800 border-green-200" variant="outline">
+                <Badge
+                  className="bg-green-100 text-green-800 border-green-200"
+                  variant="outline">
                   <CheckCircle className="h-3 w-3 mr-1" />
                   Applied
                 </Badge>
@@ -228,7 +238,9 @@ export default function PositionDetailsPage({
                   : ['#8B1538', '#B8264D', '#D4345F']
               }
               borderWidth={position.isFeatured ? 3 : 2}>
-              {position.isFeatured && <BorderBeam size={250} duration={12} delay={9} />}
+              {position.isFeatured && (
+                <BorderBeam size={250} duration={12} delay={9} />
+              )}
               <Card className="border-0">
                 <div className="p-6 space-y-6">
                   <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
@@ -240,7 +252,9 @@ export default function PositionDetailsPage({
                     <div className="flex items-center gap-3">
                       <Building2 className="h-5 w-5 text-[#8B1538]" />
                       <div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">Department</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Department
+                        </p>
                         <p className="font-medium text-slate-900 dark:text-slate-100">
                           {position.departmentName}
                         </p>
@@ -277,7 +291,9 @@ export default function PositionDetailsPage({
                     <div className="flex items-center gap-3">
                       <Users className="h-5 w-5 text-[#8B1538]" />
                       <div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">Openings</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Openings
+                        </p>
                         <p className="font-medium text-slate-900 dark:text-slate-100">
                           {position.numberOfOpenings} position(s)
                         </p>
@@ -292,12 +308,16 @@ export default function PositionDetailsPage({
                         </p>
                         <div className="flex items-center gap-2">
                           <p className="font-medium text-slate-900 dark:text-slate-100">
-                            {format(new Date(position.applicationDeadline), 'MMMM dd, yyyy')}
+                            {format(
+                              new Date(position.applicationDeadline),
+                              'MMMM dd, yyyy'
+                            )}
                           </p>
                           {isUrgent && (
                             <Badge variant="destructive" className="ml-auto">
                               <Clock className="h-3 w-3 mr-1" />
-                              {daysUntilDeadline} {daysUntilDeadline === 1 ? 'day' : 'days'} left
+                              {daysUntilDeadline}{' '}
+                              {daysUntilDeadline === 1 ? 'day' : 'days'} left
                             </Badge>
                           )}
                         </div>
@@ -321,42 +341,52 @@ export default function PositionDetailsPage({
                   <Separator />
 
                   {/* Qualifications */}
-                  {position.qualifications && position.qualifications.length > 0 && (
-                    <div className="space-y-3">
-                      <h3 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                        <GraduationCap className="h-4 w-4 text-[#8B1538]" />
-                        Qualifications
-                      </h3>
-                      <ul className="space-y-2">
-                        {position.qualifications.map((qual, index) => (
-                          <li key={index} className="flex items-start gap-2 text-sm">
-                            <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                            <span className="text-slate-700 dark:text-slate-300">{qual}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                  {position.qualifications &&
+                    position.qualifications.length > 0 && (
+                      <div className="space-y-3">
+                        <h3 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                          <GraduationCap className="h-4 w-4 text-[#8B1538]" />
+                          Qualifications
+                        </h3>
+                        <ul className="space-y-2">
+                          {position.qualifications.map((qual, index) => (
+                            <li
+                              key={index}
+                              className="flex items-start gap-2 text-sm">
+                              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                              <span className="text-slate-700 dark:text-slate-300">
+                                {qual}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
 
                   <Separator />
 
                   {/* Responsibilities */}
-                  {position.responsibilities && position.responsibilities.length > 0 && (
-                    <div className="space-y-3">
-                      <h3 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                        <Target className="h-4 w-4 text-[#8B1538]" />
-                        Key Responsibilities
-                      </h3>
-                      <ul className="space-y-2">
-                        {position.responsibilities.map((resp, index) => (
-                          <li key={index} className="flex items-start gap-2 text-sm">
-                            <Award className="h-4 w-4 text-[#8B1538] mt-0.5 flex-shrink-0" />
-                            <span className="text-slate-700 dark:text-slate-300">{resp}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                  {position.responsibilities &&
+                    position.responsibilities.length > 0 && (
+                      <div className="space-y-3">
+                        <h3 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                          <Target className="h-4 w-4 text-[#8B1538]" />
+                          Key Responsibilities
+                        </h3>
+                        <ul className="space-y-2">
+                          {position.responsibilities.map((resp, index) => (
+                            <li
+                              key={index}
+                              className="flex items-start gap-2 text-sm">
+                              <Award className="h-4 w-4 text-[#8B1538] mt-0.5 flex-shrink-0" />
+                              <span className="text-slate-700 dark:text-slate-300">
+                                {resp}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
 
                   {/* Requirements */}
                   {position.requirements && (
@@ -374,13 +404,15 @@ export default function PositionDetailsPage({
                                 Education
                               </h4>
                               <ul className="space-y-1">
-                                {position.requirements.education.map((item, index) => (
-                                  <li
-                                    key={index}
-                                    className="text-sm text-slate-600 dark:text-slate-400 pl-4">
-                                    • {item}
-                                  </li>
-                                ))}
+                                {position.requirements.education.map(
+                                  (item, index) => (
+                                    <li
+                                      key={index}
+                                      className="text-sm text-slate-600 dark:text-slate-400 pl-4">
+                                      • {item}
+                                    </li>
+                                  )
+                                )}
                               </ul>
                             </div>
                           )}
@@ -392,13 +424,15 @@ export default function PositionDetailsPage({
                                 Experience
                               </h4>
                               <ul className="space-y-1">
-                                {position.requirements.experience.map((item, index) => (
-                                  <li
-                                    key={index}
-                                    className="text-sm text-slate-600 dark:text-slate-400 pl-4">
-                                    • {item}
-                                  </li>
-                                ))}
+                                {position.requirements.experience.map(
+                                  (item, index) => (
+                                    <li
+                                      key={index}
+                                      className="text-sm text-slate-600 dark:text-slate-400 pl-4">
+                                      • {item}
+                                    </li>
+                                  )
+                                )}
                               </ul>
                             </div>
                           )}
@@ -410,13 +444,15 @@ export default function PositionDetailsPage({
                                 Skills
                               </h4>
                               <ul className="space-y-1">
-                                {position.requirements.skills.map((item, index) => (
-                                  <li
-                                    key={index}
-                                    className="text-sm text-slate-600 dark:text-slate-400 pl-4">
-                                    • {item}
-                                  </li>
-                                ))}
+                                {position.requirements.skills.map(
+                                  (item, index) => (
+                                    <li
+                                      key={index}
+                                      className="text-sm text-slate-600 dark:text-slate-400 pl-4">
+                                      • {item}
+                                    </li>
+                                  )
+                                )}
                               </ul>
                             </div>
                           )}
@@ -468,12 +504,15 @@ export default function PositionDetailsPage({
                           Application Submitted
                         </p>
                         <p className="text-xs text-green-700 dark:text-green-300">
-                          Status: {position.applicationStatus?.replace('_', ' ')}
+                          Status:{' '}
+                          {position.applicationStatus?.replace('_', ' ')}
                         </p>
                       </div>
                     </div>
                     <Button asChild variant="outline" className="w-full">
-                      <Link href="/dashboard/applications">View My Applications</Link>
+                      <Link href="/dashboard/applications">
+                        View My Applications
+                      </Link>
                     </Button>
                   </div>
                 ) : (
@@ -536,7 +575,9 @@ export default function PositionDetailsPage({
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-600 dark:text-slate-400">Posted</span>
+                    <span className="text-sm text-slate-600 dark:text-slate-400">
+                      Posted
+                    </span>
                     <span className="font-semibold text-slate-900 dark:text-slate-100">
                       {format(new Date(position.postedAt), 'MMM dd, yyyy')}
                     </span>

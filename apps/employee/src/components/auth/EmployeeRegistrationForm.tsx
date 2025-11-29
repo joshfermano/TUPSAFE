@@ -15,9 +15,9 @@ import {
   Loader2,
 } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Checkbox } from '../ui/checkbox';
 import {
   Form,
   FormControl,
@@ -26,7 +26,7 @@ import {
   FormLabel,
   FormMessage,
   FormDescription,
-} from '@/components/ui/form';
+} from '../ui/form';
 
 import { OrganizationSelector } from './OrganizationSelector';
 import { HireDateInput } from './HireDateInput';
@@ -35,7 +35,7 @@ import { EmailVerificationStep } from './EmailVerificationStep';
 import {
   employeeRegistrationSchemaWithConfirmation,
   type EmployeeRegistrationFormData,
-} from '@/lib/validations/auth';
+} from '../../lib/validations/auth';
 
 interface EmployeeRegistrationFormProps {
   employmentCategory: 'faculty' | 'administrative';

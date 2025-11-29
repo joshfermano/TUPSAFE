@@ -15,17 +15,17 @@ import {
   Loader2,
 } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
+import { Input } from '../ui/input';
+import { Checkbox } from '../ui/checkbox';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '../ui/select';
 import {
   Form,
   FormControl,
@@ -34,15 +34,15 @@ import {
   FormLabel,
   FormMessage,
   FormDescription,
-} from '@/components/ui/form';
+} from '../ui/form';
 
-import { useOpenPositions, type OpenPosition } from '@/hooks';
+import { useOpenPositions, type OpenPosition } from '../../hooks';
 import { EmailVerificationStep } from './EmailVerificationStep';
 
 import {
   applicantRegistrationSchemaWithConfirmation,
   type ApplicantRegistrationFormData,
-} from '@/lib/validations/auth';
+} from '../../lib/validations/auth';
 
 interface ApplicantRegistrationFormProps {
   currentStep: number;
@@ -179,13 +179,12 @@ export function ApplicantRegistrationForm({
   };
 
   // Input styling matching login page
-  const inputClasses = "h-11 bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/60 focus:border-[#8B1538] focus:ring-2 focus:ring-[#8B1538]/20 dark:focus:border-[#8B1538] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-lg transition-all duration-200";
+  const inputClasses =
+    'h-11 bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/60 focus:border-[#8B1538] focus:ring-2 focus:ring-[#8B1538]/20 dark:focus:border-[#8B1538] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-lg transition-all duration-200';
 
   return (
     <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         {/* Step 1: Personal Information */}
         {currentStep === 1 && (
           <div className="space-y-6">
@@ -195,7 +194,9 @@ export function ApplicantRegistrationForm({
                 name="firstName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-medium text-slate-600 dark:text-slate-400">First Name</FormLabel>
+                    <FormLabel className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                      First Name
+                    </FormLabel>
                     <FormControl>
                       <Input
                         {...field}
@@ -213,7 +214,9 @@ export function ApplicantRegistrationForm({
                 name="lastName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-medium text-slate-600 dark:text-slate-400">Last Name</FormLabel>
+                    <FormLabel className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                      Last Name
+                    </FormLabel>
                     <FormControl>
                       <Input
                         {...field}
@@ -232,7 +235,9 @@ export function ApplicantRegistrationForm({
               name="middleName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-medium text-slate-600 dark:text-slate-400">Middle Name (Optional)</FormLabel>
+                  <FormLabel className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                    Middle Name (Optional)
+                  </FormLabel>
                   <FormControl>
                     <Input
                       {...field}
@@ -250,7 +255,9 @@ export function ApplicantRegistrationForm({
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-medium text-slate-600 dark:text-slate-400">Email Address</FormLabel>
+                  <FormLabel className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                    Email Address
+                  </FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
@@ -275,7 +282,9 @@ export function ApplicantRegistrationForm({
               name="phoneNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-medium text-slate-600 dark:text-slate-400">Phone Number</FormLabel>
+                  <FormLabel className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                    Phone Number
+                  </FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
@@ -297,7 +306,9 @@ export function ApplicantRegistrationForm({
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-medium text-slate-600 dark:text-slate-400">Password</FormLabel>
+                  <FormLabel className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                    Password
+                  </FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
@@ -310,14 +321,18 @@ export function ApplicantRegistrationForm({
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-0.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/50"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-0.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                   </FormControl>
                   <FormDescription className="text-xs text-slate-500 dark:text-slate-400">
-                    8+ characters, uppercase, lowercase, number, special character
+                    8+ characters, uppercase, lowercase, number, special
+                    character
                   </FormDescription>
                   <FormMessage className="text-xs" />
                 </FormItem>
@@ -329,7 +344,9 @@ export function ApplicantRegistrationForm({
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-medium text-slate-600 dark:text-slate-400">Confirm Password</FormLabel>
+                  <FormLabel className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                    Confirm Password
+                  </FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
@@ -341,10 +358,15 @@ export function ApplicantRegistrationForm({
                       />
                       <button
                         type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-0.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/50"
-                      >
-                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-0.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                   </FormControl>
@@ -385,7 +407,9 @@ export function ApplicantRegistrationForm({
                         <div className="p-2 text-sm text-slate-500">
                           Loading open positions...
                         </div>
-                      ) : openPositions && openPositions.positions && openPositions.positions.length > 0 ? (
+                      ) : openPositions &&
+                        openPositions.positions &&
+                        openPositions.positions.length > 0 ? (
                         openPositions.positions.map((position) => (
                           <SelectItem key={position.id} value={position.id}>
                             <div className="flex flex-col py-1">
@@ -527,8 +551,7 @@ export function ApplicantRegistrationForm({
               variant="ghost"
               onClick={onPrevStep}
               disabled={currentStep === 0 || isLoading || isInitiating}
-              className="flex-1 h-11 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/50 font-medium rounded-lg transition-all duration-200 disabled:opacity-40"
-            >
+              className="flex-1 h-11 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/50 font-medium rounded-lg transition-all duration-200 disabled:opacity-40">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Previous
             </Button>
@@ -538,8 +561,7 @@ export function ApplicantRegistrationForm({
                 type="button"
                 onClick={handleNextStep}
                 disabled={isLoading || isInitiating}
-                className="flex-1 h-11 bg-gradient-to-r from-[#8B1538] to-[#B8264D] hover:from-[#6B1028] hover:to-[#9A1E3D] text-white font-medium rounded-lg shadow-lg shadow-[#8B1538]/25 hover:shadow-[#8B1538]/40 transition-all duration-200 disabled:opacity-40"
-              >
+                className="flex-1 h-11 bg-gradient-to-r from-[#8B1538] to-[#B8264D] hover:from-[#6B1028] hover:to-[#9A1E3D] text-white font-medium rounded-lg shadow-lg shadow-[#8B1538]/25 hover:shadow-[#8B1538]/40 transition-all duration-200 disabled:opacity-40">
                 {isInitiating ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -556,8 +578,7 @@ export function ApplicantRegistrationForm({
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="flex-1 h-11 bg-gradient-to-r from-[#8B1538] to-[#B8264D] hover:from-[#6B1028] hover:to-[#9A1E3D] text-white font-medium rounded-lg shadow-lg shadow-[#8B1538]/25 hover:shadow-[#8B1538]/40 transition-all duration-200 disabled:opacity-40"
-              >
+                className="flex-1 h-11 bg-gradient-to-r from-[#8B1538] to-[#B8264D] hover:from-[#6B1028] hover:to-[#9A1E3D] text-white font-medium rounded-lg shadow-lg shadow-[#8B1538]/25 hover:shadow-[#8B1538]/40 transition-all duration-200 disabled:opacity-40">
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

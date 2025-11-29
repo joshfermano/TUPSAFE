@@ -24,9 +24,6 @@ import { philippineAddressSchema } from './address';
 const phoneRegex = /^(\+63|0)?[2-9]\d{1,2}-?\d{3}-?\d{4}$/;
 const mobileRegex = /^(\+63|0)?9\d{2}-?\d{3}-?\d{4}$/;
 
-// Email validation (RFC 5322 compliant)
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 // Government ID number formats
 const gsisRegex = /^\d{2}-\d{7}-\d{1}$/; // Format: 12-3456789-0
 const sssRegex = /^\d{2}-\d{7}-\d{1}$/; // Format: 34-5678901-2
@@ -123,47 +120,58 @@ export const personalInfoBasicSchema = z.object({
     .optional(),
 
   // Government IDs (all optional but recommended)
+  // Using union pattern: empty string OR valid format, then optional/nullable
   gsisNo: z
-    .string()
-    .regex(gsisRegex, 'Invalid GSIS format (e.g., 12-3456789-0)')
-    .nullable()
+    .union([
+      z.literal(''),
+      z.string().regex(gsisRegex, 'Invalid GSIS ID format (XX-XXXXXXX-X)'),
+    ])
     .optional()
-    .or(z.literal('')),
+    .nullable(),
 
   pagibigNo: z
-    .string()
-    .regex(pagibigRegex, 'Invalid PAG-IBIG format (e.g., 1234-5678-9012)')
-    .nullable()
+    .union([
+      z.literal(''),
+      z
+        .string()
+        .regex(pagibigRegex, 'Invalid PAG-IBIG format (XXXX-XXXX-XXXX)'),
+    ])
     .optional()
-    .or(z.literal('')),
+    .nullable(),
 
   philhealthNo: z
-    .string()
-    .regex(philhealthRegex, 'Invalid PhilHealth format (e.g., 12-345678901-2)')
-    .nullable()
+    .union([
+      z.literal(''),
+      z
+        .string()
+        .regex(philhealthRegex, 'Invalid PhilHealth format (XX-XXXXXXXXX-X)'),
+    ])
     .optional()
-    .or(z.literal('')),
+    .nullable(),
 
   sssNo: z
-    .string()
-    .regex(sssRegex, 'Invalid SSS format (e.g., 34-5678901-2)')
-    .nullable()
+    .union([
+      z.literal(''),
+      z.string().regex(sssRegex, 'Invalid SSS format (XX-XXXXXXX-X)'),
+    ])
     .optional()
-    .or(z.literal('')),
+    .nullable(),
 
   tinNo: z
-    .string()
-    .regex(tinRegex, 'Invalid TIN format (e.g., 123-456-789-000)')
-    .nullable()
+    .union([
+      z.literal(''),
+      z.string().regex(tinRegex, 'Invalid TIN format (XXX-XXX-XXX-XXX)'),
+    ])
     .optional()
-    .or(z.literal('')),
+    .nullable(),
 
   agencyEmployeeNo: z
-    .string()
-    .max(50, 'Agency Employee No. must not exceed 50 characters')
-    .nullable()
+    .union([
+      z.literal(''),
+      z.string().max(50, 'Agency Employee No. must not exceed 50 characters'),
+    ])
     .optional()
-    .or(z.literal('')),
+    .nullable(),
 
   // Citizenship
   citizenship: z.object({
@@ -195,33 +203,45 @@ export const permanentAddressSchema = philippineAddressSchema.extend({
 
 /**
  * Part 4: Contact Information
+ * Using union pattern: empty string OR valid format, then optional/nullable
  */
 export const contactInfoSchema = z.object({
   telephoneNo: z
-    .string()
-    .regex(
-      phoneRegex,
-      'Invalid telephone number format (e.g., +63-2-8123-4567)'
-    )
-    .nullable()
+    .union([
+      z.literal(''),
+      z
+        .string()
+        .regex(
+          phoneRegex,
+          'Invalid telephone number format (e.g., +63-2-8123-4567)'
+        ),
+    ])
     .optional()
-    .or(z.literal('')),
+    .nullable(),
 
   mobileNo: z
-    .string()
-    .regex(mobileRegex, 'Invalid mobile number format (e.g., +63-917-123-4567)')
-    .nullable()
+    .union([
+      z.literal(''),
+      z
+        .string()
+        .regex(
+          mobileRegex,
+          'Invalid mobile number format (e.g., +63-917-123-4567)'
+        ),
+    ])
     .optional()
-    .or(z.literal('')),
+    .nullable(),
 
   emailAddress: z
-    .string()
-    .regex(emailRegex, 'Invalid email address format')
-    .email('Invalid email address')
-    .max(100, 'Email address must not exceed 100 characters')
-    .nullable()
+    .union([
+      z.literal(''),
+      z
+        .string()
+        .email('Invalid email address')
+        .max(100, 'Email address must not exceed 100 characters'),
+    ])
     .optional()
-    .or(z.literal('')),
+    .nullable(),
 });
 
 /**
@@ -293,11 +313,12 @@ const spouseSchema = z.object({
     .optional(),
 
   spouseTelephoneNo: z
-    .string()
-    .regex(phoneRegex, 'Invalid telephone number format')
-    .nullable()
+    .union([
+      z.literal(''),
+      z.string().regex(phoneRegex, 'Invalid telephone number format'),
+    ])
     .optional()
-    .or(z.literal('')),
+    .nullable(),
 });
 
 /**
@@ -711,10 +732,12 @@ const referenceSchema = z.object({
     .max(250, 'Address must not exceed 250 characters'),
 
   telephoneNo: z
-    .string()
-    .regex(phoneRegex, 'Invalid telephone number format')
+    .union([
+      z.literal(''),
+      z.string().regex(phoneRegex, 'Invalid telephone number format'),
+    ])
     .optional()
-    .or(z.literal('')),
+    .nullable(),
 });
 
 /**
@@ -796,8 +819,8 @@ export const otherInformationSchema = z
     questions: questionsSchema,
     references: z
       .array(referenceSchema)
-      .min(3, 'At least 3 references are required')
-      .max(5, 'Maximum of 5 references allowed'),
+      .min(3, 'You must provide at least 3 character references')
+      .max(5, 'Maximum of 5 character references allowed'),
   })
   .refine(
     (data) => {
@@ -952,6 +975,185 @@ export const completePdsSchema = z.object({
 });
 
 // ============================================================================
+// STEP-SPECIFIC VALIDATION SCHEMAS
+// ============================================================================
+
+/**
+ * Citizenship schema for step validation
+ */
+const citizenshipSchema = z.object({
+  type: z.enum(['Filipino', 'Dual'], {
+    required_error: 'Citizenship type is required',
+  }),
+  details: z
+    .string()
+    .max(100, 'Citizenship details must not exceed 100 characters')
+    .optional(),
+});
+
+/**
+ * Step 1: Personal Basic (Required fields only)
+ * Used for validating the minimum required personal information
+ */
+export const step1RequiredSchema = z.object({
+  surname: z
+    .string()
+    .min(1, 'Surname is required')
+    .max(50, 'Surname must not exceed 50 characters')
+    .regex(/^[a-zA-Z\s\-\.ñÑ]+$/, 'Invalid characters in surname'),
+
+  firstName: z
+    .string()
+    .min(1, 'First name is required')
+    .max(50, 'First name must not exceed 50 characters')
+    .regex(/^[a-zA-Z\s\-\.ñÑ]+$/, 'Invalid characters in first name'),
+
+  dateOfBirth: z
+    .date({ required_error: 'Date of birth is required' })
+    .max(new Date(), 'Date cannot be in the future')
+    .refine(
+      (date) => {
+        const age = new Date().getFullYear() - date.getFullYear();
+        return age >= 18 && age <= 100;
+      },
+      { message: 'Age must be between 18 and 100 years' }
+    ),
+
+  placeOfBirth: z
+    .string()
+    .min(1, 'Place of birth is required')
+    .max(100, 'Place of birth must not exceed 100 characters'),
+
+  sex: z.enum(['male', 'female'], {
+    required_error: 'Sex is required',
+  }),
+
+  civilStatus: z.enum(
+    ['single', 'married', 'widowed', 'separated', 'divorced'],
+    {
+      required_error: 'Civil status is required',
+    }
+  ),
+
+  citizenship: citizenshipSchema,
+});
+
+/**
+ * Step 2: Addresses Schema
+ * Optional but validated if provided
+ */
+export const step2AddressSchema = z.object({
+  residentialAddress: residentialAddressSchema.optional(),
+  permanentAddress: permanentAddressSchema.optional(),
+});
+
+/**
+ * Step 3: Contact Information Schema
+ * Optional but validated if provided
+ */
+export const step3ContactSchema = contactInfoSchema;
+
+/**
+ * Step 4: Family Background Schema
+ * Optional but validated if provided
+ */
+export const step4FamilySchema = familyBackgroundSchema;
+
+/**
+ * Step 5: Educational Background Schema
+ * Optional but validated if provided
+ */
+export const step5EducationSchema = educationalBackgroundSchema;
+
+/**
+ * Step 6: Civil Service Eligibility Schema
+ * Optional array but validated if provided
+ */
+export const step6EligibilitySchema = z.array(civilServiceSchema).default([]);
+
+/**
+ * Step 7: Work Experience Schema
+ * Optional array but validated if provided
+ */
+export const step7WorkExperienceSchema = z
+  .array(workExperienceSchema)
+  .default([]);
+
+/**
+ * Step 8: Voluntary Work Schema
+ * Optional array but validated if provided
+ */
+export const step8VoluntaryWorkSchema = z
+  .array(voluntaryWorkSchema)
+  .default([]);
+
+/**
+ * Step 9: Learning and Development Schema
+ * Optional array but validated if provided
+ */
+export const step9TrainingSchema = z.array(trainingSchema).default([]);
+
+/**
+ * Step 10: Other Information Schema
+ * Required with minimum 3 references
+ */
+export const step10OtherInfoSchema = otherInformationSchema;
+
+/**
+ * Step validators object for use in form navigation
+ * Maps step index to corresponding validation schema
+ */
+export const stepValidators = {
+  0: step1RequiredSchema, // Personal Basic (required)
+  1: step2AddressSchema, // Addresses (optional but validated)
+  2: step3ContactSchema, // Contact (optional but validated)
+  3: step4FamilySchema, // Family (optional but validated)
+  4: step5EducationSchema, // Education (optional but validated)
+  5: step6EligibilitySchema, // Eligibility (optional array)
+  6: step7WorkExperienceSchema, // Work Experience (optional array)
+  7: step8VoluntaryWorkSchema, // Voluntary Work (optional array)
+  8: step9TrainingSchema, // Training (optional array)
+  9: step10OtherInfoSchema, // Other Info (required references)
+} as const;
+
+/**
+ * Type for step validator keys
+ */
+export type StepIndex = keyof typeof stepValidators;
+
+/**
+ * Validate a specific step's data
+ * @param stepIndex - The step index (0-9)
+ * @param data - The data to validate for that step
+ * @returns Object with success boolean and optional errors
+ */
+export function validateStep(
+  stepIndex: StepIndex,
+  data: unknown
+): { success: boolean; errors?: z.ZodError } {
+  const validator = stepValidators[stepIndex];
+  if (!validator) {
+    return { success: false };
+  }
+
+  const result = validator.safeParse(data);
+  if (result.success) {
+    return { success: true };
+  }
+  return { success: false, errors: result.error };
+}
+
+/**
+ * Check if a step is required
+ * @param stepIndex - The step index (0-9)
+ * @returns boolean indicating if the step has required fields
+ */
+export function isStepRequired(stepIndex: StepIndex): boolean {
+  // Only step 0 (Personal Basic) and step 9 (Other Info with references) are required
+  return stepIndex === 0 || stepIndex === 9;
+}
+
+// ============================================================================
 // TYPE EXPORTS
 // ============================================================================
 
@@ -971,6 +1173,18 @@ export type Recognition = z.infer<typeof recognitionSchema>;
 export type Association = z.infer<typeof associationSchema>;
 export type Reference = z.infer<typeof referenceSchema>;
 export type CompletePdsData = z.infer<typeof completePdsSchema>;
+
+// Step-specific types
+export type Step1Data = z.infer<typeof step1RequiredSchema>;
+export type Step2Data = z.infer<typeof step2AddressSchema>;
+export type Step3Data = z.infer<typeof step3ContactSchema>;
+export type Step4Data = z.infer<typeof step4FamilySchema>;
+export type Step5Data = z.infer<typeof step5EducationSchema>;
+export type Step6Data = z.infer<typeof step6EligibilitySchema>;
+export type Step7Data = z.infer<typeof step7WorkExperienceSchema>;
+export type Step8Data = z.infer<typeof step8VoluntaryWorkSchema>;
+export type Step9Data = z.infer<typeof step9TrainingSchema>;
+export type Step10Data = z.infer<typeof step10OtherInfoSchema>;
 
 // ============================================================================
 // HELPER FUNCTIONS

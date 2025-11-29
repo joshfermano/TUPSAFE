@@ -4,7 +4,7 @@ import { memo } from 'react';
 import { motion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 import { StatusBadge, type Status } from './StatusBadge';
-import { cn } from '@/lib/utils';
+import { cn } from '../../lib/utils';
 
 export interface ActivityItemProps {
   icon: LucideIcon;

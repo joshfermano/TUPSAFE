@@ -2,8 +2,8 @@
 
 import { memo } from 'react';
 import { Home } from 'lucide-react';
-import { FormSection } from '@/components/forms/shared/FormSection';
-import { AddressInput } from '@/components/forms/shared/AddressInput';
+import { FormSection } from '../../../../../components/forms/shared/FormSection';
+import { AddressInput } from '../../../../../components/forms/shared/AddressInput';
 
 /**
  * Step 2: Personal Information - Addresses
@@ -16,8 +16,7 @@ export const Addresses = memo(function Addresses() {
       description="Provide your complete Philippine addresses"
       icon={Home}
       required={true}
-      stepNumber={2}
-    >
+      stepNumber={2}>
       <div className="space-y-12">
         <AddressInput
           name="personalInfo.residentialAddress"

@@ -54,97 +54,101 @@ interface ComplianceOverviewCardProps {
   trendPercentage: number;
 }
 
-const ComplianceOverviewCard = memo(({ overallRate, trendPercentage }: ComplianceOverviewCardProps) => {
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+const ComplianceOverviewCard = memo(
+  ({ overallRate, trendPercentage }: ComplianceOverviewCardProps) => {
+    const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setPrefersReducedMotion(mediaQuery.matches);
-  }, []);
+    useEffect(() => {
+      const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+      setPrefersReducedMotion(mediaQuery.matches);
+    }, []);
 
-  const isPositive = trendPercentage > 0;
+    const isPositive = trendPercentage > 0;
 
-  // 7-day mini trend data - visual representation only
-  const trendData = useMemo(() => {
-    const baseRate = overallRate;
-    return Array.from({ length: 7 }, (_, i) => ({
-      day: i + 1,
-      rate: baseRate + (Math.random() * 3 - 1.5),
-    }));
-  }, [overallRate]);
+    // 7-day mini trend data - visual representation only
+    const trendData = useMemo(() => {
+      const baseRate = overallRate;
+      return Array.from({ length: 7 }, (_, i) => ({
+        day: i + 1,
+        rate: baseRate + (Math.random() * 3 - 1.5),
+      }));
+    }, [overallRate]);
 
-  const chartConfig = {
-    rate: {
-      label: 'Compliance Rate',
-      color: '#8B1538',
-    },
-  };
+    const chartConfig = {
+      rate: {
+        label: 'Compliance Rate',
+        color: '#8B1538',
+      },
+    };
 
-  const content = (
-    <Card className="bg-gradient-to-br from-[#8B1538]/5 to-transparent">
-      <CardHeader>
-        <CardTitle className="text-base font-medium">
-          Compliance Overview
-        </CardTitle>
-        <CardDescription>Overall compliance rate</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-bold">{overallRate.toFixed(1)}%</span>
-            <div
-              className={`flex items-center gap-1 text-sm ${
-                isPositive
-                  ? 'text-green-600 dark:text-green-400'
-                  : 'text-red-600 dark:text-red-400'
-              }`}
-            >
-              {isPositive ? (
-                <TrendingUp className="h-4 w-4" />
-              ) : (
-                <TrendingDown className="h-4 w-4" />
-              )}
-              <span>{Math.abs(trendPercentage).toFixed(1)}%</span>
+    const content = (
+      <Card className="bg-gradient-to-br from-[#8B1538]/5 to-transparent">
+        <CardHeader>
+          <CardTitle className="text-base font-medium">
+            Compliance Overview
+          </CardTitle>
+          <CardDescription>Overall compliance rate</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-bold">
+                {overallRate.toFixed(1)}%
+              </span>
+              <div
+                className={`flex items-center gap-1 text-sm ${
+                  isPositive
+                    ? 'text-green-600 dark:text-green-400'
+                    : 'text-red-600 dark:text-red-400'
+                }`}>
+                {isPositive ? (
+                  <TrendingUp className="h-4 w-4" />
+                ) : (
+                  <TrendingDown className="h-4 w-4" />
+                )}
+                <span>{Math.abs(trendPercentage).toFixed(1)}%</span>
+              </div>
             </div>
+            <p className="text-xs text-muted-foreground">
+              7-day trend vs previous period
+            </p>
+
+            {/* Mini area chart */}
+            <ChartContainer config={chartConfig} className="h-[60px]">
+              <AreaChart data={trendData}>
+                <defs>
+                  <linearGradient id="miniTrend" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#8B1538" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#8B1538" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <Area
+                  type="monotone"
+                  dataKey="rate"
+                  stroke="var(--color-rate)"
+                  strokeWidth={1.5}
+                  fillOpacity={1}
+                  fill="url(#miniTrend)"
+                />
+              </AreaChart>
+            </ChartContainer>
           </div>
-          <p className="text-xs text-muted-foreground">7-day trend vs previous period</p>
+        </CardContent>
+      </Card>
+    );
 
-          {/* Mini area chart */}
-          <ChartContainer config={chartConfig} className="h-[60px]">
-            <AreaChart data={trendData}>
-              <defs>
-                <linearGradient id="miniTrend" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#8B1538" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#8B1538" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <Area
-                type="monotone"
-                dataKey="rate"
-                stroke="var(--color-rate)"
-                strokeWidth={1.5}
-                fillOpacity={1}
-                fill="url(#miniTrend)"
-              />
-            </AreaChart>
-          </ChartContainer>
-        </div>
-      </CardContent>
-    </Card>
-  );
+    if (prefersReducedMotion) return content;
 
-  if (prefersReducedMotion) return content;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-    >
-      {content}
-    </motion.div>
-  );
-});
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}>
+        {content}
+      </motion.div>
+    );
+  }
+);
 
 ComplianceOverviewCard.displayName = 'ComplianceOverviewCard';
 
@@ -158,74 +162,84 @@ interface SubmissionStatsCardProps {
   salnRecent: number;
 }
 
-const SubmissionStatsCard = memo(({ pdsTotal, salnTotal, pdsRecent, salnRecent }: SubmissionStatsCardProps) => {
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+const SubmissionStatsCard = memo(
+  ({
+    pdsTotal,
+    salnTotal,
+    pdsRecent,
+    salnRecent,
+  }: SubmissionStatsCardProps) => {
+    const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setPrefersReducedMotion(mediaQuery.matches);
-  }, []);
+    useEffect(() => {
+      const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+      setPrefersReducedMotion(mediaQuery.matches);
+    }, []);
 
-  const content = (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base font-medium">
-          Submission Statistics
-        </CardTitle>
-        <CardDescription>Total submissions this period</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {/* PDS Submissions */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-blue-100 p-2 dark:bg-blue-900/20">
-                <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+    const content = (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base font-medium">
+            Submission Statistics
+          </CardTitle>
+          <CardDescription>Total submissions this period</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* PDS Submissions */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-blue-100 p-2 dark:bg-blue-900/20">
+                  <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">PDS Submissions</p>
+                  <p className="text-2xl font-bold">{pdsTotal}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium">PDS Submissions</p>
-                <p className="text-2xl font-bold">{pdsTotal}</p>
-              </div>
+              <Badge
+                variant="outline"
+                className="text-blue-600 dark:text-blue-400">
+                {pdsRecent} recent
+              </Badge>
             </div>
-            <Badge variant="outline" className="text-blue-600 dark:text-blue-400">
-              {pdsRecent} recent
-            </Badge>
-          </div>
 
-          <Separator />
+            <Separator />
 
-          {/* SALN Submissions */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-purple-100 p-2 dark:bg-purple-900/20">
-                <Landmark className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            {/* SALN Submissions */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-purple-100 p-2 dark:bg-purple-900/20">
+                  <Landmark className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">SALN Submissions</p>
+                  <p className="text-2xl font-bold">{salnTotal}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium">SALN Submissions</p>
-                <p className="text-2xl font-bold">{salnTotal}</p>
-              </div>
+              <Badge
+                variant="outline"
+                className="text-purple-600 dark:text-purple-400">
+                {salnRecent} recent
+              </Badge>
             </div>
-            <Badge variant="outline" className="text-purple-600 dark:text-purple-400">
-              {salnRecent} recent
-            </Badge>
           </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+        </CardContent>
+      </Card>
+    );
 
-  if (prefersReducedMotion) return content;
+    if (prefersReducedMotion) return content;
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: 0.1, ease: [0.4, 0, 0.2, 1] }}
-    >
-      {content}
-    </motion.div>
-  );
-});
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.1, ease: [0.4, 0, 0.2, 1] }}>
+        {content}
+      </motion.div>
+    );
+  }
+);
 
 SubmissionStatsCard.displayName = 'SubmissionStatsCard';
 
@@ -236,83 +250,87 @@ interface DepartmentPerformanceCardProps {
   departments: Array<{ name: string; rate: number }>;
 }
 
-const DepartmentPerformanceCard = memo(({ departments }: DepartmentPerformanceCardProps) => {
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+const DepartmentPerformanceCard = memo(
+  ({ departments }: DepartmentPerformanceCardProps) => {
+    const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setPrefersReducedMotion(mediaQuery.matches);
-  }, []);
+    useEffect(() => {
+      const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+      setPrefersReducedMotion(mediaQuery.matches);
+    }, []);
 
-  // Take top 4 departments for the card
-  const topDepartments = useMemo(() => departments.slice(0, 4), [departments]);
+    // Take top 4 departments for the card
+    const topDepartments = useMemo(
+      () => departments.slice(0, 4),
+      [departments]
+    );
 
-  const chartConfig = {
-    compliance: {
-      label: 'Compliance',
-      color: '#8B1538',
-    },
-  };
+    const chartConfig = {
+      compliance: {
+        label: 'Compliance',
+        color: '#8B1538',
+      },
+    };
 
-  const content = (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base font-medium">
-          Department Performance
-        </CardTitle>
-        <CardDescription>Compliance by department</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="h-[180px]">
-          <BarChart data={topDepartments} layout="vertical">
-            <XAxis type="number" domain={[0, 100]} hide />
-            <YAxis
-              type="category"
-              dataKey="name"
-              width={120}
-              tick={{ fontSize: 11 }}
-              tickLine={false}
-              axisLine={false}
-            />
-            <ChartTooltip
-              content={
-                <ChartTooltipContent
-                  formatter={(value) => `${Number(value)}%`}
-                />
-              }
-            />
-            <Bar dataKey="rate" radius={[0, 4, 4, 0]}>
-              {topDepartments.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={
-                    entry.rate >= 95
-                      ? '#10b981'
-                      : entry.rate >= 85
+    const content = (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base font-medium">
+            Department Performance
+          </CardTitle>
+          <CardDescription>Compliance by department</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={chartConfig} className="h-[180px]">
+            <BarChart data={topDepartments} layout="vertical">
+              <XAxis type="number" domain={[0, 100]} hide />
+              <YAxis
+                type="category"
+                dataKey="name"
+                width={120}
+                tick={{ fontSize: 11 }}
+                tickLine={false}
+                axisLine={false}
+              />
+              <ChartTooltip
+                content={
+                  <ChartTooltipContent
+                    formatter={(value) => `${Number(value)}%`}
+                  />
+                }
+              />
+              <Bar dataKey="rate" radius={[0, 4, 4, 0]}>
+                {topDepartments.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={
+                      entry.rate >= 95
+                        ? '#10b981'
+                        : entry.rate >= 85
                         ? '#f59e0b'
                         : '#ef4444'
-                  }
-                />
-              ))}
-            </Bar>
-          </BarChart>
-        </ChartContainer>
-      </CardContent>
-    </Card>
-  );
+                    }
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+    );
 
-  if (prefersReducedMotion) return content;
+    if (prefersReducedMotion) return content;
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: 0.2, ease: [0.4, 0, 0.2, 1] }}
-    >
-      {content}
-    </motion.div>
-  );
-});
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.2, ease: [0.4, 0, 0.2, 1] }}>
+        {content}
+      </motion.div>
+    );
+  }
+);
 
 DepartmentPerformanceCard.displayName = 'DepartmentPerformanceCard';
 
@@ -355,9 +373,7 @@ const RecentActivityCard = memo(({ activities }: RecentActivityCardProps) => {
   const content = (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base font-medium">
-          Recent Activity
-        </CardTitle>
+        <CardTitle className="text-base font-medium">Recent Activity</CardTitle>
         <CardDescription>Latest important activities</CardDescription>
       </CardHeader>
       <CardContent>
@@ -369,16 +385,25 @@ const RecentActivityCard = memo(({ activities }: RecentActivityCardProps) => {
           ) : (
             activities.map((activity) => (
               <div key={activity.id} className="flex gap-3">
-                <div className={`mt-0.5 h-2 w-2 rounded-full ${getActivityColor(activity.type).replace('text-', 'bg-')}`} />
+                <div
+                  className={`mt-0.5 h-2 w-2 rounded-full ${getActivityColor(
+                    activity.type
+                  ).replace('text-', 'bg-')}`}
+                />
                 <div className="flex-1 space-y-1">
-                  <p className={`text-sm font-medium ${getActivityColor(activity.type)}`}>
+                  <p
+                    className={`text-sm font-medium ${getActivityColor(
+                      activity.type
+                    )}`}>
                     {activity.action}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {activity.user}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
+                    {formatDistanceToNow(new Date(activity.timestamp), {
+                      addSuffix: true,
+                    })}
                   </p>
                 </div>
               </div>
@@ -395,8 +420,7 @@ const RecentActivityCard = memo(({ activities }: RecentActivityCardProps) => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: 0.3, ease: [0.4, 0, 0.2, 1] }}
-    >
+      transition={{ duration: 0.3, delay: 0.3, ease: [0.4, 0, 0.2, 1] }}>
       {content}
     </motion.div>
   );
@@ -478,10 +502,13 @@ function ReportsErrorState({ error }: { error: Error }) {
           <CardHeader>
             <div className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-destructive" />
-              <CardTitle className="text-destructive">Failed to Load Reports</CardTitle>
+              <CardTitle className="text-destructive">
+                Failed to Load Reports
+              </CardTitle>
             </div>
             <CardDescription>
-              {error.message || 'An error occurred while loading the reports data.'}
+              {error.message ||
+                'An error occurred while loading the reports data.'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -541,10 +568,26 @@ export default function ReportsPage() {
     () =>
       reports
         ? [
-            { name: 'Approved', value: reports.statusDistribution.approved, color: '#10b981' },
-            { name: 'Pending', value: reports.statusDistribution.pending, color: '#f59e0b' },
-            { name: 'In Review', value: reports.statusDistribution.inReview, color: '#3b82f6' },
-            { name: 'Rejected', value: reports.statusDistribution.rejected, color: '#ef4444' },
+            {
+              name: 'Approved',
+              value: reports.statusDistribution.approved,
+              color: '#10b981',
+            },
+            {
+              name: 'Pending',
+              value: reports.statusDistribution.pending,
+              color: '#f59e0b',
+            },
+            {
+              name: 'In Review',
+              value: reports.statusDistribution.inReview,
+              color: '#3b82f6',
+            },
+            {
+              name: 'Rejected',
+              value: reports.statusDistribution.rejected,
+              color: '#ef4444',
+            },
           ]
         : [],
     [reports]
@@ -579,8 +622,7 @@ export default function ReportsPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay, ease: [0.4, 0, 0.2, 1] }}
-        >
+          transition={{ duration: 0.3, delay, ease: [0.4, 0, 0.2, 1] }}>
           {content}
         </motion.div>
       );
@@ -651,15 +693,13 @@ export default function ReportsPage() {
             <Button
               variant="outline"
               onClick={handleExportCSV}
-              disabled={exportMutation.isPending}
-            >
+              disabled={exportMutation.isPending}>
               <Download className="mr-2 h-4 w-4" />
               Export CSV
             </Button>
             <Button
               onClick={handleExportPDF}
-              disabled={exportMutation.isPending}
-            >
+              disabled={exportMutation.isPending}>
               <Download className="mr-2 h-4 w-4" />
               Export PDF
             </Button>
@@ -693,8 +733,7 @@ export default function ReportsPage() {
           <ChartCard
             title="Submission Rate Trend"
             description="PDS and SALN submissions over the last 6 months"
-            delay={0.4}
-          >
+            delay={0.4}>
             <ChartContainer config={dualLineChartConfig} className="h-[300px]">
               <LineChart data={submissionTrendData}>
                 <XAxis
@@ -738,9 +777,10 @@ export default function ReportsPage() {
             <ChartCard
               title="Department Compliance Comparison"
               description="All departments ranked by compliance rate"
-              delay={0.5}
-            >
-              <ChartContainer config={departmentBarChartConfig} className="h-[300px]">
+              delay={0.5}>
+              <ChartContainer
+                config={departmentBarChartConfig}
+                className="h-[300px]">
                 <BarChart data={departmentData} layout="vertical">
                   <XAxis
                     type="number"
@@ -774,10 +814,10 @@ export default function ReportsPage() {
                           entry.compliance >= 95
                             ? '#10b981'
                             : entry.compliance >= 90
-                              ? '#8B1538'
-                              : entry.compliance >= 85
-                                ? '#f59e0b'
-                                : '#ef4444'
+                            ? '#8B1538'
+                            : entry.compliance >= 85
+                            ? '#f59e0b'
+                            : '#ef4444'
                         }
                       />
                     ))}
@@ -790,8 +830,7 @@ export default function ReportsPage() {
             <ChartCard
               title="Status Distribution"
               description="Breakdown of all submission statuses"
-              delay={0.6}
-            >
+              delay={0.6}>
               <ChartContainer config={statusPieConfig} className="h-[300px]">
                 <PieChart>
                   <Pie
@@ -803,11 +842,13 @@ export default function ReportsPage() {
                     paddingAngle={2}
                     dataKey="value"
                     label={(entry) => {
-                      const data = entry as unknown as { name: string; percent: number };
+                      const data = entry as unknown as {
+                        name: string;
+                        percent: number;
+                      };
                       return `${data.name} ${(data.percent * 100).toFixed(0)}%`;
                     }}
-                    labelLine={{ stroke: 'hsl(var(--muted-foreground))' }}
-                  >
+                    labelLine={{ stroke: 'hsl(var(--muted-foreground))' }}>
                     {statusData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}

@@ -3,12 +3,19 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, Shield, FileText, Users, LogOut, User as UserIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useAuth } from '@/providers/AuthProvider';
+import {
+  Menu,
+  Shield,
+  FileText,
+  Users,
+  LogOut,
+  User as UserIcon,
+} from 'lucide-react';
+import { cn } from '../../lib/utils';
+import { useAuth } from '../../providers/AuthProvider';
 
 // UI Components
-import { Button } from '@/components/ui/button';
+import { Button } from '../ui/button';
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -16,16 +23,11 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
-} from '@/components/ui/navigation-menu';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
+} from '../ui/navigation-menu';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../ui/sheet';
 
 // Theme Components
-import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { ThemeToggle } from '../theme/ThemeToggle';
 
 // Notification Components
 import { NotificationBellClient } from './NotificationBellClient';
@@ -206,7 +208,9 @@ const MobileNavigation: React.FC<{
                       <UserIcon className="h-5 w-5 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{user.email}</p>
+                      <p className="text-sm font-medium truncate">
+                        {user.email}
+                      </p>
                       <p className="text-xs text-muted-foreground">Signed in</p>
                     </div>
                   </div>
@@ -280,7 +284,9 @@ const DesktopNavigation: React.FC = () => {
                       <NavigationMenuLink asChild>
                         <Link
                           href={item.href}
-                          onClick={(e) => handleNavClick(e, item.href, pathname, router)}
+                          onClick={(e) =>
+                            handleNavClick(e, item.href, pathname, router)
+                          }
                           className="flex h-full w-full select-none flex-col justify-end rounded-xl bg-gradient-tup-soft p-6 no-underline outline-none focus:shadow-md hover:shadow-lg transition-all duration-300">
                           {item.icon && (
                             <item.icon className="h-6 w-6 text-tup" />
@@ -322,7 +328,9 @@ const DesktopNavigation: React.FC = () => {
               <NavigationMenuLink asChild>
                 <Link
                   href={item.href}
-                  onClick={(e) => handleNavClick(e, item.href, pathname, router)}
+                  onClick={(e) =>
+                    handleNavClick(e, item.href, pathname, router)
+                  }
                   className={cn(
                     'inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium',
                     'transition-all duration-300 focus-tup',
@@ -393,7 +401,8 @@ export const Header: React.FC = () => {
   const router = useRouter();
 
   // Hide header on dashboard routes and pending approval page
-  const shouldHideHeader = pathname.startsWith('/dashboard') || pathname === '/auth/pending-approval';
+  const shouldHideHeader =
+    pathname.startsWith('/dashboard') || pathname === '/auth/pending-approval';
 
   // Handle logout with navigation
   const handleLogout = async () => {
@@ -401,7 +410,7 @@ export const Header: React.FC = () => {
     // Small delay to ensure all state cleanup (localStorage removal, React state updates)
     // completes before the browser navigation starts. This prevents a race condition where
     // the page reload interrupts the async cleanup process, leaving stale user state.
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
     // Force complete page reload to clear all state
     window.location.href = '/';
   };
@@ -457,7 +466,7 @@ export const Header: React.FC = () => {
           {/* Logo Section - Left */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <Link
-              href={user ? "/dashboard/profile" : "/"}
+              href={user ? '/dashboard/profile' : '/'}
               className="group flex items-center gap-2 transition-all duration-300 hover:scale-105 focus-tup rounded-full p-1">
               <div className="relative">
                 <Shield className="h-6 w-6 sm:h-7 sm:w-7 text-primary transition-all duration-300 group-hover:rotate-12" />

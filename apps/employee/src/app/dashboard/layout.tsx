@@ -2,11 +2,11 @@
 
 import { useEffect, useState, useMemo, useCallback, memo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useAuth } from '@/providers/AuthProvider';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { cn } from '@/lib/utils';
+import { useAuth } from '../../providers/AuthProvider';
+import { Avatar, AvatarFallback } from '../../components/ui/avatar';
+import { Button } from '../../components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '../../components/ui/sheet';
+import { cn } from '../../lib/utils';
 import { motion } from 'framer-motion';
 import {
   LayoutDashboard,
@@ -83,7 +83,10 @@ function useReducedMotion(): boolean {
  * Returns animation props based on reduced motion preference
  * Disables animations if user prefers reduced motion
  */
-function getAnimationProps(prefersReducedMotion: boolean, animationProps: object) {
+function getAnimationProps(
+  prefersReducedMotion: boolean,
+  animationProps: object
+) {
   return prefersReducedMotion ? {} : animationProps;
 }
 
@@ -95,42 +98,42 @@ function getAnimationProps(prefersReducedMotion: boolean, animationProps: object
  * Minimalistic UserInfo component with clean design
  * Simple hover effect with subtle scale
  */
-const UserInfo = memo<UserInfoProps>(({ email, initials, prefersReducedMotion }) => {
-  return (
-    <motion.div
-      className="group cursor-pointer"
-      {...getAnimationProps(prefersReducedMotion, {
-        initial: { opacity: 0, y: -8 },
-        animate: { opacity: 1, y: 0 },
-        transition: { duration: 0.4, ease: 'easeOut' }
-      })}
-    >
-      <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50/50 dark:bg-slate-800/30 border border-slate-200/50 dark:border-slate-700/30 transition-all duration-300 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 hover:border-[#093FB4]/20 dark:hover:border-[#093FB4]/30">
-        <motion.div
-          {...getAnimationProps(prefersReducedMotion, {
-            whileHover: { scale: 1.05 },
-            transition: { duration: 0.2 }
-          })}
-        >
-          <Avatar className="h-10 w-10 ring-2 ring-slate-200 dark:ring-slate-700 transition-all duration-300 group-hover:ring-primary/30">
-            <AvatarFallback className="bg-primary text-white font-semibold text-sm">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-        </motion.div>
+const UserInfo = memo<UserInfoProps>(
+  ({ email, initials, prefersReducedMotion }) => {
+    return (
+      <motion.div
+        className="group cursor-pointer"
+        {...getAnimationProps(prefersReducedMotion, {
+          initial: { opacity: 0, y: -8 },
+          animate: { opacity: 1, y: 0 },
+          transition: { duration: 0.4, ease: 'easeOut' },
+        })}>
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50/50 dark:bg-slate-800/30 border border-slate-200/50 dark:border-slate-700/30 transition-all duration-300 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 hover:border-[#093FB4]/20 dark:hover:border-[#093FB4]/30">
+          <motion.div
+            {...getAnimationProps(prefersReducedMotion, {
+              whileHover: { scale: 1.05 },
+              transition: { duration: 0.2 },
+            })}>
+            <Avatar className="h-10 w-10 ring-2 ring-slate-200 dark:ring-slate-700 transition-all duration-300 group-hover:ring-primary/30">
+              <AvatarFallback className="bg-primary text-white font-semibold text-sm">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+          </motion.div>
 
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate leading-tight">
-            {email?.split('@')[0] || 'User'}
-          </p>
-          <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-            {email || 'user@gov.ph'}
-          </p>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate leading-tight">
+              {email?.split('@')[0] || 'User'}
+            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+              {email || 'user@gov.ph'}
+            </p>
+          </div>
         </div>
-      </div>
-    </motion.div>
-  );
-});
+      </motion.div>
+    );
+  }
+);
 
 UserInfo.displayName = 'UserInfo';
 
@@ -138,44 +141,45 @@ UserInfo.displayName = 'UserInfo';
  * Clean, minimalistic NavItem component
  * Simple design with subtle hover effect and smooth transitions
  */
-const NavItem = memo<NavItemProps>(({ item, isActive, onClick, prefersReducedMotion }) => {
-  const Icon = item.icon;
+const NavItem = memo<NavItemProps>(
+  ({ item, isActive, onClick, prefersReducedMotion }) => {
+    const Icon = item.icon;
 
-  return (
-    <motion.button
-      onClick={onClick}
-      {...getAnimationProps(prefersReducedMotion, {
-        whileHover: { x: 2 },
-        whileTap: { scale: 0.98 },
-        transition: { duration: 0.2 }
-      })}
-      className={cn(
-        "relative w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 group",
-        isActive
-          ? "bg-primary text-white shadow-sm shadow-primary/20"
-          : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100"
-      )}
-    >
-      <Icon
+    return (
+      <motion.button
+        onClick={onClick}
+        {...getAnimationProps(prefersReducedMotion, {
+          whileHover: { x: 2 },
+          whileTap: { scale: 0.98 },
+          transition: { duration: 0.2 },
+        })}
         className={cn(
-          "h-5 w-5 transition-all duration-300",
+          'relative w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 group',
           isActive
-            ? "text-white"
-            : "text-slate-500 dark:text-slate-400 group-hover:text-primary dark:group-hover:text-primary"
-        )}
-      />
-      <span className="flex-1 text-left">{item.name}</span>
-
-      {isActive && (
-        <motion.div
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="h-1.5 w-1.5 rounded-full bg-white"
+            ? 'bg-primary text-white shadow-sm shadow-primary/20'
+            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100'
+        )}>
+        <Icon
+          className={cn(
+            'h-5 w-5 transition-all duration-300',
+            isActive
+              ? 'text-white'
+              : 'text-slate-500 dark:text-slate-400 group-hover:text-primary dark:group-hover:text-primary'
+          )}
         />
-      )}
-    </motion.button>
-  );
-});
+        <span className="flex-1 text-left">{item.name}</span>
+
+        {isActive && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="h-1.5 w-1.5 rounded-full bg-white"
+          />
+        )}
+      </motion.button>
+    );
+  }
+);
 
 NavItem.displayName = 'NavItem';
 
@@ -183,7 +187,10 @@ NavItem.displayName = 'NavItem';
 // MAIN COMPONENTS
 // ============================================================================
 
-const DashboardSidebar = memo(function DashboardSidebar({ className, userType = 'employee' }: DashboardSidebarProps) {
+const DashboardSidebar = memo(function DashboardSidebar({
+  className,
+  userType = 'employee',
+}: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, signOut } = useAuth();
@@ -250,15 +257,18 @@ const DashboardSidebar = memo(function DashboardSidebar({ className, userType = 
   const handleSignOut = useCallback(async () => {
     await signOut();
     // Small delay to ensure all state cleanup completes before page reload
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
     // Force complete page reload to clear all state and go to homepage
     window.location.href = '/';
   }, [signOut]);
 
   // Memoize navigation click handler
-  const handleNavigate = useCallback((href: string) => {
-    router.push(href);
-  }, [router]);
+  const handleNavigate = useCallback(
+    (href: string) => {
+      router.push(href);
+    },
+    [router]
+  );
 
   // Memoize user initials calculation
   const userInitials = useMemo(() => {
@@ -267,10 +277,9 @@ const DashboardSidebar = memo(function DashboardSidebar({ className, userType = 
   }, [user]);
 
   return (
-    <div className={cn("relative flex h-full flex-col", className)}>
+    <div className={cn('relative flex h-full flex-col', className)}>
       {/* Clean white/dark background with subtle border */}
       <div className="relative z-10 flex h-full flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
-
         {/* Sidebar Header - Clean and Simple */}
         <div className="flex flex-col gap-4 p-6 border-b border-slate-200 dark:border-slate-800">
           {/* Logo - Minimalistic with single accent color */}
@@ -279,9 +288,8 @@ const DashboardSidebar = memo(function DashboardSidebar({ className, userType = 
             {...getAnimationProps(prefersReducedMotion, {
               initial: { opacity: 0, y: -12 },
               animate: { opacity: 1, y: 0 },
-              transition: { duration: 0.5, ease: 'easeOut' }
-            })}
-          >
+              transition: { duration: 0.5, ease: 'easeOut' },
+            })}>
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-sm">
               <LayoutDashboard className="h-5 w-5 text-white" />
             </div>
@@ -306,7 +314,8 @@ const DashboardSidebar = memo(function DashboardSidebar({ className, userType = 
         {/* Navigation - Clean list with subtle hover states */}
         <nav className="flex-1 p-4 space-y-1.5">
           {navigationItems.map((item, index) => {
-            const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+            const isActive =
+              pathname === item.href || pathname?.startsWith(item.href + '/');
 
             return (
               <motion.div
@@ -314,9 +323,12 @@ const DashboardSidebar = memo(function DashboardSidebar({ className, userType = 
                 {...getAnimationProps(prefersReducedMotion, {
                   initial: { opacity: 0, x: -12 },
                   animate: { opacity: 1, x: 0 },
-                  transition: { duration: 0.3, delay: index * 0.05, ease: 'easeOut' }
-                })}
-              >
+                  transition: {
+                    duration: 0.3,
+                    delay: index * 0.05,
+                    ease: 'easeOut',
+                  },
+                })}>
                 <NavItem
                   item={item}
                   isActive={isActive}
@@ -333,14 +345,12 @@ const DashboardSidebar = memo(function DashboardSidebar({ className, userType = 
           <motion.div
             {...getAnimationProps(prefersReducedMotion, {
               whileHover: { x: 2 },
-              whileTap: { scale: 0.98 }
-            })}
-          >
+              whileTap: { scale: 0.98 },
+            })}>
             <Button
               variant="ghost"
               className="w-full justify-start gap-3 text-slate-700 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all duration-300"
-              onClick={handleSignOut}
-            >
+              onClick={handleSignOut}>
               <LogOut className="h-5 w-5" />
               <span>Sign Out</span>
             </Button>
@@ -384,7 +394,9 @@ export default function DashboardLayout({
       <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-900">
         <div className="flex flex-col items-center gap-4">
           <div className="h-10 w-10 animate-spin rounded-full border-3 border-slate-200 dark:border-slate-700 border-t-primary"></div>
-          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Loading dashboard...</p>
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+            Loading dashboard...
+          </p>
         </div>
       </div>
     );
@@ -409,8 +421,7 @@ export default function DashboardLayout({
             <Button
               variant="ghost"
               size="icon"
-              className="fixed top-4 left-4 z-50 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all duration-300"
-            >
+              className="fixed top-4 left-4 z-50 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all duration-300">
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>

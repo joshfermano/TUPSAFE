@@ -17,13 +17,16 @@
 import { memo, useMemo } from 'react';
 import { useFormContext, useFieldArray, Controller } from 'react-hook-form';
 import { Building, Plus, Trash2 } from 'lucide-react';
-import { CurrencyInput } from '@/components/forms/shared/CurrencyInput';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { formatCurrency } from '@/lib/utils/currency';
-import { PROPERTY_KIND, ACQUISITION_MODE } from '@/lib/validations/saln-schema';
+import { CurrencyInput } from '../../../../../components/forms/shared/CurrencyInput';
+import { Label } from '../../../../../components/ui/label';
+import { Button } from '../../../../../components/ui/button';
+import { Textarea } from '../../../../../components/ui/textarea';
+import { Badge } from '../../../../../components/ui/badge';
+import { formatCurrency } from '../../../../../lib/utils/currency';
+import {
+  PROPERTY_KIND,
+  ACQUISITION_MODE,
+} from '../../../../../lib/validations/saln-schema';
 
 // Import Enhanced Components
 import {
@@ -64,7 +67,8 @@ export const RealProperties = memo(function RealProperties() {
 
   const totalRealPropertyValue = useMemo(() => {
     return realProperties.reduce(
-      (sum: number, prop: PropertyItem) => sum + (prop.currentFairMarketValue || 0),
+      (sum: number, prop: PropertyItem) =>
+        sum + (prop.currentFairMarketValue || 0),
       0
     );
   }, [realProperties]);
@@ -92,7 +96,9 @@ export const RealProperties = memo(function RealProperties() {
           {fields.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed rounded-lg border-slate-200/50 dark:border-slate-800/50">
               <Building className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">No real properties added yet</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                No real properties added yet
+              </p>
               <Button type="button" onClick={addRealProperty} variant="outline">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Real Property
@@ -140,8 +146,11 @@ export const RealProperties = memo(function RealProperties() {
                             errors.realProperties[index] && (
                               <p className="text-sm text-destructive">
                                 {
-                                  (errors.realProperties[index] as PropertyError)
-                                    ?.description?.message
+                                  (
+                                    errors.realProperties[
+                                      index
+                                    ] as PropertyError
+                                  )?.description?.message
                                 }
                               </p>
                             )}
@@ -166,7 +175,8 @@ export const RealProperties = memo(function RealProperties() {
                                   <option value="">Select kind</option>
                                   {PROPERTY_KIND.map((kind) => (
                                     <option key={kind} value={kind}>
-                                      {kind.charAt(0).toUpperCase() + kind.slice(1)}
+                                      {kind.charAt(0).toUpperCase() +
+                                        kind.slice(1)}
                                     </option>
                                   ))}
                                 </select>
@@ -187,7 +197,10 @@ export const RealProperties = memo(function RealProperties() {
                                 <select
                                   value={value?.toString() || ''}
                                   onChange={(e) => {
-                                    const numValue = parseInt(e.target.value, 10);
+                                    const numValue = parseInt(
+                                      e.target.value,
+                                      10
+                                    );
                                     if (!isNaN(numValue)) {
                                       onChange(numValue);
                                     }
@@ -299,7 +312,9 @@ export const RealProperties = memo(function RealProperties() {
               <BlurFade delay={0.2 + fields.length * 0.05}>
                 <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
                   <div className="flex items-center justify-between">
-                    <span className="font-medium">Total Real Property Value:</span>
+                    <span className="font-medium">
+                      Total Real Property Value:
+                    </span>
                     <span className="text-xl font-bold text-primary">
                       {formatCurrency(totalRealPropertyValue)}
                     </span>

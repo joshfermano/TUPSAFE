@@ -15,10 +15,10 @@ import {
   FileCheck,
   Award,
 } from 'lucide-react';
-import { MagicCard } from '@/components/ui/magic-card';
-import { NeonGradientCard } from '@/components/ui/neon-gradient-card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { MagicCard } from '../ui/magic-card';
+import { NeonGradientCard } from '../ui/neon-gradient-card';
+import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
 
 interface Feature {
   id: string;
@@ -112,15 +112,14 @@ const features: Feature[] = [
   },
 ];
 
-
 // Feature ID to URL mapping
 const featureRoutes: Record<string, string> = {
   'e-pds': '/features/pds',
   'e-saln': '/features/saln',
   'ai-assistant': '/features/ai-compliance',
-  'workflows': '/features/automated-workflows',
-  'security': '/features/security-compliance',
-  'analytics': '/features/dashboard-analytics',
+  workflows: '/features/automated-workflows',
+  security: '/features/security-compliance',
+  analytics: '/features/dashboard-analytics',
 };
 
 const FeatureCard: React.FC<{ feature: Feature; index: number }> = ({
@@ -159,7 +158,9 @@ const FeatureCard: React.FC<{ feature: Feature; index: number }> = ({
               </div>
             </div>
             {feature.comingSoon && (
-              <Badge variant="outline" className="text-xs text-[#c73436] border-[#c73436]">
+              <Badge
+                variant="outline"
+                className="text-xs text-[#c73436] border-[#c73436]">
                 Research Proposal
               </Badge>
             )}
@@ -279,9 +280,10 @@ export default function FeaturesSection() {
           </h2>
 
           <p className="text-lg text-gray-600 dark:text-gray-300">
-            A comprehensive digital compliance system designed specifically for TUP Manila faculty and staff.
-            This thesis project implements modern web technologies to streamline e-PDS and e-SALN processes
-            in alignment with CSC standards.
+            A comprehensive digital compliance system designed specifically for
+            TUP Manila faculty and staff. This thesis project implements modern
+            web technologies to streamline e-PDS and e-SALN processes in
+            alignment with CSC standards.
           </p>
         </motion.div>
 
@@ -311,8 +313,9 @@ export default function FeaturesSection() {
               Built for TUP Manila&apos;s Digital Transformation
             </h3>
             <p className="mb-8 text-gray-600 dark:text-gray-300">
-              This thesis explores how modern web technologies can streamline compliance workflows
-              for university faculty and administrative personnel while maintaining CSC standards.
+              This thesis explores how modern web technologies can streamline
+              compliance workflows for university faculty and administrative
+              personnel while maintaining CSC standards.
             </p>
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
               <Button

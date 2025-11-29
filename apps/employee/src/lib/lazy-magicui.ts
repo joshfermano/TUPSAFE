@@ -37,7 +37,7 @@ import { lazy } from 'react';
  * Bundle impact: ~50KB
  */
 export const Globe = lazy(() =>
-  import('@/components/ui/globe').then((m) => ({ default: m.Globe }))
+  import('../components/ui/globe').then((m) => ({ default: m.Globe }))
 );
 
 /**
@@ -45,7 +45,7 @@ export const Globe = lazy(() =>
  * Bundle impact: ~15KB
  */
 export const Particles = lazy(() =>
-  import('@/components/ui/particles').then((m) => ({ default: m.Particles }))
+  import('../components/ui/particles').then((m) => ({ default: m.Particles }))
 );
 
 /**
@@ -53,7 +53,7 @@ export const Particles = lazy(() =>
  * Bundle impact: ~10KB
  */
 export const AnimatedGridPattern = lazy(() =>
-  import('@/components/ui/animated-grid-pattern').then((m) => ({
+  import('../components/ui/animated-grid-pattern').then((m) => ({
     default: m.AnimatedGridPattern,
   }))
 );
@@ -63,7 +63,7 @@ export const AnimatedGridPattern = lazy(() =>
  * Bundle impact: ~8KB
  */
 export const RetroGrid = lazy(() =>
-  import('@/components/ui/retro-grid').then((m) => ({ default: m.RetroGrid }))
+  import('../components/ui/retro-grid').then((m) => ({ default: m.RetroGrid }))
 );
 
 /**
@@ -71,7 +71,7 @@ export const RetroGrid = lazy(() =>
  * Bundle impact: ~8KB
  */
 export const Meteors = lazy(() =>
-  import('@/components/ui/meteors').then((m) => ({ default: m.Meteors }))
+  import('../components/ui/meteors').then((m) => ({ default: m.Meteors }))
 );
 
 /**
@@ -79,7 +79,9 @@ export const Meteors = lazy(() =>
  * Bundle impact: ~5KB
  */
 export const BorderBeam = lazy(() =>
-  import('@/components/ui/border-beam').then((m) => ({ default: m.BorderBeam }))
+  import('../components/ui/border-beam').then((m) => ({
+    default: m.BorderBeam,
+  }))
 );
 
 /**
@@ -87,7 +89,9 @@ export const BorderBeam = lazy(() =>
  * Bundle impact: ~5KB
  */
 export const ShineBorder = lazy(() =>
-  import('@/components/ui/shine-border').then((m) => ({ default: m.ShineBorder }))
+  import('../components/ui/shine-border').then((m) => ({
+    default: m.ShineBorder,
+  }))
 );
 
 /**
@@ -95,7 +99,9 @@ export const ShineBorder = lazy(() =>
  * Bundle impact: ~4KB
  */
 export const DotPattern = lazy(() =>
-  import('@/components/ui/dot-pattern').then((m) => ({ default: m.DotPattern }))
+  import('../components/ui/dot-pattern').then((m) => ({
+    default: m.DotPattern,
+  }))
 );
 
 /**
@@ -103,7 +109,9 @@ export const DotPattern = lazy(() =>
  * Bundle impact: ~4KB
  */
 export const GridPattern = lazy(() =>
-  import('@/components/ui/grid-pattern').then((m) => ({ default: m.GridPattern }))
+  import('../components/ui/grid-pattern').then((m) => ({
+    default: m.GridPattern,
+  }))
 );
 
 /**
@@ -111,7 +119,7 @@ export const GridPattern = lazy(() =>
  * Bundle impact: ~6KB
  */
 export const Ripple = lazy(() =>
-  import('@/components/ui/ripple').then((m) => ({ default: m.Ripple }))
+  import('../components/ui/ripple').then((m) => ({ default: m.Ripple }))
 );
 
 /**
@@ -119,7 +127,7 @@ export const Ripple = lazy(() =>
  * Bundle impact: ~7KB
  */
 export const NeonGradientCard = lazy(() =>
-  import('@/components/ui/neon-gradient-card').then((m) => ({
+  import('../components/ui/neon-gradient-card').then((m) => ({
     default: m.NeonGradientCard,
   }))
 );
@@ -129,7 +137,7 @@ export const NeonGradientCard = lazy(() =>
  * Bundle impact: ~6KB
  */
 export const MagicCard = lazy(() =>
-  import('@/components/ui/magic-card').then((m) => ({ default: m.MagicCard }))
+  import('../components/ui/magic-card').then((m) => ({ default: m.MagicCard }))
 );
 
 /**
@@ -137,7 +145,9 @@ export const MagicCard = lazy(() =>
  * Bundle impact: ~8KB
  */
 export const FlickeringGrid = lazy(() =>
-  import('@/components/ui/flickering-grid').then((m) => ({ default: m.FlickeringGrid }))
+  import('../components/ui/flickering-grid').then((m) => ({
+    default: m.FlickeringGrid,
+  }))
 );
 
 /**
@@ -152,7 +162,7 @@ export const FlickeringGrid = lazy(() =>
  * type GlobeProps = ComponentProps<typeof Globe>;
  * ```
  */
-export type { AnimatedGridPatternProps } from '@/components/ui/animated-grid-pattern';
+export type { AnimatedGridPatternProps } from '../components/ui/animated-grid-pattern';
 
 /**
  * Preload utility for critical components
@@ -185,43 +195,43 @@ export function preloadMagicUIComponents(
   components.forEach((component) => {
     switch (component) {
       case 'Globe':
-        import('@/components/ui/globe');
+        import('../components/ui/globe');
         break;
       case 'Particles':
-        import('@/components/ui/particles');
+        import('../components/ui/particles');
         break;
       case 'AnimatedGridPattern':
-        import('@/components/ui/animated-grid-pattern');
+        import('../components/ui/animated-grid-pattern');
         break;
       case 'RetroGrid':
-        import('@/components/ui/retro-grid');
+        import('../components/ui/retro-grid');
         break;
       case 'Meteors':
-        import('@/components/ui/meteors');
+        import('../components/ui/meteors');
         break;
       case 'BorderBeam':
-        import('@/components/ui/border-beam');
+        import('../components/ui/border-beam');
         break;
       case 'ShineBorder':
-        import('@/components/ui/shine-border');
+        import('../components/ui/shine-border');
         break;
       case 'DotPattern':
-        import('@/components/ui/dot-pattern');
+        import('../components/ui/dot-pattern');
         break;
       case 'GridPattern':
-        import('@/components/ui/grid-pattern');
+        import('../components/ui/grid-pattern');
         break;
       case 'Ripple':
-        import('@/components/ui/ripple');
+        import('../components/ui/ripple');
         break;
       case 'NeonGradientCard':
-        import('@/components/ui/neon-gradient-card');
+        import('../components/ui/neon-gradient-card');
         break;
       case 'MagicCard':
-        import('@/components/ui/magic-card');
+        import('../components/ui/magic-card');
         break;
       case 'FlickeringGrid':
-        import('@/components/ui/flickering-grid');
+        import('../components/ui/flickering-grid');
         break;
     }
   });

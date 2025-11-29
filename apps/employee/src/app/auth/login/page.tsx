@@ -2,16 +2,16 @@
 
 import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '@/providers/AuthProvider';
-import { LoginForm } from '@/components/auth/LoginForm';
-import { Badge } from '@/components/ui/badge';
-import { MagicCard } from '@/components/ui/magic-card';
-import { BorderBeam } from '@/components/ui/border-beam';
-import { AnimatedGradientText } from '@/components/ui/animated-gradient-text';
-import { AnimatedShinyText } from '@/components/ui/animated-shiny-text';
-import AnimatedGridPattern from '@/components/ui/animated-grid-pattern';
+import { useAuth } from '../../../providers/AuthProvider';
+import { LoginForm } from '../../../components/auth/LoginForm';
+import { Badge } from '../../../components/ui/badge';
+import { MagicCard } from '../../../components/ui/magic-card';
+import { BorderBeam } from '../../../components/ui/border-beam';
+import { AnimatedGradientText } from '../../../components/ui/animated-gradient-text';
+import { AnimatedShinyText } from '../../../components/ui/animated-shiny-text';
+import AnimatedGridPattern from '../../../components/ui/animated-grid-pattern';
 import { Shield, Building2, FileText, Users, ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '../../../lib/utils';
 
 function LoginContent() {
   const router = useRouter();

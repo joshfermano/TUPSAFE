@@ -2,7 +2,7 @@
 
 import React, { useMemo, useCallback, useState, memo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '../../../../providers/AuthProvider';
 import { usePds } from '@tupsafe/mock-data/api';
 import type { PdsSubmission } from '@tupsafe/mock-data';
 import { differenceInYears, format } from 'date-fns';
@@ -26,30 +26,35 @@ import {
 
 // UI Components
 import { BlurFade, NumberTicker, Badge } from '@tupsafe/shared-ui';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { Button } from '../../../../components/ui/button';
+import { Card, CardContent } from '../../../../components/ui/card';
+import { Progress } from '../../../../components/ui/progress';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+} from '../../../../components/ui/collapsible';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { cn } from '@/lib/utils';
+} from '../../../../components/ui/select';
+import { cn } from '../../../../lib/utils';
 
 // Status configuration with TUP Manila theme
 const STATUS_COLORS = {
-  draft: 'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border-amber-200 dark:border-amber-800',
-  submitted: 'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-  reviewing: 'bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400 border-purple-200 dark:border-purple-800',
-  approved: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
-  rejected: 'bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 border-rose-200 dark:border-rose-800',
+  draft:
+    'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border-amber-200 dark:border-amber-800',
+  submitted:
+    'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+  reviewing:
+    'bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400 border-purple-200 dark:border-purple-800',
+  approved:
+    'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
+  rejected:
+    'bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 border-rose-200 dark:border-rose-800',
 } as const;
 
 const STATUS_ICONS = {
@@ -63,7 +68,8 @@ const STATUS_ICONS = {
 // Calculate PDS completion percentage
 const calculateCompletion = (submission: PdsSubmission): number => {
   if (submission.status === 'approved') return 100;
-  if (submission.status === 'submitted' || submission.status === 'reviewing') return 95;
+  if (submission.status === 'submitted' || submission.status === 'reviewing')
+    return 95;
   if (submission.status === 'draft') return Math.floor(Math.random() * 40) + 50;
   return 0;
 };
@@ -83,46 +89,53 @@ interface StatsCardProps {
   delay?: number;
 }
 
-const StatsCard = memo(({ label, value, icon: Icon, color = 'default', delay = 0 }: StatsCardProps) => {
-  const colorClasses = {
-    default: 'from-slate-500 to-slate-600',
-    green: 'from-emerald-500 to-emerald-600',
-    yellow: 'from-amber-500 to-amber-600',
-    blue: 'from-blue-500 to-blue-600',
-    red: 'from-rose-500 to-rose-600',
-    purple: 'from-purple-500 to-purple-600',
-  };
+const StatsCard = memo(
+  ({
+    label,
+    value,
+    icon: Icon,
+    color = 'default',
+    delay = 0,
+  }: StatsCardProps) => {
+    const colorClasses = {
+      default: 'from-slate-500 to-slate-600',
+      green: 'from-emerald-500 to-emerald-600',
+      yellow: 'from-amber-500 to-amber-600',
+      blue: 'from-blue-500 to-blue-600',
+      red: 'from-rose-500 to-rose-600',
+      purple: 'from-purple-500 to-purple-600',
+    };
 
-  return (
-    <BlurFade delay={delay}>
-      <Card className="relative overflow-hidden h-full transition-all duration-200 hover:shadow-md hover:border-[oklch(0.55_0.22_15)]">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                {label}
-              </p>
-              <div className="text-2xl font-bold bg-gradient-to-r from-[oklch(0.55_0.22_15)] to-[oklch(0.65_0.22_15)] bg-clip-text text-transparent">
-                <NumberTicker value={value} />
+    return (
+      <BlurFade delay={delay}>
+        <Card className="relative overflow-hidden h-full transition-all duration-200 hover:shadow-md hover:border-[oklch(0.55_0.22_15)]">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                  {label}
+                </p>
+                <div className="text-2xl font-bold bg-gradient-to-r from-[oklch(0.55_0.22_15)] to-[oklch(0.65_0.22_15)] bg-clip-text text-transparent">
+                  <NumberTicker value={value} />
+                </div>
               </div>
+              {Icon && (
+                <div
+                  className={cn(
+                    'p-2.5 rounded-full bg-gradient-to-br',
+                    colorClasses[color],
+                    'bg-opacity-10'
+                  )}>
+                  <Icon className="h-5 w-5" />
+                </div>
+              )}
             </div>
-            {Icon && (
-              <div
-                className={cn(
-                  'p-2.5 rounded-full bg-gradient-to-br',
-                  colorClasses[color],
-                  'bg-opacity-10'
-                )}
-              >
-                <Icon className="h-5 w-5" />
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </BlurFade>
-  );
-});
+          </CardContent>
+        </Card>
+      </BlurFade>
+    );
+  }
+);
 
 StatsCard.displayName = 'StatsCard';
 
@@ -136,11 +149,21 @@ interface ArchivedPDSCardProps {
 }
 
 const ArchivedPDSCard = memo(
-  ({ submission, onView, onDownload, onPrint, delay = 0 }: ArchivedPDSCardProps) => {
+  ({
+    submission,
+    onView,
+    onDownload,
+    onPrint,
+    delay = 0,
+  }: ArchivedPDSCardProps) => {
     const [isOpen, setIsOpen] = useState(false);
-    const completion = useMemo(() => calculateCompletion(submission), [submission]);
+    const completion = useMemo(
+      () => calculateCompletion(submission),
+      [submission]
+    );
 
-    const StatusIcon = STATUS_ICONS[submission.status as keyof typeof STATUS_ICONS];
+    const StatusIcon =
+      STATUS_ICONS[submission.status as keyof typeof STATUS_ICONS];
     const submissionDate = submission.submittedAt || submission.createdAt;
     const submissionYear = new Date(submissionDate).getFullYear();
     const yearsAgo = differenceInYears(new Date(), new Date(submissionDate));
@@ -172,8 +195,7 @@ const ArchivedPDSCard = memo(
                   </h3>
                   <Badge
                     variant="outline"
-                    className="border-amber-500 text-amber-700 dark:border-amber-600 dark:text-amber-500 gap-1 px-2 py-0.5 text-xs"
-                  >
+                    className="border-amber-500 text-amber-700 dark:border-amber-600 dark:text-amber-500 gap-1 px-2 py-0.5 text-xs">
                     <Archive className="h-3 w-3" />
                     Archived
                   </Badge>
@@ -189,10 +211,11 @@ const ArchivedPDSCard = memo(
                 className={cn(
                   'gap-1.5 px-2 py-0.5 text-xs',
                   STATUS_COLORS[submission.status as keyof typeof STATUS_COLORS]
-                )}
-              >
+                )}>
                 <StatusIcon className="h-3 w-3" />
-                <span className="capitalize font-medium">{submission.status}</span>
+                <span className="capitalize font-medium">
+                  {submission.status}
+                </span>
               </Badge>
             </div>
 
@@ -231,8 +254,7 @@ const ArchivedPDSCard = memo(
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-full justify-between hover:bg-slate-100 dark:hover:bg-slate-800 h-8"
-                >
+                  className="w-full justify-between hover:bg-slate-100 dark:hover:bg-slate-800 h-8">
                   <span className="text-xs font-medium">View Sections</span>
                   {isOpen ? (
                     <ChevronUp className="h-3.5 w-3.5" />
@@ -255,8 +277,7 @@ const ArchivedPDSCard = memo(
                           section.completed
                             ? 'text-slate-700 dark:text-slate-300'
                             : 'text-slate-400 dark:text-slate-500'
-                        )}
-                      >
+                        )}>
                         {section.name}
                       </span>
                     </li>
@@ -271,16 +292,23 @@ const ArchivedPDSCard = memo(
                 variant="default"
                 size="sm"
                 onClick={onView}
-                className="gap-1.5 h-8 text-xs bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]"
-              >
+                className="gap-1.5 h-8 text-xs bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]">
                 <Eye className="h-3.5 w-3.5" />
                 View
               </Button>
-              <Button variant="outline" size="sm" onClick={onDownload} className="gap-1.5 h-8 text-xs">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onDownload}
+                className="gap-1.5 h-8 text-xs">
                 <Download className="h-3.5 w-3.5" />
                 PDF
               </Button>
-              <Button variant="outline" size="sm" onClick={onPrint} className="gap-1.5 h-8 text-xs">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onPrint}
+                className="gap-1.5 h-8 text-xs">
                 <Printer className="h-3.5 w-3.5" />
                 Print
               </Button>
@@ -290,7 +318,9 @@ const ArchivedPDSCard = memo(
             <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 rounded-lg p-2.5">
               <p className="text-xs text-amber-700 dark:text-amber-500 flex items-center gap-1.5">
                 <Archive className="h-3 w-3 shrink-0" />
-                <span>This is an archived record (5+ years old) and cannot be edited</span>
+                <span>
+                  This is an archived record (5+ years old) and cannot be edited
+                </span>
               </p>
             </div>
           </CardContent>
@@ -328,8 +358,7 @@ const ErrorState = memo(({ error }: { error: string }) => (
     <Button
       variant="default"
       onClick={() => window.location.reload()}
-      className="bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]"
-    >
+      className="bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]">
       Try Again
     </Button>
   </div>
@@ -351,15 +380,15 @@ const EmptyState = memo(({ onViewActive }: { onViewActive: () => void }) => (
         No Archived PDS Submissions
       </h3>
       <p className="text-sm text-slate-600 dark:text-slate-400">
-        Your archived Personal Data Sheets (older than 5 years) will appear here. Check your active submissions to see recent records.
+        Your archived Personal Data Sheets (older than 5 years) will appear
+        here. Check your active submissions to see recent records.
       </p>
     </div>
 
     {/* Action Button */}
     <Button
       onClick={onViewActive}
-      className="gap-2 bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)] text-white"
-    >
+      className="gap-2 bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)] text-white">
       <Eye className="h-4 w-4" />
       View Active Submissions
     </Button>
@@ -377,49 +406,53 @@ interface YearGroupProps {
   onPrint: (id: string) => void;
 }
 
-const YearGroup = memo(({ year, submissions, onView, onDownload, onPrint }: YearGroupProps) => {
-  const [isExpanded, setIsExpanded] = useState(true);
+const YearGroup = memo(
+  ({ year, submissions, onView, onDownload, onPrint }: YearGroupProps) => {
+    const [isExpanded, setIsExpanded] = useState(true);
 
-  return (
-    <div className="space-y-3.5">
-      <Button
-        variant="ghost"
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full justify-between hover:bg-slate-100 dark:hover:bg-slate-800 p-3.5 h-auto"
-      >
-        <div className="flex items-center gap-2.5">
-          <Calendar className="h-4.5 w-4.5 text-[oklch(0.55_0.22_15)]" />
-          <div className="text-left">
-            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{year}</h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400">
-              {submissions.length} {submissions.length === 1 ? 'submission' : 'submissions'}
-            </p>
+    return (
+      <div className="space-y-3.5">
+        <Button
+          variant="ghost"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full justify-between hover:bg-slate-100 dark:hover:bg-slate-800 p-3.5 h-auto">
+          <div className="flex items-center gap-2.5">
+            <Calendar className="h-4.5 w-4.5 text-[oklch(0.55_0.22_15)]" />
+            <div className="text-left">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                {year}
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                {submissions.length}{' '}
+                {submissions.length === 1 ? 'submission' : 'submissions'}
+              </p>
+            </div>
           </div>
-        </div>
-        {isExpanded ? (
-          <ChevronUp className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-        ) : (
-          <ChevronDown className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-        )}
-      </Button>
+          {isExpanded ? (
+            <ChevronUp className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+          )}
+        </Button>
 
-      {isExpanded && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pl-3">
-          {submissions.map((submission, index) => (
-            <ArchivedPDSCard
-              key={submission.id}
-              submission={submission}
-              onView={() => onView(submission.id)}
-              onDownload={() => onDownload(submission.id)}
-              onPrint={() => onPrint(submission.id)}
-              delay={index * 0.05}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-});
+        {isExpanded && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pl-3">
+            {submissions.map((submission, index) => (
+              <ArchivedPDSCard
+                key={submission.id}
+                submission={submission}
+                onView={() => onView(submission.id)}
+                onDownload={() => onDownload(submission.id)}
+                onPrint={() => onPrint(submission.id)}
+                delay={index * 0.05}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+);
 
 YearGroup.displayName = 'YearGroup';
 
@@ -432,7 +465,9 @@ export default function PDSArchivePage() {
   // Filter and sort state
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [decadeFilter, setDecadeFilter] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<'date-desc' | 'date-asc' | 'status'>('date-desc');
+  const [sortBy, setSortBy] = useState<'date-desc' | 'date-asc' | 'status'>(
+    'date-desc'
+  );
   const [groupByYear, setGroupByYear] = useState(true);
 
   // Filter archived submissions (5+ years old)
@@ -444,7 +479,9 @@ export default function PDSArchivePage() {
     });
 
     const statusFiltered =
-      statusFilter === 'all' ? filtered : filtered.filter((s) => s.status === statusFilter);
+      statusFilter === 'all'
+        ? filtered
+        : filtered.filter((s) => s.status === statusFilter);
 
     const decadeFiltered =
       decadeFilter === 'all'
@@ -478,12 +515,16 @@ export default function PDSArchivePage() {
   const groupedByYear = useMemo(() => {
     const groups: Record<number, PdsSubmission[]> = {};
     archivedSubmissions.forEach((submission) => {
-      const year = new Date(submission.submittedAt || submission.createdAt).getFullYear();
+      const year = new Date(
+        submission.submittedAt || submission.createdAt
+      ).getFullYear();
       if (!groups[year]) groups[year] = [];
       groups[year].push(submission);
     });
     return Object.entries(groups).sort(([yearA], [yearB]) =>
-      sortBy === 'date-desc' ? Number(yearB) - Number(yearA) : Number(yearA) - Number(yearB)
+      sortBy === 'date-desc'
+        ? Number(yearB) - Number(yearA)
+        : Number(yearA) - Number(yearB)
     );
   }, [archivedSubmissions, sortBy]);
 
@@ -492,7 +533,10 @@ export default function PDSArchivePage() {
     const decades = new Set<string>();
     submissions
       .filter((s) => {
-        const age = differenceInYears(new Date(), new Date(s.submittedAt || s.createdAt));
+        const age = differenceInYears(
+          new Date(),
+          new Date(s.submittedAt || s.createdAt)
+        );
         return age >= 5;
       })
       .forEach((s) => {
@@ -520,8 +564,10 @@ export default function PDSArchivePage() {
 
     return {
       total: archivedSubmissions.length,
-      approved: archivedSubmissions.filter((s) => s.status === 'approved').length,
-      rejected: archivedSubmissions.filter((s) => s.status === 'rejected').length,
+      approved: archivedSubmissions.filter((s) => s.status === 'approved')
+        .length,
+      rejected: archivedSubmissions.filter((s) => s.status === 'rejected')
+        .length,
       oldestYear,
     };
   }, [archivedSubmissions]);
@@ -564,8 +610,7 @@ export default function PDSArchivePage() {
                 </h1>
                 <Badge
                   variant="outline"
-                  className="border-amber-500 text-amber-700 dark:border-amber-600 dark:text-amber-500 px-2 py-0.5 text-xs"
-                >
+                  className="border-amber-500 text-amber-700 dark:border-amber-600 dark:text-amber-500 px-2 py-0.5 text-xs">
                   <Archive className="h-3 w-3 mr-1" />
                   Historical Records
                 </Badge>
@@ -579,8 +624,7 @@ export default function PDSArchivePage() {
             <Button
               variant="default"
               onClick={handleViewActive}
-              className="gap-2 shrink-0 bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]"
-            >
+              className="gap-2 shrink-0 bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]">
               <Eye className="h-4 w-4" />
               View Active Submissions
             </Button>
@@ -663,8 +707,9 @@ export default function PDSArchivePage() {
                 <SortAsc className="h-4 w-4 text-slate-600 dark:text-slate-400" />
                 <Select
                   value={sortBy}
-                  onValueChange={(v) => setSortBy(v as 'date-desc' | 'date-asc' | 'status')}
-                >
+                  onValueChange={(v) =>
+                    setSortBy(v as 'date-desc' | 'date-asc' | 'status')
+                  }>
                   <SelectTrigger className="w-full sm:w-[160px] h-9">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
@@ -681,9 +726,9 @@ export default function PDSArchivePage() {
                 onClick={() => setGroupByYear(!groupByYear)}
                 className={cn(
                   'gap-2 h-9',
-                  groupByYear && 'bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]'
-                )}
-              >
+                  groupByYear &&
+                    'bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]'
+                )}>
                 <Calendar className="h-4 w-4" />
                 Group by Year
               </Button>

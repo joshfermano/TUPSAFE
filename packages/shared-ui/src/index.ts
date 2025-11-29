@@ -52,3 +52,6 @@ export * from './ui/enhanced-select';
 export * from './ui/enhanced-text-field';
 export * from './ui/enhanced-background';
 export * from './ui/enhanced-success';
+
+// Export PDF fonts utility
+export * from './fonts';

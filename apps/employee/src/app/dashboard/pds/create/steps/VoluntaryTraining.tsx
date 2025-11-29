@@ -1,20 +1,29 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { Heart, BookOpen, Plus, X } from 'lucide-react';
 import { useFormContext, useFieldArray } from 'react-hook-form';
+import { toast } from 'sonner';
 import {
   FormField,
   FormItem,
   FormLabel,
   FormControl,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { FormSection } from '@/components/forms/shared/FormSection';
-import { type CompletePdsData } from '@/lib/validations/pds-schema';
+} from '../../../../../components/ui/form';
+import { Input } from '../../../../../components/ui/input';
+import { Button } from '../../../../../components/ui/button';
+import { Separator } from '../../../../../components/ui/separator';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../../../../components/ui/select';
+import { FormSection } from '../../../../../components/forms/shared/FormSection';
+import { type CompletePdsData } from '../../../../../lib/validations/pds-schema';
+import { autoSortWithNotification } from '../../../../../lib/utils/pds-sort';
 
 /**
  * Step 7: Voluntary Work & Learning Development
@@ -26,6 +35,7 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
     fields: voluntaryFields,
     append: appendVoluntary,
     remove: removeVoluntary,
+    replace: replaceVoluntary,
   } = useFieldArray({
     control: form.control,
     name: 'voluntaryWork',
@@ -35,10 +45,85 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
     fields: trainingFields,
     append: appendTraining,
     remove: removeTraining,
+    replace: replaceTraining,
   } = useFieldArray({
     control: form.control,
     name: 'learningDevelopment',
   });
+
+  /**
+   * Sort voluntary work entries by date (latest first)
+   */
+  const sortVoluntaryWorkEntries = useCallback(() => {
+    const currentValues = form.getValues('voluntaryWork');
+    if (!currentValues || currentValues.length <= 1) return;
+
+    const { sorted, wasReordered } = autoSortWithNotification(currentValues);
+    if (wasReordered) {
+      replaceVoluntary(sorted);
+      toast.info('Voluntary work sorted by date (latest first)');
+    }
+  }, [form, replaceVoluntary]);
+
+  /**
+   * Sort training entries by date (latest first)
+   */
+  const sortTrainingEntries = useCallback(() => {
+    const currentValues = form.getValues('learningDevelopment');
+    if (!currentValues || currentValues.length <= 1) return;
+
+    const { sorted, wasReordered } = autoSortWithNotification(currentValues);
+    if (wasReordered) {
+      replaceTraining(sorted);
+      toast.info('Training programs sorted by date (latest first)');
+    }
+  }, [form, replaceTraining]);
+
+  /**
+   * Handle adding new voluntary work with auto-sort
+   */
+  const handleAddVoluntaryWork = useCallback(() => {
+    appendVoluntary({
+      organizationName: '',
+      organizationAddress: '',
+      dateFrom: new Date(),
+      dateTo: null,
+      numberOfHours: null,
+      positionNature: '',
+    });
+    // Sort after a brief delay to ensure the new entry is added
+    setTimeout(sortVoluntaryWorkEntries, 100);
+  }, [appendVoluntary, sortVoluntaryWorkEntries]);
+
+  /**
+   * Handle adding new training with auto-sort
+   */
+  const handleAddTraining = useCallback(() => {
+    appendTraining({
+      title: '',
+      dateFrom: new Date(),
+      dateTo: new Date(),
+      hours: null,
+      typeOfLd: '',
+      conductedBy: '',
+    });
+    // Sort after a brief delay to ensure the new entry is added
+    setTimeout(sortTrainingEntries, 100);
+  }, [appendTraining, sortTrainingEntries]);
+
+  /**
+   * Handle blur event on voluntary work date fields to trigger auto-sort
+   */
+  const handleVoluntaryDateBlur = useCallback(() => {
+    sortVoluntaryWorkEntries();
+  }, [sortVoluntaryWorkEntries]);
+
+  /**
+   * Handle blur event on training date fields to trigger auto-sort
+   */
+  const handleTrainingDateBlur = useCallback(() => {
+    sortTrainingEntries();
+  }, [sortTrainingEntries]);
 
   return (
     <FormSection
@@ -58,16 +143,7 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
               type="button"
               variant="outline"
               size="sm"
-              onClick={() =>
-                appendVoluntary({
-                  organizationName: '',
-                  organizationAddress: '',
-                  dateFrom: new Date(),
-                  dateTo: null,
-                  numberOfHours: null,
-                  positionNature: '',
-                })
-              }>
+              onClick={handleAddVoluntaryWork}>
               <Plus className="h-4 w-4 mr-2" />
               Add Voluntary Work
             </Button>
@@ -96,23 +172,150 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
                     </Button>
                   </div>
 
-                  <FormField
-                    control={form.control}
-                    name={`voluntaryWork.${index}.organizationName`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Organization Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="e.g., Red Cross Philippines"
-                            {...field}
-                            className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name={`voluntaryWork.${index}.organizationName`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Organization Name <span className="text-destructive">*</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g., Red Cross Philippines"
+                              {...field}
+                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`voluntaryWork.${index}.organizationAddress`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Organization Address</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g., Manila, Philippines"
+                              {...field}
+                              value={field.value ?? ''}
+                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`voluntaryWork.${index}.dateFrom`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            From <span className="text-destructive">*</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="date"
+                              {...field}
+                              value={
+                                field.value instanceof Date
+                                  ? field.value.toISOString().split('T')[0]
+                                  : ''
+                              }
+                              onChange={(e) =>
+                                field.onChange(new Date(e.target.value))
+                              }
+                              onBlur={handleVoluntaryDateBlur}
+                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`voluntaryWork.${index}.dateTo`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>To (leave blank if ongoing)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="date"
+                              {...field}
+                              value={
+                                field.value instanceof Date
+                                  ? field.value.toISOString().split('T')[0]
+                                  : ''
+                              }
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value ? new Date(e.target.value) : null
+                                )
+                              }
+                              onBlur={handleVoluntaryDateBlur}
+                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`voluntaryWork.${index}.numberOfHours`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Number of Hours</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="1"
+                              placeholder="e.g., 120"
+                              {...field}
+                              value={field.value ?? ''}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value ? parseInt(e.target.value) : null
+                                )
+                              }
+                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`voluntaryWork.${index}.positionNature`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Position / Nature of Work</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g., Volunteer Coordinator"
+                              {...field}
+                              value={field.value ?? ''}
+                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
               ))}
             </div>
@@ -132,16 +335,7 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
               type="button"
               variant="outline"
               size="sm"
-              onClick={() =>
-                appendTraining({
-                  title: '',
-                  dateFrom: new Date(),
-                  dateTo: new Date(),
-                  hours: null,
-                  typeOfLd: '',
-                  conductedBy: '',
-                })
-              }>
+              onClick={handleAddTraining}>
               <Plus className="h-4 w-4 mr-2" />
               Add Training
             </Button>
@@ -173,18 +367,152 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
                     name={`learningDevelopment.${index}.title`}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Title of Training/Seminar</FormLabel>
+                        <FormLabel>
+                          Title of Training/Seminar <span className="text-destructive">*</span>
+                        </FormLabel>
                         <FormControl>
                           <Input
                             placeholder="e.g., Advanced Teaching Methodologies"
                             {...field}
-                            className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                            className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
                           />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name={`learningDevelopment.${index}.dateFrom`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            From <span className="text-destructive">*</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="date"
+                              {...field}
+                              value={
+                                field.value instanceof Date
+                                  ? field.value.toISOString().split('T')[0]
+                                  : ''
+                              }
+                              onChange={(e) =>
+                                field.onChange(new Date(e.target.value))
+                              }
+                              onBlur={handleTrainingDateBlur}
+                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`learningDevelopment.${index}.dateTo`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            To <span className="text-destructive">*</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="date"
+                              {...field}
+                              value={
+                                field.value instanceof Date
+                                  ? field.value.toISOString().split('T')[0]
+                                  : ''
+                              }
+                              onChange={(e) =>
+                                field.onChange(new Date(e.target.value))
+                              }
+                              onBlur={handleTrainingDateBlur}
+                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`learningDevelopment.${index}.hours`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Number of Hours</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="1"
+                              placeholder="e.g., 40"
+                              {...field}
+                              value={field.value ?? ''}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value ? parseInt(e.target.value) : null
+                                )
+                              }
+                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`learningDevelopment.${index}.typeOfLd`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Type of L&D</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value ?? undefined}>
+                            <FormControl>
+                              <SelectTrigger className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors">
+                                <SelectValue placeholder="Select type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Managerial">Managerial</SelectItem>
+                              <SelectItem value="Supervisory">Supervisory</SelectItem>
+                              <SelectItem value="Technical">Technical</SelectItem>
+                              <SelectItem value="Foundation">Foundation</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`learningDevelopment.${index}.conductedBy`}
+                      render={({ field }) => (
+                        <FormItem className="md:col-span-2">
+                          <FormLabel>Conducted / Sponsored By</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g., CHED"
+                              {...field}
+                              value={field.value ?? ''}
+                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
               ))}
             </div>

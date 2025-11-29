@@ -5,9 +5,9 @@
  * CS Form No. 212 Revised 2025
  *
  * Comprehensive 8-step multi-step form with:
- * - Auto-save functionality (every 30 seconds)
- * - Draft restoration on mount
- * - Real-time validation per step
+ * - Auto-save functionality (every 30 seconds) with API persistence
+ * - Draft restoration on mount (including completed steps)
+ * - Real-time validation per step with required field enforcement
  * - Progress tracking with visual indicators
  * - TUP Manila crimson theme
  * - Magic UI components for premium feel
@@ -15,11 +15,9 @@
  * - Mobile-responsive design
  */
 
-import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import {
@@ -47,17 +45,31 @@ import {
   createEmptyPds,
   getPdsSectionProgress,
   type CompletePdsData,
-} from '@/lib/validations/pds-schema';
+} from '../../../../lib/validations/pds-schema';
 import { z } from 'zod';
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
+/**
+ * Draft data structure for saving/restoring form state
+ */
+interface PdsDraftData {
+  formData: Partial<CompletePdsData>;
+  completedSteps: number[];
+  currentStep: number;
+  savedAt: string;
+}
 
 // Form components
 import {
   FormStepIndicator,
   FormStepSkeleton,
   type FormStep,
-} from '@/components/forms/shared';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+} from '../../../../components/forms/shared';
+import { Button } from '../../../../components/ui/button';
+import { Badge } from '../../../../components/ui/badge';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -67,18 +79,17 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from '../../../../components/ui/alert-dialog';
 
 // Magic UI components
-import { ShimmerButton } from '@/components/ui/shimmer-button';
-import { AnimatedGradientText } from '@/components/ui/animated-gradient-text';
-import { BlurFade } from '@/components/ui/blur-fade';
-import { DotPattern } from '@/components/ui/dot-pattern';
+import { ShimmerButton } from '../../../../components/ui/shimmer-button';
+import { AnimatedGradientText } from '../../../../components/ui/animated-gradient-text';
+import { BlurFade } from '../../../../components/ui/blur-fade';
+import { DotPattern } from '../../../../components/ui/dot-pattern';
 
 // Hooks
-import { useAutoSave, getSavedDraft } from '@/hooks/useAutoSave';
-import { useAuth } from '@/providers/AuthProvider';
-import { cn } from '@/lib/utils';
+import { useAutoSave, getSavedDraft } from '../../../../hooks/useAutoSave';
+import { useAuth } from '../../../../providers/AuthProvider';
 
 // Step components
 import {
@@ -152,6 +163,78 @@ const FORM_STEPS: FormStep[] = [
 // Per-step validation can be handled manually in the step navigation logic
 
 // ============================================================================
+// STEP FIELD MAPPINGS
+// ============================================================================
+
+/**
+ * Get the form field paths for a specific step
+ * Used for per-step validation before navigation
+ *
+ * @param step - The step index (0-based)
+ * @returns Array of field paths to validate for the given step
+ */
+const getStepFields = (step: number): string[] => {
+  switch (step) {
+    case 0: // Personal Basic - REQUIRED
+      return [
+        'personalInfo.surname',
+        'personalInfo.firstName',
+        'personalInfo.dateOfBirth',
+        'personalInfo.placeOfBirth',
+        'personalInfo.sex',
+        'personalInfo.civilStatus',
+        'personalInfo.citizenship',
+      ];
+    case 1: // Addresses - Key fields required
+      return [
+        'personalInfo.residentialAddress.barangay',
+        'personalInfo.residentialAddress.cityMunicipality',
+        'personalInfo.residentialAddress.province',
+        'personalInfo.permanentAddress.barangay',
+        'personalInfo.permanentAddress.cityMunicipality',
+        'personalInfo.permanentAddress.province',
+      ];
+    case 2: // Contact - At least mobile or email
+      return [
+        'personalInfo.mobileNo',
+        'personalInfo.emailAddress',
+      ];
+    case 3: // Family - Optional, return empty
+      return [];
+    case 4: // Education - Optional, return empty
+      return [];
+    case 5: // Eligibility & Work - Optional, return empty
+      return [];
+    case 6: // Voluntary & Training - Optional, return empty
+      return [];
+    case 7: // Other Info & Review - References required on final submission
+      return [
+        'otherInfo.references',
+      ];
+    default:
+      return [];
+  }
+};
+
+/**
+ * Get required fields description for error messages
+ */
+const getStepRequiredFieldsDescription = (step: number): string => {
+  switch (step) {
+    case 0:
+      return 'surname, first name, date of birth, place of birth, sex, civil status, and citizenship';
+    case 1:
+      return 'barangay, city/municipality, and province for both residential and permanent addresses';
+    case 2:
+      return 'at least a mobile number or email address for contact';
+    case 7:
+      return 'at least 3 character references';
+    default:
+      return 'all required fields';
+  }
+};
+
+// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
@@ -165,35 +248,72 @@ export default function PDSCreatePage() {
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDraftDialog, setShowDraftDialog] = useState(false);
-  const [showExitDialog, setShowExitDialog] = useState(false);
-  const [hasSavedDraft, setHasSavedDraft] = useState(false);
+  const [_showExitDialog, _setShowExitDialog] = useState(false); // Reserved for exit confirmation
+  const [_hasSavedDraft, setHasSavedDraft] = useState(false); // Tracking draft state
 
   // Form setup - no resolver during multi-step flow to allow incomplete data
   // Final validation happens on submission
+  // Using 'onBlur' mode to validate on blur instead of every keystroke (performance optimization)
   const form = useForm<Partial<CompletePdsData>>({
     defaultValues: createEmptyPds(),
-    mode: 'onChange',
+    mode: 'onBlur',
   });
 
-  const formData = form.watch();
+  // Ref-based subscription to track form changes without causing re-renders
+  // This is a performance optimization - we only need the data for auto-save, not for rendering
+  const formDataRef = useRef<Partial<CompletePdsData>>(createEmptyPds());
 
-  // Auto-save setup
+  // Subscribe to form changes without causing re-renders
+  useEffect(() => {
+    const subscription = form.watch((value) => {
+      formDataRef.current = value as Partial<CompletePdsData>;
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
+
+  // Callback-based approach for getting draft data
+  // This doesn't cause re-renders when form data changes
+  const getDraftData = useCallback((): PdsDraftData => ({
+    formData: form.getValues(),
+    completedSteps,
+    currentStep,
+    savedAt: new Date().toISOString(),
+  }), [completedSteps, currentStep, form]);
+
+  // Auto-save setup with API persistence
+  // Using getDraftData callback instead of reactive data to avoid re-renders
   const { saveStatus, lastSaved, saveNow, clearSaved, hasSavedData } =
-    useAutoSave({
+    useAutoSave<PdsDraftData>({
       key: `pds-draft-${userId}`,
-      data: formData,
-      debounceMs: 2000,
+      getData: getDraftData, // Callback-based approach for better performance
+      debounceMs: 3000, // Increased from 2000ms to reduce save frequency
       autoSaveIntervalMs: 30000,
       enabled: !isSubmitting,
-      showToast: false, // We'll show custom toast
+      showToast: false, // Disabled to reduce DOM updates and improve performance
+      onSave: async (data) => {
+        // Save to API as well for server-side persistence
+        try {
+          await fetch('/api/pds/draft', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+          });
+        } catch (error) {
+          console.error('Failed to save draft to server:', error);
+          // LocalStorage will still work as backup
+          // Don't throw - we want the local save to succeed even if API fails
+        }
+      },
+      onError: (error) => {
+        console.error('Draft save error:', error);
+        // Error toast is handled by useAutoSave when showToast is true
+      },
     });
 
   // Check for saved draft on mount
   useEffect(() => {
-    const savedDraft = getSavedDraft<Partial<CompletePdsData>>(
-      `pds-draft-${userId}`
-    );
-    if (savedDraft && Object.keys(savedDraft).length > 0) {
+    const savedDraft = getSavedDraft<PdsDraftData>(`pds-draft-${userId}`);
+    if (savedDraft && savedDraft.formData && Object.keys(savedDraft.formData).length > 0) {
       setHasSavedDraft(true);
       setShowDraftDialog(true);
     }
@@ -201,24 +321,38 @@ export default function PDSCreatePage() {
 
   // Handle draft restoration
   const handleRestoreDraft = useCallback(() => {
-    const savedDraft = getSavedDraft<Partial<CompletePdsData>>(
-      `pds-draft-${userId}`
-    );
-    if (savedDraft) {
-      form.reset(savedDraft);
-      toast.success('Draft Restored', {
-        description: 'Your previous work has been loaded.',
-      });
+    const savedDraft = getSavedDraft<PdsDraftData>(`pds-draft-${userId}`);
+    if (savedDraft && savedDraft.formData) {
+      // Restore form data
+      form.reset(savedDraft.formData);
 
-      // Calculate which steps are completed
-      const progress = getPdsSectionProgress(savedDraft);
-      const completed: number[] = [];
-      Object.entries(progress).forEach(([key, value], index) => {
-        if (value >= 100) {
-          completed.push(index);
-        }
+      // Restore completed steps from saved draft
+      if (savedDraft.completedSteps && Array.isArray(savedDraft.completedSteps)) {
+        setCompletedSteps(savedDraft.completedSteps);
+      } else {
+        // Fallback: Calculate which steps are completed based on form data
+        const progress = getPdsSectionProgress(savedDraft.formData);
+        const completed: number[] = [];
+        Object.entries(progress).forEach(([, value], index) => {
+          if (value >= 100) {
+            completed.push(index);
+          }
+        });
+        setCompletedSteps(completed);
+      }
+
+      // Restore current step position
+      if (typeof savedDraft.currentStep === 'number' && savedDraft.currentStep >= 0) {
+        setCurrentStep(savedDraft.currentStep);
+      }
+
+      // Show success message with last saved time if available
+      const savedTime = savedDraft.savedAt
+        ? new Date(savedDraft.savedAt).toLocaleString()
+        : 'previously';
+      toast.success('Draft Restored', {
+        description: `Your work from ${savedTime} has been loaded.`,
       });
-      setCompletedSteps(completed);
     }
     setShowDraftDialog(false);
   }, [userId, form]);
@@ -231,21 +365,38 @@ export default function PDSCreatePage() {
     });
   }, [clearSaved]);
 
-  // Validate current step
+  // Validate current step - only validates fields for the current step
   const validateCurrentStep = useCallback(async (): Promise<boolean> => {
-    const isValid = await form.trigger();
+    const stepFields = getStepFields(currentStep);
+
+    // If there are no required fields for this step, it's valid
+    if (stepFields.length === 0) {
+      return true;
+    }
+
+    // Validate only the current step's fields
+    // Cast to any because react-hook-form trigger accepts string | string[] but TS typing is strict
+    const isValid = await form.trigger(stepFields as Parameters<typeof form.trigger>[0]);
     return isValid;
-  }, [form]);
+  }, [form, currentStep]);
 
   // Navigation handlers
   const handleNext = useCallback(async () => {
-    const isValid = await validateCurrentStep();
+    // Get the fields for the current step
+    const stepFields = getStepFields(currentStep);
 
-    if (!isValid) {
-      toast.error('Validation Error', {
-        description: 'Please fix the errors before proceeding.',
-      });
-      return;
+    // If there are required fields, validate them
+    if (stepFields.length > 0) {
+      // Validate only the current step's fields
+      const isValid = await form.trigger(stepFields as Parameters<typeof form.trigger>[0]);
+
+      if (!isValid) {
+        const requiredFieldsDesc = getStepRequiredFieldsDescription(currentStep);
+        toast.error('Please fill in all required fields', {
+          description: `Required fields: ${requiredFieldsDesc}`,
+        });
+        return;
+      }
     }
 
     // Mark step as completed
@@ -258,7 +409,7 @@ export default function PDSCreatePage() {
       setCurrentStep(currentStep + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [currentStep, completedSteps, validateCurrentStep]);
+  }, [currentStep, completedSteps, form]);
 
   const handlePrevious = useCallback(() => {
     if (currentStep > 0) {
@@ -277,48 +428,117 @@ export default function PDSCreatePage() {
     [currentStep, completedSteps]
   );
 
-  // Form submission
+  // Form submission with real API call
   const handleSubmit = useCallback(
     async (data: Partial<CompletePdsData>) => {
       setIsSubmitting(true);
 
       try {
-        // Validate complete form
+        // Validate complete form with Zod schema
         const validatedData = completePdsSchema.parse(data);
 
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        // Call real API to create PDS
+        const response = await fetch('/api/pds', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(validatedData),
+        });
 
-        // Show success
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.message || `Failed to create PDS (${response.status})`
+          );
+        }
+
+        const result = await response.json();
+
+        // Clear draft on success
+        clearSaved();
+
+        // Show success animation
         confetti({
           particleCount: 100,
           spread: 70,
           origin: { y: 0.6 },
         });
 
-        toast.success('PDS Submitted Successfully!', {
-          description:
-            'Your Personal Data Sheet has been submitted for review.',
+        toast.success('PDS Created Successfully!', {
+          description: 'Your Personal Data Sheet has been saved.',
         });
 
-        // Clear draft
-        clearSaved();
-
-        // Redirect
+        // Redirect after animation
         setTimeout(() => {
           router.push('/dashboard/pds');
         }, 2000);
       } catch (error) {
         console.error('Submission error:', error);
-        toast.error('Submission Failed', {
-          description: 'Please review your form and try again.',
-        });
+
+        if (error instanceof z.ZodError) {
+          // Show validation errors from Zod
+          const firstError = error.errors[0];
+          const fieldPath = firstError.path.join('.');
+          toast.error('Validation Error', {
+            description: `${fieldPath}: ${firstError.message}`,
+          });
+
+          // Try to navigate to the step with the error
+          const errorStep = getStepForFieldPath(fieldPath);
+          if (errorStep !== null && errorStep !== currentStep) {
+            setCurrentStep(errorStep);
+            toast.info('Navigated to the step with errors', {
+              description: 'Please fix the highlighted fields.',
+            });
+          }
+        } else {
+          toast.error('Failed to save PDS', {
+            description:
+              error instanceof Error ? error.message : 'Please try again.',
+          });
+        }
       } finally {
         setIsSubmitting(false);
       }
     },
-    [clearSaved, router]
+    [clearSaved, router, currentStep]
   );
+
+  /**
+   * Helper to determine which step a field path belongs to
+   */
+  const getStepForFieldPath = (fieldPath: string): number | null => {
+    if (fieldPath.startsWith('personalInfo.surname') ||
+        fieldPath.startsWith('personalInfo.firstName') ||
+        fieldPath.startsWith('personalInfo.dateOfBirth') ||
+        fieldPath.startsWith('personalInfo.placeOfBirth') ||
+        fieldPath.startsWith('personalInfo.sex') ||
+        fieldPath.startsWith('personalInfo.civilStatus') ||
+        fieldPath.startsWith('personalInfo.citizenship')) {
+      return 0;
+    }
+    if (fieldPath.includes('residentialAddress') || fieldPath.includes('permanentAddress')) {
+      return 1;
+    }
+    if (fieldPath.includes('telephoneNo') || fieldPath.includes('mobileNo') || fieldPath.includes('emailAddress')) {
+      return 2;
+    }
+    if (fieldPath.startsWith('family')) {
+      return 3;
+    }
+    if (fieldPath.startsWith('education')) {
+      return 4;
+    }
+    if (fieldPath.startsWith('eligibility') || fieldPath.startsWith('workExperience')) {
+      return 5;
+    }
+    if (fieldPath.startsWith('voluntaryWork') || fieldPath.startsWith('learningDevelopment')) {
+      return 6;
+    }
+    if (fieldPath.startsWith('otherInfo')) {
+      return 7;
+    }
+    return null;
+  };
 
   // Calculate overall progress
   const overallProgress = useMemo(() => {
@@ -404,7 +624,9 @@ export default function PDSCreatePage() {
                 <AnimatedGradientText className="text-2xl sm:text-3xl font-semibold">
                   Create Personal Data Sheet
                 </AnimatedGradientText>
-                <Badge variant="outline" className="text-xs font-normal border-slate-300/50 dark:border-slate-700/50 w-fit">
+                <Badge
+                  variant="outline"
+                  className="text-xs font-normal border-slate-300/50 dark:border-slate-700/50 w-fit">
                   CS Form No. 212 Revised 2025
                 </Badge>
               </div>

@@ -15,9 +15,9 @@
 
 import { memo } from 'react';
 import { Calculator, TrendingUp, TrendingDown } from 'lucide-react';
-import { NumberTicker } from '@/components/ui/number-ticker';
-import { formatCurrency } from '@/lib/utils/currency';
-import type { SalnSummary } from '@/lib/validations/saln-schema';
+import { NumberTicker } from '../../../../../components/ui/number-ticker';
+import { formatCurrency } from '../../../../../lib/utils/currency';
+import type { SalnSummary } from '../../../../../lib/validations/saln-schema';
 
 // Import Enhanced Components
 import {
@@ -79,7 +79,9 @@ export const NetWorthSummary = memo(function NetWorthSummary({
                 Total Assets
               </p>
               <div className="flex items-center justify-center gap-3">
-                <span className="text-sm text-slate-600 dark:text-slate-400">PHP</span>
+                <span className="text-sm text-slate-600 dark:text-slate-400">
+                  PHP
+                </span>
                 <p className="text-5xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                   <NumberTicker value={Math.round(summary.totalAssets)} />
                 </p>
@@ -93,7 +95,9 @@ export const NetWorthSummary = memo(function NetWorthSummary({
           {/* Total Liabilities */}
           <BlurFade delay={0.3}>
             <div className="p-8 border border-destructive/20 rounded-lg bg-destructive/5 mb-8">
-              <p className="text-base font-medium text-slate-600 dark:text-slate-400 mb-3">Total Liabilities</p>
+              <p className="text-base font-medium text-slate-600 dark:text-slate-400 mb-3">
+                Total Liabilities
+              </p>
               <p className="text-3xl font-bold text-destructive">
                 {formatCurrency(summary.totalLiabilities)}
               </p>
@@ -114,16 +118,22 @@ export const NetWorthSummary = memo(function NetWorthSummary({
                 ) : (
                   <TrendingDown className="h-6 w-6 text-amber-500" />
                 )}
-                <p className="text-lg font-semibold uppercase tracking-wide">Net Worth</p>
+                <p className="text-lg font-semibold uppercase tracking-wide">
+                  Net Worth
+                </p>
               </div>
 
               <div className="flex items-center justify-center gap-3 mb-3">
-                <span className="text-base text-slate-600 dark:text-slate-400">PHP</span>
+                <span className="text-base text-slate-600 dark:text-slate-400">
+                  PHP
+                </span>
                 <p
                   className={`text-6xl font-bold ${
                     isPositiveNetWorth ? 'text-primary' : 'text-amber-500'
                   }`}>
-                  <NumberTicker value={Math.round(Math.abs(summary.netWorth))} />
+                  <NumberTicker
+                    value={Math.round(Math.abs(summary.netWorth))}
+                  />
                 </p>
               </div>
 

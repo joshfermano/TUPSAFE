@@ -22,11 +22,11 @@ import {
   Headphones,
   Star,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { MagicCard } from '@/components/ui/magic-card';
-import { NeonGradientCard } from '@/components/ui/neon-gradient-card';
+import { Button } from '../../../components/ui/button';
+import { Badge } from '../../../components/ui/badge';
+import { Card } from '../../../components/ui/card';
+import { MagicCard } from '../../../components/ui/magic-card';
+import { NeonGradientCard } from '../../../components/ui/neon-gradient-card';
 import Link from 'next/link';
 
 const HeroSection = () => (

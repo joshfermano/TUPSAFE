@@ -1,16 +1,16 @@
 'use client';
 
 import React from 'react';
-import { useTheme, ThemeToggle } from '@/components/theme';
+import { useTheme, ThemeToggle } from '.';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+} from '../ui/card';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
 
 /**
  * ThemeDemo component showcasing all TUPSAFE theme features
@@ -31,22 +31,18 @@ export const ThemeDemo: React.FC = () => {
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold text-tup">
-            TUPSAFE Theme System
-          </h1>
+          <h1 className="text-4xl font-bold text-tup">TUPSAFE Theme System</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            A comprehensive theme system for the TUPM e-PDS and
-            e-SALN compliance platform. Features TUP&apos;s Red (#8B1538)
-            branding, accessibility compliance, and seamless dark mode support.
+            A comprehensive theme system for the TUPM e-PDS and e-SALN
+            compliance platform. Features TUP&apos;s Red (#8B1538) branding,
+            accessibility compliance, and seamless dark mode support.
           </p>
         </div>
 
         {/* Theme Status */}
         <Card className="bg-gradient-tup-soft border-border/50">
           <CardHeader>
-            <CardTitle className="text-tup">
-              Current Theme Status
-            </CardTitle>
+            <CardTitle className="text-tup">Current Theme Status</CardTitle>
             <CardDescription>
               Live theme information and system preferences
             </CardDescription>
@@ -223,9 +219,7 @@ export const ThemeDemo: React.FC = () => {
           <CardContent>
             <div className="flex flex-wrap gap-4">
               <Button className="btn-tup">Primary Action</Button>
-              <Button className="btn-tup-outline">
-                Secondary Action
-              </Button>
+              <Button className="btn-tup-outline">Secondary Action</Button>
               <Button className="btn-tup-ghost">Ghost Action</Button>
               <Button variant="destructive">Destructive Action</Button>
             </div>

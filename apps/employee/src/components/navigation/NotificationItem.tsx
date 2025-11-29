@@ -32,7 +32,7 @@ import {
   XCircle,
   type LucideIcon,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '../../lib/utils';
 
 /**
  * Notification type definition
@@ -112,8 +112,10 @@ function getNotificationIcon(
  */
 function getIconColorClasses(type?: string): string {
   const colorMap: Record<string, string> = {
-    success: 'text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30',
-    warning: 'text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30',
+    success:
+      'text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30',
+    warning:
+      'text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30',
     error: 'text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30',
     info: 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30',
   };
@@ -143,7 +145,13 @@ function getBorderColorClasses(type?: string, isRead?: boolean): string {
  * NotificationItem Component
  */
 export const NotificationItem = React.memo<NotificationItemProps>(
-  ({ notification, onClick, showUnreadIndicator = true, compact = false, className }) => {
+  ({
+    notification,
+    onClick,
+    showUnreadIndicator = true,
+    compact = false,
+    className,
+  }) => {
     const Icon = getNotificationIcon(
       notification.type,
       notification.category,
@@ -228,7 +236,9 @@ export const NotificationItem = React.memo<NotificationItemProps>(
             <time
               className={cn(
                 'text-xs whitespace-nowrap flex-shrink-0',
-                notification.isRead ? 'text-muted-foreground/60' : 'text-muted-foreground'
+                notification.isRead
+                  ? 'text-muted-foreground/60'
+                  : 'text-muted-foreground'
               )}
               dateTime={notification.createdAt}
               title={new Date(notification.createdAt).toLocaleString('en-PH', {
@@ -244,7 +254,9 @@ export const NotificationItem = React.memo<NotificationItemProps>(
             className={cn(
               'text-xs leading-relaxed',
               compact ? 'line-clamp-2' : 'line-clamp-3',
-              notification.isRead ? 'text-muted-foreground/70' : 'text-muted-foreground'
+              notification.isRead
+                ? 'text-muted-foreground/70'
+                : 'text-muted-foreground'
             )}>
             {notification.message}
           </p>

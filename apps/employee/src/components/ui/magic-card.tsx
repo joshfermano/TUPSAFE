@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { motion, useMotionTemplate, useMotionValue } from "motion/react";
-import React, { useCallback, useEffect } from "react";
+import { motion, useMotionTemplate, useMotionValue } from 'motion/react';
+import React, { useCallback, useEffect } from 'react';
 
-import { cn } from "@/lib/utils";
+import { cn } from '../../lib/utils';
 
 interface MagicCardProps {
   children?: React.ReactNode;
@@ -19,10 +19,10 @@ export function MagicCard({
   children,
   className,
   gradientSize = 200,
-  gradientColor = "#8B1538",
+  gradientColor = '#8B1538',
   gradientOpacity = 0.6,
-  gradientFrom = "#8B1538",
-  gradientTo = "#B8264D",
+  gradientFrom = '#8B1538',
+  gradientTo = '#B8264D',
 }: MagicCardProps) {
   const mouseX = useMotionValue(-gradientSize);
   const mouseY = useMotionValue(-gradientSize);
@@ -37,7 +37,7 @@ export function MagicCard({
       mouseX.set(e.clientX - rect.left);
       mouseY.set(e.clientY - rect.top);
     },
-    [mouseX, mouseY],
+    [mouseX, mouseY]
   );
 
   useEffect(() => {
@@ -52,29 +52,28 @@ export function MagicCard({
     };
 
     const handleVisibility = () => {
-      if (document.visibilityState !== "visible") {
+      if (document.visibilityState !== 'visible') {
         reset();
       }
     };
 
-    window.addEventListener("pointerout", handleGlobalPointerOut);
-    window.addEventListener("blur", reset);
-    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener('pointerout', handleGlobalPointerOut);
+    window.addEventListener('blur', reset);
+    document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
-      window.removeEventListener("pointerout", handleGlobalPointerOut);
-      window.removeEventListener("blur", reset);
-      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener('pointerout', handleGlobalPointerOut);
+      window.removeEventListener('blur', reset);
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, [reset]);
 
   return (
     <div
-      className={cn("group relative rounded-[inherit]", className)}
+      className={cn('group relative rounded-[inherit]', className)}
       onPointerMove={handlePointerMove}
       onPointerLeave={reset}
-      onPointerEnter={reset}
-    >
+      onPointerEnter={reset}>
       <motion.div
         className="pointer-events-none absolute inset-0 rounded-[inherit] bg-border duration-300 group-hover:opacity-100"
         style={{

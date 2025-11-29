@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Button } from '../ui/button';
 import { Camera, Upload, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface AvatarUploadProps {
@@ -100,8 +100,7 @@ export function AvatarUpload({
       <motion.div
         className="relative group"
         whileHover={{ scale: 1.02 }}
-        transition={{ duration: 0.2, ease: 'easeOut' }}
-      >
+        transition={{ duration: 0.2, ease: 'easeOut' }}>
         <div
           className={cn(
             'relative rounded-full overflow-hidden border-4 transition-all duration-200',
@@ -112,8 +111,7 @@ export function AvatarUpload({
           )}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-        >
+          onDrop={handleDrop}>
           <Avatar className="h-32 w-32">
             <AvatarImage src={preview || currentAvatar} alt={userName} />
             <AvatarFallback className="text-2xl font-semibold bg-gradient-to-br from-red-700 to-red-800 text-white">
@@ -127,8 +125,7 @@ export function AvatarUpload({
             initial={{ opacity: 0 }}
             whileHover={{ opacity: 1 }}
             transition={{ duration: 0.2 }}
-            onClick={handleClick}
-          >
+            onClick={handleClick}>
             <Camera className="h-8 w-8 text-white" />
           </motion.div>
         </div>
@@ -143,8 +140,7 @@ export function AvatarUpload({
               transition={{ duration: 0.15 }}
               onClick={handleRemove}
               className="absolute -top-2 -right-2 h-8 w-8 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-lg flex items-center justify-center transition-colors duration-200 z-10"
-              type="button"
-            >
+              type="button">
               <X className="h-4 w-4" />
             </motion.button>
           )}
@@ -158,8 +154,7 @@ export function AvatarUpload({
           variant="outline"
           size="sm"
           onClick={handleClick}
-          className="border-red-700 text-red-500 hover:bg-red-500/5 dark:border-red-600 dark:text-red-600 dark:hover:bg-red-600/10"
-        >
+          className="border-red-700 text-red-500 hover:bg-red-500/5 dark:border-red-600 dark:text-red-600 dark:hover:bg-red-600/10">
           <Upload className="h-4 w-4 mr-2" />
           Upload Photo
         </Button>

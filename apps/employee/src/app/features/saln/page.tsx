@@ -20,14 +20,12 @@ import {
   FileText,
   Zap,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { MagicCard } from '@/components/ui/magic-card';
-import { NeonGradientCard } from '@/components/ui/neon-gradient-card';
+import { Button } from '../../../components/ui/button';
+import { Badge } from '../../../components/ui/badge';
+import { Card } from '../../../components/ui/card';
+import { MagicCard } from '../../../components/ui/magic-card';
+import { NeonGradientCard } from '../../../components/ui/neon-gradient-card';
 import Link from 'next/link';
-
-
 
 const HeroSection = () => (
   <section className="relative overflow-hidden bg-gradient-to-br from-[#8B1538]/5 via-white to-[#B8264D]/5 dark:from-gray-950 dark:via-gray-900 dark:to-[#8B1538]/20 pt-32 pb-20">
@@ -60,10 +58,11 @@ const HeroSection = () => (
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
           className="mb-8 text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
-          Academic prototype of digital Statement of Assets, Liabilities, and Net Worth management
-          with automated calculations, compliance checks, and deadline tracking.
-          Research implementation supporting transparency and anti-corruption compliance 
-          as required by Philippine government regulations.
+          Academic prototype of digital Statement of Assets, Liabilities, and
+          Net Worth management with automated calculations, compliance checks,
+          and deadline tracking. Research implementation supporting transparency
+          and anti-corruption compliance as required by Philippine government
+          regulations.
         </motion.p>
 
         <motion.div
@@ -181,9 +180,9 @@ const KeyFeaturesSection = () => {
             Thesis Research SALN Features
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Academic demonstration of comprehensive e-SALN management capabilities 
-            designed to support transparency, accountability, and anti-corruption 
-            compliance in Philippine government institutions.
+            Academic demonstration of comprehensive e-SALN management
+            capabilities designed to support transparency, accountability, and
+            anti-corruption compliance in Philippine government institutions.
           </p>
         </motion.div>
 
@@ -388,7 +387,7 @@ const ComplianceSection = () => {
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
             Academic study demonstrating implementation of transparency and
-            accountability standards required by Philippine anti-corruption laws 
+            accountability standards required by Philippine anti-corruption laws
             and Data Privacy Act 2012 compliance.
           </p>
         </motion.div>
@@ -556,8 +555,9 @@ const BenefitsSection = () => {
             Research Benefits of Digital e-SALN
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Academic study of the potential benefits of modernizing SALN management 
-            through digital transformation in Philippine government institutions.
+            Academic study of the potential benefits of modernizing SALN
+            management through digital transformation in Philippine government
+            institutions.
           </p>
         </motion.div>
 
@@ -600,9 +600,10 @@ const CTASection = () => (
           Thesis Research on Digital SALN Transformation
         </h2>
         <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
-          This research prototype demonstrates how digital transformation can enhance 
-          SALN management processes while ensuring full transparency and compliance 
-          with Philippine government regulations and anti-corruption measures.
+          This research prototype demonstrates how digital transformation can
+          enhance SALN management processes while ensuring full transparency and
+          compliance with Philippine government regulations and anti-corruption
+          measures.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">

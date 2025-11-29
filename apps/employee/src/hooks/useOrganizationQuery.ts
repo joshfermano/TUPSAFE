@@ -14,8 +14,8 @@ import type {
   DepartmentsQueryParams,
   PositionsQueryParams,
   ApiErrorResponse,
-} from '@/types/api';
-import { buildQueryString, isApiError } from '@/types/api';
+} from '../types/api';
+import { buildQueryString, isApiError } from '../types/api';
 
 // ============================================================================
 // Departments Hooks
@@ -96,7 +96,9 @@ export function useDepartmentsByCollegeQuery(collegeId: string | null) {
  * Fetch all active departments
  */
 export function useDepartmentsQuery(params?: DepartmentsQueryParams) {
-  const queryString = params ? buildQueryString(params as Record<string, string>) : '';
+  const queryString = params
+    ? buildQueryString(params as Record<string, string>)
+    : '';
 
   return useQuery<Department[], Error>({
     queryKey: ['departments', params],
@@ -198,7 +200,9 @@ export function usePositionsByDepartmentQuery(departmentId: string | null) {
  * Fetch positions with custom filters
  */
 export function usePositionsQuery(params?: PositionsQueryParams) {
-  const queryString = params ? buildQueryString(params as Record<string, string>) : '';
+  const queryString = params
+    ? buildQueryString(params as Record<string, string>)
+    : '';
 
   return useQuery<Position[], Error>({
     queryKey: ['positions', params],

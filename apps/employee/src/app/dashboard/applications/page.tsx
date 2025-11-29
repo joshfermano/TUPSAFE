@@ -13,23 +13,26 @@ import {
   Eye,
   Loader2,
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Badge } from '../../../components/ui/badge';
+import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Card } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
-import { useApplicationsQuery, type Application } from '@/hooks/useApplicationsQuery';
-import { BlurFade } from '@/components/ui/blur-fade';
-import { ShineBorder } from '@/components/ui/shine-border';
-import AnimatedGradientText from '@/components/ui/animated-gradient-text';
+} from '../../../components/ui/select';
+import { Card } from '../../../components/ui/card';
+import { Separator } from '../../../components/ui/separator';
+import { cn } from '../../../lib/utils';
+import {
+  useApplicationsQuery,
+  type Application,
+} from '../../../hooks/useApplicationsQuery';
+import { BlurFade } from '../../../components/ui/blur-fade';
+import { ShineBorder } from '../../../components/ui/shine-border';
+import AnimatedGradientText from '../../../components/ui/animated-gradient-text';
 
 /**
  * Status badge color mapping
@@ -106,7 +109,11 @@ function ApplicationCard({ application }: { application: Application }) {
               <div className="flex items-center gap-2 text-sm">
                 <Calendar className="h-4 w-4 text-[#8B1538]" />
                 <span className="text-slate-700 dark:text-slate-300">
-                  Applied {format(new Date(application.applicationDate), 'MMM dd, yyyy')}
+                  Applied{' '}
+                  {format(
+                    new Date(application.applicationDate),
+                    'MMM dd, yyyy'
+                  )}
                 </span>
               </div>
 
@@ -123,7 +130,11 @@ function ApplicationCard({ application }: { application: Application }) {
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="h-4 w-4 text-green-600" />
                   <span className="font-medium text-green-700 dark:text-green-400">
-                    Interview: {format(new Date(application.interviewDate), "MMM dd, yyyy")}
+                    Interview:{' '}
+                    {format(
+                      new Date(application.interviewDate),
+                      'MMM dd, yyyy'
+                    )}
                   </span>
                 </div>
               )}
@@ -161,8 +172,8 @@ function EmptyState() {
               No Applications Yet
             </h3>
             <p className="text-sm text-slate-600 dark:text-slate-400 max-w-sm">
-              You haven&apos;t submitted any job applications yet. Browse open positions to get
-              started.
+              You haven&apos;t submitted any job applications yet. Browse open
+              positions to get started.
             </p>
           </div>
           <Button
@@ -193,8 +204,12 @@ export default function ApplicationsPage() {
     data?.applications.filter(
       (app) =>
         app.position.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        app.applicationNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        app.position.department.name.toLowerCase().includes(searchQuery.toLowerCase())
+        app.applicationNumber
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        app.position.department.name
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase())
     ) || [];
 
   return (
@@ -284,7 +299,8 @@ export default function ApplicationsPage() {
               <BlurFade delay={0.15} inView>
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-slate-600 dark:text-slate-400">
-                    Showing {filteredApplications.length} of {data?.total || 0} applications
+                    Showing {filteredApplications.length} of {data?.total || 0}{' '}
+                    applications
                   </p>
                 </div>
               </BlurFade>
@@ -292,7 +308,10 @@ export default function ApplicationsPage() {
               {/* Grid */}
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 {filteredApplications.map((application) => (
-                  <ApplicationCard key={application.id} application={application} />
+                  <ApplicationCard
+                    key={application.id}
+                    application={application}
+                  />
                 ))}
               </div>
             </>

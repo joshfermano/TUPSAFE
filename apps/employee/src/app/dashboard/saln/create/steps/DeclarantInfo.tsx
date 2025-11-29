@@ -16,7 +16,7 @@
 
 import { memo } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { Label } from '@/components/ui/label';
+import { Label } from '../../../../../components/ui/label';
 
 // Import Enhanced Components from shared-ui
 import {
@@ -39,7 +39,6 @@ interface FormErrors {
 }
 
 export const DeclarantInfo = memo(function DeclarantInfo() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const {
     register,
     watch,
@@ -104,7 +103,11 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
           variant="default">
           <div className="grid gap-6 md:grid-cols-2">
             <div className="grid gap-2">
-              <Label htmlFor="submission.position" className="text-base font-medium">Position/Designation</Label>
+              <Label
+                htmlFor="submission.position"
+                className="text-base font-medium">
+                Position/Designation
+              </Label>
               <EnhancedInput
                 id="submission.position"
                 placeholder="e.g., Assistant Professor III"
@@ -118,7 +121,11 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="submission.agency" className="text-base font-medium">Agency/Office</Label>
+              <Label
+                htmlFor="submission.agency"
+                className="text-base font-medium">
+                Agency/Office
+              </Label>
               <EnhancedInput
                 id="submission.agency"
                 placeholder="e.g., Technological University of the Philippines"
@@ -133,7 +140,11 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="submission.officeAddress" className="text-base font-medium">Office Address</Label>
+            <Label
+              htmlFor="submission.officeAddress"
+              className="text-base font-medium">
+              Office Address
+            </Label>
             <EnhancedInput
               id="submission.officeAddress"
               placeholder="Complete office address"
@@ -236,7 +247,8 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
                     </p>
                   )}
                   <p className="text-sm text-slate-600 dark:text-slate-400">
-                    Required for joint filing. Include middle name if applicable.
+                    Required for joint filing. Include middle name if
+                    applicable.
                   </p>
                 </div>
               </BlurFade>

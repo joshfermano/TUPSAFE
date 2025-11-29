@@ -15,12 +15,12 @@
 import { memo, useMemo } from 'react';
 import { useFormContext, useFieldArray, Controller } from 'react-hook-form';
 import { Car, Plus, Trash2 } from 'lucide-react';
-import { CurrencyInput } from '@/components/forms/shared/CurrencyInput';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { formatCurrency } from '@/lib/utils/currency';
+import { CurrencyInput } from '../../../../../components/forms/shared/CurrencyInput';
+import { Label } from '../../../../../components/ui/label';
+import { Button } from '../../../../../components/ui/button';
+import { Textarea } from '../../../../../components/ui/textarea';
+import { Badge } from '../../../../../components/ui/badge';
+import { formatCurrency } from '../../../../../lib/utils/currency';
 
 // Import Enhanced Components
 import {
@@ -92,7 +92,10 @@ export const PersonalProperties = memo(function PersonalProperties() {
                 <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
                   No personal properties added yet
                 </p>
-                <Button type="button" onClick={addPersonalProperty} variant="outline">
+                <Button
+                  type="button"
+                  onClick={addPersonalProperty}
+                  variant="outline">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Personal Property
                 </Button>
@@ -100,10 +103,15 @@ export const PersonalProperties = memo(function PersonalProperties() {
 
               {/* Suggested Categories */}
               <div className="p-6 bg-muted/50 rounded-lg border border-slate-200/50 dark:border-slate-800/50">
-                <p className="text-base font-medium mb-3">Suggested Categories:</p>
+                <p className="text-base font-medium mb-3">
+                  Suggested Categories:
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {suggestedCategories.map((category) => (
-                    <Badge key={category} variant="secondary" className="text-xs">
+                    <Badge
+                      key={category}
+                      variant="secondary"
+                      className="text-xs">
                       {category}
                     </Badge>
                   ))}
@@ -152,8 +160,11 @@ export const PersonalProperties = memo(function PersonalProperties() {
                             errors.personalProperties[index] && (
                               <p className="text-sm text-destructive">
                                 {
-                                  (errors.personalProperties[index] as PropertyError)
-                                    ?.description?.message
+                                  (
+                                    errors.personalProperties[
+                                      index
+                                    ] as PropertyError
+                                  )?.description?.message
                                 }
                               </p>
                             )}
@@ -174,7 +185,10 @@ export const PersonalProperties = memo(function PersonalProperties() {
                                 <select
                                   value={value?.toString() || ''}
                                   onChange={(e) => {
-                                    const numValue = parseInt(e.target.value, 10);
+                                    const numValue = parseInt(
+                                      e.target.value,
+                                      10
+                                    );
                                     if (!isNaN(numValue)) {
                                       onChange(numValue);
                                     }
@@ -220,7 +234,9 @@ export const PersonalProperties = memo(function PersonalProperties() {
               <BlurFade delay={0.2 + fields.length * 0.05}>
                 <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
                   <div className="flex items-center justify-between">
-                    <span className="font-medium">Total Personal Property Value:</span>
+                    <span className="font-medium">
+                      Total Personal Property Value:
+                    </span>
                     <span className="text-xl font-bold text-primary">
                       {formatCurrency(totalPersonalPropertyValue)}
                     </span>

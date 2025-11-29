@@ -19,14 +19,14 @@
 
 import { useMemo, memo, useCallback } from 'react';
 import Link from 'next/link';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '../../../providers/AuthProvider';
 import { useSaln } from '@tupsafe/mock-data/api';
-import { InfoCard } from '@/components/dashboard/InfoCard';
-import { DeadlineSection } from '@/components/dashboard/DeadlineSection';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+import { InfoCard } from '../../../components/dashboard/InfoCard';
+import { DeadlineSection } from '../../../components/dashboard/DeadlineSection';
+import { Badge } from '../../../components/ui/badge';
+import { Button } from '../../../components/ui/button';
+import { Card, CardContent } from '../../../components/ui/card';
+import { cn } from '../../../lib/utils';
 
 // Import minimal MagicUI components
 import { BlurFade, NumberTicker } from '@tupsafe/shared-ui';
@@ -182,7 +182,9 @@ const EmptyState = memo(function EmptyState() {
           No Active SALN Submissions
         </h3>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          You haven&apos;t created any Statement of Assets, Liabilities, and Net Worth in the last 5 years. Start a new submission or view your archived records.
+          You haven&apos;t created any Statement of Assets, Liabilities, and Net
+          Worth in the last 5 years. Start a new submission or view your
+          archived records.
         </p>
       </div>
 
@@ -217,56 +219,59 @@ export default function SalnPage() {
   }, []);
 
   // Memoized status badge renderer
-  const getStatusBadge = useCallback((status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'reviewing') => {
-    const variants = {
-      draft: {
-        variant: 'secondary' as const,
-        icon: Clock,
-        label: 'Draft',
-        className:
-          'bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400',
-      },
-      submitted: {
-        variant: 'default' as const,
-        icon: Send,
-        label: 'Submitted',
-        className:
-          'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400',
-      },
-      reviewing: {
-        variant: 'default' as const,
-        icon: Eye,
-        label: 'Under Review',
-        className:
-          'bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400',
-      },
-      approved: {
-        variant: 'default' as const,
-        icon: CheckCircle2,
-        label: 'Approved',
-        className:
-          'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400',
-      },
-      rejected: {
-        variant: 'destructive' as const,
-        icon: AlertCircle,
-        label: 'Rejected',
-        className: '',
-      },
-    };
+  const getStatusBadge = useCallback(
+    (status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'reviewing') => {
+      const variants = {
+        draft: {
+          variant: 'secondary' as const,
+          icon: Clock,
+          label: 'Draft',
+          className:
+            'bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400',
+        },
+        submitted: {
+          variant: 'default' as const,
+          icon: Send,
+          label: 'Submitted',
+          className:
+            'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400',
+        },
+        reviewing: {
+          variant: 'default' as const,
+          icon: Eye,
+          label: 'Under Review',
+          className:
+            'bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400',
+        },
+        approved: {
+          variant: 'default' as const,
+          icon: CheckCircle2,
+          label: 'Approved',
+          className:
+            'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400',
+        },
+        rejected: {
+          variant: 'destructive' as const,
+          icon: AlertCircle,
+          label: 'Rejected',
+          className: '',
+        },
+      };
 
-    const config = variants[status] || variants.draft;
-    const IconComponent = config.icon;
+      const config = variants[status] || variants.draft;
+      const IconComponent = config.icon;
 
-    return (
-      <Badge
-        variant={config.variant}
-        className={cn('font-semibold', config.className)}>
-        <IconComponent className="h-3 w-3 mr-1" />
-        {config.label}
-      </Badge>
-    );
-  }, []);
+      return (
+        <Badge
+          variant={config.variant}
+          className={cn('font-semibold', config.className)}>
+          <IconComponent className="h-3 w-3 mr-1" />
+          {config.label}
+        </Badge>
+      );
+    },
+    []
+  );
 
   // Memoized activity icon getter
   const getActivityIcon = useCallback((type: ActivityItem['type']) => {
@@ -348,8 +353,6 @@ export default function SalnPage() {
               Statement of Assets, Liabilities, and Net Worth
             </p>
           </div>
-
-
         </div>
       </BlurFade>
 
@@ -411,7 +414,10 @@ export default function SalnPage() {
                 </div>
                 <div className="flex items-end gap-2">
                   <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                    ₱<NumberTicker value={latest ? Number(latest.netWorth) : 0} />
+                    ₱
+                    <NumberTicker
+                      value={latest ? Number(latest.netWorth) : 0}
+                    />
                   </span>
                 </div>
                 {netWorthChange && (
@@ -430,7 +436,11 @@ export default function SalnPage() {
                     <span>
                       {netWorthChange.isPositive ? '+' : ''}
                       {formatCurrency(netWorthChange.change)} (
-                      <NumberTicker value={Math.abs(netWorthChange.percentChange)} decimalPlaces={1} />%)
+                      <NumberTicker
+                        value={Math.abs(netWorthChange.percentChange)}
+                        decimalPlaces={1}
+                      />
+                      %)
                     </span>
                   </div>
                 )}
@@ -443,7 +453,10 @@ export default function SalnPage() {
                   Total Assets
                 </div>
                 <div className="text-xl font-semibold text-slate-900 dark:text-slate-100">
-                  ₱<NumberTicker value={latest ? Number(latest.totalAssets) : 0} />
+                  ₱
+                  <NumberTicker
+                    value={latest ? Number(latest.totalAssets) : 0}
+                  />
                 </div>
                 <div className="text-xs text-slate-600 dark:text-slate-400">
                   Real property, personal property, and investments
@@ -457,7 +470,10 @@ export default function SalnPage() {
                   Total Liabilities
                 </div>
                 <div className="text-xl font-semibold text-slate-900 dark:text-slate-100">
-                  ₱<NumberTicker value={latest ? Number(latest.totalLiabilities) : 0} />
+                  ₱
+                  <NumberTicker
+                    value={latest ? Number(latest.totalLiabilities) : 0}
+                  />
                 </div>
                 <div className="text-xs text-slate-600 dark:text-slate-400">
                   Loans, mortgages, and other obligations
@@ -476,55 +492,57 @@ export default function SalnPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {MOCK_SALN_SECTIONS.map((section) => (
-              <Card key={section.id} className="cursor-pointer hover:shadow-md hover:border-[oklch(0.55_0.22_15)] transition-all border-slate-200 dark:border-slate-800">
+              <Card
+                key={section.id}
+                className="cursor-pointer hover:shadow-md hover:border-[oklch(0.55_0.22_15)] transition-all border-slate-200 dark:border-slate-800">
                 <CardContent className="p-5">
-                    <div className="flex items-start justify-between mb-3">
-                      <div
+                  <div className="flex items-start justify-between mb-3">
+                    <div
+                      className={cn(
+                        'flex h-10 w-10 items-center justify-center rounded-lg',
+                        'bg-white dark:bg-slate-800'
+                      )}>
+                      <section.icon
                         className={cn(
-                          'flex h-10 w-10 items-center justify-center rounded-lg',
-                          'bg-white dark:bg-slate-800'
-                        )}>
-                        <section.icon
-                          className={cn(
-                            'h-5 w-5',
-                            section.isComplete
-                              ? 'text-red-600 dark:text-red-400'
-                              : 'text-red-500 dark:text-red-500'
-                          )}
-                        />
-                      </div>
-                      {section.isComplete ? (
-                        <Badge className="bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400 px-2 py-0.5 text-xs">
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Complete
-                        </Badge>
-                      ) : (
-                        <Badge
-                          variant="secondary"
-                          className="bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400 px-2 py-0.5 text-xs">
-                          <Clock className="h-3 w-3 mr-1" />
-                          In Progress
-                        </Badge>
-                      )}
+                          'h-5 w-5',
+                          section.isComplete
+                            ? 'text-red-600 dark:text-red-400'
+                            : 'text-red-500 dark:text-red-500'
+                        )}
+                      />
                     </div>
+                    {section.isComplete ? (
+                      <Badge className="bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400 px-2 py-0.5 text-xs">
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                        Complete
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="secondary"
+                        className="bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400 px-2 py-0.5 text-xs">
+                        <Clock className="h-3 w-3 mr-1" />
+                        In Progress
+                      </Badge>
+                    )}
+                  </div>
 
-                    <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-1.5">
-                      {section.title}
-                    </h3>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 mb-3">
-                      {section.description}
-                    </p>
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-1.5">
+                    {section.title}
+                  </h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mb-3">
+                    {section.description}
+                  </p>
 
-                    <div className="flex items-center justify-between">
-                      <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                        ₱<NumberTicker value={section.amount} />
-                      </span>
-                      <span className="text-xs text-slate-600 dark:text-slate-400">
-                        {section.items} {section.items === 1 ? 'item' : 'items'}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                      ₱<NumberTicker value={section.amount} />
+                    </span>
+                    <span className="text-xs text-slate-600 dark:text-slate-400">
+                      {section.items} {section.items === 1 ? 'item' : 'items'}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
@@ -537,22 +555,24 @@ export default function SalnPage() {
           <InfoCard title="Historical Overview" icon={Calendar}>
             <div className="space-y-4">
               {MOCK_YEAR_SUMMARIES.map((summary) => (
-                <div key={summary.year} className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-tup-crimson-subtle to-tup-crimson-subtle dark:from-primary/50 dark:to-tup-crimson-dark/50">
-                        <Calendar className="h-6 w-6 text-primary dark:text-tup-crimson-light" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-slate-900 dark:text-slate-100">
-                          SALN {summary.year}
-                        </p>
-                        <p className="text-sm text-slate-600 dark:text-slate-400">
-                          ₱<NumberTicker value={summary.netWorth} />
-                        </p>
-                      </div>
+                <div
+                  key={summary.year}
+                  className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-tup-crimson-subtle to-tup-crimson-subtle dark:from-primary/50 dark:to-tup-crimson-dark/50">
+                      <Calendar className="h-6 w-6 text-primary dark:text-tup-crimson-light" />
                     </div>
-                    {getStatusBadge(summary.status)}
+                    <div>
+                      <p className="font-semibold text-slate-900 dark:text-slate-100">
+                        SALN {summary.year}
+                      </p>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        ₱<NumberTicker value={summary.netWorth} />
+                      </p>
+                    </div>
                   </div>
+                  {getStatusBadge(summary.status)}
+                </div>
               ))}
             </div>
           </InfoCard>
@@ -565,28 +585,30 @@ export default function SalnPage() {
               {MOCK_RECENT_ACTIVITY.map((activity) => {
                 const ActivityIcon = getActivityIcon(activity.type);
                 return (
-                    <div key={activity.id} className="flex items-start gap-3 pb-4 border-b border-slate-200 dark:border-slate-800 last:border-0 last:pb-0">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tup-crimson-subtle dark:bg-primary/30 flex-shrink-0">
-                        <ActivityIcon className="h-4 w-4 text-primary dark:text-tup-crimson-light" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                          {activity.action}
-                        </p>
-                        {activity.section && (
-                          <p className="text-xs text-slate-600 dark:text-slate-400">
-                            {activity.section}
-                          </p>
-                        )}
-                        <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
-                          {activity.date.toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })}
-                        </p>
-                      </div>
+                  <div
+                    key={activity.id}
+                    className="flex items-start gap-3 pb-4 border-b border-slate-200 dark:border-slate-800 last:border-0 last:pb-0">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tup-crimson-subtle dark:bg-primary/30 flex-shrink-0">
+                      <ActivityIcon className="h-4 w-4 text-primary dark:text-tup-crimson-light" />
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                        {activity.action}
+                      </p>
+                      {activity.section && (
+                        <p className="text-xs text-slate-600 dark:text-slate-400">
+                          {activity.section}
+                        </p>
+                      )}
+                      <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
+                        {activity.date.toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </p>
+                    </div>
+                  </div>
                 );
               })}
             </div>

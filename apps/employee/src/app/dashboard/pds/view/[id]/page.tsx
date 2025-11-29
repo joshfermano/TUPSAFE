@@ -9,11 +9,14 @@
  * Theme: TUP red accent - oklch(0.55_0.22_15)
  */
 
-import React, { useMemo, use } from 'react';
+import React, { useMemo, use, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '../../../../../providers/AuthProvider';
 import { usePds } from '@tupsafe/mock-data/api';
+import { usePDSPdf } from '../../../../../hooks/usePDSPdf';
+import { transformPdsForPdf } from '../../../../../lib/utils/pds-transform';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 import {
   Download,
@@ -31,21 +34,24 @@ import {
   Heart,
   BookOpen,
   Star,
+  Loader2,
+  Info,
 } from 'lucide-react';
 
 // UI Components
-import { BlurFade } from '@/components/ui/blur-fade';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { BlurFade } from '../../../../../components/ui/blur-fade';
+import { Card } from '../../../../../components/ui/card';
+import { Button } from '../../../../../components/ui/button';
+import { Badge } from '../../../../../components/ui/badge';
+import { Separator } from '../../../../../components/ui/separator';
+import { Tooltip } from '../../../../../components/ui/tooltip';
 import {
   Collapsible,
   CollapsibleTrigger,
   CollapsibleContent,
-} from '@/components/ui/collapsible';
-import { cn } from '@/lib/utils';
-import type { CompletePdsData } from '@/lib/validations/pds-schema';
+} from '../../../../../components/ui/collapsible';
+import { cn } from '../../../../../lib/utils';
+import type { CompletePdsData } from '../../../../../lib/validations/pds-schema';
 
 // ============================================================================
 // STATUS CONFIGURATION
@@ -53,7 +59,8 @@ import type { CompletePdsData } from '@/lib/validations/pds-schema';
 
 const STATUS_CONFIG = {
   draft: {
-    color: 'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400',
+    color:
+      'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400',
     label: 'Draft',
   },
   submitted: {
@@ -61,11 +68,13 @@ const STATUS_CONFIG = {
     label: 'Submitted',
   },
   reviewing: {
-    color: 'bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400',
+    color:
+      'bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400',
     label: 'Under Review',
   },
   approved: {
-    color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400',
+    color:
+      'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400',
     label: 'Approved',
   },
   rejected: {
@@ -85,16 +94,23 @@ interface FieldProps {
 }
 
 const Field = React.memo(({ label, value, fullWidth = false }: FieldProps) => {
-  const displayValue = value === null || value === undefined || value === ''
-    ? 'N/A'
-    : typeof value === 'boolean'
-    ? value ? 'Yes' : 'No'
-    : String(value);
+  const displayValue =
+    value === null || value === undefined || value === ''
+      ? 'N/A'
+      : typeof value === 'boolean'
+      ? value
+        ? 'Yes'
+        : 'No'
+      : String(value);
 
   return (
-    <div className={cn("space-y-1", fullWidth && "md:col-span-2")}>
-      <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">{label}</p>
-      <p className="text-sm text-slate-900 dark:text-slate-100">{displayValue}</p>
+    <div className={cn('space-y-1', fullWidth && 'md:col-span-2')}>
+      <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+        {label}
+      </p>
+      <p className="text-sm text-slate-900 dark:text-slate-100">
+        {displayValue}
+      </p>
     </div>
   );
 });
@@ -113,28 +129,38 @@ interface SectionProps {
   delay?: number;
 }
 
-const Section = React.memo(({ title, icon: Icon, children, defaultOpen = false, delay = 0 }: SectionProps) => {
-  return (
-    <BlurFade delay={delay}>
-      <Collapsible defaultOpen={defaultOpen}>
-        <Card className="p-5 hover:border-[oklch(0.55_0.22_15)] dark:hover:border-[oklch(0.65_0.24_15)] transition-colors">
-          <CollapsibleTrigger className="flex justify-between items-center w-full group">
-            <div className="flex items-center gap-2">
-              <Icon className="h-5 w-5 text-[oklch(0.55_0.22_15)] dark:text-[oklch(0.65_0.24_15)]" />
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
-            </div>
-            <ChevronDown className="h-5 w-5 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
-          </CollapsibleTrigger>
+const Section = React.memo(
+  ({
+    title,
+    icon: Icon,
+    children,
+    defaultOpen = false,
+    delay = 0,
+  }: SectionProps) => {
+    return (
+      <BlurFade delay={delay}>
+        <Collapsible defaultOpen={defaultOpen}>
+          <Card className="p-5 hover:border-[oklch(0.55_0.22_15)] dark:hover:border-[oklch(0.65_0.24_15)] transition-colors">
+            <CollapsibleTrigger className="flex justify-between items-center w-full group">
+              <div className="flex items-center gap-2">
+                <Icon className="h-5 w-5 text-[oklch(0.55_0.22_15)] dark:text-[oklch(0.65_0.24_15)]" />
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  {title}
+                </h2>
+              </div>
+              <ChevronDown className="h-5 w-5 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
+            </CollapsibleTrigger>
 
-          <CollapsibleContent>
-            <Separator className="my-4" />
-            {children}
-          </CollapsibleContent>
-        </Card>
-      </Collapsible>
-    </BlurFade>
-  );
-});
+            <CollapsibleContent>
+              <Separator className="my-4" />
+              {children}
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+      </BlurFade>
+    );
+  }
+);
 
 Section.displayName = 'Section';
 
@@ -148,7 +174,9 @@ const LoadingState = () => (
       <div className="h-16 w-16 rounded-full border-4 border-slate-200 dark:border-slate-800" />
       <div className="absolute top-0 left-0 h-16 w-16 rounded-full border-4 border-[oklch(0.55_0.22_15)] border-t-transparent animate-spin" />
     </div>
-    <p className="text-slate-600 dark:text-slate-400 text-lg font-medium">Loading PDS details...</p>
+    <p className="text-slate-600 dark:text-slate-400 text-lg font-medium">
+      Loading PDS details...
+    </p>
   </div>
 );
 
@@ -164,9 +192,11 @@ export default function PDSViewDetailPage({
   const { id: pdsId } = use(params);
   const router = useRouter();
   const { user } = useAuth();
-  const { submissions, getCompleteSubmission, loading } = usePds(user?.id || '');
+  const { submissions, getCompleteSubmission, loading } = usePds(
+    user?.id || ''
+  );
   const submission = useMemo(
-    () => submissions.find(s => s.id === pdsId),
+    () => submissions.find((s) => s.id === pdsId),
     [submissions, pdsId]
   );
 
@@ -175,7 +205,95 @@ export default function PDSViewDetailPage({
     [pdsId, getCompleteSubmission]
   ) as any;
 
-  const canEdit = submission?.status === 'draft' || submission?.status === 'rejected';
+  const canEdit =
+    submission?.status === 'draft' || submission?.status === 'rejected';
+
+  // Check if PDF download/print is allowed (only when approved)
+  const canDownloadPDF = submission?.status === 'approved';
+
+  // Get status-specific message for PDF restriction
+  const getPdfRestrictionMessage = () => {
+    switch (submission?.status) {
+      case 'draft':
+        return 'Please submit your PDS for approval first';
+      case 'submitted':
+      case 'reviewing':
+        return 'PDF will be available after admin approval';
+      case 'rejected':
+        return 'Please address feedback and resubmit for approval';
+      default:
+        return 'PDF available after admin approval';
+    }
+  };
+
+  // PDF generation hook
+  const { downloadPDF, openPDFInNewTab, isGenerating } = usePDSPdf();
+
+  // Transform PDS data for PDF generation
+  const pdfReadyData = useMemo(() => {
+    if (!pdsData || !submission) return null;
+    return transformPdsForPdf({
+      ...pdsData,
+      id: submission.id,
+      submittedAt: submission.submittedAt,
+      version: submission.version,
+    });
+  }, [pdsData, submission]);
+
+  // Handler for downloading PDF
+  const handleDownload = useCallback(async () => {
+    if (!pdfReadyData) {
+      toast.error('PDS data not available', {
+        description: 'Unable to generate PDF. Please try again.',
+      });
+      return;
+    }
+
+    try {
+      toast.loading('Generating PDF...', { id: 'pdf-download' });
+      await downloadPDF(pdfReadyData);
+      toast.success('PDF downloaded successfully', {
+        id: 'pdf-download',
+        description: `PDS_${pdfReadyData.personalInfo.surname}_${pdfReadyData.personalInfo.firstName}.pdf`,
+      });
+    } catch (error) {
+      toast.error('Failed to generate PDF', {
+        id: 'pdf-download',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred',
+      });
+    }
+  }, [pdfReadyData, downloadPDF]);
+
+  // Handler for printing (opens PDF in new tab)
+  const handlePrint = useCallback(async () => {
+    if (!pdfReadyData) {
+      toast.error('PDS data not available', {
+        description: 'Unable to generate PDF for printing. Please try again.',
+      });
+      return;
+    }
+
+    try {
+      toast.loading('Preparing print preview...', { id: 'pdf-print' });
+      await openPDFInNewTab(pdfReadyData);
+      toast.success('PDF opened in new tab', {
+        id: 'pdf-print',
+        description:
+          'Use the browser print function (Ctrl+P / Cmd+P) to print.',
+      });
+    } catch (error) {
+      toast.error('Failed to open print preview', {
+        id: 'pdf-print',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred',
+      });
+    }
+  }, [pdfReadyData, openPDFInNewTab]);
 
   if (loading || !submission || !pdsData) {
     return <LoadingState />;
@@ -185,26 +303,31 @@ export default function PDSViewDetailPage({
     ? new Date(submission.submittedAt).getFullYear()
     : new Date(submission.createdAt).getFullYear();
 
-  const statusConfig = STATUS_CONFIG[submission.status as keyof typeof STATUS_CONFIG];
+  const statusConfig =
+    STATUS_CONFIG[submission.status as keyof typeof STATUS_CONFIG];
 
   const handleEdit = () => router.push(`/dashboard/pds/edit/${pdsId}`);
-  const handleDownload = () => console.log('Download PDF:', pdsId);
-  const handlePrint = () => window.print();
 
   return (
     <div className="space-y-6 pb-10">
       {/* Breadcrumb */}
       <BlurFade delay={0.05}>
         <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-          <Link href="/dashboard" className="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
+          <Link
+            href="/dashboard"
+            className="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
             Dashboard
           </Link>
           <ChevronRight className="h-4 w-4" />
-          <Link href="/dashboard/pds/view" className="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
+          <Link
+            href="/dashboard/pds/view"
+            className="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
             PDS
           </Link>
           <ChevronRight className="h-4 w-4" />
-          <span className="text-slate-900 dark:text-slate-100 font-medium">View Details</span>
+          <span className="text-slate-900 dark:text-slate-100 font-medium">
+            View Details
+          </span>
         </div>
       </BlurFade>
 
@@ -216,60 +339,158 @@ export default function PDSViewDetailPage({
               Personal Data Sheet {submissionYear}
             </h1>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-              Version {submission.version} • Submitted {format(new Date(submission.submittedAt || submission.createdAt), 'MMM d, yyyy')}
+              Version {submission.version} • Submitted{' '}
+              {format(
+                new Date(submission.submittedAt || submission.createdAt),
+                'MMM d, yyyy'
+              )}
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge className={cn("px-2 py-0.5", statusConfig.color)}>
-              {statusConfig.label}
-            </Badge>
-            <Button variant="outline" size="sm" className="gap-2" onClick={handleDownload}>
-              <Download className="h-4 w-4" />
-              Export PDF
-            </Button>
-            <Button variant="outline" size="sm" className="gap-2" onClick={handlePrint}>
-              <Printer className="h-4 w-4" />
-              Print
-            </Button>
-            {canEdit && (
-              <Button size="sm" className="gap-2 bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]" onClick={handleEdit}>
-                <Edit className="h-4 w-4" />
-                Edit
-              </Button>
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className={cn('px-2 py-0.5', statusConfig.color)}>
+                {statusConfig.label}
+              </Badge>
+              <Tooltip
+                content={getPdfRestrictionMessage()}
+                disabled={canDownloadPDF}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    'gap-2',
+                    !canDownloadPDF &&
+                      'opacity-50 cursor-not-allowed hover:bg-transparent'
+                  )}
+                  onClick={canDownloadPDF ? handleDownload : undefined}
+                  disabled={isGenerating || !canDownloadPDF}>
+                  {isGenerating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
+                  Export PDF
+                </Button>
+              </Tooltip>
+              <Tooltip
+                content={getPdfRestrictionMessage()}
+                disabled={canDownloadPDF}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    'gap-2',
+                    !canDownloadPDF &&
+                      'opacity-50 cursor-not-allowed hover:bg-transparent'
+                  )}
+                  onClick={canDownloadPDF ? handlePrint : undefined}
+                  disabled={isGenerating || !canDownloadPDF}>
+                  {isGenerating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Printer className="h-4 w-4" />
+                  )}
+                  Print
+                </Button>
+              </Tooltip>
+              {canEdit && (
+                <Button
+                  size="sm"
+                  className="gap-2 bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]"
+                  onClick={handleEdit}>
+                  <Edit className="h-4 w-4" />
+                  Edit
+                </Button>
+              )}
+            </div>
+            {/* PDF Restriction Notice */}
+            {!canDownloadPDF && (
+              <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                <Info className="h-3.5 w-3.5" />
+                <span>{getPdfRestrictionMessage()}</span>
+              </div>
             )}
           </div>
         </div>
       </BlurFade>
 
       {/* I. PERSONAL INFORMATION */}
-      <Section title="I. Personal Information" icon={User} defaultOpen delay={0.15}>
+      <Section
+        title="I. Personal Information"
+        icon={User}
+        defaultOpen
+        delay={0.15}>
         <div className="space-y-4">
           {/* Basic Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field label="Surname" value={pdsData.personalInfo?.surname} />
             <Field label="First Name" value={pdsData.personalInfo?.firstName} />
-            <Field label="Middle Name" value={pdsData.personalInfo?.middleName} />
-            <Field label="Name Extension" value={pdsData.personalInfo?.nameExtension} />
-            <Field label="Date of Birth" value={pdsData.personalInfo?.dateOfBirth ? format(new Date(pdsData.personalInfo.dateOfBirth), 'MMM d, yyyy') : 'N/A'} />
-            <Field label="Place of Birth" value={pdsData.personalInfo?.placeOfBirth} />
+            <Field
+              label="Middle Name"
+              value={pdsData.personalInfo?.middleName}
+            />
+            <Field
+              label="Name Extension"
+              value={pdsData.personalInfo?.nameExtension}
+            />
+            <Field
+              label="Date of Birth"
+              value={
+                pdsData.personalInfo?.dateOfBirth
+                  ? format(
+                      new Date(pdsData.personalInfo.dateOfBirth),
+                      'MMM d, yyyy'
+                    )
+                  : 'N/A'
+              }
+            />
+            <Field
+              label="Place of Birth"
+              value={pdsData.personalInfo?.placeOfBirth}
+            />
             <Field label="Sex" value={pdsData.personalInfo?.sex} />
-            <Field label="Civil Status" value={pdsData.personalInfo?.civilStatus} />
+            <Field
+              label="Civil Status"
+              value={pdsData.personalInfo?.civilStatus}
+            />
             <Field label="Height (m)" value={pdsData.personalInfo?.heightM} />
             <Field label="Weight (kg)" value={pdsData.personalInfo?.weightKg} />
             <Field label="Blood Type" value={pdsData.personalInfo?.bloodType} />
-            <Field label="Citizenship" value={pdsData.personalInfo?.citizenship ? `${pdsData.personalInfo.citizenship.type}${pdsData.personalInfo.citizenship.details ? ` - ${pdsData.personalInfo.citizenship.details}` : ''}` : undefined} />
+            <Field
+              label="Citizenship"
+              value={
+                pdsData.personalInfo?.citizenship
+                  ? `${pdsData.personalInfo.citizenship.type}${
+                      pdsData.personalInfo.citizenship.details
+                        ? ` - ${pdsData.personalInfo.citizenship.details}`
+                        : ''
+                    }`
+                  : undefined
+              }
+            />
           </div>
 
           {/* Government IDs */}
           <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-            <h3 className="text-sm font-semibold mb-3 text-slate-900 dark:text-slate-100">Government IDs</h3>
+            <h3 className="text-sm font-semibold mb-3 text-slate-900 dark:text-slate-100">
+              Government IDs
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="GSIS ID No." value={pdsData.personalInfo?.gsisNo} />
-              <Field label="PAG-IBIG ID No." value={pdsData.personalInfo?.pagibigNo} />
-              <Field label="PhilHealth No." value={pdsData.personalInfo?.philhealthNo} />
+              <Field
+                label="PAG-IBIG ID No."
+                value={pdsData.personalInfo?.pagibigNo}
+              />
+              <Field
+                label="PhilHealth No."
+                value={pdsData.personalInfo?.philhealthNo}
+              />
               <Field label="SSS No." value={pdsData.personalInfo?.sssNo} />
               <Field label="TIN" value={pdsData.personalInfo?.tinNo} />
-              <Field label="Agency Employee No." value={pdsData.personalInfo?.agencyEmployeeNo} />
+              <Field
+                label="Agency Employee No."
+                value={pdsData.personalInfo?.agencyEmployeeNo}
+              />
             </div>
           </div>
 
@@ -280,14 +501,40 @@ export default function PDSViewDetailPage({
               Residential Address
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field label="House/Block/Lot No." value={pdsData.personalInfo?.residentialAddress?.houseNumber} />
-              <Field label="Street" value={pdsData.personalInfo?.residentialAddress?.streetName} />
-              <Field label="Subdivision/Village" value={pdsData.personalInfo?.residentialAddress?.subdivision} />
-              <Field label="Barangay" value={pdsData.personalInfo?.residentialAddress?.barangay} />
-              <Field label="City/Municipality" value={pdsData.personalInfo?.residentialAddress?.cityMunicipality} />
-              <Field label="Province" value={pdsData.personalInfo?.residentialAddress?.province} />
-              <Field label="Region" value={pdsData.personalInfo?.residentialAddress?.region} />
-              <Field label="Zip Code" value={pdsData.personalInfo?.residentialAddress?.zipCode} />
+              <Field
+                label="House/Block/Lot No."
+                value={pdsData.personalInfo?.residentialAddress?.houseNumber}
+              />
+              <Field
+                label="Street"
+                value={pdsData.personalInfo?.residentialAddress?.streetName}
+              />
+              <Field
+                label="Subdivision/Village"
+                value={pdsData.personalInfo?.residentialAddress?.subdivision}
+              />
+              <Field
+                label="Barangay"
+                value={pdsData.personalInfo?.residentialAddress?.barangay}
+              />
+              <Field
+                label="City/Municipality"
+                value={
+                  pdsData.personalInfo?.residentialAddress?.cityMunicipality
+                }
+              />
+              <Field
+                label="Province"
+                value={pdsData.personalInfo?.residentialAddress?.province}
+              />
+              <Field
+                label="Region"
+                value={pdsData.personalInfo?.residentialAddress?.region}
+              />
+              <Field
+                label="Zip Code"
+                value={pdsData.personalInfo?.residentialAddress?.zipCode}
+              />
             </div>
           </div>
 
@@ -298,14 +545,38 @@ export default function PDSViewDetailPage({
               Permanent Address
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field label="House/Block/Lot No." value={pdsData.personalInfo?.permanentAddress?.houseNumber} />
-              <Field label="Street" value={pdsData.personalInfo?.permanentAddress?.streetName} />
-              <Field label="Subdivision/Village" value={pdsData.personalInfo?.permanentAddress?.subdivision} />
-              <Field label="Barangay" value={pdsData.personalInfo?.permanentAddress?.barangay} />
-              <Field label="City/Municipality" value={pdsData.personalInfo?.permanentAddress?.cityMunicipality} />
-              <Field label="Province" value={pdsData.personalInfo?.permanentAddress?.province} />
-              <Field label="Region" value={pdsData.personalInfo?.permanentAddress?.region} />
-              <Field label="Zip Code" value={pdsData.personalInfo?.permanentAddress?.zipCode} />
+              <Field
+                label="House/Block/Lot No."
+                value={pdsData.personalInfo?.permanentAddress?.houseNumber}
+              />
+              <Field
+                label="Street"
+                value={pdsData.personalInfo?.permanentAddress?.streetName}
+              />
+              <Field
+                label="Subdivision/Village"
+                value={pdsData.personalInfo?.permanentAddress?.subdivision}
+              />
+              <Field
+                label="Barangay"
+                value={pdsData.personalInfo?.permanentAddress?.barangay}
+              />
+              <Field
+                label="City/Municipality"
+                value={pdsData.personalInfo?.permanentAddress?.cityMunicipality}
+              />
+              <Field
+                label="Province"
+                value={pdsData.personalInfo?.permanentAddress?.province}
+              />
+              <Field
+                label="Region"
+                value={pdsData.personalInfo?.permanentAddress?.region}
+              />
+              <Field
+                label="Zip Code"
+                value={pdsData.personalInfo?.permanentAddress?.zipCode}
+              />
             </div>
           </div>
 
@@ -316,9 +587,19 @@ export default function PDSViewDetailPage({
               Contact Information
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field label="Telephone No." value={pdsData.personalInfo?.telephoneNo} />
-              <Field label="Mobile No." value={pdsData.personalInfo?.mobileNo} />
-              <Field label="Email Address" value={pdsData.personalInfo?.emailAddress} fullWidth />
+              <Field
+                label="Telephone No."
+                value={pdsData.personalInfo?.telephoneNo}
+              />
+              <Field
+                label="Mobile No."
+                value={pdsData.personalInfo?.mobileNo}
+              />
+              <Field
+                label="Email Address"
+                value={pdsData.personalInfo?.emailAddress}
+                fullWidth
+              />
             </div>
           </div>
         </div>
@@ -329,118 +610,321 @@ export default function PDSViewDetailPage({
         <div className="space-y-4">
           {/* Spouse */}
           <div>
-            <h3 className="text-sm font-semibold mb-3 text-slate-900 dark:text-slate-100">Spouse Information</h3>
+            <h3 className="text-sm font-semibold mb-3 text-slate-900 dark:text-slate-100">
+              Spouse Information
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field label="Surname" value={pdsData.family?.spouseSurname || pdsData.familyBackground?.spouseSurname} />
-              <Field label="First Name" value={pdsData.family?.spouseFirstName || pdsData.familyBackground?.spouseFirstName} />
-              <Field label="Middle Name" value={pdsData.family?.spouseMiddleName || pdsData.familyBackground?.spouseMiddleName} />
-              <Field label="Name Extension" value={pdsData.family?.spouseNameExtension || pdsData.familyBackground?.spouseNameExtension} />
-              <Field label="Occupation" value={pdsData.family?.spouseOccupation || pdsData.familyBackground?.spouseOccupation} />
-              <Field label="Employer/Business Name" value={pdsData.family?.spouseEmployer || pdsData.familyBackground?.spouseEmployer} />
-              <Field label="Business Address" value={pdsData.family?.spouseBusinessAddress || pdsData.familyBackground?.spouseBusinessAddress} fullWidth />
-              <Field label="Telephone No." value={pdsData.family?.spouseTelephoneNo || pdsData.familyBackground?.spouseTelephoneNo} />
+              <Field
+                label="Surname"
+                value={
+                  pdsData.family?.spouseSurname ||
+                  pdsData.familyBackground?.spouseSurname
+                }
+              />
+              <Field
+                label="First Name"
+                value={
+                  pdsData.family?.spouseFirstName ||
+                  pdsData.familyBackground?.spouseFirstName
+                }
+              />
+              <Field
+                label="Middle Name"
+                value={
+                  pdsData.family?.spouseMiddleName ||
+                  pdsData.familyBackground?.spouseMiddleName
+                }
+              />
+              <Field
+                label="Name Extension"
+                value={
+                  pdsData.family?.spouseNameExtension ||
+                  pdsData.familyBackground?.spouseNameExtension
+                }
+              />
+              <Field
+                label="Occupation"
+                value={
+                  pdsData.family?.spouseOccupation ||
+                  pdsData.familyBackground?.spouseOccupation
+                }
+              />
+              <Field
+                label="Employer/Business Name"
+                value={
+                  pdsData.family?.spouseEmployer ||
+                  pdsData.familyBackground?.spouseEmployer
+                }
+              />
+              <Field
+                label="Business Address"
+                value={
+                  pdsData.family?.spouseBusinessAddress ||
+                  pdsData.familyBackground?.spouseBusinessAddress
+                }
+                fullWidth
+              />
+              <Field
+                label="Telephone No."
+                value={
+                  pdsData.family?.spouseTelephoneNo ||
+                  pdsData.familyBackground?.spouseTelephoneNo
+                }
+              />
             </div>
           </div>
 
           {/* Parents */}
           <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-            <h3 className="text-sm font-semibold mb-3 text-slate-900 dark:text-slate-100">Father&apos;s Information</h3>
+            <h3 className="text-sm font-semibold mb-3 text-slate-900 dark:text-slate-100">
+              Father&apos;s Information
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field label="Surname" value={pdsData.family?.fatherSurname || pdsData.familyBackground?.fatherSurname} />
-              <Field label="First Name" value={pdsData.family?.fatherFirstName || pdsData.familyBackground?.fatherFirstName} />
-              <Field label="Middle Name" value={pdsData.family?.fatherMiddleName || pdsData.familyBackground?.fatherMiddleName} />
+              <Field
+                label="Surname"
+                value={
+                  pdsData.family?.fatherSurname ||
+                  pdsData.familyBackground?.fatherSurname
+                }
+              />
+              <Field
+                label="First Name"
+                value={
+                  pdsData.family?.fatherFirstName ||
+                  pdsData.familyBackground?.fatherFirstName
+                }
+              />
+              <Field
+                label="Middle Name"
+                value={
+                  pdsData.family?.fatherMiddleName ||
+                  pdsData.familyBackground?.fatherMiddleName
+                }
+              />
             </div>
           </div>
 
           <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-            <h3 className="text-sm font-semibold mb-3 text-slate-900 dark:text-slate-100">Mother&apos;s Maiden Name</h3>
+            <h3 className="text-sm font-semibold mb-3 text-slate-900 dark:text-slate-100">
+              Mother&apos;s Maiden Name
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field label="Surname" value={pdsData.family?.motherMaidenSurname || pdsData.familyBackground?.motherMaidenSurname} />
-              <Field label="First Name" value={pdsData.family?.motherFirstName || pdsData.familyBackground?.motherFirstName} />
-              <Field label="Middle Name" value={pdsData.family?.motherMiddleName || pdsData.familyBackground?.motherMiddleName} />
+              <Field
+                label="Surname"
+                value={
+                  pdsData.family?.motherMaidenSurname ||
+                  pdsData.familyBackground?.motherMaidenSurname
+                }
+              />
+              <Field
+                label="First Name"
+                value={
+                  pdsData.family?.motherFirstName ||
+                  pdsData.familyBackground?.motherFirstName
+                }
+              />
+              <Field
+                label="Middle Name"
+                value={
+                  pdsData.family?.motherMiddleName ||
+                  pdsData.familyBackground?.motherMiddleName
+                }
+              />
             </div>
           </div>
 
           {/* Children */}
-          {(pdsData.family?.children || pdsData.children) && (pdsData.family?.children || pdsData.children || []).length > 0 && (
-            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-              <h3 className="text-sm font-semibold mb-3 text-slate-900 dark:text-slate-100">Children</h3>
-              <div className="space-y-2">
-                {(pdsData.family?.children || pdsData.children || []).map((child: any, index: number) => (
-                  <div key={index} className="flex items-center gap-4 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400 w-6">{index + 1}.</span>
-                    <span className="text-sm text-slate-900 dark:text-slate-100 flex-1">{child.fullName}</span>
-                    <span className="text-xs text-slate-600 dark:text-slate-400">
-                      {child.dateOfBirth ? format(new Date(child.dateOfBirth), 'MMM d, yyyy') : 'N/A'}
-                    </span>
-                  </div>
-                ))}
+          {(pdsData.family?.children || pdsData.children) &&
+            (pdsData.family?.children || pdsData.children || []).length > 0 && (
+              <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                <h3 className="text-sm font-semibold mb-3 text-slate-900 dark:text-slate-100">
+                  Children
+                </h3>
+                <div className="space-y-2">
+                  {(pdsData.family?.children || pdsData.children || []).map(
+                    (child: any, index: number) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-4 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400 w-6">
+                          {index + 1}.
+                        </span>
+                        <span className="text-sm text-slate-900 dark:text-slate-100 flex-1">
+                          {child.fullName}
+                        </span>
+                        <span className="text-xs text-slate-600 dark:text-slate-400">
+                          {child.dateOfBirth
+                            ? format(new Date(child.dateOfBirth), 'MMM d, yyyy')
+                            : 'N/A'}
+                        </span>
+                      </div>
+                    )
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
         </div>
       </Section>
 
       {/* III. EDUCATIONAL BACKGROUND */}
-      <Section title="III. Educational Background" icon={GraduationCap} delay={0.25}>
+      <Section
+        title="III. Educational Background"
+        icon={GraduationCap}
+        delay={0.25}>
         <div className="space-y-3">
-          {(pdsData.education && typeof pdsData.education === 'object' && !Array.isArray(pdsData.education)) ? (
-            ['elementary', 'secondary', 'vocational', 'college', 'graduate'].map((level) => {
-              const edu = pdsData.education?.[level as keyof typeof pdsData.education];
+          {pdsData.education &&
+          typeof pdsData.education === 'object' &&
+          !Array.isArray(pdsData.education) ? (
+            [
+              'elementary',
+              'secondary',
+              'vocational',
+              'college',
+              'graduate',
+            ].map((level) => {
+              const edu =
+                pdsData.education?.[level as keyof typeof pdsData.education];
               if (!edu) return null;
 
               return (
-                <div key={level} className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                  <h3 className="text-sm font-semibold mb-3 capitalize text-slate-900 dark:text-slate-100">{level}</h3>
+                <div
+                  key={level}
+                  className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                  <h3 className="text-sm font-semibold mb-3 capitalize text-slate-900 dark:text-slate-100">
+                    {level}
+                  </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <Field label="School Name" value={edu.schoolName} fullWidth />
+                    <Field
+                      label="School Name"
+                      value={edu.schoolName}
+                      fullWidth
+                    />
                     <Field label="Degree/Course" value={edu.degreeCourse} />
-                    <Field label="Period From" value={edu.periodFrom ? format(new Date(edu.periodFrom), 'yyyy') : 'N/A'} />
-                    <Field label="Period To" value={edu.periodTo ? format(new Date(edu.periodTo), 'yyyy') : 'N/A'} />
-                    <Field label="Highest Level/Units Earned" value={edu.highestLevelEarned} />
+                    <Field
+                      label="Period From"
+                      value={
+                        edu.periodFrom
+                          ? format(new Date(edu.periodFrom), 'yyyy')
+                          : 'N/A'
+                      }
+                    />
+                    <Field
+                      label="Period To"
+                      value={
+                        edu.periodTo
+                          ? format(new Date(edu.periodTo), 'yyyy')
+                          : 'N/A'
+                      }
+                    />
+                    <Field
+                      label="Highest Level/Units Earned"
+                      value={edu.highestLevelEarned}
+                    />
                     <Field label="Year Graduated" value={edu.yearGraduated} />
-                    <Field label="Scholarship/Honors Received" value={edu.honorsReceived} fullWidth />
+                    <Field
+                      label="Scholarship/Honors Received"
+                      value={edu.honorsReceived}
+                      fullWidth
+                    />
                   </div>
                 </div>
               );
             })
-          ) : Array.isArray(pdsData.education) && pdsData.education.length > 0 ? (
+          ) : Array.isArray(pdsData.education) &&
+            pdsData.education.length > 0 ? (
             pdsData.education.map((edu: any, index: number) => (
-              <div key={index} className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                <h3 className="text-sm font-semibold mb-3 capitalize text-slate-900 dark:text-slate-100">{edu.level}</h3>
+              <div
+                key={index}
+                className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                <h3 className="text-sm font-semibold mb-3 capitalize text-slate-900 dark:text-slate-100">
+                  {edu.level}
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <Field label="School Name" value={edu.schoolName} fullWidth />
                   <Field label="Degree/Course" value={edu.degreeCourse} />
-                  <Field label="Period From" value={edu.periodFrom ? format(new Date(edu.periodFrom), 'yyyy') : 'N/A'} />
-                  <Field label="Period To" value={edu.periodTo ? format(new Date(edu.periodTo), 'yyyy') : 'N/A'} />
-                  <Field label="Highest Level/Units Earned" value={edu.highestLevelEarned} />
+                  <Field
+                    label="Period From"
+                    value={
+                      edu.periodFrom
+                        ? format(new Date(edu.periodFrom), 'yyyy')
+                        : 'N/A'
+                    }
+                  />
+                  <Field
+                    label="Period To"
+                    value={
+                      edu.periodTo
+                        ? format(new Date(edu.periodTo), 'yyyy')
+                        : 'N/A'
+                    }
+                  />
+                  <Field
+                    label="Highest Level/Units Earned"
+                    value={edu.highestLevelEarned}
+                  />
                   <Field label="Year Graduated" value={edu.yearGraduated} />
-                  <Field label="Scholarship/Honors Received" value={edu.honorsReceived} fullWidth />
+                  <Field
+                    label="Scholarship/Honors Received"
+                    value={edu.honorsReceived}
+                    fullWidth
+                  />
                 </div>
               </div>
             ))
           ) : (
-            <p className="text-sm text-slate-500 dark:text-slate-400">No educational background available</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              No educational background available
+            </p>
           )}
         </div>
       </Section>
 
       {/* IV. CIVIL SERVICE ELIGIBILITY */}
-      {((pdsData.eligibility && pdsData.eligibility.length > 0) || (pdsData.civilService && pdsData.civilService.length > 0)) && (
+      {((pdsData.eligibility && pdsData.eligibility.length > 0) ||
+        (pdsData.civilService && pdsData.civilService.length > 0)) && (
         <Section title="IV. Civil Service Eligibility" icon={Award} delay={0.3}>
           <div className="space-y-3">
-            {(pdsData.eligibility || pdsData.civilService || []).map((elig: any, index: number) => (
-              <div key={index} className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <Field label="Career Service/RA 1080/Board/Bar/Examination" value={elig.eligibilityName} fullWidth />
-                  <Field label="Rating" value={elig.rating} />
-                  <Field label="Date of Examination/Conferment" value={elig.dateOfExam ? format(new Date(elig.dateOfExam), 'MMM d, yyyy') : 'N/A'} />
-                  <Field label="Place of Examination/Conferment" value={elig.placeOfExam} fullWidth />
-                  <Field label="License No." value={elig.licenseNo} />
-                  <Field label="License Validity Date" value={elig.licenseValidityDate ? format(new Date(elig.licenseValidityDate), 'MMM d, yyyy') : 'N/A'} />
+            {(pdsData.eligibility || pdsData.civilService || []).map(
+              (elig: any, index: number) => (
+                <div
+                  key={index}
+                  className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <Field
+                      label="Career Service/RA 1080/Board/Bar/Examination"
+                      value={elig.eligibilityName}
+                      fullWidth
+                    />
+                    <Field label="Rating" value={elig.rating} />
+                    <Field
+                      label="Date of Examination/Conferment"
+                      value={
+                        elig.dateOfExam
+                          ? format(new Date(elig.dateOfExam), 'MMM d, yyyy')
+                          : 'N/A'
+                      }
+                    />
+                    <Field
+                      label="Place of Examination/Conferment"
+                      value={elig.placeOfExam}
+                      fullWidth
+                    />
+                    <Field label="License No." value={elig.licenseNo} />
+                    <Field
+                      label="License Validity Date"
+                      value={
+                        elig.licenseValidityDate
+                          ? format(
+                              new Date(elig.licenseValidityDate),
+                              'MMM d, yyyy'
+                            )
+                          : 'N/A'
+                      }
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            )}
           </div>
         </Section>
       )}
@@ -450,15 +934,49 @@ export default function PDSViewDetailPage({
         <Section title="V. Work Experience" icon={Briefcase} delay={0.35}>
           <div className="space-y-3">
             {pdsData.workExperience.map((work: any, index: number) => (
-              <div key={index} className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+              <div
+                key={index}
+                className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <Field label="Position Title" value={work.positionTitle} fullWidth />
-                  <Field label="Department/Agency/Office/Company" value={work.departmentAgency} fullWidth />
-                  <Field label="From" value={work.dateFrom ? format(new Date(work.dateFrom), 'MMM yyyy') : 'N/A'} />
-                  <Field label="To" value={work.dateTo ? format(new Date(work.dateTo), 'MMM yyyy') : 'Present'} />
-                  <Field label="Monthly Salary" value={work.monthlySalary ? `₱${work.monthlySalary.toLocaleString()}` : 'N/A'} />
+                  <Field
+                    label="Position Title"
+                    value={work.positionTitle}
+                    fullWidth
+                  />
+                  <Field
+                    label="Department/Agency/Office/Company"
+                    value={work.departmentAgency}
+                    fullWidth
+                  />
+                  <Field
+                    label="From"
+                    value={
+                      work.dateFrom
+                        ? format(new Date(work.dateFrom), 'MMM yyyy')
+                        : 'N/A'
+                    }
+                  />
+                  <Field
+                    label="To"
+                    value={
+                      work.dateTo
+                        ? format(new Date(work.dateTo), 'MMM yyyy')
+                        : 'Present'
+                    }
+                  />
+                  <Field
+                    label="Monthly Salary"
+                    value={
+                      work.monthlySalary
+                        ? `₱${work.monthlySalary.toLocaleString()}`
+                        : 'N/A'
+                    }
+                  />
                   <Field label="Salary Grade" value={work.salaryGrade} />
-                  <Field label="Status of Appointment" value={work.statusOfAppointment} />
+                  <Field
+                    label="Status of Appointment"
+                    value={work.statusOfAppointment}
+                  />
                   <Field label="Government Service" value={work.isGovernment} />
                 </div>
               </div>
@@ -472,13 +990,41 @@ export default function PDSViewDetailPage({
         <Section title="VI. Voluntary Work" icon={Heart} delay={0.4}>
           <div className="space-y-3">
             {pdsData.voluntaryWork.map((vol: any, index: number) => (
-              <div key={index} className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+              <div
+                key={index}
+                className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <Field label="Name & Address of Organization" value={`${vol.organizationName || ''}${vol.organizationAddress ? ` - ${vol.organizationAddress}` : ''}`} fullWidth />
-                  <Field label="From" value={vol.dateFrom ? format(new Date(vol.dateFrom), 'MMM yyyy') : 'N/A'} />
-                  <Field label="To" value={vol.dateTo ? format(new Date(vol.dateTo), 'MMM yyyy') : 'Present'} />
+                  <Field
+                    label="Name & Address of Organization"
+                    value={`${vol.organizationName || ''}${
+                      vol.organizationAddress
+                        ? ` - ${vol.organizationAddress}`
+                        : ''
+                    }`}
+                    fullWidth
+                  />
+                  <Field
+                    label="From"
+                    value={
+                      vol.dateFrom
+                        ? format(new Date(vol.dateFrom), 'MMM yyyy')
+                        : 'N/A'
+                    }
+                  />
+                  <Field
+                    label="To"
+                    value={
+                      vol.dateTo
+                        ? format(new Date(vol.dateTo), 'MMM yyyy')
+                        : 'Present'
+                    }
+                  />
                   <Field label="Number of Hours" value={vol.numberOfHours} />
-                  <Field label="Position/Nature of Work" value={vol.positionNature} fullWidth />
+                  <Field
+                    label="Position/Nature of Work"
+                    value={vol.positionNature}
+                    fullWidth
+                  />
                 </div>
               </div>
             ))}
@@ -487,21 +1033,52 @@ export default function PDSViewDetailPage({
       )}
 
       {/* VII. LEARNING & DEVELOPMENT */}
-      {((pdsData.learningDevelopment && pdsData.learningDevelopment.length > 0) || (pdsData.training && pdsData.training.length > 0)) && (
-        <Section title="VII. Learning and Development Interventions" icon={BookOpen} delay={0.45}>
+      {((pdsData.learningDevelopment &&
+        pdsData.learningDevelopment.length > 0) ||
+        (pdsData.training && pdsData.training.length > 0)) && (
+        <Section
+          title="VII. Learning and Development Interventions"
+          icon={BookOpen}
+          delay={0.45}>
           <div className="space-y-3">
-            {(pdsData.learningDevelopment || pdsData.training || []).map((training: any, index: number) => (
-              <div key={index} className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <Field label="Title of Learning and Development Interventions" value={training.title} fullWidth />
-                  <Field label="From" value={training.dateFrom ? format(new Date(training.dateFrom), 'MMM d, yyyy') : 'N/A'} />
-                  <Field label="To" value={training.dateTo ? format(new Date(training.dateTo), 'MMM d, yyyy') : 'N/A'} />
-                  <Field label="Number of Hours" value={training.hours} />
-                  <Field label="Type of LD" value={training.typeOfLd} />
-                  <Field label="Conducted/Sponsored By" value={training.conductedBy} fullWidth />
+            {(pdsData.learningDevelopment || pdsData.training || []).map(
+              (training: any, index: number) => (
+                <div
+                  key={index}
+                  className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <Field
+                      label="Title of Learning and Development Interventions"
+                      value={training.title}
+                      fullWidth
+                    />
+                    <Field
+                      label="From"
+                      value={
+                        training.dateFrom
+                          ? format(new Date(training.dateFrom), 'MMM d, yyyy')
+                          : 'N/A'
+                      }
+                    />
+                    <Field
+                      label="To"
+                      value={
+                        training.dateTo
+                          ? format(new Date(training.dateTo), 'MMM d, yyyy')
+                          : 'N/A'
+                      }
+                    />
+                    <Field label="Number of Hours" value={training.hours} />
+                    <Field label="Type of LD" value={training.typeOfLd} />
+                    <Field
+                      label="Conducted/Sponsored By"
+                      value={training.conductedBy}
+                      fullWidth
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            )}
           </div>
         </Section>
       )}
@@ -512,7 +1089,9 @@ export default function PDSViewDetailPage({
           {/* Special Skills */}
           {pdsData.otherInfo?.skills && pdsData.otherInfo.skills.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold mb-3 text-slate-900 dark:text-slate-100">Special Skills and Hobbies</h3>
+              <h3 className="text-sm font-semibold mb-3 text-slate-900 dark:text-slate-100">
+                Special Skills and Hobbies
+              </h3>
               <div className="flex flex-wrap gap-2">
                 {pdsData.otherInfo.skills.map((skill: any, index: number) => (
                   <Badge key={index} variant="outline" className="text-xs">
@@ -524,119 +1103,239 @@ export default function PDSViewDetailPage({
           )}
 
           {/* Recognitions */}
-          {pdsData.otherInfo?.recognitions && pdsData.otherInfo.recognitions.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-              <h3 className="text-sm font-semibold mb-3 text-slate-900 dark:text-slate-100">Non-Academic Distinctions/Recognition</h3>
-              <div className="space-y-2">
-                {pdsData.otherInfo.recognitions.map((rec: any, index: number) => (
-                  <div key={index} className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <Field label="Title" value={rec.title} />
-                      <Field label="Year" value={rec.year} />
-                      <Field label="Organization" value={rec.organization} />
-                    </div>
-                  </div>
-                ))}
+          {pdsData.otherInfo?.recognitions &&
+            pdsData.otherInfo.recognitions.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                <h3 className="text-sm font-semibold mb-3 text-slate-900 dark:text-slate-100">
+                  Non-Academic Distinctions/Recognition
+                </h3>
+                <div className="space-y-2">
+                  {pdsData.otherInfo.recognitions.map(
+                    (rec: any, index: number) => (
+                      <div
+                        key={index}
+                        className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <Field label="Title" value={rec.title} />
+                          <Field label="Year" value={rec.year} />
+                          <Field
+                            label="Organization"
+                            value={rec.organization}
+                          />
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Associations */}
-          {pdsData.otherInfo?.associations && pdsData.otherInfo.associations.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-              <h3 className="text-sm font-semibold mb-3 text-slate-900 dark:text-slate-100">Membership in Association/Organization</h3>
-              <div className="space-y-2">
-                {pdsData.otherInfo.associations.map((assoc: any, index: number) => (
-                  <div key={index} className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <Field label="Name" value={assoc.name} />
-                      <Field label="Position" value={assoc.position} />
-                      <Field label="Year Joined" value={assoc.yearJoined} />
-                    </div>
-                  </div>
-                ))}
+          {pdsData.otherInfo?.associations &&
+            pdsData.otherInfo.associations.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                <h3 className="text-sm font-semibold mb-3 text-slate-900 dark:text-slate-100">
+                  Membership in Association/Organization
+                </h3>
+                <div className="space-y-2">
+                  {pdsData.otherInfo.associations.map(
+                    (assoc: any, index: number) => (
+                      <div
+                        key={index}
+                        className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <Field label="Name" value={assoc.name} />
+                          <Field label="Position" value={assoc.position} />
+                          <Field label="Year Joined" value={assoc.yearJoined} />
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Questions */}
           <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-            <h3 className="text-sm font-semibold mb-3 text-slate-900 dark:text-slate-100">Supplementary Questions</h3>
+            <h3 className="text-sm font-semibold mb-3 text-slate-900 dark:text-slate-100">
+              Supplementary Questions
+            </h3>
             <div className="space-y-3">
               <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                <Field label="Have you ever been formally charged?" value={pdsData.otherInfo?.questions?.Q34_criminal_charged} />
+                <Field
+                  label="Have you ever been formally charged?"
+                  value={pdsData.otherInfo?.questions?.Q34_criminal_charged}
+                />
                 {pdsData.otherInfo?.questions?.Q34_criminal_charged && (
-                  <Field label="Details" value={pdsData.otherInfo.questions.Q34_criminal_charged_details} fullWidth />
+                  <Field
+                    label="Details"
+                    value={
+                      pdsData.otherInfo.questions.Q34_criminal_charged_details
+                    }
+                    fullWidth
+                  />
                 )}
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                <Field label="Have you ever been convicted?" value={pdsData.otherInfo?.questions?.Q35_criminal_convicted} />
+                <Field
+                  label="Have you ever been convicted?"
+                  value={pdsData.otherInfo?.questions?.Q35_criminal_convicted}
+                />
                 {pdsData.otherInfo?.questions?.Q35_criminal_convicted && (
-                  <Field label="Details" value={pdsData.otherInfo.questions.Q35_criminal_convicted_details} fullWidth />
+                  <Field
+                    label="Details"
+                    value={
+                      pdsData.otherInfo.questions.Q35_criminal_convicted_details
+                    }
+                    fullWidth
+                  />
                 )}
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                <Field label="Have you ever been separated from service?" value={pdsData.otherInfo?.questions?.Q36_separated_from_service} />
+                <Field
+                  label="Have you ever been separated from service?"
+                  value={
+                    pdsData.otherInfo?.questions?.Q36_separated_from_service
+                  }
+                />
                 {pdsData.otherInfo?.questions?.Q36_separated_from_service && (
-                  <Field label="Details" value={pdsData.otherInfo.questions.Q36_separated_from_service_details} fullWidth />
+                  <Field
+                    label="Details"
+                    value={
+                      pdsData.otherInfo.questions
+                        .Q36_separated_from_service_details
+                    }
+                    fullWidth
+                  />
                 )}
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                <Field label="Have you ever been a candidate?" value={pdsData.otherInfo?.questions?.Q37_candidate_for_election} />
+                <Field
+                  label="Have you ever been a candidate?"
+                  value={
+                    pdsData.otherInfo?.questions?.Q37_candidate_for_election
+                  }
+                />
                 {pdsData.otherInfo?.questions?.Q37_candidate_for_election && (
-                  <Field label="Details" value={pdsData.otherInfo.questions.Q37_candidate_for_election_details} fullWidth />
+                  <Field
+                    label="Details"
+                    value={
+                      pdsData.otherInfo.questions
+                        .Q37_candidate_for_election_details
+                    }
+                    fullWidth
+                  />
                 )}
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                <Field label="Have you resigned from government service?" value={pdsData.otherInfo?.questions?.Q38_resigned_from_government} />
+                <Field
+                  label="Have you resigned from government service?"
+                  value={
+                    pdsData.otherInfo?.questions?.Q38_resigned_from_government
+                  }
+                />
                 {pdsData.otherInfo?.questions?.Q38_resigned_from_government && (
-                  <Field label="Details" value={pdsData.otherInfo.questions.Q38_resigned_from_government_details} fullWidth />
+                  <Field
+                    label="Details"
+                    value={
+                      pdsData.otherInfo.questions
+                        .Q38_resigned_from_government_details
+                    }
+                    fullWidth
+                  />
                 )}
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                <Field label="Have you acquired immigrant status?" value={pdsData.otherInfo?.questions?.Q39_immigrant_or_acquired_residence} />
-                {pdsData.otherInfo?.questions?.Q39_immigrant_or_acquired_residence && (
-                  <Field label="Details" value={pdsData.otherInfo.questions.Q39_immigrant_or_acquired_residence_details} fullWidth />
+                <Field
+                  label="Have you acquired immigrant status?"
+                  value={
+                    pdsData.otherInfo?.questions
+                      ?.Q39_immigrant_or_acquired_residence
+                  }
+                />
+                {pdsData.otherInfo?.questions
+                  ?.Q39_immigrant_or_acquired_residence && (
+                  <Field
+                    label="Details"
+                    value={
+                      pdsData.otherInfo.questions
+                        .Q39_immigrant_or_acquired_residence_details
+                    }
+                    fullWidth
+                  />
                 )}
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                <Field label="Are you a member of indigenous group?" value={pdsData.otherInfo?.questions?.Q40_indigenous_group} />
+                <Field
+                  label="Are you a member of indigenous group?"
+                  value={pdsData.otherInfo?.questions?.Q40_indigenous_group}
+                />
                 {pdsData.otherInfo?.questions?.Q40_indigenous_group && (
-                  <Field label="Details" value={pdsData.otherInfo.questions.Q40_indigenous_group_details} fullWidth />
+                  <Field
+                    label="Details"
+                    value={
+                      pdsData.otherInfo.questions.Q40_indigenous_group_details
+                    }
+                    fullWidth
+                  />
                 )}
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                <Field label="Are you a person with disability?" value={pdsData.otherInfo?.questions?.Q41_disabled} />
+                <Field
+                  label="Are you a person with disability?"
+                  value={pdsData.otherInfo?.questions?.Q41_disabled}
+                />
                 {pdsData.otherInfo?.questions?.Q41_disabled && (
-                  <Field label="Details" value={pdsData.otherInfo.questions.Q41_disabled_details} fullWidth />
+                  <Field
+                    label="Details"
+                    value={pdsData.otherInfo.questions.Q41_disabled_details}
+                    fullWidth
+                  />
                 )}
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                <Field label="Are you a solo parent?" value={pdsData.otherInfo?.questions?.Q42_solo_parent} />
+                <Field
+                  label="Are you a solo parent?"
+                  value={pdsData.otherInfo?.questions?.Q42_solo_parent}
+                />
                 {pdsData.otherInfo?.questions?.Q42_solo_parent && (
-                  <Field label="Details" value={pdsData.otherInfo.questions.Q42_solo_parent_details} fullWidth />
+                  <Field
+                    label="Details"
+                    value={pdsData.otherInfo.questions.Q42_solo_parent_details}
+                    fullWidth
+                  />
                 )}
               </div>
             </div>
           </div>
 
           {/* References */}
-          {pdsData.otherInfo?.references && pdsData.otherInfo.references.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-              <h3 className="text-sm font-semibold mb-3 text-slate-900 dark:text-slate-100">Character References</h3>
-              <div className="space-y-2">
-                {pdsData.otherInfo.references.map((ref: any, index: number) => (
-                  <div key={index} className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <Field label="Name" value={ref.name} />
-                      <Field label="Address" value={ref.address} />
-                      <Field label="Telephone No." value={ref.telephoneNo} />
-                    </div>
-                  </div>
-                ))}
+          {pdsData.otherInfo?.references &&
+            pdsData.otherInfo.references.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                <h3 className="text-sm font-semibold mb-3 text-slate-900 dark:text-slate-100">
+                  Character References
+                </h3>
+                <div className="space-y-2">
+                  {pdsData.otherInfo.references.map(
+                    (ref: any, index: number) => (
+                      <div
+                        key={index}
+                        className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <Field label="Name" value={ref.name} />
+                          <Field label="Address" value={ref.address} />
+                          <Field
+                            label="Telephone No."
+                            value={ref.telephoneNo}
+                          />
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
         </div>
       </Section>
     </div>

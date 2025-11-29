@@ -21,8 +21,8 @@
 
 'use client';
 
-import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
+import { Skeleton } from '../../ui/skeleton';
+import { cn } from '../../../lib/utils';
 
 export interface FormStepSkeletonProps {
   /** Number of form fields to show skeleton for (default: 6) */
@@ -37,13 +37,15 @@ export interface FormStepSkeletonProps {
  * Displays a skeleton loader that matches the typical structure of form step components.
  * Optimized to prevent Cumulative Layout Shift during lazy loading.
  */
-export function FormStepSkeleton({ fieldCount = 6, className }: FormStepSkeletonProps) {
+export function FormStepSkeleton({
+  fieldCount = 6,
+  className,
+}: FormStepSkeletonProps) {
   return (
     <div
       className={cn('space-y-8 animate-in fade-in-50 duration-300', className)}
       role="status"
-      aria-label="Loading form step"
-    >
+      aria-label="Loading form step">
       {/* Section Header Skeleton */}
       <div className="space-y-3 pb-6 border-b border-border">
         <Skeleton className="h-8 w-3/4 max-w-md" /> {/* Title */}
@@ -103,8 +105,7 @@ export function FormStepSkeletonCompact({ className }: { className?: string }) {
     <div
       className={cn('space-y-6 animate-in fade-in-50 duration-300', className)}
       role="status"
-      aria-label="Loading form step"
-    >
+      aria-label="Loading form step">
       <div className="space-y-2 pb-4 border-b border-border">
         <Skeleton className="h-7 w-2/3" />
         <Skeleton className="h-3 w-full max-w-lg" />

@@ -13,14 +13,14 @@
 import React, { useMemo, useState, useEffect, useCallback, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '../../../../../providers/AuthProvider';
 import { usePds } from '@tupsafe/mock-data/api';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   completePdsSchema,
   type CompletePdsData,
-} from '@/lib/validations/pds-schema';
+} from '../../../../../lib/validations/pds-schema';
 import { toast } from 'sonner';
 import {
   AlertCircle,
@@ -38,23 +38,27 @@ import {
 } from 'lucide-react';
 
 // UI Components
-import { BlurFade } from '@/components/ui/blur-fade';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
+import { BlurFade } from '../../../../../components/ui/blur-fade';
+import { Card } from '../../../../../components/ui/card';
+import { Button } from '../../../../../components/ui/button';
+import {
+  Alert,
+  AlertTitle,
+  AlertDescription,
+} from '../../../../../components/ui/alert';
+import { Progress } from '../../../../../components/ui/progress';
+import { Input } from '../../../../../components/ui/input';
+import { Label } from '../../../../../components/ui/label';
+import { Textarea } from '../../../../../components/ui/textarea';
+import { Separator } from '../../../../../components/ui/separator';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { cn } from '@/lib/utils';
+} from '../../../../../components/ui/select';
+import { cn } from '../../../../../lib/utils';
 
 // ============================================================================
 // TYPES

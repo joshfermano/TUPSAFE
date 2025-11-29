@@ -20,10 +20,11 @@ import {
   Mail,
   Shield,
   Loader2,
+  Lock,
 } from 'lucide-react';
 
 // UI Components
-import { Button } from '@/components/ui/button';
+import { Button } from '../../../../../components/ui/button';
 import {
   Form,
   FormControl,
@@ -32,38 +33,42 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+} from '../../../../../components/ui/form';
+import { Input } from '../../../../../components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '../../../../../components/ui/select';
 
 // MagicUI Components
-import { MagicCard } from '@/components/ui/magic-card';
-import { ShimmerButton } from '@/components/ui/shimmer-button';
-import { ShineBorder } from '@/components/ui/shine-border';
-import { AnimatedGradientText } from '@/components/ui/animated-gradient-text';
-import { Particles } from '@/components/ui/particles';
-import { NeonGradientCard } from '@/components/ui/neon-gradient-card';
-import { BlurFade } from '@/components/ui/blur-fade';
-import { Ripple } from '@/components/ui/ripple';
+import { MagicCard } from '../../../../../components/ui/magic-card';
+import { ShimmerButton } from '../../../../../components/ui/shimmer-button';
+import { ShineBorder } from '../../../../../components/ui/shine-border';
+import { AnimatedGradientText } from '../../../../../components/ui/animated-gradient-text';
+import { Particles } from '../../../../../components/ui/particles';
+import { NeonGradientCard } from '../../../../../components/ui/neon-gradient-card';
+import { BlurFade } from '../../../../../components/ui/blur-fade';
+import { Ripple } from '../../../../../components/ui/ripple';
 
 // Custom Components
-import { AvatarUpload } from '@/components/profile/AvatarUpload';
+import { AvatarUpload } from '../../../../../components/profile/AvatarUpload';
 
 // Utilities & Validation
 import {
   editProfileSchema,
   type EditProfileFormData,
-} from '@/lib/validations/profile';
+} from '../../../../../lib/validations/profile';
 
-// Mock data (replace with actual API calls)
-import { useAuth } from '@/providers/AuthProvider';
-import { useProfile } from '@tupsafe/mock-data/api';
+// Auth and API hooks
+import { useAuth } from '../../../../../providers/AuthProvider';
+import { useProfile, useUpdateProfile } from '../../../../../hooks/useProfile';
+import {
+  useColleges,
+  useOffices,
+} from '../../../../../hooks/useOrganizationData';
 
 // Animation variants - extracted to prevent recreation on each render
 const FADE_IN_UP_VARIANTS = {
@@ -71,25 +76,6 @@ const FADE_IN_UP_VARIANTS = {
   animate: { opacity: 1, y: 0 },
   exit: { opacity: 0, y: -20 },
 } as const;
-
-// Mock data - extracted as constants for performance
-const MOCK_DEPARTMENTS = [
-  { id: '1', name: 'College of Engineering (COE)', code: 'COE' },
-  { id: '2', name: 'College of Industrial Education (CIE)', code: 'CIE' },
-  { id: '3', name: 'College of Liberal Arts (CLA)', code: 'CLA' },
-  { id: '4', name: 'College of Science (CS)', code: 'CS' },
-  { id: '5', name: 'College of Architecture and Fine Arts (CAFA)', code: 'CAFA' },
-  { id: '6', name: 'College of Industrial Technology (CIT)', code: 'CIT' },
-] as const;
-
-const MOCK_POSITIONS = [
-  { id: '1', title: 'Professor', gradeLevel: 23 },
-  { id: '2', title: 'Associate Professor', gradeLevel: 22 },
-  { id: '3', title: 'Assistant Professor', gradeLevel: 21 },
-  { id: '4', title: 'Instructor', gradeLevel: 18 },
-  { id: '5', title: 'Administrative Officer', gradeLevel: 15 },
-  { id: '6', title: 'University Registrar', gradeLevel: 24 },
-] as const;
 
 interface EditProfilePageProps {
   params: Promise<{
@@ -103,9 +89,29 @@ export default function EditProfilePage({ params }: EditProfilePageProps) {
 
   const router = useRouter();
   const { user } = useAuth();
-const { profile, loading: profileLoading } = useProfile(id);
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // Real API hooks
+  const {
+    data: profile,
+    isLoading: profileLoading,
+    error: profileError,
+  } = useProfile();
+  const updateProfileMutation = useUpdateProfile();
+
+  // Organization data hooks
+  const { data: colleges = [], isLoading: collegesLoading } = useColleges();
+  const { data: offices = [], isLoading: officesLoading } = useOffices();
+
+  // Combine colleges and offices for department dropdown
+  const allDepartments = useMemo(() => {
+    const combined = [
+      ...colleges.map((c) => ({ id: c.id, name: c.name, code: c.code })),
+      ...offices.map((o) => ({ id: o.id, name: o.name, code: o.code })),
+    ];
+    // Sort alphabetically by name
+    return combined.sort((a, b) => a.name.localeCompare(b.name));
+  }, [colleges, offices]);
+
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
   // Initialize form with react-hook-form and zod validation
@@ -129,10 +135,10 @@ const { profile, loading: profileLoading } = useProfile(id);
         firstName: profile.firstName || '',
         middleName: profile.middleName || '',
         lastName: profile.lastName || '',
-        phoneNumber: '', // TODO: Add phoneNumber to Profile type in database schema
-        departmentId: profile.departmentId || '',
-        positionId: profile.positionId || '',
-        avatarUrl: '', // TODO: Add avatarUrl to Profile type in database schema
+        phoneNumber: profile.phoneNumber || '',
+        departmentId: profile.department?.id || profile.college?.id || '',
+        positionId: profile.position?.id || '',
+        avatarUrl: '',
       });
     }
   }, [profile, form]);
@@ -140,25 +146,18 @@ const { profile, loading: profileLoading } = useProfile(id);
   // Handle form submission - memoized with useCallback
   const onSubmit = useCallback(
     async (data: EditProfileFormData) => {
-      setIsSubmitting(true);
-
       try {
-        // TODO: Replace with actual API call
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-
         // Handle avatar upload if present
         if (avatarFile) {
           // TODO: Upload avatar to storage service
           console.log('Uploading avatar:', avatarFile);
         }
 
-        // TODO: Call API to update profile
-        console.log('Updating profile:', data);
-
-        // Show success toast
-        toast.success('Profile updated successfully!', {
-          description: 'Your changes have been saved.',
+        // Only submit editable fields via the mutation
+        await updateProfileMutation.mutateAsync({
+          phoneNumber: data.phoneNumber || null,
+          middleName: data.middleName || null,
+          departmentId: data.departmentId || null,
         });
 
         // Trigger confetti celebration animation
@@ -215,14 +214,10 @@ const { profile, loading: profileLoading } = useProfile(id);
         }, 1500);
       } catch (error) {
         console.error('Error updating profile:', error);
-        toast.error('Failed to update profile', {
-          description: 'Please try again later.',
-        });
-      } finally {
-        setIsSubmitting(false);
+        // Error toast is handled by useUpdateProfile hook
       }
     },
-    [avatarFile, router]
+    [avatarFile, router, updateProfileMutation]
   );
 
   const handleCancel = useCallback(() => {
@@ -233,7 +228,9 @@ const { profile, loading: profileLoading } = useProfile(id);
   const fullName = useMemo(
     () =>
       profile
-        ? `${profile.firstName} ${profile.middleName ? profile.middleName + ' ' : ''}${profile.lastName}`
+        ? `${profile.firstName} ${
+            profile.middleName ? profile.middleName + ' ' : ''
+          }${profile.lastName}`
         : '',
     [profile?.firstName, profile?.middleName, profile?.lastName]
   );
@@ -244,7 +241,7 @@ const { profile, loading: profileLoading } = useProfile(id);
       // Ctrl+S or Cmd+S to save
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
-        if (!isSubmitting) {
+        if (!updateProfileMutation.isPending) {
           form.handleSubmit(onSubmit)();
         }
       }
@@ -252,7 +249,7 @@ const { profile, loading: profileLoading } = useProfile(id);
       // Escape to cancel
       if (e.key === 'Escape') {
         e.preventDefault();
-        if (!isSubmitting) {
+        if (!updateProfileMutation.isPending) {
           handleCancel();
         }
       }
@@ -260,7 +257,7 @@ const { profile, loading: profileLoading } = useProfile(id);
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isSubmitting, form, onSubmit, handleCancel]);
+  }, [updateProfileMutation.isPending, form, onSubmit, handleCancel]);
 
   // Loading state
   if (profileLoading) {
@@ -276,8 +273,30 @@ const { profile, loading: profileLoading } = useProfile(id);
     );
   }
 
-  // Authorization check
-  if (!profile || (user?.id !== id && profile?.role !== 'admin')) {
+  // Error state
+  if (profileError) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Shield className="h-12 w-12 text-red-500 mx-auto" />
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+            Failed to Load Profile
+          </h2>
+          <p className="text-slate-600 dark:text-slate-400">
+            {profileError instanceof Error
+              ? profileError.message
+              : 'An error occurred while loading your profile.'}
+          </p>
+          <Button onClick={() => router.push('/dashboard/profile')}>
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Authorization check - user can only edit their own profile (or admin can edit any)
+  if (!profile || (user?.id !== profile.id && profile.role !== 'admin')) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center space-y-4">
@@ -316,14 +335,12 @@ const { profile, loading: profileLoading } = useProfile(id);
         initial="initial"
         animate="animate"
         variants={FADE_IN_UP_VARIANTS}
-        transition={{ duration: 0.3, ease: 'easeOut' }}
-      >
+        transition={{ duration: 0.3, ease: 'easeOut' }}>
         {/* Breadcrumb & Back Button */}
         <Button
           variant="ghost"
           className="w-fit -ml-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-          onClick={handleCancel}
-        >
+          onClick={handleCancel}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Profile
         </Button>
@@ -334,8 +351,7 @@ const { profile, loading: profileLoading } = useProfile(id);
             <AnimatedGradientText
               colorFrom="var(--primary)"
               colorTo="var(--tup-crimson-light)"
-              speed={1.5}
-            >
+              speed={1.5}>
               Edit Profile
             </AnimatedGradientText>
           </h1>
@@ -351,8 +367,7 @@ const { profile, loading: profileLoading } = useProfile(id);
         initial="initial"
         animate="animate"
         variants={FADE_IN_UP_VARIANTS}
-        transition={{ duration: 0.3, delay: 0.1, ease: 'easeOut' }}
-      >
+        transition={{ duration: 0.3, delay: 0.1, ease: 'easeOut' }}>
         <ShineBorder
           shineColor={['var(--primary)', 'var(--tup-crimson-light)']}
           borderWidth={2}
@@ -368,8 +383,7 @@ const { profile, loading: profileLoading } = useProfile(id);
                 animate="animate"
                 variants={FADE_IN_UP_VARIANTS}
                 transition={{ duration: 0.3, delay: 0.2, ease: 'easeOut' }}
-                style={{ contain: 'layout paint' }}
-              >
+                style={{ contain: 'layout paint' }}>
                 <NeonGradientCard
                   borderSize={2}
                   borderRadius={16}
@@ -377,8 +391,7 @@ const { profile, loading: profileLoading } = useProfile(id);
                     firstColor: 'var(--tup-crimson-dark)',
                     secondColor: 'var(--tup-crimson-light)',
                   }}
-                  className="p-8"
-                >
+                  className="p-8">
                   <div className="flex flex-col items-center">
                     <AvatarUpload
                       currentAvatar={undefined}
@@ -397,14 +410,12 @@ const { profile, loading: profileLoading } = useProfile(id);
                   animate="animate"
                   variants={FADE_IN_UP_VARIANTS}
                   transition={{ duration: 0.3, delay: 0.3, ease: 'easeOut' }}
-                  style={{ contain: 'layout paint' }}
-                >
+                  style={{ contain: 'layout paint' }}>
                   <MagicCard
                     gradientSize={0}
                     gradientColor="var(--primary)"
                     gradientOpacity={0}
-                    className="h-full"
-                  >
+                    className="h-full">
                     <div className="p-6 space-y-6">
                       {/* Card Header */}
                       <div className="flex items-center gap-3 pb-4 border-b border-slate-200 dark:border-slate-700">
@@ -424,14 +435,21 @@ const { profile, loading: profileLoading } = useProfile(id);
                             name="firstName"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>First Name</FormLabel>
+                                <FormLabel className="flex items-center gap-2">
+                                  First Name
+                                  <Lock className="h-3 w-3 text-slate-400" />
+                                </FormLabel>
                                 <FormControl>
                                   <Input
                                     placeholder="Juan"
                                     {...field}
-                                    className="focus-visible:ring-primary/20 focus-visible:border-primary"
+                                    disabled
+                                    className="bg-slate-50 dark:bg-slate-800/50 cursor-not-allowed"
                                   />
                                 </FormControl>
+                                <FormDescription>
+                                  Contact HR to change your name
+                                </FormDescription>
                                 <FormMessage />
                               </FormItem>
                             )}
@@ -467,14 +485,21 @@ const { profile, loading: profileLoading } = useProfile(id);
                             name="lastName"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Last Name</FormLabel>
+                                <FormLabel className="flex items-center gap-2">
+                                  Last Name
+                                  <Lock className="h-3 w-3 text-slate-400" />
+                                </FormLabel>
                                 <FormControl>
                                   <Input
                                     placeholder="Dela Cruz"
                                     {...field}
-                                    className="focus-visible:ring-primary/20 focus-visible:border-primary"
+                                    disabled
+                                    className="bg-slate-50 dark:bg-slate-800/50 cursor-not-allowed"
                                   />
                                 </FormControl>
+                                <FormDescription>
+                                  Contact HR to change your name
+                                </FormDescription>
                                 <FormMessage />
                               </FormItem>
                             )}
@@ -491,14 +516,12 @@ const { profile, loading: profileLoading } = useProfile(id);
                   animate="animate"
                   variants={FADE_IN_UP_VARIANTS}
                   transition={{ duration: 0.3, delay: 0.4, ease: 'easeOut' }}
-                  style={{ contain: 'layout paint' }}
-                >
+                  style={{ contain: 'layout paint' }}>
                   <MagicCard
                     gradientSize={0}
                     gradientColor="var(--secondary)"
                     gradientOpacity={0}
-                    className="h-full"
-                  >
+                    className="h-full">
                     <div className="p-6 space-y-6">
                       {/* Card Header */}
                       <div className="flex items-center gap-3 pb-4 border-b border-slate-200 dark:border-slate-700">
@@ -517,14 +540,15 @@ const { profile, loading: profileLoading } = useProfile(id);
                             <FormLabel>Email Address</FormLabel>
                             <div className="flex items-center gap-2">
                               <Input
-                                value={user?.email || ''}
+                                value={user?.email || profile.email || ''}
                                 disabled
                                 className="bg-slate-50 dark:bg-slate-800/50"
                               />
                               <Mail className="h-5 w-5 text-red-500" />
                             </div>
                             <FormDescription>
-                              Email cannot be changed. Contact HR for assistance.
+                              Email cannot be changed. Contact HR for
+                              assistance.
                             </FormDescription>
                           </FormItem>
                         </BlurFade>
@@ -563,13 +587,11 @@ const { profile, loading: profileLoading } = useProfile(id);
                   animate="animate"
                   variants={FADE_IN_UP_VARIANTS}
                   transition={{ duration: 0.3, delay: 0.5, ease: 'easeOut' }}
-                  style={{ contain: 'layout paint' }}
-                >
+                  style={{ contain: 'layout paint' }}>
                   <MagicCard
                     gradientSize={0}
                     gradientColor="#8B1538"
-                    gradientOpacity={0}
-                  >
+                    gradientOpacity={0}>
                     <div className="p-6 space-y-6">
                       {/* Card Header */}
                       <div className="flex items-center gap-3 pb-4 border-b border-slate-200 dark:border-slate-700">
@@ -588,7 +610,11 @@ const { profile, loading: profileLoading } = useProfile(id);
                             <FormLabel>Employee ID</FormLabel>
                             <div className="flex items-center gap-2">
                               <Input
-                                value={profile.employeeId ?? undefined}
+                                value={
+                                  profile.employeeId ||
+                                  profile.applicantId ||
+                                  'Not assigned'
+                                }
                                 disabled
                                 className="bg-slate-50 dark:bg-slate-800/50"
                               />
@@ -606,18 +632,18 @@ const { profile, loading: profileLoading } = useProfile(id);
                             name="departmentId"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Department</FormLabel>
+                                <FormLabel>Department / College</FormLabel>
                                 <Select
                                   onValueChange={field.onChange}
-                                  defaultValue={field.value}
-                                >
+                                  value={field.value}
+                                  disabled={collegesLoading || officesLoading}>
                                   <FormControl>
                                     <SelectTrigger className="focus:ring-primary/20 focus:border-primary">
                                       <SelectValue placeholder="Select department" />
                                     </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>
-                                    {MOCK_DEPARTMENTS.map((dept) => (
+                                    {allDepartments.map((dept) => (
                                       <SelectItem key={dept.id} value={dept.id}>
                                         <div className="flex items-center gap-2">
                                           <Building2 className="h-4 w-4 text-slate-500" />
@@ -634,39 +660,31 @@ const { profile, loading: profileLoading } = useProfile(id);
                         </BlurFade>
 
                         <BlurFade delay={0.45} duration={0.4}>
-                          <FormField
-                            control={form.control}
-                            name="positionId"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Position</FormLabel>
-                                <Select
-                                  onValueChange={field.onChange}
-                                  defaultValue={field.value}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger className="focus:ring-primary/20 focus:border-primary">
-                                      <SelectValue placeholder="Select position" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {MOCK_POSITIONS.map((pos) => (
-                                      <SelectItem key={pos.id} value={pos.id}>
-                                        <div className="flex items-center gap-2">
-                                          <Award className="h-4 w-4 text-slate-500" />
-                                          <span>{pos.title}</span>
-                                          <span className="text-xs text-slate-500">
-                                            (SG-{pos.gradeLevel})
-                                          </span>
-                                        </div>
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-2">
+                              Position
+                              <Lock className="h-3 w-3 text-slate-400" />
+                            </FormLabel>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                value={
+                                  profile.position
+                                    ? `${profile.position.title}${
+                                        profile.position.gradeLevel
+                                          ? ` (SG-${profile.position.gradeLevel})`
+                                          : ''
+                                      }`
+                                    : 'Not assigned'
+                                }
+                                disabled
+                                className="bg-slate-50 dark:bg-slate-800/50"
+                              />
+                              <Award className="h-5 w-5 text-slate-400" />
+                            </div>
+                            <FormDescription>
+                              Position changes require HR approval
+                            </FormDescription>
+                          </FormItem>
                         </BlurFade>
                       </div>
                     </div>
@@ -680,15 +698,13 @@ const { profile, loading: profileLoading } = useProfile(id);
                 initial="initial"
                 animate="animate"
                 variants={FADE_IN_UP_VARIANTS}
-                transition={{ duration: 0.3, delay: 0.6, ease: 'easeOut' }}
-              >
+                transition={{ duration: 0.3, delay: 0.6, ease: 'easeOut' }}>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={handleCancel}
-                  disabled={isSubmitting}
-                  className="w-full sm:w-auto order-2 sm:order-1 relative overflow-hidden group"
-                >
+                  disabled={updateProfileMutation.isPending}
+                  className="w-full sm:w-auto order-2 sm:order-1 relative overflow-hidden group">
                   <span>Cancel</span>
                   <span className="ml-2 text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hidden sm:inline">
                     (Esc)
@@ -702,12 +718,11 @@ const { profile, loading: profileLoading } = useProfile(id);
 
                 <ShimmerButton
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={updateProfileMutation.isPending}
                   className="w-full sm:w-auto order-1 sm:order-2 min-w-[180px] group"
                   shimmerColor="#B8264D"
-                  background="linear-gradient(135deg, oklch(0.55 0.22 15) 0%, oklch(0.40 0.18 15) 100%)"
-                >
-                  {isSubmitting ? (
+                  background="linear-gradient(135deg, oklch(0.55 0.22 15) 0%, oklch(0.40 0.18 15) 100%)">
+                  {updateProfileMutation.isPending ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       <span>Saving Changes...</span>
@@ -734,8 +749,7 @@ const { profile, loading: profileLoading } = useProfile(id);
         initial="initial"
         animate="animate"
         variants={FADE_IN_UP_VARIANTS}
-        transition={{ duration: 0.3, delay: 0.7, ease: 'easeOut' }}
-      >
+        transition={{ duration: 0.3, delay: 0.7, ease: 'easeOut' }}>
         <div className="flex gap-3">
           <Shield className="h-5 w-5 text-primary dark:text-primary shrink-0 mt-0.5" />
           <div className="space-y-1">

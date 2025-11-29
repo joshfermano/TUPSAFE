@@ -3,15 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@tupsafe/auth';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from '@/components/ui/input-otp';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Alert, AlertDescription } from '../ui/alert';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '../ui/input-otp';
 import { Loader2, Mail, Lock, Eye, EyeOff, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -104,7 +100,9 @@ export function LoginForm({
         setShowOTP(true);
         setIsLoading(false);
         toast.info('Verification Required', {
-          description: data.message || 'Please check your email for the verification code.',
+          description:
+            data.message ||
+            'Please check your email for the verification code.',
         });
         return;
       }
@@ -117,10 +115,12 @@ export function LoginForm({
         });
 
         // Wait for cookies to be fully persisted
-        await new Promise(resolve => setTimeout(resolve, 150));
+        await new Promise((resolve) => setTimeout(resolve, 150));
 
         // Verify session was set correctly
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
         if (!session) {
           console.error('[Login] Session verification failed after setSession');
@@ -208,7 +208,8 @@ export function LoginForm({
         throw new Error('No session data received from server');
       }
     } catch (error) {
-      const err = error instanceof Error ? error : new Error('Verification failed');
+      const err =
+        error instanceof Error ? error : new Error('Verification failed');
       setErrorMessage(err.message);
       onError?.(err);
       toast.error('Verification Failed', {
@@ -237,8 +238,12 @@ export function LoginForm({
         </div>
 
         {errorMessage && (
-          <Alert variant="destructive" className="border-red-200 dark:border-red-800/50">
-            <AlertDescription className="text-sm">{errorMessage}</AlertDescription>
+          <Alert
+            variant="destructive"
+            className="border-red-200 dark:border-red-800/50">
+            <AlertDescription className="text-sm">
+              {errorMessage}
+            </AlertDescription>
           </Alert>
         )}
 
@@ -248,8 +253,7 @@ export function LoginForm({
               maxLength={6}
               value={otp}
               onChange={setOtp}
-              disabled={otpLoading}
-            >
+              disabled={otpLoading}>
               <InputOTPGroup>
                 <InputOTPSlot index={0} />
                 <InputOTPSlot index={1} />
@@ -265,8 +269,7 @@ export function LoginForm({
             type="button"
             onClick={handleOTPVerification}
             disabled={otpLoading || otp.length !== 6}
-            className="w-full h-11 bg-gradient-to-r from-[#8B1538] to-[#B8264D] hover:from-[#6B1028] hover:to-[#9A1E3D] text-white font-medium rounded-lg shadow-lg shadow-[#8B1538]/25 hover:shadow-[#8B1538]/40 transition-all duration-200"
-          >
+            className="w-full h-11 bg-gradient-to-r from-[#8B1538] to-[#B8264D] hover:from-[#6B1028] hover:to-[#9A1E3D] text-white font-medium rounded-lg shadow-lg shadow-[#8B1538]/25 hover:shadow-[#8B1538]/40 transition-all duration-200">
             {otpLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -286,8 +289,7 @@ export function LoginForm({
               setErrorMessage('');
             }}
             disabled={otpLoading}
-            className="w-full"
-          >
+            className="w-full">
             Back to Login
           </Button>
         </div>
@@ -298,16 +300,19 @@ export function LoginForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {errorMessage && (
-        <Alert variant="destructive" className="border-red-200 dark:border-red-800/50">
-          <AlertDescription className="text-sm">{errorMessage}</AlertDescription>
+        <Alert
+          variant="destructive"
+          className="border-red-200 dark:border-red-800/50">
+          <AlertDescription className="text-sm">
+            {errorMessage}
+          </AlertDescription>
         </Alert>
       )}
 
       <div className="space-y-1.5">
         <Label
           htmlFor="email"
-          className="text-xs font-medium text-slate-600 dark:text-slate-400"
-        >
+          className="text-xs font-medium text-slate-600 dark:text-slate-400">
           Email Address
         </Label>
         <div className="relative">
@@ -328,8 +333,7 @@ export function LoginForm({
       <div className="space-y-1.5">
         <Label
           htmlFor="password"
-          className="text-xs font-medium text-slate-600 dark:text-slate-400"
-        >
+          className="text-xs font-medium text-slate-600 dark:text-slate-400">
           Password
         </Label>
         <div className="relative">
@@ -348,9 +352,12 @@ export function LoginForm({
             type="button"
             onClick={() => setShowPassword(!showPassword)}
             className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-0.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/50"
-            disabled={isLoading}
-          >
-            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            disabled={isLoading}>
+            {showPassword ? (
+              <EyeOff className="h-4 w-4" />
+            ) : (
+              <Eye className="h-4 w-4" />
+            )}
           </button>
         </div>
       </div>
@@ -358,8 +365,7 @@ export function LoginForm({
       <Button
         type="submit"
         disabled={isLoading}
-        className="w-full h-11 bg-gradient-to-r from-[#8B1538] to-[#B8264D] hover:from-[#6B1028] hover:to-[#9A1E3D] text-white font-medium rounded-lg shadow-lg shadow-[#8B1538]/25 hover:shadow-[#8B1538]/40 transition-all duration-200 mt-6"
-      >
+        className="w-full h-11 bg-gradient-to-r from-[#8B1538] to-[#B8264D] hover:from-[#6B1028] hover:to-[#9A1E3D] text-white font-medium rounded-lg shadow-lg shadow-[#8B1538]/25 hover:shadow-[#8B1538]/40 transition-all duration-200 mt-6">
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

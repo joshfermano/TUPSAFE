@@ -24,7 +24,7 @@ import {
   applicantRegistrationSchemaWithConfirmation,
   type EmployeeRegistrationFormData,
   type ApplicantRegistrationFormData,
-} from '@/lib/validations/auth';
+} from '../../../../lib/validations/auth';
 
 /**
  * Registration request payload - discriminated union based on userType

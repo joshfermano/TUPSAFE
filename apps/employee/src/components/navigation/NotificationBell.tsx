@@ -24,13 +24,13 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Bell, BellDot, Check, ExternalLink, Inbox } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '../../lib/utils';
 
 // UI Components
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Separator } from '@/components/ui/separator';
+import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Separator } from '../ui/separator';
 
 // Notification Components
 import { NotificationItem, type Notification } from './NotificationItem';
@@ -45,7 +45,7 @@ import {
 import { createClient } from '@tupsafe/auth';
 
 // Mock auth (replace with real auth)
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '../../providers/AuthProvider';
 
 /**
  * Skeleton loader for notifications
@@ -54,7 +54,9 @@ function NotificationSkeleton() {
   return (
     <div className="space-y-3">
       {[1, 2, 3].map((i) => (
-        <div key={i} className="flex gap-3 p-3 rounded-lg border border-border/30 animate-pulse">
+        <div
+          key={i}
+          className="flex gap-3 p-3 rounded-lg border border-border/30 animate-pulse">
           <div className="flex-shrink-0 h-8 w-8 rounded-full bg-muted" />
           <div className="flex-1 space-y-2">
             <div className="h-4 w-3/4 bg-muted rounded" />
@@ -76,9 +78,12 @@ function EmptyNotifications() {
       <div className="rounded-full bg-muted p-6 mb-4">
         <Inbox className="h-8 w-8 text-muted-foreground" />
       </div>
-      <h3 className="text-sm font-semibold text-foreground mb-1">No notifications yet</h3>
+      <h3 className="text-sm font-semibold text-foreground mb-1">
+        No notifications yet
+      </h3>
       <p className="text-xs text-muted-foreground max-w-[250px]">
-        When you receive updates about your submissions or profile, they&apos;ll appear here.
+        When you receive updates about your submissions or profile, they&apos;ll
+        appear here.
       </p>
     </div>
   );
@@ -148,29 +153,42 @@ export function NotificationBell({
       if (error) throw error;
 
       // Map database fields to component interface
-      return (data || []).map((notif: {
-        id: string;
-        title: string;
-        message: string;
-        type: string;
-        category: string;
-        is_read: boolean;
-        created_at: string;
-        action_url?: string;
-        action_label?: string;
-        metadata?: Record<string, unknown>;
-      }): Notification => ({
-        id: notif.id,
-        title: notif.title,
-        message: notif.message,
-        type: (['info', 'success', 'warning', 'error'].includes(notif.type) ? notif.type : 'info') as 'info' | 'success' | 'warning' | 'error',
-        category: (['submission', 'deadline', 'profile', 'system'].includes(notif.category) ? notif.category : undefined) as 'submission' | 'deadline' | 'profile' | 'system' | undefined,
-        isRead: notif.is_read,
-        createdAt: notif.created_at,
-        actionUrl: notif.action_url,
-        actionLabel: notif.action_label,
-        metadata: notif.metadata,
-      }));
+      return (data || []).map(
+        (notif: {
+          id: string;
+          title: string;
+          message: string;
+          type: string;
+          category: string;
+          is_read: boolean;
+          created_at: string;
+          action_url?: string;
+          action_label?: string;
+          metadata?: Record<string, unknown>;
+        }): Notification => ({
+          id: notif.id,
+          title: notif.title,
+          message: notif.message,
+          type: (['info', 'success', 'warning', 'error'].includes(notif.type)
+            ? notif.type
+            : 'info') as 'info' | 'success' | 'warning' | 'error',
+          category: (['submission', 'deadline', 'profile', 'system'].includes(
+            notif.category
+          )
+            ? notif.category
+            : undefined) as
+            | 'submission'
+            | 'deadline'
+            | 'profile'
+            | 'system'
+            | undefined,
+          isRead: notif.is_read,
+          createdAt: notif.created_at,
+          actionUrl: notif.action_url,
+          actionLabel: notif.action_label,
+          metadata: notif.metadata,
+        })
+      );
     },
     enabled: !!userId,
     staleTime: 30000, // 30 seconds
@@ -184,7 +202,8 @@ export function NotificationBell({
 
   // Mark as read mutation
   const markAsReadMutation = useMutation({
-    mutationFn: (notificationId: string) => markNotificationAsRead(supabase, notificationId),
+    mutationFn: (notificationId: string) =>
+      markNotificationAsRead(supabase, notificationId),
     onSuccess: () => {
       // Real-time subscription will handle cache update
     },
@@ -194,7 +213,9 @@ export function NotificationBell({
   const markAllAsReadMutation = useMutation({
     mutationFn: () => markAllNotificationsAsRead(supabase, userId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: notificationKeys.user(userId) });
+      queryClient.invalidateQueries({
+        queryKey: notificationKeys.user(userId),
+      });
     },
   });
 
@@ -237,7 +258,9 @@ export function NotificationBell({
             'focus-visible:ring-2 focus-visible:ring-primary/20',
             className
           )}
-          aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}>
+          aria-label={`Notifications${
+            unreadCount > 0 ? ` (${unreadCount} unread)` : ''
+          }`}>
           <motion.div
             animate={hasNewNotification ? { scale: [1, 1.2, 1] } : {}}
             transition={{ duration: 0.3 }}>
@@ -291,7 +314,9 @@ export function NotificationBell({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border/50">
           <div>
-            <h3 className="text-sm font-semibold text-foreground">Notifications</h3>
+            <h3 className="text-sm font-semibold text-foreground">
+              Notifications
+            </h3>
             {isConnected && (
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-500" />
@@ -320,11 +345,17 @@ export function NotificationBell({
             </div>
           ) : error ? (
             <div className="p-6 text-center">
-              <p className="text-sm text-muted-foreground">Failed to load notifications</p>
+              <p className="text-sm text-muted-foreground">
+                Failed to load notifications
+              </p>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => queryClient.invalidateQueries({ queryKey: notificationKeys.user(userId) })}
+                onClick={() =>
+                  queryClient.invalidateQueries({
+                    queryKey: notificationKeys.user(userId),
+                  })
+                }
                 className="mt-2">
                 Retry
               </Button>
@@ -357,7 +388,9 @@ export function NotificationBell({
                 variant="ghost"
                 size="sm"
                 className="w-full justify-center hover:bg-primary/10">
-                <Link href="/dashboard/notifications" onClick={() => setIsOpen(false)}>
+                <Link
+                  href="/dashboard/notifications"
+                  onClick={() => setIsOpen(false)}>
                   View all notifications
                   <ExternalLink className="h-3 w-3 ml-2" />
                 </Link>

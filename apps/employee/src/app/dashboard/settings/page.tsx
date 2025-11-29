@@ -2,13 +2,13 @@
 
 import { useState, useCallback, memo } from 'react';
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ShimmerButton } from '@/components/ui/shimmer-button';
-import { useTheme } from '@/context/ThemeContext';
-import { cn } from '@/lib/utils';
+import { Button } from '../../../components/ui/button';
+import { Badge } from '../../../components/ui/badge';
+import { Input } from '../../../components/ui/input';
+import { Label } from '../../../components/ui/label';
+import { ShimmerButton } from '../../../components/ui/shimmer-button';
+import { useTheme } from '../../../context/ThemeContext';
+import { cn } from '../../../lib/utils';
 import {
   Lock,
   Bell,

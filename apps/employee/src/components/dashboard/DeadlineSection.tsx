@@ -8,11 +8,14 @@ import {
   ClockIcon,
   ExclamationTriangleIcon,
 } from '@radix-ui/react-icons';
-import { MagicCard } from '@/components/ui/magic-card';
-import { BlurFade } from '@/components/ui/blur-fade';
-import { ShineBorder } from '@/components/ui/shine-border';
-import { cn } from '@/lib/utils';
-import { useDeadlineForForm, type UrgencyLevel } from '@/hooks/useDeadlines';
+import { MagicCard } from '../ui/magic-card';
+import { BlurFade } from '../ui/blur-fade';
+import { ShineBorder } from '../ui/shine-border';
+import { cn } from '../../lib/utils';
+import {
+  useDeadlineForForm,
+  type UrgencyLevel,
+} from '../../hooks/useDeadlines';
 import { DeadlineCountdown } from './DeadlineCountdown';
 
 interface DeadlineSectionProps {
@@ -173,8 +176,7 @@ export const DeadlineSection = memo(function DeadlineSection({
             'relative rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6',
             'animate-pulse',
             className
-          )}
-        >
+          )}>
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 rounded-lg bg-slate-200 dark:bg-slate-700" />
             <div className="flex-1 space-y-2">
@@ -196,8 +198,7 @@ export const DeadlineSection = memo(function DeadlineSection({
           className={cn(
             'relative rounded-xl border border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-950/20 p-6',
             className
-          )}
-        >
+          )}>
           <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
             <ExclamationTriangleIcon className="h-5 w-5" />
             <span className="text-sm font-medium">
@@ -217,8 +218,7 @@ export const DeadlineSection = memo(function DeadlineSection({
           className={cn(
             'relative rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-6',
             className
-          )}
-        >
+          )}>
           <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
             <Icon className="h-5 w-5" />
             <span className="text-sm font-medium">
@@ -242,8 +242,7 @@ export const DeadlineSection = memo(function DeadlineSection({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
         whileHover={{ y: -2 }}
-        className={cn('relative', className)}
-      >
+        className={cn('relative', className)}>
         <MagicCard
           gradientSize={300}
           gradientColor={urgency.gradientColors.color}
@@ -255,8 +254,7 @@ export const DeadlineSection = memo(function DeadlineSection({
             urgency.containerClass,
             urgency.bgClass,
             'hover:shadow-md'
-          )}
-        >
+          )}>
           {/* Shine border effect - always visible for urgent, hover for normal */}
           <div
             className={cn(
@@ -264,8 +262,7 @@ export const DeadlineSection = memo(function DeadlineSection({
               isCritical || isOverdue
                 ? 'opacity-100'
                 : 'opacity-0 group-hover:opacity-100'
-            )}
-          >
+            )}>
             <ShineBorder
               borderWidth={isCritical || isOverdue ? 2 : 1}
               duration={isCritical ? 6 : 10}
@@ -300,8 +297,7 @@ export const DeadlineSection = memo(function DeadlineSection({
                     urgency.iconClass
                   )}
                   whileHover={{ scale: 1.05, rotate: 3 }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-                >
+                  transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
                   {isOverdue ? (
                     <ExclamationTriangleIcon className="h-6 w-6" />
                   ) : (
@@ -319,8 +315,7 @@ export const DeadlineSection = memo(function DeadlineSection({
                       <motion.span
                         className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300"
                         animate={{ scale: [1, 1.05, 1] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                      >
+                        transition={{ duration: 1.5, repeat: Infinity }}>
                         Urgent
                       </motion.span>
                     )}
@@ -362,11 +357,10 @@ export const DeadlineSection = memo(function DeadlineSection({
                     isCritical || isOverdue
                       ? 'focus:ring-red-500'
                       : urgencyLevel === 'warning'
-                        ? 'focus:ring-amber-500'
-                        : 'focus:ring-emerald-500',
+                      ? 'focus:ring-amber-500'
+                      : 'focus:ring-emerald-500',
                     'w-full sm:w-auto'
-                  )}
-                >
+                  )}>
                   {isOverdue ? 'Submit Now' : 'Submit'}
                 </Link>
               </div>

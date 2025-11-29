@@ -2,12 +2,18 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '../providers/AuthProvider';
 import dynamic from 'next/dynamic';
 
 // Dynamically import sections to avoid SSR issues
-const HeroSection = dynamic(() => import('@/components/sections/HeroSection'), { ssr: false });
-const FeaturesSection = dynamic(() => import('@/components/sections/FeaturesSection'), { ssr: false });
+const HeroSection = dynamic(
+  () => import('../components/sections/HeroSection'),
+  { ssr: false }
+);
+const FeaturesSection = dynamic(
+  () => import('../components/sections/FeaturesSection'),
+  { ssr: false }
+);
 
 export default function Home() {
   const router = useRouter();

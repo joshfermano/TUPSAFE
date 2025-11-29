@@ -15,12 +15,12 @@
 import { memo, useMemo } from 'react';
 import { useFormContext, useFieldArray, Controller } from 'react-hook-form';
 import { CreditCard, Plus, Trash2, Info } from 'lucide-react';
-import { CurrencyInput } from '@/components/forms/shared/CurrencyInput';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { formatCurrency } from '@/lib/utils/currency';
+import { CurrencyInput } from '../../../../../components/forms/shared/CurrencyInput';
+import { Label } from '../../../../../components/ui/label';
+import { Button } from '../../../../../components/ui/button';
+import { Badge } from '../../../../../components/ui/badge';
+import { Alert, AlertDescription } from '../../../../../components/ui/alert';
+import { formatCurrency } from '../../../../../lib/utils/currency';
 
 // Import Enhanced Components
 import {
@@ -80,16 +80,18 @@ export const Liabilities = memo(function Liabilities() {
           <Alert className="mb-6 border-slate-200/50 dark:border-slate-800/50">
             <Info className="h-4 w-4" />
             <AlertDescription className="text-sm text-slate-600 dark:text-slate-400">
-              Include all outstanding debts such as home mortgages, car loans, personal
-              loans, credit card balances, and business loans. If you have no debts, you
-              may skip this section.
+              Include all outstanding debts such as home mortgages, car loans,
+              personal loans, credit card balances, and business loans. If you
+              have no debts, you may skip this section.
             </AlertDescription>
           </Alert>
 
           {fields.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed rounded-lg border-slate-200/50 dark:border-slate-800/50">
               <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-slate-600 dark:text-slate-400 mb-2">No liabilities added</p>
+              <p className="text-slate-600 dark:text-slate-400 mb-2">
+                No liabilities added
+              </p>
               <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
                 If you have no debts or loans, you can proceed to the next step
               </p>
@@ -138,8 +140,8 @@ export const Liabilities = memo(function Liabilities() {
                             errors.liabilities[index] && (
                               <p className="text-sm text-destructive">
                                 {
-                                  (errors.liabilities[index] as LiabilityError)?.nature
-                                    ?.message
+                                  (errors.liabilities[index] as LiabilityError)
+                                    ?.nature?.message
                                 }
                               </p>
                             )}
@@ -202,7 +204,9 @@ export const Liabilities = memo(function Liabilities() {
               <BlurFade delay={0.2 + fields.length * 0.05}>
                 <div className="p-6 bg-destructive/5 border border-destructive/20 rounded-lg">
                   <div className="flex items-center justify-between">
-                    <span className="text-base font-medium">Total Liabilities:</span>
+                    <span className="text-base font-medium">
+                      Total Liabilities:
+                    </span>
                     <span className="text-xl font-bold text-destructive">
                       {formatCurrency(totalLiabilities)}
                     </span>

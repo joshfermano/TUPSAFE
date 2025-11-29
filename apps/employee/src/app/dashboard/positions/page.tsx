@@ -18,25 +18,28 @@ import {
   Loader2,
   ChevronRight,
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Badge } from '../../../components/ui/badge';
+import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Card } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
-import { useOpenPositionsQuery, type OpenPosition } from '@/hooks/useApplicationsQuery';
-import { BlurFade } from '@/components/ui/blur-fade';
-import { ShineBorder } from '@/components/ui/shine-border';
-import { ShimmerButton } from '@/components/ui/shimmer-button';
-import AnimatedGradientText from '@/components/ui/animated-gradient-text';
-import { BorderBeam } from '@/components/ui/border-beam';
+} from '../../../components/ui/select';
+import { Card } from '../../../components/ui/card';
+import { Separator } from '../../../components/ui/separator';
+import { cn } from '../../../lib/utils';
+import {
+  useOpenPositionsQuery,
+  type OpenPosition,
+} from '../../../hooks/useApplicationsQuery';
+import { BlurFade } from '../../../components/ui/blur-fade';
+import { ShineBorder } from '../../../components/ui/shine-border';
+import { ShimmerButton } from '../../../components/ui/shimmer-button';
+import AnimatedGradientText from '../../../components/ui/animated-gradient-text';
+import { BorderBeam } from '../../../components/ui/border-beam';
 
 /**
  * Position card component
@@ -51,9 +54,15 @@ function PositionCard({ position }: { position: OpenPosition }) {
     <BlurFade delay={0.1} inView>
       <ShineBorder
         className="relative overflow-hidden rounded-xl p-6 transition-all duration-300 hover:shadow-lg"
-        shineColor={position.isFeatured ? ['#FFD700', '#FFA500', '#FF6347'] : ['#8B1538', '#B8264D', '#D4345F']}
+        shineColor={
+          position.isFeatured
+            ? ['#FFD700', '#FFA500', '#FF6347']
+            : ['#8B1538', '#B8264D', '#D4345F']
+        }
         borderWidth={position.isFeatured ? 3 : 2}>
-        {position.isFeatured && <BorderBeam size={250} duration={12} delay={9} />}
+        {position.isFeatured && (
+          <BorderBeam size={250} duration={12} delay={9} />
+        )}
 
         <div className="space-y-4">
           {/* Header */}
@@ -69,7 +78,9 @@ function PositionCard({ position }: { position: OpenPosition }) {
                   {position.positionTitle}
                 </h3>
                 {position.hasApplied && (
-                  <Badge className="bg-green-100 text-green-800 border-green-200" variant="outline">
+                  <Badge
+                    className="bg-green-100 text-green-800 border-green-200"
+                    variant="outline">
                     <CheckCircle className="h-3 w-3 mr-1" />
                     Applied
                   </Badge>
@@ -131,12 +142,14 @@ function PositionCard({ position }: { position: OpenPosition }) {
             <div className="flex items-center gap-2 text-sm col-span-2">
               <Calendar className="h-4 w-4 text-[#8B1538]" />
               <span className="text-slate-700 dark:text-slate-300">
-                Deadline: {format(new Date(position.applicationDeadline), 'MMM dd, yyyy')}
+                Deadline:{' '}
+                {format(new Date(position.applicationDeadline), 'MMM dd, yyyy')}
               </span>
               {daysUntilDeadline <= 7 && (
                 <Badge variant="destructive" className="ml-auto">
                   <Clock className="h-3 w-3 mr-1" />
-                  {daysUntilDeadline} {daysUntilDeadline === 1 ? 'day' : 'days'} left
+                  {daysUntilDeadline} {daysUntilDeadline === 1 ? 'day' : 'days'}{' '}
+                  left
                 </Badge>
               )}
             </div>
@@ -208,8 +221,8 @@ function EmptyState() {
               No Open Positions
             </h3>
             <p className="text-sm text-slate-600 dark:text-slate-400 max-w-sm">
-              There are currently no open positions matching your criteria. Check back later
-              for new opportunities.
+              There are currently no open positions matching your criteria.
+              Check back later for new opportunities.
             </p>
           </div>
         </div>
@@ -223,8 +236,11 @@ function EmptyState() {
  * Shows all available job positions for applicants
  */
 export default function OpenPositionsPage() {
-  const [employmentCategoryFilter, setEmploymentCategoryFilter] = useState<string>('');
-  const [sortBy, setSortBy] = useState<'deadline' | 'salary' | 'posted'>('deadline');
+  const [employmentCategoryFilter, setEmploymentCategoryFilter] =
+    useState<string>('');
+  const [sortBy, setSortBy] = useState<'deadline' | 'salary' | 'posted'>(
+    'deadline'
+  );
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data, isLoading, error } = useOpenPositionsQuery({
@@ -291,13 +307,17 @@ export default function OpenPositionsPage() {
                   <SelectContent>
                     <SelectItem value="">All Categories</SelectItem>
                     <SelectItem value="faculty">Faculty</SelectItem>
-                    <SelectItem value="administrative">Administrative</SelectItem>
+                    <SelectItem value="administrative">
+                      Administrative
+                    </SelectItem>
                     <SelectItem value="contractual">Contractual</SelectItem>
                   </SelectContent>
                 </Select>
 
                 {/* Sort By */}
-                <Select value={sortBy} onValueChange={(value) => setSortBy(value as any)}>
+                <Select
+                  value={sortBy}
+                  onValueChange={(value) => setSortBy(value as any)}>
                   <SelectTrigger className="w-[160px]">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
@@ -311,8 +331,8 @@ export default function OpenPositionsPage() {
 
               {/* Results Count */}
               <div className="text-sm text-slate-600 dark:text-slate-400">
-                {filteredPositions.length} position{filteredPositions.length !== 1 ? 's' : ''}{' '}
-                available
+                {filteredPositions.length} position
+                {filteredPositions.length !== 1 ? 's' : ''} available
               </div>
             </div>
           </div>

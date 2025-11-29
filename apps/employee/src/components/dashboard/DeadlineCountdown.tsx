@@ -2,9 +2,9 @@
 
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { NumberTicker } from '@/components/ui/number-ticker';
-import { cn } from '@/lib/utils';
-import type { UrgencyLevel } from '@/hooks/useDeadlines';
+import { NumberTicker } from '../ui/number-ticker';
+import { cn } from '../../lib/utils';
+import type { UrgencyLevel } from '../../hooks/useDeadlines';
 
 interface DeadlineCountdownProps {
   /**
@@ -114,8 +114,7 @@ export const DeadlineCountdown = memo(function DeadlineCountdown({
         )}
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3 }}
-      >
+        transition={{ duration: 0.3 }}>
         <motion.div
           className={cn(
             'flex items-center gap-2',
@@ -131,16 +130,14 @@ export const DeadlineCountdown = memo(function DeadlineCountdown({
             duration: 1.5,
             repeat: Infinity,
             ease: 'easeInOut',
-          }}
-        >
+          }}>
           <span className="tracking-tight">Overdue</span>
         </motion.div>
         <span
           className={cn(
             currentSize.label,
             'font-medium text-red-600/70 dark:text-red-400/70'
-          )}
-        >
+          )}>
           {displayDays} {displayDays === 1 ? 'day' : 'days'} past due
         </span>
       </motion.div>
@@ -166,17 +163,9 @@ export const DeadlineCountdown = memo(function DeadlineCountdown({
           : { opacity: 1, y: 0 }
       }
       transition={
-        shouldPulse
-          ? { duration: 2, repeat: Infinity }
-          : { duration: 0.4 }
-      }
-    >
-      <div
-        className={cn(
-          'flex items-baseline gap-1',
-          currentUrgency.glow
-        )}
-      >
+        shouldPulse ? { duration: 2, repeat: Infinity } : { duration: 0.4 }
+      }>
+      <div className={cn('flex items-baseline gap-1', currentUrgency.glow)}>
         <NumberTicker
           value={displayDays}
           direction="down"
@@ -196,8 +185,7 @@ export const DeadlineCountdown = memo(function DeadlineCountdown({
         )}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.3 }}
-      >
+        transition={{ delay: 0.2, duration: 0.3 }}>
         {displayDays === 1 ? 'day left' : 'days left'}
       </motion.span>
     </motion.div>

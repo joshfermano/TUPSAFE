@@ -9,8 +9,6 @@ import {
   Download,
   MoreVertical,
   Search,
-  CheckCircle,
-  XCircle,
   TrendingUp,
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
@@ -21,6 +19,7 @@ import {
   usePdsSubmissionsQuery,
   type PdsSubmissionsFilters,
 } from '@/hooks/usePdsSubmissionsQuery';
+import { ReviewDialog } from '@/components/admin/ReviewDialog';
 import { useDepartmentsQuery } from '@/hooks/useDepartmentsQuery';
 import { usePdsStatsQuery } from '@/hooks/usePdsStatsQuery';
 import { DeadlineManagementCard } from '@/components/deadlines';
@@ -67,13 +66,6 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
@@ -84,14 +76,60 @@ import {
 // Status types
 type StatusType = 'all' | 'submitted' | 'reviewing' | 'approved' | 'rejected';
 
+// Props for PdsSubmissionRow
+interface PdsSubmissionRowProps {
+  submission: PdsSubmissionListItem;
+  index: number;
+  onApprove: (submissionId: string, notes?: string) => Promise<void>;
+  onReject: (submissionId: string, notes: string) => Promise<void>;
+  onRequestChanges: (submissionId: string, notes: string) => Promise<void>;
+  isApproving: boolean;
+  isRejecting: boolean;
+  isRequestingChanges: boolean;
+}
+
 // PDS Submission Row Component (memoized)
 const PdsSubmissionRow = memo(
-  ({ submission, index }: { submission: PdsSubmissionListItem; index: number }) => {
+  ({
+    submission,
+    index,
+    onApprove,
+    onReject,
+    onRequestChanges,
+    isApproving,
+    isRejecting,
+    isRequestingChanges,
+  }: PdsSubmissionRowProps) => {
     const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
 
+    const isSubmitting = isApproving || isRejecting || isRequestingChanges;
+
+    const handleApprove = useCallback(
+      async (notes?: string) => {
+        await onApprove(submission.id, notes);
+      },
+      [submission.id, onApprove]
+    );
+
+    const handleReject = useCallback(
+      async (notes: string) => {
+        await onReject(submission.id, notes);
+      },
+      [submission.id, onReject]
+    );
+
+    const handleRequestChanges = useCallback(
+      async (notes: string) => {
+        await onRequestChanges(submission.id, notes);
+      },
+      [submission.id, onRequestChanges]
+    );
+
     const handleAction = useCallback((action: string) => {
-      console.log(`Action: ${action} for submission:`, submission.id);
-      // TODO: Implement actions
+      if (action === 'download') {
+        console.log(`Download PDF for submission:`, submission.id);
+        // TODO: Implement download functionality
+      }
     }, [submission.id]);
 
     const employeeName = `${submission.employee.firstName} ${submission.employee.lastName}`;
@@ -144,10 +182,12 @@ const PdsSubmissionRow = memo(
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="glass-dropdown">
-                <DropdownMenuItem onClick={() => setReviewDialogOpen(true)}>
-                  <Eye className="mr-2 h-4 w-4" />
-                  Quick Review
-                </DropdownMenuItem>
+                {(submission.status === 'submitted' || submission.status === 'reviewing') && (
+                  <DropdownMenuItem onClick={() => setReviewDialogOpen(true)}>
+                    <Eye className="mr-2 h-4 w-4" />
+                    Review Submission
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem asChild>
                   <Link href={`/dashboard/submissions/pds/view/${submission.id}`}>
                     View Details
@@ -158,80 +198,24 @@ const PdsSubmissionRow = memo(
                   <Download className="mr-2 h-4 w-4" />
                   Download PDF
                 </DropdownMenuItem>
-                {submission.status === 'submitted' && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => handleAction('approve')}
-                      className="text-green-600 focus:text-green-600"
-                    >
-                      <CheckCircle className="mr-2 h-4 w-4" />
-                      Approve
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => handleAction('reject')}
-                      className="text-red-600 focus:text-red-600"
-                    >
-                      <XCircle className="mr-2 h-4 w-4" />
-                      Reject
-                    </DropdownMenuItem>
-                  </>
-                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </EnhancedTableCell>
         </EnhancedTableRow>
 
-        {/* Quick Review Dialog */}
-        <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Quick Review - PDS Submission</DialogTitle>
-              <DialogDescription>
-                {employeeName} - {submission.employee.department?.name || 'N/A'}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm font-medium">Status</p>
-                    <StatusBadge status={submission.status} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Submitted</p>
-                    <p className="text-sm text-muted-foreground">
-                      {submission.submittedAt
-                        ? format(new Date(submission.submittedAt), 'PPP')
-                        : 'Not submitted'}
-                    </p>
-                  </div>
-                </div>
-                {submission.reviewer && (
-                  <div>
-                    <p className="text-sm font-medium">Reviewed By</p>
-                    <p className="text-sm text-muted-foreground">
-                      {submission.reviewer.firstName} {submission.reviewer.lastName}
-                    </p>
-                  </div>
-                )}
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setReviewDialogOpen(false)}
-                >
-                  Close
-                </Button>
-                <Button asChild>
-                  <Link href={`/dashboard/submissions/pds/view/${submission.id}`}>
-                    View Full Details
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {/* Review Dialog */}
+        <ReviewDialog
+          open={reviewDialogOpen}
+          onOpenChange={setReviewDialogOpen}
+          submissionId={submission.id}
+          submissionType="pds"
+          currentStatus={submission.status}
+          employeeName={employeeName}
+          onApprove={handleApprove}
+          onReject={handleReject}
+          onRequestChanges={handleRequestChanges}
+          isSubmitting={isSubmitting}
+        />
       </>
     );
   }
@@ -279,7 +263,47 @@ export default function PdsSubmissionsPage() {
     isLoading,
     isError,
     error,
+    approveSubmissionAsync,
+    rejectSubmissionAsync,
+    requestChangesAsync,
+    isApproving,
+    isRejecting,
+    isRequestingChanges,
   } = usePdsSubmissionsQuery(filters);
+
+  // Handlers for submission actions
+  const handleApprove = useCallback(
+    async (submissionId: string, notes?: string) => {
+      await approveSubmissionAsync({
+        submissionId,
+        reviewNotes: notes,
+        reviewedBy: '', // Will be filled by the backend from session
+      });
+    },
+    [approveSubmissionAsync]
+  );
+
+  const handleReject = useCallback(
+    async (submissionId: string, notes: string) => {
+      await rejectSubmissionAsync({
+        submissionId,
+        reviewNotes: notes,
+        reviewedBy: '', // Will be filled by the backend from session
+      });
+    },
+    [rejectSubmissionAsync]
+  );
+
+  const handleRequestChanges = useCallback(
+    async (submissionId: string, notes: string) => {
+      await requestChangesAsync({
+        submissionId,
+        reviewNotes: notes,
+        reviewedBy: '', // Will be filled by the backend from session
+      });
+    },
+    [requestChangesAsync]
+  );
 
   // Fetch departments for filter dropdown
   const { data: departmentsData, isLoading: departmentsLoading } =
@@ -573,6 +597,12 @@ export default function PdsSubmissionsPage() {
                       key={submission.id}
                       submission={submission}
                       index={index}
+                      onApprove={handleApprove}
+                      onReject={handleReject}
+                      onRequestChanges={handleRequestChanges}
+                      isApproving={isApproving}
+                      isRejecting={isRejecting}
+                      isRequestingChanges={isRequestingChanges}
                     />
                   ))}
                 </EnhancedTableBody>
