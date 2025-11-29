@@ -20,12 +20,12 @@ import {
 } from '@radix-ui/react-icons';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { MagicCard } from '@/components/ui/magic-card';
-import { BorderBeam } from '@/components/ui/border-beam';
-import { AnimatedGradientText } from '@/components/ui/animated-gradient-text';
-import AnimatedGridPattern from '@/components/ui/animated-grid-pattern';
-import { ShimmerButton } from '@/components/ui/shimmer-button';
-import { cn } from '@/lib/utils';
+import { MagicCard } from '../../../components/ui/magic-card';
+import { BorderBeam } from '../../../components/ui/border-beam';
+import { AnimatedGradientText } from '../../../components/ui/animated-gradient-text';
+import AnimatedGridPattern from '../../../components/ui/animated-grid-pattern';
+import { ShimmerButton } from '../../../components/ui/shimmer-button';
+import { cn } from '../../../lib/utils';
 import { useRealtimeProfile, type Profile } from '@tupsafe/database';
 
 type AccountStatus = 'pending' | 'active' | 'rejected' | 'suspended';
@@ -88,7 +88,8 @@ function PendingApprovalContent() {
 
         // Show error toast
         toast.error('Registration Not Approved', {
-          description: 'Your registration could not be approved. Please contact HR for more information.',
+          description:
+            'Your registration could not be approved. Please contact HR for more information.',
           duration: 5000,
         });
 
@@ -102,7 +103,8 @@ function PendingApprovalContent() {
 
         // Show warning toast
         toast.error('Account Suspended', {
-          description: 'Your account has been suspended. Please contact the administrator.',
+          description:
+            'Your account has been suspended. Please contact the administrator.',
           duration: 5000,
         });
 
@@ -140,14 +142,18 @@ function PendingApprovalContent() {
     const userStatus = user.user_metadata?.account_status as AccountStatus;
     const finalStatus = urlStatus || userStatus || 'pending';
 
-    console.log(`[Pending Approval] User ${user.id} - status: ${finalStatus} (url: ${urlStatus}, metadata: ${userStatus})`);
+    console.log(
+      `[Pending Approval] User ${user.id} - status: ${finalStatus} (url: ${urlStatus}, metadata: ${userStatus})`
+    );
 
     setStatus(finalStatus);
     setUserEmail(user.email || '');
 
     // If approved, redirect to dashboard
     if (finalStatus === 'active') {
-      console.log(`[Pending Approval] Account is active, redirecting to dashboard...`);
+      console.log(
+        `[Pending Approval] Account is active, redirecting to dashboard...`
+      );
       toast.success('Your account has been approved!', {
         description: 'Redirecting to dashboard...',
         duration: 2000,
@@ -193,7 +199,8 @@ function PendingApprovalContent() {
           icon: CheckCircledIcon,
           title: 'Account Approved',
           message: 'Welcome to TUP Manila Employee Portal',
-          description: 'Your account has been successfully approved. Redirecting you to the dashboard...',
+          description:
+            'Your account has been successfully approved. Redirecting you to the dashboard...',
           color: 'text-green-600 dark:text-green-400',
           bgGradient: 'from-green-500/10 via-emerald-500/5 to-green-500/10',
           iconBg: 'bg-green-500/10 dark:bg-green-500/20',
@@ -280,7 +287,9 @@ function PendingApprovalContent() {
         />
         <div className="relative z-10 flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#8B1538]/30 border-t-[#8B1538] dark:border-red-400/30 dark:border-t-red-400"></div>
-          <p className="text-slate-700 dark:text-slate-200 font-semibold text-lg">Checking account status...</p>
+          <p className="text-slate-700 dark:text-slate-200 font-semibold text-lg">
+            Checking account status...
+          </p>
         </div>
       </div>
     );
@@ -310,8 +319,7 @@ function PendingApprovalContent() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-center space-y-2 sm:space-y-3"
-        >
+          className="text-center space-y-2 sm:space-y-3">
           <AnimatedGradientText className="text-3xl sm:text-4xl lg:text-5xl font-bold">
             <span className="bg-gradient-to-r from-[#8B1538] via-[#6B0F2A] to-[#B8264D] bg-clip-text text-transparent dark:from-red-400 dark:via-red-300 dark:to-pink-400">
               TUPSAFE
@@ -326,14 +334,17 @@ function PendingApprovalContent() {
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
+          transition={{ duration: 0.5, delay: 0.1 }}>
           <MagicCard
             className="relative overflow-hidden bg-white dark:bg-slate-800 backdrop-blur-xl border border-slate-200 dark:border-slate-600 shadow-2xl rounded-2xl"
             gradientColor="rgba(139, 21, 56, 0.04)"
-            gradientOpacity={0.15}
-          >
-            <BorderBeam size={280} duration={12} delay={9} className="opacity-40 dark:opacity-60" />
+            gradientOpacity={0.15}>
+            <BorderBeam
+              size={280}
+              duration={12}
+              delay={9}
+              className="opacity-40 dark:opacity-60"
+            />
 
             <div className="p-6 sm:p-8 lg:p-10 space-y-6 sm:space-y-8">
               {/* Status Icon and Header - More compact spacing */}
@@ -351,9 +362,11 @@ function PendingApprovalContent() {
                     'w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center backdrop-blur-sm shadow-lg',
                     config.iconBg,
                     `bg-gradient-to-br ${config.bgGradient}`
-                  )}
-                >
-                  <StatusIcon className={cn('h-10 w-10 sm:h-12 sm:w-12', config.color)} aria-hidden="true" />
+                  )}>
+                  <StatusIcon
+                    className={cn('h-10 w-10 sm:h-12 sm:w-12', config.color)}
+                    aria-hidden="true"
+                  />
                 </motion.div>
 
                 <div className="space-y-2 sm:space-y-3">
@@ -361,8 +374,10 @@ function PendingApprovalContent() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
-                    className={cn('text-2xl sm:text-3xl font-bold leading-tight', config.color)}
-                  >
+                    className={cn(
+                      'text-2xl sm:text-3xl font-bold leading-tight',
+                      config.color
+                    )}>
                     {config.title}
                   </motion.h1>
 
@@ -370,8 +385,7 @@ function PendingApprovalContent() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.4 }}
-                    className="text-base sm:text-lg font-medium text-slate-800 dark:text-slate-100 px-2"
-                  >
+                    className="text-base sm:text-lg font-medium text-slate-800 dark:text-slate-100 px-2">
                     {config.message}
                   </motion.p>
 
@@ -379,8 +393,7 @@ function PendingApprovalContent() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.5 }}
-                    className="text-sm text-slate-700 dark:text-slate-200 max-w-md mx-auto px-2"
-                  >
+                    className="text-sm text-slate-700 dark:text-slate-200 max-w-md mx-auto px-2">
                     {config.description}
                   </motion.p>
                 </div>
@@ -391,8 +404,7 @@ function PendingApprovalContent() {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.6 }}
-                    className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 shadow-sm"
-                  >
+                    className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 shadow-sm">
                     <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
                       Account:
                     </span>
@@ -408,8 +420,7 @@ function PendingApprovalContent() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.7 }}
-                className="space-y-3 sm:space-y-4"
-              >
+                className="space-y-3 sm:space-y-4">
                 <div className="w-full h-px bg-gradient-to-r from-transparent via-slate-300 dark:via-slate-600 to-transparent" />
 
                 <div className="grid gap-2 sm:gap-2.5">
@@ -419,8 +430,7 @@ function PendingApprovalContent() {
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.8 + index * 0.1 }}
-                      className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-700/80 border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-200 shadow-sm"
-                    >
+                      className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-700/80 border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-200 shadow-sm">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#8B1538] dark:bg-red-400 mt-1.5 flex-shrink-0" />
                       <span className="text-sm text-slate-700 dark:text-slate-100 leading-relaxed font-medium">
                         {point}
@@ -435,8 +445,7 @@ function PendingApprovalContent() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1 }}
-                className="flex flex-col sm:flex-row gap-3 pt-2 sm:pt-4"
-              >
+                className="flex flex-col sm:flex-row gap-3 pt-2 sm:pt-4">
                 {status === 'pending' && (
                   <ShimmerButton
                     onClick={handleRefresh}
@@ -445,8 +454,7 @@ function PendingApprovalContent() {
                     shimmerColor="#ffffff"
                     shimmerSize="0.1em"
                     shimmerDuration="2s"
-                    background="rgba(139, 21, 56, 1)"
-                  >
+                    background="rgba(139, 21, 56, 1)">
                     {refreshing ? (
                       <>
                         <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
@@ -466,8 +474,7 @@ function PendingApprovalContent() {
                   className={cn(
                     'h-11 sm:h-12 rounded-lg border-2 border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 font-medium transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#8B1538] focus:ring-offset-2 dark:focus:ring-offset-slate-800',
                     status === 'pending' ? 'flex-1' : 'w-full'
-                  )}
-                >
+                  )}>
                   Sign Out
                 </button>
               </motion.div>
@@ -480,14 +487,12 @@ function PendingApprovalContent() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.2 }}
-          className="text-center px-4"
-        >
+          className="text-center px-4">
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-200 font-medium">
             Need assistance?{' '}
             <a
               href="mailto:hr@tup.edu.ph"
-              className="text-[#8B1538] dark:text-red-300 font-semibold hover:text-[#6B0F2A] dark:hover:text-red-200 transition-colors inline-flex items-center gap-1 hover:underline"
-            >
+              className="text-[#8B1538] dark:text-red-300 font-semibold hover:text-[#6B0F2A] dark:hover:text-red-200 transition-colors inline-flex items-center gap-1 hover:underline">
               Contact HR Support
             </a>
           </p>
@@ -509,8 +514,7 @@ export default function PendingApprovalPage() {
         <div className="relative min-h-screen pt-20 flex items-center justify-center bg-gradient-to-br from-slate-50 via-red-50 to-[#B8264D]/20 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#8B1538]/20 border-t-[#8B1538]"></div>
         </div>
-      }
-    >
+      }>
       <PendingApprovalContent />
     </Suspense>
   );

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { GraduationCap, Building2, Briefcase } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '../../lib/utils';
 
 export interface UserTypeSelectionProps {
   value?: 'employee-faculty' | 'employee-staff' | 'applicant';
@@ -68,8 +68,7 @@ export function UserTypeSelection({
                 'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B1538]/20 focus-visible:ring-offset-2'
               )}
               aria-pressed={isSelected}
-              aria-label={`Select ${option.title}: ${option.description}`}
-            >
+              aria-label={`Select ${option.title}: ${option.description}`}>
               <div className="flex items-center gap-4">
                 {/* Icon */}
                 <div
@@ -78,8 +77,7 @@ export function UserTypeSelection({
                     isSelected
                       ? 'bg-[#8B1538] shadow-sm'
                       : 'bg-[#F5F5F5] dark:bg-[#2A2A2A] group-hover:bg-[#8B1538]/10'
-                  )}
-                >
+                  )}>
                   <Icon
                     className={cn(
                       'h-5 w-5 transition-colors duration-300',
@@ -99,8 +97,7 @@ export function UserTypeSelection({
                       isSelected
                         ? 'text-[#8B1538]'
                         : 'text-[#1A1A1A] dark:text-white group-hover:text-[#8B1538]'
-                    )}
-                  >
+                    )}>
                     {option.title}
                   </h4>
                   <p className="text-sm text-[#666666] dark:text-[#999999] mt-0.5 font-light">
@@ -116,8 +113,7 @@ export function UserTypeSelection({
                       isSelected
                         ? 'border-[#8B1538] bg-[#8B1538]'
                         : 'border-[#E5E5E5] dark:border-[#2A2A2A] group-hover:border-[#8B1538]/30'
-                    )}
-                  >
+                    )}>
                     {isSelected && (
                       <div className="w-2 h-2 rounded-full bg-white" />
                     )}
@@ -139,8 +135,7 @@ export function UserTypeSelection({
         <div
           className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 font-light"
           role="alert"
-          aria-live="polite"
-        >
+          aria-live="polite">
           <div className="w-1 h-1 rounded-full bg-red-600 dark:bg-red-400" />
           <span>{error}</span>
         </div>

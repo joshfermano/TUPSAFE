@@ -2,10 +2,10 @@
 
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { MagicCard } from '@/components/ui/magic-card';
-import { BlurFade } from '@/components/ui/blur-fade';
-import { ShineBorder } from '@/components/ui/shine-border';
-import { cn } from '@/lib/utils';
+import { MagicCard } from '../ui/magic-card';
+import { BlurFade } from '../ui/blur-fade';
+import { ShineBorder } from '../ui/shine-border';
+import { cn } from '../../lib/utils';
 import type { LucideIcon } from 'lucide-react';
 
 interface InfoCardProps {
@@ -29,8 +29,7 @@ export const InfoCard = memo(function InfoCard({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: 'easeOut' }}
-        whileHover={{ y: -4 }}
-      >
+        whileHover={{ y: -4 }}>
         <MagicCard
           gradientSize={200}
           gradientColor="var(--primary)"
@@ -41,8 +40,7 @@ export const InfoCard = memo(function InfoCard({
             'relative h-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300',
             'hover:border-primary/30',
             className
-          )}
-        >
+          )}>
           {/* Subtle shine effect on hover - only for gradient cards */}
           {gradient && (
             <div className="opacity-0 hover:opacity-100 transition-opacity duration-300">
@@ -64,8 +62,7 @@ export const InfoCard = memo(function InfoCard({
                   : 'bg-slate-100 dark:bg-slate-800 text-primary dark:text-tup-crimson-light'
               )}
               whileHover={{ scale: 1.05, rotate: 5 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-            >
+              transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
               <Icon className="h-5 w-5" />
             </motion.div>
 
@@ -88,7 +85,11 @@ interface InfoItemProps {
   icon?: LucideIcon;
 }
 
-export const InfoItem = memo(function InfoItem({ label, value, icon: Icon }: InfoItemProps) {
+export const InfoItem = memo(function InfoItem({
+  label,
+  value,
+  icon: Icon,
+}: InfoItemProps) {
   return (
     <div className="flex items-start gap-3 py-2">
       {Icon && (

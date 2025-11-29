@@ -1,4 +1,4 @@
-"use client"
+'use client';
 
 import {
   ComponentPropsWithoutRef,
@@ -6,22 +6,22 @@ import {
   useId,
   useRef,
   useState,
-} from "react"
-import { motion } from "motion/react"
+} from 'react';
+import { motion } from 'motion/react';
 
-import { cn } from "@/lib/utils"
+import { cn } from '../../lib/utils';
 
 export interface AnimatedGridPatternProps
-  extends ComponentPropsWithoutRef<"svg"> {
-  width?: number
-  height?: number
-  x?: number
-  y?: number
-  strokeDasharray?: number | string
-  numSquares?: number
-  maxOpacity?: number
-  duration?: number
-  repeatDelay?: number
+  extends ComponentPropsWithoutRef<'svg'> {
+  width?: number;
+  height?: number;
+  x?: number;
+  y?: number;
+  strokeDasharray?: number | string;
+  numSquares?: number;
+  maxOpacity?: number;
+  duration?: number;
+  repeatDelay?: number;
 }
 
 export function AnimatedGridPattern({
@@ -37,16 +37,16 @@ export function AnimatedGridPattern({
   repeatDelay = 0.5,
   ...props
 }: AnimatedGridPatternProps) {
-  const id = useId()
-  const containerRef = useRef(null)
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
-  const [squares, setSquares] = useState(() => generateSquares(numSquares))
+  const id = useId();
+  const containerRef = useRef(null);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const [squares, setSquares] = useState(() => generateSquares(numSquares));
 
   function getPos() {
     return [
       Math.floor((Math.random() * dimensions.width) / width),
       Math.floor((Math.random() * dimensions.height) / height),
-    ]
+    ];
   }
 
   // Adjust the generateSquares function to return objects with an id, x, and y
@@ -54,7 +54,7 @@ export function AnimatedGridPattern({
     return Array.from({ length: count }, (_, i) => ({
       id: i,
       pos: getPos(),
-    }))
+    }));
   }
 
   // Function to update a single square's position
@@ -68,16 +68,16 @@ export function AnimatedGridPattern({
             }
           : sq
       )
-    )
-  }
+    );
+  };
 
   // Update squares to animate in
   useEffect(() => {
     if (dimensions.width && dimensions.height) {
-      setSquares(generateSquares(numSquares))
+      setSquares(generateSquares(numSquares));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dimensions, numSquares])
+  }, [dimensions, numSquares]);
 
   // Resize observer to update container dimensions
   useEffect(() => {
@@ -86,31 +86,30 @@ export function AnimatedGridPattern({
         setDimensions({
           width: entry.contentRect.width,
           height: entry.contentRect.height,
-        })
+        });
       }
-    })
+    });
 
     if (containerRef.current) {
-      resizeObserver.observe(containerRef.current)
+      resizeObserver.observe(containerRef.current);
     }
 
     return () => {
       if (containerRef.current) {
-        resizeObserver.unobserve(containerRef.current)
+        resizeObserver.unobserve(containerRef.current);
       }
-    }
-  }, [containerRef])
+    };
+  }, [containerRef]);
 
   return (
     <svg
       ref={containerRef}
       aria-hidden="true"
       className={cn(
-        "pointer-events-none absolute inset-0 h-full w-full fill-gray-400/30 stroke-gray-400/30",
+        'pointer-events-none absolute inset-0 h-full w-full fill-gray-400/30 stroke-gray-400/30',
         className
       )}
-      {...props}
-    >
+      {...props}>
       <defs>
         <pattern
           id={id}
@@ -118,8 +117,7 @@ export function AnimatedGridPattern({
           height={height}
           patternUnits="userSpaceOnUse"
           x={x}
-          y={y}
-        >
+          y={y}>
           <path
             d={`M.5 ${height}V.5H${width}`}
             fill="none"
@@ -137,7 +135,7 @@ export function AnimatedGridPattern({
               duration,
               repeat: 1,
               delay: index * 0.1,
-              repeatType: "reverse",
+              repeatType: 'reverse',
             }}
             onAnimationComplete={() => updateSquarePosition(id)}
             key={`${x}-${y}-${index}`}
@@ -151,7 +149,7 @@ export function AnimatedGridPattern({
         ))}
       </svg>
     </svg>
-  )
+  );
 }
 
-export default AnimatedGridPattern
+export default AnimatedGridPattern;

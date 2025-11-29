@@ -13,7 +13,7 @@
 import React, { useMemo, useState, useEffect, useCallback, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '../../../../../providers/AuthProvider';
 import { useSaln } from '@tupsafe/mock-data/api';
 import { toast } from 'sonner';
 import {
@@ -31,24 +31,28 @@ import {
 } from 'lucide-react';
 
 // UI Components
-import { BlurFade } from '@/components/ui/blur-fade';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
+import { BlurFade } from '../../../../../components/ui/blur-fade';
+import { Card } from '../../../../../components/ui/card';
+import { Button } from '../../../../../components/ui/button';
+import {
+  Alert,
+  AlertTitle,
+  AlertDescription,
+} from '../../../../../components/ui/alert';
+import { Progress } from '../../../../../components/ui/progress';
+import { Input } from '../../../../../components/ui/input';
+import { Label } from '../../../../../components/ui/label';
+import { Separator } from '../../../../../components/ui/separator';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { cn } from '@/lib/utils';
-import { formatCurrency } from '@/lib/utils/currency';
-import type { CompleteSalnData } from '@/lib/validations/saln-schema';
+} from '../../../../../components/ui/select';
+import { cn } from '../../../../../lib/utils';
+import { formatCurrency } from '../../../../../lib/utils/currency';
+import type { CompleteSalnData } from '../../../../../lib/validations/saln-schema';
 
 // ============================================================================
 // TYPES
@@ -190,7 +194,9 @@ export default function SALNEditDetailPage({
 
   // Form state - simplified for demonstration
   // In production, use React Hook Form with proper validation
-  const [formData, setFormData] = useState<CompleteSalnData | null>(initialData);
+  const [formData, setFormData] = useState<CompleteSalnData | null>(
+    initialData
+  );
 
   useEffect(() => {
     if (initialData) {
@@ -228,10 +234,22 @@ export default function SALNEditDetailPage({
     setIsSaving(true);
     try {
       // Calculate financial totals
-      const totalRealProperty = formData.realProperties?.reduce((sum, prop) => sum + (Number(prop.currentFairMarketValue) || 0), 0) || 0;
-      const totalPersonalProperty = formData.personalProperties?.reduce((sum, prop) => sum + (Number(prop.acquisitionCost) || 0), 0) || 0;
+      const totalRealProperty =
+        formData.realProperties?.reduce(
+          (sum, prop) => sum + (Number(prop.currentFairMarketValue) || 0),
+          0
+        ) || 0;
+      const totalPersonalProperty =
+        formData.personalProperties?.reduce(
+          (sum, prop) => sum + (Number(prop.acquisitionCost) || 0),
+          0
+        ) || 0;
       const totalAssets = totalRealProperty + totalPersonalProperty;
-      const totalLiabilities = formData.liabilities?.reduce((sum, liability) => sum + (Number(liability.outstandingBalance) || 0), 0) || 0;
+      const totalLiabilities =
+        formData.liabilities?.reduce(
+          (sum, liability) => sum + (Number(liability.outstandingBalance) || 0),
+          0
+        ) || 0;
       const netWorth = totalAssets - totalLiabilities;
 
       // Include calculated values in submission
@@ -262,10 +280,22 @@ export default function SALNEditDetailPage({
     setIsSubmitting(true);
     try {
       // Calculate financial totals
-      const totalRealProperty = formData.realProperties?.reduce((sum, prop) => sum + (Number(prop.currentFairMarketValue) || 0), 0) || 0;
-      const totalPersonalProperty = formData.personalProperties?.reduce((sum, prop) => sum + (Number(prop.acquisitionCost) || 0), 0) || 0;
+      const totalRealProperty =
+        formData.realProperties?.reduce(
+          (sum, prop) => sum + (Number(prop.currentFairMarketValue) || 0),
+          0
+        ) || 0;
+      const totalPersonalProperty =
+        formData.personalProperties?.reduce(
+          (sum, prop) => sum + (Number(prop.acquisitionCost) || 0),
+          0
+        ) || 0;
       const totalAssets = totalRealProperty + totalPersonalProperty;
-      const totalLiabilities = formData.liabilities?.reduce((sum, liability) => sum + (Number(liability.outstandingBalance) || 0), 0) || 0;
+      const totalLiabilities =
+        formData.liabilities?.reduce(
+          (sum, liability) => sum + (Number(liability.outstandingBalance) || 0),
+          0
+        ) || 0;
       const netWorth = totalAssets - totalLiabilities;
 
       // Include calculated values in submission
@@ -305,10 +335,22 @@ export default function SALNEditDetailPage({
   }, [hasUnsavedChanges, router]);
 
   // Calculate totals for display
-  const totalRealProperty = formData?.realProperties?.reduce((sum, prop) => sum + (Number(prop.currentFairMarketValue) || 0), 0) || 0;
-  const totalPersonalProperty = formData?.personalProperties?.reduce((sum, prop) => sum + (Number(prop.acquisitionCost) || 0), 0) || 0;
+  const totalRealProperty =
+    formData?.realProperties?.reduce(
+      (sum, prop) => sum + (Number(prop.currentFairMarketValue) || 0),
+      0
+    ) || 0;
+  const totalPersonalProperty =
+    formData?.personalProperties?.reduce(
+      (sum, prop) => sum + (Number(prop.acquisitionCost) || 0),
+      0
+    ) || 0;
   const totalAssets = totalRealProperty + totalPersonalProperty;
-  const totalLiabilities = formData?.liabilities?.reduce((sum, liability) => sum + (Number(liability.outstandingBalance) || 0), 0) || 0;
+  const totalLiabilities =
+    formData?.liabilities?.reduce(
+      (sum, liability) => sum + (Number(liability.outstandingBalance) || 0),
+      0
+    ) || 0;
   const netWorth = totalAssets - totalLiabilities;
 
   if (loading || !submission || !formData) {
@@ -403,7 +445,10 @@ export default function SALNEditDetailPage({
       </BlurFade>
 
       {/* I. DECLARANT INFORMATION */}
-      <EditableSection title="I. Declarant & Spouse Information" icon={User} delay={0.25}>
+      <EditableSection
+        title="I. Declarant & Spouse Information"
+        icon={User}
+        delay={0.25}>
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -489,18 +534,30 @@ export default function SALNEditDetailPage({
       </EditableSection>
 
       {/* II. FINANCIAL SUMMARY (READ-ONLY) */}
-      <EditableSection title="II. Financial Summary (Auto-Calculated)" icon={DollarSign} delay={0.3}>
+      <EditableSection
+        title="II. Financial Summary (Auto-Calculated)"
+        icon={DollarSign}
+        delay={0.3}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-            <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mb-1">Total Assets</p>
-            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(totalAssets)}</p>
+            <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mb-1">
+              Total Assets
+            </p>
+            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+              {formatCurrency(totalAssets)}
+            </p>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Real: {formatCurrency(totalRealProperty)} • Personal: {formatCurrency(totalPersonalProperty)}
+              Real: {formatCurrency(totalRealProperty)} • Personal:{' '}
+              {formatCurrency(totalPersonalProperty)}
             </p>
           </div>
           <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-            <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mb-1">Total Liabilities</p>
-            <p className="text-2xl font-bold text-rose-600 dark:text-rose-400">{formatCurrency(totalLiabilities)}</p>
+            <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mb-1">
+              Total Liabilities
+            </p>
+            <p className="text-2xl font-bold text-rose-600 dark:text-rose-400">
+              {formatCurrency(totalLiabilities)}
+            </p>
           </div>
           <div className="p-4 bg-gradient-to-br from-[oklch(0.55_0.22_15)] to-[oklch(0.45_0.22_15)] text-white rounded-lg">
             <p className="text-xs opacity-90 font-medium mb-1">Net Worth</p>
@@ -516,12 +573,16 @@ export default function SALNEditDetailPage({
           <p className="font-medium mb-2">
             Note: This is a simplified edit form for demonstration purposes.
           </p>
-          <p>
-            In production, this section would include:
-          </p>
+          <p>In production, this section would include:</p>
           <ul className="list-disc list-inside space-y-1 mt-2 text-xs">
-            <li>Dynamic array of real property entries with add/remove functionality</li>
-            <li>Fields: Description, Kind (dropdown), Exact Location, Assessed Value, Fair Market Value</li>
+            <li>
+              Dynamic array of real property entries with add/remove
+              functionality
+            </li>
+            <li>
+              Fields: Description, Kind (dropdown), Exact Location, Assessed
+              Value, Fair Market Value
+            </li>
             <li>Acquisition details: Year, Mode (dropdown), Cost</li>
             <li>Currency input fields with proper formatting</li>
             <li>Real-time validation feedback</li>
@@ -531,37 +592,48 @@ export default function SALNEditDetailPage({
       </EditableSection>
 
       {/* IV. PERSONAL PROPERTIES */}
-      <EditableSection title="IV. Personal Properties" icon={Package} delay={0.4}>
+      <EditableSection
+        title="IV. Personal Properties"
+        icon={Package}
+        delay={0.4}>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Dynamic personal property entries (vehicles, jewelry, cash, investments, etc.)
-          with add/remove functionality would be implemented here. Each entry would have:
-          Description, Year Acquired, and Acquisition Cost fields.
+          Dynamic personal property entries (vehicles, jewelry, cash,
+          investments, etc.) with add/remove functionality would be implemented
+          here. Each entry would have: Description, Year Acquired, and
+          Acquisition Cost fields.
         </p>
       </EditableSection>
 
       {/* V. LIABILITIES */}
       <EditableSection title="V. Liabilities" icon={CreditCard} delay={0.45}>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Dynamic liability entries with add/remove functionality would be implemented here.
-          Each entry would have: Nature, Creditor Name, and Outstanding Balance fields.
+          Dynamic liability entries with add/remove functionality would be
+          implemented here. Each entry would have: Nature, Creditor Name, and
+          Outstanding Balance fields.
         </p>
       </EditableSection>
 
       {/* VI. BUSINESS INTERESTS */}
-      <EditableSection title="VI. Business Interests" icon={Briefcase} delay={0.5}>
+      <EditableSection
+        title="VI. Business Interests"
+        icon={Briefcase}
+        delay={0.5}>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Dynamic business interest entries with add/remove functionality would be
-          implemented here. Each entry would have: Entity Name, Business Address,
-          Nature of Business, and Date of Acquisition fields.
+          Dynamic business interest entries with add/remove functionality would
+          be implemented here. Each entry would have: Entity Name, Business
+          Address, Nature of Business, and Date of Acquisition fields.
         </p>
       </EditableSection>
 
       {/* VII. RELATIVES IN GOVERNMENT */}
-      <EditableSection title="VII. Relatives in Government" icon={Users} delay={0.55}>
+      <EditableSection
+        title="VII. Relatives in Government"
+        icon={Users}
+        delay={0.55}>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Dynamic relative entries (within 4th civil degree) with add/remove functionality
-          would be implemented here. Each entry would have: Name, Relationship (dropdown),
-          Position, and Agency/Office Address fields.
+          Dynamic relative entries (within 4th civil degree) with add/remove
+          functionality would be implemented here. Each entry would have: Name,
+          Relationship (dropdown), Position, and Agency/Office Address fields.
         </p>
       </EditableSection>
 

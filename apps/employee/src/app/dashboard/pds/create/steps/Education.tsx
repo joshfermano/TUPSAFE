@@ -9,11 +9,11 @@ import {
   FormLabel,
   FormControl,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
-import { FormSection } from '@/components/forms/shared/FormSection';
-import { type CompletePdsData } from '@/lib/validations/pds-schema';
+} from '../../../../../components/ui/form';
+import { Input } from '../../../../../components/ui/input';
+import { Separator } from '../../../../../components/ui/separator';
+import { FormSection } from '../../../../../components/forms/shared/FormSection';
+import { type CompletePdsData } from '../../../../../lib/validations/pds-schema';
 
 /**
  * Step 5: Educational Background
@@ -35,23 +35,34 @@ export const Education = memo(function Education() {
       title="Educational Background"
       description="List your educational attainment from elementary to graduate studies"
       icon={GraduationCap}
-      stepNumber={5}
-    >
+      stepNumber={5}>
       <div className="space-y-8">
         {educationLevels.map((level, index) => (
           <div key={level.key}>
-            {index > 0 && <Separator className="mb-8 border-slate-200/50 dark:border-slate-800/50" />}
-            <h4 className="text-base font-medium text-foreground mb-6">{level.label}</h4>
+            {index > 0 && (
+              <Separator className="mb-8 border-slate-200/50 dark:border-slate-800/50" />
+            )}
+            <h4 className="text-base font-medium text-foreground mb-6">
+              {level.label}
+            </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
-                name={`education.${level.key}.schoolName` as FieldPath<CompletePdsData>}
+                name={
+                  `education.${level.key}.schoolName` as FieldPath<CompletePdsData>
+                }
                 render={({ field }) => (
                   <FormItem className="md:col-span-2">
                     <FormLabel>School Name</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder={`e.g., ${level.key === 'elementary' ? 'Manila Elementary School' : level.key === 'secondary' ? 'Manila Science High School' : 'Technological University of the Philippines'}`}
+                        placeholder={`e.g., ${
+                          level.key === 'elementary'
+                            ? 'Manila Elementary School'
+                            : level.key === 'secondary'
+                            ? 'Manila Science High School'
+                            : 'Technological University of the Philippines'
+                        }`}
                         {...field}
                         value={(field?.value as string) || ''}
                         className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
@@ -64,13 +75,19 @@ export const Education = memo(function Education() {
 
               <FormField
                 control={form.control}
-                name={`education.${level.key}.degreeCourse` as FieldPath<CompletePdsData>}
+                name={
+                  `education.${level.key}.degreeCourse` as FieldPath<CompletePdsData>
+                }
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Degree / Course</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder={level.key === 'college' ? 'e.g., BS Computer Science' : 'Leave blank if not applicable'}
+                        placeholder={
+                          level.key === 'college'
+                            ? 'e.g., BS Computer Science'
+                            : 'Leave blank if not applicable'
+                        }
                         {...field}
                         value={(field?.value as string) || ''}
                         className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
@@ -83,7 +100,9 @@ export const Education = memo(function Education() {
 
               <FormField
                 control={form.control}
-                name={`education.${level.key}.yearGraduated` as FieldPath<CompletePdsData>}
+                name={
+                  `education.${level.key}.yearGraduated` as FieldPath<CompletePdsData>
+                }
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Year Graduated</FormLabel>
@@ -95,7 +114,11 @@ export const Education = memo(function Education() {
                         placeholder="e.g., 2020"
                         {...field}
                         value={(field?.value as number) || ''}
-                        onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value ? parseInt(e.target.value) : null
+                          )
+                        }
                         className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                       />
                     </FormControl>

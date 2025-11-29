@@ -10,10 +10,10 @@ import {
   FormControl,
   FormMessage,
   FormDescription,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { FormSection } from '@/components/forms/shared/FormSection';
-import { type CompletePdsData } from '@/lib/validations/pds-schema';
+} from '../../../../../components/ui/form';
+import { Input } from '../../../../../components/ui/input';
+import { FormSection } from '../../../../../components/forms/shared/FormSection';
+import { type CompletePdsData } from '../../../../../lib/validations/pds-schema';
 
 /**
  * Step 3: Personal Information - Contact Details
@@ -28,8 +28,7 @@ export const Contact = memo(function Contact() {
       description="Provide at least one method of contact"
       icon={Phone}
       required={true}
-      stepNumber={3}
-    >
+      stepNumber={3}>
       <div className="space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
@@ -49,7 +48,9 @@ export const Contact = memo(function Contact() {
                     className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                   />
                 </FormControl>
-                <FormDescription className="text-sm text-slate-600 dark:text-slate-400">Landline number (optional)</FormDescription>
+                <FormDescription className="text-sm text-slate-600 dark:text-slate-400">
+                  Landline number (optional)
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -72,7 +73,9 @@ export const Contact = memo(function Contact() {
                     className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                   />
                 </FormControl>
-                <FormDescription className="text-sm text-slate-600 dark:text-slate-400">Mobile phone number (optional)</FormDescription>
+                <FormDescription className="text-sm text-slate-600 dark:text-slate-400">
+                  Mobile phone number (optional)
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -109,10 +112,13 @@ export const Contact = memo(function Contact() {
         <div className="flex items-start gap-3 p-6 rounded-lg bg-primary/5 dark:bg-primary/10 border border-primary/10">
           <Mail className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
           <div className="space-y-1">
-            <p className="text-sm font-medium text-foreground">Contact Information Policy</p>
+            <p className="text-sm font-medium text-foreground">
+              Contact Information Policy
+            </p>
             <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-              Your contact information will be used for official university communications only.
-              Please ensure at least one contact method is provided and regularly monitored.
+              Your contact information will be used for official university
+              communications only. Please ensure at least one contact method is
+              provided and regularly monitored.
             </p>
           </div>
         </div>

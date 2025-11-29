@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { GridPattern } from '@/components/ui/grid-pattern';
-import { Meteors } from '@/components/ui/meteors';
-import { AuroraText } from '@/components/ui/aurora-text';
+import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
+import { GridPattern } from '../ui/grid-pattern';
+import { Meteors } from '../ui/meteors';
+import { AuroraText } from '../ui/aurora-text';
 import { GraduationCap, ArrowRight, Users } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '../../lib/utils';
 import { useRouter } from 'next/navigation';
 
 export default function HeroSection() {
@@ -153,7 +153,7 @@ export default function HeroSection() {
             </div>
           </div>
         </div>
-      </div> 
+      </div>
     </section>
   );
 }

@@ -2,14 +2,14 @@
 
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { ShineBorder } from '@/components/ui/shine-border';
-import { BlurFade } from '@/components/ui/blur-fade';
-import { TextAnimate } from '@/components/ui/text-animate';
-import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback } from '../ui/avatar';
+import { Badge } from '../ui/badge';
+import { ShineBorder } from '../ui/shine-border';
+import { BlurFade } from '../ui/blur-fade';
+import { TextAnimate } from '../ui/text-animate';
+import { cn } from '../../lib/utils';
 import { Shield, Briefcase } from 'lucide-react';
-import type { ProfileData } from '@/hooks/useProfile';
+import type { ProfileData } from '../../hooks/useProfile';
 
 interface ProfileHeroProps {
   profile: ProfileData;
@@ -21,13 +21,22 @@ interface ProfileHeroProps {
 const ROLE_BADGE_COLORS: Record<string, string> = {
   admin: 'bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400',
   hr: 'bg-tup-crimson-subtle text-primary dark:bg-primary/30 dark:text-tup-crimson-light',
-  supervisor: 'bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400',
+  supervisor:
+    'bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400',
   default: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
 } as const;
 
-const SHINE_COLORS: string[] = ['#ffffff', 'var(--tup-crimson-light)', 'var(--tup-crimson-dark)'];
+const SHINE_COLORS: string[] = [
+  '#ffffff',
+  'var(--tup-crimson-light)',
+  'var(--tup-crimson-dark)',
+];
 
-export const ProfileHero = memo(function ProfileHero({ profile, department, position }: ProfileHeroProps) {
+export const ProfileHero = memo(function ProfileHero({
+  profile,
+  department,
+  position,
+}: ProfileHeroProps) {
   const getInitials = () => {
     const firstInitial = profile.firstName?.[0]?.toUpperCase() || '';
     const lastInitial = profile.lastName?.[0]?.toUpperCase() || '';
@@ -38,7 +47,9 @@ export const ProfileHero = memo(function ProfileHero({ profile, department, posi
     return ROLE_BADGE_COLORS[role] || ROLE_BADGE_COLORS.default;
   };
 
-  const fullName = `${profile.firstName} ${profile.middleName ? profile.middleName + ' ' : ''}${profile.lastName}`;
+  const fullName = `${profile.firstName} ${
+    profile.middleName ? profile.middleName + ' ' : ''
+  }${profile.lastName}`;
 
   return (
     <BlurFade delay={0.05} inView>
@@ -46,8 +57,7 @@ export const ProfileHero = memo(function ProfileHero({ profile, department, posi
         className="relative overflow-hidden rounded-xl bg-gradient-tup p-8 sm:p-10 text-white shadow-lg"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
-      >
+        transition={{ duration: 0.5, ease: 'easeOut' }}>
         {/* Subtle Shine Border Effect */}
         <ShineBorder
           borderWidth={2}
@@ -67,8 +77,7 @@ export const ProfileHero = memo(function ProfileHero({ profile, department, posi
             <motion.div
               className="relative"
               whileHover={{ scale: 1.05 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            >
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
               <div className="relative">
                 <Avatar className="h-24 w-24 sm:h-28 sm:w-28 border-4 border-white/20 shadow-xl ring-4 ring-white/10">
                   <AvatarFallback className="bg-white/10 backdrop-blur-md text-white text-3xl sm:text-4xl font-bold">
@@ -93,16 +102,14 @@ export const ProfileHero = memo(function ProfileHero({ profile, department, posi
                 <TextAnimate
                   animation="blurInUp"
                   by="word"
-                  className="text-3xl sm:text-4xl font-bold mb-2 drop-shadow-md"
-                >
+                  className="text-3xl sm:text-4xl font-bold mb-2 drop-shadow-md">
                   {fullName}
                 </TextAnimate>
                 <motion.p
                   className="text-white/90 text-lg flex items-center justify-center sm:justify-start gap-2"
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3, duration: 0.4 }}
-                >
+                  transition={{ delay: 0.3, duration: 0.4 }}>
                   <Briefcase className="h-5 w-5" />
                   {position?.title || 'Government Employee'}
                 </motion.p>
@@ -114,35 +121,33 @@ export const ProfileHero = memo(function ProfileHero({ profile, department, posi
                 className="flex flex-wrap items-center justify-center sm:justify-start gap-2"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4, duration: 0.4 }}
-              >
+                transition={{ delay: 0.4, duration: 0.4 }}>
                 <motion.div
                   whileHover={{ scale: 1.05 }}
-                  transition={{ type: 'spring', stiffness: 400 }}
-                >
+                  transition={{ type: 'spring', stiffness: 400 }}>
                   <Badge
                     className={cn(
                       'px-3 py-1 font-semibold border-white/20 backdrop-blur-sm shadow-sm',
                       getRoleBadgeColor(profile.role)
-                    )}
-                  >
+                    )}>
                     <Shield className="h-3 w-3 mr-1" />
                     {profile.role.toUpperCase()}
                   </Badge>
                 </motion.div>
                 <motion.div
                   whileHover={{ scale: 1.05 }}
-                  transition={{ type: 'spring', stiffness: 400 }}
-                >
+                  transition={{ type: 'spring', stiffness: 400 }}>
                   <Badge className="px-3 py-1 bg-white/10 text-white border-white/20 backdrop-blur-sm hover:bg-white/20 transition-colors shadow-sm">
-                    ID: {profile.userType === 'employee' ? profile.employeeId : profile.applicantId}
+                    ID:{' '}
+                    {profile.userType === 'employee'
+                      ? profile.employeeId
+                      : profile.applicantId}
                   </Badge>
                 </motion.div>
                 {department && (
                   <motion.div
                     whileHover={{ scale: 1.05 }}
-                    transition={{ type: 'spring', stiffness: 400 }}
-                  >
+                    transition={{ type: 'spring', stiffness: 400 }}>
                     <Badge className="px-3 py-1 bg-white/10 text-white border-white/20 backdrop-blur-sm hover:bg-white/20 transition-colors shadow-sm">
                       {department.code}
                     </Badge>

@@ -1,14 +1,14 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useAuth } from '@/providers/AuthProvider';
-import { useProfile } from '@/hooks/useProfile';
-import { ProfileHero } from '@/components/dashboard/ProfileHero';
-import { InfoCard, InfoItem } from '@/components/dashboard/InfoCard';
-import { Badge } from '@/components/ui/badge';
-import { ShimmerButton } from '@/components/ui/shimmer-button';
-import { AnimatedGradientText } from '@/components/ui/animated-gradient-text';
-import { cn } from '@/lib/utils';
+import { useAuth } from '../../../providers/AuthProvider';
+import { useProfile } from '../../../hooks/useProfile';
+import { ProfileHero } from '../../../components/dashboard/ProfileHero';
+import { InfoCard, InfoItem } from '../../../components/dashboard/InfoCard';
+import { Badge } from '../../../components/ui/badge';
+import { ShimmerButton } from '../../../components/ui/shimmer-button';
+import { AnimatedGradientText } from '../../../components/ui/animated-gradient-text';
+import { cn } from '../../../lib/utils';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
@@ -31,7 +31,7 @@ const BLUR_FADE_VARIANTS = {
   hidden: {
     opacity: 0,
     y: 10,
-    filter: 'blur(4px)'
+    filter: 'blur(4px)',
   },
   visible: (i: number) => ({
     opacity: 1,
@@ -47,7 +47,11 @@ const BLUR_FADE_VARIANTS = {
 
 export default function ProfilePage() {
   const { user } = useAuth();
-  const { data: profileData, isLoading: loading, error: queryError } = useProfile();
+  const {
+    data: profileData,
+    isLoading: loading,
+    error: queryError,
+  } = useProfile();
 
   // Extract data from the query response
   const profile = profileData;
@@ -72,7 +76,9 @@ export default function ProfilePage() {
   const fullName = useMemo(
     () =>
       profile
-        ? `${profile.firstName} ${profile.middleName ? profile.middleName + ' ' : ''}${profile.lastName}`
+        ? `${profile.firstName} ${
+            profile.middleName ? profile.middleName + ' ' : ''
+          }${profile.lastName}`
         : '',
     [profile]
   );
@@ -114,15 +120,13 @@ export default function ProfilePage() {
         custom={0}
         initial="hidden"
         animate="visible"
-        variants={BLUR_FADE_VARIANTS}
-      >
+        variants={BLUR_FADE_VARIANTS}>
         <div>
           <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100">
             <AnimatedGradientText
               colorFrom="var(--primary)"
               colorTo="var(--tup-crimson-light)"
-              speed={1.5}
-            >
+              speed={1.5}>
               My Profile
             </AnimatedGradientText>
           </h1>
@@ -137,8 +141,7 @@ export default function ProfilePage() {
             shimmerDuration="2s"
             borderRadius="0.5rem"
             background="linear-gradient(135deg, oklch(0.55 0.22 15) 0%, oklch(0.40 0.18 15) 100%)"
-            className="group relative flex items-center gap-2 font-medium text-white dark:text-white shadow-lg hover:shadow-xl transition-shadow"
-          >
+            className="group relative flex items-center gap-2 font-medium text-white dark:text-white shadow-lg hover:shadow-xl transition-shadow">
             <Edit className="h-4 w-4" />
             Edit Profile
           </ShimmerButton>
@@ -150,8 +153,7 @@ export default function ProfilePage() {
         custom={1}
         initial="hidden"
         animate="visible"
-        variants={BLUR_FADE_VARIANTS}
-      >
+        variants={BLUR_FADE_VARIANTS}>
         <ProfileHero
           profile={profile}
           department={department || null}
@@ -166,17 +168,21 @@ export default function ProfilePage() {
           custom={2}
           initial="hidden"
           animate="visible"
-          variants={BLUR_FADE_VARIANTS}
-        >
+          variants={BLUR_FADE_VARIANTS}>
           <InfoCard title="Personal Information" icon={User} gradient>
             <div className="space-y-3">
+              <InfoItem label="Full Name" value={fullName} />
               <InfoItem
-                label="Full Name"
-                value={fullName}
-              />
-              <InfoItem
-                label={profile.userType === 'employee' ? 'Employee ID' : 'Applicant ID'}
-                value={profile.userType === 'employee' ? profile.employeeId || '—' : profile.applicantId || '—'}
+                label={
+                  profile.userType === 'employee'
+                    ? 'Employee ID'
+                    : 'Applicant ID'
+                }
+                value={
+                  profile.userType === 'employee'
+                    ? profile.employeeId || '—'
+                    : profile.applicantId || '—'
+                }
                 icon={Shield}
               />
               <InfoItem
@@ -185,10 +191,7 @@ export default function ProfilePage() {
                 icon={Mail}
               />
               {profile.phoneNumber && (
-                <InfoItem
-                  label="Phone Number"
-                  value={profile.phoneNumber}
-                />
+                <InfoItem label="Phone Number" value={profile.phoneNumber} />
               )}
             </div>
           </InfoCard>
@@ -199,8 +202,7 @@ export default function ProfilePage() {
           custom={3}
           initial="hidden"
           animate="visible"
-          variants={BLUR_FADE_VARIANTS}
-        >
+          variants={BLUR_FADE_VARIANTS}>
           <InfoCard title="Employment Details" icon={Briefcase}>
             <div className="space-y-3">
               {profile.userType === 'employee' && (
@@ -211,10 +213,7 @@ export default function ProfilePage() {
                     icon={Building2}
                   />
                   {college && (
-                    <InfoItem
-                      label="College"
-                      value={college.name || '—'}
-                    />
+                    <InfoItem label="College" value={college.name || '—'} />
                   )}
                   <InfoItem
                     label="Position"
@@ -223,31 +222,35 @@ export default function ProfilePage() {
                   />
                   <InfoItem
                     label="Salary Grade"
-                    value={position?.gradeLevel ? `SG-${position.gradeLevel}` : '—'}
+                    value={
+                      position?.gradeLevel ? `SG-${position.gradeLevel}` : '—'
+                    }
                   />
                   {profile.hireDate && (
                     <InfoItem
                       label="Hire Date"
-                      value={new Date(profile.hireDate).toLocaleDateString('en-US', {
-                        month: 'long',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
+                      value={new Date(profile.hireDate).toLocaleDateString(
+                        'en-US',
+                        {
+                          month: 'long',
+                          day: 'numeric',
+                          year: 'numeric',
+                        }
+                      )}
                     />
                   )}
                   {profile.tenureYears !== null && (
                     <InfoItem
                       label="Years of Service"
-                      value={`${profile.tenureYears} ${profile.tenureYears === 1 ? 'year' : 'years'}`}
+                      value={`${profile.tenureYears} ${
+                        profile.tenureYears === 1 ? 'year' : 'years'
+                      }`}
                     />
                   )}
                 </>
               )}
               {profile.userType === 'applicant' && (
-                <InfoItem
-                  label="User Type"
-                  value="Applicant"
-                />
+                <InfoItem label="User Type" value="Applicant" />
               )}
             </div>
           </InfoCard>
@@ -258,8 +261,7 @@ export default function ProfilePage() {
           custom={4}
           initial="hidden"
           animate="visible"
-          variants={BLUR_FADE_VARIANTS}
-        >
+          variants={BLUR_FADE_VARIANTS}>
           <InfoCard title="Account Status" icon={Shield}>
             <div className="space-y-3">
               <InfoItem
@@ -272,8 +274,7 @@ export default function ProfilePage() {
                       profile.isActive
                         ? 'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400'
                         : ''
-                    )}
-                  >
+                    )}>
                     <CheckCircle2 className="h-3 w-3 mr-1" />
                     {profile.isActive ? 'Active' : 'Inactive'}
                   </Badge>
@@ -305,8 +306,7 @@ export default function ProfilePage() {
           initial="hidden"
           animate="visible"
           variants={BLUR_FADE_VARIANTS}
-          className="group relative"
-        >
+          className="group relative">
           <div className="h-full p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5">
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 dark:bg-primary/20 transition-colors">
@@ -334,8 +334,7 @@ export default function ProfilePage() {
           initial="hidden"
           animate="visible"
           variants={BLUR_FADE_VARIANTS}
-          className="group relative"
-        >
+          className="group relative">
           <div className="h-full p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5">
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-secondary/10 dark:bg-secondary/20 transition-colors">
@@ -346,7 +345,8 @@ export default function ProfilePage() {
                   Statement of Assets (e-SALN)
                 </h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                  Manage your annual Statement of Assets, Liabilities, and Net Worth
+                  Manage your annual Statement of Assets, Liabilities, and Net
+                  Worth
                 </p>
                 <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-secondary hover:text-primary-foreground bg-secondary/5 hover:bg-secondary/90 dark:text-secondary dark:hover:text-primary-foreground dark:bg-secondary/10 dark:hover:bg-secondary/80 border border-secondary/20 dark:border-secondary/30 rounded-lg transition-all duration-200">
                   <Eye className="h-4 w-4" />
@@ -364,13 +364,11 @@ export default function ProfilePage() {
           custom={7}
           initial="hidden"
           animate="visible"
-          variants={BLUR_FADE_VARIANTS}
-        >
+          variants={BLUR_FADE_VARIANTS}>
           <InfoCard
             title="Department Information"
             icon={Building2}
-            className="lg:col-span-2 xl:col-span-3"
-          >
+            className="lg:col-span-2 xl:col-span-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               <InfoItem label="Department Name" value={department.name} />
               <InfoItem label="Department Code" value={department.code} />
@@ -379,8 +377,7 @@ export default function ProfilePage() {
                 value={
                   <Badge
                     variant="default"
-                    className="bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400"
-                  >
+                    className="bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400">
                     Active
                   </Badge>
                 }

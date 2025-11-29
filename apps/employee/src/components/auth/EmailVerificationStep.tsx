@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { Mail, Check, AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { cn } from '../../lib/utils';
 
 interface EmailVerificationStepProps {
   email: string;
@@ -134,7 +134,10 @@ export function EmailVerificationStep({
               Verify Your Email
             </h4>
             <p className="text-sm text-[#666666] dark:text-[#999999] font-light leading-relaxed">
-              We sent a 6-digit code to <span className="font-normal text-[#1A1A1A] dark:text-white">{email}</span>
+              We sent a 6-digit code to{' '}
+              <span className="font-normal text-[#1A1A1A] dark:text-white">
+                {email}
+              </span>
             </p>
           </div>
         </div>
@@ -164,8 +167,10 @@ export function EmailVerificationStep({
             'placeholder:text-[#E5E5E5] dark:placeholder:text-[#2A2A2A] placeholder:tracking-normal',
             'transition-all duration-300 rounded-2xl',
             'hover:border-[#8B1538]/30',
-            success && 'border-green-500 bg-green-50/50 dark:bg-green-900/10 focus:border-green-500 focus:ring-green-500/20',
-            error && 'border-red-500 bg-red-50/50 dark:bg-red-900/10 focus:border-red-500 focus:ring-red-500/20'
+            success &&
+              'border-green-500 bg-green-50/50 dark:bg-green-900/10 focus:border-green-500 focus:ring-green-500/20',
+            error &&
+              'border-red-500 bg-red-50/50 dark:bg-red-900/10 focus:border-red-500 focus:ring-red-500/20'
           )}
         />
       </div>
@@ -173,7 +178,10 @@ export function EmailVerificationStep({
       {/* Error Message - Minimal */}
       {error && (
         <div className="flex items-start gap-3 p-5 rounded-2xl bg-gradient-to-br from-red-50 to-red-50/30 dark:from-red-900/10 dark:to-red-900/5 border-2 border-red-200 dark:border-red-800/30">
-          <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+          <AlertCircle
+            className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5"
+            strokeWidth={1.5}
+          />
           <p className="text-sm text-red-700 dark:text-red-300 font-light leading-relaxed">
             {error}
           </p>
@@ -183,7 +191,10 @@ export function EmailVerificationStep({
       {/* Success Message - Minimal */}
       {success && (
         <div className="flex items-start gap-3 p-5 rounded-2xl bg-gradient-to-br from-green-50 to-green-50/30 dark:from-green-900/10 dark:to-green-900/5 border-2 border-green-200 dark:border-green-800/30">
-          <Check className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+          <Check
+            className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5"
+            strokeWidth={1.5}
+          />
           <p className="text-sm text-green-700 dark:text-green-300 font-light leading-relaxed">
             Email verified successfully! Proceeding to next step...
           </p>
@@ -196,8 +207,7 @@ export function EmailVerificationStep({
           type="button"
           onClick={handleVerify}
           disabled={otp.length !== 6 || isVerifying || success}
-          className="w-full h-14 bg-[#1A1A1A] dark:bg-white hover:bg-[#2A2A2A] dark:hover:bg-[#E5E5E5] text-white dark:text-[#1A1A1A] font-normal rounded-2xl transition-all duration-300 shadow-sm hover:shadow-md disabled:opacity-40"
-        >
+          className="w-full h-14 bg-[#1A1A1A] dark:bg-white hover:bg-[#2A2A2A] dark:hover:bg-[#E5E5E5] text-white dark:text-[#1A1A1A] font-normal rounded-2xl transition-all duration-300 shadow-sm hover:shadow-md disabled:opacity-40">
           {isVerifying ? (
             <span className="flex items-center justify-center gap-2">
               <div className="w-4 h-4 border-2 border-white/30 dark:border-[#1A1A1A]/30 border-t-white dark:border-t-[#1A1A1A] rounded-full animate-spin" />
@@ -218,15 +228,12 @@ export function EmailVerificationStep({
           variant="ghost"
           onClick={handleResend}
           disabled={resendCooldown > 0 || isResending || success}
-          className="w-full h-14 text-[#666666] dark:text-[#999999] hover:text-[#1A1A1A] dark:hover:text-white hover:bg-[#FAFAFA] dark:hover:bg-[#1A1A1A]/50 font-normal rounded-2xl transition-all duration-300 disabled:opacity-40"
-        >
-          {isResending ? (
-            'Sending...'
-          ) : resendCooldown > 0 ? (
-            `Resend in ${resendCooldown}s`
-          ) : (
-            'Resend Code'
-          )}
+          className="w-full h-14 text-[#666666] dark:text-[#999999] hover:text-[#1A1A1A] dark:hover:text-white hover:bg-[#FAFAFA] dark:hover:bg-[#1A1A1A]/50 font-normal rounded-2xl transition-all duration-300 disabled:opacity-40">
+          {isResending
+            ? 'Sending...'
+            : resendCooldown > 0
+            ? `Resend in ${resendCooldown}s`
+            : 'Resend Code'}
         </Button>
       </div>
 
@@ -244,8 +251,7 @@ export function EmailVerificationStep({
         variant="ghost"
         onClick={onBack}
         disabled={isVerifying || success}
-        className="w-full h-14 text-[#666666] dark:text-[#999999] hover:text-[#8B1538] hover:bg-transparent font-normal transition-colors duration-300 disabled:opacity-40"
-      >
+        className="w-full h-14 text-[#666666] dark:text-[#999999] hover:text-[#8B1538] hover:bg-transparent font-normal transition-colors duration-300 disabled:opacity-40">
         Back to Personal Information
       </Button>
     </div>

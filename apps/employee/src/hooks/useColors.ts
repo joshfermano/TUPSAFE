@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { useResolvedTheme } from './useOptimizedTheme';
-import type { ResolvedTheme } from '@/context/ThemeContext';
+import type { ResolvedTheme } from '../context/ThemeContext';
 
 /**
  * TUP Manila Color Palette Interface
@@ -159,18 +159,22 @@ const DARK_COLORS: TUPColors = {
  * Light mode gradients
  */
 const LIGHT_GRADIENTS: TUPGradients = {
-  primary: 'linear-gradient(135deg, oklch(0.55 0.22 15) 0%, oklch(0.40 0.18 15) 100%)',
+  primary:
+    'linear-gradient(135deg, oklch(0.55 0.22 15) 0%, oklch(0.40 0.18 15) 100%)',
   soft: 'linear-gradient(135deg, oklch(0.95 0.08 15) 0%, oklch(0.97 0.01 0) 100%)',
-  radial: 'radial-gradient(circle at 50% 50%, oklch(0.55 0.22 15 / 0.15) 0%, transparent 70%)',
+  radial:
+    'radial-gradient(circle at 50% 50%, oklch(0.55 0.22 15 / 0.15) 0%, transparent 70%)',
 };
 
 /**
  * Dark mode gradients
  */
 const DARK_GRADIENTS: TUPGradients = {
-  primary: 'linear-gradient(135deg, oklch(0.65 0.24 15) 0%, oklch(0.50 0.20 15) 100%)',
+  primary:
+    'linear-gradient(135deg, oklch(0.65 0.24 15) 0%, oklch(0.50 0.20 15) 100%)',
   soft: 'linear-gradient(135deg, oklch(0.40 0.12 15) 0%, oklch(0.269 0.01 0) 100%)',
-  radial: 'radial-gradient(circle at 50% 50%, oklch(0.65 0.24 15 / 0.15) 0%, transparent 70%)',
+  radial:
+    'radial-gradient(circle at 50% 50%, oklch(0.65 0.24 15 / 0.15) 0%, transparent 70%)',
 };
 
 /**

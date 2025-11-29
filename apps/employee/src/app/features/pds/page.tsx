@@ -19,13 +19,13 @@ import {
   AlertCircle,
   ChevronRight,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { MagicCard } from '@/components/ui/magic-card';
-import { NeonGradientCard } from '@/components/ui/neon-gradient-card';
-import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
+import { Button } from '../../../components/ui/button';
+import { Badge } from '../../../components/ui/badge';
+import { Card } from '../../../components/ui/card';
+import { MagicCard } from '../../../components/ui/magic-card';
+import { NeonGradientCard } from '../../../components/ui/neon-gradient-card';
+import { Separator } from '../../../components/ui/separator';
+import { cn } from '../../../lib/utils';
 import Link from 'next/link';
 
 const HeroSection = () => (
@@ -59,9 +59,10 @@ const HeroSection = () => (
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
           className="mb-8 text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
-          This thesis project demonstrates a comprehensive digital Personal Data Sheet system 
-          with CSC compliance, version control, and automated validation. Research implementation 
-          of secure, government-appropriate e-PDS management for Philippine civil service.
+          This thesis project demonstrates a comprehensive digital Personal Data
+          Sheet system with CSC compliance, version control, and automated
+          validation. Research implementation of secure, government-appropriate
+          e-PDS management for Philippine civil service.
         </motion.p>
 
         <motion.div
@@ -179,8 +180,9 @@ const KeyFeaturesSection = () => {
             Research Implementation Features
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Academic demonstration of comprehensive e-PDS management capabilities 
-            designed for Philippine government compliance and efficiency research.
+            Academic demonstration of comprehensive e-PDS management
+            capabilities designed for Philippine government compliance and
+            efficiency research.
           </p>
         </motion.div>
 
@@ -282,7 +284,7 @@ const UseCasesSection = () => {
             Research Use Case Scenarios
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Academic study of how government employees would interact with 
+            Academic study of how government employees would interact with
             digital e-PDS systems in various compliance scenarios.
           </p>
         </motion.div>
@@ -374,8 +376,8 @@ const TechnicalSpecsSection = () => {
             Technical Research Implementation
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Prototype system architecture demonstrating government-grade security 
-            and compliance standards for academic research purposes.
+            Prototype system architecture demonstrating government-grade
+            security and compliance standards for academic research purposes.
           </p>
         </motion.div>
 
@@ -506,8 +508,8 @@ const CTASection = () => (
           Thesis Research on Digital PDS Modernization
         </h2>
         <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
-          This academic prototype demonstrates the potential for modernizing 
-          Personal Data Sheet management in Philippine government institutions 
+          This academic prototype demonstrates the potential for modernizing
+          Personal Data Sheet management in Philippine government institutions
           through digital transformation research.
         </p>
 

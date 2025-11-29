@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { Calendar, Info } from 'lucide-react';
-import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
+import { Label } from '../ui/label';
+import { cn } from '../../lib/utils';
 
 export interface HireDateInputProps {
   value?: Date;
@@ -123,8 +123,7 @@ export function HireDateInput({
             strokeLinejoin="round"
             strokeWidth="2"
             viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
+            stroke="currentColor">
             <path d="M5 13l4 4L19 7" />
           </svg>
           <span className="font-medium">{formatDisplayDate(value)}</span>
@@ -137,8 +136,7 @@ export function HireDateInput({
           id="hire-date-error"
           className="flex items-center space-x-2 text-red-600 dark:text-red-400 text-sm"
           role="alert"
-          aria-live="polite"
-        >
+          aria-live="polite">
           <svg
             className="w-4 h-4 flex-shrink-0"
             fill="none"
@@ -146,8 +144,7 @@ export function HireDateInput({
             strokeLinejoin="round"
             strokeWidth="2"
             viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
+            stroke="currentColor">
             <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span>{error}</span>
@@ -158,13 +155,10 @@ export function HireDateInput({
       {!error && (
         <div
           id="hire-date-description"
-          className="flex items-start space-x-2 text-xs text-slate-600 dark:text-slate-400"
-        >
+          className="flex items-start space-x-2 text-xs text-slate-600 dark:text-slate-400">
           <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
           <div className="space-y-1">
-            <p>
-              Enter the date you officially started working at TUP Manila.
-            </p>
+            <p>Enter the date you officially started working at TUP Manila.</p>
             <p className="text-slate-500 dark:text-slate-500">
               This will be used to generate your employee ID (TUPM-MMDD-YY-###).
             </p>

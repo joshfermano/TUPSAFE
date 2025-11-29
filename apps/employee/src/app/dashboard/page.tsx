@@ -2,17 +2,21 @@
 
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { useAuth } from '@/providers/AuthProvider';
-import { useDashboardStats, isEmployeeStats, isApplicantStats } from '@/hooks/useDashboardStats';
-import { useProfile } from '@/hooks/useProfile';
-import { Particles } from '@/components/ui/particles';
-import AnimatedGridPattern from '@/components/ui/animated-grid-pattern';
-import { ShimmerButton } from '@/components/ui/shimmer-button';
-import { AnimatedGradientText } from '@/components/ui/animated-gradient-text';
-import { MagicCard } from '@/components/ui/magic-card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { useAuth } from '../../providers/AuthProvider';
+import {
+  useDashboardStats,
+  isEmployeeStats,
+  isApplicantStats,
+} from '../../hooks/useDashboardStats';
+import { useProfile } from '../../hooks/useProfile';
+import { Particles } from '../../components/ui/particles';
+import AnimatedGridPattern from '../../components/ui/animated-grid-pattern';
+import { ShimmerButton } from '../../components/ui/shimmer-button';
+import { AnimatedGradientText } from '../../components/ui/animated-gradient-text';
+import { MagicCard } from '../../components/ui/magic-card';
+import { Badge } from '../../components/ui/badge';
+import { Button } from '../../components/ui/button';
+import { cn } from '../../lib/utils';
 import {
   FileText,
   Award,
@@ -89,8 +93,7 @@ export default function DashboardPage() {
           className="flex flex-col items-center gap-6"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-        >
+          transition={{ duration: 0.5 }}>
           <div className="relative">
             <motion.div
               className="absolute inset-0 rounded-full bg-gradient-to-br from-[#8B1538]/30 to-[#B8264D]/30 blur-2xl"
@@ -142,10 +145,11 @@ export default function DashboardPage() {
           custom={0}
           initial="hidden"
           animate="visible"
-          variants={BLUR_FADE_VARIANTS}
-        >
+          variants={BLUR_FADE_VARIANTS}>
           <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100">
-            <AnimatedGradientText>{greeting}, {firstName}!</AnimatedGradientText>
+            <AnimatedGradientText>
+              {greeting}, {firstName}!
+            </AnimatedGradientText>
           </h1>
           <p className="text-slate-600 dark:text-slate-400 mt-2">
             Here&apos;s your compliance status and recent activity
@@ -155,7 +159,11 @@ export default function DashboardPage() {
         {/* Compliance Status Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Overall Compliance */}
-          <motion.div custom={1} initial="hidden" animate="visible" variants={BLUR_FADE_VARIANTS}>
+          <motion.div
+            custom={1}
+            initial="hidden"
+            animate="visible"
+            variants={BLUR_FADE_VARIANTS}>
             <MagicCard gradientColor="rgba(139, 21, 56, 0.1)">
               <div className="p-6 space-y-4">
                 <div className="flex items-center justify-between">
@@ -166,9 +174,15 @@ export default function DashboardPage() {
                       <AlertCircle className="h-8 w-8 text-yellow-500" />
                     )}
                     <div>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">Compliance Status</p>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        Compliance Status
+                      </p>
                       <p className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                        {compliance.status === 'compliant' ? 'Compliant' : compliance.status === 'partial' ? 'Partial' : 'Non-Compliant'}
+                        {compliance.status === 'compliant'
+                          ? 'Compliant'
+                          : compliance.status === 'partial'
+                          ? 'Partial'
+                          : 'Non-Compliant'}
                       </p>
                     </div>
                   </div>
@@ -180,23 +194,30 @@ export default function DashboardPage() {
                     compliance.overall
                       ? 'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400'
                       : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400'
-                  )}
-                >
-                  {compliance.overall ? 'All Requirements Met' : 'Action Required'}
+                  )}>
+                  {compliance.overall
+                    ? 'All Requirements Met'
+                    : 'Action Required'}
                 </Badge>
               </div>
             </MagicCard>
           </motion.div>
 
           {/* PDS Status */}
-          <motion.div custom={2} initial="hidden" animate="visible" variants={BLUR_FADE_VARIANTS}>
+          <motion.div
+            custom={2}
+            initial="hidden"
+            animate="visible"
+            variants={BLUR_FADE_VARIANTS}>
             <MagicCard gradientColor="rgba(139, 21, 56, 0.1)">
               <div className="p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <FileText className="h-8 w-8 text-[#8B1538]" />
                     <div>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">e-PDS</p>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        e-PDS
+                      </p>
                       <p className="text-xl font-bold text-slate-900 dark:text-slate-100">
                         {pds.status.replace('_', ' ').toUpperCase()}
                       </p>
@@ -205,7 +226,10 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-xs text-slate-600 dark:text-slate-400">
                   {pds.submittedAt ? (
-                    <>Submitted: {new Date(pds.submittedAt).toLocaleDateString()}</>
+                    <>
+                      Submitted:{' '}
+                      {new Date(pds.submittedAt).toLocaleDateString()}
+                    </>
                   ) : (
                     'Not submitted yet'
                   )}
@@ -220,14 +244,20 @@ export default function DashboardPage() {
           </motion.div>
 
           {/* SALN Status */}
-          <motion.div custom={3} initial="hidden" animate="visible" variants={BLUR_FADE_VARIANTS}>
+          <motion.div
+            custom={3}
+            initial="hidden"
+            animate="visible"
+            variants={BLUR_FADE_VARIANTS}>
             <MagicCard gradientColor="rgba(139, 21, 56, 0.1)">
               <div className="p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Award className="h-8 w-8 text-[#8B1538]" />
                     <div>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">e-SALN {saln.year}</p>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        e-SALN {saln.year}
+                      </p>
                       <p className="text-xl font-bold text-slate-900 dark:text-slate-100">
                         {saln.status.replace('_', ' ').toUpperCase()}
                       </p>
@@ -236,7 +266,10 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-xs text-slate-600 dark:text-slate-400">
                   {saln.submittedAt ? (
-                    <>Submitted: {new Date(saln.submittedAt).toLocaleDateString()}</>
+                    <>
+                      Submitted:{' '}
+                      {new Date(saln.submittedAt).toLocaleDateString()}
+                    </>
                   ) : (
                     'Not submitted yet'
                   )}
@@ -253,7 +286,11 @@ export default function DashboardPage() {
 
         {/* Upcoming Deadlines */}
         {deadlines.length > 0 && (
-          <motion.div custom={4} initial="hidden" animate="visible" variants={BLUR_FADE_VARIANTS}>
+          <motion.div
+            custom={4}
+            initial="hidden"
+            animate="visible"
+            variants={BLUR_FADE_VARIANTS}>
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
@@ -270,21 +307,28 @@ export default function DashboardPage() {
                       deadline.isUrgent
                         ? 'bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800'
                         : 'bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700'
-                    )}
-                  >
+                    )}>
                     <div className="flex items-center gap-3">
-                      <Clock className={cn('h-5 w-5', deadline.isUrgent ? 'text-red-500' : 'text-slate-500')} />
+                      <Clock
+                        className={cn(
+                          'h-5 w-5',
+                          deadline.isUrgent ? 'text-red-500' : 'text-slate-500'
+                        )}
+                      />
                       <div>
                         <p className="font-medium text-slate-900 dark:text-slate-100">
                           {deadline.formType.toUpperCase()} {deadline.year}
                         </p>
                         <p className="text-sm text-slate-600 dark:text-slate-400">
-                          Due: {new Date(deadline.deadlineDate).toLocaleDateString()}
+                          Due:{' '}
+                          {new Date(deadline.deadlineDate).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
-                    <Badge variant={deadline.isUrgent ? 'destructive' : 'secondary'}>
-                      {deadline.daysUntil} {deadline.daysUntil === 1 ? 'day' : 'days'} left
+                    <Badge
+                      variant={deadline.isUrgent ? 'destructive' : 'secondary'}>
+                      {deadline.daysUntil}{' '}
+                      {deadline.daysUntil === 1 ? 'day' : 'days'} left
                     </Badge>
                   </div>
                 ))}
@@ -295,15 +339,24 @@ export default function DashboardPage() {
 
         {/* Notifications Count */}
         {notifications.unread > 0 && (
-          <motion.div custom={5} initial="hidden" animate="visible" variants={BLUR_FADE_VARIANTS}>
+          <motion.div
+            custom={5}
+            initial="hidden"
+            animate="visible"
+            variants={BLUR_FADE_VARIANTS}>
             <Link href="/dashboard/notifications">
               <div className="bg-gradient-to-r from-[#8B1538] to-[#B8264D] text-white rounded-xl p-6 hover:shadow-lg transition-shadow cursor-pointer">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Bell className="h-6 w-6" />
                     <div>
-                      <p className="font-semibold">You have {notifications.unread} unread notification{notifications.unread !== 1 ? 's' : ''}</p>
-                      <p className="text-sm text-white/80">Click to view all notifications</p>
+                      <p className="font-semibold">
+                        You have {notifications.unread} unread notification
+                        {notifications.unread !== 1 ? 's' : ''}
+                      </p>
+                      <p className="text-sm text-white/80">
+                        Click to view all notifications
+                      </p>
                     </div>
                   </div>
                   <ChevronRight className="h-6 w-6" />
@@ -318,14 +371,21 @@ export default function DashboardPage() {
 
   if (isApplicantStats(stats)) {
     // APPLICANT DASHBOARD
-    const { applications, recentApplications, positions, pds, notifications } = stats.stats;
+    const { applications, recentApplications, positions, pds, notifications } =
+      stats.stats;
 
     return (
       <div className="space-y-8 pb-8">
         {/* Welcome Header */}
-        <motion.div custom={0} initial="hidden" animate="visible" variants={BLUR_FADE_VARIANTS}>
+        <motion.div
+          custom={0}
+          initial="hidden"
+          animate="visible"
+          variants={BLUR_FADE_VARIANTS}>
           <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100">
-            <AnimatedGradientText>{greeting}, {firstName}!</AnimatedGradientText>
+            <AnimatedGradientText>
+              {greeting}, {firstName}!
+            </AnimatedGradientText>
           </h1>
           <p className="text-slate-600 dark:text-slate-400 mt-2">
             Track your applications and find new opportunities
@@ -335,14 +395,20 @@ export default function DashboardPage() {
         {/* Application Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Active Applications */}
-          <motion.div custom={1} initial="hidden" animate="visible" variants={BLUR_FADE_VARIANTS}>
+          <motion.div
+            custom={1}
+            initial="hidden"
+            animate="visible"
+            variants={BLUR_FADE_VARIANTS}>
             <MagicCard gradientColor="rgba(139, 21, 56, 0.1)">
               <div className="p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Briefcase className="h-8 w-8 text-[#8B1538]" />
                     <div>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">Active Applications</p>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        Active Applications
+                      </p>
                       <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">
                         {applications.active}
                       </p>
@@ -350,21 +416,28 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <p className="text-xs text-slate-600 dark:text-slate-400">
-                  Total: {applications.total} application{applications.total !== 1 ? 's' : ''}
+                  Total: {applications.total} application
+                  {applications.total !== 1 ? 's' : ''}
                 </p>
               </div>
             </MagicCard>
           </motion.div>
 
           {/* Recommended Positions */}
-          <motion.div custom={2} initial="hidden" animate="visible" variants={BLUR_FADE_VARIANTS}>
+          <motion.div
+            custom={2}
+            initial="hidden"
+            animate="visible"
+            variants={BLUR_FADE_VARIANTS}>
             <MagicCard gradientColor="rgba(139, 21, 56, 0.1)">
               <div className="p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <TrendingUp className="h-8 w-8 text-[#8B1538]" />
                     <div>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">Recommended</p>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        Recommended
+                      </p>
                       <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">
                         {positions.recommended}
                       </p>
@@ -381,14 +454,20 @@ export default function DashboardPage() {
           </motion.div>
 
           {/* PDS Status */}
-          <motion.div custom={3} initial="hidden" animate="visible" variants={BLUR_FADE_VARIANTS}>
+          <motion.div
+            custom={3}
+            initial="hidden"
+            animate="visible"
+            variants={BLUR_FADE_VARIANTS}>
             <MagicCard gradientColor="rgba(139, 21, 56, 0.1)">
               <div className="p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <FileText className="h-8 w-8 text-[#8B1538]" />
                     <div>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">e-PDS</p>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        e-PDS
+                      </p>
                       <p className="text-xl font-bold text-slate-900 dark:text-slate-100">
                         {pds.hasSubmission ? 'Submitted' : 'Not Submitted'}
                       </p>
@@ -407,7 +486,11 @@ export default function DashboardPage() {
 
         {/* Recent Applications */}
         {recentApplications.length > 0 && (
-          <motion.div custom={4} initial="hidden" animate="visible" variants={BLUR_FADE_VARIANTS}>
+          <motion.div
+            custom={4}
+            initial="hidden"
+            animate="visible"
+            variants={BLUR_FADE_VARIANTS}>
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
@@ -423,14 +506,14 @@ export default function DashboardPage() {
                 {recentApplications.map((app) => (
                   <div
                     key={app.id}
-                    className="flex items-center justify-between p-4 rounded-lg bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700"
-                  >
+                    className="flex items-center justify-between p-4 rounded-lg bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
                     <div>
                       <p className="font-medium text-slate-900 dark:text-slate-100">
                         {app.position.title}
                       </p>
                       <p className="text-sm text-slate-600 dark:text-slate-400">
-                        {app.applicationNumber} • Applied {new Date(app.applicationDate).toLocaleDateString()}
+                        {app.applicationNumber} • Applied{' '}
+                        {new Date(app.applicationDate).toLocaleDateString()}
                       </p>
                     </div>
                     <Badge>{app.status.replace('_', ' ')}</Badge>
@@ -443,15 +526,24 @@ export default function DashboardPage() {
 
         {/* Notifications Count */}
         {notifications.unread > 0 && (
-          <motion.div custom={5} initial="hidden" animate="visible" variants={BLUR_FADE_VARIANTS}>
+          <motion.div
+            custom={5}
+            initial="hidden"
+            animate="visible"
+            variants={BLUR_FADE_VARIANTS}>
             <Link href="/dashboard/notifications">
               <div className="bg-gradient-to-r from-[#8B1538] to-[#B8264D] text-white rounded-xl p-6 hover:shadow-lg transition-shadow cursor-pointer">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Bell className="h-6 w-6" />
                     <div>
-                      <p className="font-semibold">You have {notifications.unread} unread notification{notifications.unread !== 1 ? 's' : ''}</p>
-                      <p className="text-sm text-white/80">Click to view all notifications</p>
+                      <p className="font-semibold">
+                        You have {notifications.unread} unread notification
+                        {notifications.unread !== 1 ? 's' : ''}
+                      </p>
+                      <p className="text-sm text-white/80">
+                        Click to view all notifications
+                      </p>
                     </div>
                   </div>
                   <ChevronRight className="h-6 w-6" />

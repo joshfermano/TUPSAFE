@@ -16,11 +16,11 @@
 import { memo } from 'react';
 import { useFormContext, useFieldArray, Controller } from 'react-hook-form';
 import { Briefcase, Users, Plus, Trash2, Info } from 'lucide-react';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { RELATIONSHIP_TYPE } from '@/lib/validations/saln-schema';
+import { Label } from '../../../../../components/ui/label';
+import { Button } from '../../../../../components/ui/button';
+import { Badge } from '../../../../../components/ui/badge';
+import { Alert, AlertDescription } from '../../../../../components/ui/alert';
+import { RELATIONSHIP_TYPE } from '../../../../../lib/validations/saln-schema';
 
 // Import Enhanced Components
 import {
@@ -81,19 +81,25 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
           <Alert className="mb-6 border-slate-200/50 dark:border-slate-800/50">
             <Info className="h-4 w-4" />
             <AlertDescription className="text-sm text-slate-600 dark:text-slate-400">
-              Include any business where you or your spouse have an interest (stockholder,
-              partner, officer, director, etc.). If none, you may skip this section.
+              Include any business where you or your spouse have an interest
+              (stockholder, partner, officer, director, etc.). If none, you may
+              skip this section.
             </AlertDescription>
           </Alert>
 
           {businessFields.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed rounded-lg border-slate-200/50 dark:border-slate-800/50">
               <Briefcase className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-slate-600 dark:text-slate-400 mb-2">No business interests added</p>
+              <p className="text-slate-600 dark:text-slate-400 mb-2">
+                No business interests added
+              </p>
               <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
                 If you have no business interests, you can skip this section
               </p>
-              <Button type="button" onClick={addBusinessInterest} variant="outline">
+              <Button
+                type="button"
+                onClick={addBusinessInterest}
+                variant="outline">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Business Interest
               </Button>
@@ -189,7 +195,9 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
                                       ? field.value.toISOString().split('T')[0]
                                       : field.value
                                   }
-                                  onChange={(e) => field.onChange(new Date(e.target.value))}
+                                  onChange={(e) =>
+                                    field.onChange(new Date(e.target.value))
+                                  }
                                   max={new Date().toISOString().split('T')[0]}
                                 />
                               )}
@@ -224,8 +232,9 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
           <Alert className="mb-6 border-slate-200/50 dark:border-slate-800/50">
             <Info className="h-4 w-4" />
             <AlertDescription className="text-sm text-slate-600 dark:text-slate-400">
-              Disclose relatives within the 4th civil degree (by consanguinity or affinity)
-              currently employed in government. If none, you may skip this section.
+              Disclose relatives within the 4th civil degree (by consanguinity
+              or affinity) currently employed in government. If none, you may
+              skip this section.
             </AlertDescription>
           </Alert>
 
@@ -236,7 +245,8 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
                 No relatives in government added
               </p>
               <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                If you have no relatives in government service, you can skip this section
+                If you have no relatives in government service, you can skip
+                this section
               </p>
               <Button type="button" onClick={addRelative} variant="outline">
                 <Plus className="h-4 w-4 mr-2" />
@@ -295,7 +305,9 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
                                     value={value || ''}
                                     onChange={(e) => onChange(e.target.value)}
                                     className="flex h-10 w-full rounded-lg border bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all px-3 py-2 text-sm shadow-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>option]:bg-white [&>option]:dark:bg-slate-800">
-                                    <option value="">Select relationship</option>
+                                    <option value="">
+                                      Select relationship
+                                    </option>
                                     {RELATIONSHIP_TYPE.map((rel) => (
                                       <option key={rel} value={rel}>
                                         {rel}

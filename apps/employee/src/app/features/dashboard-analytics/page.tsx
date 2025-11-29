@@ -21,14 +21,13 @@ import {
   Activity,
   Award,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { MagicCard } from '@/components/ui/magic-card';
-import { NeonGradientCard } from '@/components/ui/neon-gradient-card';
-import { cn } from '@/lib/utils';
+import { Button } from '../../../components/ui/button';
+import { Badge } from '../../../components/ui/badge';
+import { Card } from '../../../components/ui/card';
+import { MagicCard } from '../../../components/ui/magic-card';
+import { NeonGradientCard } from '../../../components/ui/neon-gradient-card';
+import { cn } from '../../../lib/utils';
 import Link from 'next/link';
-
 
 const HeroSection = () => (
   <section className="relative overflow-hidden bg-gradient-to-br from-[#8B1538]/5 via-white to-[#B8264D]/5 dark:from-gray-950 dark:via-gray-900 dark:to-[#8B1538]/20 pt-32 pb-20">
@@ -61,10 +60,11 @@ const HeroSection = () => (
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
           className="mb-8 text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
-          Academic research implementation of comprehensive reporting and analytics with real-time 
-          compliance metrics and organizational insights. This thesis project demonstrates data-driven 
-          decision making with powerful visualization tools and government dashboards designed for 
-          Philippine public administration research.
+          Academic research implementation of comprehensive reporting and
+          analytics with real-time compliance metrics and organizational
+          insights. This thesis project demonstrates data-driven decision making
+          with powerful visualization tools and government dashboards designed
+          for Philippine public administration research.
         </motion.p>
 
         <motion.div
@@ -182,8 +182,9 @@ const AnalyticsFeaturesSection = () => {
             Research Analytics Implementation Features
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Academic demonstration of powerful analytics tools designed to provide actionable 
-            insights for Philippine government decision-making and digital transformation research.
+            Academic demonstration of powerful analytics tools designed to
+            provide actionable insights for Philippine government
+            decision-making and digital transformation research.
           </p>
         </motion.div>
 
@@ -359,8 +360,7 @@ const DashboardPreviewSection = () => (
                         'text-yellow-600 dark:text-yellow-400',
                       metric.color === 'red' &&
                         'text-red-600 dark:text-red-400',
-                      metric.color === 'blue' &&
-                        'text-[#B8264D]'
+                      metric.color === 'blue' && 'text-[#B8264D]'
                     )}
                   />
                 </div>
@@ -467,8 +467,9 @@ const ReportingCapabilitiesSection = () => {
             Research Reporting Capabilities Implementation
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Academic study demonstrating detailed reporting capabilities tailored to different 
-            government stakeholders and administrative decision-making needs in Philippine public service.
+            Academic study demonstrating detailed reporting capabilities
+            tailored to different government stakeholders and administrative
+            decision-making needs in Philippine public service.
           </p>
         </motion.div>
 
@@ -632,8 +633,9 @@ const BenefitsSection = () => {
             Research Benefits & Academic Impact Study
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Academic analysis of the potential benefits of implementing comprehensive 
-            analytics in Philippine government organizations through digital transformation research.
+            Academic analysis of the potential benefits of implementing
+            comprehensive analytics in Philippine government organizations
+            through digital transformation research.
           </p>
         </motion.div>
 
@@ -684,9 +686,10 @@ const CTASection = () => (
           Thesis Research on Government Data Analytics
         </h2>
         <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
-          This academic prototype demonstrates how to transform government data into actionable insights 
-          through comprehensive analytics and reporting. Research implementation supporting informed 
-          decision-making and digital governance for Philippine public administration.
+          This academic prototype demonstrates how to transform government data
+          into actionable insights through comprehensive analytics and
+          reporting. Research implementation supporting informed decision-making
+          and digital governance for Philippine public administration.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">

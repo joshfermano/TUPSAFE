@@ -11,9 +11,9 @@ import React, {
 } from 'react';
 import { useFormContext, Controller } from 'react-hook-form';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
+import { Label } from '../../ui/label';
+import { Input } from '../../ui/input';
+import { cn } from '../../../lib/utils';
 import {
   formatCurrency,
   parseCurrency,
@@ -21,7 +21,7 @@ import {
   isValidCurrencyInput,
   cleanCurrencyInput,
   CURRENCY_CONSTANTS,
-} from '@/lib/utils/currency';
+} from '../../../lib/utils/currency';
 import { X } from 'lucide-react';
 
 /**
@@ -110,7 +110,7 @@ export const CurrencyInput = memo(function CurrencyInput({
   // Get nested error if exists
   const error = useMemo(() => {
     const pathParts = name.split('.');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     // Type assertion needed: Dynamic property access on form errors object
     let currentError: any = errors;
 
@@ -168,21 +168,18 @@ export const CurrencyInput = memo(function CurrencyInput({
   /**
    * Handle blur event - format the value with currency symbol
    */
-  const handleBlur = useCallback(
-    (value: number) => {
-      setIsFocused(false);
+  const handleBlur = useCallback((value: number) => {
+    setIsFocused(false);
 
-      if (value === 0 || isNaN(value)) {
-        setDisplayValue('');
-        return;
-      }
+    if (value === 0 || isNaN(value)) {
+      setDisplayValue('');
+      return;
+    }
 
-      // Format with full currency notation on blur
-      const formatted = formatCurrency(value);
-      setDisplayValue(formatted);
-    },
-    []
-  );
+    // Format with full currency notation on blur
+    const formatted = formatCurrency(value);
+    setDisplayValue(formatted);
+  }, []);
 
   /**
    * Handle focus event - remove currency symbol for easier editing
@@ -284,9 +281,9 @@ export const CurrencyInput = memo(function CurrencyInput({
                 htmlFor={name}
                 className={cn(
                   error && 'text-destructive',
-                  required && "after:content-['*'] after:ml-0.5 after:text-destructive"
-                )}
-              >
+                  required &&
+                    "after:content-['*'] after:ml-0.5 after:text-destructive"
+                )}>
                 {label}
               </Label>
             )}
@@ -295,22 +292,19 @@ export const CurrencyInput = memo(function CurrencyInput({
             <motion.div
               className="relative"
               animate={isFocused ? { scale: 1.01 } : { scale: 1 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-            >
+              transition={{ duration: 0.2, ease: 'easeOut' }}>
               {/* Peso Sign Prefix */}
               <motion.div
                 className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"
                 animate={isFocused ? { x: 1 } : { x: 0 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
-              >
+                transition={{ duration: 0.2, ease: 'easeOut' }}>
                 <span
                   className={cn(
                     'text-muted-foreground text-sm font-medium select-none transition-colors duration-200',
                     isFocused && 'text-primary',
                     error && 'text-destructive',
                     disabled && 'opacity-50'
-                  )}
-                >
+                  )}>
                   ₱
                 </span>
               </motion.div>
@@ -319,7 +313,9 @@ export const CurrencyInput = memo(function CurrencyInput({
               <Input
                 ref={(e) => {
                   ref(e);
-                  (inputRef as React.MutableRefObject<HTMLInputElement | null>).current = e;
+                  (
+                    inputRef as React.MutableRefObject<HTMLInputElement | null>
+                  ).current = e;
                 }}
                 id={name}
                 type="text"
@@ -329,7 +325,11 @@ export const CurrencyInput = memo(function CurrencyInput({
                 disabled={disabled}
                 aria-invalid={!!error}
                 aria-describedby={
-                  error ? `${name}-error` : helperText ? `${name}-helper` : undefined
+                  error
+                    ? `${name}-error`
+                    : helperText
+                    ? `${name}-helper`
+                    : undefined
                 }
                 className={cn(
                   'pl-8 pr-9 font-mono tabular-nums',
@@ -365,8 +365,7 @@ export const CurrencyInput = memo(function CurrencyInput({
                     exit={{ opacity: 0, scale: 0.8 }}
                     transition={{ duration: 0.15 }}
                     whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
+                    whileTap={{ scale: 0.95 }}>
                     <X className="size-4" />
                   </motion.button>
                 )}
@@ -378,15 +377,13 @@ export const CurrencyInput = memo(function CurrencyInput({
               <p
                 id={`${name}-error`}
                 className="text-destructive text-sm font-medium"
-                role="alert"
-              >
+                role="alert">
                 {error}
               </p>
             ) : helperText ? (
               <p
                 id={`${name}-helper`}
-                className="text-muted-foreground text-sm"
-              >
+                className="text-muted-foreground text-sm">
                 {helperText}
               </p>
             ) : null}

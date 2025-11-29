@@ -1,8 +1,8 @@
 'use client';
 
 import { useMemo, useCallback } from 'react';
-import { useTheme } from '@/context/ThemeContext';
-import type { Theme, ResolvedTheme } from '@/context/ThemeContext';
+import { useTheme } from '../context/ThemeContext';
+import type { Theme, ResolvedTheme } from '../context/ThemeContext';
 
 /**
  * Performance-optimized theme hook that prevents unnecessary re-renders
@@ -49,7 +49,8 @@ export interface OptimizedThemeConfig {
 }
 
 export function useOptimizedTheme(): OptimizedThemeConfig {
-  const { theme, resolvedTheme, systemTheme, setTheme, toggleTheme } = useTheme();
+  const { theme, resolvedTheme, systemTheme, setTheme, toggleTheme } =
+    useTheme();
 
   // Memoize theme check function for stable reference
   const isTheme = useCallback(
@@ -60,10 +61,7 @@ export function useOptimizedTheme(): OptimizedThemeConfig {
   );
 
   // Memoize system theme check
-  const isSystemTheme = useMemo(
-    () => theme === 'system',
-    [theme]
-  );
+  const isSystemTheme = useMemo(() => theme === 'system', [theme]);
 
   // Return fully memoized configuration object
   // This ensures the reference only changes when actual theme values change
@@ -77,7 +75,15 @@ export function useOptimizedTheme(): OptimizedThemeConfig {
       isTheme,
       isSystemTheme,
     }),
-    [theme, resolvedTheme, systemTheme, setTheme, toggleTheme, isTheme, isSystemTheme]
+    [
+      theme,
+      resolvedTheme,
+      systemTheme,
+      setTheme,
+      toggleTheme,
+      isTheme,
+      isSystemTheme,
+    ]
   );
 }
 

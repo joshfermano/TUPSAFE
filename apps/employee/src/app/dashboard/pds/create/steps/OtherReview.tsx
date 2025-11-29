@@ -1,7 +1,7 @@
 'use client';
 
 import { memo } from 'react';
-import { Info, Plus, X, CheckCircle2 } from 'lucide-react';
+import { Info, Plus, X, CheckCircle2, Award, Users } from 'lucide-react';
 import { useFormContext, useFieldArray, type FieldPath } from 'react-hook-form';
 import {
   FormField,
@@ -9,17 +9,46 @@ import {
   FormLabel,
   FormControl,
   FormMessage,
-  FormDescription,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Textarea } from '@/components/ui/textarea';
-import { FormSection } from '@/components/forms/shared/FormSection';
-import { NeonGradientCard } from '@/components/ui/neon-gradient-card';
-import { type CompletePdsData } from '@/lib/validations/pds-schema';
+} from '../../../../../components/ui/form';
+import { Input } from '../../../../../components/ui/input';
+import { Button } from '../../../../../components/ui/button';
+import { Separator } from '../../../../../components/ui/separator';
+import { Checkbox } from '../../../../../components/ui/checkbox';
+import { Textarea } from '../../../../../components/ui/textarea';
+import { FormSection } from '../../../../../components/forms/shared/FormSection';
+import { NeonGradientCard } from '../../../../../components/ui/neon-gradient-card';
+import { type CompletePdsData } from '../../../../../lib/validations/pds-schema';
+
+// Define questions array outside component to prevent recreation on each render
+const CSC_QUESTIONS = [
+  {
+    key: 'Q34_criminal_charged',
+    label: 'Have you ever been formally charged?',
+  },
+  { key: 'Q35_criminal_convicted', label: 'Have you ever been convicted?' },
+  {
+    key: 'Q36_separated_from_service',
+    label: 'Have you ever been separated from service?',
+  },
+  {
+    key: 'Q37_candidate_for_election',
+    label: 'Have you ever been a candidate?',
+  },
+  {
+    key: 'Q38_resigned_from_government',
+    label: 'Have you resigned from government service?',
+  },
+  {
+    key: 'Q39_immigrant_or_acquired_residence',
+    label: 'Have you acquired immigrant status?',
+  },
+  {
+    key: 'Q40_indigenous_group',
+    label: 'Are you a member of an indigenous group?',
+  },
+  { key: 'Q41_disabled', label: 'Are you a person with disability?' },
+  { key: 'Q42_solo_parent', label: 'Are you a solo parent?' },
+] as const;
 
 /**
  * Step 8: Other Information & Review
@@ -28,8 +57,16 @@ import { type CompletePdsData } from '@/lib/validations/pds-schema';
 export const OtherReview = memo(function OtherReview() {
   const form = useFormContext<Partial<CompletePdsData>>();
 
+  // Watch all question values at once (single subscription instead of 9 separate ones)
+  // This fixes the performance issue of calling watch() inside the map loop
+  const questionValues = form.watch('otherInfo.questions');
+
   // Type-safe field array setup for nested arrays
-  const { fields: skillFields, append: appendSkill, remove: removeSkill } = useFieldArray({
+  const {
+    fields: skillFields,
+    append: appendSkill,
+    remove: removeSkill,
+  } = useFieldArray({
     control: form.control,
     // TypeScript limitation: React Hook Form doesn't support deeply nested field array paths in its type system
     // Runtime validation is maintained through the Zod schema
@@ -37,7 +74,31 @@ export const OtherReview = memo(function OtherReview() {
     name: 'otherInfo.skills' as any,
   });
 
-  const { fields: referenceFields, append: appendReference, remove: removeReference } = useFieldArray({
+  const {
+    fields: recognitionFields,
+    append: appendRecognition,
+    remove: removeRecognition,
+  } = useFieldArray({
+    control: form.control,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    name: 'otherInfo.recognitions' as any,
+  });
+
+  const {
+    fields: associationFields,
+    append: appendAssociation,
+    remove: removeAssociation,
+  } = useFieldArray({
+    control: form.control,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    name: 'otherInfo.associations' as any,
+  });
+
+  const {
+    fields: referenceFields,
+    append: appendReference,
+    remove: removeReference,
+  } = useFieldArray({
     control: form.control,
     // TypeScript limitation: React Hook Form doesn't support deeply nested field array paths in its type system
     // Runtime validation is maintained through the Zod schema
@@ -45,36 +106,24 @@ export const OtherReview = memo(function OtherReview() {
     name: 'otherInfo.references' as any,
   });
 
-  const questions = [
-    { key: 'Q34_criminal_charged', label: 'Have you ever been formally charged?' },
-    { key: 'Q35_criminal_convicted', label: 'Have you ever been convicted?' },
-    { key: 'Q36_separated_from_service', label: 'Have you ever been separated from service?' },
-    { key: 'Q37_candidate_for_election', label: 'Have you ever been a candidate?' },
-    { key: 'Q38_resigned_from_government', label: 'Have you resigned from government service?' },
-    { key: 'Q39_immigrant_or_acquired_residence', label: 'Have you acquired immigrant status?' },
-    { key: 'Q40_indigenous_group', label: 'Are you a member of an indigenous group?' },
-    { key: 'Q41_disabled', label: 'Are you a person with disability?' },
-    { key: 'Q42_solo_parent', label: 'Are you a solo parent?' },
-  ];
-
   return (
     <FormSection
       title="Other Information & Final Review"
       description="Special skills, CSC questions, character references, and review"
       icon={Info}
-      stepNumber={8}
-    >
+      stepNumber={8}>
       <div className="space-y-8">
         {/* Skills */}
         <div>
           <div className="flex items-center justify-between mb-6">
-            <h4 className="text-base font-medium text-foreground">Special Skills & Hobbies</h4>
+            <h4 className="text-base font-medium text-foreground">
+              Special Skills & Hobbies
+            </h4>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => appendSkill('')}
-            >
+              onClick={() => appendSkill('')}>
               <Plus className="h-4 w-4 mr-2" />
               Add Skill
             </Button>
@@ -89,7 +138,11 @@ export const OtherReview = memo(function OtherReview() {
                   render={({ field }) => (
                     <FormItem className="flex-1">
                       <FormControl>
-                        <Input placeholder="e.g., Public Speaking" {...field} className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
+                        <Input
+                          placeholder="e.g., Public Speaking"
+                          {...field}
+                          className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -99,8 +152,7 @@ export const OtherReview = memo(function OtherReview() {
                   type="button"
                   variant="ghost"
                   size="icon"
-                  onClick={() => removeSkill(index)}
-                >
+                  onClick={() => removeSkill(index)}>
                   <X className="h-4 w-4" />
                 </Button>
               </div>
@@ -110,51 +162,311 @@ export const OtherReview = memo(function OtherReview() {
 
         <Separator className="border-slate-200/50 dark:border-slate-800/50" />
 
+        {/* Non-Academic Distinctions/Recognition */}
+        <div>
+          <div className="flex items-center justify-between mb-6">
+            <h4 className="text-base font-medium text-foreground flex items-center gap-2">
+              <Award className="h-4 w-4 text-primary" />
+              Non-Academic Distinctions / Recognition
+            </h4>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                appendRecognition({
+                  title: '',
+                  year: new Date().getFullYear(),
+                  organization: '',
+                })
+              }>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Recognition
+            </Button>
+          </div>
+
+          {recognitionFields.length === 0 ? (
+            <div className="text-center py-12 text-slate-600 dark:text-slate-400 text-sm">
+              No recognitions added yet
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {recognitionFields.map((field, index) => (
+                <div
+                  key={field.id}
+                  className="p-6 rounded-lg border border-slate-200 dark:border-slate-800 space-y-6">
+                  <div className="flex justify-between items-start">
+                    <p className="text-sm font-medium">
+                      Recognition #{index + 1}
+                    </p>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeRecognition(index)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name={`otherInfo.recognitions.${index}.title`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Title of Recognition <span className="text-destructive">*</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g., Outstanding Researcher Award"
+                              {...field}
+                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`otherInfo.recognitions.${index}.year`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Year Received <span className="text-destructive">*</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="1950"
+                              max={new Date().getFullYear()}
+                              placeholder="e.g., 2024"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(parseInt(e.target.value))
+                              }
+                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`otherInfo.recognitions.${index}.organization`}
+                      render={({ field }) => (
+                        <FormItem className="md:col-span-2">
+                          <FormLabel>
+                            Awarding Organization <span className="text-destructive">*</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g., CHED"
+                              {...field}
+                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <Separator className="border-slate-200/50 dark:border-slate-800/50" />
+
+        {/* Membership in Association/Organization */}
+        <div>
+          <div className="flex items-center justify-between mb-6">
+            <h4 className="text-base font-medium text-foreground flex items-center gap-2">
+              <Users className="h-4 w-4 text-primary" />
+              Membership in Association / Organization
+            </h4>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                appendAssociation({
+                  name: '',
+                  position: '',
+                  yearJoined: new Date().getFullYear(),
+                })
+              }>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Membership
+            </Button>
+          </div>
+
+          {associationFields.length === 0 ? (
+            <div className="text-center py-12 text-slate-600 dark:text-slate-400 text-sm">
+              No memberships added yet
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {associationFields.map((field, index) => (
+                <div
+                  key={field.id}
+                  className="p-6 rounded-lg border border-slate-200 dark:border-slate-800 space-y-6">
+                  <div className="flex justify-between items-start">
+                    <p className="text-sm font-medium">
+                      Membership #{index + 1}
+                    </p>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeAssociation(index)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name={`otherInfo.associations.${index}.name`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Association / Organization Name <span className="text-destructive">*</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g., Philippine Institute of Engineering"
+                              {...field}
+                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`otherInfo.associations.${index}.position`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Position / Role (if any)</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g., Member, Board Member"
+                              {...field}
+                              value={field.value ?? ''}
+                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`otherInfo.associations.${index}.yearJoined`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Year Joined</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="1950"
+                              max={new Date().getFullYear()}
+                              placeholder="e.g., 2020"
+                              {...field}
+                              value={field.value ?? ''}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value ? parseInt(e.target.value) : undefined
+                                )
+                              }
+                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <Separator className="border-slate-200/50 dark:border-slate-800/50" />
+
         {/* CSC Questions */}
         <div>
-          <h4 className="text-base font-medium text-foreground mb-6">CSC Questions (34-42)</h4>
+          <h4 className="text-base font-medium text-foreground mb-6">
+            CSC Questions (34-42)
+          </h4>
           <div className="space-y-6">
-            {questions.map((question) => (
-              <div key={question.key} className="space-y-3">
-                <FormField
-                  control={form.control}
-                  name={`otherInfo.questions.${question.key}` as FieldPath<Partial<CompletePdsData>>}
-                  render={({ field }) => (
-                    <FormItem className="flex items-center space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value as boolean}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormLabel className="font-normal cursor-pointer">
-                        {question.label}
-                      </FormLabel>
-                    </FormItem>
-                  )}
-                />
+            {CSC_QUESTIONS.map((question) => {
+              // Access the value directly from the watched object instead of calling watch() per question
+              // This avoids creating 9 separate subscriptions on each render
+              const isChecked = questionValues?.[
+                question.key as keyof typeof questionValues
+              ] as boolean;
 
-                {form.watch(`otherInfo.questions.${question.key}` as FieldPath<Partial<CompletePdsData>>) && (
+              return (
+                <div key={question.key} className="space-y-3">
                   <FormField
                     control={form.control}
-                    name={`otherInfo.questions.${question.key}_details` as FieldPath<Partial<CompletePdsData>>}
+                    name={
+                      `otherInfo.questions.${question.key}` as FieldPath<
+                        Partial<CompletePdsData>
+                      >
+                    }
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="flex items-center space-x-3 space-y-0">
                         <FormControl>
-                          <Textarea
-                            placeholder="Please provide details..."
-                            className="resize-none bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
-                            {...field}
-                            value={(field?.value as string) || ''}
+                          <Checkbox
+                            checked={field.value as boolean}
+                            onCheckedChange={field.onChange}
                           />
                         </FormControl>
-                        <FormMessage />
+                        <FormLabel className="font-normal cursor-pointer">
+                          {question.label}
+                        </FormLabel>
                       </FormItem>
                     )}
                   />
-                )}
-              </div>
-            ))}
+
+                  {isChecked && (
+                    <FormField
+                      control={form.control}
+                      name={
+                        `otherInfo.questions.${question.key}_details` as FieldPath<
+                          Partial<CompletePdsData>
+                        >
+                      }
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Please provide details..."
+                              className="resize-none bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                              {...field}
+                              value={(field?.value as string) || ''}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -167,19 +479,22 @@ export const OtherReview = memo(function OtherReview() {
               <h4 className="text-base font-medium text-foreground">
                 Character References <span className="text-destructive">*</span>
               </h4>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Minimum 3, Maximum 5</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                Minimum 3, Maximum 5
+              </p>
             </div>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => appendReference({
-                name: '',
-                address: '',
-                telephoneNo: '',
-              })}
-              disabled={referenceFields.length >= 5}
-            >
+              onClick={() =>
+                appendReference({
+                  name: '',
+                  address: '',
+                  telephoneNo: '',
+                })
+              }
+              disabled={referenceFields.length >= 5}>
               <Plus className="h-4 w-4 mr-2" />
               Add Reference
             </Button>
@@ -192,15 +507,18 @@ export const OtherReview = memo(function OtherReview() {
           ) : (
             <div className="space-y-4">
               {referenceFields.map((field, index) => (
-                <div key={field.id} className="p-6 rounded-lg border border-slate-200 dark:border-slate-800 space-y-6">
+                <div
+                  key={field.id}
+                  className="p-6 rounded-lg border border-slate-200 dark:border-slate-800 space-y-6">
                   <div className="flex justify-between items-start">
-                    <p className="text-sm font-medium">Reference #{index + 1}</p>
+                    <p className="text-sm font-medium">
+                      Reference #{index + 1}
+                    </p>
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      onClick={() => removeReference(index)}
-                    >
+                      onClick={() => removeReference(index)}>
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
@@ -213,7 +531,11 @@ export const OtherReview = memo(function OtherReview() {
                         <FormItem>
                           <FormLabel>Full Name</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g., Dr. Maria Santos" {...field} className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
+                            <Input
+                              placeholder="e.g., Dr. Maria Santos"
+                              {...field}
+                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -227,7 +549,12 @@ export const OtherReview = memo(function OtherReview() {
                         <FormItem>
                           <FormLabel>Telephone No.</FormLabel>
                           <FormControl>
-                            <Input placeholder="+63-2-8123-4567" {...field} value={field.value || ''} className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
+                            <Input
+                              placeholder="+63-2-8123-4567"
+                              {...field}
+                              value={field.value || ''}
+                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -242,9 +569,9 @@ export const OtherReview = memo(function OtherReview() {
                           <FormLabel>Address</FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder='Complete address'
+                              placeholder="Complete address"
                               {...field}
-                              className="resize-none bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                              className="resize-none bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
                             />
                           </FormControl>
                           <FormMessage />
@@ -265,11 +592,14 @@ export const OtherReview = memo(function OtherReview() {
           <div className="space-y-5">
             <div className="flex items-center gap-3">
               <CheckCircle2 className="h-6 w-6 text-primary" />
-              <h4 className="text-base font-medium text-foreground">Ready to Submit?</h4>
+              <h4 className="text-base font-medium text-foreground">
+                Ready to Submit?
+              </h4>
             </div>
             <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-              Please review all the information you&apos;ve provided. Once submitted, your Personal Data
-              Sheet will be forwarded to HR for review. You can still save as draft if you need more time.
+              Please review all the information you&apos;ve provided. Once
+              submitted, your Personal Data Sheet will be forwarded to HR for
+              review. You can still save as draft if you need more time.
             </p>
             <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-2 list-disc list-inside">
               <li>All required fields are marked with an asterisk (*)</li>

@@ -22,14 +22,13 @@ import {
   Building,
   Settings,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { MagicCard } from '@/components/ui/magic-card';
-import { NeonGradientCard } from '@/components/ui/neon-gradient-card';
-import { cn } from '@/lib/utils';
+import { Button } from '../../../components/ui/button';
+import { Badge } from '../../../components/ui/badge';
+import { Card } from '../../../components/ui/card';
+import { MagicCard } from '../../../components/ui/magic-card';
+import { NeonGradientCard } from '../../../components/ui/neon-gradient-card';
+import { cn } from '../../../lib/utils';
 import Link from 'next/link';
-
 
 const HeroSection = () => (
   <section className="relative overflow-hidden bg-gradient-to-br from-[#8B1538]/5 via-white to-[#8B1538]/10 dark:from-gray-950 dark:via-gray-900 dark:to-[#8B1538]/20 pt-32 pb-20">
@@ -62,10 +61,12 @@ const HeroSection = () => (
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
           className="mb-8 text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
-          Academic research implementation of government-grade security with complete audit trails, 
-          end-to-end encryption, and comprehensive regulatory compliance monitoring.
-          This thesis project demonstrates protection of sensitive government data using 
-          advanced security standards required by Data Privacy Act 2012 and Philippine government regulations.
+          Academic research implementation of government-grade security with
+          complete audit trails, end-to-end encryption, and comprehensive
+          regulatory compliance monitoring. This thesis project demonstrates
+          protection of sensitive government data using advanced security
+          standards required by Data Privacy Act 2012 and Philippine government
+          regulations.
         </motion.p>
 
         <motion.div
@@ -183,9 +184,10 @@ const SecurityFeaturesSection = () => {
             Research Security Implementation Features
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Academic demonstration of comprehensive security measures designed to protect 
-            sensitive government data and ensure regulatory compliance with Philippine 
-            Data Privacy Act 2012 and Civil Service Commission requirements.
+            Academic demonstration of comprehensive security measures designed
+            to protect sensitive government data and ensure regulatory
+            compliance with Philippine Data Privacy Act 2012 and Civil Service
+            Commission requirements.
           </p>
         </motion.div>
 
@@ -286,8 +288,9 @@ const ComplianceStandardsSection = () => {
             Research Compliance Standards Implementation
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Academic study demonstrating implementation of the highest standards for 
-            Philippine government data protection and regulatory compliance requirements.
+            Academic study demonstrating implementation of the highest standards
+            for Philippine government data protection and regulatory compliance
+            requirements.
           </p>
         </motion.div>
 
@@ -664,9 +667,10 @@ const CTASection = () => (
           Thesis Research on Government Data Security
         </h2>
         <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
-          This academic prototype demonstrates how to protect sensitive government information 
-          with advanced security measures. Research implementation of the highest levels of 
-          data protection and regulatory compliance for Philippine government institutions.
+          This academic prototype demonstrates how to protect sensitive
+          government information with advanced security measures. Research
+          implementation of the highest levels of data protection and regulatory
+          compliance for Philippine government institutions.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">

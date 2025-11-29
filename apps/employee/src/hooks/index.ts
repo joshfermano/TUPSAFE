@@ -297,12 +297,12 @@ export { useOpenPositionsQuery as useOpenPositionsLegacy } from './useOrganizati
 export { usePositionsByDepartmentQuery as usePositionsByOrganization } from './useOrganizationQuery';
 
 // Export types from the API types file
-export type { Department, Position } from '@/types/api';
+export type { Department, Position } from '../types/api';
 
 // Re-export College and Office types (these are Department types with specific officeType)
-export type College = import('@/types/api').Department;
-export type Office = import('@/types/api').Department;
-export type OpenPosition = import('@/types/api').Position;
+export type College = import('../types/api').Department;
+export type Office = import('../types/api').Department;
+export type OpenPosition = import('../types/api').Position;
 
 // ============================================================================
 // New API-Connected Hooks (Replace Mock Data)
@@ -451,6 +451,39 @@ export {
   type UserPreferences,
   type PreferencesUpdate,
 } from './useSettings';
+
+/**
+ * PDS PDF Generation Hook
+ *
+ * Client-side PDF generation for Personal Data Sheet documents.
+ * Provides download, preview, and blob generation functionality.
+ *
+ * @example
+ * ```tsx
+ * import { usePDSPdf } from '@/hooks';
+ * import { toast } from 'sonner';
+ *
+ * function PDSActions({ pdsData }: { pdsData: PDSData }) {
+ *   const { downloadPDF, isGenerating } = usePDSPdf();
+ *
+ *   const handleDownload = async () => {
+ *     try {
+ *       await downloadPDF(pdsData, 'my-pds.pdf');
+ *       toast.success('PDF downloaded successfully');
+ *     } catch (error) {
+ *       toast.error('Failed to generate PDF');
+ *     }
+ *   };
+ *
+ *   return (
+ *     <button onClick={handleDownload} disabled={isGenerating}>
+ *       {isGenerating ? 'Generating...' : 'Download PDF'}
+ *     </button>
+ *   );
+ * }
+ * ```
+ */
+export { usePDSPdf, type UsePDSPdfReturn } from './usePDSPdf';
 
 /**
  * Usage Examples

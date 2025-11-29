@@ -7,7 +7,9 @@
  * - LocalStorage persistence for offline draft recovery
  * - Real-time save status tracking (idle, saving, saved, error)
  * - Manual save trigger capability
- * - Deep equality checking to prevent unnecessary saves
+ * - Fast equality checking (shallow + lazy deep) to prevent unnecessary saves
+ * - Lazy data getter support for improved performance with large forms
+ * - Reduced toast notifications (only on manual saves or errors)
  * - Error handling with custom error callbacks
  * - Automatic cleanup on unmount
  * - TypeScript generic support for type-safe data handling
@@ -46,7 +48,13 @@ export interface UseAutoSaveOptions<T> {
    * Form data to save
    * Typically obtained from React Hook Form's watch() function
    */
-  data: T;
+  data?: T;
+
+  /**
+   * Alternative to data - a function that returns data when save is triggered
+   * More performant for large forms as data isn't evaluated on every render
+   */
+  getData?: () => T;
 
   /**
    * Optional async save function for API persistence
@@ -152,20 +160,51 @@ export interface UseAutoSaveReturn {
 // ============================================================================
 
 /**
- * Deep equality comparison for objects
- * Uses JSON serialization for comparison
+ * Fast equality check using object reference and shallow comparison
+ * Falls back to JSON only for nested changes
  *
  * @param obj1 - First object
  * @param obj2 - Second object
- * @returns True if objects are deeply equal
+ * @returns True if objects are equal
  */
-function deepEqual<T>(obj1: T, obj2: T): boolean {
-  try {
-    return JSON.stringify(obj1) === JSON.stringify(obj2);
-  } catch {
-    // If serialization fails, assume not equal
-    return false;
+function fastEqual<T>(obj1: T, obj2: T): boolean {
+  // Same reference - definitely equal
+  if (obj1 === obj2) return true;
+
+  // Null checks
+  if (!obj1 || !obj2) return false;
+
+  // Not objects - use strict equality
+  if (typeof obj1 !== 'object' || typeof obj2 !== 'object') {
+    return obj1 === obj2;
   }
+
+  // For objects, compare keys length first (fast bail-out)
+  const keys1 = Object.keys(obj1);
+  const keys2 = Object.keys(obj2);
+  if (keys1.length !== keys2.length) return false;
+
+  // Shallow comparison for first-level properties
+  for (const key of keys1) {
+    const val1 = (obj1 as Record<string, unknown>)[key];
+    const val2 = (obj2 as Record<string, unknown>)[key];
+
+    // Same reference for nested objects is good enough for our purposes
+    if (val1 !== val2) {
+      // Only do deep check if both are objects
+      if (typeof val1 === 'object' && typeof val2 === 'object') {
+        try {
+          if (JSON.stringify(val1) !== JSON.stringify(val2)) return false;
+        } catch {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 /**
@@ -263,6 +302,7 @@ const storage = {
 export function useAutoSave<T>({
   key,
   data,
+  getData,
   onSave,
   debounceMs = 2000,
   autoSaveIntervalMs = 30000,
@@ -290,6 +330,14 @@ export function useAutoSave<T>({
   const isMountedRef = useRef<boolean>(true);
   const saveInProgressRef = useRef<boolean>(false);
 
+  // Use ref to store latest data for interval saves (avoids data in dependencies)
+  const latestDataRef = useRef<T | (() => T) | null>(null);
+
+  // Update the latestDataRef when getData or data changes
+  useEffect(() => {
+    latestDataRef.current = getData || data || null;
+  }, [getData, data]);
+
   // ============================================================================
   // Core Save Function
   // ============================================================================
@@ -297,16 +345,19 @@ export function useAutoSave<T>({
   /**
    * Perform the actual save operation
    * Saves to localStorage and optionally calls onSave callback
+   *
+   * @param dataToSave - The data to save
+   * @param isManualSave - Whether this is a manual save (shows success toast) vs auto-save
    */
   const performSave = useCallback(
-    async (dataToSave: T): Promise<void> => {
+    async (dataToSave: T, isManualSave: boolean = false): Promise<void> => {
       // Prevent concurrent saves
       if (saveInProgressRef.current) {
         return;
       }
 
-      // Skip if data hasn't changed (deep equality check)
-      if (lastSavedDataRef.current && deepEqual(dataToSave, lastSavedDataRef.current)) {
+      // Skip if data hasn't changed (fast equality check)
+      if (lastSavedDataRef.current && fastEqual(dataToSave, lastSavedDataRef.current)) {
         return;
       }
 
@@ -342,10 +393,10 @@ export function useAutoSave<T>({
           // Call success callback
           onSuccess?.(dataToSave);
 
-          // Show success toast (brief)
-          if (showToast) {
+          // Only show success toast for manual saves to reduce notification noise
+          if (showToast && isManualSave) {
             toast.success('Draft Saved', {
-              description: 'Your changes have been automatically saved.',
+              description: 'Your changes have been saved.',
               duration: 2000,
             });
           }
@@ -367,7 +418,7 @@ export function useAutoSave<T>({
           // Call error callback
           onError?.(saveError);
 
-          // Show error toast
+          // Always show error toast (both manual and auto-saves)
           if (showToast) {
             toast.error('Save Failed', {
               description: 'Unable to save your draft. Please try again.',
@@ -406,8 +457,12 @@ export function useAutoSave<T>({
       debounceTimerRef.current = null;
     }
 
-    await performSave(data);
-  }, [enabled, data, performSave]);
+    // Get data from getData callback if provided, otherwise use data prop
+    const dataToSave = getData ? getData() : data;
+    if (dataToSave) {
+      await performSave(dataToSave, true); // true = manual save, show toast
+    }
+  }, [enabled, data, getData, performSave]);
 
   // ============================================================================
   // Clear Saved Data Function
@@ -434,6 +489,11 @@ export function useAutoSave<T>({
   useEffect(() => {
     if (!enabled) return;
 
+    // If using getData callback, we only trigger on completedSteps/currentStep changes
+    // not on every form keystroke - the getData will get fresh data when save runs
+    const hasDataToSave = getData || data;
+    if (!hasDataToSave) return;
+
     // Clear existing debounce timer
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
@@ -441,7 +501,10 @@ export function useAutoSave<T>({
 
     // Set new debounce timer
     debounceTimerRef.current = setTimeout(() => {
-      performSave(data);
+      const dataToSave = getData ? getData() : data;
+      if (dataToSave) {
+        performSave(dataToSave, false); // false = auto-save, no toast
+      }
     }, debounceMs);
 
     // Cleanup
@@ -450,7 +513,9 @@ export function useAutoSave<T>({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [data, enabled, debounceMs, performSave]);
+    // Note: When using getData, we don't include 'data' in deps to avoid re-renders
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [getData ? undefined : data, enabled, debounceMs, performSave, getData]);
 
   // ============================================================================
   // Interval Auto-Save Effect
@@ -459,9 +524,15 @@ export function useAutoSave<T>({
   useEffect(() => {
     if (!enabled) return;
 
-    // Set up interval timer for periodic saves
+    // Set up interval timer for periodic saves using latestDataRef
+    // This avoids including 'data' in dependencies which would cause unnecessary re-runs
     intervalTimerRef.current = setInterval(() => {
-      performSave(data);
+      const currentData = latestDataRef.current;
+      const dataToSave =
+        typeof currentData === 'function' ? (currentData as () => T)() : currentData;
+      if (dataToSave) {
+        performSave(dataToSave, false); // false = auto-save, no toast
+      }
     }, autoSaveIntervalMs);
 
     // Cleanup
@@ -470,7 +541,7 @@ export function useAutoSave<T>({
         clearInterval(intervalTimerRef.current);
       }
     };
-  }, [data, enabled, autoSaveIntervalMs, performSave]);
+  }, [enabled, autoSaveIntervalMs, performSave]);
 
   // ============================================================================
   // Mount/Unmount Effect

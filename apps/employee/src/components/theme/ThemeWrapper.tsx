@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { ThemeProvider } from '@/context/ThemeContext';
-import { Header } from '@/components/navigation';
+import { ThemeProvider } from '../../context/ThemeContext';
+import { Header } from '../navigation';
 
 interface ThemeWrapperProps {
   children: React.ReactNode;

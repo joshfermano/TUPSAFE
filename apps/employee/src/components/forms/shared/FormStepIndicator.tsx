@@ -34,10 +34,10 @@
 import React, { useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, type LucideIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { NumberTicker } from '@/components/ui/number-ticker';
-import { AnimatedGradientText } from '@/components/ui/animated-gradient-text';
-import { ShineBorder } from '@/components/ui/shine-border';
+import { cn } from '../../../lib/utils';
+import { NumberTicker } from '../../ui/number-ticker';
+import { AnimatedGradientText } from '../../ui/animated-gradient-text';
+import { ShineBorder } from '../../ui/shine-border';
 
 /**
  * Step definition interface
@@ -141,7 +141,10 @@ export const FormStepIndicator = React.memo<FormStepIndicatorProps>(
     // Handle keyboard navigation
     const handleKeyDown = useCallback(
       (e: React.KeyboardEvent, stepIndex: number) => {
-        if ((e.key === 'Enter' || e.key === ' ') && isStepClickable(stepIndex)) {
+        if (
+          (e.key === 'Enter' || e.key === ' ') &&
+          isStepClickable(stepIndex)
+        ) {
           e.preventDefault();
           handleStepClick(stepIndex);
         }
@@ -253,7 +256,9 @@ export const FormStepIndicator = React.memo<FormStepIndicatorProps>(
                     whileHover={isClickable ? 'hover' : undefined}
                     whileTap={isClickable ? 'tap' : undefined}
                     variants={STEP_VARIANTS}
-                    aria-label={`Step ${index + 1}: ${step.label}${isCompleted ? ' (completed)' : ''}${isActive ? ' (current)' : ''}`}
+                    aria-label={`Step ${index + 1}: ${step.label}${
+                      isCompleted ? ' (completed)' : ''
+                    }${isActive ? ' (current)' : ''}`}
                     aria-current={isActive ? 'step' : undefined}>
                     {/* Active step shine border effect */}
                     {isActive && (
@@ -278,8 +283,15 @@ export const FormStepIndicator = React.memo<FormStepIndicatorProps>(
                           initial="initial"
                           animate="animate"
                           exit="exit"
-                          transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
-                          <Check className="h-6 w-6 relative z-10" strokeWidth={3} />
+                          transition={{
+                            type: 'spring',
+                            stiffness: 300,
+                            damping: 20,
+                          }}>
+                          <Check
+                            className="h-6 w-6 relative z-10"
+                            strokeWidth={3}
+                          />
                         </motion.div>
                       ) : Icon ? (
                         <Icon className="h-6 w-6 relative z-10" />

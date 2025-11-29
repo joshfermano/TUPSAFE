@@ -2,23 +2,29 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { CheckCircle2, ArrowRight, Shield, FileText, Building2 } from 'lucide-react';
+import {
+  CheckCircle2,
+  ArrowRight,
+  Shield,
+  FileText,
+  Building2,
+} from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { UserTypeSelection } from '@/components/auth/UserTypeSelection';
-import { EmployeeRegistrationForm } from '@/components/auth/EmployeeRegistrationForm';
-import { ApplicantRegistrationForm } from '@/components/auth/ApplicantRegistrationForm';
-import { MagicCard } from '@/components/ui/magic-card';
-import { BorderBeam } from '@/components/ui/border-beam';
-import { AnimatedGradientText } from '@/components/ui/animated-gradient-text';
-import AnimatedGridPattern from '@/components/ui/animated-grid-pattern';
+import { Button } from '../../../components/ui/button';
+import { Badge } from '../../../components/ui/badge';
+import { UserTypeSelection } from '../../../components/auth/UserTypeSelection';
+import { EmployeeRegistrationForm } from '../../../components/auth/EmployeeRegistrationForm';
+import { ApplicantRegistrationForm } from '../../../components/auth/ApplicantRegistrationForm';
+import { MagicCard } from '../../../components/ui/magic-card';
+import { BorderBeam } from '../../../components/ui/border-beam';
+import { AnimatedGradientText } from '../../../components/ui/animated-gradient-text';
+import AnimatedGridPattern from '../../../components/ui/animated-grid-pattern';
 
 import {
   type EmployeeRegistrationFormData,
   type ApplicantRegistrationFormData,
-} from '@/lib/validations/auth';
-import { cn } from '@/lib/utils';
+} from '../../../lib/validations/auth';
+import { cn } from '../../../lib/utils';
 
 // Minimalist step definitions
 const EMPLOYEE_STEPS = [
@@ -142,7 +148,10 @@ export default function RegisterPage() {
             <div className="p-7 sm:p-9 space-y-6">
               <div className="flex flex-col items-center text-center space-y-6">
                 <div className="w-20 h-20 rounded-full bg-[#8B1538]/10 dark:bg-[#8B1538]/20 flex items-center justify-center backdrop-blur-sm">
-                  <CheckCircle2 className="h-10 w-10 text-[#8B1538] dark:text-red-400" strokeWidth={2} />
+                  <CheckCircle2
+                    className="h-10 w-10 text-[#8B1538] dark:text-red-400"
+                    strokeWidth={2}
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -161,7 +170,10 @@ export default function RegisterPage() {
                   </div>
                   <div className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
                     <div className="w-1.5 h-1.5 rounded-full bg-[#8B1538] dark:bg-red-400 mt-2 flex-shrink-0" />
-                    <span>Verification email sent to your {isEmployee ? 'TUP Manila email' : 'email'} address</span>
+                    <span>
+                      Verification email sent to your{' '}
+                      {isEmployee ? 'TUP Manila email' : 'email'} address
+                    </span>
                   </div>
                   <div className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
                     <div className="w-1.5 h-1.5 rounded-full bg-[#8B1538] dark:bg-red-400 mt-2 flex-shrink-0" />
@@ -175,8 +187,7 @@ export default function RegisterPage() {
 
                 <Button
                   asChild
-                  className="w-full h-11 bg-[#8B1538] hover:bg-[#6B0F2A] dark:bg-[#8B1538] dark:hover:bg-[#B8264D] text-white font-medium rounded-lg transition-all duration-300 shadow-lg shadow-[#8B1538]/20"
-                >
+                  className="w-full h-11 bg-[#8B1538] hover:bg-[#6B0F2A] dark:bg-[#8B1538] dark:hover:bg-[#B8264D] text-white font-medium rounded-lg transition-all duration-300 shadow-lg shadow-[#8B1538]/20">
                   <Link href="/auth/login">Return to Login</Link>
                 </Button>
               </div>
@@ -316,7 +327,9 @@ export default function RegisterPage() {
                   {/* Employee Registration Form */}
                   {isEmployee && currentStep > 0 && (
                     <EmployeeRegistrationForm
-                      employmentCategory={isFaculty ? 'faculty' : 'administrative'}
+                      employmentCategory={
+                        isFaculty ? 'faculty' : 'administrative'
+                      }
                       currentStep={currentStep}
                       onNextStep={nextStep}
                       onPrevStep={prevStep}

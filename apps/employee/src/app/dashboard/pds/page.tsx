@@ -1,33 +1,33 @@
 'use client';
 
 // React and Next.js
-import { useMemo, memo, useCallback } from 'react';
+import { useMemo, memo, useCallback, useState } from 'react';
 import Link from 'next/link';
 
 // Motion and Animation
 import { motion } from 'framer-motion';
 
 // API Hooks
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '../../../providers/AuthProvider';
 import { usePds } from '@tupsafe/mock-data/api';
+import { usePDSPdf } from '../../../hooks/usePDSPdf';
+import { transformPdsForPdf } from '../../../lib/utils/pds-transform';
+import { toast } from 'sonner';
 
 // Enhanced UI Components from shared-ui
-import {
-  NumberTicker,
-  BlurFade,
-  Badge,
-} from '@tupsafe/shared-ui';
+import { NumberTicker, BlurFade, Badge } from '@tupsafe/shared-ui';
 
 // Local UI Components
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '../../../components/ui/card';
+import { Button } from '../../../components/ui/button';
+import { Tooltip } from '../../../components/ui/tooltip';
 
 // Local Components
-import { InfoCard } from '@/components/dashboard/InfoCard';
-import { DeadlineSection } from '@/components/dashboard/DeadlineSection';
+import { InfoCard } from '../../../components/dashboard/InfoCard';
+import { DeadlineSection } from '../../../components/dashboard/DeadlineSection';
 
 // Utils
-import { cn } from '@/lib/utils';
+import { cn } from '../../../lib/utils';
 
 // Icons
 import {
@@ -50,6 +50,8 @@ import {
   Send,
   TrendingUp,
   Archive,
+  Loader2,
+  Info,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -256,9 +258,111 @@ const SectionCard = memo(function SectionCard({
 // Main Component
 export default function PDSPage() {
   const { user } = useAuth();
-  const { submissions, latest, loading, error } = usePds(user?.id || '');
+  const { submissions, latest, getCompleteSubmission, loading, error } = usePds(
+    user?.id || ''
+  );
+  const { downloadPDF, openPDFInNewTab, isGenerating } = usePDSPdf();
 
   const hasExistingPDS = submissions.length > 0;
+
+  // Check if PDF download/print is allowed (only when approved)
+  const canDownloadPDF = latest?.status === 'approved';
+
+  // Get status-specific message for PDF restriction
+  const getPdfRestrictionMessage = useCallback(() => {
+    switch (latest?.status) {
+      case 'draft':
+        return 'Please submit your PDS for approval first';
+      case 'submitted':
+      case 'reviewing':
+        return 'PDF will be available after admin approval';
+      case 'rejected':
+        return 'Please address feedback and resubmit for approval';
+      default:
+        return 'PDF available after admin approval';
+    }
+  }, [latest?.status]);
+
+  // Handler for downloading the latest PDS as PDF
+  const handleDownloadPDF = useCallback(async () => {
+    if (!latest) {
+      toast.error('No PDS available', {
+        description: 'Please create a PDS first.',
+      });
+      return;
+    }
+
+    const pdsData = getCompleteSubmission(latest.id);
+    if (!pdsData) {
+      toast.error('PDS data not available', {
+        description: 'Unable to generate PDF. Please try again.',
+      });
+      return;
+    }
+
+    try {
+      const pdfData = transformPdsForPdf({
+        ...pdsData,
+        id: latest.id,
+        submittedAt: latest.submittedAt,
+        version: latest.version,
+      });
+
+      toast.loading('Generating PDF...', { id: 'pdf-download' });
+      await downloadPDF(pdfData);
+      toast.success('PDF downloaded successfully', {
+        id: 'pdf-download',
+        description: `PDS_${pdfData.personalInfo.surname}_${pdfData.personalInfo.firstName}.pdf`,
+      });
+    } catch (err) {
+      toast.error('Failed to generate PDF', {
+        id: 'pdf-download',
+        description:
+          err instanceof Error ? err.message : 'An unexpected error occurred',
+      });
+    }
+  }, [latest, getCompleteSubmission, downloadPDF]);
+
+  // Handler for printing the latest PDS (opens in new tab)
+  const handlePrintPDS = useCallback(async () => {
+    if (!latest) {
+      toast.error('No PDS available', {
+        description: 'Please create a PDS first.',
+      });
+      return;
+    }
+
+    const pdsData = getCompleteSubmission(latest.id);
+    if (!pdsData) {
+      toast.error('PDS data not available', {
+        description: 'Unable to generate PDF for printing. Please try again.',
+      });
+      return;
+    }
+
+    try {
+      const pdfData = transformPdsForPdf({
+        ...pdsData,
+        id: latest.id,
+        submittedAt: latest.submittedAt,
+        version: latest.version,
+      });
+
+      toast.loading('Preparing print preview...', { id: 'pdf-print' });
+      await openPDFInNewTab(pdfData);
+      toast.success('PDF opened in new tab', {
+        id: 'pdf-print',
+        description:
+          'Use the browser print function (Ctrl+P / Cmd+P) to print.',
+      });
+    } catch (err) {
+      toast.error('Failed to open print preview', {
+        id: 'pdf-print',
+        description:
+          err instanceof Error ? err.message : 'An unexpected error occurred',
+      });
+    }
+  }, [latest, getCompleteSubmission, openPDFInNewTab]);
 
   // Memoized status badge renderer
   const getStatusBadge = useCallback(
@@ -312,15 +416,18 @@ export default function PDSPage() {
   );
 
   // Memoized activity icon getter
-  const getActivityIcon = useCallback((type: ActivityItem['type']): LucideIcon => {
-    const icons = {
-      create: Plus,
-      update: Edit,
-      submit: Send,
-      approve: CheckCircle2,
-    };
-    return icons[type] || FileText;
-  }, []);
+  const getActivityIcon = useCallback(
+    (type: ActivityItem['type']): LucideIcon => {
+      const icons = {
+        create: Plus,
+        update: Edit,
+        submit: Send,
+        approve: CheckCircle2,
+      };
+      return icons[type] || FileText;
+    },
+    []
+  );
 
   // Memoized completion data
   const completionData = useMemo(() => {
@@ -387,8 +494,6 @@ export default function PDSPage() {
               Commission
             </p>
           </div>
-
-
         </div>
       </BlurFade>
 
@@ -398,41 +503,78 @@ export default function PDSPage() {
       {/* Quick Actions */}
       <BlurFade delay={0.2} duration={0.5}>
         <InfoCard title="Quick Actions" icon={FileText}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5">
-            <Link href="/dashboard/pds/view" className="w-full">
+          <div className="space-y-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5">
+              <Link href="/dashboard/pds/view" className="w-full">
+                <Button
+                  variant="outline"
+                  className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-primary/40 transition-colors">
+                  <Eye className="h-3.5 w-3.5 mr-2" />
+                  View Submissions
+                </Button>
+              </Link>
+              <Link href="/dashboard/pds/archive" className="w-full">
+                <Button
+                  variant="outline"
+                  className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors">
+                  <Archive className="h-3.5 w-3.5 mr-2" />
+                  View Archive
+                </Button>
+              </Link>
+              <Tooltip
+                content={getPdfRestrictionMessage()}
+                disabled={canDownloadPDF}>
+                <Button
+                  variant="outline"
+                  onClick={canDownloadPDF ? handleDownloadPDF : undefined}
+                  disabled={isGenerating || !latest || !canDownloadPDF}
+                  className={cn(
+                    'w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
+                    canDownloadPDF &&
+                      'hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-950/30'
+                  )}>
+                  {isGenerating ? (
+                    <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />
+                  ) : (
+                    <Download className="h-3.5 w-3.5 mr-2" />
+                  )}
+                  Download PDF
+                </Button>
+              </Tooltip>
+              <Tooltip
+                content={getPdfRestrictionMessage()}
+                disabled={canDownloadPDF}>
+                <Button
+                  variant="outline"
+                  onClick={canDownloadPDF ? handlePrintPDS : undefined}
+                  disabled={isGenerating || !latest || !canDownloadPDF}
+                  className={cn(
+                    'w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
+                    canDownloadPDF &&
+                      'hover:border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/30'
+                  )}>
+                  {isGenerating ? (
+                    <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />
+                  ) : (
+                    <Printer className="h-3.5 w-3.5 mr-2" />
+                  )}
+                  Print PDS
+                </Button>
+              </Tooltip>
               <Button
                 variant="outline"
                 className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-primary/40 transition-colors">
-                <Eye className="h-3.5 w-3.5 mr-2" />
-                View Submissions
+                <Send className="h-3.5 w-3.5 mr-2" />
+                Submit for Review
               </Button>
-            </Link>
-            <Link href="/dashboard/pds/archive" className="w-full">
-              <Button
-                variant="outline"
-                className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors">
-                <Archive className="h-3.5 w-3.5 mr-2" />
-                View Archive
-              </Button>
-            </Link>
-            <Button
-              variant="outline"
-              className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-950/30 transition-colors">
-              <Download className="h-3.5 w-3.5 mr-2" />
-              Download PDF
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors">
-              <Printer className="h-3.5 w-3.5 mr-2" />
-              Print PDS
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-primary/40 transition-colors">
-              <Send className="h-3.5 w-3.5 mr-2" />
-              Submit for Review
-            </Button>
+            </div>
+            {/* PDF Restriction Notice */}
+            {!canDownloadPDF && latest && (
+              <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 pl-1">
+                <Info className="h-3.5 w-3.5 shrink-0" />
+                <span>{getPdfRestrictionMessage()}</span>
+              </div>
+            )}
           </div>
         </InfoCard>
       </BlurFade>
@@ -441,74 +583,74 @@ export default function PDSPage() {
       <BlurFade delay={0.3} duration={0.5}>
         <Card className="border-slate-200 dark:border-slate-800 hover:border-primary/20 transition-colors">
           <CardContent className="p-5">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Completion Progress */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
-                <TrendingUp className="h-4 w-4" />
-                Completion Progress
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Completion Progress */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
+                  <TrendingUp className="h-4 w-4" />
+                  Completion Progress
+                </div>
+                <div className="flex items-end gap-2">
+                  <NumberTicker
+                    value={completionData.percentage}
+                    className="text-4xl font-bold text-slate-900 dark:text-slate-100"
+                  />
+                  <span className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+                    % Complete
+                  </span>
+                </div>
+                <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                  <motion.div
+                    className="h-full bg-gradient-tup rounded-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${completionData.percentage}%` }}
+                    transition={{ duration: 1, delay: 0.3, ease: 'easeOut' }}
+                  />
+                </div>
               </div>
-              <div className="flex items-end gap-2">
-                <NumberTicker
-                  value={completionData.percentage}
-                  className="text-4xl font-bold text-slate-900 dark:text-slate-100"
-                />
-                <span className="text-sm text-slate-600 dark:text-slate-400 mb-2">
-                  % Complete
-                </span>
-              </div>
-              <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden">
-                <motion.div
-                  className="h-full bg-gradient-tup rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${completionData.percentage}%` }}
-                  transition={{ duration: 1, delay: 0.3, ease: 'easeOut' }}
-                />
-              </div>
-            </div>
 
-            {/* Last Updated */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
-                <Calendar className="h-4 w-4" />
-                Last Updated
+              {/* Last Updated */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
+                  <Calendar className="h-4 w-4" />
+                  Last Updated
+                </div>
+                <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+                  {latest &&
+                    new Date(latest.updatedAt).toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
+                </div>
+                <div className="text-sm text-slate-600 dark:text-slate-400">
+                  {completionData.daysAgo} days ago
+                </div>
               </div>
-              <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-                {latest &&
-                  new Date(latest.updatedAt).toLocaleDateString('en-US', {
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
-              </div>
-              <div className="text-sm text-slate-600 dark:text-slate-400">
-                {completionData.daysAgo} days ago
-              </div>
-            </div>
 
-            {/* Status */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
-                <FileCheck className="h-4 w-4" />
-                Current Status
-              </div>
-              <div className="flex flex-col gap-3">
-                {latest && getStatusBadge(latest.status)}
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  {latest?.status === 'draft' &&
-                    'Continue editing and submit for review when ready'}
-                  {latest?.status === 'submitted' &&
-                    'Your PDS has been submitted for review'}
-                  {latest?.status === 'reviewing' &&
-                    'Your PDS is under review by HR personnel'}
-                  {latest?.status === 'approved' &&
-                    'Your PDS has been approved and is now official'}
-                  {latest?.status === 'rejected' &&
-                    'Please review feedback and resubmit'}
-                </p>
+              {/* Status */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
+                  <FileCheck className="h-4 w-4" />
+                  Current Status
+                </div>
+                <div className="flex flex-col gap-3">
+                  {latest && getStatusBadge(latest.status)}
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    {latest?.status === 'draft' &&
+                      'Continue editing and submit for review when ready'}
+                    {latest?.status === 'submitted' &&
+                      'Your PDS has been submitted for review'}
+                    {latest?.status === 'reviewing' &&
+                      'Your PDS is under review by HR personnel'}
+                    {latest?.status === 'approved' &&
+                      'Your PDS has been approved and is now official'}
+                    {latest?.status === 'rejected' &&
+                      'Please review feedback and resubmit'}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
           </CardContent>
         </Card>
       </BlurFade>
@@ -533,7 +675,10 @@ export default function PDSPage() {
         <BlurFade delay={0.5} duration={0.5} className="lg:col-span-2">
           <InfoCard title="Submission History" icon={Calendar}>
             <div className="text-sm text-slate-600 dark:text-slate-400">
-              <p>View your complete PDS submission history and track changes over time.</p>
+              <p>
+                View your complete PDS submission history and track changes over
+                time.
+              </p>
             </div>
           </InfoCard>
         </BlurFade>

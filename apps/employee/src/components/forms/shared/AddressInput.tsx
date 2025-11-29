@@ -1,23 +1,23 @@
-                'use client';
+'use client';
 
 import { memo, useCallback, useMemo, useState, useEffect } from 'react';
 import { useFormContext, Controller } from 'react-hook-form';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import { Label } from '../../ui/label';
+import { Input } from '../../ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { cn } from '@/lib/utils';
+} from '../../ui/select';
+import { cn } from '../../../lib/utils';
 import {
   PHILIPPINE_REGIONS,
   getProvincesByRegion,
   getCitiesByProvince,
   getBarangaysByCity,
-} from '@/lib/data/philippine-locations';
+} from '../../../lib/data/philippine-locations';
 import { MapPin, Home, Building2, Info } from 'lucide-react';
 
 /**
@@ -83,13 +83,18 @@ export const AddressInput = memo(function AddressInput({
     formState: { errors },
   } = useFormContext();
 
-  // Watch values for cascading dropdowns
-  const selectedRegion = watch(`${name}.${FIELD_NAMES.region}`);
-  const selectedProvince = watch(`${name}.${FIELD_NAMES.province}`);
-  const selectedCity = watch(`${name}.${FIELD_NAMES.cityMunicipality}`);
-
   // Watch the "Same as" checkbox if sameAsField is provided
   const [sameAs, setSameAs] = useState(false);
+
+  // Consolidated watch subscription for cascading dropdowns - reduces from 6 watch() calls to 1
+  const watchedValues = watch([
+    `${name}.${FIELD_NAMES.region}`,
+    `${name}.${FIELD_NAMES.province}`,
+    `${name}.${FIELD_NAMES.cityMunicipality}`,
+  ]);
+  const selectedRegion = watchedValues[0] as string | undefined;
+  const selectedProvince = watchedValues[1] as string | undefined;
+  const selectedCity = watchedValues[2] as string | undefined;
 
   // Memoized filtered data
   const provinces = useMemo(() => {
@@ -139,40 +144,51 @@ export const AddressInput = memo(function AddressInput({
     [name, setValue]
   );
 
-  // Reset dependent fields when parent changes
+  // Track previous parent values to detect actual user-initiated changes
+  // This prevents clearing fields when navigating between form steps
+  const [prevRegion, setPrevRegion] = useState<string | undefined>(selectedRegion);
+  const [prevProvince, setPrevProvince] = useState<string | undefined>(selectedProvince);
+  const [prevCity, setPrevCity] = useState<string | undefined>(selectedCity);
+
+  // Reset dependent fields ONLY when parent actually changes (user selects a new value)
+  // Compare by name since form stores display names, not codes
   useEffect(() => {
-    if (showRegion && selectedRegion) {
-      // Reset province, city, barangay when region changes
-      const currentProvince = watch(`${name}.${FIELD_NAMES.province}`);
-      const isProvinceValid = provinces.some((p) => p.code === currentProvince);
-      if (!isProvinceValid && currentProvince) {
-        setValue(`${name}.${FIELD_NAMES.province}`, '');
-        setValue(`${name}.${FIELD_NAMES.cityMunicipality}`, '');
-        setValue(`${name}.${FIELD_NAMES.barangay}`, '');
+    // Only reset if region actually changed to a different value (not on mount/navigation)
+    if (showRegion && selectedRegion && prevRegion && selectedRegion !== prevRegion) {
+      // Region changed - check if current province is still valid
+      const isProvinceValid = provinces.some((p) => p.name === selectedProvince);
+      if (!isProvinceValid && selectedProvince) {
+        setValue(`${name}.${FIELD_NAMES.province}`, '', { shouldValidate: false });
+        setValue(`${name}.${FIELD_NAMES.cityMunicipality}`, '', { shouldValidate: false });
+        setValue(`${name}.${FIELD_NAMES.barangay}`, '', { shouldValidate: false });
       }
     }
-  }, [selectedRegion, provinces, name, setValue, watch, showRegion]);
+    setPrevRegion(selectedRegion);
+  }, [selectedRegion, provinces, name, setValue, showRegion, prevRegion, selectedProvince]);
 
   useEffect(() => {
-    if (selectedProvince) {
-      const currentCity = watch(`${name}.${FIELD_NAMES.cityMunicipality}`);
-      const isCityValid = cities.some((c) => c.code === currentCity);
-      if (!isCityValid && currentCity) {
-        setValue(`${name}.${FIELD_NAMES.cityMunicipality}`, '');
-        setValue(`${name}.${FIELD_NAMES.barangay}`, '');
+    // Only reset if province actually changed to a different value
+    if (selectedProvince && prevProvince && selectedProvince !== prevProvince) {
+      const isCityValid = cities.some((c) => c.name === selectedCity);
+      if (!isCityValid && selectedCity) {
+        setValue(`${name}.${FIELD_NAMES.cityMunicipality}`, '', { shouldValidate: false });
+        setValue(`${name}.${FIELD_NAMES.barangay}`, '', { shouldValidate: false });
       }
     }
-  }, [selectedProvince, cities, name, setValue, watch]);
+    setPrevProvince(selectedProvince);
+  }, [selectedProvince, cities, name, setValue, prevProvince, selectedCity]);
 
   useEffect(() => {
-    if (selectedCity) {
+    // Only reset if city actually changed to a different value
+    if (selectedCity && prevCity && selectedCity !== prevCity) {
       const currentBarangay = watch(`${name}.${FIELD_NAMES.barangay}`);
-      const isBarangayValid = barangays.some((b) => b.code === currentBarangay);
+      const isBarangayValid = barangays.some((b) => b.name === currentBarangay);
       if (!isBarangayValid && currentBarangay) {
-        setValue(`${name}.${FIELD_NAMES.barangay}`, '');
+        setValue(`${name}.${FIELD_NAMES.barangay}`, '', { shouldValidate: false });
       }
     }
-  }, [selectedCity, barangays, name, setValue, watch]);
+    setPrevCity(selectedCity);
+  }, [selectedCity, barangays, name, setValue, watch, prevCity]);
 
   // Get nested error messages
   const getError = useCallback(
@@ -224,9 +240,12 @@ export const AddressInput = memo(function AddressInput({
           />
           <Label
             htmlFor={`${name}-same-as`}
-            className="text-sm cursor-pointer select-none"
-          >
-            Same as {sameAsField.replace(/([A-Z])/g, ' $1').trim().toLowerCase()}
+            className="text-sm cursor-pointer select-none">
+            Same as{' '}
+            {sameAsField
+              .replace(/([A-Z])/g, ' $1')
+              .trim()
+              .toLowerCase()}
           </Label>
         </div>
       )}
@@ -243,8 +262,7 @@ export const AddressInput = memo(function AddressInput({
           <div className="space-y-2">
             <Label
               htmlFor={`${name}.${FIELD_NAMES.houseNumber}`}
-              className="text-sm font-medium"
-            >
+              className="text-sm font-medium">
               House/Block/Lot No.
             </Label>
             <Controller
@@ -268,8 +286,7 @@ export const AddressInput = memo(function AddressInput({
             {getError(FIELD_NAMES.houseNumber) && (
               <p
                 id={`${name}.${FIELD_NAMES.houseNumber}-error`}
-                className="text-xs text-destructive"
-              >
+                className="text-xs text-destructive">
                 {getError(FIELD_NAMES.houseNumber)}
               </p>
             )}
@@ -279,8 +296,7 @@ export const AddressInput = memo(function AddressInput({
           <div className="space-y-2">
             <Label
               htmlFor={`${name}.${FIELD_NAMES.streetName}`}
-              className="text-sm font-medium"
-            >
+              className="text-sm font-medium">
               Street Name
             </Label>
             <Controller
@@ -304,8 +320,7 @@ export const AddressInput = memo(function AddressInput({
             {getError(FIELD_NAMES.streetName) && (
               <p
                 id={`${name}.${FIELD_NAMES.streetName}-error`}
-                className="text-xs text-destructive"
-              >
+                className="text-xs text-destructive">
                 {getError(FIELD_NAMES.streetName)}
               </p>
             )}
@@ -315,8 +330,7 @@ export const AddressInput = memo(function AddressInput({
           <div className="space-y-2 md:col-span-2">
             <Label
               htmlFor={`${name}.${FIELD_NAMES.subdivision}`}
-              className="text-sm font-medium"
-            >
+              className="text-sm font-medium">
               Subdivision/Village
             </Label>
             <Controller
@@ -340,8 +354,7 @@ export const AddressInput = memo(function AddressInput({
             {getError(FIELD_NAMES.subdivision) && (
               <p
                 id={`${name}.${FIELD_NAMES.subdivision}-error`}
-                className="text-xs text-destructive"
-              >
+                className="text-xs text-destructive">
                 {getError(FIELD_NAMES.subdivision)}
               </p>
             )}
@@ -365,8 +378,7 @@ export const AddressInput = memo(function AddressInput({
             <div className="space-y-2 md:col-span-2">
               <Label
                 htmlFor={`${name}.${FIELD_NAMES.region}`}
-                className="text-sm font-medium flex items-center gap-2"
-              >
+                className="text-sm font-medium flex items-center gap-2">
                 Region
                 <span className="text-xs text-muted-foreground font-normal">
                   (Optional)
@@ -379,8 +391,7 @@ export const AddressInput = memo(function AddressInput({
                   <Select
                     value={field.value}
                     onValueChange={field.onChange}
-                    disabled={disabled || sameAs}
-                  >
+                    disabled={disabled || sameAs}>
                     <SelectTrigger
                       id={`${name}.${FIELD_NAMES.region}`}
                       className="w-full"
@@ -389,8 +400,7 @@ export const AddressInput = memo(function AddressInput({
                         getError(FIELD_NAMES.region)
                           ? `${name}.${FIELD_NAMES.region}-error`
                           : undefined
-                      }
-                    >
+                      }>
                       <SelectValue placeholder="Select region" />
                     </SelectTrigger>
                     <SelectContent>
@@ -406,8 +416,7 @@ export const AddressInput = memo(function AddressInput({
               {getError(FIELD_NAMES.region) && (
                 <p
                   id={`${name}.${FIELD_NAMES.region}-error`}
-                  className="text-xs text-destructive"
-                >
+                  className="text-xs text-destructive">
                   {getError(FIELD_NAMES.region)}
                 </p>
               )}
@@ -418,8 +427,7 @@ export const AddressInput = memo(function AddressInput({
           <div className="space-y-2">
             <Label
               htmlFor={`${name}.${FIELD_NAMES.province}`}
-              className="text-sm font-medium"
-            >
+              className="text-sm font-medium">
               Province
               {required && <span className="text-destructive ml-1">*</span>}
             </Label>
@@ -443,15 +451,16 @@ export const AddressInput = memo(function AddressInput({
               )}
             />
             <datalist id={`${name}-province-list`}>
-              {(showRegion && selectedRegion ? provinces : []).map((province) => (
-                <option key={province.code} value={province.name} />
-              ))}
+              {(showRegion && selectedRegion ? provinces : []).map(
+                (province) => (
+                  <option key={province.code} value={province.name} />
+                )
+              )}
             </datalist>
             {getError(FIELD_NAMES.province) && (
               <p
                 id={`${name}.${FIELD_NAMES.province}-error`}
-                className="text-xs text-destructive"
-              >
+                className="text-xs text-destructive">
                 {getError(FIELD_NAMES.province)}
               </p>
             )}
@@ -461,8 +470,7 @@ export const AddressInput = memo(function AddressInput({
           <div className="space-y-2">
             <Label
               htmlFor={`${name}.${FIELD_NAMES.cityMunicipality}`}
-              className="text-sm font-medium"
-            >
+              className="text-sm font-medium">
               City/Municipality
               {required && <span className="text-destructive ml-1">*</span>}
             </Label>
@@ -493,8 +501,7 @@ export const AddressInput = memo(function AddressInput({
             {getError(FIELD_NAMES.cityMunicipality) && (
               <p
                 id={`${name}.${FIELD_NAMES.cityMunicipality}-error`}
-                className="text-xs text-destructive"
-              >
+                className="text-xs text-destructive">
                 {getError(FIELD_NAMES.cityMunicipality)}
               </p>
             )}
@@ -504,8 +511,7 @@ export const AddressInput = memo(function AddressInput({
           <div className="space-y-2">
             <Label
               htmlFor={`${name}.${FIELD_NAMES.barangay}`}
-              className="text-sm font-medium"
-            >
+              className="text-sm font-medium">
               Barangay
               {required && <span className="text-destructive ml-1">*</span>}
             </Label>
@@ -536,8 +542,7 @@ export const AddressInput = memo(function AddressInput({
             {getError(FIELD_NAMES.barangay) && (
               <p
                 id={`${name}.${FIELD_NAMES.barangay}-error`}
-                className="text-xs text-destructive"
-              >
+                className="text-xs text-destructive">
                 {getError(FIELD_NAMES.barangay)}
               </p>
             )}
@@ -547,8 +552,7 @@ export const AddressInput = memo(function AddressInput({
           <div className="space-y-2">
             <Label
               htmlFor={`${name}.${FIELD_NAMES.zipCode}`}
-              className="text-sm font-medium"
-            >
+              className="text-sm font-medium">
               ZIP Code
             </Label>
             <Controller
@@ -576,8 +580,7 @@ export const AddressInput = memo(function AddressInput({
             {getError(FIELD_NAMES.zipCode) && (
               <p
                 id={`${name}.${FIELD_NAMES.zipCode}-error`}
-                className="text-xs text-destructive"
-              >
+                className="text-xs text-destructive">
                 {getError(FIELD_NAMES.zipCode)}
               </p>
             )}
@@ -589,8 +592,9 @@ export const AddressInput = memo(function AddressInput({
       <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/5 dark:bg-primary/10 border border-primary/20">
         <Info className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
         <p className="text-xs text-muted-foreground leading-relaxed">
-          Please provide your complete Philippine address. Required fields are marked with an
-          asterisk (*). For government employees, ensure this matches your official records.
+          Please provide your complete Philippine address. Required fields are
+          marked with an asterisk (*). For government employees, ensure this
+          matches your official records.
         </p>
       </div>
     </div>

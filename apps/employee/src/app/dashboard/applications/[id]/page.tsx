@@ -21,10 +21,10 @@ import {
   AlertCircle,
   ExternalLink,
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
+import { Badge } from '../../../../components/ui/badge';
+import { Button } from '../../../../components/ui/button';
+import { Card } from '../../../../components/ui/card';
+import { Separator } from '../../../../components/ui/separator';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,15 +35,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { cn } from '@/lib/utils';
+} from '../../../../components/ui/alert-dialog';
+import { cn } from '../../../../lib/utils';
 import {
   useApplicationQuery,
   useWithdrawApplicationMutation,
-} from '@/hooks/useApplicationsQuery';
-import { BlurFade } from '@/components/ui/blur-fade';
-import { ShineBorder } from '@/components/ui/shine-border';
-import AnimatedGradientText from '@/components/ui/animated-gradient-text';
+} from '../../../../hooks/useApplicationsQuery';
+import { BlurFade } from '../../../../components/ui/blur-fade';
+import { ShineBorder } from '../../../../components/ui/shine-border';
+import AnimatedGradientText from '../../../../components/ui/animated-gradient-text';
 import { toast } from 'sonner';
 
 /**
@@ -102,7 +102,8 @@ function StatusTimeline({
               )}>
               {item.newStatus === 'accepted' || item.newStatus === 'hired' ? (
                 <CheckCircle2 className="h-5 w-5" />
-              ) : item.newStatus === 'rejected' || item.newStatus === 'withdrawn' ? (
+              ) : item.newStatus === 'rejected' ||
+                item.newStatus === 'withdrawn' ? (
                 <XCircle className="h-5 w-5" />
               ) : (
                 <Clock className="h-5 w-5" />
@@ -147,7 +148,11 @@ export default function ApplicationDetailsPage({
   const router = useRouter();
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
 
-  const { data: application, isLoading, error } = useApplicationQuery(resolvedParams.id);
+  const {
+    data: application,
+    isLoading,
+    error,
+  } = useApplicationQuery(resolvedParams.id);
   const withdrawMutation = useWithdrawApplicationMutation();
 
   const handleWithdraw = async () => {
@@ -176,7 +181,9 @@ export default function ApplicationDetailsPage({
           <div className="p-6 text-center space-y-4">
             <AlertCircle className="h-12 w-12 text-red-600 mx-auto" />
             <p className="text-red-800 dark:text-red-400">
-              {error ? 'Failed to load application details' : 'Application not found'}
+              {error
+                ? 'Failed to load application details'
+                : 'Application not found'}
             </p>
             <Button asChild variant="outline">
               <Link href="/dashboard/applications">Back to Applications</Link>
@@ -225,7 +232,9 @@ export default function ApplicationDetailsPage({
               {formatStatus(application.status)}
             </Badge>
             {canWithdraw && (
-              <AlertDialog open={withdrawDialogOpen} onOpenChange={setWithdrawDialogOpen}>
+              <AlertDialog
+                open={withdrawDialogOpen}
+                onOpenChange={setWithdrawDialogOpen}>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" size="sm">
                     Withdraw Application
@@ -235,8 +244,8 @@ export default function ApplicationDetailsPage({
                   <AlertDialogHeader>
                     <AlertDialogTitle>Withdraw Application?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to withdraw this application? This action cannot
-                      be undone.
+                      Are you sure you want to withdraw this application? This
+                      action cannot be undone.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -311,7 +320,9 @@ export default function ApplicationDetailsPage({
                               Salary Range
                             </p>
                             <p className="font-medium text-slate-900 dark:text-slate-100">
-                              ₱{application.position.salaryRangeMin.toLocaleString()} - ₱
+                              ₱
+                              {application.position.salaryRangeMin.toLocaleString()}{' '}
+                              - ₱
                               {application.position.salaryRangeMax.toLocaleString()}
                             </p>
                           </div>
@@ -349,9 +360,11 @@ export default function ApplicationDetailsPage({
                           Qualifications
                         </h3>
                         <ul className="list-disc list-inside space-y-1 text-sm text-slate-700 dark:text-slate-300">
-                          {application.position.qualifications.map((qual, index) => (
-                            <li key={index}>{qual}</li>
-                          ))}
+                          {application.position.qualifications.map(
+                            (qual, index) => (
+                              <li key={index}>{qual}</li>
+                            )
+                          )}
                         </ul>
                       </div>
                     )}
@@ -362,9 +375,11 @@ export default function ApplicationDetailsPage({
                           Responsibilities
                         </h3>
                         <ul className="list-disc list-inside space-y-1 text-sm text-slate-700 dark:text-slate-300">
-                          {application.position.responsibilities.map((resp, index) => (
-                            <li key={index}>{resp}</li>
-                          ))}
+                          {application.position.responsibilities.map(
+                            (resp, index) => (
+                              <li key={index}>{resp}</li>
+                            )
+                          )}
                         </ul>
                       </div>
                     )}
@@ -388,11 +403,15 @@ export default function ApplicationDetailsPage({
                   <div className="space-y-2">
                     <p className="text-sm text-green-800 dark:text-green-200">
                       <strong>Date & Time:</strong>{' '}
-                      {format(new Date(application.interviewDate), 'MMMM dd, yyyy h:mm a')}
+                      {format(
+                        new Date(application.interviewDate),
+                        'MMMM dd, yyyy h:mm a'
+                      )}
                     </p>
                     {application.interviewLocation && (
                       <p className="text-sm text-green-800 dark:text-green-200">
-                        <strong>Location:</strong> {application.interviewLocation}
+                        <strong>Location:</strong>{' '}
+                        {application.interviewLocation}
                       </p>
                     )}
                   </div>
@@ -418,7 +437,8 @@ export default function ApplicationDetailsPage({
                         </span>
                       </div>
                       <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/dashboard/pds/view/${application.pdsSubmissionId}`}>
+                        <Link
+                          href={`/dashboard/pds/view/${application.pdsSubmissionId}`}>
                           <ExternalLink className="h-4 w-4" />
                         </Link>
                       </Button>
@@ -433,7 +453,10 @@ export default function ApplicationDetailsPage({
                         </span>
                       </div>
                       <Button variant="ghost" size="sm" asChild>
-                        <a href={application.resumeUrl} target="_blank" rel="noopener noreferrer">
+                        <a
+                          href={application.resumeUrl}
+                          target="_blank"
+                          rel="noopener noreferrer">
                           <ExternalLink className="h-4 w-4" />
                         </a>
                       </Button>
@@ -462,7 +485,10 @@ export default function ApplicationDetailsPage({
                         Applied On
                       </p>
                       <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                        {format(new Date(application.applicationDate), 'MMMM dd, yyyy')}
+                        {format(
+                          new Date(application.applicationDate),
+                          'MMMM dd, yyyy'
+                        )}
                       </p>
                     </div>
                   </div>
@@ -473,7 +499,10 @@ export default function ApplicationDetailsPage({
                         Last Updated
                       </p>
                       <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                        {format(new Date(application.updatedAt), 'MMMM dd, yyyy')}
+                        {format(
+                          new Date(application.updatedAt),
+                          'MMMM dd, yyyy'
+                        )}
                       </p>
                     </div>
                   </div>

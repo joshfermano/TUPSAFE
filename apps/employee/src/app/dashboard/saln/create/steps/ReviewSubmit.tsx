@@ -27,24 +27,24 @@ import {
   Calculator,
   AlertTriangle,
 } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Checkbox } from '../../../../../components/ui/checkbox';
+import { Label } from '../../../../../components/ui/label';
+import { Badge } from '../../../../../components/ui/badge';
+import { Button } from '../../../../../components/ui/button';
+import { Alert, AlertDescription } from '../../../../../components/ui/alert';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { formatCurrency } from '@/lib/utils/currency';
-import type { CompleteSalnData, SalnSummary } from '@/lib/validations/saln-schema';
+} from '../../../../../components/ui/collapsible';
+import { formatCurrency } from '../../../../../lib/utils/currency';
+import type {
+  CompleteSalnData,
+  SalnSummary,
+} from '../../../../../lib/validations/saln-schema';
 
 // Import Enhanced Components
-import {
-  EnhancedFormSection,
-  BlurFade,
-} from '@tupsafe/shared-ui';
+import { EnhancedFormSection, BlurFade } from '@tupsafe/shared-ui';
 
 interface ReviewSubmitProps {
   data: Partial<CompleteSalnData>;
@@ -60,7 +60,9 @@ export const ReviewSubmit = memo(function ReviewSubmit({
     formState: { errors },
   } = useFormContext();
 
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+  const [expandedSections, setExpandedSections] = useState<
+    Record<string, boolean>
+  >({
     declarant: true,
     real: false,
     personal: false,
@@ -84,8 +86,8 @@ export const ReviewSubmit = memo(function ReviewSubmit({
           <Alert className="mb-6 border-slate-200/50 dark:border-slate-800/50">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription className="text-sm text-slate-600 dark:text-slate-400">
-              Review all information carefully. Once submitted, your SALN will be sent for
-              official review and cannot be edited without approval.
+              Review all information carefully. Once submitted, your SALN will
+              be sent for official review and cannot be edited without approval.
             </AlertDescription>
           </Alert>
 
@@ -113,25 +115,37 @@ export const ReviewSubmit = memo(function ReviewSubmit({
               <CollapsibleContent className="p-6 border border-slate-200 dark:border-slate-800 rounded-lg mb-6 space-y-3">
                 <div className="grid gap-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-slate-600 dark:text-slate-400">Reporting Year:</span>
+                    <span className="text-slate-600 dark:text-slate-400">
+                      Reporting Year:
+                    </span>
                     <span className="font-medium">{data.submission?.year}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-600 dark:text-slate-400">Filing Type:</span>
+                    <span className="text-slate-600 dark:text-slate-400">
+                      Filing Type:
+                    </span>
                     <span className="font-medium capitalize">
                       {data.submission?.filingType?.replace('_', ' ')}
                     </span>
                   </div>
                   {data.submission?.spouseName && (
                     <div className="flex justify-between">
-                      <span className="text-slate-600 dark:text-slate-400">Spouse Name:</span>
-                      <span className="font-medium">{data.submission.spouseName}</span>
+                      <span className="text-slate-600 dark:text-slate-400">
+                        Spouse Name:
+                      </span>
+                      <span className="font-medium">
+                        {data.submission.spouseName}
+                      </span>
                     </div>
                   )}
                   {data.submission?.position && (
                     <div className="flex justify-between">
-                      <span className="text-slate-600 dark:text-slate-400">Position:</span>
-                      <span className="font-medium">{data.submission.position}</span>
+                      <span className="text-slate-600 dark:text-slate-400">
+                        Position:
+                      </span>
+                      <span className="font-medium">
+                        {data.submission.position}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -165,13 +179,17 @@ export const ReviewSubmit = memo(function ReviewSubmit({
               <CollapsibleContent className="p-6 border border-slate-200 dark:border-slate-800 rounded-lg mb-6 space-y-6">
                 {data.realProperties && data.realProperties.length > 0 ? (
                   data.realProperties.map((prop, index) => (
-                    <div key={index} className="pb-4 border-b border-slate-200/50 dark:border-slate-800/50 last:border-0">
+                    <div
+                      key={index}
+                      className="pb-4 border-b border-slate-200/50 dark:border-slate-800/50 last:border-0">
                       <p className="font-medium mb-1">{prop.description}</p>
                       <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
                         {prop.exactLocation}
                       </p>
                       <div className="flex gap-4 text-sm">
-                        <span className="text-slate-600 dark:text-slate-400">FMV: {formatCurrency(prop.currentFairMarketValue)}</span>
+                        <span className="text-slate-600 dark:text-slate-400">
+                          FMV: {formatCurrency(prop.currentFairMarketValue)}
+                        </span>
                         <Badge variant="secondary">{prop.kind}</Badge>
                       </div>
                     </div>
@@ -198,7 +216,8 @@ export const ReviewSubmit = memo(function ReviewSubmit({
                   <div className="flex items-center gap-3">
                     <Car className="h-5 w-5" />
                     <span className="font-semibold">
-                      Personal Properties ({data.personalProperties?.length || 0})
+                      Personal Properties (
+                      {data.personalProperties?.length || 0})
                     </span>
                   </div>
                   {expandedSections.personal ? (
@@ -209,13 +228,18 @@ export const ReviewSubmit = memo(function ReviewSubmit({
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="p-6 border border-slate-200 dark:border-slate-800 rounded-lg mb-6 space-y-6">
-                {data.personalProperties && data.personalProperties.length > 0 ? (
+                {data.personalProperties &&
+                data.personalProperties.length > 0 ? (
                   data.personalProperties.map((prop, index) => (
-                    <div key={index} className="pb-4 border-b border-slate-200/50 dark:border-slate-800/50 last:border-0">
+                    <div
+                      key={index}
+                      className="pb-4 border-b border-slate-200/50 dark:border-slate-800/50 last:border-0">
                       <p className="font-medium mb-2">{prop.description}</p>
                       <div className="flex gap-4 text-sm text-slate-600 dark:text-slate-400">
                         <span>Year: {prop.yearAcquired}</span>
-                        <span>Value: {formatCurrency(prop.acquisitionCost)}</span>
+                        <span>
+                          Value: {formatCurrency(prop.acquisitionCost)}
+                        </span>
                       </div>
                     </div>
                   ))
@@ -254,7 +278,9 @@ export const ReviewSubmit = memo(function ReviewSubmit({
               <CollapsibleContent className="p-6 border border-slate-200 dark:border-slate-800 rounded-lg mb-6 space-y-6">
                 {data.liabilities && data.liabilities.length > 0 ? (
                   data.liabilities.map((liability, index) => (
-                    <div key={index} className="pb-4 border-b border-slate-200/50 dark:border-slate-800/50 last:border-0">
+                    <div
+                      key={index}
+                      className="pb-4 border-b border-slate-200/50 dark:border-slate-800/50 last:border-0">
                       <p className="font-medium mb-2">{liability.nature}</p>
                       <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
                         {liability.creditorName}
@@ -265,7 +291,9 @@ export const ReviewSubmit = memo(function ReviewSubmit({
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-slate-600 dark:text-slate-400">No liabilities declared</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    No liabilities declared
+                  </p>
                 )}
               </CollapsibleContent>
             </Collapsible>
@@ -297,7 +325,9 @@ export const ReviewSubmit = memo(function ReviewSubmit({
               <CollapsibleContent className="p-6 border border-slate-200 dark:border-slate-800 rounded-lg mb-6 space-y-6">
                 {data.businessInterests && data.businessInterests.length > 0 ? (
                   data.businessInterests.map((business, index) => (
-                    <div key={index} className="pb-4 border-b border-slate-200/50 dark:border-slate-800/50 last:border-0">
+                    <div
+                      key={index}
+                      className="pb-4 border-b border-slate-200/50 dark:border-slate-800/50 last:border-0">
                       <p className="font-medium mb-2">{business.entityName}</p>
                       <p className="text-sm text-slate-600 dark:text-slate-400">
                         {business.natureOfBusiness}
@@ -326,7 +356,8 @@ export const ReviewSubmit = memo(function ReviewSubmit({
                   <div className="flex items-center gap-3">
                     <Users className="h-5 w-5" />
                     <span className="font-semibold">
-                      Relatives in Government ({data.relativesInGov?.length || 0})
+                      Relatives in Government (
+                      {data.relativesInGov?.length || 0})
                     </span>
                   </div>
                   {expandedSections.relatives ? (
@@ -339,7 +370,9 @@ export const ReviewSubmit = memo(function ReviewSubmit({
               <CollapsibleContent className="p-6 border border-slate-200 dark:border-slate-800 rounded-lg mb-6 space-y-6">
                 {data.relativesInGov && data.relativesInGov.length > 0 ? (
                   data.relativesInGov.map((relative, index) => (
-                    <div key={index} className="pb-4 border-b border-slate-200/50 dark:border-slate-800/50 last:border-0">
+                    <div
+                      key={index}
+                      className="pb-4 border-b border-slate-200/50 dark:border-slate-800/50 last:border-0">
                       <p className="font-medium mb-2">{relative.name}</p>
                       <div className="flex gap-4 text-sm text-slate-600 dark:text-slate-400">
                         <span>{relative.relationship}</span>
@@ -379,13 +412,17 @@ export const ReviewSubmit = memo(function ReviewSubmit({
               </CollapsibleTrigger>
               <CollapsibleContent className="p-8 border border-slate-200 dark:border-slate-800 rounded-lg mb-8 space-y-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-600 dark:text-slate-400">Total Real Property:</span>
+                  <span className="text-slate-600 dark:text-slate-400">
+                    Total Real Property:
+                  </span>
                   <span className="font-semibold">
                     {formatCurrency(summary.totalRealPropertyValue)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-600 dark:text-slate-400">Total Personal Property:</span>
+                  <span className="text-slate-600 dark:text-slate-400">
+                    Total Personal Property:
+                  </span>
                   <span className="font-semibold">
                     {formatCurrency(summary.totalPersonalPropertyValue)}
                   </span>
@@ -426,13 +463,15 @@ export const ReviewSubmit = memo(function ReviewSubmit({
           <div className="space-y-6">
             <div className="p-6 bg-muted/50 rounded-lg border border-slate-200/50 dark:border-slate-800/50">
               <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-                I declare under penalty of perjury that this Statement of Assets,
-                Liabilities and Net Worth is a true, detailed and sworn statement of my
-                assets, liabilities, net worth, business interests and financial
-                connections, including those of my spouse and unmarried children below
-                eighteen (18) years of age living in my household, as of December 31,{' '}
-                {data.submission?.year}, pursuant to Section 8 of Republic Act No. 6713
-                (Code of Conduct and Ethical Standards for Public Officials and Employees).
+                I declare under penalty of perjury that this Statement of
+                Assets, Liabilities and Net Worth is a true, detailed and sworn
+                statement of my assets, liabilities, net worth, business
+                interests and financial connections, including those of my
+                spouse and unmarried children below eighteen (18) years of age
+                living in my household, as of December 31,{' '}
+                {data.submission?.year}, pursuant to Section 8 of Republic Act
+                No. 6713 (Code of Conduct and Ethical Standards for Public
+                Officials and Employees).
               </p>
             </div>
 
@@ -469,8 +508,8 @@ export const ReviewSubmit = memo(function ReviewSubmit({
             <Alert className="border-slate-200/50 dark:border-slate-800/50">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription className="text-sm text-slate-600 dark:text-slate-400">
-                Note: Wet signature will be required after PDF generation for official
-                submission.
+                Note: Wet signature will be required after PDF generation for
+                official submission.
               </AlertDescription>
             </Alert>
           </div>

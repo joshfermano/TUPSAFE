@@ -9,16 +9,16 @@ import {
   type College,
   type Department,
   type Office,
-} from '@/hooks';
+} from '../../hooks';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
+} from '../ui/select';
+import { Label } from '../ui/label';
+import { Skeleton } from '../ui/skeleton';
 
 export interface OrganizationSelectorProps {
   userType: 'faculty' | 'administrative';
@@ -79,7 +79,13 @@ export function OrganizationSelector({
         onDepartmentChange('');
       }
     }
-  }, [collegeValue, departments, departmentValue, onDepartmentChange, userType]);
+  }, [
+    collegeValue,
+    departments,
+    departmentValue,
+    onDepartmentChange,
+    userType,
+  ]);
 
   // Faculty Selection (College → Department)
   if (userType === 'faculty') {
@@ -101,8 +107,7 @@ export function OrganizationSelector({
                 <button
                   type="button"
                   onClick={() => refetchColleges()}
-                  className="text-sm text-red-600 dark:text-red-400 hover:underline focus:outline-none"
-                >
+                  className="text-sm text-red-600 dark:text-red-400 hover:underline focus:outline-none">
                   Retry
                 </button>
               </div>
@@ -114,14 +119,18 @@ export function OrganizationSelector({
                 className={`bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-[#8B1538] focus:ring-[#8B1538] text-slate-900 dark:text-slate-100 transition-all duration-300 hover:bg-white hover:border-[#8B1538]/40 dark:hover:bg-slate-700/80 dark:hover:border-[#8B1538]/50 ${
                   errors?.college ? 'border-red-500 focus:border-red-500' : ''
                 }`}
-                aria-describedby={errors?.college ? 'college-error' : undefined}
-              >
+                aria-describedby={
+                  errors?.college ? 'college-error' : undefined
+                }>
                 <SelectValue placeholder="Select your college">
                   {collegeValue && (
                     <div className="flex items-center space-x-2">
                       <Building2 className="h-4 w-4 text-slate-500" />
                       <span>
-                        {colleges?.find((c: College) => c.id === collegeValue)?.name}
+                        {
+                          colleges?.find((c: College) => c.id === collegeValue)
+                            ?.name
+                        }
                       </span>
                     </div>
                   )}
@@ -162,8 +171,7 @@ export function OrganizationSelector({
             <p
               id="college-error"
               className="text-sm text-red-600 dark:text-red-400 mt-1"
-              role="alert"
-            >
+              role="alert">
               {errors.college}
             </p>
           )}
@@ -189,27 +197,35 @@ export function OrganizationSelector({
                   <button
                     type="button"
                     onClick={() => refetchDepartments()}
-                    className="text-sm text-red-600 dark:text-red-400 hover:underline focus:outline-none"
-                  >
+                    className="text-sm text-red-600 dark:text-red-400 hover:underline focus:outline-none">
                     Retry
                   </button>
                 </div>
               </div>
             ) : departments && departments.length > 0 ? (
-              <Select value={departmentValue} onValueChange={onDepartmentChange}>
+              <Select
+                value={departmentValue}
+                onValueChange={onDepartmentChange}>
                 <SelectTrigger
                   id="department"
                   className={`bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-[#8B1538] focus:ring-[#8B1538] text-slate-900 dark:text-slate-100 transition-all duration-300 hover:bg-white hover:border-[#8B1538]/40 dark:hover:bg-slate-700/80 dark:hover:border-[#8B1538]/50 ${
-                    errors?.department ? 'border-red-500 focus:border-red-500' : ''
+                    errors?.department
+                      ? 'border-red-500 focus:border-red-500'
+                      : ''
                   }`}
-                  aria-describedby={errors?.department ? 'department-error' : undefined}
-                >
+                  aria-describedby={
+                    errors?.department ? 'department-error' : undefined
+                  }>
                   <SelectValue placeholder="Select your department">
                     {departmentValue && (
                       <div className="flex items-center space-x-2">
                         <Building2 className="h-4 w-4 text-slate-500" />
                         <span>
-                          {departments?.find((d: Department) => d.id === departmentValue)?.name}
+                          {
+                            departments?.find(
+                              (d: Department) => d.id === departmentValue
+                            )?.name
+                          }
                         </span>
                       </div>
                     )}
@@ -221,7 +237,10 @@ export function OrganizationSelector({
                       <Search className="h-4 w-4 text-slate-400" />
                       <span className="text-xs text-slate-600 dark:text-slate-400">
                         {departments?.length || 0} departments in{' '}
-                        {colleges?.find((c: College) => c.id === collegeValue)?.code}
+                        {
+                          colleges?.find((c: College) => c.id === collegeValue)
+                            ?.code
+                        }
                       </span>
                     </div>
                   </div>
@@ -257,8 +276,7 @@ export function OrganizationSelector({
               <p
                 id="department-error"
                 className="text-sm text-red-600 dark:text-red-400 mt-1"
-                role="alert"
-              >
+                role="alert">
                 {errors.department}
               </p>
             )}
@@ -288,8 +306,7 @@ export function OrganizationSelector({
             <button
               type="button"
               onClick={() => refetchOffices()}
-              className="text-sm text-red-600 dark:text-red-400 hover:underline focus:outline-none"
-            >
+              className="text-sm text-red-600 dark:text-red-400 hover:underline focus:outline-none">
               Retry
             </button>
           </div>
@@ -301,8 +318,7 @@ export function OrganizationSelector({
             className={`bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-[#8B1538] focus:ring-[#8B1538] text-slate-900 dark:text-slate-100 transition-all duration-300 hover:bg-white hover:border-[#8B1538]/40 dark:hover:bg-slate-700/80 dark:hover:border-[#8B1538]/50 ${
               errors?.office ? 'border-red-500 focus:border-red-500' : ''
             }`}
-            aria-describedby={errors?.office ? 'office-error' : undefined}
-          >
+            aria-describedby={errors?.office ? 'office-error' : undefined}>
             <SelectValue placeholder="Select your office">
               {officeValue && (
                 <div className="flex items-center space-x-2">
@@ -349,8 +365,7 @@ export function OrganizationSelector({
         <p
           id="office-error"
           className="text-sm text-red-600 dark:text-red-400 mt-1"
-          role="alert"
-        >
+          role="alert">
           {errors.office}
         </p>
       )}

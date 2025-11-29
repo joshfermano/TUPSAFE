@@ -2,10 +2,10 @@
 
 import { memo, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import { cn } from '../../../lib/utils';
 import { LucideIcon, CheckCircle2 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { BlurFade } from '@/components/ui/blur-fade';
+import { Badge } from '../../ui/badge';
+import { BlurFade } from '../../ui/blur-fade';
 
 interface FormSectionProps {
   /**
@@ -86,8 +86,7 @@ export const FormSection = memo<FormSectionProps>(function FormSection({
           'transition-all duration-300',
           'hover:border-l-primary/30',
           className
-        )}
-      >
+        )}>
         {/* Section Header */}
         <div className="mb-8 space-y-3">
           <div className="flex items-start justify-between gap-4">
@@ -100,8 +99,7 @@ export const FormSection = memo<FormSectionProps>(function FormSection({
                     completed
                       ? 'bg-primary/10 text-primary ring-1 ring-primary/20'
                       : 'bg-slate-100 text-slate-500 dark:bg-slate-800/50 dark:text-slate-400'
-                  )}
-                >
+                  )}>
                   {completed ? (
                     <CheckCircle2 className="h-4 w-4" />
                   ) : (
@@ -118,8 +116,7 @@ export const FormSection = memo<FormSectionProps>(function FormSection({
                     completed
                       ? 'bg-primary/10 text-primary'
                       : 'bg-slate-100/50 text-slate-600 dark:bg-slate-800/30 dark:text-slate-400'
-                  )}
-                >
+                  )}>
                   <Icon className="h-5 w-5" />
                 </div>
               )}
@@ -142,16 +139,14 @@ export const FormSection = memo<FormSectionProps>(function FormSection({
               {required && !completed && (
                 <Badge
                   variant="outline"
-                  className="border-amber-400/40 bg-amber-50/50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-400/30"
-                >
+                  className="border-amber-400/40 bg-amber-50/50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-400/30">
                   Required
                 </Badge>
               )}
               {completed && (
                 <Badge
                   variant="default"
-                  className="border-primary/30 bg-primary/10 text-primary dark:bg-primary/20"
-                >
+                  className="border-primary/30 bg-primary/10 text-primary dark:bg-primary/20">
                   <CheckCircle2 className="mr-1 h-3 w-3" />
                   Completed
                 </Badge>
