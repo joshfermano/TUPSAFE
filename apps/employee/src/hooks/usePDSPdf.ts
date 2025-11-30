@@ -14,6 +14,7 @@ import { pdf } from '@react-pdf/renderer';
 import { PDSDocument } from '../components/pds/pdf';
 import { ensurePDFFontsRegistered } from '../components/pds/pdf/PDSStyles';
 import type { PDSData } from '../components/pds/pdf/types';
+import { validatePDSForPDF } from '../lib/utils/pds-validation';
 
 // ============================================================================
 // Types
@@ -58,10 +59,16 @@ export interface UsePDSPdfReturn {
 /**
  * Generate a default filename for the PDS PDF
  * Format: PDS_LastName_FirstName_YYYYMMDD.pdf
+ * Throws error if required name fields are missing
  */
 function generateDefaultFilename(pdsData: PDSData): string {
-  const lastName = pdsData.personalInfo.surname || 'Unknown';
-  const firstName = pdsData.personalInfo.firstName || 'Unknown';
+  const lastName = pdsData.personalInfo.surname;
+  const firstName = pdsData.personalInfo.firstName;
+
+  if (!lastName || !firstName) {
+    throw new Error('Cannot generate PDF: Name fields are required. Please ensure surname and first name are filled in the PDS submission.');
+  }
+
   const date = new Date().toISOString().split('T')[0].replace(/-/g, '');
 
   // Sanitize names for filename (remove special characters)
@@ -154,6 +161,21 @@ export function usePDSPdf(): UsePDSPdfReturn {
     setError(null);
 
     try {
+      // Validate data before generating PDF
+      const validation = validatePDSForPDF(pdsData);
+
+      if (!validation.isValid) {
+        const errorMessages = validation.errors
+          .map(e => `${e.field}: ${e.message}`)
+          .join('; ');
+        throw new Error(`Cannot generate PDF - ${errorMessages}`);
+      }
+
+      // Log warnings if any
+      if (validation.warnings.length > 0) {
+        console.warn('PDF Generation Warnings:', validation.warnings);
+      }
+
       // Get base URL for font paths and ensure fonts are registered
       const baseUrl =
         typeof window !== 'undefined' ? window.location.origin : '';
