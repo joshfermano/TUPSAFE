@@ -81,7 +81,16 @@
       "Bash(npm run type-check:employee:*)",
       "Bash(npm run type-check:admin:*)",
       "Bash(turbo type-check:*)",
-      "Bash(npx turbo:*)"
+      "Bash(npx turbo:*)",
+      "Bash(tee:*)",
+      "Bash(echo:*)",
+      "mcp__shadcn__search_items_in_registries",
+      "mcp__filesystem__list_allowed_directories",
+      "Bash(npm run lint:employee:*)",
+      "mcp__serena__write_memory",
+      "mcp__serena__think_about_collected_information",
+      "mcp__serena__insert_after_symbol",
+      "Bash(tsc --build:*)"
     ],
     "deny": [],
     "ask": []

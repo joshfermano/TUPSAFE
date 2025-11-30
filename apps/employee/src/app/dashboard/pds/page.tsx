@@ -11,7 +11,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../../../providers/AuthProvider';
 import { usePds } from '@tupsafe/mock-data/api';
 import { usePDSPdf } from '../../../hooks/usePDSPdf';
-import { transformPdsForPdf } from '../../../lib/utils/pds-transform';
+import { transformPdsForPdf } from '../../../lib/utils/pds-transformations';
 import { toast } from 'sonner';
 
 // Enhanced UI Components from shared-ui

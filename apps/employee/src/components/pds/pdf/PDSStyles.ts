@@ -58,7 +58,22 @@ export const colors = {
   borderColor: '#000000',
 };
 
-// Common dimensions
+// Font sizes matching CSC Form No. 212 Revised 2025
+export const fontSizes = {
+  formTitle: 10, // "PERSONAL DATA SHEET"
+  formSubtitle: 7, // Warning text
+  csFormNumber: 7, // "CS Form No. 212"
+  sectionHeader: 8, // Roman numeral headers
+  fieldLabel: 6, // Field labels (ALL CAPS)
+  fieldValue: 7, // User data
+  tableHeader: 6, // Table column headers
+  tableContent: 6, // Table data cells
+  footerText: 5, // Page footers
+  declarationText: 6, // Declaration paragraph
+  noteText: 5, // Italic continuation notes
+};
+
+// Common dimensions matching CSC Form No. 212 Revised 2025
 export const dimensions = {
   pagePadding: 15,
   cellPadding: 2,
@@ -66,6 +81,12 @@ export const dimensions = {
   headerHeight: 20,
   rowHeight: 14,
   smallRowHeight: 12,
+  photoWidth: 127.56, // 4.5cm → points (exact CSC requirement)
+  photoHeight: 99.21, // 3.5cm → points (exact CSC requirement)
+  signatureBoxWidth: 120,
+  signatureBoxHeight: 50,
+  thumbmarkWidth: 60,
+  thumbmarkHeight: 80,
 };
 
 // Main stylesheet
@@ -84,19 +105,19 @@ export const styles = StyleSheet.create({
     marginBottom: 5,
   },
   formTitle: {
-    fontSize: 8,
+    fontSize: fontSizes.formTitle,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 3,
   },
   formSubtitle: {
-    fontSize: 6,
+    fontSize: fontSizes.formSubtitle,
     textAlign: 'center',
     marginBottom: 8,
     fontStyle: 'italic',
   },
   csFormNumber: {
-    fontSize: 7,
+    fontSize: fontSizes.csFormNumber,
     textAlign: 'right',
     marginBottom: 2,
   },
@@ -106,7 +127,7 @@ export const styles = StyleSheet.create({
     backgroundColor: colors.headerBg,
     color: colors.white,
     padding: 3,
-    fontSize: 8,
+    fontSize: fontSizes.sectionHeader,
     fontWeight: 'bold',
     textAlign: 'center',
     borderWidth: dimensions.borderWidth,
@@ -159,16 +180,16 @@ export const styles = StyleSheet.create({
 
   // Text styles
   label: {
-    fontSize: 6,
+    fontSize: fontSizes.fieldLabel,
     color: colors.black,
     marginBottom: 1,
   },
   labelSmall: {
-    fontSize: 5,
+    fontSize: fontSizes.fieldLabel,
     color: colors.black,
   },
   value: {
-    fontSize: 7,
+    fontSize: fontSizes.fieldValue,
     fontWeight: 'bold',
     color: colors.black,
   },
@@ -243,26 +264,35 @@ export const styles = StyleSheet.create({
     fontSize: 6,
     color: colors.white,
   },
+  checkboxContainer: {
+    marginRight: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxSymbol: {
+    fontSize: 10,
+    color: colors.black,
+  },
 
   // Signature and photo boxes
   signatureBox: {
-    width: 120,
-    height: 50,
+    width: dimensions.signatureBoxWidth,
+    height: dimensions.signatureBoxHeight,
     borderWidth: 1,
     borderColor: colors.black,
     marginTop: 5,
   },
   photoBox: {
-    width: 100,
-    height: 120,
+    width: dimensions.photoWidth,
+    height: dimensions.photoHeight,
     borderWidth: 1,
     borderColor: colors.black,
     justifyContent: 'center',
     alignItems: 'center',
   },
   thumbmarkBox: {
-    width: 60,
-    height: 80,
+    width: dimensions.thumbmarkWidth,
+    height: dimensions.thumbmarkHeight,
     borderWidth: 1,
     borderColor: colors.black,
     justifyContent: 'center',
@@ -325,7 +355,7 @@ export const styles = StyleSheet.create({
 
   // Footer styles
   footerText: {
-    fontSize: 5,
+    fontSize: fontSizes.footerText,
     textAlign: 'center',
     marginTop: 5,
     fontStyle: 'italic',
@@ -339,7 +369,7 @@ export const styles = StyleSheet.create({
 
   // Declaration section
   declarationText: {
-    fontSize: 6,
+    fontSize: fontSizes.declarationText,
     textAlign: 'justify',
     lineHeight: 1.4,
     marginBottom: 10,
@@ -360,7 +390,7 @@ export const styles = StyleSheet.create({
 
   // Notes section
   noteText: {
-    fontSize: 5,
+    fontSize: fontSizes.noteText,
     fontStyle: 'italic',
     color: '#666666',
   },

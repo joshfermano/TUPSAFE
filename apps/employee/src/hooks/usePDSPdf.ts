@@ -12,7 +12,7 @@
 import { useState, useCallback } from 'react';
 import { pdf } from '@react-pdf/renderer';
 import { PDSDocument } from '../components/pds/pdf';
-import { ensurePDFFontsRegistered } from '@/components/pds/pdf/PDSStyles';
+import { ensurePDFFontsRegistered } from '../components/pds/pdf/PDSStyles';
 import type { PDSData } from '../components/pds/pdf/types';
 
 // ============================================================================

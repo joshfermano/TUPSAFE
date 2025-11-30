@@ -781,6 +781,11 @@ const associationSchema = z.object({
 /**
  * Character References
  * Minimum of 3 references required
+ *
+ * Validation logic:
+ * - Frontend filters out incomplete references before validation
+ * - A reference is considered "complete" only if it has ALL required fields: name, address, AND telephone
+ * - After filtering, at least 3 complete references must remain
  */
 const referenceSchema = z.object({
   name: z
@@ -790,7 +795,7 @@ const referenceSchema = z.object({
 
   address: z
     .string()
-    .min(1, 'Address is required')
+    .min(1, 'Reference address is required')
     .max(250, 'Address must not exceed 250 characters'),
 
   telephoneNo: z

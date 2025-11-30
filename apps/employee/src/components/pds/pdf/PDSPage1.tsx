@@ -35,13 +35,9 @@ function formatAddress(address: Address): string {
   return parts.join(', ') || '';
 }
 
-// Checkbox component
+// Checkbox component using symbols ☐ and ☑
 function Checkbox({ checked }: { checked: boolean }) {
-  return (
-    <View style={checked ? styles.checkboxChecked : styles.checkbox}>
-      {checked && <Text style={styles.checkMark}>X</Text>}
-    </View>
-  );
+  return <Text style={styles.checkboxSymbol}>{checked ? '☑' : '☐'}</Text>;
 }
 
 // Field with label above value
@@ -70,7 +66,7 @@ export function PDSPage1({ data }: PDSPage1Props) {
       {/* Header */}
       <View style={styles.formHeader}>
         <Text style={styles.csFormNumber}>CS Form No. 212</Text>
-        <Text style={styles.csFormNumber}>Revised 2017</Text>
+        <Text style={styles.csFormNumber}>Revised 2025</Text>
       </View>
 
       <Text style={styles.formTitle}>PERSONAL DATA SHEET</Text>
@@ -605,7 +601,7 @@ export function PDSPage1({ data }: PDSPage1Props) {
       {/* Page footer */}
       <View style={styles.pageNumber}>
         <Text style={styles.noteText}>
-          CS FORM 212 (Revised 2017), Page 1 of 4
+          CS FORM 212 (Revised 2025), Page 1 of 4
         </Text>
       </View>
     </Page>

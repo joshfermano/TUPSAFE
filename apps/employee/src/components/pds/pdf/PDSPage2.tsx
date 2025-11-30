@@ -442,7 +442,7 @@ export function PDSPage2({ data }: PDSPage2Props) {
       {/* Page footer */}
       <View style={styles.pageNumber}>
         <Text style={styles.noteText}>
-          CS FORM 212 (Revised 2017), Page 2 of 4
+          CS FORM 212 (Revised 2025), Page 2 of 4
         </Text>
       </View>
     </Page>

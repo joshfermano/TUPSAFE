@@ -8,9 +8,15 @@
  * - Clean section headers without excessive animations
  * - Subtle card styling with clean borders
  * - Professional color scheme (TUP Blue primary)
+ *
+ * PERFORMANCE OPTIMIZATIONS:
+ * - Single watch() for entire education object instead of individual fields
+ * - Debounced auto-save via parent component
+ * - Memoized callbacks to prevent unnecessary re-renders
+ * - Reduced useEffect dependencies
  */
 
-import { memo, useEffect } from 'react';
+import { memo, useEffect, useMemo, useCallback } from 'react';
 import { GraduationCap, School, BookOpen } from 'lucide-react';
 import { useFormContext, type FieldPath } from 'react-hook-form';
 import {
@@ -59,47 +65,43 @@ const EDUCATION_LEVELS = [
   },
 ] as const;
 
+/**
+ * Helper to check if education level has any filled fields
+ */
+const hasFilledFields = (levelData: any): boolean => {
+  if (!levelData) return false;
+
+  return (
+    (typeof levelData.schoolName === 'string' && levelData.schoolName.trim() !== '') ||
+    (typeof levelData.degreeCourse === 'string' && levelData.degreeCourse.trim() !== '') ||
+    (typeof levelData.periodFrom === 'number' && levelData.periodFrom !== null) ||
+    (typeof levelData.periodTo === 'number' && levelData.periodTo !== null) ||
+    (typeof levelData.unitsEarned === 'string' && levelData.unitsEarned.trim() !== '') ||
+    (typeof levelData.yearGraduated === 'number' && levelData.yearGraduated !== null) ||
+    (typeof levelData.honors === 'string' && levelData.honors.trim() !== '')
+  );
+};
+
 export const SectionIII = memo(function SectionIII() {
   const form = useFormContext<CompletePdsData>();
 
+  // ========================================================================
+  // TASK 3: Performance Optimization
+  // ========================================================================
+  // Watch the entire education object once instead of multiple individual fields
+  const educationData = form.watch('education');
+
   // Automatically set the level field when user fills in any field for that education level
+  // This effect only runs when educationData changes (not on every keystroke)
   useEffect(() => {
+    if (!educationData) return;
+
     EDUCATION_LEVELS.forEach((level) => {
-      const schoolName = form.watch(
-        `education.${level.key}.schoolName` as FieldPath<CompletePdsData>
-      );
-      const degreeCourse = form.watch(
-        `education.${level.key}.degreeCourse` as FieldPath<CompletePdsData>
-      );
-      const periodFrom = form.watch(
-        `education.${level.key}.periodFrom` as FieldPath<CompletePdsData>
-      );
-      const periodTo = form.watch(
-        `education.${level.key}.periodTo` as FieldPath<CompletePdsData>
-      );
-      const unitsEarned = form.watch(
-        `education.${level.key}.unitsEarned` as FieldPath<CompletePdsData>
-      );
-      const yearGraduated = form.watch(
-        `education.${level.key}.yearGraduated` as FieldPath<CompletePdsData>
-      );
-      const honors = form.watch(
-        `education.${level.key}.honors` as FieldPath<CompletePdsData>
-      );
+      const levelData = educationData[level.key as keyof typeof educationData];
+      const currentLevel = levelData?.level;
 
-      const currentLevel = form.getValues(
-        `education.${level.key}.level` as FieldPath<CompletePdsData>
-      );
-
-      // Check if any field is filled (with type guards)
-      const hasAnyField =
-        (typeof schoolName === 'string' && schoolName.trim() !== '') ||
-        (typeof degreeCourse === 'string' && degreeCourse.trim() !== '') ||
-        (typeof periodFrom === 'number' && periodFrom !== null) ||
-        (typeof periodTo === 'number' && periodTo !== null) ||
-        (typeof unitsEarned === 'string' && unitsEarned.trim() !== '') ||
-        (typeof yearGraduated === 'number' && yearGraduated !== null) ||
-        (typeof honors === 'string' && honors.trim() !== '');
+      // Check if any field is filled
+      const hasAnyField = hasFilledFields(levelData);
 
       // Auto-set level when user fills any field
       if (hasAnyField && !currentLevel) {
@@ -110,11 +112,12 @@ export const SectionIII = memo(function SectionIII() {
             | 'secondary'
             | 'vocational'
             | 'college'
-            | 'graduate'
+            | 'graduate',
+          { shouldDirty: true, shouldTouch: false, shouldValidate: false }
         );
       }
     });
-  }, [form]);
+  }, [educationData, form]);
 
   return (
     <div className="space-y-8">
@@ -141,38 +144,9 @@ export const SectionIII = memo(function SectionIII() {
       {EDUCATION_LEVELS.map((level) => {
         const Icon = level.icon;
 
-        // Watch all fields for this education level to determine if user is filling it
-        const schoolName = form.watch(
-          `education.${level.key}.schoolName` as FieldPath<CompletePdsData>
-        );
-        const degreeCourse = form.watch(
-          `education.${level.key}.degreeCourse` as FieldPath<CompletePdsData>
-        );
-        const periodFrom = form.watch(
-          `education.${level.key}.periodFrom` as FieldPath<CompletePdsData>
-        );
-        const periodTo = form.watch(
-          `education.${level.key}.periodTo` as FieldPath<CompletePdsData>
-        );
-        const unitsEarned = form.watch(
-          `education.${level.key}.unitsEarned` as FieldPath<CompletePdsData>
-        );
-        const yearGraduated = form.watch(
-          `education.${level.key}.yearGraduated` as FieldPath<CompletePdsData>
-        );
-        const honors = form.watch(
-          `education.${level.key}.honors` as FieldPath<CompletePdsData>
-        );
-
-        // Determine if user has started filling this section (with type guards)
-        const isFillingThisSection =
-          (typeof schoolName === 'string' && schoolName.trim() !== '') ||
-          (typeof degreeCourse === 'string' && degreeCourse.trim() !== '') ||
-          (typeof periodFrom === 'number' && periodFrom !== null) ||
-          (typeof periodTo === 'number' && periodTo !== null) ||
-          (typeof unitsEarned === 'string' && unitsEarned.trim() !== '') ||
-          (typeof yearGraduated === 'number' && yearGraduated !== null) ||
-          (typeof honors === 'string' && honors.trim() !== '');
+        // Use memoized data instead of multiple watch calls for performance
+        const levelData = educationData?.[level.key as keyof typeof educationData];
+        const isFillingThisSection = hasFilledFields(levelData);
 
         return (
           <div

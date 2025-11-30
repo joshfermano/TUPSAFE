@@ -112,7 +112,7 @@ export function DeadlineManagementCard({
   const [isSetDialogOpen, setIsSetDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  const { data: deadline, isLoading, error } = useDeadlineByFormType(formType, year);
+  const { data: deadline, isLoading, error, refetch, isRefetching } = useDeadlineByFormType(formType, year);
 
   // Calculate days remaining from deadline date
   const daysRemaining = useMemo(() => {
@@ -125,6 +125,17 @@ export function DeadlineManagementCard({
   const urgencyStyles = getUrgencyStyles(urgency);
 
   const formTypeLabel = formType.toUpperCase();
+
+  // Log component state for debugging
+  console.log('[DeadlineManagementCard] Render state:', {
+    formType,
+    year,
+    isLoading,
+    isRefetching,
+    hasError: !!error,
+    hasDeadline: !!deadline,
+    errorMessage: error?.message,
+  });
 
   // Loading state
   if (isLoading) {
@@ -154,27 +165,99 @@ export function DeadlineManagementCard({
 
   // Error state
   if (error) {
+    const isAuthError = error.message?.includes('Unauthorized') || error.message?.includes('403');
+    const isValidationError = error.message?.includes('Invalid request');
+    const isNetworkError = error.message?.includes('Network error');
+
+    let errorTitle = 'Failed to load deadline information';
+    let errorDescription = error.message;
+    let canRetry = true;
+
+    if (isAuthError) {
+      errorTitle = 'Permission denied';
+      errorDescription = 'You do not have permission to view deadline information';
+      canRetry = false;
+    } else if (isValidationError) {
+      errorTitle = 'Invalid request';
+      errorDescription = 'The request parameters are invalid. Please refresh the page.';
+      canRetry = false;
+    } else if (isNetworkError) {
+      errorTitle = 'Network error';
+      errorDescription = 'Unable to connect to the server. Please check your internet connection.';
+      canRetry = true;
+    }
+
     return (
       <Card className={cn('border-destructive/50', className)}>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-base font-semibold">
-                {formTypeLabel} Submission Deadline
+            <div className="flex-1">
+              <CardTitle className="text-base font-semibold text-destructive flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                {errorTitle}
               </CardTitle>
-              <CardDescription className="text-destructive">
-                Failed to load deadline information
+              <CardDescription className="mt-1.5 text-muted-foreground">
+                {formTypeLabel} Submission Deadline for {year}
               </CardDescription>
+              <p className="text-sm mt-2 text-destructive/90">
+                {errorDescription}
+              </p>
+              {isAuthError && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Contact your administrator to request HR or Admin access.
+                </p>
+              )}
+              {!isAuthError && !isValidationError && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Error details: {error.message}
+                </p>
+              )}
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.location.reload()}
-            >
-              Retry
-            </Button>
+            <div className="flex items-center gap-2">
+              {canRetry && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    console.log('[DeadlineManagementCard] Retry button clicked');
+                    refetch();
+                  }}
+                  disabled={isRefetching}
+                  className="gap-1.5"
+                >
+                  {isRefetching ? (
+                    <>
+                      <Clock className="h-4 w-4 animate-spin" />
+                      Retrying...
+                    </>
+                  ) : (
+                    'Retry'
+                  )}
+                </Button>
+              )}
+            </div>
           </div>
         </CardHeader>
+        <CardContent>
+          <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3">
+            <div className="flex items-start gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/20">
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+              </div>
+              <div className="flex-1 space-y-1">
+                <p className="text-sm font-medium text-destructive">
+                  Unable to load deadline
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {isAuthError && 'Authorization required'}
+                  {isValidationError && 'Invalid parameters provided'}
+                  {isNetworkError && 'Check your connection and try again'}
+                  {!isAuthError && !isValidationError && !isNetworkError && 'An unexpected error occurred'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
       </Card>
     );
   }

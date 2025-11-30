@@ -344,7 +344,7 @@ export function PDSPage3({ data }: PDSPage3Props) {
 
       {/* Page footer */}
       <View style={styles.pageNumber}>
-        <Text style={styles.noteText}>CS FORM 212 (Revised 2017), Page 3 of 4</Text>
+        <Text style={styles.noteText}>CS FORM 212 (Revised 2025), Page 3 of 4</Text>
       </View>
     </Page>
   );

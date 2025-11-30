@@ -24,7 +24,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../providers/AuthProvider';
 import { usePds } from '@tupsafe/mock-data/api';
 import { usePDSPdf } from '../../../../hooks/usePDSPdf';
-import { transformPdsForPdf } from '../../../../lib/utils/pds-transform';
+import { transformPdsForPdf } from '../../../../lib/utils/pds-transformations';
 import { toast } from 'sonner';
 import type { PdsSubmission } from '@tupsafe/mock-data';
 import { differenceInYears, format, formatDistanceToNow } from 'date-fns';
@@ -168,19 +168,22 @@ StatsCard.displayName = 'StatsCard';
 // ============================================================================
 
 // Helper function to get PDF restriction message based on status
+// PDF is available for: approved, submitted, reviewing
+// PDF is NOT available for: draft, rejected
 const getPdfRestrictionMessage = (
   status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'reviewing'
 ): string => {
   switch (status) {
     case 'draft':
-      return 'Please submit your PDS for approval first';
+      return 'Submit your PDS to enable PDF download';
+    case 'rejected':
+      return 'Address feedback and resubmit to enable PDF download';
+    case 'approved':
     case 'submitted':
     case 'reviewing':
-      return 'PDF will be available after admin approval';
-    case 'rejected':
-      return 'Please address feedback and resubmit for approval';
+      return 'PDF download available';
     default:
-      return 'PDF available after admin approval';
+      return 'Submit your PDS to enable PDF download';
   }
 };
 
@@ -208,8 +211,13 @@ const PDSCard = React.memo(
       [submission]
     );
 
-    // Check if PDF download/print is allowed (only when approved)
-    const canDownloadPDF = submission.status === 'approved';
+    // Check if PDF download/print is allowed
+    // PDF is available for: approved, submitted, reviewing
+    // PDF is NOT available for: draft, rejected
+    const canDownloadPDF =
+      submission.status === 'approved' ||
+      submission.status === 'submitted' ||
+      submission.status === 'reviewing';
 
     const StatusIcon =
       STATUS_ICONS[submission.status as keyof typeof STATUS_ICONS];

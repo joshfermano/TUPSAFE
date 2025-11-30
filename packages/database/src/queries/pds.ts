@@ -24,7 +24,7 @@ import {
   pdsOtherInfo,
   archives,
 } from '../schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, gte } from 'drizzle-orm';
 import type {
   PdsSubmission,
   PdsPersonalInfo,
@@ -293,6 +293,39 @@ export async function getPDSSubmissionById(
         error instanceof Error ? error.message : 'Unknown error'
       }`
     );
+  }
+}
+
+
+/**
+ * Get the active draft for a user (within 24 hours)
+ * Returns the most recently updated draft created in the last 24 hours
+ * 
+ * @param userId - The user ID to find draft for
+ * @returns Draft ID if found, null otherwise
+ */
+export async function getActiveDraft(userId: string): Promise<string | null> {
+  try {
+    // Only consider drafts from the last 24 hours
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    const [draft] = await db
+      .select({ id: pdsSubmissions.id })
+      .from(pdsSubmissions)
+      .where(
+        and(
+          eq(pdsSubmissions.userId, userId),
+          eq(pdsSubmissions.status, 'draft'),
+          gte(pdsSubmissions.createdAt, twentyFourHoursAgo)
+        )
+      )
+      .orderBy(desc(pdsSubmissions.updatedAt))
+      .limit(1);
+
+    return draft?.id ?? null;
+  } catch (error) {
+    console.error('[getActiveDraft] Error:', error);
+    return null;
   }
 }
 
@@ -1105,6 +1138,105 @@ export async function getArchivedPDS(
     console.error('[getArchivedPDS] Database error:', error);
     throw new Error(
       `Failed to fetch archived PDS for user ${userId}: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
+    );
+  }
+}
+
+/**
+ * Delete a PDS submission (draft only)
+ *
+ * Permanently deletes a PDS submission and all its related sections from the database.
+ * This operation is ONLY allowed for draft submissions. Submitted or approved submissions
+ * should be archived instead.
+ *
+ * TRANSACTION OPERATIONS:
+ * 1. Validate ownership and status
+ * 2. Delete all related section records
+ * 3. Delete main submission record
+ *
+ * SECURITY:
+ * - Validates user ownership before deletion
+ * - Only allows deletion of draft submissions
+ * - Uses transaction to ensure atomicity
+ *
+ * @param id - PDS submission UUID
+ * @param userId - User UUID for ownership validation
+ * @returns Promise<void>
+ * @throws Error if PDS is not draft status, ownership validation fails, or transaction fails
+ *
+ * @example
+ * await deletePDSSubmission(draftId, userId);
+ * console.log('Draft PDS deleted successfully');
+ */
+export async function deletePDSSubmission(
+  id: string,
+  userId: string
+): Promise<void> {
+  try {
+    if (!id || typeof id !== 'string') {
+      throw new Error('Valid PDS submission ID is required');
+    }
+
+    if (!userId || typeof userId !== 'string') {
+      throw new Error('Valid user ID is required');
+    }
+
+    await db.transaction(async (tx) => {
+      // Validate ownership and get submission status
+      const [submission] = await tx
+        .select()
+        .from(pdsSubmissions)
+        .where(
+          and(eq(pdsSubmissions.id, id), eq(pdsSubmissions.userId, userId))
+        )
+        .limit(1);
+
+      if (!submission) {
+        throw new Error('PDS submission not found or access denied');
+      }
+
+      // Only allow deletion of draft submissions
+      if (submission.status !== 'draft') {
+        throw new Error(
+          `Cannot delete PDS with status '${submission.status}'. Only draft submissions can be deleted. Please archive submitted or approved submissions instead.`
+        );
+      }
+
+      // Delete all child records in proper order (foreign key dependencies)
+      // One-to-many relations (array sections)
+      await tx.delete(pdsChildren).where(eq(pdsChildren.pdsSubmissionId, id));
+      await tx.delete(pdsEducation).where(eq(pdsEducation.pdsSubmissionId, id));
+      await tx
+        .delete(pdsCivilService)
+        .where(eq(pdsCivilService.pdsSubmissionId, id));
+      await tx
+        .delete(pdsWorkExperience)
+        .where(eq(pdsWorkExperience.pdsSubmissionId, id));
+      await tx
+        .delete(pdsVoluntaryWork)
+        .where(eq(pdsVoluntaryWork.pdsSubmissionId, id));
+      await tx.delete(pdsTraining).where(eq(pdsTraining.pdsSubmissionId, id));
+
+      // One-to-one relations
+      await tx
+        .delete(pdsPersonalInfo)
+        .where(eq(pdsPersonalInfo.pdsSubmissionId, id));
+      await tx
+        .delete(pdsFamilyBackground)
+        .where(eq(pdsFamilyBackground.pdsSubmissionId, id));
+      await tx.delete(pdsOtherInfo).where(eq(pdsOtherInfo.pdsSubmissionId, id));
+
+      // Finally, delete the main submission record
+      await tx.delete(pdsSubmissions).where(eq(pdsSubmissions.id, id));
+    });
+
+    console.log(`[deletePDSSubmission] Successfully deleted draft PDS ${id}`);
+  } catch (error) {
+    console.error('[deletePDSSubmission] Transaction error:', error);
+    throw new Error(
+      `Failed to delete PDS submission ${id}: ${
         error instanceof Error ? error.message : 'Unknown error'
       }`
     );

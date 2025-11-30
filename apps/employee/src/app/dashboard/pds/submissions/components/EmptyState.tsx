@@ -54,7 +54,7 @@ export const EmptyState = memo(
             No Submissions Yet
           </h3>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            You haven't created any PDS submissions yet. Get started by creating
+            You haven&apos;t created any PDS submissions yet. Get started by creating
             your first Personal Data Sheet.
           </p>
         </div>

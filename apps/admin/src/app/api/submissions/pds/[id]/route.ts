@@ -106,6 +106,14 @@ export async function GET(
       return NextResponse.json({ error: 'PDS submission not found' }, { status: 404 });
     }
 
+    // Block access to draft submissions in admin portal
+    if (submission.status === 'draft') {
+      return NextResponse.json(
+        { error: 'Draft submissions are not accessible in admin portal' },
+        { status: 403 }
+      );
+    }
+
     // Fetch reviewer details if reviewed
     let reviewedBy = null;
     if (submission.approvedBy) {

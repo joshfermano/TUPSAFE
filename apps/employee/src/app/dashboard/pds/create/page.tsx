@@ -30,8 +30,9 @@ import {
   useRef,
   Suspense,
 } from 'react';
+import { useCreatePDS, useSubmitPDS, useUpdatePDS } from '../../../../hooks/usePDS';
 import { useForm, FormProvider } from 'react-hook-form';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import {
@@ -107,6 +108,9 @@ import { DotPattern } from '../../../../components/ui/dot-pattern';
 // Hooks
 import { useAutoSave, getSavedDraft } from '../../../../hooks/useAutoSave';
 import { useAuth } from '../../../../providers/AuthProvider';
+
+// Transformations
+import { transformPdsForSubmission, transformPdsFromBackend } from '../../../../lib/utils/pds-transformations';
 
 // Section components (lazy-loaded)
 import {
@@ -223,8 +227,12 @@ const getSectionRequiredFieldsDescription = (section: number): string => {
 
 export default function PDSCreatePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const userId = user?.id || 'guest';
+
+  // Check if loading from existing draft
+  const draftIdFromUrl = searchParams.get('draftId');
 
   // State
   const [currentSection, setCurrentSection] = useState(0);
@@ -232,6 +240,22 @@ export default function PDSCreatePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDraftDialog, setShowDraftDialog] = useState(false);
   const [_hasSavedDraft, setHasSavedDraft] = useState(false);
+  const [createdPdsId, setCreatedPdsId] = useState<string | null>(null);
+  const [draftId, setDraftId] = useState<string | null>(null); // Track draft ID for updates
+
+  // Synchronous draft ID tracking to prevent race conditions
+  const draftIdRef = useRef<string | null>(null);
+
+  // Helper to update both state and ref together
+  const updateDraftId = useCallback((id: string | null) => {
+    draftIdRef.current = id;
+    setDraftId(id);
+  }, []);
+
+  // Initialize mutations
+  const createMutation = useCreatePDS();
+  const updateMutation = useUpdatePDS(draftId || '');
+  const submitMutation = useSubmitPDS(createdPdsId || '');
 
   // Form setup - no resolver during multi-step flow to allow incomplete data
   // Final validation happens on submission
@@ -262,7 +286,66 @@ export default function PDSCreatePage() {
     [completedSections, currentSection, form]
   );
 
-  // Auto-save setup with API persistence
+  // Save draft to database (create or update)
+  // Uses ref for synchronous draft ID access to prevent race conditions
+  const saveDraftToDatabase = useCallback(
+    async (data: PdsDraftData): Promise<{ success: boolean; draftId?: string }> => {
+      try {
+        // Transform form data for backend
+        const transformedData = transformPdsForSubmission(data.formData);
+
+        // Read from ref (synchronous) instead of state (asynchronous)
+        const currentDraftId = draftIdRef.current;
+
+        if (currentDraftId) {
+          // Update existing draft
+          console.log('[PDS Create] Updating draft:', currentDraftId);
+          const response = await fetch(`/api/pds/${currentDraftId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(transformedData),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            throw new Error(errorData.error || 'Failed to update draft');
+          }
+
+          console.log('[PDS Create] Draft updated successfully:', currentDraftId);
+          return { success: true, draftId: currentDraftId };
+        } else {
+          // Create new draft
+          console.log('[PDS Create] Creating new draft submission');
+          const response = await fetch('/api/pds', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(transformedData),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            throw new Error(errorData.error || 'Failed to create draft');
+          }
+
+          const result = await response.json();
+          if (result.data?.id) {
+            // Update both ref and state together
+            updateDraftId(result.data.id);
+            console.log('[PDS Create] Draft created successfully:', result.data.id);
+            return { success: true, draftId: result.data.id };
+          } else {
+            throw new Error('No draft ID returned from server');
+          }
+        }
+      } catch (error) {
+        console.error('[PDS Create] Error saving draft to database:', error);
+        throw error;
+      }
+    },
+    [updateDraftId] // Stable dependency
+  );
+
+  // Auto-save setup with database persistence
   const { saveStatus, lastSaved, saveNow, clearSaved } =
     useAutoSave<PdsDraftData>({
       key: `pds-draft-${userId}`,
@@ -271,34 +354,63 @@ export default function PDSCreatePage() {
       autoSaveIntervalMs: 30000,
       enabled: !isSubmitting,
       showToast: false,
-      onSave: async (data) => {
-        try {
-          await fetch('/api/pds/draft', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
-          });
-        } catch (error) {
-          console.error('Failed to save draft to server:', error);
-        }
+      onSave: async (data: PdsDraftData) => {
+        await saveDraftToDatabase(data);
+        // Return void - wrapper function that discards the return value
       },
       onError: (error) => {
         console.error('Draft save error:', error);
       },
     });
 
-  // Check for saved draft on mount
+  // Load draft from database if draftId is present in URL
   useEffect(() => {
-    const savedDraft = getSavedDraft<PdsDraftData>(`pds-draft-${userId}`);
-    if (
-      savedDraft &&
-      savedDraft.formData &&
-      Object.keys(savedDraft.formData).length > 0
-    ) {
-      setHasSavedDraft(true);
-      setShowDraftDialog(true);
+    if (draftIdFromUrl) {
+      // Load draft from database
+      fetch(`/api/pds/${draftIdFromUrl}`)
+        .then(async (res) => {
+          if (!res.ok) {
+            throw new Error('Failed to load draft');
+          }
+          return res.json();
+        })
+        .then((result) => {
+          if (result.success && result.data) {
+            const pdsData = result.data;
+
+            // Set draft ID for future updates (update both ref and state)
+            updateDraftId(draftIdFromUrl);
+
+            // Transform backend data to frontend format
+            const formData = transformPdsFromBackend(pdsData);
+
+            // Reset form with transformed data
+            form.reset(formData);
+
+            toast.success('Draft Loaded', {
+              description: 'Your saved draft has been loaded.',
+            });
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to load draft:', error);
+          toast.error('Failed to Load Draft', {
+            description: 'Could not load your saved draft. Starting fresh.',
+          });
+        });
+    } else {
+      // Check for saved draft in localStorage if no URL parameter
+      const savedDraft = getSavedDraft<PdsDraftData>(`pds-draft-${userId}`);
+      if (
+        savedDraft &&
+        savedDraft.formData &&
+        Object.keys(savedDraft.formData).length > 0
+      ) {
+        setHasSavedDraft(true);
+        setShowDraftDialog(true);
+      }
     }
-  }, [userId]);
+  }, [draftIdFromUrl, userId, form]);
 
   // Handle draft restoration
   const handleRestoreDraft = useCallback(() => {
@@ -350,6 +462,42 @@ export default function PDSCreatePage() {
       description: 'Starting with a blank form.',
     });
   }, [clearSaved]);
+
+  // Manual save and navigate handler
+  const handleSaveAndNavigate = useCallback(async (): Promise<void> => {
+    // Since saveNow() doesn't throw errors (they're caught in performSave),
+    // we need to manually call saveDraftToDatabase with proper error handling
+    try {
+      const draftData = getDraftData();
+
+      // Save to database directly with error propagation
+      await saveDraftToDatabase(draftData);
+
+      // Also save to localStorage via saveNow (for offline backup)
+      await saveNow();
+
+      // If we get here, save was successful
+      toast.success('Draft Saved', {
+        description: draftId
+          ? 'Your draft has been updated.'
+          : 'Your draft has been saved successfully.',
+      });
+
+      // Navigate to drafts page after successful save
+      router.push('/dashboard/pds/drafts');
+    } catch (error) {
+      // Log error for debugging
+      console.error('[PDS Create] Failed to save draft:', error);
+
+      // Show error toast
+      toast.error('Failed to save draft', {
+        description: error instanceof Error ? error.message : 'Please try again.',
+        duration: 5000,
+      });
+
+      // Don't navigate on error
+    }
+  }, [getDraftData, saveDraftToDatabase, saveNow, draftId, router]);
 
   // Navigation handlers
   const handleNext = useCallback(async () => {
@@ -403,77 +551,265 @@ export default function PDSCreatePage() {
     [currentSection, completedSections]
   );
 
-  // Form submission with real API call
+  // Form submission with sequential mutations
   const handleSubmit = useCallback(
     async (data: Partial<CompletePdsData>) => {
       setIsSubmitting(true);
 
       try {
-        // Validate complete form with Zod schema
-        const validatedData = completePdsSchema.parse(data);
+        // STEP 1: Prepare data for validation with type conversions only
+        // Apply type conversions but keep the original structure (object format)
+        const dataWithTypeConversions = { ...data };
 
-        // Call real API to create PDS
-        const response = await fetch('/api/pds', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(validatedData),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(
-            errorData.message || `Failed to create PDS (${response.status})`
-          );
+        // Convert Personal Info date/number fields
+        if (dataWithTypeConversions.personalInfo) {
+          dataWithTypeConversions.personalInfo = {
+            ...dataWithTypeConversions.personalInfo,
+            dateOfBirth: dataWithTypeConversions.personalInfo.dateOfBirth 
+              ? (dataWithTypeConversions.personalInfo.dateOfBirth instanceof Date 
+                ? dataWithTypeConversions.personalInfo.dateOfBirth 
+                : new Date(dataWithTypeConversions.personalInfo.dateOfBirth))
+              : null,
+            heightM: dataWithTypeConversions.personalInfo.heightM
+              ? (typeof dataWithTypeConversions.personalInfo.heightM === 'number'
+                ? dataWithTypeConversions.personalInfo.heightM
+                : parseFloat(dataWithTypeConversions.personalInfo.heightM as any))
+              : null,
+            weightKg: dataWithTypeConversions.personalInfo.weightKg
+              ? (typeof dataWithTypeConversions.personalInfo.weightKg === 'number'
+                ? dataWithTypeConversions.personalInfo.weightKg
+                : parseFloat(dataWithTypeConversions.personalInfo.weightKg as any))
+              : null,
+          } as any;
         }
 
-        // Clear draft on success
+        // Convert Family Background - Children dateOfBirth
+        if (dataWithTypeConversions.family?.children) {
+          dataWithTypeConversions.family.children = dataWithTypeConversions.family.children.map((child: any) => ({
+            ...child,
+            dateOfBirth: child.dateOfBirth
+              ? (child.dateOfBirth instanceof Date
+                ? child.dateOfBirth
+                : new Date(child.dateOfBirth))
+              : null,
+          }));
+        }
+
+        // Convert Civil Service Eligibility dates
+        if (dataWithTypeConversions.eligibility) {
+          dataWithTypeConversions.eligibility = dataWithTypeConversions.eligibility.map((item: any) => ({
+            ...item,
+            dateOfExam: item.dateOfExam
+              ? (item.dateOfExam instanceof Date
+                ? item.dateOfExam
+                : new Date(item.dateOfExam))
+              : null,
+            licenseValidityDate: item.licenseValidityDate
+              ? (item.licenseValidityDate instanceof Date
+                ? item.licenseValidityDate
+                : new Date(item.licenseValidityDate))
+              : null,
+          }));
+        }
+
+        // Convert Work Experience dates and salary
+        if (dataWithTypeConversions.workExperience) {
+          dataWithTypeConversions.workExperience = dataWithTypeConversions.workExperience.map((item: any) => ({
+            ...item,
+            dateFrom: item.dateFrom
+              ? (item.dateFrom instanceof Date
+                ? item.dateFrom
+                : new Date(item.dateFrom))
+              : null,
+            dateTo: item.dateTo
+              ? (item.dateTo instanceof Date
+                ? item.dateTo
+                : new Date(item.dateTo))
+              : null,
+            monthlySalary: item.monthlySalary
+              ? (typeof item.monthlySalary === 'number'
+                ? item.monthlySalary
+                : parseFloat(item.monthlySalary))
+              : null,
+          }));
+        }
+
+        // Convert Voluntary Work dates and hours
+        if (dataWithTypeConversions.voluntaryWork) {
+          dataWithTypeConversions.voluntaryWork = dataWithTypeConversions.voluntaryWork.map((item: any) => ({
+            ...item,
+            dateFrom: item.dateFrom
+              ? (item.dateFrom instanceof Date
+                ? item.dateFrom
+                : new Date(item.dateFrom))
+              : null,
+            dateTo: item.dateTo
+              ? (item.dateTo instanceof Date
+                ? item.dateTo
+                : new Date(item.dateTo))
+              : null,
+            numberOfHours: item.numberOfHours
+              ? (typeof item.numberOfHours === 'number'
+                ? item.numberOfHours
+                : parseFloat(item.numberOfHours))
+              : null,
+          }));
+        }
+
+        // Convert Learning Development dates and hours
+        if (dataWithTypeConversions.learningDevelopment) {
+          dataWithTypeConversions.learningDevelopment = dataWithTypeConversions.learningDevelopment.map((item: any) => ({
+            ...item,
+            dateFrom: item.dateFrom
+              ? (item.dateFrom instanceof Date
+                ? item.dateFrom
+                : new Date(item.dateFrom))
+              : null,
+            dateTo: item.dateTo
+              ? (item.dateTo instanceof Date
+                ? item.dateTo
+                : new Date(item.dateTo))
+              : null,
+            hours: item.hours
+              ? (typeof item.hours === 'number'
+                ? item.hours
+                : parseFloat(item.hours))
+              : null,
+          }));
+        }
+
+        // Filter out empty references (a reference is considered filled if it has ALL required fields)
+        if (dataWithTypeConversions.otherInfo?.references) {
+          dataWithTypeConversions.otherInfo.references =
+            dataWithTypeConversions.otherInfo.references.filter(
+              (ref: any) =>
+                ref.name && ref.name.trim() !== '' &&
+                ref.address && ref.address.trim() !== '' &&
+                ref.telephoneNo && ref.telephoneNo.trim() !== ''
+            );
+        }
+
+        // Log for debugging
+        console.log('Data with type conversions:', {
+          hasPersonalInfo: !!dataWithTypeConversions.personalInfo,
+          hasFamily: !!dataWithTypeConversions.family,
+          hasEducation: !!dataWithTypeConversions.education,
+          educationType: Array.isArray(dataWithTypeConversions.education) ? 'array' : 'object',
+          referencesCount: dataWithTypeConversions.otherInfo?.references?.length || 0,
+          dateOfBirthType: typeof dataWithTypeConversions.personalInfo?.dateOfBirth,
+          heightType: typeof dataWithTypeConversions.personalInfo?.heightM,
+          weightType: typeof dataWithTypeConversions.personalInfo?.weightKg,
+        });
+
+        // STEP 2: Validate using the schema (with frontend structure - education as object)
+        const validatedData = completePdsSchema.parse(dataWithTypeConversions);
+
+        // STEP 3: Transform to backend format (education object → array, family → familyBackground)
+        const backendData = transformPdsForSubmission(dataWithTypeConversions);
+
+        console.log('Backend data structure:', {
+          hasPersonalInfo: !!backendData.personalInfo,
+          hasFamilyBackground: !!backendData.familyBackground,
+          hasEducation: !!backendData.education,
+          educationCount: backendData.education?.length || 0,
+          educationSample: backendData.education?.[0] || null,
+        });
+
+        let pdsId: string;
+
+        if (draftId) {
+          // Use existing draft ID
+          pdsId = draftId;
+          // Update draft one final time before submission
+          await updateMutation.mutateAsync(backendData as any);
+        } else {
+          // Create PDS (status: draft)
+          const createResult = await createMutation.mutateAsync(backendData as any);
+
+          if (!createResult?.data?.id) {
+            throw new Error('Failed to create PDS - no ID returned');
+          }
+
+          pdsId = createResult.data.id;
+        }
+
+        setCreatedPdsId(pdsId);
+
+        // Submit for review (status: draft → submitted)
+        await submitMutation.mutateAsync();
+
+        // Clear draft from localStorage
         clearSaved();
 
-        // Show success animation
+        // Success feedback
         confetti({
           particleCount: 100,
           spread: 70,
           origin: { y: 0.6 },
         });
 
-        toast.success('PDS Created Successfully!', {
-          description: 'Your Personal Data Sheet has been saved.',
+        toast.success('PDS Submitted Successfully!', {
+          description: 'Your PDS has been submitted for admin review.',
         });
 
-        // Redirect after animation
+        // Redirect to pending page
         setTimeout(() => {
-          router.push('/dashboard/pds');
+          router.push('/dashboard/pds/pending');
         }, 2000);
+
       } catch (error) {
         console.error('Submission error:', error);
 
         if (error instanceof z.ZodError) {
           const firstError = error.errors[0];
-          const fieldPath = firstError.path.join('.');
-          toast.error('Validation Error', {
-            description: `${fieldPath}: ${firstError.message}`,
+          const errorPath = firstError.path.join('.');
+          console.error('Validation errors:', error.errors);
+
+          // Provide user-friendly error messages
+          let errorMessage = firstError.message;
+          let errorTitle = 'Validation Error';
+
+          // Special handling for references error
+          if (errorPath.includes('references')) {
+            errorTitle = 'Character References Required';
+            errorMessage = 'You must provide at least 3 complete character references. Each reference must include name, address, and telephone number.';
+          } else if (errorPath.includes('dateOfBirth')) {
+            errorTitle = 'Date of Birth Required';
+            errorMessage = 'Please provide a valid date of birth.';
+          } else if (errorPath.includes('heightM') || errorPath.includes('weightKg')) {
+            errorTitle = 'Invalid Measurement';
+            errorMessage = firstError.message;
+          } else {
+            errorMessage = `${errorPath}: ${firstError.message}`;
+          }
+
+          toast.error(errorTitle, {
+            description: errorMessage,
           });
 
-          // Try to navigate to the section with the error
-          const errorSection = getSectionForFieldPath(fieldPath);
-          if (errorSection !== null && errorSection !== currentSection) {
+          const errorSection = getSectionForFieldPath(errorPath);
+          if (errorSection !== null) {
             setCurrentSection(errorSection);
-            toast.info('Navigated to the section with errors', {
-              description: 'Please fix the highlighted fields.',
-            });
           }
+        } else if (createdPdsId) {
+          toast.error('Submission Failed', {
+            description: 'Your PDS was saved as draft. You can submit it from the dashboard.',
+            action: {
+              label: 'Go to Dashboard',
+              onClick: () => router.push('/dashboard/pds'),
+            },
+          });
         } else {
           toast.error('Failed to save PDS', {
-            description:
-              error instanceof Error ? error.message : 'Please try again.',
+            description: error instanceof Error ? error.message : 'Please try again.',
           });
         }
       } finally {
         setIsSubmitting(false);
       }
     },
-    [clearSaved, router, currentSection]
-  );
+    [createMutation, submitMutation, clearSaved, router, currentSection, createdPdsId, draftId, updateMutation]
+  );;
 
   /**
    * Helper to determine which section a field path belongs to
@@ -593,7 +929,7 @@ export default function PDSCreatePage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={saveNow}
+                onClick={handleSaveAndNavigate}
                 disabled={isSubmitting}
                 className="border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900">
                 <Save className="h-4 w-4 mr-2" />
@@ -634,7 +970,7 @@ export default function PDSCreatePage() {
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={saveNow}
+                    onClick={handleSaveAndNavigate}
                     disabled={isSubmitting}>
                     <Save className="h-4 w-4 mr-2" />
                     Save Draft

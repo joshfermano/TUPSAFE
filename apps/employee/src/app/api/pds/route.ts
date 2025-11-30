@@ -8,6 +8,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   getPDSSubmissions,
   createPDSSubmission,
+  updatePDSSubmission,
+  getActiveDraft,
   type PDSFilterOptions,
   type CreatePDSData,
 } from '@tupsafe/database/server';
@@ -66,7 +68,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Invalid pagination parameters. Page and limit must be positive integers.',
+          error:
+            'Invalid pagination parameters. Page and limit must be positive integers.',
         },
         { status: 400 }
       );
@@ -91,7 +94,9 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(
           {
             success: false,
-            error: `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
+            error: `Invalid status. Must be one of: ${validStatuses.join(
+              ', '
+            )}`,
           },
           { status: 400 }
         );
@@ -184,36 +189,53 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate required sections (at minimum, personal info should be present)
-    if (!body.personalInfo) {
+    // For drafts, allow partial data
+    // Only validate if personal info is provided (optional for initial draft creation)
+    if (body.personalInfo) {
+      const { personalInfo } = body;
+
+      // Only validate required fields if they exist
+      // This allows for partial drafts during auto-save
+      const providedFields = Object.keys(personalInfo).filter(
+        (key) => personalInfo[key as keyof typeof personalInfo] !== null &&
+                personalInfo[key as keyof typeof personalInfo] !== undefined &&
+                personalInfo[key as keyof typeof personalInfo] !== ''
+      );
+
+      // If at least some personal info is provided, that's good enough for a draft
+      if (providedFields.length === 0) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Please provide at least some personal information to save a draft.',
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Check for existing draft within 24 hours (deduplication)
+    const existingDraftId = await getActiveDraft(session.user.id);
+
+    if (existingDraftId) {
+      // Update existing draft instead of creating new one
+      console.log(
+        `[POST /api/pds] Found existing draft ${existingDraftId}, updating instead of creating new`
+      );
+
+      await updatePDSSubmission(existingDraftId, session.user.id, body);
+
       return NextResponse.json(
         {
-          success: false,
-          error:
-            'Personal information is required to create a PDS submission.',
+          success: true,
+          data: { id: existingDraftId },
+          message: 'Draft updated successfully',
         },
-        { status: 400 }
+        { status: 200 }
       );
     }
 
-    // Validate personal info required fields
-    const { personalInfo } = body;
-    const requiredFields = ['surname', 'firstName', 'dateOfBirth', 'sex'];
-    const missingFields = requiredFields.filter(
-      (field) => !personalInfo[field as keyof typeof personalInfo]
-    );
-
-    if (missingFields.length > 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Missing required personal information fields: ${missingFields.join(', ')}`,
-        },
-        { status: 400 }
-      );
-    }
-
-    // Create PDS submission
+    // No recent draft exists - create new one
     const pdsId = await createPDSSubmission(session.user.id, body);
 
     console.log(

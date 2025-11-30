@@ -14,20 +14,23 @@
  */
 
 import { Page, View, Text } from '@react-pdf/renderer';
-import { styles, displayOrEmpty, formatDateMMDDYYYY } from './PDSStyles';
+import {
+  styles,
+  colors,
+  fontSizes,
+  dimensions,
+  displayOrEmpty,
+  formatDateMMDDYYYY,
+} from './PDSStyles';
 import type { PDSData, Reference, GovernmentID, PDSQuestions } from './types';
 
 interface PDSPage4Props {
   data: PDSData;
 }
 
-// Checkbox component
+// Checkbox component using symbols ☐ and ☑
 function Checkbox({ checked }: { checked: boolean }) {
-  return (
-    <View style={checked ? styles.checkboxChecked : styles.checkbox}>
-      {checked && <Text style={styles.checkMark}>X</Text>}
-    </View>
-  );
+  return <Text style={styles.checkboxSymbol}>{checked ? '☑' : '☐'}</Text>;
 }
 
 // Yes/No question row component
@@ -78,13 +81,13 @@ function QuestionRow({
 function ReferenceRow({ reference, index }: { reference?: Reference; index: number }) {
   return (
     <View style={styles.fieldRow}>
-      <View style={[styles.tableCell, styles.w40]}>
+      <View style={[styles.tableCell, styles.w33]}>
         <Text style={styles.value}>{reference?.name || ''}</Text>
       </View>
-      <View style={[styles.tableCell, styles.w40]}>
+      <View style={[styles.tableCell, styles.w33]}>
         <Text style={styles.valueSmall}>{reference?.address || ''}</Text>
       </View>
-      <View style={[styles.tableCellNoBorder, styles.w20]}>
+      <View style={[styles.tableCellNoBorder, { flex: 1 }]}>
         <Text style={styles.value}>{reference?.telephoneNo || ''}</Text>
       </View>
     </View>
@@ -136,8 +139,8 @@ export function PDSPage4({ data }: PDSPage4Props) {
         {/* Question 34 */}
         <QuestionRow
           number="34"
-          question="Are you related by consanguinity or affinity to the appointing or recommending authority, or to the chief of bureau or office or to the person who has immediate supervision over you in the Office, Bureau or Department where you will be appointed,"
-          subQuestion="a. within the third degree? b. within the fourth degree (for Local Government Unit - Loss Elective Official)?"
+          question="Are you related by consanguinity or affinity to the appointing or recommending authority, or to the chief of bureau or office or to the person who has immediate supervision over you in the Office, Bureau or Department where you will be apppointed,"
+          subQuestion="a. within the third degree? b. within the fourth degree (for Local Government Unit - Career Employees)?"
           yesChecked={q34Related}
           details={q34Details}
         />
@@ -199,25 +202,36 @@ export function PDSPage4({ data }: PDSPage4Props) {
         />
 
         {/* Question 40 */}
+        <View style={styles.fieldRow}>
+          <View style={[styles.labelCell, styles.w60]}>
+            <Text style={styles.labelSmall}>
+              40. Pursuant to: (a) Indigenous People&apos;s Act (RA 8371); (b) Magna
+              Carta for Disabled Persons (RA 7277, as amended); and (c) Expanded Solo
+              Parents Welfare Act (RA 11861), please answer the following items:
+            </Text>
+          </View>
+          <View style={[styles.fieldCellLast, { flex: 1 }]} />
+        </View>
+
+        {/* Question 40a */}
         <QuestionRow
-          number="40"
-          question="Pursuant to: (a) Indigenous People's Act (RA No. 8371); (b) Magna Carta for Disabled Persons (RA No. 7277); and (c) Solo Parents Welfare Act of 2000 (RA No. 8972), please answer the following items:"
-          subQuestion="Are you a member of any indigenous group?"
+          number="a"
+          question="Are you a member of any indigenous group?"
           yesChecked={q40Indigenous}
           details={q40Details}
         />
 
-        {/* Question 41 */}
+        {/* Question 40b */}
         <QuestionRow
-          number="41"
+          number="b"
           question="Are you a person with disability?"
           yesChecked={q41Disabled}
           details={q41Details}
         />
 
-        {/* Question 42 */}
+        {/* Question 40c */}
         <QuestionRow
-          number="42"
+          number="c"
           question="Are you a solo parent?"
           yesChecked={q42SoloParent}
           details={q42Details}
@@ -227,22 +241,29 @@ export function PDSPage4({ data }: PDSPage4Props) {
       {/* References Section */}
       <View style={[styles.borderedSection, styles.marginTop5]}>
         <View style={styles.sectionHeader}>
-          <Text>REFERENCES</Text>
-          <Text style={[styles.labelSmall, { color: '#ffffff' }]}>
-            (Person not related by consanguinity or affinity to applicant / appointee)
+          <Text>41. REFERENCES</Text>
+        </View>
+        <View style={styles.subSectionHeader}>
+          <Text style={styles.labelSmall}>
+            (Person not related by consanguinity or affinity to applicant /
+            appointee)
           </Text>
         </View>
 
         {/* References header */}
         <View style={styles.fieldRow}>
-          <View style={[styles.tableCellHeader, styles.w40]}>
+          <View style={[styles.tableCellHeader, styles.w33]}>
             <Text style={[styles.labelSmall, styles.center]}>NAME</Text>
           </View>
-          <View style={[styles.tableCellHeader, styles.w40]}>
-            <Text style={[styles.labelSmall, styles.center]}>ADDRESS</Text>
+          <View style={[styles.tableCellHeader, styles.w33]}>
+            <Text style={[styles.labelSmall, styles.center]}>
+              OFFICE / RESIDENTIAL ADDRESS
+            </Text>
           </View>
-          <View style={[styles.tableCellHeader, styles.w20]}>
-            <Text style={[styles.labelSmall, styles.center]}>TEL. NO.</Text>
+          <View style={[styles.tableCellHeader, { flex: 1 }]}>
+            <Text style={[styles.labelSmall, styles.center]}>
+              CONTACT NO. AND/OR EMAIL
+            </Text>
           </View>
         </View>
 
@@ -258,47 +279,45 @@ export function PDSPage4({ data }: PDSPage4Props) {
 
       {/* Government Issued ID Section */}
       <View style={[styles.borderedSection, styles.marginTop5]}>
+        <View style={styles.sectionHeader}>
+          <Text>Government Issued ID (i.e.Passport, GSIS, SSS, PRC, Driver&apos;s License, etc.)</Text>
+        </View>
+        <View style={styles.subSectionHeader}>
+          <Text style={styles.labelSmall}>
+            PLEASE INDICATE ID Number and Date of Issuance
+          </Text>
+        </View>
         <View style={styles.fieldRow}>
           <View style={[styles.labelCell, styles.w25]}>
-            <Text style={styles.labelSmall}>
-              43. GOVERNMENT ISSUED ID
-            </Text>
-            <Text style={[styles.labelSmall, styles.italic]}>
-              (i.e. Passport, GSIS, SSS, PRC, Driver&apos;s License, etc.)
-            </Text>
-            <Text style={[styles.labelSmall, styles.italic]}>
-              PLEASE INDICATE ID Number and Date of Issuance
-            </Text>
+            <Text style={styles.labelSmall}>Government Issued ID:</Text>
           </View>
           <View style={[styles.fieldCellLast, { flex: 1 }]}>
-            <View style={styles.row}>
-              <View style={[styles.column, styles.w50]}>
-                <Text style={styles.labelSmall}>Government Issued ID:</Text>
-                <Text style={styles.value}>
-                  {displayOrEmpty(governmentId?.idType)}
-                </Text>
-              </View>
-              <View style={[styles.column, styles.w50]}>
-                <Text style={styles.labelSmall}>ID/License/Passport No.:</Text>
-                <Text style={styles.value}>
-                  {displayOrEmpty(governmentId?.idNumber)}
-                </Text>
-              </View>
-            </View>
-            <View style={[styles.row, styles.marginTop5]}>
-              <View style={[styles.column, styles.w50]}>
-                <Text style={styles.labelSmall}>Date of Issuance:</Text>
-                <Text style={styles.value}>
-                  {formatDateMMDDYYYY(governmentId?.dateIssued)}
-                </Text>
-              </View>
-              <View style={[styles.column, styles.w50]}>
-                <Text style={styles.labelSmall}>Place of Issuance:</Text>
-                <Text style={styles.value}>
-                  {displayOrEmpty(governmentId?.placeIssued)}
-                </Text>
-              </View>
-            </View>
+            <Text style={styles.value}>
+              {displayOrEmpty(governmentId?.idType)}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.fieldRow}>
+          <View style={[styles.labelCell, styles.w25]}>
+            <Text style={styles.labelSmall}>ID/License/Passport No.:</Text>
+          </View>
+          <View style={[styles.fieldCellLast, { flex: 1 }]}>
+            <Text style={styles.value}>
+              {displayOrEmpty(governmentId?.idNumber)}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.fieldRow}>
+          <View style={[styles.labelCell, styles.w25]}>
+            <Text style={styles.labelSmall}>Date/Place of Issuance:</Text>
+          </View>
+          <View style={[styles.fieldCellLast, { flex: 1 }]}>
+            <Text style={styles.value}>
+              {formatDateMMDDYYYY(governmentId?.dateIssued)}
+              {governmentId?.placeIssued
+                ? ` / ${displayOrEmpty(governmentId.placeIssued)}`
+                : ''}
+            </Text>
           </View>
         </View>
       </View>
@@ -310,9 +329,9 @@ export function PDSPage4({ data }: PDSPage4Props) {
           <View style={[styles.column, styles.w60]}>
             <Text style={styles.declarationText}>
               I declare under oath that I have personally accomplished this Personal
-              Data Sheet which is a true, correct and complete statement pursuant to
-              the provisions of pertinent laws, rules and regulations of the Republic
-              of the Philippines. I authorize the agency head/authorized
+              Data Sheet which is a true, correct, and complete statement pursuant to
+              the provisions of pertinent laws, rules, and regulations of the
+              Republic of the Philippines. I authorize the agency head/authorized
               representative to verify/validate the contents stated herein. I agree
               that any misrepresentation made in this document and its attachments
               shall cause the filing of administrative/criminal case/s against me.
@@ -344,23 +363,24 @@ export function PDSPage4({ data }: PDSPage4Props) {
 
           {/* Right side - Photo and Thumbmark */}
           <View style={[styles.column, styles.w40, { alignItems: 'center' }]}>
-            {/* Photo Box */}
-            <View style={styles.photoBox}>
-              <Text style={[styles.labelSmall, styles.center]}>
-                ID picture taken within
-              </Text>
-              <Text style={[styles.labelSmall, styles.center]}>
-                the last 6 months
-              </Text>
-              <Text style={[styles.labelSmall, styles.center]}>
-                3.5 cm x 4.5 cm
-              </Text>
-              <Text style={[styles.labelSmall, styles.center]}>
-                (passport size)
+            {/* Photo Box - 4.5cm x 3.5cm (127.56 x 99.21 points) */}
+            <View
+              style={{
+                width: dimensions.photoWidth,
+                height: dimensions.photoHeight,
+                borderWidth: 1,
+                borderColor: colors.black,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ fontSize: fontSizes.noteText, textAlign: 'center' }}>
+                Passport-sized unfiltered{'\n'}digital picture taken within{'\n'}
+                the last 6 months{'\n'}4.5 cm. X 3.5 cm
               </Text>
             </View>
             <Text style={[styles.labelSmall, styles.center, styles.marginTop5]}>
-              Photo
+              PHOTO
             </Text>
 
             {/* Right Thumb Mark Box */}
@@ -377,27 +397,10 @@ export function PDSPage4({ data }: PDSPage4Props) {
       {/* Subscribed and Sworn Section */}
       <View style={[styles.borderedSection, styles.marginTop5]}>
         <View style={{ padding: 5 }}>
-          <Text style={styles.subscribeText}>
-            SUBSCRIBED AND SWORN to before me this ________ day of ________________, ________,
+          <Text style={styles.declarationText}>
+            SUBSCRIBED AND SWORN to before me this ____________________, affiant
+            exhibiting his/her validly issued government ID as indicated above.
           </Text>
-          <Text style={[styles.subscribeText, styles.marginTop5]}>
-            affiant exhibiting his/her validly issued government ID as indicated above.
-          </Text>
-
-          <View style={[styles.row, styles.marginTop10, { justifyContent: 'space-around' }]}>
-            <View style={styles.column}>
-              <Text style={styles.labelSmall}>Community Tax Certificate No.:</Text>
-              <Text style={styles.value}>_________________________</Text>
-            </View>
-            <View style={styles.column}>
-              <Text style={styles.labelSmall}>Issued at:</Text>
-              <Text style={styles.value}>_________________________</Text>
-            </View>
-            <View style={styles.column}>
-              <Text style={styles.labelSmall}>Issued on:</Text>
-              <Text style={styles.value}>_________________________</Text>
-            </View>
-          </View>
 
           <View style={[styles.marginTop10, { alignItems: 'center' }]}>
             <View style={{ height: 40 }} />
@@ -407,13 +410,17 @@ export function PDSPage4({ data }: PDSPage4Props) {
             <Text style={[styles.labelSmall, styles.center]}>
               Person Administering Oath
             </Text>
+            <Text style={[styles.labelSmall, styles.center, styles.italic]}>
+              (wet signature/e-signature/digital certificate except for notary
+              public)
+            </Text>
           </View>
         </View>
       </View>
 
       {/* Page footer */}
       <View style={styles.pageNumber}>
-        <Text style={styles.noteText}>CS FORM 212 (Revised 2017), Page 4 of 4</Text>
+        <Text style={styles.noteText}>CS FORM 212 (Revised 2025), Page 4 of 4</Text>
       </View>
     </Page>
   );

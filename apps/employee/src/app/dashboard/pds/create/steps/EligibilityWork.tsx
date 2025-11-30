@@ -468,7 +468,7 @@ export const EligibilityWork = memo(function EligibilityWork() {
                       name={`workExperience.${index}.salaryGrade`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Salary Grade/Step (if gov't)</FormLabel>
+                          <FormLabel>Salary Grade/Step (if gov&apos;t)</FormLabel>
                           <FormControl>
                             <Input
                               placeholder="e.g., SG-24 Step 1"

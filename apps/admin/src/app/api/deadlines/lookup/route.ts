@@ -52,11 +52,21 @@ function calculateDaysRemaining(deadlineDate: string | Date): number {
  * Fetch a specific deadline by form type and year
  */
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
+
   try {
+    console.log('[Deadlines Lookup API] Request started:', {
+      url: request.url,
+      method: request.method,
+      timestamp: new Date().toISOString(),
+    });
+
     // Authorization check - HR or Admin only
+    console.log('[Deadlines Lookup API] Checking authorization...');
     const hasPermission = await checkUserRoleFromSupabase(['hr', 'admin'], 'admin');
 
     if (!hasPermission) {
+      console.warn('[Deadlines Lookup API] Authorization failed - insufficient permissions');
       return NextResponse.json(
         {
           success: false,
@@ -66,12 +76,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    console.log('[Deadlines Lookup API] Authorization successful');
+
     // Parse and validate query parameters
     const searchParams = request.nextUrl.searchParams;
     const queryParams = {
       formType: searchParams.get('formType'),
       year: searchParams.get('year'),
     };
+
+    console.log('[Deadlines Lookup API] Received query parameters:', queryParams);
 
     const validationResult = lookupParamsSchema.safeParse(queryParams);
 
@@ -80,6 +94,7 @@ export async function GET(request: NextRequest) {
       console.error('[Deadlines Lookup API] Validation failed:', {
         queryParams,
         fieldErrors,
+        issues: validationResult.error.issues,
       });
       return NextResponse.json(
         {
@@ -92,8 +107,15 @@ export async function GET(request: NextRequest) {
     }
 
     const { formType, year } = validationResult.data;
+    console.log('[Deadlines Lookup API] Validated parameters:', { formType, year });
 
     // Fetch the deadline by form type and year
+    console.log('[Deadlines Lookup API] Querying database...', {
+      formType,
+      year,
+      tableName: 'submission_deadlines',
+    });
+
     const [deadline] = await db
       .select({
         id: submissionDeadlines.id,
@@ -113,8 +135,14 @@ export async function GET(request: NextRequest) {
       )
       .limit(1);
 
+    console.log('[Deadlines Lookup API] Database query completed:', {
+      found: !!deadline,
+      deadlineId: deadline?.id,
+    });
+
     // Return 404 if deadline not found
     if (!deadline) {
+      console.warn('[Deadlines Lookup API] No deadline found:', { formType, year });
       return NextResponse.json(
         {
           success: false,
@@ -179,9 +207,23 @@ export async function GET(request: NextRequest) {
       },
     };
 
+    const duration = Date.now() - startTime;
+    console.log('[Deadlines Lookup API] Request completed successfully:', {
+      deadlineId: response.id,
+      formType: response.formType,
+      year: response.year,
+      durationMs: duration,
+    });
+
     return NextResponse.json(response, { status: 200 });
   } catch (error) {
-    console.error('[Deadlines Lookup API] Error:', error);
+    const duration = Date.now() - startTime;
+    console.error('[Deadlines Lookup API] Error occurred:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      durationMs: duration,
+    });
+
     return NextResponse.json(
       {
         success: false,

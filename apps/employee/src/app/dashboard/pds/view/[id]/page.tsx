@@ -15,7 +15,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../../providers/AuthProvider';
 import { usePdsSubmissionById } from '../../../../../hooks/usePdsSubmissionById';
 import { usePDSPdf } from '../../../../../hooks/usePDSPdf';
-import { transformPdsForPdf } from '../../../../../lib/utils/pds-transform';
+import { transformPdsForPdf } from '../../../../../lib/utils/pds-transformations';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import {
@@ -36,6 +36,7 @@ import {
   Star,
   Loader2,
   Info,
+  XCircle,
 } from 'lucide-react';
 
 // UI Components
@@ -44,7 +45,6 @@ import { Card } from '../../../../../components/ui/card';
 import { Button } from '../../../../../components/ui/button';
 import { Badge } from '../../../../../components/ui/badge';
 import { Separator } from '../../../../../components/ui/separator';
-import { Tooltip } from '../../../../../components/ui/tooltip';
 import {
   Collapsible,
   CollapsibleTrigger,
@@ -211,21 +211,27 @@ export default function PDSViewDetailPage({
   const canEdit =
     submission?.status === 'draft' || submission?.status === 'rejected';
 
-  // Check if PDF download/print is allowed (only when approved)
-  const canDownloadPDF = submission?.status === 'approved';
+  // Check if PDF download/print is allowed
+  // PDF is available for: approved, submitted, reviewing
+  // PDF is NOT available for: draft, rejected
+  const canDownloadPDF =
+    submission?.status === 'approved' ||
+    submission?.status === 'submitted' ||
+    submission?.status === 'reviewing';
 
   // Get status-specific message for PDF restriction
   const getPdfRestrictionMessage = () => {
     switch (submission?.status) {
       case 'draft':
-        return 'Please submit your PDS for approval first';
+        return 'Submit your PDS to enable PDF download';
+      case 'rejected':
+        return 'Address feedback and resubmit to enable PDF download';
+      case 'approved':
       case 'submitted':
       case 'reviewing':
-        return 'PDF will be available after admin approval';
-      case 'rejected':
-        return 'Please address feedback and resubmit for approval';
+        return 'PDF download available';
       default:
-        return 'PDF available after admin approval';
+        return 'Submit your PDS to enable PDF download';
     }
   };
 
@@ -354,48 +360,34 @@ export default function PDSViewDetailPage({
               <Badge className={cn('px-2 py-0.5', statusConfig.color)}>
                 {statusConfig.label}
               </Badge>
-              <Tooltip
-                content={getPdfRestrictionMessage()}
-                disabled={canDownloadPDF}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    'gap-2',
-                    !canDownloadPDF &&
-                      'opacity-50 cursor-not-allowed hover:bg-transparent'
-                  )}
-                  onClick={canDownloadPDF ? handleDownload : undefined}
-                  disabled={isGenerating || !canDownloadPDF}>
-                  {isGenerating ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Download className="h-4 w-4" />
-                  )}
-                  Export PDF
-                </Button>
-              </Tooltip>
-              <Tooltip
-                content={getPdfRestrictionMessage()}
-                disabled={canDownloadPDF}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    'gap-2',
-                    !canDownloadPDF &&
-                      'opacity-50 cursor-not-allowed hover:bg-transparent'
-                  )}
-                  onClick={canDownloadPDF ? handlePrint : undefined}
-                  disabled={isGenerating || !canDownloadPDF}>
-                  {isGenerating ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Printer className="h-4 w-4" />
-                  )}
-                  Print
-                </Button>
-              </Tooltip>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={handleDownload}
+                disabled={isGenerating || !canDownloadPDF}
+                title={!canDownloadPDF ? getPdfRestrictionMessage() : undefined}>
+                {isGenerating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                Export PDF
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={handlePrint}
+                disabled={isGenerating || !canDownloadPDF}
+                title={!canDownloadPDF ? getPdfRestrictionMessage() : undefined}>
+                {isGenerating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Printer className="h-4 w-4" />
+                )}
+                Print
+              </Button>
               {canEdit && (
                 <Button
                   size="sm"
@@ -416,6 +408,34 @@ export default function PDSViewDetailPage({
           </div>
         </div>
       </BlurFade>
+
+      {/* Rejection Feedback Panel */}
+      {submission.status === 'rejected' && submission.rejectionReason && (
+        <BlurFade delay={0.12}>
+          <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800 rounded-lg p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <XCircle className="h-5 w-5 text-rose-600 dark:text-rose-400 mt-0.5 shrink-0" />
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-rose-700 dark:text-rose-400">
+                  Submission Rejected
+                </h3>
+                <p className="text-sm text-rose-600 dark:text-rose-500 mt-1">
+                  {submission.rejectionReason}
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3 border-rose-300 hover:bg-rose-100 dark:border-rose-700 dark:hover:bg-rose-900/20"
+                  onClick={handleEdit}
+                >
+                  <Edit className="h-3.5 w-3.5 mr-1.5" />
+                  Edit & Resubmit
+                </Button>
+              </div>
+            </div>
+          </div>
+        </BlurFade>
+      )}
 
       {/* I. PERSONAL INFORMATION */}
       <Section

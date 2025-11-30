@@ -184,43 +184,136 @@ export async function fetchDeadlineByFormTypeAndYear(
   formType: FormType,
   year: number
 ): Promise<DeadlineDetailResponse | null> {
-  const searchParams = new URLSearchParams();
-  searchParams.set('formType', formType);
-  searchParams.set('year', year.toString());
+  const requestId = `lookup-${formType}-${year}-${Date.now()}`;
 
-  const response = await fetch(`${API_BASE}/lookup?${searchParams.toString()}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-  });
+  try {
+    const searchParams = new URLSearchParams();
+    searchParams.set('formType', formType);
+    searchParams.set('year', year.toString());
 
-  // Parse response body once
-  const responseData = await response.json().catch(() => ({
-    success: false,
-    error: 'Failed to fetch deadline',
-  }));
+    const url = `${API_BASE}/lookup?${searchParams.toString()}`;
 
-  // Return null if not found (404)
-  if (response.status === 404) {
-    return null;
-  }
-
-  if (!response.ok) {
-    const errorMessage = responseData.error || 'Failed to fetch deadline';
-    const errorDetails = responseData.details ? ` (${responseData.details})` : '';
-
-    console.error('[fetchDeadlineByFormTypeAndYear] API Error:', {
-      status: response.status,
-      error: responseData.error,
-      details: responseData.details,
+    console.log('[fetchDeadlineByFormTypeAndYear] Request started:', {
+      requestId,
+      url,
+      formType,
+      year,
+      timestamp: new Date().toISOString(),
     });
 
-    throw new Error(`${errorMessage}${errorDetails}`);
-  }
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
 
-  return responseData;
+    console.log('[fetchDeadlineByFormTypeAndYear] Response received:', {
+      requestId,
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+    });
+
+    // Parse response body once
+    let responseData;
+    try {
+      responseData = await response.json();
+    } catch (parseError) {
+      console.error('[fetchDeadlineByFormTypeAndYear] JSON parse error:', {
+        requestId,
+        error: parseError instanceof Error ? parseError.message : 'Unknown parse error',
+      });
+      responseData = {
+        success: false,
+        error: 'Failed to parse server response',
+      };
+    }
+
+    // Return null if not found (404) - this is expected and not an error
+    if (response.status === 404) {
+      console.log('[fetchDeadlineByFormTypeAndYear] No deadline found (404):', {
+        requestId,
+        formType,
+        year,
+        serverMessage: responseData.error,
+      });
+      return null;
+    }
+
+    // Handle authorization errors (403)
+    if (response.status === 403) {
+      console.error('[fetchDeadlineByFormTypeAndYear] Authorization error (403):', {
+        requestId,
+        error: responseData.error,
+        details: responseData.details,
+      });
+
+      const errorMessage = responseData.error || 'Unauthorized access';
+      throw new Error(errorMessage);
+    }
+
+    // Handle validation errors (400)
+    if (response.status === 400) {
+      console.error('[fetchDeadlineByFormTypeAndYear] Validation error (400):', {
+        requestId,
+        error: responseData.error,
+        details: responseData.details,
+      });
+
+      const errorMessage = responseData.error || 'Invalid request parameters';
+      const errorDetails = responseData.details
+        ? `: ${JSON.stringify(responseData.details)}`
+        : '';
+      throw new Error(`${errorMessage}${errorDetails}`);
+    }
+
+    // Handle other errors
+    if (!response.ok) {
+      const errorMessage = responseData.error || 'Failed to fetch deadline';
+      const errorDetails = responseData.details ? ` (${responseData.details})` : '';
+
+      console.error('[fetchDeadlineByFormTypeAndYear] API Error:', {
+        requestId,
+        status: response.status,
+        statusText: response.statusText,
+        error: responseData.error,
+        details: responseData.details,
+        url,
+      });
+
+      throw new Error(`${errorMessage}${errorDetails}`);
+    }
+
+    console.log('[fetchDeadlineByFormTypeAndYear] Request successful:', {
+      requestId,
+      deadlineId: responseData.id,
+      formType: responseData.formType,
+      year: responseData.year,
+    });
+
+    return responseData;
+  } catch (error) {
+    // Network or other errors
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      console.error('[fetchDeadlineByFormTypeAndYear] Network error:', {
+        requestId,
+        error: error.message,
+        formType,
+        year,
+      });
+      throw new Error('Network error: Unable to connect to the server. Please check your connection.');
+    }
+
+    // Re-throw other errors
+    console.error('[fetchDeadlineByFormTypeAndYear] Unexpected error:', {
+      requestId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    throw error;
+  }
 }
 
 /**
