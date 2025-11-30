@@ -46,6 +46,8 @@ export interface ReviewDialogProps {
   currentStatus: string;
   /** Name of the employee who submitted */
   employeeName: string;
+  /** Default action to pre-select when dialog opens */
+  defaultAction?: 'approve' | 'reject' | 'request_changes';
   /** Callback for approval action */
   onApprove: (notes?: string) => Promise<void>;
   /** Callback for rejection action */
@@ -94,6 +96,7 @@ export function ReviewDialog({
   submissionType,
   currentStatus,
   employeeName,
+  defaultAction = 'approve',
   onApprove,
   onReject,
   onRequestChanges,
@@ -109,7 +112,7 @@ export function ReviewDialog({
   } = useForm<ReviewFormData>({
     resolver: zodResolver(reviewSchema),
     defaultValues: {
-      action: 'approve',
+      action: defaultAction,
       notes: '',
     },
   });
@@ -123,12 +126,13 @@ export function ReviewDialog({
   // Validate notes requirement
   const isNotesValid = !notesRequired || (notes && notes.trim().length > 0);
 
-  // Reset form when dialog closes
+  // Reset form when dialog opens/closes or defaultAction changes
   React.useEffect(() => {
-    if (!open) {
-      reset();
+    if (open) {
+      // When dialog opens, set to the defaultAction
+      reset({ action: defaultAction, notes: '' });
     }
-  }, [open, reset]);
+  }, [open, defaultAction, reset]);
 
   const onSubmit = async (data: ReviewFormData) => {
     // Validate notes if required

@@ -518,3 +518,127 @@ export function showAutoSaveToast(type: DocumentType, success: boolean = true) {
     toast.error('Save Failed', errorOptions);
   }
 }
+
+/**
+ * Show delete draft confirmation toast
+ *
+ * @param type - Document type
+ * @param onConfirm - Callback function to execute when deletion is confirmed
+ * @param options - Additional options
+ *
+ * @example
+ * ```typescript
+ * showDeleteDraftToast('pds', async () => {
+ *   await deletePDS(draftId);
+ * }, {
+ *   version: 1
+ * });
+ * ```
+ */
+export function showDeleteDraftToast(
+  type: DocumentType,
+  onConfirm: () => Promise<void>,
+  options?: {
+    version?: number;
+  }
+) {
+  const typeLabel = type.toUpperCase();
+  const versionText = options?.version ? ` (Version ${options.version})` : '';
+
+  const deleteOptions: {
+    description: string;
+    duration: number;
+    icon?: React.ReactNode;
+    className?: string;
+    action: {
+      label: string;
+      onClick: () => void;
+    };
+  } = {
+    description: `This will permanently delete your ${typeLabel} draft${versionText}. This action cannot be undone.`,
+    duration: 10000, // Longer duration for important actions
+    icon: AlertTriangle ? <AlertTriangle className="h-5 w-5" /> : undefined,
+    className: 'border-amber-500/50 bg-amber-50 dark:bg-amber-950/30',
+    action: {
+      label: 'Delete',
+      onClick: async () => {
+        try {
+          await onConfirm();
+          showDeleteSuccessToast(type, options);
+        } catch (error) {
+          showDeleteErrorToast(type, error instanceof Error ? error.message : 'Unknown error');
+        }
+      },
+    },
+  };
+
+  toast.warning('Confirm Deletion', deleteOptions);
+}
+
+/**
+ * Show delete success toast
+ *
+ * @param type - Document type
+ * @param options - Additional options
+ *
+ * @example
+ * ```typescript
+ * showDeleteSuccessToast('pds', { version: 1 });
+ * ```
+ */
+export function showDeleteSuccessToast(
+  type: DocumentType,
+  options?: {
+    version?: number;
+  }
+) {
+  const typeLabel = type.toUpperCase();
+  const versionText = options?.version ? ` (Version ${options.version})` : '';
+
+  const successOptions: {
+    description: string;
+    duration: number;
+    icon?: React.ReactNode;
+    className?: string;
+  } = {
+    description: `Your ${typeLabel} draft${versionText} has been permanently deleted.`,
+    duration: 4000,
+    icon: CheckCircle2 ? <CheckCircle2 className="h-5 w-5" /> : undefined,
+    className: 'border-green-500/50 bg-green-50 dark:bg-green-950/30',
+  };
+
+  toast.success('Draft Deleted', successOptions);
+}
+
+/**
+ * Show delete error toast
+ *
+ * @param type - Document type
+ * @param errorMessage - Error message to display
+ *
+ * @example
+ * ```typescript
+ * showDeleteErrorToast('pds', 'Failed to delete draft: Database error');
+ * ```
+ */
+export function showDeleteErrorToast(
+  type: DocumentType,
+  errorMessage?: string
+) {
+  const typeLabel = type.toUpperCase();
+  const description = errorMessage || `Failed to delete your ${typeLabel} draft. Please try again.`;
+
+  const errorOptions: {
+    description: string;
+    duration: number;
+    icon?: React.ReactNode;
+    className?: string;
+  } = {
+    description,
+    duration: 6000,
+    icon: XCircle ? <XCircle className="h-5 w-5" /> : undefined,
+    className: 'border-red-500/50 bg-red-50 dark:bg-red-950/30',
+  };
+
+  toast.error('Deletion Failed', errorOptions);
+}

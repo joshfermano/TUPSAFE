@@ -281,6 +281,7 @@ const DashboardSidebar = memo(function DashboardSidebar({
           icon: FileText,
           subItems: [
             { name: 'Create', href: '/dashboard/pds/create' },
+            { name: 'Drafts', href: '/dashboard/pds/drafts' },
             { name: 'Submissions', href: '/dashboard/pds/submissions' },
             { name: 'Pending', href: '/dashboard/pds/pending' },
             { name: 'Archive', href: '/dashboard/pds/archive' },
@@ -316,6 +317,7 @@ const DashboardSidebar = memo(function DashboardSidebar({
         icon: FileText,
         subItems: [
           { name: 'Create', href: '/dashboard/pds/create' },
+          { name: 'Drafts', href: '/dashboard/pds/drafts' },
           { name: 'Submissions', href: '/dashboard/pds/submissions' },
           { name: 'Pending', href: '/dashboard/pds/pending' },
           { name: 'Archive', href: '/dashboard/pds/archive' },

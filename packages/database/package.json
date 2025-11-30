@@ -30,6 +30,10 @@
     "./utils/audit-log": {
       "types": "./dist/utils/audit-log.d.ts",
       "default": "./dist/utils/audit-log.js"
+    },
+    "./utils/validation": {
+      "types": "./dist/utils/validation.d.ts",
+      "default": "./dist/utils/validation.js"
     }
   },
   "scripts": {

@@ -62,9 +62,22 @@ export async function GET(request: NextRequest) {
     // Build WHERE conditions
     const conditions = [];
 
-    // Status filter (exclude 'all' which means no filter)
+    // Status filter - ALWAYS exclude drafts from admin view
     if (validatedQuery.status && validatedQuery.status !== 'all') {
+      // User selected a specific status (must not be draft)
+      if (validatedQuery.status === 'draft') {
+        // Block attempts to filter for drafts
+        return NextResponse.json(
+          { error: 'Draft submissions are not accessible in admin portal' },
+          { status: 403 }
+        );
+      }
       conditions.push(eq(pdsSubmissions.status, validatedQuery.status));
+    } else {
+      // Default: show submitted, reviewing, approved, rejected (NOT draft)
+      conditions.push(
+        inArray(pdsSubmissions.status, ['submitted', 'reviewing', 'approved', 'rejected'])
+      );
     }
 
     // Department filter

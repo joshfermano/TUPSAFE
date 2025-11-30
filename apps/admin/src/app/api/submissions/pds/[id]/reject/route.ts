@@ -94,18 +94,31 @@ export async function POST(
       );
     }
 
-    // Verify submission is in reviewable status
-    if (submission.status !== 'submitted' && submission.status !== 'reviewing') {
+    // Verify submission is not already approved
+    // Allow rejecting draft, submitted, or reviewing submissions
+    if (submission.status === 'approved') {
       return NextResponse.json(
         {
-          error: `Cannot reject submission with status '${submission.status}'`,
-          details: 'Only submissions with status "submitted" or "reviewing" can be rejected',
+          error: `Cannot reject submission with status 'approved'`,
+          details: 'Already approved submissions cannot be rejected. Contact system administrator if needed.',
+        },
+        { status: 409 }
+      );
+    }
+
+    // Prevent re-rejecting already rejected submissions
+    if (submission.status === 'rejected') {
+      return NextResponse.json(
+        {
+          error: `Submission is already rejected`,
+          details: 'This submission has already been rejected.',
         },
         { status: 409 }
       );
     }
 
     // Update submission to rejected (atomic transaction)
+    // Also set isLatest=false to allow user to create new submission
     const now = new Date();
     const [updatedSubmission] = await db
       .update(pdsSubmissions)
@@ -114,12 +127,15 @@ export async function POST(
         approvedBy: sessionUser.id, // Track who rejected
         approvedAt: now,
         rejectionReason: validatedData.reason,
+        isLatest: false, // Allow user to create new PDS
         updatedAt: now,
       })
       .where(
         and(
           eq(pdsSubmissions.id, id),
+          // Allow rejecting draft, submitted, or reviewing submissions
           or(
+            eq(pdsSubmissions.status, 'draft'),
             eq(pdsSubmissions.status, 'submitted'),
             eq(pdsSubmissions.status, 'reviewing')
           )
@@ -158,12 +174,16 @@ export async function POST(
     });
 
     // Send rejection notification to employee with reason
+    const notificationMessage = submission.status === 'draft'
+      ? `Your PDS draft (Version ${submission.version}) has been rejected by the administrator.\n\nReason: ${validatedData.reason}\n\nYou can now create a new PDS submission with the necessary corrections.`
+      : `Your PDS submission (Version ${submission.version}) has been rejected.\n\nReason: ${validatedData.reason}\n\nPlease review the feedback and create a new submission with the necessary corrections.`;
+
     await db.insert(notifications).values({
       id: uuidv7(),
       userId: submission.userId,
       type: 'submission_status',
       title: 'PDS Submission Rejected',
-      message: `Your PDS submission (Version ${submission.version}) has been rejected.\n\nReason: ${validatedData.reason}\n\nPlease review the feedback and resubmit with the necessary corrections.`,
+      message: notificationMessage,
       isRead: false,
       createdAt: now,
     });

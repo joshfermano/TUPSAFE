@@ -22,6 +22,8 @@ import {
   type CompletePdsData,
 } from '../../../../../lib/validations/pds-schema';
 import { toast } from 'sonner';
+import { z } from 'zod';
+import { useUpdatePDS, useSubmitPDS } from '../../../../../hooks/usePDS';
 import {
   AlertCircle,
   Save,
@@ -60,6 +62,9 @@ import {
   SelectValue,
 } from '../../../../../components/ui/select';
 import { cn } from '../../../../../lib/utils';
+
+// Transformations
+import { transformPdsForSubmission } from '../../../../../lib/utils/pds-transformations';
 
 // ============================================================================
 // TYPES
@@ -282,6 +287,10 @@ export default function PDSEditDetailPage({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [completionPercentage, setCompletionPercentage] = useState(0);
 
+  // Initialize mutations
+  const updateMutation = useUpdatePDS(pdsId);
+  const submitMutation = useSubmitPDS(pdsId);
+
   // Form state - simplified for demonstration
   // In production, use React Hook Form with proper validation
   const [formData, setFormData] = useState<CompletePdsData | null>(initialData);
@@ -321,40 +330,73 @@ export default function PDSEditDetailPage({
 
     setIsSaving(true);
     try {
-      // TODO: Implement API call to update PDS draft
-      // const response = await fetch(`/api/pds/${pdsId}`, {
-      //   method: 'PATCH',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(formData),
-      // });
+      // Transform data structure to match backend expectations
+      const transformedData = transformPdsForSubmission(formData);
+
+      // Update PDS draft via mutation
+      await updateMutation.mutateAsync(transformedData as any);
+
       setHasUnsavedChanges(false);
       toast.success('Draft saved successfully');
     } catch (error) {
-      toast.error('Failed to save draft');
+      console.error('Save draft error:', error);
+      toast.error('Failed to save draft', {
+        description: error instanceof Error ? error.message : 'Please try again.',
+      });
     } finally {
       setIsSaving(false);
     }
-  }, [pdsId, formData]);
+  }, [pdsId, formData, updateMutation]);
 
   const handleSubmit = useCallback(async () => {
     if (!formData) return;
 
     setIsSubmitting(true);
+
     try {
-      // TODO: Implement API call to submit PDS for review
-      // const response = await fetch(`/api/pds/${pdsId}/submit`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(formData),
-      // });
-      toast.success('PDS submitted for admin review');
-      router.push('/dashboard/pds/view');
+      // Validate
+      const validatedData = completePdsSchema.parse(formData);
+
+      // Transform data structure to match backend expectations
+      const transformedData = transformPdsForSubmission(validatedData);
+
+      // Save changes if needed
+      if (hasUnsavedChanges) {
+        await updateMutation.mutateAsync(transformedData as any);
+      }
+
+      // Submit for review
+      await submitMutation.mutateAsync();
+
+      // Clear unsaved flag
+      setHasUnsavedChanges(false);
+
+      toast.success('PDS Submitted Successfully!', {
+        description: 'Your changes have been submitted for admin review.',
+      });
+
+      // Redirect
+      setTimeout(() => {
+        router.push(`/dashboard/pds/view/${pdsId}`);
+      }, 1500);
+
     } catch (error) {
-      toast.error('Failed to submit PDS');
+      console.error('Submit error:', error);
+
+      if (error instanceof z.ZodError) {
+        const firstError = error.errors[0];
+        toast.error('Validation Error', {
+          description: `${firstError.path.join('.')}: ${firstError.message}`,
+        });
+      } else {
+        toast.error('Submission Failed', {
+          description: error instanceof Error ? error.message : 'Unable to submit PDS.',
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
-  }, [pdsId, formData, router]);
+  }, [pdsId, formData, hasUnsavedChanges, updateMutation, submitMutation, router]);
 
   const handleCancel = useCallback(() => {
     if (hasUnsavedChanges) {

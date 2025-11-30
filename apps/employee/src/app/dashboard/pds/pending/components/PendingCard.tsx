@@ -27,6 +27,7 @@ interface PendingCardProps {
     updatedAt: string;
     submittedAt?: string;
     reviewedBy?: string;
+    rejectionReason?: string;
   };
   onContinue: () => void;
   onView: () => void;
@@ -156,6 +157,23 @@ export const PendingCard = memo(
               )}
             </div>
 
+            {/* Rejection Reason Alert - Show prominently before action buttons */}
+            {isRejected && submission.rejectionReason && (
+              <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800/30 rounded-lg p-3">
+                <div className="flex items-start gap-2.5">
+                  <XCircle className="h-4 w-4 shrink-0 mt-0.5 text-rose-600 dark:text-rose-400" />
+                  <div className="flex-1 space-y-1">
+                    <h4 className="text-xs font-semibold text-rose-800 dark:text-rose-300">
+                      Rejection Reason
+                    </h4>
+                    <p className="text-xs text-rose-700 dark:text-rose-400 leading-relaxed">
+                      {submission.rejectionReason}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Action Buttons */}
             <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
               {isDraft ? (
@@ -173,6 +191,25 @@ export const PendingCard = memo(
                     size="sm"
                     onClick={onView}
                     className="gap-1.5 h-8 text-xs">
+                    <Eye className="h-3.5 w-3.5" />
+                    View
+                  </Button>
+                </>
+              ) : isRejected ? (
+                <>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={onContinue}
+                    className="col-span-2 gap-1.5 h-8 text-xs bg-rose-600 hover:bg-rose-700 dark:bg-rose-700 dark:hover:bg-rose-800">
+                    <FileEdit className="h-3.5 w-3.5" />
+                    Edit & Resubmit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onView}
+                    className="gap-1.5 h-8 text-xs border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20">
                     <Eye className="h-3.5 w-3.5" />
                     View
                   </Button>
@@ -200,13 +237,13 @@ export const PendingCard = memo(
             </div>
 
             {/* Status-specific notices */}
-            {isRejected && (
+            {isRejected && !submission.rejectionReason && (
               <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800/30 rounded-lg p-2.5">
-                <p className="text-xs text-rose-700 dark:text-rose-500 flex items-center gap-1.5">
-                  <XCircle className="h-3 w-3 shrink-0" />
+                <p className="text-xs text-rose-700 dark:text-rose-500 flex items-start gap-1.5">
+                  <XCircle className="h-3 w-3 shrink-0 mt-0.5" />
                   <span>
-                    This submission was rejected. Please review feedback and
-                    resubmit.
+                    This submission was rejected. Please review and make the
+                    necessary corrections before resubmitting.
                   </span>
                 </p>
               </div>

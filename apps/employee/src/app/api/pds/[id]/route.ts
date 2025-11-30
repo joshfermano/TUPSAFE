@@ -2,12 +2,14 @@
  * PDS API Route - Individual PDS Operations
  * GET /api/pds/[id] - Get complete PDS with all sections
  * PATCH /api/pds/[id] - Update existing PDS (draft/rejected only)
+ * DELETE /api/pds/[id] - Delete PDS (draft only)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import {
   getPDSSubmissionById,
   updatePDSSubmission,
+  deletePDSSubmission,
   type UpdatePDSData,
 } from '@tupsafe/database/server';
 import { createServerClient } from '@tupsafe/auth/server';
@@ -223,6 +225,99 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         success: false,
         error:
           error instanceof Error ? error.message : 'Failed to update PDS',
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * DELETE /api/pds/[id]
+ * Delete a PDS submission (draft only)
+ *
+ * Path Parameters:
+ * - id: PDS submission UUID
+ *
+ * Returns:
+ * {
+ *   success: true,
+ *   message: string
+ * }
+ *
+ * Security:
+ * - Only draft submissions can be deleted
+ * - Validates user ownership
+ * - Permanent deletion (cannot be undone)
+ */
+export async function DELETE(request: NextRequest, context: RouteContext) {
+  try {
+    // Authenticate user
+    const supabase = await createServerClient('employee');
+    const {
+      data: { session },
+      error: authError,
+    } = await supabase.auth.getSession();
+
+    if (authError || !session) {
+      console.error('[DELETE /api/pds/[id]] Authentication failed:', authError);
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized. Please log in.' },
+        { status: 401 }
+      );
+    }
+
+    // Get PDS ID from route params
+    const { id } = await context.params;
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'PDS submission ID is required.' },
+        { status: 400 }
+      );
+    }
+
+    // Check if PDS exists and get current status
+    const existingPDS = await getPDSSubmissionById(id, session.user.id);
+
+    if (!existingPDS) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'PDS submission not found or access denied.',
+        },
+        { status: 404 }
+      );
+    }
+
+    // Validate that PDS can be deleted (only drafts)
+    if (existingPDS.submission.status !== 'draft') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Cannot delete PDS with status '${existingPDS.submission.status}'. Only draft submissions can be deleted. Please archive submitted or approved submissions instead.`,
+        },
+        { status: 403 }
+      );
+    }
+
+    // Delete PDS submission
+    await deletePDSSubmission(id, session.user.id);
+
+    console.log(
+      `[DELETE /api/pds/[id]] Deleted draft PDS ${id} for user ${session.user.id}`
+    );
+
+    return NextResponse.json({
+      success: true,
+      message: 'Draft PDS deleted successfully',
+    });
+  } catch (error) {
+    console.error('[DELETE /api/pds/[id]] Error deleting PDS:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          error instanceof Error ? error.message : 'Failed to delete PDS',
       },
       { status: 500 }
     );

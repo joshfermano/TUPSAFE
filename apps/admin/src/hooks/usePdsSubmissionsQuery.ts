@@ -231,7 +231,7 @@ export function usePdsSubmissionsQuery(filters: PdsSubmissionsFilters = {}) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          notes: reviewNotes,
+          reason: reviewNotes,
         }),
       });
 

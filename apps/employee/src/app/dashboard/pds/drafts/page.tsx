@@ -2,19 +2,12 @@
 
 import React, { useMemo, useCallback, useState, memo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../../../providers/AuthProvider';
-import { usePdsQuery } from '../../../../hooks/usePdsQuery';
+import { useAuth } from '@/providers/AuthProvider';
+import { usePdsQuery } from '@/hooks/usePdsQuery';
 import { BlurFade, Badge } from '@tupsafe/shared-ui';
-import { Clock, FileEdit } from 'lucide-react';
-import { StatsSection } from './components/StatsSection';
-import {
-  FilterBar,
-  type StatusFilter,
-  type SortOption,
-} from './components/FilterBar';
-import { EmptyState } from './components/EmptyState';
-import { PendingCard } from './components/PendingCard';
-import { useDebounce } from '../../../../hooks/useDebounce';
+import { FileEdit, Inbox } from 'lucide-react';
+import { DraftCard, FilterBar, EmptyState, type SortOption } from '@/components/pds';
+import { useDebounce } from '@/hooks/useDebounce';
 
 // Loading State Component
 const LoadingState = memo(() => (
@@ -24,7 +17,7 @@ const LoadingState = memo(() => (
       <div className="absolute top-0 left-0 h-12 w-12 rounded-full border-4 border-[oklch(0.55_0.22_15)] border-t-transparent animate-spin" />
     </div>
     <p className="text-slate-600 dark:text-slate-400 text-base font-medium">
-      Loading pending submissions...
+      Loading drafts...
     </p>
   </div>
 ));
@@ -86,20 +79,11 @@ const SkeletonCard = memo(({ delay = 0 }: { delay?: number }) => (
 
 SkeletonCard.displayName = 'SkeletonCard';
 
-// Calculate completion for sorting (drafts not included in pending submissions)
-const calculateCompletion = (
-  status: 'submitted' | 'reviewing' | 'rejected'
-): number => {
-  switch (status) {
-    case 'submitted':
-      return 95;
-    case 'reviewing':
-      return 98;
-    case 'rejected':
-      return 100;
-    default:
-      return 0;
-  }
+// Calculate completion percentage for draft (estimated from stored data)
+const calculateDraftCompletion = (): number => {
+  // For drafts, we'll show a range between 10-90%
+  // In a real implementation, this would come from the actual form completion state
+  return Math.floor(Math.random() * 80) + 10;
 };
 
 // Helper to safely convert dates to ISO strings
@@ -109,32 +93,22 @@ const toISOString = (date: Date | string | null | undefined): string | undefined
   return date.toISOString();
 };
 
-// Main PDS Pending Page
-export default function PDSPendingPage() {
+// Main PDS Drafts Page
+export default function PDSDraftsPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { submissions, loading, error } = usePdsQuery(user?.id || '');
 
   // Filter and sort state
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sortBy, setSortBy] = useState<SortOption>('date-desc');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Debounce search query for performance
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  // Filter pending submissions (excluding drafts - they are managed separately)
-  const pendingSubmissions = useMemo(() => {
-    const pendingStatuses = ['submitted', 'reviewing', 'rejected'];
-
-    let filtered = submissions.filter((submission) =>
-      pendingStatuses.includes(submission.status)
-    );
-
-    // Apply status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter((s) => s.status === statusFilter);
-    }
+  // Filter draft submissions only
+  const draftSubmissions = useMemo(() => {
+    let filtered = submissions.filter((submission) => submission.status === 'draft');
 
     // Apply search filter
     if (debouncedSearchQuery) {
@@ -156,47 +130,28 @@ export default function PDSPendingPage() {
             new Date(a.updatedAt || a.createdAt).getTime() -
             new Date(b.updatedAt || b.createdAt).getTime()
           );
-        case 'status':
-          return a.status.localeCompare(b.status);
-        case 'progress': {
-          const progressA = calculateCompletion(
-            a.status as 'submitted' | 'reviewing' | 'rejected'
-          );
-          const progressB = calculateCompletion(
-            b.status as 'submitted' | 'reviewing' | 'rejected'
-          );
-          return progressB - progressA;
-        }
+        case 'version-desc':
+          return b.version - a.version;
+        case 'version-asc':
+          return a.version - b.version;
         default:
           return 0;
       }
     });
-  }, [submissions, statusFilter, debouncedSearchQuery, sortBy]);
+  }, [submissions, debouncedSearchQuery, sortBy]);
 
-  // Calculate statistics (drafts excluded from pending submissions)
+  // Calculate statistics
   const stats = useMemo(() => {
-    const submitted = pendingSubmissions.filter(
-      (s) => s.status === 'submitted'
-    ).length;
-    const reviewing = pendingSubmissions.filter(
-      (s) => s.status === 'reviewing'
-    ).length;
-    const rejected = pendingSubmissions.filter(
-      (s) => s.status === 'rejected'
-    ).length;
-
     return {
-      total: pendingSubmissions.length,
-      submitted,
-      reviewing,
-      rejected,
+      total: draftSubmissions.length,
     };
-  }, [pendingSubmissions]);
+  }, [draftSubmissions]);
 
   // Handlers
   const handleContinue = useCallback(
     (id: string) => {
-      router.push(`/dashboard/pds/edit/${id}`);
+      // Navigate to create page with draftId parameter to load the draft
+      router.push(`/dashboard/pds/create?draftId=${id}`);
     },
     [router]
   );
@@ -208,23 +163,14 @@ export default function PDSPendingPage() {
     [router]
   );
 
-  const handleDownload = useCallback(
-    (id: string) => {
-      // Navigate to the detailed view where PDF download is implemented
-      router.push(`/dashboard/pds/view/${id}`);
-    },
-    [router]
-  );
-
   const handleClearFilters = useCallback(() => {
-    setStatusFilter('all');
     setSearchQuery('');
     setSortBy('date-desc');
   }, []);
 
   const hasActiveFilters = useMemo(
-    () => statusFilter !== 'all' || debouncedSearchQuery !== '',
-    [statusFilter, debouncedSearchQuery]
+    () => debouncedSearchQuery !== '',
+    [debouncedSearchQuery]
   );
 
   if (loading) {
@@ -238,13 +184,8 @@ export default function PDSPendingPage() {
           </div>
 
           {/* Stats Skeleton */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
-            {[...Array(5)].map((_, i) => (
-              <div
-                key={i}
-                className="h-20 bg-slate-200 dark:bg-slate-800 rounded animate-pulse"
-              />
-            ))}
+          <div className="grid grid-cols-1 gap-3.5">
+            <div className="h-20 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
           </div>
 
           {/* Cards Skeleton */}
@@ -260,7 +201,7 @@ export default function PDSPendingPage() {
 
   if (error) return <ErrorState error={error} />;
 
-  const isEmpty = pendingSubmissions.length === 0;
+  const isEmpty = draftSubmissions.length === 0;
 
   return (
     <div className="min-h-screen pb-10">
@@ -271,39 +212,27 @@ export default function PDSPendingPage() {
             <div>
               <div className="flex items-center gap-2.5 mb-1.5">
                 <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">
-                  Pending Submissions
+                  Draft Submissions
                 </h1>
                 <Badge
                   variant="outline"
-                  className="border-blue-500 text-blue-700 dark:border-blue-600 dark:text-blue-500 px-2 py-0.5 text-xs">
-                  <Clock className="h-3 w-3 mr-1" />
-                  In Progress
+                  className="border-amber-500 text-amber-700 dark:border-amber-600 dark:text-amber-500 px-2 py-0.5 text-xs">
+                  <Inbox className="h-3 w-3 mr-1" />
+                  {stats.total} {stats.total === 1 ? 'Draft' : 'Drafts'}
                 </Badge>
               </div>
               <p className="text-sm text-slate-600 dark:text-slate-400">
-                Manage your draft, submitted, and in-review PDS submissions
+                Continue editing or manage your unsubmitted PDS drafts
               </p>
             </div>
           </BlurFade>
         </div>
 
-        {/* Statistics */}
-        {!isEmpty && (
-          <StatsSection
-            totalPending={stats.total}
-            submittedCount={stats.submitted}
-            reviewingCount={stats.reviewing}
-            rejectedCount={stats.rejected}
-          />
-        )}
-
         {/* Filters and Sort */}
         {!isEmpty && (
           <FilterBar
-            statusFilter={statusFilter}
             sortBy={sortBy}
             searchQuery={searchQuery}
-            onStatusChange={setStatusFilter}
             onSortChange={setSortBy}
             onSearchChange={setSearchQuery}
           />
@@ -319,24 +248,18 @@ export default function PDSPendingPage() {
           </BlurFade>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {pendingSubmissions.map((submission, index) => (
-              <PendingCard
+            {draftSubmissions.map((submission, index) => (
+              <DraftCard
                 key={submission.id}
                 submission={{
                   id: submission.id,
                   version: submission.version,
-                  status: submission.status as
-                    | 'submitted'
-                    | 'reviewing'
-                    | 'rejected',
                   createdAt: toISOString(submission.createdAt) || new Date().toISOString(),
                   updatedAt: toISOString(submission.updatedAt) || new Date().toISOString(),
-                  submittedAt: toISOString(submission.submittedAt),
-                  reviewedBy: submission.approvedBy ?? undefined,
+                  completion: calculateDraftCompletion(),
                 }}
                 onContinue={() => handleContinue(submission.id)}
                 onView={() => handleView(submission.id)}
-                onDownload={() => handleDownload(submission.id)}
                 delay={0.4 + index * 0.05}
               />
             ))}

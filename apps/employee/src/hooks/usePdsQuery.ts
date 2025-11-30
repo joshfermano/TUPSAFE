@@ -83,3 +83,63 @@ export function useInvalidatePds() {
     }
   };
 }
+
+/**
+ * React Query mutation hook for deleting a PDS draft
+ *
+ * @returns Mutation object with deletePDS function
+ *
+ * @example
+ * ```tsx
+ * const { deletePDS, isPending } = useDeletePDS();
+ *
+ * const handleDelete = async () => {
+ *   try {
+ *     await deletePDS('submission-id');
+ *     toast.success('Draft deleted successfully');
+ *   } catch (error) {
+ *     toast.error(error.message);
+ *   }
+ * };
+ * ```
+ */
+export function useDeletePDS() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: async (submissionId: string) => {
+      const response = await fetch(`/api/pds/${submissionId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies for authentication
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to delete PDS draft' }));
+        throw new Error(errorData.error || 'Failed to delete PDS draft');
+      }
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to delete PDS draft');
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      // Invalidate all PDS queries to refetch the updated list
+      queryClient.invalidateQueries({ queryKey: pdsKeys.all });
+    },
+    retry: false, // Don't retry delete operations
+  });
+
+  return {
+    deletePDS: mutation.mutateAsync,
+    isPending: mutation.isPending,
+    isError: mutation.isError,
+    error: mutation.error?.message ?? null,
+  };
+}

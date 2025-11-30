@@ -20,7 +20,6 @@ import {
   type CreateDeadlineData,
   type UpdateDeadlineData,
   type FormType,
-  type Deadline,
 } from '@/lib/api/deadlines';
 
 /**
@@ -77,9 +76,68 @@ export function useDeadlineById(id: string | null) {
 export function useDeadlineByFormType(formType: FormType | null, year: number | null) {
   return useQuery<DeadlineDetailResponse | null, Error>({
     queryKey: deadlineKeys.byFormTypeAndYear(formType || 'pds', year || 0),
-    queryFn: () => fetchDeadlineByFormTypeAndYear(formType!, year!),
+    queryFn: async () => {
+      console.log('[useDeadlineByFormType] Query function started:', {
+        formType,
+        year,
+        timestamp: new Date().toISOString(),
+      });
+
+      try {
+        const result = await fetchDeadlineByFormTypeAndYear(formType!, year!);
+
+        console.log('[useDeadlineByFormType] Query completed:', {
+          formType,
+          year,
+          found: !!result,
+          deadlineId: result?.id,
+        });
+
+        return result;
+      } catch (error) {
+        console.error('[useDeadlineByFormType] Query failed:', {
+          formType,
+          year,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        throw error;
+      }
+    },
     enabled: !!formType && !!year && year > 0,
     staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: (failureCount, error) => {
+      // Don't retry on authorization errors (403)
+      if (error?.message?.includes('Unauthorized') || error?.message?.includes('403')) {
+        console.log('[useDeadlineByFormType] Skipping retry for authorization error');
+        return false;
+      }
+
+      // Don't retry on validation errors (400)
+      if (error?.message?.includes('Invalid request')) {
+        console.log('[useDeadlineByFormType] Skipping retry for validation error');
+        return false;
+      }
+
+      // Retry up to 2 times for network or server errors
+      const shouldRetry = failureCount < 2;
+      console.log('[useDeadlineByFormType] Retry decision:', {
+        failureCount,
+        shouldRetry,
+        error: error?.message,
+      });
+
+      return shouldRetry;
+    },
+    retryDelay: (attemptIndex) => {
+      // Exponential backoff: 1s, 2s, 4s
+      const delay = Math.min(1000 * 2 ** attemptIndex, 30000);
+      console.log('[useDeadlineByFormType] Retry delay:', {
+        attemptIndex,
+        delayMs: delay,
+      });
+      return delay;
+    },
   });
 }
 
@@ -350,7 +408,7 @@ export function useToggleDeadlineStatus() {
       return { previousLists };
     },
 
-    onError: (error, { id }, context) => {
+    onError: (error, _variables, context) => {
       if (context?.previousLists) {
         context.previousLists.forEach(([queryKey, data]) => {
           queryClient.setQueryData(queryKey, data);
@@ -400,10 +458,10 @@ export function useInvalidateDeadlines() {
 export function usePrefetchDeadline() {
   const queryClient = useQueryClient();
 
-  return (id: string) => {
+  return (_id: string) => {
     queryClient.prefetchQuery({
-      queryKey: deadlineKeys.detail(id),
-      queryFn: () => fetchDeadlineById(id),
+      queryKey: deadlineKeys.detail(_id),
+      queryFn: () => fetchDeadlineById(_id),
       staleTime: 5 * 60 * 1000,
     });
   };

@@ -8,6 +8,10 @@ import {
   getPDSSubmissionById,
   submitPDSForApproval,
 } from '@tupsafe/database/server';
+import {
+  validatePersonalInfo,
+  formatValidationError,
+} from '@tupsafe/database/utils/validation';
 import { createServerClient } from '@tupsafe/auth/server';
 
 interface RouteContext {
@@ -103,32 +107,20 @@ export async function POST(request: NextRequest, context: RouteContext) {
       );
     }
 
-    // Validate personal info completeness
+    // Validate personal info completeness using type-safe validation
     if (pds.personalInfo) {
-      const requiredPersonalFields = [
-        'surname',
-        'firstName',
-        'dateOfBirth',
-        'sex',
-        'civilStatus',
-        'citizenship',
-        'height',
-        'weight',
-        'bloodType',
-        'mobileNo',
-        'emailAddress',
-        'residentialAddress',
-      ];
+      const validationResult = validatePersonalInfo(pds.personalInfo);
 
-      const missingPersonalFields = requiredPersonalFields.filter(
-        (field) => !pds.personalInfo![field as keyof typeof pds.personalInfo]
-      );
+      if (!validationResult.isValid) {
+        const errorMessage = formatValidationError(
+          validationResult,
+          'personal information'
+        );
 
-      if (missingPersonalFields.length > 0) {
         return NextResponse.json(
           {
             success: false,
-            error: `Cannot submit incomplete personal information. Missing fields: ${missingPersonalFields.join(', ')}`,
+            error: errorMessage,
           },
           { status: 400 }
         );
