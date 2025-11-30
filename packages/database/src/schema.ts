@@ -529,6 +529,7 @@ export const pdsPersonalInfo = pgTable(
     sssNo: text('sss_no'),
     tinNo: text('tin_no'),
     agencyEmployeeNo: text('agency_employee_no'),
+    philsysNo: text('philsys_no').unique(), // PhilSys Number (PSN) - CS Form No. 212 Item 13
     citizenship: jsonb('citizenship'), // {type: 'Filipino' | 'Dual', details: {...}}
     residentialAddress: jsonb('residential_address'), // {street, city, province, zipCode}
     permanentAddress: jsonb('permanent_address'),

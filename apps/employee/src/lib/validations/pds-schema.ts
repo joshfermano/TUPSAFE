@@ -30,6 +30,7 @@ const sssRegex = /^\d{2}-\d{7}-\d{1}$/; // Format: 34-5678901-2
 const tinRegex = /^\d{3}-\d{3}-\d{3}-\d{3}$/; // Format: 123-456-789-000
 const philhealthRegex = /^\d{2}-\d{9}-\d{1}$/; // Format: 12-345678901-2
 const pagibigRegex = /^\d{4}-\d{4}-\d{4}$/; // Format: 1234-5678-9012
+const philsysRegex = /^\d{2}-\d{9}-\d{1}$/; // Format: 12-345678901-2 (PhilSys Number - PSN)
 
 // Date validation helpers
 const pastDateSchema = z.date().max(new Date(), 'Date cannot be in the future');
@@ -169,6 +170,17 @@ export const personalInfoBasicSchema = z.object({
     .union([
       z.literal(''),
       z.string().max(50, 'Agency Employee No. must not exceed 50 characters'),
+    ])
+    .optional()
+    .nullable(),
+
+  // PhilSys Number (PSN) - CS Form No. 212 Item 13
+  philsysNo: z
+    .union([
+      z.literal(''),
+      z
+        .string()
+        .regex(philsysRegex, 'Invalid PhilSys Number format (XX-XXXXXXXXX-X)'),
     ])
     .optional()
     .nullable(),
@@ -396,36 +408,54 @@ export const familyBackgroundSchema = spouseSchema.merge(parentSchema).merge(
 /**
  * Education Entry Schema
  * Covers Elementary, Secondary, Vocational, College, and Graduate Studies
+ *
+ * Validation Logic:
+ * - If schoolName is filled, level is required
+ * - If schoolName is empty/null, entire entry is optional
  */
 export const educationSchema = z
   .object({
-    level: z.enum(
-      ['elementary', 'secondary', 'vocational', 'college', 'graduate'],
-      {
-        required_error: 'Education level is required',
-      }
-    ),
+    level: z
+      .enum(['elementary', 'secondary', 'vocational', 'college', 'graduate'])
+      .nullable()
+      .optional(),
 
     schoolName: z
       .string()
-      .min(1, 'School name is required')
-      .max(200, 'School name must not exceed 200 characters'),
+      .max(200, 'School name must not exceed 200 characters')
+      .nullable()
+      .optional()
+      .default(''),
 
     degreeCourse: z
       .string()
       .max(150, 'Degree/Course must not exceed 150 characters')
       .nullable()
+      .optional()
+      .default(''),
+
+    periodFrom: z
+      .number()
+      .int('Year must be a whole number')
+      .min(1950, 'Year must be 1950 or later')
+      .max(new Date().getFullYear(), 'Year cannot be in the future')
+      .nullable()
       .optional(),
 
-    periodFrom: optionalPastDateSchema,
+    periodTo: z
+      .number()
+      .int('Year must be a whole number')
+      .min(1950, 'Year must be 1950 or later')
+      .max(new Date().getFullYear(), 'Year cannot be in the future')
+      .nullable()
+      .optional(),
 
-    periodTo: optionalPastDateSchema,
-
-    highestLevelEarned: z
+    unitsEarned: z
       .string()
       .max(100, 'Highest level/units earned must not exceed 100 characters')
       .nullable()
-      .optional(),
+      .optional()
+      .default(''),
 
     yearGraduated: z
       .number()
@@ -435,33 +465,65 @@ export const educationSchema = z
       .nullable()
       .optional(),
 
-    honorsReceived: z
+    honors: z
       .string()
       .max(200, 'Scholarship/Honors must not exceed 200 characters')
       .nullable()
-      .optional(),
+      .optional()
+      .default(''),
   })
-  .refine(
-    (data) => {
-      // If periodFrom is provided, periodTo should be after periodFrom
-      if (data.periodFrom && data.periodTo) {
-        return data.periodTo >= data.periodFrom;
+  .superRefine((data, ctx) => {
+    // Check if user has filled in any field (indicates they're filling this level)
+    const hasSchoolName = data.schoolName && data.schoolName.trim() !== '';
+    const hasDegreeCourse = data.degreeCourse && data.degreeCourse.trim() !== '';
+    const hasPeriodFrom = data.periodFrom !== null && data.periodFrom !== undefined;
+    const hasPeriodTo = data.periodTo !== null && data.periodTo !== undefined;
+    const hasUnitsEarned = data.unitsEarned && data.unitsEarned.trim() !== '';
+    const hasYearGraduated = data.yearGraduated !== null && data.yearGraduated !== undefined;
+    const hasHonors = data.honors && data.honors.trim() !== '';
+
+    // If user filled ANY field, they must provide level and school name
+    const hasAnyField = hasSchoolName || hasDegreeCourse || hasPeriodFrom || hasPeriodTo ||
+                        hasUnitsEarned || hasYearGraduated || hasHonors;
+
+    if (hasAnyField) {
+      // Require level when any field is filled
+      if (!data.level) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Education level is required when filling this section',
+          path: ['level'],
+        });
       }
-      return true;
-    },
-    {
-      message: 'End date must be after start date',
-      path: ['periodTo'],
+
+      // Require school name when any field is filled
+      if (!hasSchoolName) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'School name is required when filling this section',
+          path: ['schoolName'],
+        });
+      }
     }
-  );
+
+    // If periodFrom is provided, periodTo should be after periodFrom
+    if (hasPeriodFrom && hasPeriodTo && data.periodFrom! > data.periodTo!) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'End year must be after start year',
+        path: ['periodTo'],
+      });
+    }
+  });
 
 /**
  * Complete Educational Background Schema
- * All levels optional, but at least elementary is typically expected
+ * Elementary and secondary are REQUIRED per CS Form 212
+ * College, vocational, and graduate studies are optional
  */
 export const educationalBackgroundSchema = z.object({
-  elementary: educationSchema.optional().nullable(),
-  secondary: educationSchema.optional().nullable(),
+  elementary: educationSchema, // REQUIRED
+  secondary: educationSchema,   // REQUIRED
   vocational: educationSchema.optional().nullable(),
   college: educationSchema.optional().nullable(),
   graduate: educationSchema.optional().nullable(),
@@ -1213,6 +1275,7 @@ export function createEmptyPds(): Partial<CompletePdsData> {
       sssNo: null,
       tinNo: null,
       agencyEmployeeNo: null,
+      philsysNo: null,
       citizenship: {
         type: 'Filipino',
       },
@@ -1258,8 +1321,26 @@ export function createEmptyPds(): Partial<CompletePdsData> {
       children: [],
     },
     education: {
-      elementary: null,
-      secondary: null,
+      elementary: {
+        level: 'elementary',
+        schoolName: '',
+        degreeCourse: '',
+        periodFrom: null,
+        periodTo: null,
+        unitsEarned: '',
+        yearGraduated: null,
+        honors: '',
+      },
+      secondary: {
+        level: 'secondary',
+        schoolName: '',
+        degreeCourse: '',
+        periodFrom: null,
+        periodTo: null,
+        unitsEarned: '',
+        yearGraduated: null,
+        honors: '',
+      },
       vocational: null,
       college: null,
       graduate: null,
@@ -1283,7 +1364,11 @@ export function createEmptyPds(): Partial<CompletePdsData> {
         Q41_disabled: false,
         Q42_solo_parent: false,
       },
-      references: [],
+      references: [
+        { name: '', address: '', telephoneNo: '' },
+        { name: '', address: '', telephoneNo: '' },
+        { name: '', address: '', telephoneNo: '' },
+      ],
     },
   };
 }

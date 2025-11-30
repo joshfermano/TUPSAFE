@@ -250,7 +250,7 @@ export async function PATCH(
 ) {
   try {
     // Verify permissions using Supabase auth
-    const sessionUser = await getUserFromSupabase();
+    const sessionUser = await getUserFromSupabase('admin');
     if (!sessionUser) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
@@ -431,7 +431,7 @@ export async function DELETE(
 ) {
   try {
     // Verify permissions using Supabase auth
-    const sessionUser = await getUserFromSupabase();
+    const sessionUser = await getUserFromSupabase('admin');
     if (!sessionUser) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }

@@ -306,7 +306,7 @@ export async function checkUserRoleFromSupabase(
  * Get user from Supabase session directly
  * This is the recommended approach for API routes
  */
-export async function getUserFromSupabase(): Promise<{
+export async function getUserFromSupabase(portal?: Portal): Promise<{
   userId: string;
   id: string;
   email: string;
@@ -326,7 +326,7 @@ export async function getUserFromSupabase(): Promise<{
     const { db, profiles } = require('@tupsafe/database/server');
     const { eq } = require('drizzle-orm');
 
-    const supabase = await createClient();
+    const supabase = await createClient(portal);
     const {
       data: { user },
       error: userError,

@@ -22,7 +22,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkUserRole } from '@tupsafe/auth/server';
+import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 import {
   db,
   profiles,
@@ -37,7 +37,7 @@ import type { SubmissionStatsResponse } from '@tupsafe/types';
 export async function GET(_request: NextRequest) {
   try {
     // Verify admin/HR permissions
-    const hasPermission = await checkUserRole(['admin', 'hr']);
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(

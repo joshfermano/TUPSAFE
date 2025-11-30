@@ -134,12 +134,18 @@ export default function UserViewPage() {
   const { data: user, isLoading, isError, error } = useUserDetail(userId);
 
   // Mock submissions data (in production, filter by userId on the backend)
-  const { submissions: allPdsSubmissions, isLoading: isPdsLoading } = usePdsSubmissionsQuery({});
-  const { submissions: allSalnSubmissions, isLoading: isSalnLoading } = useSalnSubmissionsQuery({});
+  const { submissions: allPdsSubmissions, isLoading: isPdsLoading } =
+    usePdsSubmissionsQuery({});
+  const { submissions: allSalnSubmissions, isLoading: isSalnLoading } =
+    useSalnSubmissionsQuery({});
 
   // Filter submissions by userId client-side
-  const pdsSubmissions = allPdsSubmissions.filter((s) => s.employee.id === userId);
-  const salnSubmissions = allSalnSubmissions.filter((s) => s.employee.id === userId);
+  const pdsSubmissions = allPdsSubmissions.filter(
+    (s) => s.employee.id === userId
+  );
+  const salnSubmissions = allSalnSubmissions.filter(
+    (s) => s.employee.id === userId
+  );
 
   const [activeTab, setActiveTab] = useState('overview');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -160,8 +166,12 @@ export default function UserViewPage() {
       };
     }
 
-    const pendingPds = pdsSubmissions.filter((s) => s.status === 'submitted').length;
-    const pendingSaln = salnSubmissions.filter((s) => s.status === 'submitted').length;
+    const pendingPds = pdsSubmissions.filter(
+      (s) => s.status === 'submitted'
+    ).length;
+    const pendingSaln = salnSubmissions.filter(
+      (s) => s.status === 'submitted'
+    ).length;
 
     return {
       totalPds: pdsSubmissions.length,
@@ -177,7 +187,9 @@ export default function UserViewPage() {
     toggleUserStatus(userId, {
       onSuccess: () => {
         toast.success(
-          `User ${user.profile.isActive ? 'deactivated' : 'activated'} successfully`
+          `User ${
+            user.profile.isActive ? 'deactivated' : 'activated'
+          } successfully`
         );
         setShowDeactivateDialog(false);
       },
@@ -202,7 +214,8 @@ export default function UserViewPage() {
   const handleResetPassword = useCallback(() => {
     // Mock password reset
     toast.success('Password reset email sent', {
-      description: 'The user will receive instructions to reset their password.',
+      description:
+        'The user will receive instructions to reset their password.',
     });
     setShowResetPasswordDialog(false);
   }, []);
@@ -241,7 +254,9 @@ export default function UserViewPage() {
     );
   }
 
-  const fullName = `${user.profile.firstName} ${user.profile.middleName || ''} ${user.profile.lastName}`.trim();
+  const fullName = `${user.profile.firstName} ${
+    user.profile.middleName || ''
+  } ${user.profile.lastName}`.trim();
 
   return (
     <PageTransition className="space-y-6">
@@ -269,7 +284,10 @@ export default function UserViewPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.push('/dashboard/users')}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push('/dashboard/users')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
@@ -280,7 +298,8 @@ export default function UserViewPage() {
               />
             </div>
             <p className="text-muted-foreground">
-              {user.profile.employeeId} &bull; {user.profile.role.replace('_', ' ')}
+              {user.profile.employeeId} &bull;{' '}
+              {user.profile.role.replace('_', ' ')}
             </p>
           </div>
         </div>
@@ -300,7 +319,8 @@ export default function UserViewPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setShowResetPasswordDialog(true)}>
+              <DropdownMenuItem
+                onClick={() => setShowResetPasswordDialog(true)}>
                 <Key className="mr-2 h-4 w-4" />
                 Reset Password
               </DropdownMenuItem>
@@ -324,8 +344,7 @@ export default function UserViewPage() {
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => setShowDeleteDialog(true)}
-                className="text-red-600 focus:text-red-600"
-              >
+                className="text-red-600 focus:text-red-600">
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete User
               </DropdownMenuItem>
@@ -357,15 +376,21 @@ export default function UserViewPage() {
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div>
                   <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="font-medium">{user.profile.employeeId}@tup.edu.ph</p>
+                  <p className="font-medium">
+                    {user.profile.employeeId}@tup.edu.ph
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Department</p>
-                  <p className="font-medium">{user.department?.name || 'Not assigned'}</p>
+                  <p className="font-medium">
+                    {user.department?.name || 'Not assigned'}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Position</p>
-                  <p className="font-medium">{user.position?.title || 'Not assigned'}</p>
+                  <p className="font-medium">
+                    {user.position?.title || 'Not assigned'}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Role</p>
@@ -395,13 +420,16 @@ export default function UserViewPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">PDS Submissions</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              PDS Submissions
+            </CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalPds}</div>
             <p className="text-xs text-muted-foreground">
-              {pdsSubmissions?.filter((s) => s.status === 'approved').length || 0}{' '}
+              {pdsSubmissions?.filter((s) => s.status === 'approved').length ||
+                0}{' '}
               approved
             </p>
           </CardContent>
@@ -409,21 +437,24 @@ export default function UserViewPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">SALN Submissions</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              SALN Submissions
+            </CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalSaln}</div>
             <p className="text-xs text-muted-foreground">
-              Latest:{' '}
-              {salnSubmissions?.[0]?.year || 'N/A'}
+              Latest: {salnSubmissions?.[0]?.year || 'N/A'}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Reviews</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Pending Reviews
+            </CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -451,7 +482,10 @@ export default function UserViewPage() {
       </div>
 
       {/* Tabbed Content */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-4">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="pds">PDS</TabsTrigger>
@@ -478,7 +512,9 @@ export default function UserViewPage() {
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Middle Name</p>
-                  <p className="font-medium">{user.profile.middleName || 'N/A'}</p>
+                  <p className="font-medium">
+                    {user.profile.middleName || 'N/A'}
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Employee ID</p>
@@ -486,7 +522,9 @@ export default function UserViewPage() {
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="font-medium">{user.profile.employeeId}@tup.edu.ph</p>
+                  <p className="font-medium">
+                    {user.profile.employeeId}@tup.edu.ph
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -507,15 +545,21 @@ export default function UserViewPage() {
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Department</p>
-                  <p className="font-medium">{user.department?.name || 'Not assigned'}</p>
+                  <p className="font-medium">
+                    {user.department?.name || 'Not assigned'}
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Position</p>
-                  <p className="font-medium">{user.position?.title || 'Not assigned'}</p>
+                  <p className="font-medium">
+                    {user.position?.title || 'Not assigned'}
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Status</p>
-                  <StatusBadge status={user.profile.isActive ? 'active' : 'inactive'} />
+                  <StatusBadge
+                    status={user.profile.isActive ? 'active' : 'inactive'}
+                  />
                 </div>
               </div>
             </CardContent>
@@ -530,11 +574,15 @@ export default function UserViewPage() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Created</p>
-                  <p className="font-medium">{format(user.profile.createdAt, 'MMMM d, yyyy h:mm a')}</p>
+                  <p className="font-medium">
+                    {format(user.profile.createdAt, 'MMMM d, yyyy h:mm a')}
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Last Updated</p>
-                  <p className="font-medium">{format(user.profile.updatedAt, 'MMMM d, yyyy h:mm a')}</p>
+                  <p className="font-medium">
+                    {format(user.profile.updatedAt, 'MMMM d, yyyy h:mm a')}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -548,7 +596,9 @@ export default function UserViewPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>PDS Submissions</CardTitle>
-                  <CardDescription>Personal Data Sheet submissions</CardDescription>
+                  <CardDescription>
+                    Personal Data Sheet submissions
+                  </CardDescription>
                 </div>
                 <Button size="sm">
                   <Plus className="mr-2 h-4 w-4" />
@@ -582,16 +632,23 @@ export default function UserViewPage() {
                           </TableCell>
                           <TableCell>
                             {submission.submittedAt
-                              ? format(new Date(submission.submittedAt), 'MMM d, yyyy')
+                              ? format(
+                                  new Date(submission.submittedAt),
+                                  'MMM d, yyyy'
+                                )
                               : 'Not submitted'}
                           </TableCell>
                           <TableCell>
-                            {format(new Date(submission.updatedAt), 'MMM d, yyyy')}
+                            {format(
+                              new Date(submission.updatedAt),
+                              'MMM d, yyyy'
+                            )}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button variant="ghost" size="sm" asChild>
-                                <Link href={`/dashboard/submissions/pds/view/${submission.id}`}>
+                                <Link
+                                  href={`/dashboard/submissions/pds/view/${submission.id}`}>
                                   <Eye className="mr-2 h-4 w-4" />
                                   View
                                 </Link>
@@ -601,8 +658,7 @@ export default function UserViewPage() {
                                 size="sm"
                                 onClick={() =>
                                   handleDownloadPdf('pds', submission.id)
-                                }
-                              >
+                                }>
                                 <Download className="mr-2 h-4 w-4" />
                                 PDF
                               </Button>
@@ -635,7 +691,9 @@ export default function UserViewPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>SALN Submissions</CardTitle>
-                  <CardDescription>Statement of Assets, Liabilities, and Net Worth</CardDescription>
+                  <CardDescription>
+                    Statement of Assets, Liabilities, and Net Worth
+                  </CardDescription>
                 </div>
                 <Button size="sm">
                   <Plus className="mr-2 h-4 w-4" />
@@ -683,7 +741,8 @@ export default function UserViewPage() {
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button variant="ghost" size="sm" asChild>
-                                <Link href={`/dashboard/submissions/saln/view/${submission.id}`}>
+                                <Link
+                                  href={`/dashboard/submissions/saln/view/${submission.id}`}>
                                   <Eye className="mr-2 h-4 w-4" />
                                   View
                                 </Link>
@@ -693,8 +752,7 @@ export default function UserViewPage() {
                                 size="sm"
                                 onClick={() =>
                                   handleDownloadPdf('saln', submission.id)
-                                }
-                              >
+                                }>
                                 <Download className="mr-2 h-4 w-4" />
                                 PDF
                               </Button>
@@ -725,7 +783,9 @@ export default function UserViewPage() {
           <Card>
             <CardHeader>
               <CardTitle>Activity Log</CardTitle>
-              <CardDescription>Recent user activity and system events</CardDescription>
+              <CardDescription>
+                Recent user activity and system events
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[500px] pr-4">

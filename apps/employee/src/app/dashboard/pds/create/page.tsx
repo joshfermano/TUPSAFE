@@ -4,26 +4,38 @@
  * PDS (Personal Data Sheet) Create Page
  * CS Form No. 212 Revised 2025
  *
- * Comprehensive 8-step multi-step form with:
- * - Auto-save functionality (every 30 seconds) with API persistence
- * - Draft restoration on mount (including completed steps)
- * - Real-time validation per step with required field enforcement
- * - Progress tracking with visual indicators
- * - TUP Manila crimson theme
- * - Magic UI components for premium feel
+ * Restructured to match official CS Form sections:
+ * - Section I: Personal Information (basic, contact, addresses)
+ * - Section II: Family Background
+ * - Section III: Educational Background
+ * - Section IV: Civil Service Eligibility & Work Experience
+ * - Section V: Voluntary Work & Learning Development
+ * - Section VI: Other Information (skills, questions, references)
+ *
+ * Features:
+ * - One complete section per page (no component remounting)
+ * - Auto-save functionality with API persistence
+ * - Draft restoration on mount
+ * - Real-time validation per section
+ * - Magic UI components for professional design
  * - Full accessibility (WCAG 2.1 AA)
  * - Mobile-responsive design
  */
 
-import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+  Suspense,
+} from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import {
   User,
-  Home,
-  Phone,
   Users,
   GraduationCap,
   Briefcase,
@@ -57,17 +69,24 @@ import { z } from 'zod';
  */
 interface PdsDraftData {
   formData: Partial<CompletePdsData>;
-  completedSteps: number[];
-  currentStep: number;
+  completedSections: number[];
+  currentSection: number;
   savedAt: string;
 }
 
+/**
+ * Section definition for the form
+ */
+interface PDSFormSection {
+  id: string;
+  label: string;
+  title: string;
+  icon: typeof User;
+}
+
 // Form components
-import {
-  FormStepIndicator,
-  FormStepSkeleton,
-  type FormStep,
-} from '../../../../components/forms/shared';
+import { FormStepSkeleton } from '../../../../components/forms/shared';
+import { PDSSectionIndicator } from '../../../../components/forms/shared/PDSSectionIndicator';
 import { Button } from '../../../../components/ui/button';
 import { Badge } from '../../../../components/ui/badge';
 import {
@@ -81,101 +100,78 @@ import {
   AlertDialogTitle,
 } from '../../../../components/ui/alert-dialog';
 
-// Magic UI components
+// UI components - Keep only essential Magic UI components with subtle effects
 import { ShimmerButton } from '../../../../components/ui/shimmer-button';
-import { AnimatedGradientText } from '../../../../components/ui/animated-gradient-text';
-import { BlurFade } from '../../../../components/ui/blur-fade';
 import { DotPattern } from '../../../../components/ui/dot-pattern';
 
 // Hooks
 import { useAutoSave, getSavedDraft } from '../../../../hooks/useAutoSave';
 import { useAuth } from '../../../../providers/AuthProvider';
 
-// Step components
+// Section components (lazy-loaded)
 import {
-  PersonalBasic,
-  Addresses,
-  Contact,
-  Family,
-  Education,
-  EligibilityWork,
-  VoluntaryTraining,
-  OtherReview,
-} from './steps';
+  SectionI,
+  SectionII,
+  SectionIII,
+  SectionIV,
+  SectionV,
+  SectionVI,
+} from './sections';
 
 // ============================================================================
-// STEP DEFINITIONS
+// SECTION DEFINITIONS
 // ============================================================================
 
-const FORM_STEPS: FormStep[] = [
+const FORM_SECTIONS: PDSFormSection[] = [
   {
-    id: 'personal-basic',
-    label: 'Personal Info',
-    description: 'Basic personal information and IDs',
+    id: 'section-i',
+    label: 'Section I',
+    title: 'Personal Information',
     icon: User,
   },
   {
-    id: 'addresses',
-    label: 'Addresses',
-    description: 'Residential and permanent addresses',
-    icon: Home,
-  },
-  {
-    id: 'contact',
-    label: 'Contact',
-    description: 'Phone numbers and email',
-    icon: Phone,
-  },
-  {
-    id: 'family',
-    label: 'Family',
-    description: 'Spouse, parents, and children',
+    id: 'section-ii',
+    label: 'Section II',
+    title: 'Family Background',
     icon: Users,
   },
   {
-    id: 'education',
-    label: 'Education',
-    description: 'Educational attainment',
+    id: 'section-iii',
+    label: 'Section III',
+    title: 'Educational Background',
     icon: GraduationCap,
   },
   {
-    id: 'eligibility-work',
-    label: 'Work Experience',
-    description: 'Civil service and work history',
+    id: 'section-iv',
+    label: 'Section IV',
+    title: 'Eligibility & Work',
     icon: Briefcase,
   },
   {
-    id: 'voluntary-training',
-    label: 'Training',
-    description: 'Voluntary work and learning',
+    id: 'section-v',
+    label: 'Section V',
+    title: 'Training & Volunteer',
     icon: Heart,
   },
   {
-    id: 'other-review',
-    label: 'Review',
-    description: 'Skills, references, and review',
+    id: 'section-vi',
+    label: 'Section VI',
+    title: 'Other Information',
     icon: Info,
   },
 ];
 
-// Note: Using complete schema for validation instead of per-step schemas
-// This ensures compatibility with Zod v4 and @hookform/resolvers/zod
-// Per-step validation can be handled manually in the step navigation logic
-
 // ============================================================================
-// STEP FIELD MAPPINGS
+// SECTION FIELD MAPPINGS (for validation)
 // ============================================================================
 
 /**
- * Get the form field paths for a specific step
- * Used for per-step validation before navigation
- *
- * @param step - The step index (0-based)
- * @returns Array of field paths to validate for the given step
+ * Get the form field paths for a specific section
+ * Used for per-section validation before navigation
  */
-const getStepFields = (step: number): string[] => {
-  switch (step) {
-    case 0: // Personal Basic - REQUIRED
+const getSectionFields = (section: number): string[] => {
+  switch (section) {
+    case 0: // Section I: Personal Information
       return [
         'personalInfo.surname',
         'personalInfo.firstName',
@@ -184,33 +180,24 @@ const getStepFields = (step: number): string[] => {
         'personalInfo.sex',
         'personalInfo.civilStatus',
         'personalInfo.citizenship',
-      ];
-    case 1: // Addresses - Key fields required
-      return [
         'personalInfo.residentialAddress.barangay',
         'personalInfo.residentialAddress.cityMunicipality',
         'personalInfo.residentialAddress.province',
         'personalInfo.permanentAddress.barangay',
         'personalInfo.permanentAddress.cityMunicipality',
         'personalInfo.permanentAddress.province',
-      ];
-    case 2: // Contact - At least mobile or email
-      return [
-        'personalInfo.mobileNo',
         'personalInfo.emailAddress',
       ];
-    case 3: // Family - Optional, return empty
+    case 1: // Section II: Family Background - Optional
       return [];
-    case 4: // Education - Optional, return empty
+    case 2: // Section III: Educational Background - Optional
       return [];
-    case 5: // Eligibility & Work - Optional, return empty
+    case 3: // Section IV: Eligibility & Work - Optional
       return [];
-    case 6: // Voluntary & Training - Optional, return empty
+    case 4: // Section V: Training & Volunteer - Optional
       return [];
-    case 7: // Other Info & Review - References required on final submission
-      return [
-        'otherInfo.references',
-      ];
+    case 5: // Section VI: Other Information - References required
+      return ['otherInfo.references'];
     default:
       return [];
   }
@@ -219,15 +206,11 @@ const getStepFields = (step: number): string[] => {
 /**
  * Get required fields description for error messages
  */
-const getStepRequiredFieldsDescription = (step: number): string => {
-  switch (step) {
+const getSectionRequiredFieldsDescription = (section: number): string => {
+  switch (section) {
     case 0:
-      return 'surname, first name, date of birth, place of birth, sex, civil status, and citizenship';
-    case 1:
-      return 'barangay, city/municipality, and province for both residential and permanent addresses';
-    case 2:
-      return 'at least a mobile number or email address for contact';
-    case 7:
+      return 'personal details including name, birth info, citizenship, addresses, and email';
+    case 5:
       return 'at least 3 character references';
     default:
       return 'all required fields';
@@ -244,23 +227,20 @@ export default function PDSCreatePage() {
   const userId = user?.id || 'guest';
 
   // State
-  const [currentStep, setCurrentStep] = useState(0);
-  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [currentSection, setCurrentSection] = useState(0);
+  const [completedSections, setCompletedSections] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDraftDialog, setShowDraftDialog] = useState(false);
-  const [_showExitDialog, _setShowExitDialog] = useState(false); // Reserved for exit confirmation
-  const [_hasSavedDraft, setHasSavedDraft] = useState(false); // Tracking draft state
+  const [_hasSavedDraft, setHasSavedDraft] = useState(false);
 
   // Form setup - no resolver during multi-step flow to allow incomplete data
   // Final validation happens on submission
-  // Using 'onBlur' mode to validate on blur instead of every keystroke (performance optimization)
   const form = useForm<Partial<CompletePdsData>>({
     defaultValues: createEmptyPds(),
     mode: 'onBlur',
   });
 
   // Ref-based subscription to track form changes without causing re-renders
-  // This is a performance optimization - we only need the data for auto-save, not for rendering
   const formDataRef = useRef<Partial<CompletePdsData>>(createEmptyPds());
 
   // Subscribe to form changes without causing re-renders
@@ -272,26 +252,26 @@ export default function PDSCreatePage() {
   }, [form]);
 
   // Callback-based approach for getting draft data
-  // This doesn't cause re-renders when form data changes
-  const getDraftData = useCallback((): PdsDraftData => ({
-    formData: form.getValues(),
-    completedSteps,
-    currentStep,
-    savedAt: new Date().toISOString(),
-  }), [completedSteps, currentStep, form]);
+  const getDraftData = useCallback(
+    (): PdsDraftData => ({
+      formData: form.getValues(),
+      completedSections,
+      currentSection,
+      savedAt: new Date().toISOString(),
+    }),
+    [completedSections, currentSection, form]
+  );
 
   // Auto-save setup with API persistence
-  // Using getDraftData callback instead of reactive data to avoid re-renders
-  const { saveStatus, lastSaved, saveNow, clearSaved, hasSavedData } =
+  const { saveStatus, lastSaved, saveNow, clearSaved } =
     useAutoSave<PdsDraftData>({
       key: `pds-draft-${userId}`,
-      getData: getDraftData, // Callback-based approach for better performance
-      debounceMs: 3000, // Increased from 2000ms to reduce save frequency
+      getData: getDraftData,
+      debounceMs: 3000,
       autoSaveIntervalMs: 30000,
       enabled: !isSubmitting,
-      showToast: false, // Disabled to reduce DOM updates and improve performance
+      showToast: false,
       onSave: async (data) => {
-        // Save to API as well for server-side persistence
         try {
           await fetch('/api/pds/draft', {
             method: 'POST',
@@ -300,20 +280,21 @@ export default function PDSCreatePage() {
           });
         } catch (error) {
           console.error('Failed to save draft to server:', error);
-          // LocalStorage will still work as backup
-          // Don't throw - we want the local save to succeed even if API fails
         }
       },
       onError: (error) => {
         console.error('Draft save error:', error);
-        // Error toast is handled by useAutoSave when showToast is true
       },
     });
 
   // Check for saved draft on mount
   useEffect(() => {
     const savedDraft = getSavedDraft<PdsDraftData>(`pds-draft-${userId}`);
-    if (savedDraft && savedDraft.formData && Object.keys(savedDraft.formData).length > 0) {
+    if (
+      savedDraft &&
+      savedDraft.formData &&
+      Object.keys(savedDraft.formData).length > 0
+    ) {
       setHasSavedDraft(true);
       setShowDraftDialog(true);
     }
@@ -326,11 +307,14 @@ export default function PDSCreatePage() {
       // Restore form data
       form.reset(savedDraft.formData);
 
-      // Restore completed steps from saved draft
-      if (savedDraft.completedSteps && Array.isArray(savedDraft.completedSteps)) {
-        setCompletedSteps(savedDraft.completedSteps);
+      // Restore completed sections from saved draft
+      if (
+        savedDraft.completedSections &&
+        Array.isArray(savedDraft.completedSections)
+      ) {
+        setCompletedSections(savedDraft.completedSections);
       } else {
-        // Fallback: Calculate which steps are completed based on form data
+        // Fallback: Calculate which sections are completed based on form data
         const progress = getPdsSectionProgress(savedDraft.formData);
         const completed: number[] = [];
         Object.entries(progress).forEach(([, value], index) => {
@@ -338,15 +322,17 @@ export default function PDSCreatePage() {
             completed.push(index);
           }
         });
-        setCompletedSteps(completed);
+        setCompletedSections(completed);
       }
 
-      // Restore current step position
-      if (typeof savedDraft.currentStep === 'number' && savedDraft.currentStep >= 0) {
-        setCurrentStep(savedDraft.currentStep);
+      // Restore current section position
+      if (
+        typeof savedDraft.currentSection === 'number' &&
+        savedDraft.currentSection >= 0
+      ) {
+        setCurrentSection(savedDraft.currentSection);
       }
 
-      // Show success message with last saved time if available
       const savedTime = savedDraft.savedAt
         ? new Date(savedDraft.savedAt).toLocaleString()
         : 'previously';
@@ -365,67 +351,56 @@ export default function PDSCreatePage() {
     });
   }, [clearSaved]);
 
-  // Validate current step - only validates fields for the current step
-  const validateCurrentStep = useCallback(async (): Promise<boolean> => {
-    const stepFields = getStepFields(currentStep);
-
-    // If there are no required fields for this step, it's valid
-    if (stepFields.length === 0) {
-      return true;
-    }
-
-    // Validate only the current step's fields
-    // Cast to any because react-hook-form trigger accepts string | string[] but TS typing is strict
-    const isValid = await form.trigger(stepFields as Parameters<typeof form.trigger>[0]);
-    return isValid;
-  }, [form, currentStep]);
-
   // Navigation handlers
   const handleNext = useCallback(async () => {
-    // Get the fields for the current step
-    const stepFields = getStepFields(currentStep);
+    const sectionFields = getSectionFields(currentSection);
 
     // If there are required fields, validate them
-    if (stepFields.length > 0) {
-      // Validate only the current step's fields
-      const isValid = await form.trigger(stepFields as Parameters<typeof form.trigger>[0]);
+    if (sectionFields.length > 0) {
+      const isValid = await form.trigger(
+        sectionFields as Parameters<typeof form.trigger>[0]
+      );
 
       if (!isValid) {
-        const requiredFieldsDesc = getStepRequiredFieldsDescription(currentStep);
+        const requiredFieldsDesc =
+          getSectionRequiredFieldsDescription(currentSection);
         toast.error('Please fill in all required fields', {
-          description: `Required fields: ${requiredFieldsDesc}`,
+          description: `Required: ${requiredFieldsDesc}`,
         });
         return;
       }
     }
 
-    // Mark step as completed
-    if (!completedSteps.includes(currentStep)) {
-      setCompletedSteps([...completedSteps, currentStep]);
+    // Mark section as completed
+    if (!completedSections.includes(currentSection)) {
+      setCompletedSections([...completedSections, currentSection]);
     }
 
-    // Move to next step
-    if (currentStep < FORM_STEPS.length - 1) {
-      setCurrentStep(currentStep + 1);
+    // Move to next section
+    if (currentSection < FORM_SECTIONS.length - 1) {
+      setCurrentSection(currentSection + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [currentStep, completedSteps, form]);
+  }, [currentSection, completedSections, form]);
 
   const handlePrevious = useCallback(() => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
+    if (currentSection > 0) {
+      setCurrentSection(currentSection - 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [currentStep]);
+  }, [currentSection]);
 
-  const handleStepClick = useCallback(
-    (stepIndex: number) => {
-      if (stepIndex <= currentStep || completedSteps.includes(stepIndex - 1)) {
-        setCurrentStep(stepIndex);
+  const handleSectionClick = useCallback(
+    (sectionIndex: number) => {
+      if (
+        sectionIndex <= currentSection ||
+        completedSections.includes(sectionIndex - 1)
+      ) {
+        setCurrentSection(sectionIndex);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     },
-    [currentStep, completedSteps]
+    [currentSection, completedSections]
   );
 
   // Form submission with real API call
@@ -451,8 +426,6 @@ export default function PDSCreatePage() {
           );
         }
 
-        const result = await response.json();
-
         // Clear draft on success
         clearSaved();
 
@@ -475,18 +448,17 @@ export default function PDSCreatePage() {
         console.error('Submission error:', error);
 
         if (error instanceof z.ZodError) {
-          // Show validation errors from Zod
           const firstError = error.errors[0];
           const fieldPath = firstError.path.join('.');
           toast.error('Validation Error', {
             description: `${fieldPath}: ${firstError.message}`,
           });
 
-          // Try to navigate to the step with the error
-          const errorStep = getStepForFieldPath(fieldPath);
-          if (errorStep !== null && errorStep !== currentStep) {
-            setCurrentStep(errorStep);
-            toast.info('Navigated to the step with errors', {
+          // Try to navigate to the section with the error
+          const errorSection = getSectionForFieldPath(fieldPath);
+          if (errorSection !== null && errorSection !== currentSection) {
+            setCurrentSection(errorSection);
+            toast.info('Navigated to the section with errors', {
               description: 'Please fix the highlighted fields.',
             });
           }
@@ -500,50 +472,39 @@ export default function PDSCreatePage() {
         setIsSubmitting(false);
       }
     },
-    [clearSaved, router, currentStep]
+    [clearSaved, router, currentSection]
   );
 
   /**
-   * Helper to determine which step a field path belongs to
+   * Helper to determine which section a field path belongs to
    */
-  const getStepForFieldPath = (fieldPath: string): number | null => {
-    if (fieldPath.startsWith('personalInfo.surname') ||
-        fieldPath.startsWith('personalInfo.firstName') ||
-        fieldPath.startsWith('personalInfo.dateOfBirth') ||
-        fieldPath.startsWith('personalInfo.placeOfBirth') ||
-        fieldPath.startsWith('personalInfo.sex') ||
-        fieldPath.startsWith('personalInfo.civilStatus') ||
-        fieldPath.startsWith('personalInfo.citizenship')) {
-      return 0;
-    }
-    if (fieldPath.includes('residentialAddress') || fieldPath.includes('permanentAddress')) {
-      return 1;
-    }
-    if (fieldPath.includes('telephoneNo') || fieldPath.includes('mobileNo') || fieldPath.includes('emailAddress')) {
-      return 2;
+  const getSectionForFieldPath = (fieldPath: string): number | null => {
+    if (fieldPath.startsWith('personalInfo')) {
+      return 0; // Section I
     }
     if (fieldPath.startsWith('family')) {
-      return 3;
+      return 1; // Section II
     }
     if (fieldPath.startsWith('education')) {
-      return 4;
+      return 2; // Section III
     }
-    if (fieldPath.startsWith('eligibility') || fieldPath.startsWith('workExperience')) {
-      return 5;
+    if (
+      fieldPath.startsWith('eligibility') ||
+      fieldPath.startsWith('workExperience')
+    ) {
+      return 3; // Section IV
     }
-    if (fieldPath.startsWith('voluntaryWork') || fieldPath.startsWith('learningDevelopment')) {
-      return 6;
+    if (
+      fieldPath.startsWith('voluntaryWork') ||
+      fieldPath.startsWith('learningDevelopment')
+    ) {
+      return 4; // Section V
     }
     if (fieldPath.startsWith('otherInfo')) {
-      return 7;
+      return 5; // Section VI
     }
     return null;
   };
-
-  // Calculate overall progress
-  const overallProgress = useMemo(() => {
-    return Math.round((completedSteps.length / FORM_STEPS.length) * 100);
-  }, [completedSteps.length]);
 
   // Save status display
   const saveStatusDisplay = useMemo(() => {
@@ -576,31 +537,27 @@ export default function PDSCreatePage() {
     }
   }, [saveStatus, lastSaved]);
 
-  // Render current step
-  const renderStep = useCallback(() => {
-    switch (currentStep) {
+  // Render current section - NO key prop to prevent remounting
+  const renderSection = useMemo(() => {
+    switch (currentSection) {
       case 0:
-        return <PersonalBasic />;
+        return <SectionI />;
       case 1:
-        return <Addresses />;
+        return <SectionII />;
       case 2:
-        return <Contact />;
+        return <SectionIII />;
       case 3:
-        return <Family />;
+        return <SectionIV />;
       case 4:
-        return <Education />;
+        return <SectionV />;
       case 5:
-        return <EligibilityWork />;
-      case 6:
-        return <VoluntaryTraining />;
-      case 7:
-        return <OtherReview />;
+        return <SectionVI />;
       default:
         return null;
     }
-  }, [currentStep]);
+  }, [currentSection]);
 
-  const isLastStep = currentStep === FORM_STEPS.length - 1;
+  const isLastSection = currentSection === FORM_SECTIONS.length - 1;
 
   return (
     <div className="relative min-h-screen">
@@ -616,64 +573,59 @@ export default function PDSCreatePage() {
 
       {/* Main content */}
       <div className="relative z-10 container max-w-5xl mx-auto px-6 py-12">
-        {/* Header */}
-        <div className="pb-8 mb-8 border-b border-slate-200/50 dark:border-slate-800/50">
-          <BlurFade delay={0.1}>
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                <AnimatedGradientText className="text-2xl sm:text-3xl font-semibold">
-                  Create Personal Data Sheet
-                </AnimatedGradientText>
-                <Badge
-                  variant="outline"
-                  className="text-xs font-normal border-slate-300/50 dark:border-slate-700/50 w-fit">
-                  CS Form No. 212 Revised 2025
-                </Badge>
-              </div>
-
-              {/* Save status */}
-              <div className="hidden sm:flex items-center gap-4">
-                {saveStatusDisplay}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={saveNow}
-                  disabled={isSubmitting}
-                  className="border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Now
-                </Button>
-              </div>
+        {/* Header - Clean, Professional */}
+        <div className="pb-8 mb-8 border-b border-slate-200 dark:border-slate-800">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+                Create Personal Data Sheet
+              </h1>
+              <Badge
+                variant="outline"
+                className="text-xs font-normal border-slate-300 dark:border-slate-700 w-fit">
+                CS Form No. 212 Revised 2025
+              </Badge>
             </div>
 
-            {/* Progress indicator */}
-            <FormStepIndicator
-              steps={FORM_STEPS}
-              currentStep={currentStep}
-              completedSteps={completedSteps}
-              onStepClick={handleStepClick}
-              compact={false}
-            />
-          </BlurFade>
+            {/* Save status */}
+            <div className="hidden sm:flex items-center gap-4">
+              {saveStatusDisplay}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={saveNow}
+                disabled={isSubmitting}
+                className="border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900">
+                <Save className="h-4 w-4 mr-2" />
+                Save Now
+              </Button>
+            </div>
+          </div>
+
+          {/* Section progress indicator */}
+          <PDSSectionIndicator
+            sections={FORM_SECTIONS}
+            currentSection={currentSection}
+            completedSections={completedSections}
+            onSectionClick={handleSectionClick}
+          />
         </div>
 
         {/* Form */}
         <FormProvider {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)}>
-            <BlurFade delay={0.2} key={currentStep}>
-              <Suspense fallback={<FormStepSkeleton fieldCount={8} />}>
-                <div className="mb-10">{renderStep()}</div>
-              </Suspense>
-            </BlurFade>
+            {/* Section content - No key prop to prevent remounting */}
+            <Suspense fallback={<FormStepSkeleton fieldCount={10} />}>
+              <div className="mb-10">{renderSection}</div>
+            </Suspense>
 
             {/* Navigation buttons */}
-            <BlurFade delay={0.3}>
-              <div className="flex items-center justify-between gap-4 pt-10 border-t border-border/50">
+            <div className="flex items-center justify-between gap-4 pt-10 border-t border-slate-200 dark:border-slate-800">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={handlePrevious}
-                  disabled={currentStep === 0 || isSubmitting}>
+                  disabled={currentSection === 0 || isSubmitting}>
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Previous
                 </Button>
@@ -688,7 +640,7 @@ export default function PDSCreatePage() {
                     Save Draft
                   </Button>
 
-                  {isLastStep ? (
+                  {isLastSection ? (
                     <ShimmerButton
                       type="submit"
                       disabled={isSubmitting}
@@ -710,13 +662,12 @@ export default function PDSCreatePage() {
                       type="button"
                       onClick={handleNext}
                       disabled={isSubmitting}>
-                      Next
+                      Next Section
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </ShimmerButton>
                   )}
                 </div>
               </div>
-            </BlurFade>
           </form>
         </FormProvider>
       </div>

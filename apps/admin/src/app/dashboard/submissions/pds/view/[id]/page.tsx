@@ -20,6 +20,9 @@ import {
   UserCheck,
   AlertCircle,
   Check,
+  Printer,
+  XCircle,
+  CheckCircle,
 } from 'lucide-react';
 
 import {
@@ -174,37 +177,56 @@ export default function PdsSubmissionViewPage() {
 
   // Handle PDF export
   const handleExportPdf = React.useCallback(() => {
-    toast.info('PDF Export', {
-      description: 'PDF export functionality will be implemented soon',
+    toast.info('PDF Export Coming Soon', {
+      description: 'PDF export functionality is being implemented. Please check back later.',
     });
   }, []);
 
-  // Validation helper functions
-  const isSectionComplete = (sectionData: unknown): boolean => {
-    if (!sectionData) return false;
-    if (Array.isArray(sectionData)) return sectionData.length > 0;
-    if (typeof sectionData === 'object') {
-      return Object.values(sectionData).some((val) => {
-        if (val === null || val === undefined) return false;
-        if (typeof val === 'object') return Object.keys(val).length > 0;
-        return true;
-      });
+  // Section status types and helpers
+  type SectionStatus = 'complete' | 'incomplete' | 'not_applicable';
+
+  const getSectionStatus = (sectionData: unknown, isRequired: boolean = false): SectionStatus => {
+    if (!sectionData) return isRequired ? 'incomplete' : 'not_applicable';
+
+    if (Array.isArray(sectionData)) {
+      if (sectionData.length === 0) return 'not_applicable';
+      return 'complete';
     }
-    return !!sectionData;
+
+    if (typeof sectionData === 'object') {
+      const values = Object.values(sectionData as Record<string, unknown>);
+      const hasData = values.some(val => val !== null && val !== undefined && val !== '');
+      if (!hasData) return isRequired ? 'incomplete' : 'not_applicable';
+      return 'complete';
+    }
+
+    return sectionData ? 'complete' : (isRequired ? 'incomplete' : 'not_applicable');
   };
 
-  const ValidationBadge = ({ isComplete }: { isComplete: boolean }) => {
-    return isComplete ? (
-      <Badge variant="outline" className="gap-1 bg-emerald-50 text-emerald-700 border-emerald-200">
-        <Check className="h-3 w-3" />
-        Complete
-      </Badge>
-    ) : (
-      <Badge variant="outline" className="gap-1 bg-amber-50 text-amber-700 border-amber-200">
-        <AlertCircle className="h-3 w-3" />
-        Incomplete
-      </Badge>
-    );
+  const ValidationBadge = ({ status }: { status: SectionStatus }) => {
+    switch (status) {
+      case 'complete':
+        return (
+          <Badge variant="outline" className="gap-1 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400 dark:border-emerald-800">
+            <Check className="h-3 w-3" />
+            Complete
+          </Badge>
+        );
+      case 'incomplete':
+        return (
+          <Badge variant="outline" className="gap-1 bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-800">
+            <AlertCircle className="h-3 w-3" />
+            Incomplete
+          </Badge>
+        );
+      case 'not_applicable':
+        return (
+          <Badge variant="outline" className="gap-1 bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-700">
+            <span className="text-xs">—</span>
+            N/A
+          </Badge>
+        );
+    }
   };
 
   // Loading state
@@ -278,6 +300,45 @@ export default function PdsSubmissionViewPage() {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
+
+        {/* Prominent Review Actions Bar */}
+        {canReview && (
+          <Card className="p-4 mb-6 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border-2 border-primary/20">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <h3 className="font-semibold text-lg">Review Actions</h3>
+                <p className="text-sm text-muted-foreground">
+                  Take action on this PDS submission
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={handleExportPdf}
+                  className="gap-2"
+                >
+                  <Printer className="h-4 w-4" />
+                  Print PDF
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => setIsReviewDialogOpen(true)}
+                  className="gap-2"
+                >
+                  <XCircle className="h-4 w-4" />
+                  Reject
+                </Button>
+                <Button
+                  onClick={() => setIsReviewDialogOpen(true)}
+                  className="gap-2 bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  Approve
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Header Section */}
         <div className="mb-6 space-y-4">
@@ -360,7 +421,7 @@ export default function PdsSubmissionViewPage() {
                           <User className="h-4 w-4 text-muted-foreground" />
                           <span className="font-semibold">I. PERSONAL INFORMATION</span>
                         </div>
-                        <ValidationBadge isComplete={isSectionComplete(pdsData.personalInfo)} />
+                        <ValidationBadge status={getSectionStatus(pdsData.personalInfo, true)} />
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
@@ -524,7 +585,7 @@ export default function PdsSubmissionViewPage() {
                           <Users className="h-4 w-4 text-muted-foreground" />
                           <span className="font-semibold">II. FAMILY BACKGROUND</span>
                         </div>
-                        <ValidationBadge isComplete={isSectionComplete(pdsData.familyBackground)} />
+                        <ValidationBadge status={getSectionStatus(pdsData.familyBackground, true)} />
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
@@ -671,7 +732,7 @@ export default function PdsSubmissionViewPage() {
                           <GraduationCap className="h-4 w-4 text-muted-foreground" />
                           <span className="font-semibold">III. EDUCATIONAL BACKGROUND</span>
                         </div>
-                        <ValidationBadge isComplete={isSectionComplete(pdsData.education)} />
+                        <ValidationBadge status={getSectionStatus(pdsData.education, true)} />
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
@@ -734,7 +795,7 @@ export default function PdsSubmissionViewPage() {
                           <Award className="h-4 w-4 text-muted-foreground" />
                           <span className="font-semibold">IV. CIVIL SERVICE ELIGIBILITY</span>
                         </div>
-                        <ValidationBadge isComplete={isSectionComplete(pdsData.civilService)} />
+                        <ValidationBadge status={getSectionStatus(pdsData.civilService, false)} />
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
@@ -797,7 +858,7 @@ export default function PdsSubmissionViewPage() {
                           <Briefcase className="h-4 w-4 text-muted-foreground" />
                           <span className="font-semibold">V. WORK EXPERIENCE</span>
                         </div>
-                        <ValidationBadge isComplete={isSectionComplete(pdsData.workExperience)} />
+                        <ValidationBadge status={getSectionStatus(pdsData.workExperience, false)} />
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
@@ -863,7 +924,7 @@ export default function PdsSubmissionViewPage() {
                             ORGANIZATIONS
                           </span>
                         </div>
-                        <ValidationBadge isComplete={isSectionComplete(pdsData.voluntaryWork)} />
+                        <ValidationBadge status={getSectionStatus(pdsData.voluntaryWork, false)} />
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
@@ -927,7 +988,7 @@ export default function PdsSubmissionViewPage() {
                             VII. LEARNING AND DEVELOPMENT (L&D) INTERVENTIONS/TRAINING PROGRAMS ATTENDED
                           </span>
                         </div>
-                        <ValidationBadge isComplete={isSectionComplete(pdsData.training)} />
+                        <ValidationBadge status={getSectionStatus(pdsData.training, false)} />
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
@@ -984,7 +1045,7 @@ export default function PdsSubmissionViewPage() {
                           <Info className="h-4 w-4 text-muted-foreground" />
                           <span className="font-semibold">VIII. OTHER INFORMATION</span>
                         </div>
-                        <ValidationBadge isComplete={isSectionComplete(pdsData.otherInfo)} />
+                        <ValidationBadge status={getSectionStatus(pdsData.otherInfo, true)} />
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
@@ -1102,13 +1163,7 @@ export default function PdsSubmissionViewPage() {
                           <UserCheck className="h-4 w-4 text-muted-foreground" />
                           <span className="font-semibold">X. REFERENCES</span>
                         </div>
-                        <ValidationBadge
-                          isComplete={
-                            pdsData.otherInfo?.references
-                              ? pdsData.otherInfo.references.length > 0
-                              : false
-                          }
-                        />
+                        <ValidationBadge status={getSectionStatus(pdsData.otherInfo?.references, true)} />
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>

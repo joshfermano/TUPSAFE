@@ -18,6 +18,7 @@ import {
   User,
   Briefcase,
   Building2,
+  ChevronDown,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -25,10 +26,16 @@ import {
 // TYPES
 // ============================================================================
 
-interface NavigationItem {
+interface NavigationSubItem {
   name: string;
   href: string;
+}
+
+interface NavigationItem {
+  name: string;
+  href?: string;
   icon: LucideIcon;
+  subItems?: NavigationSubItem[];
 }
 
 interface NavItemProps {
@@ -36,6 +43,10 @@ interface NavItemProps {
   isActive: boolean;
   onClick: () => void;
   prefersReducedMotion: boolean;
+  isExpanded?: boolean;
+  onToggle?: () => void;
+  onNavigate?: (href: string) => void;
+  currentPathname?: string;
 }
 
 interface UserInfoProps {
@@ -140,43 +151,102 @@ UserInfo.displayName = 'UserInfo';
 /**
  * Clean, minimalistic NavItem component
  * Simple design with subtle hover effect and smooth transitions
+ * Supports nested sub-items with expand/collapse functionality
  */
 const NavItem = memo<NavItemProps>(
-  ({ item, isActive, onClick, prefersReducedMotion }) => {
+  ({
+    item,
+    isActive,
+    onClick,
+    prefersReducedMotion,
+    isExpanded,
+    onToggle,
+    onNavigate,
+    currentPathname
+  }) => {
     const Icon = item.icon;
+    const hasSubItems = item.subItems && item.subItems.length > 0;
 
     return (
-      <motion.button
-        onClick={onClick}
-        {...getAnimationProps(prefersReducedMotion, {
-          whileHover: { x: 2 },
-          whileTap: { scale: 0.98 },
-          transition: { duration: 0.2 },
-        })}
-        className={cn(
-          'relative w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 group',
-          isActive
-            ? 'bg-primary text-white shadow-sm shadow-primary/20'
-            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100'
-        )}>
-        <Icon
+      <div>
+        <motion.button
+          onClick={hasSubItems ? onToggle : onClick}
+          {...getAnimationProps(prefersReducedMotion, {
+            whileHover: { x: 2 },
+            whileTap: { scale: 0.98 },
+            transition: { duration: 0.2 },
+          })}
           className={cn(
-            'h-5 w-5 transition-all duration-300',
+            'relative w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 group',
             isActive
-              ? 'text-white'
-              : 'text-slate-500 dark:text-slate-400 group-hover:text-primary dark:group-hover:text-primary'
-          )}
-        />
-        <span className="flex-1 text-left">{item.name}</span>
-
-        {isActive && (
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="h-1.5 w-1.5 rounded-full bg-white"
+              ? 'bg-primary text-white shadow-sm shadow-primary/20'
+              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100'
+          )}>
+          <Icon
+            className={cn(
+              'h-5 w-5 transition-all duration-300',
+              isActive
+                ? 'text-white'
+                : 'text-slate-500 dark:text-slate-400 group-hover:text-primary dark:group-hover:text-primary'
+            )}
           />
+          <span className="flex-1 text-left">{item.name}</span>
+
+          {hasSubItems ? (
+            <ChevronDown
+              className={cn(
+                'h-4 w-4 transition-transform duration-300',
+                isExpanded && 'rotate-180',
+                isActive
+                  ? 'text-white'
+                  : 'text-slate-400 dark:text-slate-500'
+              )}
+            />
+          ) : isActive ? (
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="h-1.5 w-1.5 rounded-full bg-white"
+            />
+          ) : null}
+        </motion.button>
+
+        {/* Sub-items with smooth expand/collapse animation */}
+        {hasSubItems && (
+          <motion.div
+            initial={false}
+            animate={{
+              height: isExpanded ? 'auto' : 0,
+              opacity: isExpanded ? 1 : 0,
+            }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+            className="overflow-hidden">
+            <div className="mt-1 ml-4 space-y-1 border-l-2 border-slate-200 dark:border-slate-700 pl-4 py-1">
+              {item.subItems?.map((subItem) => {
+                const isSubActive = currentPathname === subItem.href;
+
+                return (
+                  <motion.button
+                    key={subItem.href}
+                    onClick={() => onNavigate?.(subItem.href)}
+                    {...getAnimationProps(prefersReducedMotion, {
+                      whileHover: { x: 2 },
+                      transition: { duration: 0.2 },
+                    })}
+                    className={cn(
+                      'w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200',
+                      isSubActive
+                        ? 'bg-primary/10 text-primary font-medium'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100'
+                    )}>
+                    {subItem.name}
+                  </motion.button>
+                );
+              })}
+            </div>
+          </motion.div>
         )}
-      </motion.button>
+      </div>
     );
   }
 );
@@ -195,6 +265,7 @@ const DashboardSidebar = memo(function DashboardSidebar({
   const router = useRouter();
   const { user, signOut } = useAuth();
   const prefersReducedMotion = useReducedMotion();
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
   // Memoize navigation items array based on user type
   const navigationItems = useMemo<NavigationItem[]>(() => {
@@ -207,8 +278,13 @@ const DashboardSidebar = memo(function DashboardSidebar({
         },
         {
           name: 'e-PDS',
-          href: '/dashboard/pds',
           icon: FileText,
+          subItems: [
+            { name: 'Create', href: '/dashboard/pds/create' },
+            { name: 'Submissions', href: '/dashboard/pds/submissions' },
+            { name: 'Pending', href: '/dashboard/pds/pending' },
+            { name: 'Archive', href: '/dashboard/pds/archive' },
+          ],
         },
         {
           name: 'My Applications',
@@ -237,13 +313,23 @@ const DashboardSidebar = memo(function DashboardSidebar({
       },
       {
         name: 'e-PDS',
-        href: '/dashboard/pds',
         icon: FileText,
+        subItems: [
+          { name: 'Create', href: '/dashboard/pds/create' },
+          { name: 'Submissions', href: '/dashboard/pds/submissions' },
+          { name: 'Pending', href: '/dashboard/pds/pending' },
+          { name: 'Archive', href: '/dashboard/pds/archive' },
+        ],
       },
       {
         name: 'e-SALN',
-        href: '/dashboard/saln',
         icon: Landmark,
+        subItems: [
+          { name: 'Create', href: '/dashboard/saln/create' },
+          { name: 'Submissions', href: '/dashboard/saln/submissions' },
+          { name: 'Pending', href: '/dashboard/saln/pending' },
+          { name: 'Archive', href: '/dashboard/saln/archive' },
+        ],
       },
       {
         name: 'Settings',
@@ -275,6 +361,33 @@ const DashboardSidebar = memo(function DashboardSidebar({
     if (!user) return 'U';
     return user.email?.[0]?.toUpperCase() || '';
   }, [user]);
+
+  // Handle toggle for expandable items
+  const handleToggle = useCallback((itemName: string) => {
+    setExpandedItems((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemName)) {
+        newSet.delete(itemName);
+      } else {
+        newSet.add(itemName);
+      }
+      return newSet;
+    });
+  }, []);
+
+  // Auto-expand items that contain the current route
+  useEffect(() => {
+    navigationItems.forEach((item) => {
+      if (item.subItems) {
+        const hasActiveSubItem = item.subItems.some(
+          (subItem) => pathname?.startsWith(subItem.href)
+        );
+        if (hasActiveSubItem) {
+          setExpandedItems((prev) => new Set(prev).add(item.name));
+        }
+      }
+    });
+  }, [pathname, navigationItems]);
 
   return (
     <div className={cn('relative flex h-full flex-col', className)}>
@@ -314,8 +427,11 @@ const DashboardSidebar = memo(function DashboardSidebar({
         {/* Navigation - Clean list with subtle hover states */}
         <nav className="flex-1 p-4 space-y-1.5">
           {navigationItems.map((item, index) => {
-            const isActive =
-              pathname === item.href || pathname?.startsWith(item.href + '/');
+            const hasSubItems = item.subItems && item.subItems.length > 0;
+            const isActive = hasSubItems
+              ? item.subItems?.some((subItem) => pathname?.startsWith(subItem.href)) ?? false
+              : pathname === item.href || pathname?.startsWith(item.href + '/');
+            const isExpanded = expandedItems.has(item.name);
 
             return (
               <motion.div
@@ -332,8 +448,12 @@ const DashboardSidebar = memo(function DashboardSidebar({
                 <NavItem
                   item={item}
                   isActive={isActive}
-                  onClick={() => handleNavigate(item.href)}
+                  onClick={() => item.href && handleNavigate(item.href)}
                   prefersReducedMotion={prefersReducedMotion}
+                  isExpanded={isExpanded}
+                  onToggle={() => handleToggle(item.name)}
+                  onNavigate={handleNavigate}
+                  currentPathname={pathname || ''}
                 />
               </motion.div>
             );

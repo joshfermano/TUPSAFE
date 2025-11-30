@@ -47,7 +47,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Get current user
-    const sessionUser = await getUserFromSupabase();
+    const sessionUser = await getUserFromSupabase('admin');
     if (!sessionUser) {
       return NextResponse.json({ error: 'Session expired' }, { status: 401 });
     }

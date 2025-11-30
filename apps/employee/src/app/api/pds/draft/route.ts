@@ -25,6 +25,49 @@ import { eq, and, desc } from 'drizzle-orm';
 const DRAFT_TITLE = 'PDS Draft Data';
 
 /**
+ * Date serialization utilities
+ * These ensure Date objects are properly converted to/from strings for JSON storage
+ */
+
+function serializeDates<T>(data: T): T {
+  if (data === null || data === undefined) return data;
+  if (data instanceof Date) return data.toISOString() as T;
+  if (Array.isArray(data)) return data.map((item) => serializeDates(item)) as T;
+  if (typeof data === 'object') {
+    const serialized: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(data)) {
+      serialized[key] = serializeDates(value);
+    }
+    return serialized as T;
+  }
+  return data;
+}
+
+function deserializeDates<T>(data: T): T {
+  if (data === null || data === undefined) return data;
+  if (Array.isArray(data)) return data.map((item) => deserializeDates(item)) as T;
+  if (typeof data === 'object') {
+    const deserialized: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (typeof value === 'string' && isISODateString(value)) {
+        deserialized[key] = new Date(value);
+      } else {
+        deserialized[key] = deserializeDates(value);
+      }
+    }
+    return deserialized as T;
+  }
+  return data;
+}
+
+function isISODateString(value: string): boolean {
+  const isoDatePattern = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?)?$/;
+  if (!isoDatePattern.test(value)) return false;
+  const date = new Date(value);
+  return !isNaN(date.getTime());
+}
+
+/**
  * POST /api/pds/draft
  * Save or update the PDS draft for the current user
  *
@@ -105,12 +148,15 @@ export async function POST(request: NextRequest) {
         );
     }
 
+    // Serialize dates before storing
+    const serializedData = serializeDates(draftData);
+
     // Create new draft notification entry
     await db.insert(notifications).values({
       userId: session.user.id,
       type: 'system_update', // Using system_update as closest match
       title: DRAFT_TITLE,
-      message: JSON.stringify(draftData),
+      message: JSON.stringify(serializedData),
       isRead: true, // Mark as read so it doesn't show in notifications
     });
 
@@ -185,10 +231,12 @@ export async function GET() {
       });
     }
 
-    // Parse the stored draft data
+    // Parse the stored draft data and deserialize dates
     let draftData = null;
     try {
-      draftData = JSON.parse(drafts[0].message);
+      const parsed = JSON.parse(drafts[0].message);
+      // Deserialize dates back to Date objects
+      draftData = deserializeDates(parsed);
     } catch (parseError) {
       console.error(
         '[GET /api/pds/draft] Failed to parse draft data:',

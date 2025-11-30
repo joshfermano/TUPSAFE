@@ -9,6 +9,7 @@ import {
 } from '@tupsafe/database/schema';
 import { eq, and, gte, lte, sql } from 'drizzle-orm';
 import { exportQuerySchema } from '@tupsafe/types';
+import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 
 /**
  * GET /api/dashboard/export
@@ -32,11 +33,15 @@ import { exportQuerySchema } from '@tupsafe/types';
  */
 export async function GET(request: NextRequest) {
   try {
-    // TODO: Verify admin/HR role and apply rate limiting
-    // const session = await getServerSession();
-    // if (!session || !['admin', 'hr'].includes(session.user.role)) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    // }
+    // Verify admin/HR permissions
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
+
+    if (!hasPermission) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Admin or HR role required.' },
+        { status: 403 }
+      );
+    }
 
     // Parse and validate query parameters
     const searchParams = request.nextUrl.searchParams;

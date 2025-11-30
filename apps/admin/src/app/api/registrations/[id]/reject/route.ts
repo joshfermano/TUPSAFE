@@ -57,7 +57,7 @@ export async function POST(
     }
 
     // Get current admin user
-    const adminUser = await getUserFromSupabase();
+    const adminUser = await getUserFromSupabase('admin');
 
     if (!adminUser) {
       return NextResponse.json(

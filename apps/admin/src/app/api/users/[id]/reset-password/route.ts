@@ -63,7 +63,7 @@ export async function POST(
 ) {
   try {
     // Verify permissions using Supabase auth
-    const sessionUser = await getUserFromSupabase();
+    const sessionUser = await getUserFromSupabase('admin');
     if (!sessionUser) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }

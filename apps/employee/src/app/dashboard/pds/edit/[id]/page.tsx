@@ -14,7 +14,7 @@ import React, { useMemo, useState, useEffect, useCallback, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../../providers/AuthProvider';
-import { usePds } from '@tupsafe/mock-data/api';
+import { usePdsSubmissionById } from '../../../../../hooks/usePdsSubmissionById';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -35,6 +35,7 @@ import {
   Heart,
   BookOpen,
   Star,
+  ShieldAlert,
 } from 'lucide-react';
 
 // UI Components
@@ -165,6 +166,61 @@ const LoadingState = () => (
 );
 
 // ============================================================================
+// UNAUTHORIZED EDIT STATE
+// ============================================================================
+
+const UnauthorizedEditState = ({
+  status,
+  pdsId
+}: {
+  status: string;
+  pdsId: string;
+}) => {
+  const router = useRouter();
+
+  const getMessage = () => {
+    switch (status) {
+      case 'submitted':
+        return 'Your PDS is currently awaiting admin review.';
+      case 'reviewing':
+        return 'Your PDS is currently under review by the administration.';
+      case 'approved':
+        return 'Your PDS has been approved. Contact admin to create a new version.';
+      default:
+        return 'This PDS cannot be edited in its current state.';
+    }
+  };
+
+  return (
+    <BlurFade delay={0.1}>
+      <Card className="p-8 text-center max-w-2xl mx-auto">
+        <ShieldAlert className="h-16 w-16 mx-auto text-amber-500 mb-4" />
+        <h2 className="text-2xl font-bold mb-2">Editing Not Allowed</h2>
+        <p className="text-slate-600 dark:text-slate-400 mb-4">{getMessage()}</p>
+
+        <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg mb-6">
+          <h3 className="font-semibold mb-2">What you can do</h3>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            {status === 'approved'
+              ? 'Contact the admin to request creating a new version of your PDS.'
+              : 'You can view your submission details or wait for admin feedback.'}
+          </p>
+        </div>
+
+        <div className="flex gap-3 justify-center">
+          <Button variant="outline" onClick={() => router.back()}>
+            Back to PDS
+          </Button>
+          <Button onClick={() => router.push(`/dashboard/pds/view/${pdsId}`)}>
+            View Details
+          </Button>
+        </div>
+      </Card>
+    </BlurFade>
+  );
+};
+
+// ============================================================================
 // MAIN PAGE COMPONENT
 // ============================================================================
 
@@ -176,22 +232,50 @@ export default function PDSEditDetailPage({
   const { id: pdsId } = use(params);
   const router = useRouter();
   const { user } = useAuth();
-  const {
-    submissions,
-    getCompleteSubmission,
-    updateSubmission,
-    submitForReview,
-    loading,
-  } = usePds(user?.id || '');
-  const submission = useMemo(
-    () => submissions.find((s) => s.id === pdsId),
-    [submissions, pdsId]
-  );
 
-  const initialData = useMemo(
-    () => getCompleteSubmission(pdsId),
-    [pdsId, getCompleteSubmission]
-  ) as CompletePdsData | null;
+  // Fetch complete PDS data by ID
+  const { pdsData: rawPdsData, loading, error } = usePdsSubmissionById(pdsId);
+
+  // Extract submission metadata from complete data
+  const submission = rawPdsData?.submission ?? null;
+
+  // Check if user can edit based on status
+  const canEdit = submission?.status === 'draft' || submission?.status === 'rejected';
+
+  // Create compatible data structure for form (handles different property naming conventions)
+  // Note: Using 'as any as CompletePdsData' for type compatibility between DB schema and form schema
+  // The DB returns dates as strings and has additional ID fields, while the form expects Date objects
+  // Provide default empty objects/arrays for all nested properties to prevent null access errors
+  // Memoized to prevent infinite re-renders in useEffect dependency
+  const initialData = useMemo(() => {
+    if (!rawPdsData) return null;
+    return {
+      personalInfo: rawPdsData.personalInfo ?? {},
+      family: rawPdsData.familyBackground ?? {
+        spouseSurname: '',
+        spouseFirstName: '',
+        spouseMiddleName: '',
+        spouseNameExtension: '',
+        spouseOccupation: '',
+        spouseEmployer: '',
+        spouseBusinessAddress: '',
+        spouseTelephoneNo: '',
+        fatherSurname: '',
+        fatherFirstName: '',
+        fatherMiddleName: '',
+        fatherNameExtension: '',
+        motherMaidenSurname: '',
+        motherFirstName: '',
+        motherMiddleName: '',
+      },
+      education: rawPdsData.education ?? [],
+      eligibility: rawPdsData.civilService ?? [],
+      workExperience: rawPdsData.workExperience ?? [],
+      voluntaryWork: rawPdsData.voluntaryWork ?? [],
+      learningDevelopment: rawPdsData.training ?? [],
+      otherInfo: rawPdsData.otherInfo ?? {},
+    } as any as CompletePdsData;
+  }, [rawPdsData]);
 
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -237,8 +321,12 @@ export default function PDSEditDetailPage({
 
     setIsSaving(true);
     try {
-      // Cast to any to bypass strict type checking - formData structure is correct
-      await updateSubmission(pdsId, formData as any);
+      // TODO: Implement API call to update PDS draft
+      // const response = await fetch(`/api/pds/${pdsId}`, {
+      //   method: 'PATCH',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(formData),
+      // });
       setHasUnsavedChanges(false);
       toast.success('Draft saved successfully');
     } catch (error) {
@@ -246,17 +334,19 @@ export default function PDSEditDetailPage({
     } finally {
       setIsSaving(false);
     }
-  }, [pdsId, formData, updateSubmission]);
+  }, [pdsId, formData]);
 
   const handleSubmit = useCallback(async () => {
     if (!formData) return;
 
     setIsSubmitting(true);
     try {
-      // Save first - cast to any to bypass strict type checking
-      await updateSubmission(pdsId, formData as any);
-      // Then submit for review
-      await submitForReview(pdsId);
+      // TODO: Implement API call to submit PDS for review
+      // const response = await fetch(`/api/pds/${pdsId}/submit`, {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(formData),
+      // });
       toast.success('PDS submitted for admin review');
       router.push('/dashboard/pds/view');
     } catch (error) {
@@ -264,7 +354,7 @@ export default function PDSEditDetailPage({
     } finally {
       setIsSubmitting(false);
     }
-  }, [pdsId, formData, updateSubmission, submitForReview, router]);
+  }, [pdsId, formData, router]);
 
   const handleCancel = useCallback(() => {
     if (hasUnsavedChanges) {
@@ -278,7 +368,35 @@ export default function PDSEditDetailPage({
     }
   }, [hasUnsavedChanges, router]);
 
-  if (loading || !submission || !formData) {
+  // Loading state
+  if (loading) {
+    return <LoadingState />;
+  }
+
+  // Error or not found state
+  if (error || !rawPdsData || !submission) {
+    return (
+      <BlurFade delay={0.1}>
+        <Card className="p-8 text-center max-w-2xl mx-auto">
+          <h2 className="text-2xl font-bold mb-2">PDS Not Found</h2>
+          <p className="text-slate-600 dark:text-slate-400 mb-4">
+            {error || 'The requested PDS submission could not be found.'}
+          </p>
+          <Button onClick={() => router.back()}>
+            Back to PDS
+          </Button>
+        </Card>
+      </BlurFade>
+    );
+  }
+
+  // Permission check - only allow editing if status is draft or rejected
+  if (!canEdit) {
+    return <UnauthorizedEditState status={submission.status} pdsId={pdsId} />;
+  }
+
+  // Cannot proceed without form data
+  if (!formData) {
     return <LoadingState />;
   }
 
@@ -411,18 +529,18 @@ export default function PDSEditDetailPage({
             <div className="space-y-1.5">
               <Label className="text-xs font-medium">Name Extension</Label>
               <Select
-                value={formData.personalInfo.nameExtension || ''}
+                value={formData.personalInfo?.nameExtension || '_none'}
                 onValueChange={(val) =>
                   handleFieldChange('personalInfo', {
-                    ...formData.personalInfo,
-                    nameExtension: val || null,
+                    ...(formData.personalInfo ?? {}),
+                    nameExtension: val === '_none' ? null : val,
                   })
                 }>
                 <SelectTrigger>
                   <SelectValue placeholder="Select extension" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="_none">None</SelectItem>
                   <SelectItem value="Jr.">Jr.</SelectItem>
                   <SelectItem value="Sr.">Sr.</SelectItem>
                   <SelectItem value="II">II</SelectItem>
@@ -465,10 +583,10 @@ export default function PDSEditDetailPage({
           <FormField
             label="Spouse Surname"
             name="spouseSurname"
-            value={formData.family.spouseSurname}
+            value={formData.family?.spouseSurname ?? ''}
             onChange={(val) =>
               handleFieldChange('family', {
-                ...formData.family,
+                ...(formData.family ?? {}),
                 spouseSurname: val,
               })
             }
@@ -476,10 +594,10 @@ export default function PDSEditDetailPage({
           <FormField
             label="Spouse First Name"
             name="spouseFirstName"
-            value={formData.family.spouseFirstName}
+            value={formData.family?.spouseFirstName ?? ''}
             onChange={(val) =>
               handleFieldChange('family', {
-                ...formData.family,
+                ...(formData.family ?? {}),
                 spouseFirstName: val,
               })
             }

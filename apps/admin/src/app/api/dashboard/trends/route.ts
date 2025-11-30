@@ -12,6 +12,7 @@ import {
   type DashboardTrendsResponse,
   type TrendDataPoint,
 } from '@tupsafe/types';
+import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 
 /**
  * GET /api/dashboard/trends
@@ -28,6 +29,16 @@ import {
  */
 export async function GET(request: NextRequest) {
   try {
+    // Verify admin/HR permissions
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
+
+    if (!hasPermission) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Admin or HR role required.' },
+        { status: 403 }
+      );
+    }
+
     // Parse and validate query parameters
     const searchParams = request.nextUrl.searchParams;
     const params = trendsQuerySchema.parse({

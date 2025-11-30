@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     console.log('[Password Change API] POST request received');
 
     // Get current user from Supabase session
-    const user = await getUserFromSupabase();
+    const user = await getUserFromSupabase('admin');
     if (!user) {
       console.log('[Password Change API] No authenticated session');
       return NextResponse.json(

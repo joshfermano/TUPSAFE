@@ -34,7 +34,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkUserRole, getSessionUser } from '@tupsafe/auth/server';
+import { checkUserRoleFromSupabase, getSessionUser } from '@tupsafe/auth/server';
 import { db, pdsSubmissions, salnSubmissions, notifications } from '@tupsafe/database/server';
 import { eq, and, or, inArray } from 'drizzle-orm';
 import { createAuditLog } from '@tupsafe/database/utils/audit-log';
@@ -48,7 +48,7 @@ import { v7 as uuidv7 } from 'uuid';
 export async function POST(request: NextRequest) {
   try {
     // Verify admin/HR permissions
-    const hasPermission = await checkUserRole(['admin', 'hr']);
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(

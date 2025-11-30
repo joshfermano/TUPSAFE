@@ -1,6 +1,6 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, useEffect, useMemo } from 'react';
 import { GraduationCap } from 'lucide-react';
 import { useFormContext, type FieldPath } from 'react-hook-form';
 import {
@@ -22,13 +22,30 @@ import { type CompletePdsData } from '../../../../../lib/validations/pds-schema'
 export const Education = memo(function Education() {
   const form = useFormContext<CompletePdsData>();
 
-  const educationLevels = [
-    { key: 'elementary', label: 'Elementary' },
-    { key: 'secondary', label: 'Secondary' },
-    { key: 'vocational', label: 'Vocational / Trade Course' },
-    { key: 'college', label: 'College' },
-    { key: 'graduate', label: 'Graduate Studies' },
-  ];
+  const educationLevels = useMemo(
+    () => [
+      { key: 'elementary', label: 'Elementary' },
+      { key: 'secondary', label: 'Secondary' },
+      { key: 'vocational', label: 'Vocational / Trade Course' },
+      { key: 'college', label: 'College' },
+      { key: 'graduate', label: 'Graduate Studies' },
+    ],
+    []
+  );
+
+  // Automatically set the level field when user fills in the school name
+  useEffect(() => {
+    educationLevels.forEach((level) => {
+      const schoolName = form.watch(`education.${level.key}.schoolName` as FieldPath<CompletePdsData>);
+      const currentLevel = form.getValues(`education.${level.key}.level` as FieldPath<CompletePdsData>);
+      if (schoolName && !currentLevel) {
+        form.setValue(
+          `education.${level.key}.level` as FieldPath<CompletePdsData>,
+          level.key as 'elementary' | 'secondary' | 'vocational' | 'college' | 'graduate'
+        );
+      }
+    });
+  }, [form, educationLevels]);
 
   return (
     <FormSection
@@ -45,6 +62,7 @@ export const Education = memo(function Education() {
             <h4 className="text-base font-medium text-foreground mb-6">
               {level.label}
             </h4>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
