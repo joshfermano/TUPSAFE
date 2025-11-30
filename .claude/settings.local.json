@@ -68,7 +68,20 @@
       "Bash(npm view:*)",
       "Bash(npm run clean:*)",
       "mcp__serena__find_symbol",
-      "mcp__serena__check_onboarding_performed"
+      "mcp__serena__check_onboarding_performed",
+      "mcp__magicui__getAnimations",
+      "mcp__serena__think_about_task_adherence",
+      "mcp__magicui__getBackgrounds",
+      "mcp__magicui__getTextAnimations",
+      "mcp__magicui__getButtons",
+      "mcp__serena__think_about_whether_you_are_done",
+      "mcp__magicui__getSpecialEffects",
+      "mcp__serena__find_file",
+      "mcp__magicui__getUIComponents",
+      "Bash(npm run type-check:employee:*)",
+      "Bash(npm run type-check:admin:*)",
+      "Bash(turbo type-check:*)",
+      "Bash(npx turbo:*)"
     ],
     "deny": [],
     "ask": []

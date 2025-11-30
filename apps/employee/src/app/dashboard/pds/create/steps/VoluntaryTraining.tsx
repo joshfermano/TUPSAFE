@@ -229,9 +229,9 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
                                   ? field.value.toISOString().split('T')[0]
                                   : ''
                               }
-                              onChange={(e) =>
-                                field.onChange(new Date(e.target.value))
-                              }
+                              onChange={(e) => {
+                                field.onChange(e.target.value ? new Date(e.target.value) : null);
+                              }}
                               onBlur={handleVoluntaryDateBlur}
                               className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
                             />
@@ -256,11 +256,9 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
                                   ? field.value.toISOString().split('T')[0]
                                   : ''
                               }
-                              onChange={(e) =>
-                                field.onChange(
-                                  e.target.value ? new Date(e.target.value) : null
-                                )
-                              }
+                              onChange={(e) => {
+                                field.onChange(e.target.value ? new Date(e.target.value) : null);
+                              }}
                               onBlur={handleVoluntaryDateBlur}
                               className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
                             />
@@ -400,9 +398,9 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
                                   ? field.value.toISOString().split('T')[0]
                                   : ''
                               }
-                              onChange={(e) =>
-                                field.onChange(new Date(e.target.value))
-                              }
+                              onChange={(e) => {
+                                field.onChange(e.target.value ? new Date(e.target.value) : null);
+                              }}
                               onBlur={handleTrainingDateBlur}
                               className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
                             />
@@ -429,9 +427,9 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
                                   ? field.value.toISOString().split('T')[0]
                                   : ''
                               }
-                              onChange={(e) =>
-                                field.onChange(new Date(e.target.value))
-                              }
+                              onChange={(e) => {
+                                field.onChange(e.target.value ? new Date(e.target.value) : null);
+                              }}
                               onBlur={handleTrainingDateBlur}
                               className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
                             />

@@ -3,6 +3,7 @@ import { db } from '@tupsafe/database/server';
 import { auditLogs } from '@tupsafe/database/schema';
 import { sql, desc, count, gte } from 'drizzle-orm';
 import { subDays, format } from 'date-fns';
+import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 
 /**
  * GET /api/audit-logs/analytics
@@ -22,11 +23,15 @@ import { subDays, format } from 'date-fns';
  */
 export async function GET() {
   try {
-    // TODO: Verify admin/HR role
-    // const session = await getServerSession();
-    // if (!session || !['admin', 'hr'].includes(session.user.role)) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    // }
+    // Verify admin/HR permissions
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
+
+    if (!hasPermission) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Admin or HR role required.' },
+        { status: 403 }
+      );
+    }
 
     // Calculate date 30 days ago
     const thirtyDaysAgo = subDays(new Date(), 30);

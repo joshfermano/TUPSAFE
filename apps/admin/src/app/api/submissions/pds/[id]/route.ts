@@ -21,7 +21,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkUserRole, getSessionUser, createAdminClient } from '@tupsafe/auth/server';
+import { checkUserRoleFromSupabase, getUserFromSupabase, createAdminClient } from '@tupsafe/auth/server';
 import {
   db,
   profiles,
@@ -51,7 +51,7 @@ export async function GET(
     const { id } = await params;
 
     // Verify admin/HR permissions
-    const hasPermission = await checkUserRole(['admin', 'hr']);
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(
@@ -61,7 +61,7 @@ export async function GET(
     }
 
     // Get current user for audit logging
-    const sessionUser = await getSessionUser();
+    const sessionUser = await getUserFromSupabase('admin');
     if (!sessionUser) {
       return NextResponse.json({ error: 'Session expired' }, { status: 401 });
     }

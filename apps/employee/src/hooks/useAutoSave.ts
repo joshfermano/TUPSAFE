@@ -160,6 +160,98 @@ export interface UseAutoSaveReturn {
 // ============================================================================
 
 /**
+ * Serialize Date objects to ISO strings for localStorage
+ * Recursively processes nested objects and arrays
+ *
+ * @param data - Data to serialize
+ * @returns Data with Date objects converted to ISO strings
+ */
+function serializeDates<T>(data: T): T {
+  if (data === null || data === undefined) {
+    return data;
+  }
+
+  // Handle Date objects
+  if (data instanceof Date) {
+    return data.toISOString() as T;
+  }
+
+  // Handle arrays
+  if (Array.isArray(data)) {
+    return data.map((item) => serializeDates(item)) as T;
+  }
+
+  // Handle objects
+  if (typeof data === 'object') {
+    const serialized: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(data)) {
+      serialized[key] = serializeDates(value);
+    }
+    return serialized as T;
+  }
+
+  // Primitives pass through
+  return data;
+}
+
+/**
+ * Deserialize ISO strings back to Date objects
+ * Recursively processes nested objects and arrays
+ * Only converts strings that match ISO date format
+ *
+ * @param data - Data to deserialize
+ * @returns Data with ISO strings converted to Date objects
+ */
+function deserializeDates<T>(data: T): T {
+  if (data === null || data === undefined) {
+    return data;
+  }
+
+  // Handle arrays
+  if (Array.isArray(data)) {
+    return data.map((item) => deserializeDates(item)) as T;
+  }
+
+  // Handle objects
+  if (typeof data === 'object') {
+    const deserialized: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(data)) {
+      // Check if the value is an ISO date string
+      if (typeof value === 'string' && isISODateString(value)) {
+        deserialized[key] = new Date(value);
+      } else {
+        deserialized[key] = deserializeDates(value);
+      }
+    }
+    return deserialized as T;
+  }
+
+  // Primitives pass through
+  return data;
+}
+
+/**
+ * Check if a string is an ISO date string
+ * Matches formats like: 2024-01-15T00:00:00.000Z or 2024-01-15
+ *
+ * @param value - String to check
+ * @returns True if the string is an ISO date
+ */
+function isISODateString(value: string): boolean {
+  // ISO 8601 date regex pattern
+  const isoDatePattern =
+    /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?)?$/;
+
+  if (!isoDatePattern.test(value)) {
+    return false;
+  }
+
+  // Validate that it's a valid date
+  const date = new Date(value);
+  return !isNaN(date.getTime());
+}
+
+/**
  * Fast equality check using object reference and shallow comparison
  * Falls back to JSON only for nested changes
  *
@@ -208,17 +300,19 @@ function fastEqual<T>(obj1: T, obj2: T): boolean {
 }
 
 /**
- * Safe localStorage wrapper with error handling
+ * Safe localStorage wrapper with error handling and automatic date serialization
  */
 const storage = {
   /**
-   * Get item from localStorage
+   * Get item from localStorage with automatic date deserialization
    */
   getItem: <T>(key: string): T | null => {
     try {
       const item = localStorage.getItem(key);
       if (!item) return null;
-      return JSON.parse(item) as T;
+      const parsed = JSON.parse(item);
+      // Automatically deserialize dates
+      return deserializeDates(parsed) as T;
     } catch (error) {
       console.error('[useAutoSave] Failed to retrieve from localStorage:', error);
       return null;
@@ -226,11 +320,13 @@ const storage = {
   },
 
   /**
-   * Set item in localStorage
+   * Set item in localStorage with automatic date serialization
    */
   setItem: <T>(key: string, value: T): boolean => {
     try {
-      localStorage.setItem(key, JSON.stringify(value));
+      // Automatically serialize dates before saving
+      const serialized = serializeDates(value);
+      localStorage.setItem(key, JSON.stringify(serialized));
       return true;
     } catch (error) {
       console.error('[useAutoSave] Failed to save to localStorage:', error);
@@ -586,11 +682,11 @@ export function useAutoSave<T>({
 // ============================================================================
 
 /**
- * Retrieve saved draft from localStorage
+ * Retrieve saved draft from localStorage with automatic date deserialization
  *
  * @template T - Type of data being retrieved
  * @param key - localStorage key
- * @returns Saved draft data or null if not found
+ * @returns Saved draft data or null if not found (with dates automatically converted)
  *
  * @example
  * const savedData = getSavedDraft<PDSFormData>('pds-draft-user-123');
@@ -599,6 +695,11 @@ export function useAutoSave<T>({
 export function getSavedDraft<T>(key: string): T | null {
   return storage.getItem<T>(key);
 }
+
+/**
+ * Export date serialization utilities for use in other modules
+ */
+export { serializeDates, deserializeDates, isISODateString };
 
 /**
  * Clear draft from localStorage

@@ -7,14 +7,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, pendingRegistrations, profiles } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
 import {
-  checkUserRole,
+  checkUserRoleFromSupabase,
   createServerClient,
 } from '@tupsafe/auth/server';
 
 export async function GET(_request: NextRequest) {
   try {
     // Check if user has HR or admin role
-    const hasPermission = await checkUserRole(['hr', 'admin']);
+    const hasPermission = await checkUserRoleFromSupabase(['hr', 'admin'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(

@@ -63,9 +63,9 @@ export const PersonalBasic = memo(function PersonalBasic() {
                   </FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g., DELA CRUZ"
+                      placeholder="e.g., Dela Cruz"
                       {...field}
-                      className="uppercase bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                      className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                     />
                   </FormControl>
                   <FormMessage />
@@ -171,7 +171,9 @@ export const PersonalBasic = memo(function PersonalBasic() {
                           ? field.value.toISOString().split('T')[0]
                           : ''
                       }
-                      onChange={(e) => field.onChange(new Date(e.target.value))}
+                      onChange={(e) => {
+                        field.onChange(e.target.value ? new Date(e.target.value) : null);
+                      }}
                       className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                     />
                   </FormControl>
@@ -491,6 +493,28 @@ export const PersonalBasic = memo(function PersonalBasic() {
                   </FormControl>
                   <FormDescription className="text-sm text-slate-600 dark:text-slate-400">
                     Your TUP Manila employee ID
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="personalInfo.philsysNo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>PhilSys Number (PSN)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g., 12-345678901-2"
+                      {...field}
+                      value={field.value || ''}
+                      className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                    />
+                  </FormControl>
+                  <FormDescription className="text-sm text-slate-600 dark:text-slate-400">
+                    Philippine Identification System Number (Format: XX-XXXXXXXXX-X)
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

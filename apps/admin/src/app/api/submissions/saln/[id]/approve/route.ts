@@ -27,7 +27,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkUserRole, getSessionUser } from '@tupsafe/auth/server';
+import { checkUserRoleFromSupabase, getUserFromSupabase } from '@tupsafe/auth/server';
 import { db, salnSubmissions, notifications } from '@tupsafe/database/server';
 import { eq, and, or } from 'drizzle-orm';
 import { createAuditLog } from '@tupsafe/database/utils/audit-log';
@@ -42,7 +42,7 @@ export async function POST(
     const { id } = await params;
 
     // Verify admin/HR permissions
-    const hasPermission = await checkUserRole(['admin', 'hr']);
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(
@@ -52,7 +52,7 @@ export async function POST(
     }
 
     // Get current user
-    const sessionUser = await getSessionUser();
+    const sessionUser = await getUserFromSupabase('admin');
     if (!sessionUser) {
       return NextResponse.json({ error: 'Session expired' }, { status: 401 });
     }

@@ -9,11 +9,11 @@
  * Theme: TUP red accent - oklch(0.55_0.22_15)
  */
 
-import React, { useMemo, use, useCallback } from 'react';
+import React, { use, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../../providers/AuthProvider';
-import { usePds } from '@tupsafe/mock-data/api';
+import { usePdsSubmissionById } from '../../../../../hooks/usePdsSubmissionById';
 import { usePDSPdf } from '../../../../../hooks/usePDSPdf';
 import { transformPdsForPdf } from '../../../../../lib/utils/pds-transform';
 import { toast } from 'sonner';
@@ -192,18 +192,21 @@ export default function PDSViewDetailPage({
   const { id: pdsId } = use(params);
   const router = useRouter();
   const { user } = useAuth();
-  const { submissions, getCompleteSubmission, loading } = usePds(
-    user?.id || ''
-  );
-  const submission = useMemo(
-    () => submissions.find((s) => s.id === pdsId),
-    [submissions, pdsId]
-  );
 
-  const pdsData = useMemo(
-    () => getCompleteSubmission(pdsId),
-    [pdsId, getCompleteSubmission]
-  ) as any;
+  // Fetch complete PDS data by ID
+  const { pdsData: rawPdsData, loading } = usePdsSubmissionById(pdsId);
+
+  // Extract submission metadata from complete data
+  const submission = rawPdsData?.submission ?? null;
+
+  // Create compatible data structure for view (handles different property naming conventions)
+  const pdsData = rawPdsData ? {
+    ...rawPdsData,
+    // Add fallback property names for compatibility with view components
+    family: rawPdsData.familyBackground,
+    eligibility: rawPdsData.civilService,
+    learningDevelopment: rawPdsData.training,
+  } as any : null;
 
   const canEdit =
     submission?.status === 'draft' || submission?.status === 'rejected';
@@ -295,7 +298,7 @@ export default function PDSViewDetailPage({
     }
   }, [pdfReadyData, openPDFInNewTab]);
 
-  if (loading || !submission || !pdsData) {
+  if (loading || !pdsData || !submission) {
     return <LoadingState />;
   }
 

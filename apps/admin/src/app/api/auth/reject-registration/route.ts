@@ -14,7 +14,7 @@ import {
 } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
 import {
-  checkUserRole,
+  checkUserRoleFromSupabase,
   getSessionUser,
   sendEmail,
   createServerClient,
@@ -29,7 +29,7 @@ const rejectionSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     // Check if user has HR or admin role
-    const hasPermission = await checkUserRole(['hr', 'admin']);
+    const hasPermission = await checkUserRoleFromSupabase(['hr', 'admin'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(

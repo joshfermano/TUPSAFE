@@ -339,9 +339,9 @@ export const Family = memo(function Family() {
                                   ? field.value.toISOString().split('T')[0]
                                   : ''
                               }
-                              onChange={(e) =>
-                                field.onChange(new Date(e.target.value))
-                              }
+                              onChange={(e) => {
+                                field.onChange(e.target.value ? new Date(e.target.value) : null);
+                              }}
                               className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                             />
                           </FormControl>

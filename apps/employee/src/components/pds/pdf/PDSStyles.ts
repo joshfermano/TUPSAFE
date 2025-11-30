@@ -1,10 +1,3 @@
-/**
- * PDF Styles for CS Form No. 212 (Revised 2025)
- * Personal Data Sheet - Civil Service Commission
- *
- * These styles match the official CSC PDS form layout
- */
-
 import { StyleSheet, Font } from '@react-pdf/renderer';
 
 /**

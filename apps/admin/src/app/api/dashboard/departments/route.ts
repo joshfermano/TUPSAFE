@@ -8,6 +8,7 @@ import {
 } from '@tupsafe/database/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import type { DashboardDepartmentsResponse, DepartmentMetrics } from '@tupsafe/types';
+import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 
 /**
  * GET /api/dashboard/departments
@@ -25,11 +26,15 @@ import type { DashboardDepartmentsResponse, DepartmentMetrics } from '@tupsafe/t
  */
 export async function GET(_request: NextRequest) {
   try {
-    // TODO: Verify admin/HR role
-    // const session = await getServerSession();
-    // if (!session || !['admin', 'hr'].includes(session.user.role)) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    // }
+    // Verify admin/HR permissions
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
+
+    if (!hasPermission) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Admin or HR role required.' },
+        { status: 403 }
+      );
+    }
 
     const now = new Date();
     const currentYear = now.getFullYear();

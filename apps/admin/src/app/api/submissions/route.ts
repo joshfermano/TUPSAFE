@@ -21,7 +21,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkUserRole, getSessionUser } from '@tupsafe/auth/server';
+import { checkUserRoleFromSupabase, getSessionUser } from '@tupsafe/auth/server';
 import {
   db,
   profiles,
@@ -40,7 +40,7 @@ import {
 export async function GET(request: NextRequest) {
   try {
     // Verify admin/HR permissions
-    const hasPermission = await checkUserRole(['admin', 'hr']);
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(
