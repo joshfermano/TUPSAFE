@@ -133,7 +133,7 @@ export default function PdsSubmissionViewPage() {
   const pdfReadyData = React.useMemo(() => {
     if (!completeSubmission) return null;
     return transformPdsForPdf({
-      ...completeSubmission,
+      ...completeSubmission.pdsData,
       id: completeSubmission.submission.id,
       submittedAt: completeSubmission.submission.submittedAt,
       version: completeSubmission.submission.version,
@@ -200,26 +200,85 @@ export default function PdsSubmissionViewPage() {
       toast.error('PDS data not available');
       return;
     }
+
     try {
+      // Validate before generating
+      const { validatePDSForPDF } = await import(
+        '@/../../employee/src/lib/utils/pds-validation'
+      );
+      const validation = validatePDSForPDF(pdfReadyData);
+
+      if (!validation.isValid) {
+        const errorList = validation.errors
+          .map((e) => `• ${e.message}`)
+          .join('\n');
+        toast.error('Cannot generate PDF', {
+          description: errorList,
+        });
+        return;
+      }
+
+      // Show warnings if any
+      if (validation.warnings.length > 0) {
+        console.warn('PDF Generation Warnings:', validation.warnings);
+      }
+
+      // Generate PDF
+      const filename = `PDS_${
+        completeSubmission?.employee?.employeeId || 'Submission'
+      }_${new Date().toISOString().split('T')[0]}`;
+
       toast.loading('Generating PDF...', { id: 'admin-pdf' });
       await downloadPDF(pdfReadyData);
-      toast.success('PDF downloaded', { id: 'admin-pdf' });
+      toast.success('PDF downloaded successfully', { id: 'admin-pdf' });
     } catch (error) {
-      toast.error('Failed to generate PDF', { id: 'admin-pdf' });
+      console.error('PDF generation error:', error);
+      toast.error('Failed to generate PDF', {
+        description:
+          error instanceof Error ? error.message : 'Unknown error occurred',
+        id: 'admin-pdf',
+      });
     }
-  }, [pdfReadyData, downloadPDF]);
+  }, [pdfReadyData, downloadPDF, completeSubmission]);
 
   const handlePrintPdf = React.useCallback(async () => {
     if (!pdfReadyData) {
       toast.error('PDS data not available');
       return;
     }
+
     try {
+      // Validate before generating
+      const { validatePDSForPDF } = await import(
+        '@/../../employee/src/lib/utils/pds-validation'
+      );
+      const validation = validatePDSForPDF(pdfReadyData);
+
+      if (!validation.isValid) {
+        const errorList = validation.errors
+          .map((e) => `• ${e.message}`)
+          .join('\n');
+        toast.error('Cannot generate PDF', {
+          description: errorList,
+        });
+        return;
+      }
+
+      // Show warnings if any
+      if (validation.warnings.length > 0) {
+        console.warn('PDF Generation Warnings:', validation.warnings);
+      }
+
       toast.loading('Opening print preview...', { id: 'admin-print' });
       await openPDFInNewTab(pdfReadyData);
       toast.success('PDF opened - use Ctrl+P to print', { id: 'admin-print' });
     } catch (error) {
-      toast.error('Failed to open print preview', { id: 'admin-print' });
+      console.error('PDF generation error:', error);
+      toast.error('Failed to open print preview', {
+        description:
+          error instanceof Error ? error.message : 'Unknown error occurred',
+        id: 'admin-print',
+      });
     }
   }, [pdfReadyData, openPDFInNewTab]);
 

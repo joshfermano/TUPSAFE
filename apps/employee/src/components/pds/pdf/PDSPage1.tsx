@@ -12,6 +12,7 @@
 import { Page, View, Text } from '@react-pdf/renderer';
 import {
   styles,
+  colors,
   formatDateMMDDYYYY,
   displayOrEmpty,
 } from './PDSStyles';
@@ -35,9 +36,19 @@ function formatAddress(address: Address): string {
   return parts.join(', ') || '';
 }
 
-// Checkbox component using symbols ☐ and ☑
+// Checkbox component using bordered View elements
 function Checkbox({ checked }: { checked: boolean }) {
-  return <Text style={styles.checkboxSymbol}>{checked ? '☑' : '☐'}</Text>;
+  return (
+    <View style={styles.checkboxContainer}>
+      <View
+        style={[
+          styles.checkbox,
+          checked ? { backgroundColor: colors.black } : {},
+        ]}>
+        {checked && <Text style={styles.checkMark}>✓</Text>}
+      </View>
+    </View>
+  );
 }
 
 // Field with label above value
@@ -148,36 +159,16 @@ export function PDSPage1({ data }: PDSPage1Props) {
           </View>
         </View>
 
-        {/* Row 3: Date of Birth */}
+        {/* Field 3: Date of Birth (standalone) */}
         <View style={styles.fieldRow}>
-          <View style={[styles.labelCell, styles.w15]}>
+          <View style={[styles.labelCell, styles.w25]}>
             <Text style={styles.labelSmall}>3. DATE OF BIRTH</Text>
             <Text style={[styles.labelSmall, styles.italic]}>(mm/dd/yyyy)</Text>
           </View>
-          <View style={[styles.fieldCell, styles.w25]}>
+          <View style={[styles.fieldCellLast, { flex: 1 }]}>
             <Text style={styles.value}>
               {formatDateMMDDYYYY(personalInfo.dateOfBirth)}
             </Text>
-          </View>
-          <View style={[styles.labelCell, styles.w15]}>
-            <Text style={styles.labelSmall}>16. CITIZENSHIP</Text>
-          </View>
-          <View style={[styles.fieldCellLast, { flex: 1 }]}>
-            <View style={styles.row}>
-              <View style={styles.checkboxRow}>
-                <Checkbox checked={personalInfo.citizenship.type === 'Filipino'} />
-                <Text style={styles.labelSmall}>Filipino</Text>
-              </View>
-              <View style={styles.checkboxRow}>
-                <Checkbox checked={personalInfo.citizenship.type === 'Dual'} />
-                <Text style={styles.labelSmall}>Dual Citizenship</Text>
-              </View>
-            </View>
-            {personalInfo.citizenship.type === 'Dual' && (
-              <Text style={styles.valueSmall}>
-                {displayOrEmpty(personalInfo.citizenship.details)}
-              </Text>
-            )}
           </View>
         </View>
 
@@ -193,12 +184,12 @@ export function PDSPage1({ data }: PDSPage1Props) {
           </View>
         </View>
 
-        {/* Row 5: Sex */}
+        {/* Field 5: Sex */}
         <View style={styles.fieldRow}>
-          <View style={[styles.labelCell, styles.w15]}>
+          <View style={[styles.labelCell, styles.w25]}>
             <Text style={styles.labelSmall}>5. SEX</Text>
           </View>
-          <View style={[styles.fieldCell, styles.w25]}>
+          <View style={[styles.fieldCellLast, { flex: 1 }]}>
             <View style={styles.row}>
               <View style={styles.checkboxRow}>
                 <Checkbox checked={personalInfo.sex === 'male'} />
@@ -210,22 +201,14 @@ export function PDSPage1({ data }: PDSPage1Props) {
               </View>
             </View>
           </View>
-          <View style={[styles.labelCell, styles.w15]}>
-            <Text style={styles.labelSmall}>17. RESIDENTIAL ADDRESS</Text>
-          </View>
-          <View style={[styles.fieldCellLast, { flex: 1 }]}>
-            <Text style={styles.valueSmall}>
-              {formatAddress(personalInfo.residentialAddress)}
-            </Text>
-          </View>
         </View>
 
-        {/* Row 6: Civil Status */}
+        {/* Field 6: Civil Status */}
         <View style={styles.fieldRow}>
-          <View style={[styles.labelCell, styles.w15]}>
+          <View style={[styles.labelCell, styles.w25]}>
             <Text style={styles.labelSmall}>6. CIVIL STATUS</Text>
           </View>
-          <View style={[styles.fieldCell, styles.w25]}>
+          <View style={[styles.fieldCellLast, { flex: 1 }]}>
             <View style={styles.row}>
               <View style={styles.checkboxRow}>
                 <Checkbox checked={personalInfo.civilStatus === 'single'} />
@@ -235,8 +218,6 @@ export function PDSPage1({ data }: PDSPage1Props) {
                 <Checkbox checked={personalInfo.civilStatus === 'married'} />
                 <Text style={styles.labelSmall}>Married</Text>
               </View>
-            </View>
-            <View style={styles.row}>
               <View style={styles.checkboxRow}>
                 <Checkbox checked={personalInfo.civilStatus === 'widowed'} />
                 <Text style={styles.labelSmall}>Widowed</Text>
@@ -247,119 +228,71 @@ export function PDSPage1({ data }: PDSPage1Props) {
               </View>
             </View>
           </View>
-          <View style={[styles.labelCell, styles.w15]}>
-            <Text style={styles.labelSmall}>ZIP CODE</Text>
-          </View>
-          <View style={[styles.fieldCellLast, { flex: 1 }]}>
-            <Text style={styles.value}>
-              {displayOrEmpty(personalInfo.residentialAddress.zipCode)}
-            </Text>
-          </View>
         </View>
 
-        {/* Row 7: Height */}
+        {/* Field 7: Height */}
         <View style={styles.fieldRow}>
-          <View style={[styles.labelCell, styles.w15]}>
+          <View style={[styles.labelCell, styles.w25]}>
             <Text style={styles.labelSmall}>7. HEIGHT (m)</Text>
           </View>
-          <View style={[styles.fieldCell, styles.w25]}>
+          <View style={[styles.fieldCellLast, { flex: 1 }]}>
             <Text style={styles.value}>
               {personalInfo.heightM ? personalInfo.heightM.toFixed(2) : ''}
             </Text>
           </View>
-          <View style={[styles.labelCell, styles.w15]}>
-            <Text style={styles.labelSmall}>18. PERMANENT ADDRESS</Text>
-          </View>
-          <View style={[styles.fieldCellLast, { flex: 1 }]}>
-            <Text style={styles.valueSmall}>
-              {formatAddress(personalInfo.permanentAddress)}
-            </Text>
-          </View>
         </View>
 
-        {/* Row 8: Weight */}
+        {/* Field 8: Weight */}
         <View style={styles.fieldRow}>
-          <View style={[styles.labelCell, styles.w15]}>
+          <View style={[styles.labelCell, styles.w25]}>
             <Text style={styles.labelSmall}>8. WEIGHT (kg)</Text>
           </View>
-          <View style={[styles.fieldCell, styles.w25]}>
+          <View style={[styles.fieldCellLast, { flex: 1 }]}>
             <Text style={styles.value}>
               {personalInfo.weightKg ? personalInfo.weightKg.toString() : ''}
             </Text>
           </View>
-          <View style={[styles.labelCell, styles.w15]}>
-            <Text style={styles.labelSmall}>ZIP CODE</Text>
-          </View>
-          <View style={[styles.fieldCellLast, { flex: 1 }]}>
-            <Text style={styles.value}>
-              {displayOrEmpty(personalInfo.permanentAddress.zipCode)}
-            </Text>
-          </View>
         </View>
 
-        {/* Row 9: Blood Type */}
+        {/* Field 9: Blood Type */}
         <View style={styles.fieldRow}>
-          <View style={[styles.labelCell, styles.w15]}>
+          <View style={[styles.labelCell, styles.w25]}>
             <Text style={styles.labelSmall}>9. BLOOD TYPE</Text>
           </View>
-          <View style={[styles.fieldCell, styles.w25]}>
+          <View style={[styles.fieldCellLast, { flex: 1 }]}>
             <Text style={styles.value}>
               {displayOrEmpty(personalInfo.bloodType)}
             </Text>
           </View>
-          <View style={[styles.labelCell, styles.w15]}>
-            <Text style={styles.labelSmall}>19. TELEPHONE NO.</Text>
-          </View>
-          <View style={[styles.fieldCellLast, { flex: 1 }]}>
-            <Text style={styles.value}>
-              {displayOrEmpty(personalInfo.telephoneNo)}
-            </Text>
-          </View>
         </View>
 
-        {/* Row 10: GSIS */}
+        {/* Field 10: GSIS ID NO. */}
         <View style={styles.fieldRow}>
-          <View style={[styles.labelCell, styles.w15]}>
+          <View style={[styles.labelCell, styles.w25]}>
             <Text style={styles.labelSmall}>10. GSIS ID NO.</Text>
           </View>
-          <View style={[styles.fieldCell, styles.w25]}>
+          <View style={[styles.fieldCellLast, { flex: 1 }]}>
             <Text style={styles.value}>
               {displayOrEmpty(personalInfo.gsisNo)}
             </Text>
           </View>
-          <View style={[styles.labelCell, styles.w15]}>
-            <Text style={styles.labelSmall}>20. MOBILE NO.</Text>
-          </View>
-          <View style={[styles.fieldCellLast, { flex: 1 }]}>
-            <Text style={styles.value}>
-              {displayOrEmpty(personalInfo.mobileNo)}
-            </Text>
-          </View>
         </View>
 
-        {/* Row 11: PAG-IBIG */}
+        {/* Field 11: PAG-IBIG ID NO. */}
         <View style={styles.fieldRow}>
-          <View style={[styles.labelCell, styles.w15]}>
+          <View style={[styles.labelCell, styles.w25]}>
             <Text style={styles.labelSmall}>11. PAG-IBIG ID NO.</Text>
           </View>
-          <View style={[styles.fieldCell, styles.w25]}>
+          <View style={[styles.fieldCellLast, { flex: 1 }]}>
             <Text style={styles.value}>
               {displayOrEmpty(personalInfo.pagibigNo)}
             </Text>
           </View>
-          <View style={[styles.labelCell, styles.w15]}>
-            <Text style={styles.labelSmall}>21. E-MAIL ADDRESS</Text>
-          </View>
-          <View style={[styles.fieldCellLast, { flex: 1 }]}>
-            <Text style={styles.value}>
-              {displayOrEmpty(personalInfo.emailAddress)}
-            </Text>
-          </View>
         </View>
 
-        {/* Row 12: PHILHEALTH */}
+        {/* Field 12: PHILHEALTH NO. */}
         <View style={styles.fieldRow}>
-          <View style={[styles.labelCell, styles.w15]}>
+          <View style={[styles.labelCell, styles.w25]}>
             <Text style={styles.labelSmall}>12. PHILHEALTH NO.</Text>
           </View>
           <View style={[styles.fieldCellLast, { flex: 1 }]}>
@@ -369,9 +302,9 @@ export function PDSPage1({ data }: PDSPage1Props) {
           </View>
         </View>
 
-        {/* Row 13: SSS */}
+        {/* Field 13: SSS NO. */}
         <View style={styles.fieldRow}>
-          <View style={[styles.labelCell, styles.w15]}>
+          <View style={[styles.labelCell, styles.w25]}>
             <Text style={styles.labelSmall}>13. SSS NO.</Text>
           </View>
           <View style={[styles.fieldCellLast, { flex: 1 }]}>
@@ -381,9 +314,9 @@ export function PDSPage1({ data }: PDSPage1Props) {
           </View>
         </View>
 
-        {/* Row 14: TIN */}
+        {/* Field 14: TIN NO. */}
         <View style={styles.fieldRow}>
-          <View style={[styles.labelCell, styles.w15]}>
+          <View style={[styles.labelCell, styles.w25]}>
             <Text style={styles.labelSmall}>14. TIN NO.</Text>
           </View>
           <View style={[styles.fieldCellLast, { flex: 1 }]}>
@@ -393,9 +326,9 @@ export function PDSPage1({ data }: PDSPage1Props) {
           </View>
         </View>
 
-        {/* Row 15: Agency Employee No */}
+        {/* Field 15: Agency Employee No. */}
         <View style={styles.fieldRow}>
-          <View style={[styles.labelCell, styles.w15]}>
+          <View style={[styles.labelCell, styles.w25]}>
             <Text style={styles.labelSmall}>15. AGENCY EMPLOYEE NO.</Text>
           </View>
           <View style={[styles.fieldCellLast, { flex: 1 }]}>
@@ -404,12 +337,202 @@ export function PDSPage1({ data }: PDSPage1Props) {
             </Text>
           </View>
         </View>
+
+        {/* Field 16: CITIZENSHIP (separate row after Field 15) */}
+        <View style={styles.fieldRow}>
+          <View style={[styles.labelCell, styles.w20]}>
+            <Text style={styles.labelSmall}>16. CITIZENSHIP</Text>
+          </View>
+          <View style={[styles.fieldCellLast, { flex: 1 }]}>
+            <View style={[styles.row, { gap: 15 }]}>
+              <View style={styles.checkboxRow}>
+                <Checkbox checked={personalInfo.citizenship.type === 'Filipino'} />
+                <Text style={styles.valueSmall}>Filipino</Text>
+              </View>
+              <View style={styles.checkboxRow}>
+                <Checkbox checked={personalInfo.citizenship.type === 'Dual'} />
+                <Text style={styles.valueSmall}>Dual Citizenship</Text>
+              </View>
+              {personalInfo.citizenship.type === 'Dual' && (
+                <View style={[styles.row, { marginLeft: 10 }]}>
+                  <View style={styles.checkboxRow}>
+                    <Checkbox checked={personalInfo.citizenship.details?.includes('by birth') ?? false} />
+                    <Text style={styles.valueSmall}>by birth</Text>
+                  </View>
+                  <View style={styles.checkboxRow}>
+                    <Checkbox checked={personalInfo.citizenship.details?.includes('by naturalization') ?? false} />
+                    <Text style={styles.valueSmall}>by naturalization</Text>
+                  </View>
+                </View>
+              )}
+            </View>
+          </View>
+        </View>
+
+        {personalInfo.citizenship.type === 'Dual' && personalInfo.citizenship.details && (
+          <View style={styles.fieldRow}>
+            <View style={[styles.labelCell, styles.w20]}>
+              <Text style={styles.labelSmall}>If holder of dual citizenship, please indicate country:</Text>
+            </View>
+            <View style={[styles.fieldCellLast, { flex: 1 }]}>
+              <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.citizenship.details)}</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Field 17: RESIDENTIAL ADDRESS */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.labelSmall}>17. RESIDENTIAL ADDRESS</Text>
+        </View>
+
+        {/* House/Block/Lot No. and Street */}
+        <View style={styles.fieldRow}>
+          <View style={[styles.labelCell, styles.w25]}>
+            <Text style={styles.labelSmall}>House/Block/Lot No.</Text>
+          </View>
+          <View style={[styles.fieldCell, styles.w25]}>
+            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.residentialAddress?.houseNumber)}</Text>
+          </View>
+          <View style={[styles.labelCell, styles.w25]}>
+            <Text style={styles.labelSmall}>Street</Text>
+          </View>
+          <View style={[styles.fieldCellLast, { flex: 1 }]}>
+            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.residentialAddress?.street)}</Text>
+          </View>
+        </View>
+
+        {/* Subdivision/Village and Barangay */}
+        <View style={styles.fieldRow}>
+          <View style={[styles.labelCell, styles.w25]}>
+            <Text style={styles.labelSmall}>Subdivision/Village</Text>
+          </View>
+          <View style={[styles.fieldCell, styles.w25]}>
+            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.residentialAddress?.subdivision)}</Text>
+          </View>
+          <View style={[styles.labelCell, styles.w25]}>
+            <Text style={styles.labelSmall}>Barangay</Text>
+          </View>
+          <View style={[styles.fieldCellLast, { flex: 1 }]}>
+            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.residentialAddress?.barangay)}</Text>
+          </View>
+        </View>
+
+        {/* City/Municipality, Province, ZIP CODE */}
+        <View style={styles.fieldRow}>
+          <View style={[styles.labelCell, styles.w25]}>
+            <Text style={styles.labelSmall}>City/Municipality</Text>
+          </View>
+          <View style={[styles.fieldCell, styles.w25]}>
+            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.residentialAddress?.city)}</Text>
+          </View>
+          <View style={[styles.labelCell, styles.w15]}>
+            <Text style={styles.labelSmall}>Province</Text>
+          </View>
+          <View style={[styles.fieldCell, styles.w20]}>
+            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.residentialAddress?.province)}</Text>
+          </View>
+          <View style={[styles.labelCell, styles.w10]}>
+            <Text style={styles.labelSmall}>ZIP CODE</Text>
+          </View>
+          <View style={[styles.fieldCellLast, { flex: 1 }]}>
+            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.residentialAddress?.zipCode)}</Text>
+          </View>
+        </View>
+
+        {/* Field 18: PERMANENT ADDRESS */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.labelSmall}>18. PERMANENT ADDRESS</Text>
+        </View>
+
+        {/* House/Block/Lot No. and Street */}
+        <View style={styles.fieldRow}>
+          <View style={[styles.labelCell, styles.w25]}>
+            <Text style={styles.labelSmall}>House/Block/Lot No.</Text>
+          </View>
+          <View style={[styles.fieldCell, styles.w25]}>
+            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.permanentAddress?.houseNumber)}</Text>
+          </View>
+          <View style={[styles.labelCell, styles.w25]}>
+            <Text style={styles.labelSmall}>Street</Text>
+          </View>
+          <View style={[styles.fieldCellLast, { flex: 1 }]}>
+            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.permanentAddress?.street)}</Text>
+          </View>
+        </View>
+
+        {/* Subdivision/Village and Barangay */}
+        <View style={styles.fieldRow}>
+          <View style={[styles.labelCell, styles.w25]}>
+            <Text style={styles.labelSmall}>Subdivision/Village</Text>
+          </View>
+          <View style={[styles.fieldCell, styles.w25]}>
+            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.permanentAddress?.subdivision)}</Text>
+          </View>
+          <View style={[styles.labelCell, styles.w25]}>
+            <Text style={styles.labelSmall}>Barangay</Text>
+          </View>
+          <View style={[styles.fieldCellLast, { flex: 1 }]}>
+            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.permanentAddress?.barangay)}</Text>
+          </View>
+        </View>
+
+        {/* City/Municipality, Province, ZIP CODE */}
+        <View style={styles.fieldRow}>
+          <View style={[styles.labelCell, styles.w25]}>
+            <Text style={styles.labelSmall}>City/Municipality</Text>
+          </View>
+          <View style={[styles.fieldCell, styles.w25]}>
+            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.permanentAddress?.city)}</Text>
+          </View>
+          <View style={[styles.labelCell, styles.w15]}>
+            <Text style={styles.labelSmall}>Province</Text>
+          </View>
+          <View style={[styles.fieldCell, styles.w20]}>
+            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.permanentAddress?.province)}</Text>
+          </View>
+          <View style={[styles.labelCell, styles.w10]}>
+            <Text style={styles.labelSmall}>ZIP CODE</Text>
+          </View>
+          <View style={[styles.fieldCellLast, { flex: 1 }]}>
+            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.permanentAddress?.zipCode)}</Text>
+          </View>
+        </View>
+
+        {/* Field 19: TELEPHONE NO. */}
+        <View style={styles.fieldRow}>
+          <View style={[styles.labelCell, styles.w25]}>
+            <Text style={styles.labelSmall}>19. TELEPHONE NO.</Text>
+          </View>
+          <View style={[styles.fieldCellLast, { flex: 1 }]}>
+            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.telephoneNo)}</Text>
+          </View>
+        </View>
+
+        {/* Field 20: MOBILE NO. */}
+        <View style={styles.fieldRow}>
+          <View style={[styles.labelCell, styles.w25]}>
+            <Text style={styles.labelSmall}>20. MOBILE NO.</Text>
+          </View>
+          <View style={[styles.fieldCellLast, { flex: 1 }]}>
+            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.mobileNo)}</Text>
+          </View>
+        </View>
+
+        {/* Field 21: E-MAIL ADDRESS (if any) */}
+        <View style={styles.fieldRow}>
+          <View style={[styles.labelCell, styles.w25]}>
+            <Text style={styles.labelSmall}>21. E-MAIL ADDRESS (if any)</Text>
+          </View>
+          <View style={[styles.fieldCellLast, { flex: 1 }]}>
+            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.emailAddress)}</Text>
+          </View>
+        </View>
       </View>
 
       {/* Section II: Family Background */}
       <View style={[styles.borderedSection, styles.marginTop5]}>
         <View style={styles.sectionHeader}>
-          <Text>II. FAMILY BACKGROUND</Text>
+          <Text>22-25. II. FAMILY BACKGROUND</Text>
         </View>
 
         {/* Spouse Section */}

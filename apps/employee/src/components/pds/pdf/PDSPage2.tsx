@@ -105,7 +105,7 @@ export function PDSPage2({ data }: PDSPage2Props) {
       {/* Section III: Educational Background */}
       <View style={styles.borderedSection}>
         <View style={styles.sectionHeader}>
-          <Text>III. EDUCATIONAL BACKGROUND</Text>
+          <Text>26. III. EDUCATIONAL BACKGROUND</Text>
         </View>
 
         {/* Header Row */}
@@ -189,7 +189,7 @@ export function PDSPage2({ data }: PDSPage2Props) {
       <View style={[styles.borderedSection, styles.marginTop5]}>
         <View style={styles.sectionHeader}>
           <Text>
-            IV. CIVIL SERVICE ELIGIBILITY
+            27. IV. CIVIL SERVICE ELIGIBILITY
           </Text>
         </View>
 
@@ -297,7 +297,7 @@ export function PDSPage2({ data }: PDSPage2Props) {
       <View style={[styles.borderedSection, styles.marginTop5]}>
         <View style={styles.sectionHeader}>
           <Text>
-            V. WORK EXPERIENCE
+            28. V. WORK EXPERIENCE
           </Text>
         </View>
 

@@ -28,9 +28,19 @@ interface PDSPage4Props {
   data: PDSData;
 }
 
-// Checkbox component using symbols ☐ and ☑
+// Checkbox component using bordered View elements
 function Checkbox({ checked }: { checked: boolean }) {
-  return <Text style={styles.checkboxSymbol}>{checked ? '☑' : '☐'}</Text>;
+  return (
+    <View style={styles.checkboxContainer}>
+      <View
+        style={[
+          styles.checkbox,
+          checked ? { backgroundColor: colors.black } : {},
+        ]}>
+        {checked && <Text style={styles.checkMark}>✓</Text>}
+      </View>
+    </View>
+  );
 }
 
 // Yes/No question row component
@@ -241,7 +251,7 @@ export function PDSPage4({ data }: PDSPage4Props) {
       {/* References Section */}
       <View style={[styles.borderedSection, styles.marginTop5]}>
         <View style={styles.sectionHeader}>
-          <Text>41. REFERENCES</Text>
+          <Text>REFERENCES</Text>
         </View>
         <View style={styles.subSectionHeader}>
           <Text style={styles.labelSmall}>

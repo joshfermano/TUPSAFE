@@ -56,7 +56,7 @@ export function PDSPage3({ data }: PDSPage3Props) {
       <View style={styles.borderedSection}>
         <View style={styles.sectionHeader}>
           <Text>
-            VI. VOLUNTARY WORK OR INVOLVEMENT IN CIVIC / NON-GOVERNMENT / PEOPLE /
+            29. VI. VOLUNTARY WORK OR INVOLVEMENT IN CIVIC / NON-GOVERNMENT / PEOPLE /
             VOLUNTARY ORGANIZATION/S
           </Text>
         </View>
@@ -65,7 +65,7 @@ export function PDSPage3({ data }: PDSPage3Props) {
         <View style={styles.fieldRow}>
           <View style={[styles.tableCellHeader, styles.w40]}>
             <Text style={[styles.labelSmall, styles.center]}>
-              29. NAME &amp; ADDRESS OF ORGANIZATION
+              NAME &amp; ADDRESS OF ORGANIZATION
             </Text>
             <Text style={[styles.labelSmall, styles.center, styles.italic]}>
               (Write in full)
@@ -148,7 +148,7 @@ export function PDSPage3({ data }: PDSPage3Props) {
       <View style={[styles.borderedSection, styles.marginTop5]}>
         <View style={styles.sectionHeader}>
           <Text>
-            VII. LEARNING AND DEVELOPMENT (L&amp;D) INTERVENTIONS/TRAINING PROGRAMS
+            30. VII. LEARNING AND DEVELOPMENT (L&amp;D) INTERVENTIONS/TRAINING PROGRAMS
             ATTENDED
           </Text>
         </View>
@@ -164,7 +164,7 @@ export function PDSPage3({ data }: PDSPage3Props) {
         <View style={styles.fieldRow}>
           <View style={[styles.tableCellHeader, styles.w33]}>
             <Text style={[styles.labelSmall, styles.center]}>
-              30. TITLE OF LEARNING AND DEVELOPMENT INTERVENTIONS/TRAINING PROGRAMS
+              TITLE OF LEARNING AND DEVELOPMENT INTERVENTIONS/TRAINING PROGRAMS
             </Text>
             <Text style={[styles.labelSmall, styles.center, styles.italic]}>
               (Write in full)
@@ -256,7 +256,7 @@ export function PDSPage3({ data }: PDSPage3Props) {
       {/* Section VIII: Other Information */}
       <View style={[styles.borderedSection, styles.marginTop5]}>
         <View style={styles.sectionHeader}>
-          <Text>VIII. OTHER INFORMATION</Text>
+          <Text>31-33. VIII. OTHER INFORMATION</Text>
         </View>
 
         {/* Other Information Table Header */}

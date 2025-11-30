@@ -244,6 +244,32 @@ export async function GET(
         .limit(20),
     ]);
 
+    // Validate critical data exists before returning
+    if (!personalInfo) {
+      return NextResponse.json(
+        {
+          error: 'Personal information is missing from this submission',
+          details: 'This PDS submission cannot generate a PDF without personal information'
+        },
+        { status: 422 }
+      );
+    }
+
+    if (!personalInfo.surname || !personalInfo.firstName || !personalInfo.dateOfBirth) {
+      return NextResponse.json(
+        {
+          error: 'Critical fields missing from PDS submission',
+          details: 'Name and birth date are required for PDF generation. Please complete the submission first.',
+          missingFields: {
+            surname: !personalInfo.surname,
+            firstName: !personalInfo.firstName,
+            dateOfBirth: !personalInfo.dateOfBirth
+          }
+        },
+        { status: 422 }
+      );
+    }
+
     // Create audit log for viewing this submission
     await createAuditLog({
       userId: sessionUser.id,

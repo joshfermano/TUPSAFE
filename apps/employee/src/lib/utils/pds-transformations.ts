@@ -499,7 +499,7 @@ export function transformPdsForPdf(data: any): PDSData {
       firstName: personalInfo.firstName || '',
       middleName: personalInfo.middleName || null,
       nameExtension: personalInfo.nameExtension || null,
-      dateOfBirth: personalInfo.dateOfBirth || new Date(),
+      dateOfBirth: personalInfo.dateOfBirth || null,
       placeOfBirth: personalInfo.placeOfBirth || '',
       sex: personalInfo.sex || 'male',
       civilStatus: personalInfo.civilStatus || 'single',
@@ -539,7 +539,7 @@ export function transformPdsForPdf(data: any): PDSData {
       children: Array.isArray(children)
         ? children.map((child: any) => ({
             fullName: child.fullName || '',
-            dateOfBirth: child.dateOfBirth || new Date(),
+            dateOfBirth: child.dateOfBirth || null,
           }))
         : [],
     },
@@ -559,7 +559,7 @@ export function transformPdsForPdf(data: any): PDSData {
 
     workExperiences: Array.isArray(workExperience)
       ? workExperience.map((work: any) => ({
-          dateFrom: work.dateFrom || new Date(),
+          dateFrom: work.dateFrom || null,
           dateTo: work.dateTo || null,
           positionTitle: work.positionTitle || '',
           departmentAgency: work.departmentAgency || '',
@@ -574,7 +574,7 @@ export function transformPdsForPdf(data: any): PDSData {
       ? voluntaryWork.map((vol: any) => ({
           organizationName: vol.organizationName || '',
           organizationAddress: vol.organizationAddress || null,
-          dateFrom: vol.dateFrom || new Date(),
+          dateFrom: vol.dateFrom || null,
           dateTo: vol.dateTo || null,
           numberOfHours: vol.numberOfHours || null,
           positionNature: vol.positionNature || null,
@@ -584,8 +584,8 @@ export function transformPdsForPdf(data: any): PDSData {
     trainings: Array.isArray(training)
       ? training.map((t: any) => ({
           title: t.title || '',
-          dateFrom: t.dateFrom || new Date(),
-          dateTo: t.dateTo || new Date(),
+          dateFrom: t.dateFrom || null,
+          dateTo: t.dateTo || null,
           hours: t.hours || null,
           typeOfLd: t.typeOfLd || null,
           conductedBy: t.conductedBy || null,
@@ -625,13 +625,19 @@ export function transformPdsForPdf(data: any): PDSData {
 
 /**
  * Generate a filename for PDS PDF based on the data
+ * Note: This function should only be called after validating that required fields exist.
  *
  * @param pdsData - The PDS data
  * @returns A formatted filename string (e.g., "PDS_Doe_John_20250130.pdf")
  */
 export function generatePdsFilename(pdsData: PDSData): string {
-  const lastName = pdsData.personalInfo.surname || 'Unknown';
-  const firstName = pdsData.personalInfo.firstName || 'Unknown';
+  const lastName = pdsData.personalInfo.surname;
+  const firstName = pdsData.personalInfo.firstName;
+
+  if (!lastName || !firstName) {
+    throw new Error('Cannot generate filename: Name fields are required');
+  }
+
   const date = new Date().toISOString().split('T')[0].replace(/-/g, '');
 
   // Sanitize names for filename (remove special characters)
