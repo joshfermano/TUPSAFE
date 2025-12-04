@@ -13,7 +13,7 @@
     }
   },
   "scripts": {
-    "prebuild": "rm -rf dist *.tsbuildinfo",
+    "prebuild": "rimraf dist && rimraf --glob \"*.tsbuildinfo\"",
     "build": "tsc",
     "dev": "tsc --watch",
     "lint": "eslint src/",

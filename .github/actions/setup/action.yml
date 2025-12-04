@@ -1,0 +1,47 @@
+name: 'Setup Monorepo'
+description: 'Setup Node.js, caches, and dependencies for TUPSAFE monorepo'
+
+inputs:
+  node-version:
+    description: 'Node.js version to use'
+    required: false
+    default: '22'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: 'npm'
+
+    - name: Cache Turbo
+      uses: actions/cache@v4
+      with:
+        path: .turbo
+        key: turbo-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          turbo-${{ runner.os }}-
+
+    - name: Install dependencies
+      shell: bash
+      run: npm ci
+
+    - name: Setup environment
+      shell: bash
+      run: |
+        if [ -f .env.example ]; then
+          cp .env.example apps/employee/.env.local
+          cp .env.example apps/admin/.env.local
+        else
+          # Create minimal env files if .env.example doesn't exist
+          echo "NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co" > apps/employee/.env.local
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder" >> apps/employee/.env.local
+          cp apps/employee/.env.local apps/admin/.env.local
+        fi

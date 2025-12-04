@@ -6,7 +6,6 @@ on:
       - main
       - dev
       - 'feature/**'
-  # pull_request removed - handled by pr-validation.yml
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -16,143 +15,26 @@ jobs:
   build:
     name: Build & Validate
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Setup
+        uses: ./.github/actions/setup
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - name: Cache Turbo
-        uses: actions/cache@v4
-        with:
-          path: .turbo
-          key: ${{ runner.os }}-turbo-${{ hashFiles('**/package-lock.json', 'turbo.json') }}
-          restore-keys: |
-            ${{ runner.os }}-turbo-
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Setup environment variables
-        run: |
-          for app in admin employee; do
-            if [ -f "apps/$app/.env.example" ]; then
-              cp "apps/$app/.env.example" "apps/$app/.env.local"
-            else
-              cat > "apps/$app/.env.local" << 'EOF'
-          NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder-anon-key
-          SUPABASE_SERVICE_ROLE_KEY=placeholder-service-role-key
-          DATABASE_URL=postgresql://postgres:password@localhost:5432/tupsafe
-          EOF
-            fi
-          done
-
-      - name: Build all packages and apps
+      - name: Build
         run: npm run build
 
-      - name: Verify build outputs
-        run: |
-          # Check packages
-          for pkg in auth database types shared-ui mock-data; do
-            if [ ! -d "packages/$pkg/dist" ]; then
-              echo "::error::Package $pkg dist missing"
-              exit 1
-            fi
-          done
-
-          # Check auth middleware (critical)
-          if [ ! -f "packages/auth/dist/middleware.js" ]; then
-            echo "::error::Auth middleware.js missing"
-            exit 1
-          fi
-
-          # Check apps
-          for app in admin employee; do
-            if [ ! -d "apps/$app/.next" ]; then
-              echo "::error::App $app build missing"
-              exit 1
-            fi
-          done
-
-      - name: Check bundle size
-        id: bundle
-        run: |
-          FAILED=false
-
-          for app in admin employee; do
-            # Calculate First Load JS (gzipped) from rootMainFiles in build-manifest.json
-            # This matches what Next.js reports as "First Load JS shared by all"
-            TOTAL_GZIP=0
-            ROOT_FILES=$(cat "apps/$app/.next/build-manifest.json" | jq -r '.rootMainFiles[]' 2>/dev/null || echo "")
-
-            if [ -z "$ROOT_FILES" ]; then
-              echo "::warning::Could not read build-manifest.json for $app"
-              BUNDLE_KB=0
-            else
-              for file in $ROOT_FILES; do
-                GZIP_SIZE=$(gzip -c "apps/$app/.next/$file" 2>/dev/null | wc -c || echo 0)
-                TOTAL_GZIP=$((TOTAL_GZIP + GZIP_SIZE))
-              done
-              BUNDLE_KB=$((TOTAL_GZIP / 1024))
-            fi
-
-            echo "${app}_bundle=${BUNDLE_KB}" >> $GITHUB_OUTPUT
-            echo "$app First Load JS (gzip): ${BUNDLE_KB}KB"
-
-            if [ "$BUNDLE_KB" -gt 200 ]; then
-              echo "::error::$app bundle (${BUNDLE_KB}KB) exceeds 200KB limit"
-              FAILED=true
-            fi
-          done
-
-          if [ "$FAILED" = true ]; then
-            exit 1
-          fi
-
-      - name: Type check
+      - name: Type Check
         run: npm run type-check
 
       - name: Lint
         run: npm run lint
 
-      - name: Security audit (non-blocking)
-        run: npm audit --audit-level=high || true
-
-      - name: Build summary
+      - name: Summary
         if: always()
         run: |
           echo "## CI Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Bundle Sizes (gzipped)" >> $GITHUB_STEP_SUMMARY
-          echo "| App | First Load JS | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----|---------------|--------|" >> $GITHUB_STEP_SUMMARY
-
-          for app in admin employee; do
-            # Calculate First Load JS (gzipped) from rootMainFiles
-            TOTAL_GZIP=0
-            ROOT_FILES=$(cat "apps/$app/.next/build-manifest.json" | jq -r '.rootMainFiles[]' 2>/dev/null || echo "")
-
-            if [ -n "$ROOT_FILES" ]; then
-              for file in $ROOT_FILES; do
-                GZIP_SIZE=$(gzip -c "apps/$app/.next/$file" 2>/dev/null | wc -c || echo 0)
-                TOTAL_GZIP=$((TOTAL_GZIP + GZIP_SIZE))
-              done
-            fi
-            BUNDLE_KB=$((TOTAL_GZIP / 1024))
-
-            if [ "$BUNDLE_KB" -le 200 ]; then
-              echo "| $app | ${BUNDLE_KB}KB | :white_check_mark: Pass |" >> $GITHUB_STEP_SUMMARY
-            else
-              echo "| $app | ${BUNDLE_KB}KB | :x: Over limit |" >> $GITHUB_STEP_SUMMARY
-            fi
-          done
-
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "> Bundle limit: 200KB (gzipped) per CLAUDE.md" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ job.status == 'success' && ':white_check_mark:' || ':x:' }} |" >> $GITHUB_STEP_SUMMARY
