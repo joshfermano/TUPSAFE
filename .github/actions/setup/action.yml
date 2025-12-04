@@ -1,5 +1,5 @@
 name: 'Setup Monorepo'
-description: 'Setup Node.js, caches, and dependencies for TUPSAFE monorepo'
+description: 'Setup Node.js, caches, and dependencies for TUPSAFE monorepo. Note: Run actions/checkout@v4 before using this action.'
 
 inputs:
   node-version:
@@ -10,11 +10,6 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
