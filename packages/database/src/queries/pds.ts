@@ -51,6 +51,7 @@ export interface PaginationOptions {
  */
 export interface PDSFilterOptions extends PaginationOptions {
   status?: 'draft' | 'submitted' | 'reviewing' | 'approved' | 'rejected';
+  year?: number; // Filter by calendar year (e.g., 2025 for "Annual PDS - CY 2025")
 }
 
 /**
@@ -73,7 +74,8 @@ export interface CompletePDSSubmission {
  * Data structure for creating a new PDS submission
  */
 export interface CreatePDSData {
-  version?: number;
+  year?: number; // Calendar year for this PDS (defaults to current year)
+  version?: number; // Version within the year (auto-calculated if not provided)
   personalInfo?: Omit<PdsPersonalInfo, 'id' | 'pdsSubmissionId'>;
   familyBackground?: Omit<PdsFamilyBackground, 'id' | 'pdsSubmissionId'>;
   children?: Omit<PdsChild, 'id' | 'pdsSubmissionId'>[];
@@ -132,11 +134,16 @@ export async function getPDSSubmissions(
       conditions.push(eq(pdsSubmissions.status, filters.status));
     }
 
+    // Filter by year (e.g., 2025 for "Annual PDS - CY 2025")
+    if (filters?.year) {
+      conditions.push(eq(pdsSubmissions.year, filters.year));
+    }
+
     const baseQuery = db
       .select()
       .from(pdsSubmissions)
       .where(and(...conditions))
-      .orderBy(desc(pdsSubmissions.createdAt));
+      .orderBy(desc(pdsSubmissions.year), desc(pdsSubmissions.version));
 
     // Build final query with limit/offset if provided
     const query = filters?.offset
@@ -298,16 +305,18 @@ export async function getPDSSubmissionById(
 
 
 /**
- * Get the active draft for a user (within 24 hours)
- * Returns the most recently updated draft created in the last 24 hours
- * 
+ * Get the active draft for a user (within 24 hours and current year)
+ * Returns the most recently updated draft created in the last 24 hours for the current year
+ *
  * @param userId - The user ID to find draft for
+ * @param year - Optional year to check (defaults to current year)
  * @returns Draft ID if found, null otherwise
  */
-export async function getActiveDraft(userId: string): Promise<string | null> {
+export async function getActiveDraft(userId: string, year?: number): Promise<string | null> {
   try {
-    // Only consider drafts from the last 24 hours
+    // Only consider drafts from the last 24 hours for the specified year
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const targetYear = year || new Date().getFullYear();
 
     const [draft] = await db
       .select({ id: pdsSubmissions.id })
@@ -316,6 +325,7 @@ export async function getActiveDraft(userId: string): Promise<string | null> {
         and(
           eq(pdsSubmissions.userId, userId),
           eq(pdsSubmissions.status, 'draft'),
+          eq(pdsSubmissions.year, targetYear),
           gte(pdsSubmissions.createdAt, twentyFourHoursAgo)
         )
       )
@@ -414,13 +424,35 @@ export async function createPDSSubmission(
     }
 
     return await db.transaction(async (tx) => {
-      // Calculate next version number
+      // Calculate year (use provided or current year)
+      const submissionYear = data.year || new Date().getFullYear();
+
+      // Calculate next version number WITHIN THE SAME YEAR
+      // This allows multiple submissions per year (v1, v2, etc.) but only if previous is approved/rejected
       const existingSubmissions = await tx
-        .select({ version: pdsSubmissions.version })
+        .select({
+          version: pdsSubmissions.version,
+          status: pdsSubmissions.status
+        })
         .from(pdsSubmissions)
-        .where(eq(pdsSubmissions.userId, userId))
+        .where(
+          and(
+            eq(pdsSubmissions.userId, userId),
+            eq(pdsSubmissions.year, submissionYear)
+          )
+        )
         .orderBy(desc(pdsSubmissions.version))
         .limit(1);
+
+      // Check if user has a pending submission for this year
+      if (existingSubmissions.length > 0) {
+        const latest = existingSubmissions[0];
+        if (latest.status === 'draft' || latest.status === 'submitted' || latest.status === 'reviewing') {
+          throw new Error(
+            `You already have a pending PDS submission for CY ${submissionYear}. Please complete or withdraw it before creating a new one.`
+          );
+        }
+      }
 
       const nextVersion =
         data.version ||
@@ -428,17 +460,23 @@ export async function createPDSSubmission(
           ? (existingSubmissions[0].version || 0) + 1
           : 1);
 
-      // Set all existing submissions to isLatest=false
+      // Set all existing submissions FOR THIS YEAR to isLatest=false
       await tx
         .update(pdsSubmissions)
         .set({ isLatest: false, updatedAt: new Date() })
-        .where(eq(pdsSubmissions.userId, userId));
+        .where(
+          and(
+            eq(pdsSubmissions.userId, userId),
+            eq(pdsSubmissions.year, submissionYear)
+          )
+        );
 
-      // Create main submission
+      // Create main submission with year
       const [submission] = await tx
         .insert(pdsSubmissions)
         .values({
           userId,
+          year: submissionYear,
           version: nextVersion,
           status: 'draft',
           isLatest: true,

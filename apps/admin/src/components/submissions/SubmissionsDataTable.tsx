@@ -123,11 +123,18 @@ export function SubmissionsDataTable({
         },
       },
       {
-        accessorKey: 'fiscalYear',
+        accessorKey: 'year',
         header: 'Year',
         cell: ({ row }) => {
-          const fiscalYear = row.original.fiscalYear;
-          return fiscalYear ? <span>{fiscalYear}</span> : <span className="text-muted-foreground">—</span>;
+          // For PDS: show CY {year}, for SALN: show fiscalYear
+          const type = row.original.type;
+          if (type === 'pds') {
+            const year = row.original.year;
+            return year ? <span>CY {year}</span> : <span className="text-muted-foreground">—</span>;
+          } else {
+            const fiscalYear = row.original.fiscalYear;
+            return fiscalYear ? <span>CY {fiscalYear}</span> : <span className="text-muted-foreground">—</span>;
+          }
         },
       },
       {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { PdsSubmission } from '@tupsafe/mock-data';
+import type { PdsSubmission } from '@tupsafe/database';
 
 /**
  * PDS query key factory
@@ -9,7 +9,8 @@ import type { PdsSubmission } from '@tupsafe/mock-data';
 export const pdsKeys = {
   all: ['pds'] as const,
   user: (userId: string) => [...pdsKeys.all, userId] as const,
-  submission: (submissionId: string) => [...pdsKeys.all, 'submission', submissionId] as const,
+  submission: (submissionId: string) =>
+    [...pdsKeys.all, 'submission', submissionId] as const,
 };
 
 /**
@@ -39,7 +40,9 @@ export function usePdsQuery(userId: string) {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to fetch PDS submissions' }));
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: 'Failed to fetch PDS submissions' }));
         throw new Error(errorData.error || 'Failed to fetch PDS submissions');
       }
 
@@ -55,7 +58,8 @@ export function usePdsQuery(userId: string) {
     staleTime: 3 * 60 * 1000, // 3 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     retry: 2,
-    retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retryDelay: (attemptIndex: number) =>
+      Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   return {
@@ -117,7 +121,9 @@ export function useDeletePDS() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to delete PDS draft' }));
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: 'Failed to delete PDS draft' }));
         throw new Error(errorData.error || 'Failed to delete PDS draft');
       }
 

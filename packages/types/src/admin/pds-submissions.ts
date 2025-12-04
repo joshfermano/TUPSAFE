@@ -21,13 +21,14 @@ export const pdsSubmissionsQuerySchema = z.object({
     .enum(['draft', 'submitted', 'reviewing', 'approved', 'rejected', 'all'])
     .default('all'),
   department: z.string().uuid().optional(),
+  year: z.coerce.number().int().min(2000).max(2100).optional(), // Filter by calendar year
 
   // Search (across employee name and employee ID)
   search: z.string().max(200).optional(),
 
   // Sorting
   sortBy: z
-    .enum(['submittedAt', 'updatedAt', 'employeeName'])
+    .enum(['submittedAt', 'updatedAt', 'employeeName', 'year'])
     .default('submittedAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
@@ -49,8 +50,9 @@ export type RequestChangesData = z.infer<typeof requestChangesSchema>;
  */
 export interface PdsSubmissionListItem {
   id: string;
+  year: number; // Calendar year for this PDS (e.g., 2025 for "Annual PDS - CY 2025")
   status: 'draft' | 'submitted' | 'reviewing' | 'approved' | 'rejected';
-  version: number;
+  version: number; // Version within the year
   submittedAt: Date | null;
   approvedAt: Date | null;
   createdAt: Date;

@@ -467,7 +467,8 @@ export const pdsSubmissions = pgTable(
       .primaryKey()
       .$defaultFn(() => v7()),
     userId: uuid('user_id').notNull(), // References Supabase auth.users.id
-    version: integer('version').default(1).notNull(),
+    year: integer('year').notNull(), // Calendar year for this PDS (e.g., 2025 for "Annual PDS - CY 2025")
+    version: integer('version').default(1).notNull(), // Version within the year
     status: submissionStatusEnum('status').default('draft').notNull(),
     submittedAt: timestamp('submitted_at'),
     approvedBy: uuid('approved_by'),
@@ -489,6 +490,12 @@ export const pdsSubmissions = pgTable(
       table.approvedBy
     ),
     createdAtIdx: index('pds_submissions_created_at_idx').on(table.createdAt),
+    // Year-based indexes for annual PDS queries
+    yearIdx: index('pds_submissions_year_idx').on(table.year),
+    userYearIdx: index('pds_submissions_user_year_idx').on(
+      table.userId,
+      table.year
+    ),
     // Composite indexes for common queries
     userStatusIdx: index('pds_submissions_user_status_idx').on(
       table.userId,
@@ -501,6 +508,11 @@ export const pdsSubmissions = pgTable(
     statusSubmittedIdx: index('pds_submissions_status_submitted_idx').on(
       table.status,
       table.submittedAt
+    ),
+    // Year + status index for admin filtering
+    yearStatusIdx: index('pds_submissions_year_status_idx').on(
+      table.year,
+      table.status
     ),
   })
 );

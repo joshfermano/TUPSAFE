@@ -8,7 +8,6 @@ import { z } from 'zod';
 import {
   db,
   profiles,
-  trustedDevices,
   createAuditLog,
 } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
@@ -107,9 +106,17 @@ export async function POST(request: NextRequest) {
     });
 
     if (linkError || !linkData) {
-      console.error('Failed to generate magic link:', linkError);
+      console.error('Failed to generate magic link:', linkError?.message || linkError);
       return NextResponse.json(
-        { error: 'Failed to create session token' },
+        { error: 'Failed to create session token. Please try logging in again.' },
+        { status: 500 }
+      );
+    }
+
+    if (!linkData.properties?.hashed_token) {
+      console.error('Magic link generated but missing hashed_token');
+      return NextResponse.json(
+        { error: 'Invalid session token generated. Please try logging in again.' },
         { status: 500 }
       );
     }
@@ -120,13 +127,25 @@ export async function POST(request: NextRequest) {
     const { data: sessionData, error: sessionError } = await supabase.auth.verifyOtp({
       type: 'magiclink',
       token_hash: linkData.properties.hashed_token,
-      email,
     });
 
     if (sessionError || !sessionData.session) {
-      console.error('Failed to create session:', sessionError);
+      // Type assertion for error details
+      const errorDetails = sessionError as { message?: string; code?: string; status?: number } | null;
+
+      console.error('Failed to create session:', {
+        error: errorDetails?.message || sessionError,
+        code: errorDetails?.code,
+        status: errorDetails?.status,
+      });
+
+      // Provide user-friendly error message
+      const errorMessage = errorDetails?.message?.includes('token_hash')
+        ? 'Invalid verification token. Please request a new verification code.'
+        : 'Failed to establish session. Please try logging in again.';
+
       return NextResponse.json(
-        { error: 'Failed to establish session' },
+        { error: errorMessage },
         { status: 500 }
       );
     }

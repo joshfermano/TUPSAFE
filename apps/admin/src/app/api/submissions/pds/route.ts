@@ -133,6 +133,7 @@ export async function GET(request: NextRequest) {
       .select({
         // Submission fields
         id: pdsSubmissions.id,
+        year: pdsSubmissions.year,
         version: pdsSubmissions.version,
         status: pdsSubmissions.status,
         submittedAt: pdsSubmissions.submittedAt,
@@ -194,6 +195,7 @@ export async function GET(request: NextRequest) {
     // Transform to response format
     const submissions: PdsSubmissionListItem[] = submissionsData.map((item) => ({
       id: item.id,
+      year: item.year,
       version: item.version,
       status: item.status,
       submittedAt: item.submittedAt,

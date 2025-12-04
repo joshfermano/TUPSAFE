@@ -77,6 +77,7 @@ export async function GET(
     const [submission] = await db
       .select({
         id: pdsSubmissions.id,
+        year: pdsSubmissions.year,
         userId: pdsSubmissions.userId,
         status: pdsSubmissions.status,
         submittedAt: pdsSubmissions.submittedAt,
@@ -295,6 +296,7 @@ export async function GET(
         reviewedAt: submission.approvedAt,
         reviewNotes: null, // Add this field to schema if needed
         rejectionReason: submission.rejectionReason,
+        year: submission.year,
         version: submission.version,
       },
       employee: {

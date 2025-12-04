@@ -329,7 +329,8 @@ export interface SubmissionListItem {
   } | null;
   reviewedAt?: Date | null;
   fiscalYear?: number; // for SALN only
-  version?: number; // for PDS only
+  year?: number; // Calendar year for PDS (e.g., 2025 for "Annual PDS - CY 2025")
+  version?: number; // Version within the year for PDS
 }
 
 export interface SubmissionListResponse {
@@ -359,7 +360,8 @@ export interface PDSSubmissionDetail {
     reviewedAt?: Date | null;
     reviewNotes?: string | null;
     rejectionReason?: string | null;
-    version: number;
+    year: number; // Calendar year for this PDS
+    version: number; // Version within the year
   };
   employee: {
     id: string;

@@ -85,7 +85,8 @@ export function PDSDetailsDialog({
                   >
                     {pdsData.submission.status}
                   </Badge>
-                  <Badge variant="outline">Version {pdsData.submission.version}</Badge>
+                  <Badge variant="outline">CY {pdsData.submission.year}</Badge>
+                  <span className="text-xs text-muted-foreground">v{pdsData.submission.version}</span>
                 </div>
               </div>
             </DialogHeader>

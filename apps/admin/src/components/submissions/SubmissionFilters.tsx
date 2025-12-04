@@ -154,27 +154,25 @@ export function SubmissionFilters({ onFilterChange }: SubmissionFiltersProps) {
           </SelectContent>
         </Select>
 
-        {/* Fiscal Year Filter (SALN only) */}
-        {filters.type === 'saln' || filters.type === 'all' ? (
-          <Select
-            value={filters.fiscalYear?.toString() || 'all'}
-            onValueChange={(v) =>
-              updateFilter('fiscalYear', v === 'all' ? undefined : parseInt(v))
-            }
-          >
-            <SelectTrigger className="w-full sm:w-[150px]">
-              <SelectValue placeholder="Fiscal Year" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Years</SelectItem>
-              {fiscalYears.map((year) => (
-                <SelectItem key={year} value={year.toString()}>
-                  {year}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : null}
+        {/* Year Filter (for both PDS and SALN) */}
+        <Select
+          value={filters.fiscalYear?.toString() || 'all'}
+          onValueChange={(v) =>
+            updateFilter('fiscalYear', v === 'all' ? undefined : parseInt(v))
+          }
+        >
+          <SelectTrigger className="w-full sm:w-[150px]">
+            <SelectValue placeholder="Year" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Years</SelectItem>
+            {fiscalYears.map((year) => (
+              <SelectItem key={year} value={year.toString()}>
+                CY {year}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         {/* Clear Filters Button */}
         {activeFilterCount > 0 && (

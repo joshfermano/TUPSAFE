@@ -27,8 +27,9 @@ export interface PdsSubmissionsFilters {
   limit?: number;
   status?: string;
   department?: string;
+  year?: number; // Filter by calendar year (e.g., 2025 for "Annual PDS - CY 2025")
   search?: string;
-  sortBy?: 'submittedAt' | 'updatedAt' | 'employeeName';
+  sortBy?: 'submittedAt' | 'updatedAt' | 'employeeName' | 'year';
   sortOrder?: 'asc' | 'desc';
 }
 
@@ -72,6 +73,7 @@ export function usePdsSubmissionsQuery(filters: PdsSubmissionsFilters = {}) {
       if (filters.department && filters.department !== 'all') {
         params.append('department', filters.department);
       }
+      if (filters.year) params.append('year', filters.year.toString());
       if (filters.search) params.append('search', filters.search);
       if (filters.sortBy) params.append('sortBy', filters.sortBy);
       if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
