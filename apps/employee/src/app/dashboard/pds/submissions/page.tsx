@@ -35,7 +35,8 @@ type SortOption = 'newest' | 'oldest';
 
 interface ApprovedSubmission {
   id: string;
-  version: number;
+  year: number; // Calendar year for this PDS
+  version: number; // Version within the year
   status: string;
   submittedAt: Date | null;
   approvedAt: Date | null;
@@ -139,8 +140,8 @@ const ApprovedCard = memo<{
                 <FileText className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg">Version {submission.version}</h3>
-                <p className="text-sm text-muted-foreground">PDS Submission</p>
+                <h3 className="font-semibold text-lg">Annual PDS - CY {submission.year}</h3>
+                <p className="text-sm text-muted-foreground">Version {submission.version}</p>
               </div>
             </div>
             <Badge
@@ -230,6 +231,7 @@ export default function ApprovedSubmissionsPage() {
       .map(
         (submission): ApprovedSubmission => ({
           id: submission.id,
+          year: submission.year,
           version: submission.version,
           status: submission.status,
           submittedAt: submission.submittedAt,

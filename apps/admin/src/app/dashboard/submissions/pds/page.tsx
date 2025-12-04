@@ -76,6 +76,10 @@ import {
 // Status types
 type StatusType = 'all' | 'submitted' | 'reviewing' | 'approved' | 'rejected';
 
+// Generate fiscal years for filter (current year and 4 previous years)
+const currentYear = new Date().getFullYear();
+const fiscalYears = Array.from({ length: 5 }, (_, i) => currentYear - i);
+
 // Props for PdsSubmissionRow
 interface PdsSubmissionRowProps {
   submission: PdsSubmissionListItem;
@@ -157,6 +161,9 @@ const PdsSubmissionRow = memo(
           </EnhancedTableCell>
           <EnhancedTableCell className="hidden md:table-cell">
             {submission.employee.department?.name || 'N/A'}
+          </EnhancedTableCell>
+          <EnhancedTableCell className="hidden sm:table-cell">
+            {submission.year ? `CY ${submission.year}` : 'N/A'}
           </EnhancedTableCell>
           <EnhancedTableCell>
             <StatusBadge status={submission.status} />
@@ -244,6 +251,7 @@ LoadingTable.displayName = 'LoadingTable';
 export default function PdsSubmissionsPage() {
   const [statusFilter, setStatusFilter] = useState<StatusType>('all');
   const [departmentFilter, setDepartmentFilter] = useState('all');
+  const [yearFilter, setYearFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
 
@@ -252,9 +260,10 @@ export default function PdsSubmissionsPage() {
     () => ({
       status: statusFilter !== 'all' ? statusFilter : undefined,
       department: departmentFilter !== 'all' ? departmentFilter : undefined,
+      year: yearFilter !== 'all' ? parseInt(yearFilter) : undefined,
       search: searchQuery,
     }),
-    [statusFilter, departmentFilter, searchQuery]
+    [statusFilter, departmentFilter, yearFilter, searchQuery]
   );
 
   // Fetch submissions with filters
@@ -346,11 +355,12 @@ export default function PdsSubmissionsPage() {
   const handleResetFilters = useCallback(() => {
     setStatusFilter('all');
     setDepartmentFilter('all');
+    setYearFilter('all');
     setSearchQuery('');
   }, []);
 
   const hasActiveFilters =
-    statusFilter !== 'all' || departmentFilter !== 'all' || searchQuery;
+    statusFilter !== 'all' || departmentFilter !== 'all' || yearFilter !== 'all' || searchQuery;
 
   return (
     <PageTransition className="space-y-6">
@@ -455,7 +465,7 @@ export default function PdsSubmissionsPage() {
         </CardHeader>
         <CardContent className="pt-6">
           <div className="flex flex-col gap-4">
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-3">
               {/* Search Input with animated icon */}
               <div className="relative">
                 <motion.div
@@ -499,6 +509,21 @@ export default function PdsSubmissionsPage() {
                       </SelectItem>
                     ))
                   )}
+                </SelectContent>
+              </Select>
+
+              {/* Year Filter */}
+              <Select value={yearFilter} onValueChange={setYearFilter}>
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder="Select year" />
+                </SelectTrigger>
+                <SelectContent className="glass-dropdown">
+                  <SelectItem value="all">All Years</SelectItem>
+                  {fiscalYears.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      CY {year}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -578,6 +603,9 @@ export default function PdsSubmissionsPage() {
                     <EnhancedTableHead>Employee</EnhancedTableHead>
                     <EnhancedTableHead className="hidden md:table-cell">
                       Department
+                    </EnhancedTableHead>
+                    <EnhancedTableHead className="hidden sm:table-cell">
+                      Year
                     </EnhancedTableHead>
                     <EnhancedTableHead>Status</EnhancedTableHead>
                     <EnhancedTableHead className="hidden lg:table-cell">

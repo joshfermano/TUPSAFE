@@ -92,7 +92,8 @@
       "mcp__serena__insert_after_symbol",
       "Bash(tsc --build:*)",
       "Bash(md5sum:*)",
-      "WebFetch(domain:www.csc.gov.ph)"
+      "WebFetch(domain:www.csc.gov.ph)",
+      "mcp__filesystem__read_multiple_files"
     ],
     "deny": [],
     "ask": []

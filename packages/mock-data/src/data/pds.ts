@@ -24,7 +24,8 @@ export type EducationLevel =
 export interface PdsSubmission {
   id: string;
   userId: string;
-  version: number;
+  year: number; // Calendar year for this PDS (e.g., 2025 for "Annual PDS - CY 2025")
+  version: number; // Version within the year
   status: SubmissionStatus;
   submittedAt: Date | null;
   approvedBy: string | null;
@@ -189,6 +190,7 @@ export const mockPdsSubmissions: PdsSubmission[] = [
   {
     id: '01927d4e-8b45-8000-0001-000000000001',
     userId: '01927d4e-8b45-7f52-b123-456789abcdef',
+    year: 2024,
     version: 1,
     status: 'approved',
     submittedAt: new Date('2024-12-15T09:00:00Z'),
@@ -203,6 +205,7 @@ export const mockPdsSubmissions: PdsSubmission[] = [
   {
     id: '01927d4e-8b45-8000-0001-000000000002',
     userId: '01927d4e-8b45-7f52-b123-456789abcde0',
+    year: 2024,
     version: 2,
     status: 'submitted',
     submittedAt: new Date('2024-12-20T10:30:00Z'),
@@ -217,6 +220,7 @@ export const mockPdsSubmissions: PdsSubmission[] = [
   {
     id: '01927d4e-8b45-8000-0001-000000000003',
     userId: '01927d4e-8b45-7f52-b123-456789abcde1',
+    year: 2024,
     version: 1,
     status: 'reviewing',
     submittedAt: new Date('2024-12-22T11:45:00Z'),
@@ -231,6 +235,7 @@ export const mockPdsSubmissions: PdsSubmission[] = [
   {
     id: '01927d4e-8b45-8000-0001-000000000004',
     userId: '01927d4e-8b45-7f52-b123-456789abcde4',
+    year: 2024,
     version: 1,
     status: 'draft',
     submittedAt: null,
@@ -245,6 +250,7 @@ export const mockPdsSubmissions: PdsSubmission[] = [
   {
     id: '01927d4e-8b45-8000-0001-000000000005',
     userId: '01927d4e-8b45-7f52-b123-456789abcde7',
+    year: 2024,
     version: 1,
     status: 'rejected',
     submittedAt: new Date('2024-12-18T08:30:00Z'),

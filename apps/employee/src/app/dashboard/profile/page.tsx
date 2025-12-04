@@ -4,12 +4,13 @@ import { useMemo } from 'react';
 import { useAuth } from '../../../providers/AuthProvider';
 import { useProfile } from '../../../hooks/useProfile';
 import { ProfileHero } from '../../../components/dashboard/ProfileHero';
-import { InfoCard, InfoItem } from '../../../components/dashboard/InfoCard';
 import { Badge } from '../../../components/ui/badge';
 import { ShimmerButton } from '../../../components/ui/shimmer-button';
 import { AnimatedGradientText } from '../../../components/ui/animated-gradient-text';
+import { BlurFade } from '../../../components/ui/blur-fade';
+import { MagicCard } from '../../../components/ui/magic-card';
+import { BorderBeam } from '../../../components/ui/border-beam';
 import { cn } from '../../../lib/utils';
-import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
   User,
@@ -24,26 +25,45 @@ import {
   Eye,
   CheckCircle2,
   AlertCircle,
+  Phone,
+  Clock,
+  Hash,
+  GraduationCap,
+  MapPin,
 } from 'lucide-react';
 
-// Animation variants for blur-fade effect - extracted outside component to prevent recreation
-const BLUR_FADE_VARIANTS = {
-  hidden: {
-    opacity: 0,
-    y: 10,
-    filter: 'blur(4px)',
-  },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    filter: 'blur(0px)',
-    transition: {
-      duration: 0.4,
-      delay: i * 0.05,
-      ease: [0.4, 0, 0.2, 1] as [number, number, number, number],
-    },
-  }),
-};
+// Info row component for clean display
+function InfoRow({
+  icon: Icon,
+  label,
+  value,
+  highlight = false,
+}: {
+  icon?: React.ElementType;
+  label: string;
+  value: React.ReactNode;
+  highlight?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        'flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-800 last:border-0',
+        highlight && 'bg-primary/5 dark:bg-primary/10 -mx-4 px-4 rounded-lg'
+      )}>
+      <div className="flex items-center gap-3">
+        {Icon && (
+          <Icon className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+        )}
+        <span className="text-sm text-slate-600 dark:text-slate-400">
+          {label}
+        </span>
+      </div>
+      <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+        {value || '—'}
+      </div>
+    </div>
+  );
+}
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -113,66 +133,76 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="space-y-8 pb-8">
+    <div className="max-w-4xl mx-auto space-y-6 pb-8">
       {/* Page Header */}
-      <motion.div
-        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-        custom={0}
-        initial="hidden"
-        animate="visible"
-        variants={BLUR_FADE_VARIANTS}>
-        <div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100">
-            <AnimatedGradientText
-              colorFrom="var(--primary)"
-              colorTo="var(--tup-crimson-light)"
-              speed={1.5}>
-              My Profile
-            </AnimatedGradientText>
-          </h1>
-          <p className="text-slate-700 dark:text-slate-400 mt-2">
-            View and manage your employee information
-          </p>
+      <BlurFade delay={0}>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100">
+              <AnimatedGradientText
+                colorFrom="var(--primary)"
+                colorTo="var(--tup-crimson-light)"
+                speed={1.5}>
+                My Profile
+              </AnimatedGradientText>
+            </h1>
+            <p className="text-slate-700 dark:text-slate-400 mt-2">
+              View and manage your employee information
+            </p>
+          </div>
+          <Link href={`/dashboard/profile/edit/${user?.id}`}>
+            <ShimmerButton
+              shimmerColor="#ffffff"
+              shimmerSize="0.1em"
+              shimmerDuration="2s"
+              borderRadius="0.5rem"
+              background="linear-gradient(135deg, oklch(0.55 0.22 15) 0%, oklch(0.40 0.18 15) 100%)"
+              className="group relative flex items-center gap-2 font-medium text-white dark:text-white shadow-lg hover:shadow-xl transition-shadow">
+              <Edit className="h-4 w-4" />
+              Edit Profile
+            </ShimmerButton>
+          </Link>
         </div>
-        <Link href={`/dashboard/profile/edit/${user?.id}`}>
-          <ShimmerButton
-            shimmerColor="#ffffff"
-            shimmerSize="0.1em"
-            shimmerDuration="2s"
-            borderRadius="0.5rem"
-            background="linear-gradient(135deg, oklch(0.55 0.22 15) 0%, oklch(0.40 0.18 15) 100%)"
-            className="group relative flex items-center gap-2 font-medium text-white dark:text-white shadow-lg hover:shadow-xl transition-shadow">
-            <Edit className="h-4 w-4" />
-            Edit Profile
-          </ShimmerButton>
-        </Link>
-      </motion.div>
+      </BlurFade>
 
       {/* Profile Hero */}
-      <motion.div
-        custom={1}
-        initial="hidden"
-        animate="visible"
-        variants={BLUR_FADE_VARIANTS}>
+      <BlurFade delay={0.05}>
         <ProfileHero
           profile={profile}
           department={department || null}
           position={position || null}
         />
-      </motion.div>
+      </BlurFade>
 
-      {/* Information Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {/* Personal Information */}
-        <motion.div
-          custom={2}
-          initial="hidden"
-          animate="visible"
-          variants={BLUR_FADE_VARIANTS}>
-          <InfoCard title="Personal Information" icon={User} gradient>
-            <div className="space-y-3">
-              <InfoItem label="Full Name" value={fullName} />
-              <InfoItem
+      {/* Personal Information Card */}
+      <BlurFade delay={0.1}>
+        <MagicCard
+          gradientSize={300}
+          gradientColor="var(--primary)"
+          gradientOpacity={0.05}
+          gradientFrom="var(--primary)"
+          gradientTo="var(--tup-crimson-dark)"
+          className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+          <BorderBeam
+            size={80}
+            duration={8}
+            colorFrom="var(--primary)"
+            colorTo="var(--tup-crimson-light)"
+            borderWidth={1}
+          />
+          <div className="p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-tup-crimson-dark text-white shadow-md">
+                <User className="h-5 w-5" />
+              </div>
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+                Personal Information
+              </h2>
+            </div>
+            <div className="space-y-1">
+              <InfoRow label="Full Name" value={fullName} highlight />
+              <InfoRow
+                icon={Hash}
                 label={
                   profile.userType === 'employee'
                     ? 'Employee ID'
@@ -183,51 +213,73 @@ export default function ProfilePage() {
                     ? profile.employeeId || '—'
                     : profile.applicantId || '—'
                 }
-                icon={Shield}
               />
-              <InfoItem
+              <InfoRow
+                icon={Mail}
                 label="Email Address"
                 value={profile.email || '—'}
-                icon={Mail}
               />
               {profile.phoneNumber && (
-                <InfoItem label="Phone Number" value={profile.phoneNumber} />
+                <InfoRow
+                  icon={Phone}
+                  label="Phone Number"
+                  value={profile.phoneNumber}
+                />
               )}
             </div>
-          </InfoCard>
-        </motion.div>
+          </div>
+        </MagicCard>
+      </BlurFade>
 
-        {/* Employment Details */}
-        <motion.div
-          custom={3}
-          initial="hidden"
-          animate="visible"
-          variants={BLUR_FADE_VARIANTS}>
-          <InfoCard title="Employment Details" icon={Briefcase}>
-            <div className="space-y-3">
-              {profile.userType === 'employee' && (
+      {/* Employment Details Card */}
+      <BlurFade delay={0.15}>
+        <MagicCard
+          gradientSize={300}
+          gradientColor="var(--primary)"
+          gradientOpacity={0.05}
+          gradientFrom="var(--primary)"
+          gradientTo="var(--tup-crimson-dark)"
+          className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+          <div className="p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-primary dark:text-tup-crimson-light">
+                <Briefcase className="h-5 w-5" />
+              </div>
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+                Employment Details
+              </h2>
+            </div>
+            <div className="space-y-1">
+              {profile.userType === 'employee' ? (
                 <>
-                  <InfoItem
+                  <InfoRow
+                    icon={Building2}
                     label="Department"
                     value={department?.name || '—'}
-                    icon={Building2}
+                    highlight
                   />
                   {college && (
-                    <InfoItem label="College" value={college.name || '—'} />
+                    <InfoRow
+                      icon={GraduationCap}
+                      label="College"
+                      value={college.name || '—'}
+                    />
                   )}
-                  <InfoItem
+                  <InfoRow
+                    icon={Award}
                     label="Position"
                     value={position?.title || '—'}
-                    icon={Award}
                   />
-                  <InfoItem
+                  <InfoRow
+                    icon={Hash}
                     label="Salary Grade"
                     value={
                       position?.gradeLevel ? `SG-${position.gradeLevel}` : '—'
                     }
                   />
                   {profile.hireDate && (
-                    <InfoItem
+                    <InfoRow
+                      icon={Calendar}
                       label="Hire Date"
                       value={new Date(profile.hireDate).toLocaleDateString(
                         'en-US',
@@ -240,7 +292,8 @@ export default function ProfilePage() {
                     />
                   )}
                   {profile.tenureYears !== null && (
-                    <InfoItem
+                    <InfoRow
+                      icon={Clock}
                       label="Years of Service"
                       value={`${profile.tenureYears} ${
                         profile.tenureYears === 1 ? 'year' : 'years'
@@ -248,23 +301,34 @@ export default function ProfilePage() {
                     />
                   )}
                 </>
-              )}
-              {profile.userType === 'applicant' && (
-                <InfoItem label="User Type" value="Applicant" />
+              ) : (
+                <InfoRow icon={User} label="User Type" value="Applicant" />
               )}
             </div>
-          </InfoCard>
-        </motion.div>
+          </div>
+        </MagicCard>
+      </BlurFade>
 
-        {/* Account Status */}
-        <motion.div
-          custom={4}
-          initial="hidden"
-          animate="visible"
-          variants={BLUR_FADE_VARIANTS}>
-          <InfoCard title="Account Status" icon={Shield}>
-            <div className="space-y-3">
-              <InfoItem
+      {/* Account Status Card */}
+      <BlurFade delay={0.2}>
+        <MagicCard
+          gradientSize={300}
+          gradientColor="var(--primary)"
+          gradientOpacity={0.05}
+          gradientFrom="var(--primary)"
+          gradientTo="var(--tup-crimson-dark)"
+          className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+          <div className="p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-primary dark:text-tup-crimson-light">
+                <Shield className="h-5 w-5" />
+              </div>
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+                Account Status
+              </h2>
+            </div>
+            <div className="space-y-1">
+              <InfoRow
                 label="Status"
                 value={
                   <Badge
@@ -279,13 +343,15 @@ export default function ProfilePage() {
                     {profile.isActive ? 'Active' : 'Inactive'}
                   </Badge>
                 }
+                highlight
               />
-              <InfoItem
+              <InfoRow
+                icon={Calendar}
                 label="Member Since"
                 value={memberSince}
-                icon={Calendar}
               />
-              <InfoItem
+              <InfoRow
+                icon={Clock}
                 label="Last Updated"
                 value={new Date(profile.updatedAt).toLocaleDateString('en-US', {
                   month: 'short',
@@ -294,98 +360,119 @@ export default function ProfilePage() {
                 })}
               />
             </div>
-          </InfoCard>
-        </motion.div>
-      </div>
-
-      {/* Quick Actions Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* PDS Quick Action */}
-        <motion.div
-          custom={5}
-          initial="hidden"
-          animate="visible"
-          variants={BLUR_FADE_VARIANTS}
-          className="group relative">
-          <div className="h-full p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5">
-            <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 dark:bg-primary/20 transition-colors">
-                <FileText className="h-6 w-6 text-primary" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                  Personal Data Sheet (e-PDS)
-                </h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                  View and update your Personal Data Sheet information
-                </p>
-                <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary hover:text-primary-foreground bg-primary/5 hover:bg-primary/90 dark:text-primary dark:hover:text-primary-foreground dark:bg-primary/10 dark:hover:bg-primary/80 border border-primary/20 dark:border-primary/30 rounded-lg transition-all duration-200">
-                  <Eye className="h-4 w-4" />
-                  View e-PDS
-                </button>
-              </div>
-            </div>
           </div>
-        </motion.div>
+        </MagicCard>
+      </BlurFade>
 
-        {/* SALN Quick Action */}
-        <motion.div
-          custom={6}
-          initial="hidden"
-          animate="visible"
-          variants={BLUR_FADE_VARIANTS}
-          className="group relative">
-          <div className="h-full p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5">
-            <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-secondary/10 dark:bg-secondary/20 transition-colors">
-                <Award className="h-6 w-6 text-secondary" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                  Statement of Assets (e-SALN)
-                </h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                  Manage your annual Statement of Assets, Liabilities, and Net
-                  Worth
-                </p>
-                <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-secondary hover:text-primary-foreground bg-secondary/5 hover:bg-secondary/90 dark:text-secondary dark:hover:text-primary-foreground dark:bg-secondary/10 dark:hover:bg-secondary/80 border border-secondary/20 dark:border-secondary/30 rounded-lg transition-all duration-200">
-                  <Eye className="h-4 w-4" />
-                  View e-SALN
-                </button>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Department Information (Full Width) */}
+      {/* Department Information Card */}
       {department && (
-        <motion.div
-          custom={7}
-          initial="hidden"
-          animate="visible"
-          variants={BLUR_FADE_VARIANTS}>
-          <InfoCard
-            title="Department Information"
-            icon={Building2}
-            className="lg:col-span-2 xl:col-span-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              <InfoItem label="Department Name" value={department.name} />
-              <InfoItem label="Department Code" value={department.code} />
-              <InfoItem
-                label="Department Status"
-                value={
-                  <Badge
-                    variant="default"
-                    className="bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400">
-                    Active
-                  </Badge>
-                }
-              />
+        <BlurFade delay={0.25}>
+          <MagicCard
+            gradientSize={300}
+            gradientColor="var(--primary)"
+            gradientOpacity={0.05}
+            gradientFrom="var(--primary)"
+            gradientTo="var(--tup-crimson-dark)"
+            className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-primary dark:text-tup-crimson-light">
+                  <Building2 className="h-5 w-5" />
+                </div>
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+                  Department Information
+                </h2>
+              </div>
+              <div className="space-y-1">
+                <InfoRow
+                  icon={MapPin}
+                  label="Department Name"
+                  value={department.name}
+                  highlight
+                />
+                <InfoRow
+                  icon={Hash}
+                  label="Department Code"
+                  value={department.code}
+                />
+                <InfoRow
+                  label="Department Status"
+                  value={
+                    <Badge
+                      variant="default"
+                      className="bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400">
+                      Active
+                    </Badge>
+                  }
+                />
+              </div>
             </div>
-          </InfoCard>
-        </motion.div>
+          </MagicCard>
+        </BlurFade>
       )}
+
+      {/* Quick Actions */}
+      <BlurFade delay={0.3}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* PDS Quick Action */}
+          <MagicCard
+            gradientSize={200}
+            gradientColor="var(--primary)"
+            gradientOpacity={0.08}
+            gradientFrom="var(--primary)"
+            gradientTo="var(--tup-crimson-dark)"
+            className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden hover:border-primary/30 transition-all duration-300">
+            <div className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 group-hover:from-primary/20 group-hover:to-primary/10 transition-colors">
+                  <FileText className="h-6 w-6 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-1">
+                    Personal Data Sheet
+                  </h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+                    View and update your e-PDS
+                  </p>
+                  <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary hover:text-white bg-primary/5 hover:bg-primary dark:bg-primary/10 dark:hover:bg-primary border border-primary/20 hover:border-primary rounded-lg transition-all duration-200">
+                    <Eye className="h-4 w-4" />
+                    View e-PDS
+                  </button>
+                </div>
+              </div>
+            </div>
+          </MagicCard>
+
+          {/* SALN Quick Action */}
+          <MagicCard
+            gradientSize={200}
+            gradientColor="var(--secondary)"
+            gradientOpacity={0.08}
+            gradientFrom="var(--secondary)"
+            gradientTo="var(--tup-gold-dark)"
+            className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden hover:border-secondary/30 transition-all duration-300">
+            <div className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-secondary/10 to-secondary/5 dark:from-secondary/20 dark:to-secondary/10 group-hover:from-secondary/20 group-hover:to-secondary/10 transition-colors">
+                  <Award className="h-6 w-6 text-secondary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-1">
+                    Statement of Assets
+                  </h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+                    Manage your annual e-SALN
+                  </p>
+                  <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-secondary hover:text-slate-900 bg-secondary/5 hover:bg-secondary dark:bg-secondary/10 dark:hover:bg-secondary border border-secondary/20 hover:border-secondary rounded-lg transition-all duration-200">
+                    <Eye className="h-4 w-4" />
+                    View e-SALN
+                  </button>
+                </div>
+              </div>
+            </div>
+          </MagicCard>
+        </div>
+      </BlurFade>
     </div>
   );
 }

@@ -23,7 +23,8 @@ import { showDeleteSuccessToast, showDeleteErrorToast } from '@/lib/toast-templa
 interface DraftCardProps {
   submission: {
     id: string;
-    version: number;
+    year: number; // Calendar year for this PDS
+    version: number; // Version within the year
     createdAt: string;
     updatedAt: string;
     completion: number;
@@ -67,16 +68,16 @@ export const DraftCard = memo(
               isPending && 'opacity-60 pointer-events-none'
             )}>
             <CardContent className="p-5 space-y-3.5">
-              {/* Header with Version and Status Badge */}
+              {/* Header with Year, Version and Status Badge */}
               <div className="flex justify-between items-start gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1.5">
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                      PDS Version {submission.version}
+                      Annual PDS - CY {submission.year}
                     </h3>
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-400">
-                    Last saved {timeAgo}
+                    Version {submission.version} • Last saved {timeAgo}
                   </p>
                 </div>
                 <Badge
@@ -107,7 +108,7 @@ export const DraftCard = memo(
               <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
                 <span className="flex items-center gap-1">
                   <FileText className="h-3 w-3" />
-                  Version {submission.version}
+                  CY {submission.year} v{submission.version}
                 </span>
                 <span className="flex items-center gap-1">
                   <Calendar className="h-3 w-3" />

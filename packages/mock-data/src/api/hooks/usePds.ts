@@ -81,6 +81,7 @@ export function usePds(userId: string): UsePdsReturn {
     const newSubmission: PdsSubmission = {
       id: `pds-${Date.now()}`,
       userId,
+      year: new Date().getFullYear(), // Default to current year
       version: 1,
       status: 'draft',
       submittedAt: null,

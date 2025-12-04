@@ -253,6 +253,7 @@ export default function PDSDraftsPage() {
                 key={submission.id}
                 submission={{
                   id: submission.id,
+                  year: submission.year,
                   version: submission.version,
                   createdAt: toISOString(submission.createdAt) || new Date().toISOString(),
                   updatedAt: toISOString(submission.updatedAt) || new Date().toISOString(),
