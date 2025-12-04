@@ -41,35 +41,35 @@ export function validatePDSForPDF(data: PDSData): ValidationResult {
   if (!data.personalInfo?.surname) {
     errors.push({
       field: 'surname',
-      message: 'Last name is required'
+      message: 'Last name is required',
     });
   }
 
   if (!data.personalInfo?.firstName) {
     errors.push({
       field: 'firstName',
-      message: 'First name is required'
+      message: 'First name is required',
     });
   }
 
   if (!data.personalInfo?.dateOfBirth) {
     errors.push({
       field: 'dateOfBirth',
-      message: 'Date of birth is required'
+      message: 'Date of birth is required',
     });
   }
 
   if (!data.personalInfo?.sex) {
     errors.push({
       field: 'sex',
-      message: 'Sex is required'
+      message: 'Sex is required',
     });
   }
 
   if (!data.personalInfo?.civilStatus) {
     errors.push({
       field: 'civilStatus',
-      message: 'Civil status is required'
+      message: 'Civil status is required',
     });
   }
 
@@ -77,13 +77,13 @@ export function validatePDSForPDF(data: PDSData): ValidationResult {
   if (!data.personalInfo?.placeOfBirth) {
     warnings.push({
       field: 'placeOfBirth',
-      message: 'Place of birth is recommended for complete CSC compliance'
+      message: 'Place of birth is recommended for complete CSC compliance',
     });
   }
 
   return {
     isValid: errors.length === 0,
     errors,
-    warnings
+    warnings,
   };
 }

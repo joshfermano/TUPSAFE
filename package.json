@@ -16,8 +16,8 @@
     "type-check:admin": "cd apps/admin && npx tsc --noEmit",
     "type-check:apps": "cd apps/employee && npx tsc --noEmit && cd ../admin && npx tsc --noEmit",
     "clean": "turbo clean",
-    "clean:all": "rm -rf packages/*/dist packages/*/.turbo packages/*.tsbuildinfo packages/*/*.tsbuildinfo apps/*/.next apps/*/.turbo apps/*.tsbuildinfo apps/*/*.tsbuildinfo .turbo node_modules/.cache",
-    "clean:dist": "rm -rf packages/*/dist apps/*/.next",
+    "clean:all": "rimraf --glob \"packages/*/dist\" \"packages/*/.turbo\" \"packages/*.tsbuildinfo\" \"packages/*/*.tsbuildinfo\" \"apps/*/.next\" \"apps/*/.turbo\" \"apps/*.tsbuildinfo\" \"apps/*/*.tsbuildinfo\" \".turbo\" \"node_modules/.cache\"",
+    "clean:dist": "rimraf --glob \"packages/*/dist\" \"apps/*/.next\"",
     "rebuild": "npm run clean:all && npm run build",
     "rebuild:quick": "npm run clean:dist && npm run build",
     "verify:no-artifacts": "bash scripts/verify-no-artifacts.sh",
@@ -31,6 +31,7 @@
   },
   "devDependencies": {
     "drizzle-kit": "^0.18.1",
+    "rimraf": "^6.0.1",
     "turbo": "^2.5.8",
     "typescript": "^5"
   },
