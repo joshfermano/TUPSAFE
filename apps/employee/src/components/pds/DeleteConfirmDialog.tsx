@@ -18,6 +18,7 @@ interface DeleteConfirmDialogProps {
   onOpenChange: (open: boolean) => void;
   onConfirm: () => Promise<void>;
   version: number;
+  year: number;
   isDeleting?: boolean;
 }
 
@@ -26,6 +27,7 @@ export function DeleteConfirmDialog({
   onOpenChange,
   onConfirm,
   version,
+  year,
   isDeleting = false,
 }: DeleteConfirmDialogProps) {
   return (
@@ -41,7 +43,7 @@ export function DeleteConfirmDialog({
                 Delete Draft?
               </AlertDialogTitle>
               <AlertDialogDescription className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-                Are you sure you want to delete <span className="font-semibold text-slate-900 dark:text-slate-100">PDS Version {version}</span>? This action cannot be undone and all progress on this draft will be permanently lost.
+                Are you sure you want to delete <span className="font-semibold text-slate-900 dark:text-slate-100">PDS CY {year}</span>? This action cannot be undone and all progress on this draft will be permanently lost.
               </AlertDialogDescription>
             </div>
           </div>

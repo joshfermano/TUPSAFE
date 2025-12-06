@@ -24,8 +24,9 @@ export default function HeroSection() {
       className="relative min-h-screen overflow-hidden bg-background flex items-center"
       aria-label="TUPSAFE Hero Section"
       role="banner">
-      {/* Animated Background - Subtle and Professional */}
+      {/* Layered Animated Background - Enhanced */}
       <div className="absolute inset-0">
+        {/* Base Grid Pattern */}
         <GridPattern
           width={40}
           height={40}
@@ -36,7 +37,10 @@ export default function HeroSection() {
             '[mask-image:radial-gradient(1200px_circle_at_center,white,transparent)]'
           )}
         />
-        <Meteors number={8} />
+        {/* Meteors Effect */}
+        <Meteors number={12} />
+        {/* Gradient Overlay for Depth */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/5 to-white/20 dark:via-gray-950/5 dark:to-gray-950/20" />
       </div>
 
       {/* Content Container */}

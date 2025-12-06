@@ -280,6 +280,7 @@ const DashboardSidebar = memo(function DashboardSidebar({
           name: 'e-PDS',
           icon: FileText,
           subItems: [
+            { name: 'Overview', href: '/dashboard/pds' },
             { name: 'Create', href: '/dashboard/pds/create' },
             { name: 'Drafts', href: '/dashboard/pds/drafts' },
             { name: 'Submissions', href: '/dashboard/pds/submissions' },
@@ -316,6 +317,7 @@ const DashboardSidebar = memo(function DashboardSidebar({
         name: 'e-PDS',
         icon: FileText,
         subItems: [
+          { name: 'Overview', href: '/dashboard/pds' },
           { name: 'Create', href: '/dashboard/pds/create' },
           { name: 'Drafts', href: '/dashboard/pds/drafts' },
           { name: 'Submissions', href: '/dashboard/pds/submissions' },
@@ -327,6 +329,7 @@ const DashboardSidebar = memo(function DashboardSidebar({
         name: 'e-SALN',
         icon: Landmark,
         subItems: [
+          { name: 'Overview', href: '/dashboard/saln' },
           { name: 'Create', href: '/dashboard/saln/create' },
           { name: 'Submissions', href: '/dashboard/saln/submissions' },
           { name: 'Pending', href: '/dashboard/saln/pending' },
@@ -555,7 +558,7 @@ export default function DashboardLayout({
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
-        <div className="container mx-auto px-4 py-8 lg:px-8 lg:py-12">
+        <div className="container mx-auto px-4 py-6 lg:px-8 lg:py-8">
           {children}
         </div>
       </main>

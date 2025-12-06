@@ -156,13 +156,22 @@ export function useUpcomingDeadlines(formType?: 'pds' | 'saln') {
 
   /**
    * Get the single deadline for a specific form type
-   * Returns the most upcoming deadline for that form type
+   * Returns the most upcoming deadline, or most recent overdue if none upcoming
    */
   const getDeadlineForForm = (type: 'pds' | 'saln'): Deadline | null => {
-    const filtered = deadlines
+    // First try to get non-overdue deadlines (sorted by soonest)
+    const upcoming = deadlines
       .filter((d) => d.formType === type && !d.isOverdue)
       .sort((a, b) => a.daysRemaining - b.daysRemaining);
-    return filtered[0] || null;
+
+    if (upcoming.length > 0) return upcoming[0];
+
+    // If no upcoming deadlines, return the most recent overdue one
+    const overdue = deadlines
+      .filter((d) => d.formType === type && d.isOverdue)
+      .sort((a, b) => b.daysRemaining - a.daysRemaining); // Most recent overdue first
+
+    return overdue[0] || null;
   };
 
   /**

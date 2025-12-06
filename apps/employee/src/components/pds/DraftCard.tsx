@@ -77,7 +77,7 @@ export const DraftCard = memo(
                     </h3>
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-400">
-                    Version {submission.version} • Last saved {timeAgo}
+                    CY {submission.year} v{submission.version} • Last saved {timeAgo}
                   </p>
                 </div>
                 <Badge
@@ -182,6 +182,7 @@ export const DraftCard = memo(
           onOpenChange={setShowDeleteDialog}
           onConfirm={handleDelete}
           version={submission.version}
+          year={submission.year}
           isDeleting={isPending}
         />
       </>

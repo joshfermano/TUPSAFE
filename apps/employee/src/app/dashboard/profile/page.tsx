@@ -133,7 +133,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-8">
+    <div className="max-w-4xl mx-auto space-y-8 pb-8">
       {/* Page Header */}
       <BlurFade delay={0}>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

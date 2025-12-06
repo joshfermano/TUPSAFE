@@ -908,7 +908,7 @@ export default function PDSCreatePage() {
       />
 
       {/* Main content */}
-      <div className="relative z-10 container max-w-5xl mx-auto px-6 py-12">
+      <div className="max-w-5xl mx-auto space-y-8 pb-8">
         {/* Header - Clean, Professional */}
         <div className="pb-8 mb-8 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center justify-between mb-8">
