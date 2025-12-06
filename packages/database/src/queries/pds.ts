@@ -1177,11 +1177,11 @@ export async function getArchivedPDS(
 }
 
 /**
- * Delete a PDS submission (draft only)
+ * Delete a PDS submission
  *
  * Permanently deletes a PDS submission and all its related sections from the database.
- * This operation is ONLY allowed for draft submissions. Submitted or approved submissions
- * should be archived instead.
+ * Only draft and rejected submissions can be deleted. Submitted, reviewing, and approved
+ * submissions should be archived instead.
  *
  * TRANSACTION OPERATIONS:
  * 1. Validate ownership and status
@@ -1190,17 +1190,17 @@ export async function getArchivedPDS(
  *
  * SECURITY:
  * - Validates user ownership before deletion
- * - Only allows deletion of draft submissions
+ * - Only allows deletion of draft or rejected submissions
  * - Uses transaction to ensure atomicity
  *
  * @param id - PDS submission UUID
  * @param userId - User UUID for ownership validation
  * @returns Promise<void>
- * @throws Error if PDS is not draft status, ownership validation fails, or transaction fails
+ * @throws Error if PDS status doesn't allow deletion, ownership validation fails, or transaction fails
  *
  * @example
- * await deletePDSSubmission(draftId, userId);
- * console.log('Draft PDS deleted successfully');
+ * await deletePDSSubmission(submissionId, userId);
+ * console.log('PDS deleted successfully');
  */
 export async function deletePDSSubmission(
   id: string,
@@ -1214,6 +1214,8 @@ export async function deletePDSSubmission(
     if (!userId || typeof userId !== 'string') {
       throw new Error('Valid user ID is required');
     }
+
+    let deletedStatus = 'unknown';
 
     await db.transaction(async (tx) => {
       // Validate ownership and get submission status
@@ -1229,10 +1231,14 @@ export async function deletePDSSubmission(
         throw new Error('PDS submission not found or access denied');
       }
 
-      // Only allow deletion of draft submissions
-      if (submission.status !== 'draft') {
+      // Store status for logging
+      deletedStatus = submission.status;
+
+      // Only allow deletion of draft or rejected submissions
+      const allowedDeleteStatuses = ['draft', 'rejected'];
+      if (!allowedDeleteStatuses.includes(submission.status)) {
         throw new Error(
-          `Cannot delete PDS with status '${submission.status}'. Only draft submissions can be deleted. Please archive submitted or approved submissions instead.`
+          `Cannot delete PDS with status '${submission.status}'. Only draft or rejected submissions can be deleted. Please archive submitted or approved submissions instead.`
         );
       }
 
@@ -1264,7 +1270,7 @@ export async function deletePDSSubmission(
       await tx.delete(pdsSubmissions).where(eq(pdsSubmissions.id, id));
     });
 
-    console.log(`[deletePDSSubmission] Successfully deleted draft PDS ${id}`);
+    console.log(`[deletePDSSubmission] Successfully deleted PDS ${id} (status: ${deletedStatus})`);
   } catch (error) {
     console.error('[deletePDSSubmission] Transaction error:', error);
     throw new Error(

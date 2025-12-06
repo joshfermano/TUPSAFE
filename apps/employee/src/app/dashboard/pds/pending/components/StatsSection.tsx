@@ -10,7 +10,6 @@ interface StatsSectionProps {
   totalPending: number;
   submittedCount: number;
   reviewingCount: number;
-  rejectedCount: number;
 }
 
 interface StatsCardProps {
@@ -73,10 +72,9 @@ export const StatsSection = memo(
     totalPending,
     submittedCount,
     reviewingCount,
-    rejectedCount,
   }: StatsSectionProps) => {
     return (
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3.5">
         <StatsCard
           label="Total Pending"
           value={totalPending}
@@ -97,13 +95,6 @@ export const StatsSection = memo(
           icon={Clock}
           color="purple"
           delay={0.2}
-        />
-        <StatsCard
-          label="Rejected"
-          value={rejectedCount}
-          icon={XCircle}
-          color="rose"
-          delay={0.25}
         />
       </div>
     );

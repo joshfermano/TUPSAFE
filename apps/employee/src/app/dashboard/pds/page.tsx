@@ -68,6 +68,8 @@ import {
   Sparkles,
   Shield,
   ListChecks,
+  XCircle,
+  ArrowRight,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -393,6 +395,7 @@ export default function PDSPage() {
         totalSubmissions: 0,
         pendingReviews: 0,
         approvalRate: 0,
+        rejected: 0,
       };
     }
 
@@ -401,6 +404,7 @@ export default function PDSPage() {
     const pendingReviews = submissions.filter(
       (s: any) => s.status === 'submitted' || s.status === 'reviewing'
     ).length;
+    const rejected = submissions.filter((s: any) => s.status === 'rejected').length;
 
     const approvalRate =
       totalSubmissions > 0
@@ -411,6 +415,7 @@ export default function PDSPage() {
       totalSubmissions,
       pendingReviews,
       approvalRate,
+      rejected,
     };
   }, [hasExistingPDS, submissions]);
 
@@ -610,7 +615,7 @@ export default function PDSPage() {
           <DeadlineSection formType="pds" />
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatsCard
               title="Total Submissions"
               value={stats.totalSubmissions}
@@ -623,17 +628,40 @@ export default function PDSPage() {
               icon={Clock}
               delay={0.2}
             />
+            <BlurFade delay={0.25}>
+              <Card className="border border-rose-200 dark:border-rose-800 bg-gradient-to-br from-rose-50 to-red-50 dark:from-rose-950/20 dark:to-red-950/20 shadow-sm">
+                <CardContent className="p-5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-rose-100 dark:bg-rose-900/30">
+                      <XCircle className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+                    </div>
+                  </div>
+                  <p className="text-xs font-medium text-rose-600 dark:text-rose-400 uppercase tracking-wide mb-1">
+                    Needs Revision
+                  </p>
+                  <div className="flex items-baseline gap-0.5">
+                    <NumberTicker
+                      value={stats.rejected}
+                      className="text-2xl font-bold text-rose-900 dark:text-rose-100"
+                    />
+                  </div>
+                  <p className="text-xs text-rose-600/80 dark:text-rose-400/80 mt-2">
+                    Submissions requiring changes
+                  </p>
+                </CardContent>
+              </Card>
+            </BlurFade>
             <StatsCard
               title="Approval Rate"
               value={stats.approvalRate}
               suffix="%"
               icon={CheckCircle2}
-              delay={0.25}
+              delay={0.3}
             />
           </div>
 
           {/* Quick Actions */}
-          <BlurFade delay={0.3}>
+          <BlurFade delay={0.35}>
             <Card className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 shadow-sm">
               <CardContent className="p-5">
                 <div className="flex items-center gap-2 mb-4">
@@ -644,6 +672,27 @@ export default function PDSPage() {
                     Quick Actions
                   </h3>
                 </div>
+
+                {/* Rejected Submissions Alert */}
+                {stats.rejected > 0 && (
+                  <div className="mb-4">
+                    <Link
+                      href="/dashboard/pds/submissions?filter=rejected"
+                      className="flex items-center gap-3 p-4 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors group"
+                    >
+                      <XCircle className="h-5 w-5 text-rose-600 dark:text-rose-400 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-rose-900 dark:text-rose-100">
+                          Revise Rejected Submissions
+                        </p>
+                        <p className="text-xs text-rose-600/80 dark:text-rose-400/80">
+                          {stats.rejected} submission{stats.rejected !== 1 ? 's' : ''} need{stats.rejected === 1 ? 's' : ''} your attention
+                        </p>
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-rose-600 dark:text-rose-400 shrink-0 group-hover:translate-x-1 transition-transform" />
+                    </Link>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                   <Link href="/dashboard/pds/create" className="w-full">
@@ -732,7 +781,7 @@ export default function PDSPage() {
             <div className="lg:col-span-2 space-y-6">
               {/* Current Status Card */}
               {latest && (
-                <BlurFade delay={0.35}>
+                <BlurFade delay={0.4}>
                   <div className="relative">
                     <Card className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 shadow-sm overflow-hidden">
                       <BorderBeam
@@ -799,7 +848,7 @@ export default function PDSPage() {
               )}
 
               {/* Recent Submissions */}
-              <BlurFade delay={0.4}>
+              <BlurFade delay={0.45}>
                 <Card className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 shadow-sm">
                   <CardContent className="p-5">
                     <div className="flex items-center justify-between mb-4">
@@ -844,7 +893,7 @@ export default function PDSPage() {
 
             {/* Right Column - PDS Sections */}
             <div className="lg:col-span-1">
-              <BlurFade delay={0.45}>
+              <BlurFade delay={0.5}>
                 <Card className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 shadow-sm sticky top-6">
                   <CardContent className="p-5">
                     <div className="flex items-center gap-2 mb-4">

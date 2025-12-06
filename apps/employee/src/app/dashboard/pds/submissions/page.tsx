@@ -22,6 +22,7 @@ import {
   Printer,
   Eye,
   CheckCircle2,
+  XCircle,
   SortAsc,
   Calendar,
   User,
@@ -29,19 +30,25 @@ import {
   Loader2,
   AlertCircle,
   FolderCheck,
+  FileEdit,
+  Trash2,
+  Filter,
 } from 'lucide-react';
+import { useDebounce } from '../../../../hooks/useDebounce';
 
-type SortOption = 'newest' | 'oldest';
+type SortOption = 'date-desc' | 'date-asc' | 'year-desc' | 'year-asc';
+type StatusFilter = 'all' | 'approved' | 'rejected';
 
-interface ApprovedSubmission {
+interface Submission {
   id: string;
-  year: number; // Calendar year for this PDS
-  version: number; // Version within the year
+  year: number;
+  version: number;
   status: string;
   submittedAt: Date | null;
   approvedAt: Date | null;
   approvedBy: string | null;
   rejectionReason: string | null;
+  reviewNotes: string | null;
 }
 
 /**
@@ -50,7 +57,7 @@ interface ApprovedSubmission {
 const LoadingState = memo(() => (
   <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
     <Loader2 className="h-12 w-12 animate-spin text-[oklch(0.55_0.22_15)]" />
-    <p className="text-muted-foreground">Loading approved submissions...</p>
+    <p className="text-slate-600 dark:text-slate-400">Loading submissions...</p>
   </div>
 ));
 LoadingState.displayName = 'LoadingState';
@@ -60,12 +67,12 @@ LoadingState.displayName = 'LoadingState';
  */
 const ErrorState = memo<{ message: string }>(({ message }) => (
   <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-    <div className="rounded-full bg-destructive/10 p-4">
-      <AlertCircle className="h-12 w-12 text-destructive" />
+    <div className="rounded-full bg-rose-100 dark:bg-rose-950/30 p-4">
+      <AlertCircle className="h-12 w-12 text-rose-600 dark:text-rose-400" />
     </div>
     <div className="text-center space-y-2">
       <h3 className="text-xl font-semibold">Error Loading Submissions</h3>
-      <p className="text-muted-foreground max-w-md">{message}</p>
+      <p className="text-slate-600 dark:text-slate-400 max-w-md">{message}</p>
     </div>
   </div>
 ));
@@ -74,20 +81,30 @@ ErrorState.displayName = 'ErrorState';
 /**
  * Empty State Component
  */
-const EmptyState = memo(() => (
-  <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-    <div className="rounded-full bg-emerald-100 dark:bg-emerald-950/30 p-4">
-      <FolderCheck className="h-12 w-12 text-emerald-600 dark:text-emerald-400" />
+const EmptyState = memo<{ hasFilters: boolean; onClearFilters: () => void }>(
+  ({ hasFilters, onClearFilters }) => (
+    <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+      <div className="rounded-full bg-slate-100 dark:bg-slate-800 p-4">
+        <FolderCheck className="h-12 w-12 text-slate-600 dark:text-slate-400" />
+      </div>
+      <div className="text-center space-y-2">
+        <h3 className="text-xl font-semibold">
+          {hasFilters ? 'No Results Found' : 'No Submissions'}
+        </h3>
+        <p className="text-slate-600 dark:text-slate-400 max-w-md">
+          {hasFilters
+            ? 'No submissions match your current filters. Try adjusting your search.'
+            : "You don't have any approved or rejected PDS submissions yet."}
+        </p>
+        {hasFilters && (
+          <Button variant="outline" size="sm" onClick={onClearFilters}>
+            Clear Filters
+          </Button>
+        )}
+      </div>
     </div>
-    <div className="text-center space-y-2">
-      <h3 className="text-xl font-semibold">No Approved Submissions</h3>
-      <p className="text-muted-foreground max-w-md">
-        You don&apos;t have any approved PDS submissions yet. Submit your PDS for review to see
-        approved submissions here.
-      </p>
-    </div>
-  </div>
-));
+  )
+);
 EmptyState.displayName = 'EmptyState';
 
 /**
@@ -100,18 +117,16 @@ const StatsCard = memo<{
   delay: number;
 }>(({ title, value, icon, delay }) => (
   <BlurFade delay={delay} inView>
-    <Card className="border-muted">
+    <Card className="border-slate-200 dark:border-slate-800">
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">{title}</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">{title}</p>
             <p className="text-2xl font-bold">
               {typeof value === 'number' ? <NumberTicker value={value} /> : value}
             </p>
           </div>
-          <div className="rounded-full bg-emerald-100 dark:bg-emerald-950/30 p-3">
-            {icon}
-          </div>
+          <div className="rounded-full bg-slate-100 dark:bg-slate-800 p-3">{icon}</div>
         </div>
       </CardContent>
     </Card>
@@ -123,14 +138,14 @@ StatsCard.displayName = 'StatsCard';
  * Approved Card Component
  */
 const ApprovedCard = memo<{
-  submission: ApprovedSubmission;
+  submission: Submission;
   delay: number;
   onView: (id: string) => void;
   onDownload: (id: string) => void;
   onPrint: (id: string) => void;
 }>(({ submission, delay, onView, onDownload, onPrint }) => (
   <BlurFade delay={delay} inView>
-    <Card className="border-muted hover:border-emerald-300 dark:hover:border-emerald-700 transition-all duration-300 group">
+    <Card className="border-slate-200 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all duration-300">
       <CardContent className="p-6">
         <div className="space-y-4">
           {/* Header */}
@@ -141,13 +156,14 @@ const ApprovedCard = memo<{
               </div>
               <div>
                 <h3 className="font-semibold text-lg">Annual PDS - CY {submission.year}</h3>
-                <p className="text-sm text-muted-foreground">v{submission.version}</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  v{submission.version}
+                </p>
               </div>
             </div>
             <Badge
               variant="outline"
-              className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
-            >
+              className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">
               <CheckCircle2 className="h-3 w-3 mr-1" />
               Approved
             </Badge>
@@ -156,7 +172,7 @@ const ApprovedCard = memo<{
           {/* Details */}
           <div className="space-y-2">
             {submission.submittedAt && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                 <Calendar className="h-4 w-4" />
                 <span>Submitted: {format(submission.submittedAt, 'MMM dd, yyyy')}</span>
               </div>
@@ -168,9 +184,19 @@ const ApprovedCard = memo<{
               </div>
             )}
             {submission.approvedBy && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                 <User className="h-4 w-4" />
                 <span>Approved by: {submission.approvedBy}</span>
+              </div>
+            )}
+            {submission.reviewNotes && (
+              <div className="mt-3 p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400 mb-1">
+                  Review Notes
+                </p>
+                <p className="text-sm text-slate-700 dark:text-slate-300">
+                  {submission.reviewNotes}
+                </p>
               </div>
             )}
           </div>
@@ -181,8 +207,7 @@ const ApprovedCard = memo<{
               variant="outline"
               size="sm"
               onClick={() => onView(submission.id)}
-              className="flex-1 min-w-[100px]"
-            >
+              className="flex-1 min-w-[100px]">
               <Eye className="h-4 w-4 mr-2" />
               View
             </Button>
@@ -190,8 +215,7 @@ const ApprovedCard = memo<{
               variant="outline"
               size="sm"
               onClick={() => onDownload(submission.id)}
-              className="flex-1 min-w-[100px]"
-            >
+              className="flex-1 min-w-[100px]">
               <Download className="h-4 w-4 mr-2" />
               Download
             </Button>
@@ -199,8 +223,7 @@ const ApprovedCard = memo<{
               variant="outline"
               size="sm"
               onClick={() => onPrint(submission.id)}
-              className="flex-1 min-w-[100px]"
-            >
+              className="flex-1 min-w-[100px]">
               <Printer className="h-4 w-4 mr-2" />
               Print
             </Button>
@@ -213,116 +236,281 @@ const ApprovedCard = memo<{
 ApprovedCard.displayName = 'ApprovedCard';
 
 /**
+ * Rejected Card Component
+ */
+const RejectedCard = memo<{
+  submission: Submission;
+  delay: number;
+  onView: (id: string) => void;
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
+}>(({ submission, delay, onView, onEdit, onDelete }) => (
+  <BlurFade delay={delay} inView>
+    <Card className="border-slate-200 dark:border-slate-800 hover:border-rose-300 dark:hover:border-rose-700 transition-all duration-300">
+      <CardContent className="p-6">
+        <div className="space-y-4">
+          {/* Header */}
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-rose-100 dark:bg-rose-950/30 p-2.5">
+                <FileText className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg">Annual PDS - CY {submission.year}</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  v{submission.version}
+                </p>
+              </div>
+            </div>
+            <Badge
+              variant="outline"
+              className="bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 border-rose-200 dark:border-rose-800">
+              <XCircle className="h-3 w-3 mr-1" />
+              Rejected
+            </Badge>
+          </div>
+
+          {/* Details */}
+          <div className="space-y-2">
+            {submission.submittedAt && (
+              <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                <Calendar className="h-4 w-4" />
+                <span>Submitted: {format(submission.submittedAt, 'MMM dd, yyyy')}</span>
+              </div>
+            )}
+            {submission.approvedBy && (
+              <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                <User className="h-4 w-4" />
+                <span>Reviewed by: {submission.approvedBy}</span>
+              </div>
+            )}
+            {submission.rejectionReason && (
+              <div className="mt-3 p-3 bg-rose-50 dark:bg-rose-950/20 rounded-lg border border-rose-200 dark:border-rose-800">
+                <p className="text-xs font-medium text-rose-700 dark:text-rose-400 mb-1">
+                  Rejection Reason
+                </p>
+                <p className="text-sm text-slate-700 dark:text-slate-300">
+                  {submission.rejectionReason}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-wrap gap-2 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onView(submission.id)}
+              className="flex-1 min-w-[100px]">
+              <Eye className="h-4 w-4 mr-2" />
+              View
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(submission.id)}
+              className="flex-1 min-w-[100px]">
+              <FileEdit className="h-4 w-4 mr-2" />
+              Edit & Resubmit
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onDelete(submission.id)}
+              className="flex-1 min-w-[100px] text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20">
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  </BlurFade>
+));
+RejectedCard.displayName = 'RejectedCard';
+
+/**
+ * Filter Bar Component
+ */
+const FilterBar = memo<{
+  statusFilter: StatusFilter;
+  sortBy: SortOption;
+  searchQuery: string;
+  onStatusChange: (status: StatusFilter) => void;
+  onSortChange: (sort: SortOption) => void;
+  onSearchChange: (query: string) => void;
+}>(({ statusFilter, sortBy, searchQuery, onStatusChange, onSortChange, onSearchChange }) => (
+  <BlurFade delay={0.35} inView>
+    <div className="flex flex-col lg:flex-row gap-3">
+      {/* Search Input */}
+      <div className="relative flex-1 max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <Input
+          type="text"
+          placeholder="Search by year or version..."
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="pl-9 h-9"
+        />
+      </div>
+
+      {/* Status Filter */}
+      <div className="flex items-center gap-2">
+        <Filter className="h-4 w-4 text-slate-600 dark:text-slate-400 shrink-0" />
+        <Select value={statusFilter} onValueChange={(v) => onStatusChange(v as StatusFilter)}>
+          <SelectTrigger className="w-full sm:w-[160px] h-9">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="approved">Approved</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Sort Options */}
+      <div className="flex items-center gap-2">
+        <SortAsc className="h-4 w-4 text-slate-600 dark:text-slate-400 shrink-0" />
+        <Select value={sortBy} onValueChange={(v) => onSortChange(v as SortOption)}>
+          <SelectTrigger className="w-full sm:w-[160px] h-9">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="date-desc">Newest First</SelectItem>
+            <SelectItem value="date-asc">Oldest First</SelectItem>
+            <SelectItem value="year-desc">Year (Newest)</SelectItem>
+            <SelectItem value="year-asc">Year (Oldest)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  </BlurFade>
+));
+FilterBar.displayName = 'FilterBar';
+
+/**
  * Main Page Component
  */
-export default function ApprovedSubmissionsPage() {
+export default function SubmissionsPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { submissions, loading, error } = usePdsQuery(user?.id || '');
 
-  const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [sortBy, setSortBy] = useState<SortOption>('date-desc');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Filter only approved submissions
-  const approvedSubmissions = useMemo(() => {
-    if (!submissions) return [];
-    return submissions
-      .filter((submission) => submission.status === 'approved')
-      .map(
-        (submission): ApprovedSubmission => ({
-          id: submission.id,
-          year: submission.year,
-          version: submission.version,
-          status: submission.status,
-          submittedAt: submission.submittedAt,
-          approvedAt: submission.approvedAt,
-          approvedBy: submission.approvedBy,
-          rejectionReason: submission.rejectionReason ?? null,
-        })
-      );
-  }, [submissions]);
+  // Debounce search query for performance
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  // Filter and sort submissions
-  const filteredAndSortedSubmissions = useMemo(() => {
-    let filtered = [...approvedSubmissions];
+  // Filter submissions (approved + rejected only)
+  const filteredSubmissions = useMemo(() => {
+    if (!submissions) return [];
+
+    let filtered = submissions.filter(
+      (submission) =>
+        submission.status === 'approved' || submission.status === 'rejected'
+    );
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter((s) => s.status === statusFilter);
+    }
 
     // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter((submission) =>
-        `version ${submission.version}`.toLowerCase().includes(query)
+    if (debouncedSearchQuery) {
+      const query = debouncedSearchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (s) =>
+          s.year.toString().includes(query) ||
+          s.version.toString().includes(query)
       );
     }
 
     // Apply sorting
-    filtered.sort((a, b) => {
-      const dateA = a.approvedAt || a.submittedAt || new Date(0);
-      const dateB = b.approvedAt || b.submittedAt || new Date(0);
-
-      if (sortBy === 'newest') {
-        return dateB.getTime() - dateA.getTime();
-      } else {
-        return dateA.getTime() - dateB.getTime();
+    return filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'date-desc': {
+          const dateA = a.approvedAt || a.submittedAt || new Date(0);
+          const dateB = b.approvedAt || b.submittedAt || new Date(0);
+          return new Date(dateB).getTime() - new Date(dateA).getTime();
+        }
+        case 'date-asc': {
+          const dateA = a.approvedAt || a.submittedAt || new Date(0);
+          const dateB = b.approvedAt || b.submittedAt || new Date(0);
+          return new Date(dateA).getTime() - new Date(dateB).getTime();
+        }
+        case 'year-desc':
+          return b.year - a.year;
+        case 'year-asc':
+          return a.year - b.year;
+        default:
+          return 0;
       }
     });
-
-    return filtered;
-  }, [approvedSubmissions, searchQuery, sortBy]);
+  }, [submissions, statusFilter, debouncedSearchQuery, sortBy]);
 
   // Calculate statistics
   const stats = useMemo(() => {
-    if (approvedSubmissions.length === 0) {
-      return {
-        total: 0,
-        latestYear: 'N/A',
-        oldestYear: 'N/A',
-      };
-    }
-
-    const years = approvedSubmissions
-      .map((submission) => {
-        const date = submission.approvedAt || submission.submittedAt;
-        return date ? new Date(date).getFullYear() : null;
-      })
-      .filter((year): year is number => year !== null);
+    const approved = filteredSubmissions.filter((s) => s.status === 'approved').length;
+    const rejected = filteredSubmissions.filter((s) => s.status === 'rejected').length;
 
     return {
-      total: approvedSubmissions.length,
-      latestYear: years.length > 0 ? Math.max(...years).toString() : 'N/A',
-      oldestYear: years.length > 0 ? Math.min(...years).toString() : 'N/A',
+      total: filteredSubmissions.length,
+      approved,
+      rejected,
     };
-  }, [approvedSubmissions]);
+  }, [filteredSubmissions]);
 
   // Event handlers
   const handleView = useCallback(
     (id: string) => {
-      router.push(`/dashboard/pds/${id}`);
+      router.push(`/dashboard/pds/view/${id}`);
     },
     [router]
   );
 
   const handleDownload = useCallback((id: string) => {
-    // TODO: Implement PDF download
-    console.log('Download PDF:', id);
+    // Navigate to the detailed view where PDF download is implemented
+    router.push(`/dashboard/pds/view/${id}`);
+  }, [router]);
+
+  const handlePrint = useCallback(
+    (id: string) => {
+      router.push(`/dashboard/pds/view/${id}`);
+    },
+    [router]
+  );
+
+  const handleEdit = useCallback(
+    (id: string) => {
+      router.push(`/dashboard/pds/edit/${id}`);
+    },
+    [router]
+  );
+
+  const handleDelete = useCallback((id: string) => {
+    // TODO: Implement delete functionality with confirmation
+    console.log('Delete submission:', id);
   }, []);
 
-  const handlePrint = useCallback((id: string) => {
-    // TODO: Implement print functionality
-    console.log('Print:', id);
+  const handleClearFilters = useCallback(() => {
+    setStatusFilter('all');
+    setSearchQuery('');
+    setSortBy('date-desc');
   }, []);
 
-  const handleSortChange = useCallback((value: string) => {
-    setSortBy(value as SortOption);
-  }, []);
-
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  }, []);
+  const hasActiveFilters = useMemo(
+    () => statusFilter !== 'all' || debouncedSearchQuery !== '',
+    [statusFilter, debouncedSearchQuery]
+  );
 
   // Loading state
   if (loading) {
     return (
-      <div className="container mx-auto py-8 px-4">
+      <div className="min-h-screen pb-10">
         <LoadingState />
       </div>
     );
@@ -331,115 +519,128 @@ export default function ApprovedSubmissionsPage() {
   // Error state
   if (error) {
     return (
-      <div className="container mx-auto py-8 px-4">
-        <ErrorState message={error || 'Failed to load approved submissions'} />
+      <div className="min-h-screen pb-10">
+        <ErrorState message={error || 'Failed to load submissions'} />
       </div>
     );
   }
 
+  const isEmpty = filteredSubmissions.length === 0;
+
   return (
-    <div className="container mx-auto py-8 px-4 space-y-8">
-      {/* Header */}
-      <BlurFade delay={0.1} inView>
+    <div className="min-h-screen pb-10">
+      <div className="space-y-6">
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Approved Submissions</h1>
-            <p className="text-muted-foreground mt-1">
-              View all your approved Personal Data Sheet submissions
-            </p>
-          </div>
-          <Badge
-            variant="outline"
-            className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 w-fit"
-          >
-            <CheckCircle2 className="h-4 w-4 mr-1" />
-            Approved
-          </Badge>
-        </div>
-      </BlurFade>
-
-      {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatsCard
-          title="Total Approved"
-          value={stats.total}
-          icon={<CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />}
-          delay={0.2}
-        />
-        <StatsCard
-          title="Latest Approved"
-          value={stats.latestYear}
-          icon={<Calendar className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />}
-          delay={0.25}
-        />
-        <StatsCard
-          title="Oldest Approved"
-          value={stats.oldestYear}
-          icon={<FileText className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />}
-          delay={0.3}
-        />
-      </div>
-
-      {/* Filters */}
-      {approvedSubmissions.length > 0 && (
-        <BlurFade delay={0.35} inView>
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Search */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search by version..."
-                value={searchQuery}
-                onChange={handleSearchChange}
-                className="pl-9"
-              />
+          <BlurFade delay={0}>
+            <div>
+              <div className="flex items-center gap-2.5 mb-1.5">
+                <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">
+                  PDS Submissions
+                </h1>
+                <Badge
+                  variant="outline"
+                  className="border-slate-500 text-slate-700 dark:border-slate-600 dark:text-slate-400 px-2 py-0.5 text-xs">
+                  <FolderCheck className="h-3 w-3 mr-1" />
+                  History
+                </Badge>
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                View all your approved and rejected PDS submissions
+              </p>
             </div>
-
-            {/* Sort */}
-            <Select value={sortBy} onValueChange={handleSortChange}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SortAsc className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Sort by..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="newest">Newest First</SelectItem>
-                <SelectItem value="oldest">Oldest First</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </BlurFade>
-      )}
-
-      {/* Submissions Grid */}
-      {approvedSubmissions.length === 0 ? (
-        <EmptyState />
-      ) : filteredAndSortedSubmissions.length === 0 ? (
-        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-          <div className="rounded-full bg-muted p-4">
-            <Search className="h-12 w-12 text-muted-foreground" />
-          </div>
-          <div className="text-center space-y-2">
-            <h3 className="text-xl font-semibold">No Results Found</h3>
-            <p className="text-muted-foreground max-w-md">
-              No approved submissions match your search criteria. Try adjusting your filters.
-            </p>
-          </div>
+          </BlurFade>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredAndSortedSubmissions.map((submission, index) => (
-            <ApprovedCard
-              key={submission.id}
-              submission={submission}
-              delay={0.4 + index * 0.05}
-              onView={handleView}
-              onDownload={handleDownload}
-              onPrint={handlePrint}
+
+        {/* Statistics */}
+        {!isEmpty && (
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3.5">
+            <StatsCard
+              title="Total Submissions"
+              value={stats.total}
+              icon={
+                <FileText className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+              }
+              delay={0.1}
             />
-          ))}
-        </div>
-      )}
+            <StatsCard
+              title="Approved"
+              value={stats.approved}
+              icon={
+                <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              }
+              delay={0.15}
+            />
+            <StatsCard
+              title="Rejected"
+              value={stats.rejected}
+              icon={
+                <XCircle className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+              }
+              delay={0.2}
+            />
+          </div>
+        )}
+
+        {/* Filters and Sort */}
+        {!isEmpty && (
+          <FilterBar
+            statusFilter={statusFilter}
+            sortBy={sortBy}
+            searchQuery={searchQuery}
+            onStatusChange={setStatusFilter}
+            onSortChange={setSortBy}
+            onSearchChange={setSearchQuery}
+          />
+        )}
+
+        {/* Submissions Grid or Empty State */}
+        {isEmpty ? (
+          <BlurFade delay={0.4}>
+            <EmptyState hasFilters={hasActiveFilters} onClearFilters={handleClearFilters} />
+          </BlurFade>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filteredSubmissions.map((submission, index) => {
+              const mappedSubmission: Submission = {
+                id: submission.id,
+                year: submission.year,
+                version: submission.version,
+                status: submission.status,
+                submittedAt: submission.submittedAt,
+                approvedAt: submission.approvedAt,
+                approvedBy: submission.approvedBy,
+                rejectionReason: submission.rejectionReason ?? null,
+                reviewNotes: submission.reviewNotes ?? null,
+              };
+
+              if (submission.status === 'approved') {
+                return (
+                  <ApprovedCard
+                    key={submission.id}
+                    submission={mappedSubmission}
+                    delay={0.4 + index * 0.05}
+                    onView={handleView}
+                    onDownload={handleDownload}
+                    onPrint={handlePrint}
+                  />
+                );
+              } else {
+                return (
+                  <RejectedCard
+                    key={submission.id}
+                    submission={mappedSubmission}
+                    delay={0.4 + index * 0.05}
+                    onView={handleView}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
+                );
+              }
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
