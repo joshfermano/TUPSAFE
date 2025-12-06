@@ -869,16 +869,18 @@ export async function submitPDSForApproval(
  *
  * @param id - PDS submission UUID
  * @param approverId - UUID of the user approving the submission
+ * @param reviewNotes - Optional review feedback or approval notes
  * @returns Promise<void>
  * @throws Error if PDS is not in submitted/reviewing status or update fails
  *
  * @example
- * await approvePDS(submissionId, hrUserId);
+ * await approvePDS(submissionId, hrUserId, 'All documents verified and complete.');
  * console.log('PDS approved successfully');
  */
 export async function approvePDS(
   id: string,
-  approverId: string
+  approverId: string,
+  reviewNotes?: string
 ): Promise<void> {
   try {
     if (!id || typeof id !== 'string') {
@@ -916,6 +918,7 @@ export async function approvePDS(
         approvedAt: new Date(),
         updatedAt: new Date(),
         rejectionReason: null, // Clear any previous rejection reason
+        reviewNotes: reviewNotes ? reviewNotes.trim() : null, // Optional review feedback
       })
       .where(eq(pdsSubmissions.id, id));
   } catch (error) {
@@ -937,17 +940,19 @@ export async function approvePDS(
  *
  * @param id - PDS submission UUID
  * @param approverId - UUID of the user rejecting the submission
- * @param reason - Detailed reason for rejection
+ * @param reason - Detailed reason for rejection (required)
+ * @param reviewNotes - Optional additional review feedback or context
  * @returns Promise<void>
  * @throws Error if reason is empty, PDS is not in submitted/reviewing status, or update fails
  *
  * @example
- * await rejectPDS(submissionId, hrUserId, 'Missing required civil service eligibility documents');
+ * await rejectPDS(submissionId, hrUserId, 'Missing required civil service eligibility documents', 'Please upload CSC eligibility certificate');
  */
 export async function rejectPDS(
   id: string,
   approverId: string,
-  reason: string
+  reason: string,
+  reviewNotes?: string
 ): Promise<void> {
   try {
     if (!id || typeof id !== 'string') {
@@ -988,6 +993,7 @@ export async function rejectPDS(
         approvedBy: approverId,
         approvedAt: new Date(),
         rejectionReason: reason.trim(),
+        reviewNotes: reviewNotes ? reviewNotes.trim() : null, // Optional review feedback
         updatedAt: new Date(),
       })
       .where(eq(pdsSubmissions.id, id));

@@ -36,16 +36,6 @@ export const pdsSubmissionsQuerySchema = z.object({
 export type PdsSubmissionsQuery = z.infer<typeof pdsSubmissionsQuerySchema>;
 
 /**
- * Request changes validation schema
- * Used when HR/admin requests changes to a submitted PDS
- */
-export const requestChangesSchema = z.object({
-  notes: z.string().min(10, 'Notes must be at least 10 characters').max(1000),
-});
-
-export type RequestChangesData = z.infer<typeof requestChangesSchema>;
-
-/**
  * PDS submission list item (for table display)
  */
 export interface PdsSubmissionListItem {
@@ -58,6 +48,7 @@ export interface PdsSubmissionListItem {
   createdAt: Date;
   updatedAt: Date;
   rejectionReason: string | null;
+  reviewNotes: string | null;
   pdfFilePath: string | null;
 
   // Employee details

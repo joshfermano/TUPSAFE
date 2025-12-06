@@ -22,16 +22,16 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 // Validation schema
 const reviewSchema = z.object({
-  action: z.enum(['approve', 'reject', 'request_changes'], {
+  action: z.enum(['approve', 'reject'], {
     required_error: 'Please select an action',
   }),
-  notes: z.string().optional(),
+  notes: z.string().min(1).max(1000).optional(),
 });
 
 type ReviewFormData = z.infer<typeof reviewSchema>;
 
 // Action type definition
-type ReviewAction = 'approve' | 'reject' | 'request_changes';
+type ReviewAction = 'approve' | 'reject';
 
 export interface ReviewDialogProps {
   /** Controls dialog visibility */
@@ -47,13 +47,11 @@ export interface ReviewDialogProps {
   /** Name of the employee who submitted */
   employeeName: string;
   /** Default action to pre-select when dialog opens */
-  defaultAction?: 'approve' | 'reject' | 'request_changes';
+  defaultAction?: 'approve' | 'reject';
   /** Callback for approval action */
   onApprove: (notes?: string) => Promise<void>;
   /** Callback for rejection action */
   onReject: (notes: string) => Promise<void>;
-  /** Callback for request changes action */
-  onRequestChanges: (notes: string) => Promise<void>;
   /** Loading state during submission */
   isSubmitting?: boolean;
 }
@@ -61,13 +59,13 @@ export interface ReviewDialogProps {
 /**
  * ReviewDialog Component
  *
- * Reusable dialog for admin to approve, reject, or request changes on submissions (PDS/SALN).
+ * Reusable dialog for admin to approve or reject submissions (PDS/SALN).
  *
  * Features:
- * - Three action options: Approve, Reject, Request Changes
- * - Required review notes for reject/request changes
+ * - Two action options: Approve, Reject
+ * - Required review notes for reject (minimum 20 characters)
  * - Optional notes for approve
- * - Form validation with Zod
+ * - Form validation with Zod and real-time character count
  * - Loading state during mutation
  * - Toast notification on success
  * - Professional shadcn/ui styling with TUP Crimson accents
@@ -85,7 +83,6 @@ export interface ReviewDialogProps {
  *   employeeName="John Doe"
  *   onApprove={async (notes) => { await approveSubmission(notes); }}
  *   onReject={async (notes) => { await rejectSubmission(notes); }}
- *   onRequestChanges={async (notes) => { await requestChanges(notes); }}
  *   isSubmitting={isLoading}
  * />
  * ```
@@ -99,7 +96,6 @@ export function ReviewDialog({
   defaultAction = 'approve',
   onApprove,
   onReject,
-  onRequestChanges,
   isSubmitting = false,
 }: ReviewDialogProps) {
   const {
@@ -121,10 +117,10 @@ export function ReviewDialog({
   const notes = watch('notes');
 
   // Determine if notes are required based on action
-  const notesRequired = selectedAction === 'reject' || selectedAction === 'request_changes';
+  const notesRequired = selectedAction === 'reject';
 
-  // Validate notes requirement
-  const isNotesValid = !notesRequired || (notes && notes.trim().length > 0);
+  // Validate notes requirement (20 characters minimum for reject)
+  const isNotesValid = !notesRequired || (notes && notes.trim().length >= 20);
 
   // Reset form when dialog opens/closes or defaultAction changes
   React.useEffect(() => {
@@ -136,9 +132,13 @@ export function ReviewDialog({
 
   const onSubmit = async (data: ReviewFormData) => {
     // Validate notes if required
-    if (notesRequired && (!data.notes || data.notes.trim().length === 0)) {
-      toast.error('Review notes are required for this action');
-      return;
+    if (selectedAction === 'reject') {
+      if (!data.notes || data.notes.trim().length < 20) {
+        toast.error('Rejection reason must be at least 20 characters', {
+          description: `Current length: ${data.notes?.trim().length || 0} characters`
+        });
+        return;
+      }
     }
 
     try {
@@ -155,15 +155,8 @@ export function ReviewDialog({
             description: `${employeeName}'s submission has been rejected`,
           });
           break;
-        case 'request_changes':
-          await onRequestChanges(data.notes!);
-          toast.success('Changes Requested', {
-            description: `${employeeName} will be notified to revise their submission`,
-          });
-          break;
       }
 
-      // Close dialog on success
       onOpenChange(false);
     } catch (error) {
       toast.error('Review Failed', {
@@ -189,14 +182,6 @@ export function ReviewDialog({
       color: 'text-red-600 dark:text-red-400',
       bgColor: 'bg-red-50 dark:bg-red-950/20',
       borderColor: 'border-red-200 dark:border-red-800',
-    },
-    request_changes: {
-      icon: AlertCircle,
-      label: 'Request Changes',
-      description: 'Ask employee to revise and resubmit',
-      color: 'text-amber-600 dark:text-amber-400',
-      bgColor: 'bg-amber-50 dark:bg-amber-950/20',
-      borderColor: 'border-amber-200 dark:border-amber-800',
     },
   };
 
@@ -271,20 +256,20 @@ export function ReviewDialog({
               placeholder={
                 selectedAction === 'approve'
                   ? 'Optional: Add any comments or feedback...'
-                  : 'Provide detailed feedback for the employee...'
+                  : 'Provide detailed feedback for the employee (minimum 20 characters)...'
               }
               className="min-h-[120px] resize-none"
               disabled={isSubmitting}
             />
             {notesRequired && !isNotesValid && (
               <p className="text-sm text-destructive">
-                Please provide notes explaining your decision
+                Rejection reason must be at least 20 characters (current: {notes?.trim().length || 0})
               </p>
             )}
             <p className="text-xs text-muted-foreground">
               {selectedAction === 'approve'
                 ? 'Optional feedback that will be shared with the employee'
-                : 'This feedback will help the employee understand what needs to be corrected'}
+                : `Detailed explanation required (minimum 20 characters, current: ${notes?.trim().length || 0})`}
             </p>
           </div>
 
@@ -304,9 +289,7 @@ export function ReviewDialog({
               className={
                 selectedAction === 'approve'
                   ? 'bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-800'
-                  : selectedAction === 'reject'
-                  ? 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800'
-                  : 'bg-amber-600 hover:bg-amber-700 dark:bg-amber-700 dark:hover:bg-amber-800'
+                  : 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800'
               }
             >
               {isSubmitting ? (
@@ -318,7 +301,6 @@ export function ReviewDialog({
                 <>
                   {selectedAction === 'approve' && 'Approve Submission'}
                   {selectedAction === 'reject' && 'Reject Submission'}
-                  {selectedAction === 'request_changes' && 'Request Changes'}
                 </>
               )}
             </Button>

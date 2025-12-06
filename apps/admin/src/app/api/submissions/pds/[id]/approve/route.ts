@@ -111,6 +111,7 @@ export async function POST(
         status: 'approved',
         approvedBy: sessionUser.id,
         approvedAt: now,
+        reviewNotes: validatedData.notes || null, // Store approval notes
         updatedAt: now,
       })
       .where(
@@ -154,12 +155,16 @@ export async function POST(
     });
 
     // Send approval notification to employee
+    const notificationMessage = validatedData.notes
+      ? `Your PDS submission (Version ${submission.version}) has been approved.\n\nReviewer Feedback: ${validatedData.notes}`
+      : `Your PDS submission (Version ${submission.version}) has been approved.`;
+
     await db.insert(notifications).values({
       id: uuidv7(),
       userId: submission.userId,
       type: 'submission_status',
       title: 'PDS Submission Approved',
-      message: `Your PDS submission (Version ${submission.version}) has been approved.${validatedData.notes ? ` Reviewer notes: ${validatedData.notes}` : ''}`,
+      message: notificationMessage,
       isRead: false,
       createdAt: now,
     });

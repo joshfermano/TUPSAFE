@@ -172,15 +172,16 @@ export async function GET(request: NextRequest) {
       // Ensure deadlineDate is formatted as YYYY-MM-DD string
       // Drizzle returns Date objects, need to convert to string for JSON serialization
       let deadlineDateString: string;
-      if (deadline.deadlineDate instanceof Date) {
+      const deadlineValue = deadline.deadlineDate as Date | string;
+      if (deadlineValue instanceof Date) {
         // Format as YYYY-MM-DD in local timezone
-        const year = deadline.deadlineDate.getFullYear();
-        const month = String(deadline.deadlineDate.getMonth() + 1).padStart(2, '0');
-        const day = String(deadline.deadlineDate.getDate()).padStart(2, '0');
+        const year = deadlineValue.getFullYear();
+        const month = String(deadlineValue.getMonth() + 1).padStart(2, '0');
+        const day = String(deadlineValue.getDate()).padStart(2, '0');
         deadlineDateString = `${year}-${month}-${day}`;
-      } else if (typeof deadline.deadlineDate === 'string') {
+      } else if (typeof deadlineValue === 'string') {
         // Already a string, extract just the date part (YYYY-MM-DD)
-        deadlineDateString = deadline.deadlineDate.split('T')[0];
+        deadlineDateString = deadlineValue.split('T')[0];
       } else {
         // Fallback
         deadlineDateString = String(deadline.deadlineDate);

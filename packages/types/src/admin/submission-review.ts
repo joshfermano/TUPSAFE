@@ -262,7 +262,6 @@ export type ApproveSubmissionData = z.infer<typeof approveSubmissionSchema>;
  */
 export const rejectSubmissionSchema = z.object({
   reason: z.string().min(20, 'Rejection reason must be at least 20 characters').max(1000),
-  notes: z.string().max(1000).optional(),
 });
 
 export type RejectSubmissionData = z.infer<typeof rejectSubmissionSchema>;

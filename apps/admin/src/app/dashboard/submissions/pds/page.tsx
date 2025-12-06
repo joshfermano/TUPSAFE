@@ -86,10 +86,8 @@ interface PdsSubmissionRowProps {
   index: number;
   onApprove: (submissionId: string, notes?: string) => Promise<void>;
   onReject: (submissionId: string, notes: string) => Promise<void>;
-  onRequestChanges: (submissionId: string, notes: string) => Promise<void>;
   isApproving: boolean;
   isRejecting: boolean;
-  isRequestingChanges: boolean;
 }
 
 // PDS Submission Row Component (memoized)
@@ -99,14 +97,12 @@ const PdsSubmissionRow = memo(
     index,
     onApprove,
     onReject,
-    onRequestChanges,
     isApproving,
     isRejecting,
-    isRequestingChanges,
   }: PdsSubmissionRowProps) => {
     const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
 
-    const isSubmitting = isApproving || isRejecting || isRequestingChanges;
+    const isSubmitting = isApproving || isRejecting;
 
     const handleApprove = useCallback(
       async (notes?: string) => {
@@ -120,13 +116,6 @@ const PdsSubmissionRow = memo(
         await onReject(submission.id, notes);
       },
       [submission.id, onReject]
-    );
-
-    const handleRequestChanges = useCallback(
-      async (notes: string) => {
-        await onRequestChanges(submission.id, notes);
-      },
-      [submission.id, onRequestChanges]
     );
 
     const handleAction = useCallback((action: string) => {
@@ -220,7 +209,6 @@ const PdsSubmissionRow = memo(
           employeeName={employeeName}
           onApprove={handleApprove}
           onReject={handleReject}
-          onRequestChanges={handleRequestChanges}
           isSubmitting={isSubmitting}
         />
       </>
@@ -274,10 +262,8 @@ export default function PdsSubmissionsPage() {
     error,
     approveSubmissionAsync,
     rejectSubmissionAsync,
-    requestChangesAsync,
     isApproving,
     isRejecting,
-    isRequestingChanges,
   } = usePdsSubmissionsQuery(filters);
 
   // Handlers for submission actions
@@ -301,17 +287,6 @@ export default function PdsSubmissionsPage() {
       });
     },
     [rejectSubmissionAsync]
-  );
-
-  const handleRequestChanges = useCallback(
-    async (submissionId: string, notes: string) => {
-      await requestChangesAsync({
-        submissionId,
-        reviewNotes: notes,
-        reviewedBy: '', // Will be filled by the backend from session
-      });
-    },
-    [requestChangesAsync]
   );
 
   // Fetch departments for filter dropdown
@@ -627,10 +602,8 @@ export default function PdsSubmissionsPage() {
                       index={index}
                       onApprove={handleApprove}
                       onReject={handleReject}
-                      onRequestChanges={handleRequestChanges}
                       isApproving={isApproving}
                       isRejecting={isRejecting}
-                      isRequestingChanges={isRequestingChanges}
                     />
                   ))}
                 </EnhancedTableBody>

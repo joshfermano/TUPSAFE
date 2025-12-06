@@ -104,14 +104,6 @@ export function ComponentShowcase() {
     console.log('Rejected with notes:', notes);
   };
 
-  const handleRequestChanges = async (notes: string) => {
-    setReviewLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setReviewLoading(false);
-    console.log('Requested changes with notes:', notes);
-  };
-
   // ConfirmationDialog handlers
   const handleDelete = async () => {
     setConfirmLoading(true);
@@ -171,7 +163,6 @@ export function ComponentShowcase() {
             employeeName="Juan Dela Cruz"
             onApprove={handleApprove}
             onReject={handleReject}
-            onRequestChanges={handleRequestChanges}
             isSubmitting={reviewLoading}
           />
         </CardContent>

@@ -100,6 +100,7 @@ export function usePds(userId: string): UsePdsReturn {
       approvedBy: null,
       approvedAt: null,
       rejectionReason: null,
+      reviewNotes: null,
       pdfFilePath: null,
       isLatest: true,
       createdAt: new Date(),

@@ -147,6 +147,7 @@ export async function GET(request: NextRequest) {
         createdAt: pdsSubmissions.createdAt,
         updatedAt: pdsSubmissions.updatedAt,
         rejectionReason: pdsSubmissions.rejectionReason,
+        reviewNotes: pdsSubmissions.reviewNotes,
         pdfFilePath: pdsSubmissions.pdfFilePath,
 
         // Employee fields
@@ -208,6 +209,7 @@ export async function GET(request: NextRequest) {
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
       rejectionReason: item.rejectionReason,
+      reviewNotes: item.reviewNotes,
       pdfFilePath: item.pdfFilePath,
       employee: {
         id: item.employeeId,
