@@ -37,7 +37,19 @@ export function useSaln(userId: string): UseSalnReturn {
     try {
       // Simulate API delay
       setTimeout(() => {
-        const userSubmissions = MockDatabase.getSalnByUser(userId);
+        let userSubmissions = MockDatabase.getSalnByUser(userId);
+
+        // DEVELOPMENT FALLBACK: If no submissions found for this user,
+        // return the first mock user's data to ensure developers see data
+        if (userSubmissions.length === 0 && userId) {
+          console.info(
+            `[Mock Data] No SALN submissions found for user ${userId}. Returning first mock user's data for development.`
+          );
+          // Get the first mock user's submissions as fallback
+          const firstMockUserId = '01927d4e-8b45-7f52-b123-456789abcdef';
+          userSubmissions = MockDatabase.getSalnByUser(firstMockUserId);
+        }
+
         setSubmissions(userSubmissions);
 
         const latestSubmission =

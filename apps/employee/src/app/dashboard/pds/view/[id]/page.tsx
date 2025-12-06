@@ -348,7 +348,7 @@ export default function PDSViewDetailPage({
               Personal Data Sheet {submissionYear}
             </h1>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-              Version {submission.version} • Submitted{' '}
+              CY {submission.year} • Submitted{' '}
               {format(
                 new Date(submission.submittedAt || submission.createdAt),
                 'MMM d, yyyy'

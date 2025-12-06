@@ -6,7 +6,7 @@
  *
  * Features:
  * - Pagination with configurable page size
- * - Multi-dimensional filtering (status, department, search)
+ * - Multi-dimensional filtering (status, department, year, search)
  * - Full-text search across employee name and ID
  * - Optimized single-query joins
  * - Aggregate statistics by status
@@ -95,6 +95,11 @@ export async function GET(request: NextRequest) {
           ilike(profiles.employeeId, searchTerm)
         )
       );
+    }
+
+    // Year filter
+    if (validatedQuery.year) {
+      conditions.push(eq(pdsSubmissions.year, validatedQuery.year));
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;

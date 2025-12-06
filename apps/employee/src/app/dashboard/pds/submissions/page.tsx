@@ -141,7 +141,7 @@ const ApprovedCard = memo<{
               </div>
               <div>
                 <h3 className="font-semibold text-lg">Annual PDS - CY {submission.year}</h3>
-                <p className="text-sm text-muted-foreground">Version {submission.version}</p>
+                <p className="text-sm text-muted-foreground">v{submission.version}</p>
               </div>
             </div>
             <Badge

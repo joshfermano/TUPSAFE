@@ -5,13 +5,37 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../providers/AuthProvider';
 import dynamic from 'next/dynamic';
 
-// Dynamically import sections to avoid SSR issues
+// Dynamically import all sections to avoid SSR issues and optimize performance
 const HeroSection = dynamic(
   () => import('../components/sections/HeroSection'),
   { ssr: false }
 );
+const StatsSection = dynamic(
+  () => import('../components/sections/StatsSection'),
+  { ssr: false }
+);
 const FeaturesSection = dynamic(
   () => import('../components/sections/FeaturesSection'),
+  { ssr: false }
+);
+const BenefitsSection = dynamic(
+  () => import('../components/sections/BenefitsSection'),
+  { ssr: false }
+);
+const HowItWorksSection = dynamic(
+  () => import('../components/sections/HowItWorksSection'),
+  { ssr: false }
+);
+const TestimonialsSection = dynamic(
+  () => import('../components/sections/TestimonialsSection'),
+  { ssr: false }
+);
+const FAQSection = dynamic(
+  () => import('../components/sections/FAQSection'),
+  { ssr: false }
+);
+const CTASection = dynamic(
+  () => import('../components/sections/CTASection'),
   { ssr: false }
 );
 
@@ -35,11 +59,32 @@ export default function Home() {
     );
   }
 
-  // Show landing page for unauthenticated users
+  // Show comprehensive landing page for unauthenticated users
   return (
-    <main>
+    <main className="overflow-x-hidden">
+      {/* 1. Hero Section - Enhanced with layered backgrounds */}
       <HeroSection />
+
+      {/* 2. Statistics Section - Impact by numbers */}
+      <StatsSection />
+
+      {/* 3. Features Section - Enhanced with BorderBeam and AnimatedShinyText */}
       <FeaturesSection />
+
+      {/* 4. Benefits Section - Visual comparison */}
+      <BenefitsSection />
+
+      {/* 5. How It Works Section - Timeline with animated steps */}
+      <HowItWorksSection />
+
+      {/* 6. Testimonials Section - User feedback */}
+      <TestimonialsSection />
+
+      {/* 7. FAQ Section - Collapsible questions */}
+      <FAQSection />
+
+      {/* 8. Final CTA Section - Dramatic call-to-action */}
+      <CTASection />
     </main>
   );
 }

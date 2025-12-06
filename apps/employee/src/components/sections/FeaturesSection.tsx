@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { MagicCard } from '../ui/magic-card';
 import { NeonGradientCard } from '../ui/neon-gradient-card';
+import { BorderBeam } from '../ui/border-beam';
+import { AnimatedShinyText } from '../ui/animated-shiny-text';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 
@@ -136,12 +138,20 @@ const FeatureCard: React.FC<{ feature: Feature; index: number }> = ({
       transition={{ duration: 0.5, delay: index * 0.1 }}
       viewport={{ once: true }}
       className="group">
-      <NeonGradientCard
-        className="h-full cursor-pointer transition-all duration-300 hover:scale-[1.02]"
-        borderSize={2}
-        borderRadius={16}
-        neonColors={gradient}>
-        <div className="flex h-full flex-col p-6">
+      <div className="relative h-full">
+        <NeonGradientCard
+          className="h-full cursor-pointer transition-all duration-300 hover:scale-[1.02]"
+          borderSize={2}
+          borderRadius={16}
+          neonColors={gradient}>
+          <BorderBeam
+            size={250}
+            duration={15}
+            delay={index * 2}
+            colorFrom="#8B1538"
+            colorTo="#c73436"
+          />
+          <div className="flex h-full flex-col p-6">
           {/* Header */}
           <div className="mb-4 flex items-start justify-between">
             <div className="flex items-center gap-3">
@@ -201,8 +211,9 @@ const FeatureCard: React.FC<{ feature: Feature; index: number }> = ({
               View Details
             </Button>
           </Link>
-        </div>
-      </NeonGradientCard>
+          </div>
+        </NeonGradientCard>
+      </div>
     </motion.div>
   );
 };
@@ -273,10 +284,12 @@ export default function FeaturesSection() {
           </motion.div>
 
           <h2 className="mb-6 text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl">
-            Research-Driven{' '}
-            <span className="bg-gradient-to-r from-[#8B1538] to-[#c73436] bg-clip-text text-transparent">
-              Implementation
-            </span>
+            <AnimatedShinyText className="inline">
+              Research-Driven{' '}
+              <span className="bg-gradient-to-r from-[#8B1538] to-[#c73436] bg-clip-text text-transparent">
+                Implementation
+              </span>
+            </AnimatedShinyText>
           </h2>
 
           <p className="text-lg text-gray-600 dark:text-gray-300">

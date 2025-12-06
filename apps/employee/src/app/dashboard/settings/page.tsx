@@ -346,7 +346,7 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen relative">
       {/* Centered Container */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-5xl mx-auto space-y-8 pb-8">
         <motion.div
           initial="hidden"
           animate="visible"

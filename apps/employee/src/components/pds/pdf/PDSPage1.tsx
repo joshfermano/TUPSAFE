@@ -346,7 +346,9 @@ export function PDSPage1({ data }: PDSPage1Props) {
           <View style={[styles.fieldCellLast, { flex: 1 }]}>
             <View style={[styles.row, { gap: 15 }]}>
               <View style={styles.checkboxRow}>
-                <Checkbox checked={personalInfo.citizenship.type === 'Filipino'} />
+                <Checkbox
+                  checked={personalInfo.citizenship.type === 'Filipino'}
+                />
                 <Text style={styles.valueSmall}>Filipino</Text>
               </View>
               <View style={styles.checkboxRow}>
@@ -356,11 +358,23 @@ export function PDSPage1({ data }: PDSPage1Props) {
               {personalInfo.citizenship.type === 'Dual' && (
                 <View style={[styles.row, { marginLeft: 10 }]}>
                   <View style={styles.checkboxRow}>
-                    <Checkbox checked={personalInfo.citizenship.details?.includes('by birth') ?? false} />
+                    <Checkbox
+                      checked={
+                        personalInfo.citizenship.details?.includes(
+                          'by birth'
+                        ) ?? false
+                      }
+                    />
                     <Text style={styles.valueSmall}>by birth</Text>
                   </View>
                   <View style={styles.checkboxRow}>
-                    <Checkbox checked={personalInfo.citizenship.details?.includes('by naturalization') ?? false} />
+                    <Checkbox
+                      checked={
+                        personalInfo.citizenship.details?.includes(
+                          'by naturalization'
+                        ) ?? false
+                      }
+                    />
                     <Text style={styles.valueSmall}>by naturalization</Text>
                   </View>
                 </View>
@@ -369,16 +383,21 @@ export function PDSPage1({ data }: PDSPage1Props) {
           </View>
         </View>
 
-        {personalInfo.citizenship.type === 'Dual' && personalInfo.citizenship.details && (
-          <View style={styles.fieldRow}>
-            <View style={[styles.labelCell, styles.w20]}>
-              <Text style={styles.labelSmall}>If holder of dual citizenship, please indicate country:</Text>
+        {personalInfo.citizenship.type === 'Dual' &&
+          personalInfo.citizenship.details && (
+            <View style={styles.fieldRow}>
+              <View style={[styles.labelCell, styles.w20]}>
+                <Text style={styles.labelSmall}>
+                  If holder of dual citizenship, please indicate country:
+                </Text>
+              </View>
+              <View style={[styles.fieldCellLast, { flex: 1 }]}>
+                <Text style={styles.valueSmall}>
+                  {displayOrEmpty(personalInfo.citizenship.details)}
+                </Text>
+              </View>
             </View>
-            <View style={[styles.fieldCellLast, { flex: 1 }]}>
-              <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.citizenship.details)}</Text>
-            </View>
-          </View>
-        )}
+          )}
 
         {/* Field 17: RESIDENTIAL ADDRESS */}
         <View style={styles.sectionHeader}>
@@ -391,13 +410,17 @@ export function PDSPage1({ data }: PDSPage1Props) {
             <Text style={styles.labelSmall}>House/Block/Lot No.</Text>
           </View>
           <View style={[styles.fieldCell, styles.w25]}>
-            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.residentialAddress?.houseNumber)}</Text>
+            <Text style={styles.valueSmall}>
+              {displayOrEmpty(personalInfo.residentialAddress?.houseNumber)}
+            </Text>
           </View>
           <View style={[styles.labelCell, styles.w25]}>
             <Text style={styles.labelSmall}>Street</Text>
           </View>
           <View style={[styles.fieldCellLast, { flex: 1 }]}>
-            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.residentialAddress?.street)}</Text>
+            <Text style={styles.valueSmall}>
+              {displayOrEmpty(personalInfo.residentialAddress?.street)}
+            </Text>
           </View>
         </View>
 
@@ -407,13 +430,17 @@ export function PDSPage1({ data }: PDSPage1Props) {
             <Text style={styles.labelSmall}>Subdivision/Village</Text>
           </View>
           <View style={[styles.fieldCell, styles.w25]}>
-            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.residentialAddress?.subdivision)}</Text>
+            <Text style={styles.valueSmall}>
+              {displayOrEmpty(personalInfo.residentialAddress?.subdivision)}
+            </Text>
           </View>
           <View style={[styles.labelCell, styles.w25]}>
             <Text style={styles.labelSmall}>Barangay</Text>
           </View>
           <View style={[styles.fieldCellLast, { flex: 1 }]}>
-            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.residentialAddress?.barangay)}</Text>
+            <Text style={styles.valueSmall}>
+              {displayOrEmpty(personalInfo.residentialAddress?.barangay)}
+            </Text>
           </View>
         </View>
 
@@ -423,19 +450,25 @@ export function PDSPage1({ data }: PDSPage1Props) {
             <Text style={styles.labelSmall}>City/Municipality</Text>
           </View>
           <View style={[styles.fieldCell, styles.w25]}>
-            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.residentialAddress?.city)}</Text>
+            <Text style={styles.valueSmall}>
+              {displayOrEmpty(personalInfo.residentialAddress?.city)}
+            </Text>
           </View>
           <View style={[styles.labelCell, styles.w15]}>
             <Text style={styles.labelSmall}>Province</Text>
           </View>
           <View style={[styles.fieldCell, styles.w20]}>
-            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.residentialAddress?.province)}</Text>
+            <Text style={styles.valueSmall}>
+              {displayOrEmpty(personalInfo.residentialAddress?.province)}
+            </Text>
           </View>
           <View style={[styles.labelCell, styles.w10]}>
             <Text style={styles.labelSmall}>ZIP CODE</Text>
           </View>
           <View style={[styles.fieldCellLast, { flex: 1 }]}>
-            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.residentialAddress?.zipCode)}</Text>
+            <Text style={styles.valueSmall}>
+              {displayOrEmpty(personalInfo.residentialAddress?.zipCode)}
+            </Text>
           </View>
         </View>
 
@@ -450,13 +483,17 @@ export function PDSPage1({ data }: PDSPage1Props) {
             <Text style={styles.labelSmall}>House/Block/Lot No.</Text>
           </View>
           <View style={[styles.fieldCell, styles.w25]}>
-            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.permanentAddress?.houseNumber)}</Text>
+            <Text style={styles.valueSmall}>
+              {displayOrEmpty(personalInfo.permanentAddress?.houseNumber)}
+            </Text>
           </View>
           <View style={[styles.labelCell, styles.w25]}>
             <Text style={styles.labelSmall}>Street</Text>
           </View>
           <View style={[styles.fieldCellLast, { flex: 1 }]}>
-            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.permanentAddress?.street)}</Text>
+            <Text style={styles.valueSmall}>
+              {displayOrEmpty(personalInfo.permanentAddress?.street)}
+            </Text>
           </View>
         </View>
 
@@ -466,13 +503,17 @@ export function PDSPage1({ data }: PDSPage1Props) {
             <Text style={styles.labelSmall}>Subdivision/Village</Text>
           </View>
           <View style={[styles.fieldCell, styles.w25]}>
-            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.permanentAddress?.subdivision)}</Text>
+            <Text style={styles.valueSmall}>
+              {displayOrEmpty(personalInfo.permanentAddress?.subdivision)}
+            </Text>
           </View>
           <View style={[styles.labelCell, styles.w25]}>
             <Text style={styles.labelSmall}>Barangay</Text>
           </View>
           <View style={[styles.fieldCellLast, { flex: 1 }]}>
-            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.permanentAddress?.barangay)}</Text>
+            <Text style={styles.valueSmall}>
+              {displayOrEmpty(personalInfo.permanentAddress?.barangay)}
+            </Text>
           </View>
         </View>
 
@@ -482,19 +523,25 @@ export function PDSPage1({ data }: PDSPage1Props) {
             <Text style={styles.labelSmall}>City/Municipality</Text>
           </View>
           <View style={[styles.fieldCell, styles.w25]}>
-            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.permanentAddress?.city)}</Text>
+            <Text style={styles.valueSmall}>
+              {displayOrEmpty(personalInfo.permanentAddress?.city)}
+            </Text>
           </View>
           <View style={[styles.labelCell, styles.w15]}>
             <Text style={styles.labelSmall}>Province</Text>
           </View>
           <View style={[styles.fieldCell, styles.w20]}>
-            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.permanentAddress?.province)}</Text>
+            <Text style={styles.valueSmall}>
+              {displayOrEmpty(personalInfo.permanentAddress?.province)}
+            </Text>
           </View>
           <View style={[styles.labelCell, styles.w10]}>
             <Text style={styles.labelSmall}>ZIP CODE</Text>
           </View>
           <View style={[styles.fieldCellLast, { flex: 1 }]}>
-            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.permanentAddress?.zipCode)}</Text>
+            <Text style={styles.valueSmall}>
+              {displayOrEmpty(personalInfo.permanentAddress?.zipCode)}
+            </Text>
           </View>
         </View>
 
@@ -504,7 +551,9 @@ export function PDSPage1({ data }: PDSPage1Props) {
             <Text style={styles.labelSmall}>19. TELEPHONE NO.</Text>
           </View>
           <View style={[styles.fieldCellLast, { flex: 1 }]}>
-            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.telephoneNo)}</Text>
+            <Text style={styles.valueSmall}>
+              {displayOrEmpty(personalInfo.telephoneNo)}
+            </Text>
           </View>
         </View>
 
@@ -514,7 +563,9 @@ export function PDSPage1({ data }: PDSPage1Props) {
             <Text style={styles.labelSmall}>20. MOBILE NO.</Text>
           </View>
           <View style={[styles.fieldCellLast, { flex: 1 }]}>
-            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.mobileNo)}</Text>
+            <Text style={styles.valueSmall}>
+              {displayOrEmpty(personalInfo.mobileNo)}
+            </Text>
           </View>
         </View>
 
@@ -524,7 +575,9 @@ export function PDSPage1({ data }: PDSPage1Props) {
             <Text style={styles.labelSmall}>21. E-MAIL ADDRESS (if any)</Text>
           </View>
           <View style={[styles.fieldCellLast, { flex: 1 }]}>
-            <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.emailAddress)}</Text>
+            <Text style={styles.valueSmall}>
+              {displayOrEmpty(personalInfo.emailAddress)}
+            </Text>
           </View>
         </View>
       </View>
@@ -654,9 +707,7 @@ export function PDSPage1({ data }: PDSPage1Props) {
         {/* Mother Section */}
         <View style={styles.fieldRow}>
           <View style={[styles.labelCell, styles.w15]}>
-            <Text style={styles.labelSmall}>
-              24. MOTHER&apos;S MAIDEN NAME
-            </Text>
+            <Text style={styles.labelSmall}>24. MOTHER&apos;S MAIDEN NAME</Text>
           </View>
           <View style={[styles.fieldCell, styles.w25]}>
             <Text style={styles.value}>
@@ -686,9 +737,7 @@ export function PDSPage1({ data }: PDSPage1Props) {
 
         {/* Children Section */}
         <View style={styles.subSectionHeader}>
-          <Text>
-            25. NAME OF CHILDREN (Write full name and list all)
-          </Text>
+          <Text>25. NAME OF CHILDREN (Write full name and list all)</Text>
         </View>
 
         {/* Children header row */}
@@ -697,12 +746,16 @@ export function PDSPage1({ data }: PDSPage1Props) {
             <Text style={[styles.labelSmall, styles.center]}>NAME</Text>
           </View>
           <View style={[styles.tableCellHeader, { flex: 1 }]}>
-            <Text style={[styles.labelSmall, styles.center]}>DATE OF BIRTH (mm/dd/yyyy)</Text>
+            <Text style={[styles.labelSmall, styles.center]}>
+              DATE OF BIRTH (mm/dd/yyyy)
+            </Text>
           </View>
         </View>
 
         {/* Children rows (show up to 12, minimum 4 empty rows) */}
-        {Array.from({ length: Math.max(4, familyBackground.children.length) }).map((_, index) => {
+        {Array.from({
+          length: Math.max(4, familyBackground.children.length),
+        }).map((_, index) => {
           const child = familyBackground.children[index];
           return (
             <View key={index} style={styles.fieldRow}>
