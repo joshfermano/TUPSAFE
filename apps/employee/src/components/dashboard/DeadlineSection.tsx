@@ -16,6 +16,7 @@ import {
   useDeadlineForForm,
   type UrgencyLevel,
 } from '../../hooks/useDeadlines';
+import { useLatestPDS } from '../../hooks';
 import { DeadlineCountdown } from './DeadlineCountdown';
 
 interface DeadlineSectionProps {
@@ -164,11 +165,36 @@ export const DeadlineSection = memo(function DeadlineSection({
   const { deadline, isLoading, isError, urgencyLevel } =
     useDeadlineForForm(formType);
 
+  // Fetch latest PDS submission to check if approved
+  const { data: latestSubmission, isLoading: isLoadingLatest } = useLatestPDS();
+
   const config = formTypeConfig[formType];
   const Icon = config.icon;
 
-  // Loading state
-  if (isLoading) {
+  // Debug logging to verify deadline data
+  if (deadline) {
+    console.log(`[DeadlineSection ${formType}] Deadline data:`, {
+      deadlineDate: deadline.deadlineDate,
+      daysRemaining: deadline.daysRemaining,
+      urgencyLevel,
+      isOverdue: deadline.isOverdue,
+    });
+  }
+
+  // Check if user has an approved PDS for this deadline's year
+  // If approved, don't show the deadline section
+  const hasApprovedSubmission =
+    latestSubmission?.status === 'approved' &&
+    latestSubmission?.year === deadline?.year;
+
+  // Hide deadline if user has approved submission for this year
+  if (hasApprovedSubmission) {
+    console.log(`[DeadlineSection ${formType}] Hiding deadline - approved submission exists for year ${deadline?.year}`);
+    return null;
+  }
+
+  // Loading state - wait for both deadline and latest submission data
+  if (isLoading || isLoadingLatest) {
     return (
       <BlurFade delay={0.1} inView>
         <div
@@ -344,25 +370,6 @@ export const DeadlineSection = memo(function DeadlineSection({
                   urgencyLevel={urgencyLevel || 'normal'}
                   size="default"
                 />
-              </div>
-
-              {/* Right section: Submit button */}
-              <div className="flex items-center sm:flex-shrink-0">
-                <Link
-                  href={config.submitPath}
-                  className={cn(
-                    'inline-flex items-center justify-center px-5 py-2.5 rounded-lg font-medium text-sm transition-all duration-200',
-                    'focus:outline-none focus:ring-2 focus:ring-offset-2',
-                    urgency.buttonClass,
-                    isCritical || isOverdue
-                      ? 'focus:ring-red-500'
-                      : urgencyLevel === 'warning'
-                      ? 'focus:ring-amber-500'
-                      : 'focus:ring-emerald-500',
-                    'w-full sm:w-auto'
-                  )}>
-                  {isOverdue ? 'Submit Now' : 'Submit'}
-                </Link>
               </div>
             </div>
           </div>

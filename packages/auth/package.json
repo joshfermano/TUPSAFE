@@ -16,8 +16,8 @@
       "default": "./dist/client.js"
     },
     "./edge": {
-      "types": "./dist/utils/supabase/cookie-config.d.ts",
-      "default": "./dist/utils/supabase/cookie-config.js"
+      "types": "./dist/edge.d.ts",
+      "default": "./dist/edge.js"
     }
   },
   "scripts": {

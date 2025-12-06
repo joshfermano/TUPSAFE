@@ -694,89 +694,77 @@ export async function updatePDSSubmission(
       }
 
       // Update children if provided (delete and recreate)
-      if (data.children !== undefined) {
+      if (data.children !== undefined && data.children.length > 0) {
         await tx.delete(pdsChildren).where(eq(pdsChildren.pdsSubmissionId, id));
-        if (data.children.length > 0) {
-          await tx.insert(pdsChildren).values(
-            data.children.map((child) => ({
-              ...child,
-              pdsSubmissionId: id,
-            })) as (typeof pdsChildren.$inferInsert)[]
-          );
-        }
+        await tx.insert(pdsChildren).values(
+          data.children.map((child) => ({
+            ...child,
+            pdsSubmissionId: id,
+          })) as (typeof pdsChildren.$inferInsert)[]
+        );
       }
 
       // Update education if provided (delete and recreate)
-      if (data.education !== undefined) {
+      if (data.education !== undefined && data.education.length > 0) {
         await tx
           .delete(pdsEducation)
           .where(eq(pdsEducation.pdsSubmissionId, id));
-        if (data.education.length > 0) {
-          await tx.insert(pdsEducation).values(
-            data.education.map((edu) => ({
-              ...edu,
-              pdsSubmissionId: id,
-            })) as (typeof pdsEducation.$inferInsert)[]
-          );
-        }
+        await tx.insert(pdsEducation).values(
+          data.education.map((edu) => ({
+            ...edu,
+            pdsSubmissionId: id,
+          })) as (typeof pdsEducation.$inferInsert)[]
+        );
       }
 
       // Update civil service if provided (delete and recreate)
-      if (data.civilService !== undefined) {
+      if (data.civilService !== undefined && data.civilService.length > 0) {
         await tx
           .delete(pdsCivilService)
           .where(eq(pdsCivilService.pdsSubmissionId, id));
-        if (data.civilService.length > 0) {
-          await tx.insert(pdsCivilService).values(
-            data.civilService.map((cs) => ({
-              ...cs,
-              pdsSubmissionId: id,
-            })) as (typeof pdsCivilService.$inferInsert)[]
-          );
-        }
+        await tx.insert(pdsCivilService).values(
+          data.civilService.map((cs) => ({
+            ...cs,
+            pdsSubmissionId: id,
+          })) as (typeof pdsCivilService.$inferInsert)[]
+        );
       }
 
       // Update work experience if provided (delete and recreate)
-      if (data.workExperience !== undefined) {
+      if (data.workExperience !== undefined && data.workExperience.length > 0) {
         await tx
           .delete(pdsWorkExperience)
           .where(eq(pdsWorkExperience.pdsSubmissionId, id));
-        if (data.workExperience.length > 0) {
-          await tx.insert(pdsWorkExperience).values(
-            data.workExperience.map((we) => ({
-              ...we,
-              pdsSubmissionId: id,
-            })) as (typeof pdsWorkExperience.$inferInsert)[]
-          );
-        }
+        await tx.insert(pdsWorkExperience).values(
+          data.workExperience.map((we) => ({
+            ...we,
+            pdsSubmissionId: id,
+          })) as (typeof pdsWorkExperience.$inferInsert)[]
+        );
       }
 
       // Update voluntary work if provided (delete and recreate)
-      if (data.voluntaryWork !== undefined) {
+      if (data.voluntaryWork !== undefined && data.voluntaryWork.length > 0) {
         await tx
           .delete(pdsVoluntaryWork)
           .where(eq(pdsVoluntaryWork.pdsSubmissionId, id));
-        if (data.voluntaryWork.length > 0) {
-          await tx.insert(pdsVoluntaryWork).values(
-            data.voluntaryWork.map((vw) => ({
-              ...vw,
-              pdsSubmissionId: id,
-            })) as (typeof pdsVoluntaryWork.$inferInsert)[]
-          );
-        }
+        await tx.insert(pdsVoluntaryWork).values(
+          data.voluntaryWork.map((vw) => ({
+            ...vw,
+            pdsSubmissionId: id,
+          })) as (typeof pdsVoluntaryWork.$inferInsert)[]
+        );
       }
 
       // Update training if provided (delete and recreate)
-      if (data.training !== undefined) {
+      if (data.training !== undefined && data.training.length > 0) {
         await tx.delete(pdsTraining).where(eq(pdsTraining.pdsSubmissionId, id));
-        if (data.training.length > 0) {
-          await tx.insert(pdsTraining).values(
-            data.training.map((tr) => ({
-              ...tr,
-              pdsSubmissionId: id,
-            })) as (typeof pdsTraining.$inferInsert)[]
-          );
-        }
+        await tx.insert(pdsTraining).values(
+          data.training.map((tr) => ({
+            ...tr,
+            pdsSubmissionId: id,
+          })) as (typeof pdsTraining.$inferInsert)[]
+        );
       }
 
       // Update other info if provided

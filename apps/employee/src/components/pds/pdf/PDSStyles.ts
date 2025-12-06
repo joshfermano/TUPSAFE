@@ -363,8 +363,10 @@ export const styles = StyleSheet.create({
   pageNumber: {
     position: 'absolute',
     bottom: 10,
-    right: 15,
+    left: 0,
+    right: 0,
     fontSize: 6,
+    textAlign: 'center',
   },
 
   // Declaration section
@@ -398,6 +400,7 @@ export const styles = StyleSheet.create({
   // Width percentages as explicit values
   w10: { width: '10%' },
   w15: { width: '15%' },
+  w16: { width: '16%' },
   w20: { width: '20%' },
   w25: { width: '25%' },
   w30: { width: '30%' },

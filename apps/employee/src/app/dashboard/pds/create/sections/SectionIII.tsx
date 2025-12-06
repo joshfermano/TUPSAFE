@@ -10,15 +10,14 @@
  * - Professional color scheme (TUP Blue primary)
  *
  * PERFORMANCE OPTIMIZATIONS:
- * - Single watch() for entire education object instead of individual fields
- * - Debounced auto-save via parent component
- * - Memoized callbacks to prevent unnecessary re-renders
- * - Reduced useEffect dependencies
+ * - NO broad watch() calls - prevents re-renders on every keystroke
+ * - Memoized component to prevent unnecessary re-renders
+ * - Removed auto-level feature that was causing performance issues
  */
 
-import { memo, useEffect, useMemo, useCallback } from 'react';
+import { memo, useEffect } from 'react';
 import { GraduationCap, School, BookOpen } from 'lucide-react';
-import { useFormContext, type FieldPath } from 'react-hook-form';
+import { useFormContext, type FieldPath, useWatch } from 'react-hook-form';
 import {
   FormField,
   FormItem,
@@ -66,61 +65,104 @@ const EDUCATION_LEVELS = [
 ] as const;
 
 /**
- * Helper to check if education level has any filled fields
+ * Auto-Level Setter Component
+ * Watches education fields and automatically sets the level when user fills any field
  */
-const hasFilledFields = (levelData: any): boolean => {
-  if (!levelData) return false;
+const AutoLevelSetter = memo(
+  ({ levelKey }: { levelKey: 'elementary' | 'secondary' | 'vocational' | 'college' | 'graduate' }) => {
+    const form = useFormContext<CompletePdsData>();
 
-  return (
-    (typeof levelData.schoolName === 'string' && levelData.schoolName.trim() !== '') ||
-    (typeof levelData.degreeCourse === 'string' && levelData.degreeCourse.trim() !== '') ||
-    (typeof levelData.periodFrom === 'number' && levelData.periodFrom !== null) ||
-    (typeof levelData.periodTo === 'number' && levelData.periodTo !== null) ||
-    (typeof levelData.unitsEarned === 'string' && levelData.unitsEarned.trim() !== '') ||
-    (typeof levelData.yearGraduated === 'number' && levelData.yearGraduated !== null) ||
-    (typeof levelData.honors === 'string' && levelData.honors.trim() !== '')
-  );
-};
+    // Watch all fields for this education level
+    const schoolName = useWatch({
+      control: form.control,
+      name: `education.${levelKey}.schoolName` as FieldPath<CompletePdsData>,
+    });
+    const degreeCourse = useWatch({
+      control: form.control,
+      name: `education.${levelKey}.degreeCourse` as FieldPath<CompletePdsData>,
+    });
+    const periodFrom = useWatch({
+      control: form.control,
+      name: `education.${levelKey}.periodFrom` as FieldPath<CompletePdsData>,
+    });
+    const periodTo = useWatch({
+      control: form.control,
+      name: `education.${levelKey}.periodTo` as FieldPath<CompletePdsData>,
+    });
+    const unitsEarned = useWatch({
+      control: form.control,
+      name: `education.${levelKey}.unitsEarned` as FieldPath<CompletePdsData>,
+    });
+    const yearGraduated = useWatch({
+      control: form.control,
+      name: `education.${levelKey}.yearGraduated` as FieldPath<CompletePdsData>,
+    });
+    const honors = useWatch({
+      control: form.control,
+      name: `education.${levelKey}.honors` as FieldPath<CompletePdsData>,
+    });
+
+    // Auto-set level when any field is filled
+    useEffect(() => {
+      const hasSchoolName = schoolName && (schoolName as string).trim() !== '';
+      const hasDegreeCourse = degreeCourse && (degreeCourse as string).trim() !== '';
+      const hasPeriodFrom = periodFrom !== null && periodFrom !== undefined;
+      const hasPeriodTo = periodTo !== null && periodTo !== undefined;
+      const hasUnitsEarned = unitsEarned && (unitsEarned as string).trim() !== '';
+      const hasYearGraduated = yearGraduated !== null && yearGraduated !== undefined;
+      const hasHonors = honors && (honors as string).trim() !== '';
+
+      const hasAnyField =
+        hasSchoolName ||
+        hasDegreeCourse ||
+        hasPeriodFrom ||
+        hasPeriodTo ||
+        hasUnitsEarned ||
+        hasYearGraduated ||
+        hasHonors;
+
+      // If user filled any field, ensure level is set
+      if (hasAnyField) {
+        const currentLevel = form.getValues(
+          `education.${levelKey}.level` as FieldPath<CompletePdsData>
+        );
+
+        if (!currentLevel) {
+          form.setValue(
+            `education.${levelKey}.level` as FieldPath<CompletePdsData>,
+            levelKey as any,
+            { shouldDirty: true, shouldTouch: true, shouldValidate: false }
+          );
+        }
+      }
+    }, [
+      schoolName,
+      degreeCourse,
+      periodFrom,
+      periodTo,
+      unitsEarned,
+      yearGraduated,
+      honors,
+      levelKey,
+      form,
+    ]);
+
+    return null; // This component doesn't render anything
+  }
+);
+
+AutoLevelSetter.displayName = 'AutoLevelSetter';
 
 export const SectionIII = memo(function SectionIII() {
   const form = useFormContext<CompletePdsData>();
 
-  // ========================================================================
-  // TASK 3: Performance Optimization
-  // ========================================================================
-  // Watch the entire education object once instead of multiple individual fields
-  const educationData = form.watch('education');
-
-  // Automatically set the level field when user fills in any field for that education level
-  // This effect only runs when educationData changes (not on every keystroke)
-  useEffect(() => {
-    if (!educationData) return;
-
-    EDUCATION_LEVELS.forEach((level) => {
-      const levelData = educationData[level.key as keyof typeof educationData];
-      const currentLevel = levelData?.level;
-
-      // Check if any field is filled
-      const hasAnyField = hasFilledFields(levelData);
-
-      // Auto-set level when user fills any field
-      if (hasAnyField && !currentLevel) {
-        form.setValue(
-          `education.${level.key}.level` as FieldPath<CompletePdsData>,
-          level.key as
-            | 'elementary'
-            | 'secondary'
-            | 'vocational'
-            | 'college'
-            | 'graduate',
-          { shouldDirty: true, shouldTouch: false, shouldValidate: false }
-        );
-      }
-    });
-  }, [educationData, form]);
-
   return (
     <div className="space-y-8">
+      {/* Auto-level setters - hidden components that watch fields and set levels */}
+      {EDUCATION_LEVELS.map((level) => (
+        <AutoLevelSetter key={`auto-${level.key}`} levelKey={level.key} />
+      ))}
+
       {/* Section Header - Clean, Professional */}
       <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-gradient-to-br from-slate-50 to-white dark:from-slate-900 dark:to-slate-950 p-6">
         <div className="flex items-center gap-4">
@@ -143,10 +185,6 @@ export const SectionIII = memo(function SectionIII() {
       {/* Education Levels */}
       {EDUCATION_LEVELS.map((level) => {
         const Icon = level.icon;
-
-        // Use memoized data instead of multiple watch calls for performance
-        const levelData = educationData?.[level.key as keyof typeof educationData];
-        const isFillingThisSection = hasFilledFields(levelData);
 
         return (
           <div
@@ -175,12 +213,7 @@ export const SectionIII = memo(function SectionIII() {
                   }
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
-                        School Name{' '}
-                        {isFillingThisSection && (
-                          <span className="text-destructive">*</span>
-                        )}
-                      </FormLabel>
+                      <FormLabel>School Name</FormLabel>
                       <FormControl>
                         <Input
                           placeholder={`e.g., ${level.placeholder}`}

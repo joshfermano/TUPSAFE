@@ -408,7 +408,7 @@ export default function SALNCreatePage() {
                   disabled={isSubmitting}
                   className="border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50">
                   <Save className="h-4 w-4 mr-2" />
-                  Save Now
+                  Save Draft
                 </Button>
               </div>
             </div>

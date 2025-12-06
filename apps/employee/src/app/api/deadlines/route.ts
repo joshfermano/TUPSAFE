@@ -28,13 +28,28 @@ type UrgencyLevel = 'critical' | 'warning' | 'normal';
 /**
  * Calculate days remaining until deadline
  * Returns negative number if deadline has passed
+ *
+ * IMPORTANT: Handles timezone correctly by parsing date as local timezone
+ * Database stores dates as YYYY-MM-DD which JavaScript parses as UTC by default
  */
 function calculateDaysRemaining(deadlineDate: string | Date): number {
-  const deadline = new Date(deadlineDate);
+  // Parse deadline date in local timezone to avoid UTC offset issues
+  // Database returns "2025-12-19" format, need to parse as local date
+  let deadline: Date;
+  if (typeof deadlineDate === 'string') {
+    // Split date string and create date in local timezone (not UTC)
+    const [year, month, day] = deadlineDate.split('-').map(Number);
+    deadline = new Date(year, month - 1, day, 0, 0, 0, 0);
+  } else {
+    deadline = new Date(deadlineDate);
+    deadline.setHours(0, 0, 0, 0);
+  }
+
+  // Get today's date at midnight local time
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  deadline.setHours(0, 0, 0, 0);
 
+  // Calculate difference
   const diffTime = deadline.getTime() - today.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -154,7 +169,24 @@ export async function GET(request: NextRequest) {
 
     // Transform data with computed fields
     const deadlines: DeadlineItem[] = deadlinesData.map((deadline) => {
-      const daysRemaining = calculateDaysRemaining(deadline.deadlineDate);
+      // Ensure deadlineDate is formatted as YYYY-MM-DD string
+      // Drizzle returns Date objects, need to convert to string for JSON serialization
+      let deadlineDateString: string;
+      if (deadline.deadlineDate instanceof Date) {
+        // Format as YYYY-MM-DD in local timezone
+        const year = deadline.deadlineDate.getFullYear();
+        const month = String(deadline.deadlineDate.getMonth() + 1).padStart(2, '0');
+        const day = String(deadline.deadlineDate.getDate()).padStart(2, '0');
+        deadlineDateString = `${year}-${month}-${day}`;
+      } else if (typeof deadline.deadlineDate === 'string') {
+        // Already a string, extract just the date part (YYYY-MM-DD)
+        deadlineDateString = deadline.deadlineDate.split('T')[0];
+      } else {
+        // Fallback
+        deadlineDateString = String(deadline.deadlineDate);
+      }
+
+      const daysRemaining = calculateDaysRemaining(deadlineDateString);
       const urgencyLevel = getUrgencyLevel(daysRemaining);
       const isOverdue = daysRemaining < 0;
 
@@ -162,7 +194,7 @@ export async function GET(request: NextRequest) {
         id: deadline.id,
         formType: deadline.formType as 'pds' | 'saln',
         year: deadline.year,
-        deadlineDate: deadline.deadlineDate,
+        deadlineDate: deadlineDateString,
         reminderDaysBefore: deadline.reminderDaysBefore || [30, 15, 7, 3, 1],
         daysRemaining,
         urgencyLevel,

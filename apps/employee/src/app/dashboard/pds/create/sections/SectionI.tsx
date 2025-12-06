@@ -11,8 +11,8 @@
  * - No sparkles, no shine borders - clean government form aesthetic
  */
 
-import { memo, useMemo } from 'react';
-import { useFormContext } from 'react-hook-form';
+import { memo } from 'react';
+import { useFormContext, useWatch } from 'react-hook-form';
 import {
   User,
   Calendar,
@@ -49,10 +49,10 @@ import { type CompletePdsData } from '../../../../../lib/validations/pds-schema'
 
 export const SectionI = memo(function SectionI() {
   const form = useFormContext<CompletePdsData>();
-  const citizenshipType = useMemo(
-    () => form.watch('personalInfo.citizenship.type'),
-    [form]
-  );
+  const citizenshipType = useWatch({
+    control: form.control,
+    name: 'personalInfo.citizenship.type',
+  });
 
   return (
     <div className="space-y-8">

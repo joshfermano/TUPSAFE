@@ -10,10 +10,11 @@
  * - Professional color scheme (TUP Blue primary)
  */
 
-import { memo, useCallback } from 'react';
+import { memo, useCallback, startTransition, useRef } from 'react';
 import { Briefcase, Plus, X, Award } from 'lucide-react';
 import { useFormContext, useFieldArray } from 'react-hook-form';
 import { toast } from 'sonner';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   FormField,
   FormItem,
@@ -23,19 +24,15 @@ import {
 } from '../../../../../components/ui/form';
 import { Input } from '../../../../../components/ui/input';
 import { Button } from '../../../../../components/ui/button';
-import { Checkbox } from '../../../../../components/ui/checkbox';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../../../../../components/ui/select';
+import { WorkExperienceItem } from '../../../../../components/pds/array-items';
 import { type CompletePdsData } from '../../../../../lib/validations/pds-schema';
 import { autoSortWithNotification } from '../../../../../lib/utils/pds-sort';
 
 export const SectionIV = memo(function SectionIV() {
   const form = useFormContext<CompletePdsData>();
+
+  // Refs for virtualization
+  const workParentRef = useRef<HTMLDivElement>(null);
 
   const {
     fields: eligibilityFields,
@@ -56,6 +53,17 @@ export const SectionIV = memo(function SectionIV() {
     name: 'workExperience',
   });
 
+  // Virtualize work experience if there are more than 10 items
+  const shouldVirtualizeWork = workFields.length > 10;
+
+  const workVirtualizer = useVirtualizer({
+    count: workFields.length,
+    getScrollElement: () => workParentRef.current,
+    estimateSize: () => 280, // Estimated height per work experience item
+    overscan: 5,
+    enabled: shouldVirtualizeWork,
+  });
+
   /**
    * Auto-sort work experiences by date (latest first)
    */
@@ -70,7 +78,7 @@ export const SectionIV = memo(function SectionIV() {
       replaceWork(sorted);
       toast.info('Work experiences sorted by date (latest first)');
     }
-  }, [form, replaceWork]);
+  }, [form.getValues, replaceWork]);
 
   /**
    * Handle adding a new work experience entry
@@ -86,9 +94,9 @@ export const SectionIV = memo(function SectionIV() {
       dateFrom: new Date(),
       dateTo: null,
     });
-    setTimeout(() => {
+    startTransition(() => {
       sortWorkExperiencesWithNotification();
-    }, 0);
+    });
   }, [appendWork, sortWorkExperiencesWithNotification]);
 
   /**
@@ -381,236 +389,49 @@ export const SectionIV = memo(function SectionIV() {
                 history
               </p>
             </div>
+          ) : shouldVirtualizeWork ? (
+            // Virtualized rendering for >10 items
+            <div
+              ref={workParentRef}
+              style={{ height: '600px', overflow: 'auto' }}
+              className="space-y-4">
+              <div
+                style={{
+                  height: `${workVirtualizer.getTotalSize()}px`,
+                  position: 'relative',
+                }}>
+                {workVirtualizer.getVirtualItems().map((virtualItem) => (
+                  <div
+                    key={workFields[virtualItem.index].id}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: `${virtualItem.size}px`,
+                      transform: `translateY(${virtualItem.start}px)`,
+                    }}>
+                    <div className="pb-4">
+                      <WorkExperienceItem
+                        index={virtualItem.index}
+                        onRemove={removeWork}
+                        onDateBlur={handleDateBlur}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           ) : (
+            // Non-virtualized rendering for <=10 items
             <div className="space-y-4">
               {workFields.map((field, index) => (
-                <div
+                <WorkExperienceItem
                   key={field.id}
-                  className="p-5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 space-y-6">
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-medium">
-                        {index + 1}
-                      </div>
-                      <p className="text-sm font-medium">
-                        Work Experience #{index + 1}
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeWork(index)}
-                      className="text-muted-foreground hover:text-destructive">
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name={`workExperience.${index}.dateFrom`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            From <span className="text-destructive">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="date"
-                              {...field}
-                              value={
-                                field.value instanceof Date
-                                  ? field.value.toISOString().split('T')[0]
-                                  : ''
-                              }
-                              onChange={(e) => {
-                                field.onChange(
-                                  e.target.value
-                                    ? new Date(e.target.value)
-                                    : null
-                                );
-                              }}
-                              onBlur={handleDateBlur}
-                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`workExperience.${index}.dateTo`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>To (leave blank if present)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="date"
-                              {...field}
-                              value={
-                                field.value instanceof Date
-                                  ? field.value.toISOString().split('T')[0]
-                                  : ''
-                              }
-                              onChange={(e) => {
-                                field.onChange(
-                                  e.target.value
-                                    ? new Date(e.target.value)
-                                    : null
-                                );
-                              }}
-                              onBlur={handleDateBlur}
-                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`workExperience.${index}.positionTitle`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            Position Title{' '}
-                            <span className="text-destructive">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="e.g., Professor"
-                              {...field}
-                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`workExperience.${index}.departmentAgency`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            Department / Agency{' '}
-                            <span className="text-destructive">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="e.g., TUP Manila"
-                              {...field}
-                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`workExperience.${index}.monthlySalary`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Monthly Salary (PHP)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              placeholder="e.g., 45000.00"
-                              {...field}
-                              value={field.value ?? ''}
-                              onChange={(e) =>
-                                field.onChange(
-                                  e.target.value
-                                    ? parseFloat(e.target.value)
-                                    : null
-                                )
-                              }
-                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`workExperience.${index}.salaryGrade`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Salary Grade/Step (if gov&apos;t)</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="e.g., SG-24 Step 1"
-                              {...field}
-                              value={field.value ?? ''}
-                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`workExperience.${index}.statusOfAppointment`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Status of Appointment</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            value={field.value ?? undefined}>
-                            <FormControl>
-                              <SelectTrigger className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors">
-                                <SelectValue placeholder="Select status" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="Permanent">Permanent</SelectItem>
-                              <SelectItem value="Temporary">Temporary</SelectItem>
-                              <SelectItem value="Contractual">
-                                Contractual
-                              </SelectItem>
-                              <SelectItem value="Casual">Casual</SelectItem>
-                              <SelectItem value="Co-terminus">
-                                Co-terminus
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`workExperience.${index}.isGovernment`}
-                      render={({ field }) => (
-                        <FormItem className="flex items-center space-x-3 space-y-0 rounded-md border border-slate-200 dark:border-slate-800 p-4">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <FormLabel className="font-normal cursor-pointer">
-                            Government Service (Y/N)
-                          </FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
+                  index={index}
+                  onRemove={removeWork}
+                  onDateBlur={handleDateBlur}
+                />
               ))}
             </div>
           )}
