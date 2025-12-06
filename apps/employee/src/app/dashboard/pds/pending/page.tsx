@@ -88,15 +88,13 @@ SkeletonCard.displayName = 'SkeletonCard';
 
 // Calculate completion for sorting (drafts not included in pending submissions)
 const calculateCompletion = (
-  status: 'submitted' | 'reviewing' | 'rejected'
+  status: 'submitted' | 'reviewing'
 ): number => {
   switch (status) {
     case 'submitted':
       return 95;
     case 'reviewing':
       return 98;
-    case 'rejected':
-      return 100;
     default:
       return 0;
   }
@@ -123,9 +121,9 @@ export default function PDSPendingPage() {
   // Debounce search query for performance
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  // Filter pending submissions (excluding drafts - they are managed separately)
+  // Filter pending submissions (excluding drafts and rejected - they are managed separately)
   const pendingSubmissions = useMemo(() => {
-    const pendingStatuses = ['submitted', 'reviewing', 'rejected'];
+    const pendingStatuses = ['submitted', 'reviewing'];
 
     let filtered = submissions.filter((submission) =>
       pendingStatuses.includes(submission.status)
@@ -160,10 +158,10 @@ export default function PDSPendingPage() {
           return a.status.localeCompare(b.status);
         case 'progress': {
           const progressA = calculateCompletion(
-            a.status as 'submitted' | 'reviewing' | 'rejected'
+            a.status as 'submitted' | 'reviewing'
           );
           const progressB = calculateCompletion(
-            b.status as 'submitted' | 'reviewing' | 'rejected'
+            b.status as 'submitted' | 'reviewing'
           );
           return progressB - progressA;
         }
@@ -173,7 +171,7 @@ export default function PDSPendingPage() {
     });
   }, [submissions, statusFilter, debouncedSearchQuery, sortBy]);
 
-  // Calculate statistics (drafts excluded from pending submissions)
+  // Calculate statistics (drafts and rejected excluded from pending submissions)
   const stats = useMemo(() => {
     const submitted = pendingSubmissions.filter(
       (s) => s.status === 'submitted'
@@ -181,15 +179,11 @@ export default function PDSPendingPage() {
     const reviewing = pendingSubmissions.filter(
       (s) => s.status === 'reviewing'
     ).length;
-    const rejected = pendingSubmissions.filter(
-      (s) => s.status === 'rejected'
-    ).length;
 
     return {
       total: pendingSubmissions.length,
       submitted,
       reviewing,
-      rejected,
     };
   }, [pendingSubmissions]);
 
@@ -293,7 +287,6 @@ export default function PDSPendingPage() {
             totalPending={stats.total}
             submittedCount={stats.submitted}
             reviewingCount={stats.reviewing}
-            rejectedCount={stats.rejected}
           />
         )}
 
@@ -327,8 +320,7 @@ export default function PDSPendingPage() {
                   version: submission.version,
                   status: submission.status as
                     | 'submitted'
-                    | 'reviewing'
-                    | 'rejected',
+                    | 'reviewing',
                   createdAt: toISOString(submission.createdAt) || new Date().toISOString(),
                   updatedAt: toISOString(submission.updatedAt) || new Date().toISOString(),
                   submittedAt: toISOString(submission.submittedAt),

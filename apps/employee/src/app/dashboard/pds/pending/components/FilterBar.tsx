@@ -12,7 +12,7 @@ import {
 import { Input } from '../../../../../components/ui/input';
 import { Filter, SortAsc, Search } from 'lucide-react';
 
-export type StatusFilter = 'all' | 'submitted' | 'reviewing' | 'rejected';
+export type StatusFilter = 'all' | 'submitted' | 'reviewing';
 export type SortOption = 'date-desc' | 'date-asc' | 'status' | 'progress';
 
 interface FilterBarProps {
@@ -61,7 +61,6 @@ export const FilterBar = memo(
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="submitted">Submitted</SelectItem>
                 <SelectItem value="reviewing">Reviewing</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
               </SelectContent>
             </Select>
           </div>

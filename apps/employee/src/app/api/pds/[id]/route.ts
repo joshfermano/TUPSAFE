@@ -2,7 +2,7 @@
  * PDS API Route - Individual PDS Operations
  * GET /api/pds/[id] - Get complete PDS with all sections
  * PATCH /api/pds/[id] - Update existing PDS (draft/rejected only)
- * DELETE /api/pds/[id] - Delete PDS (draft only)
+ * DELETE /api/pds/[id] - Delete PDS (draft/rejected only)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -13,6 +13,7 @@ import {
   type UpdatePDSData,
 } from '@tupsafe/database/server';
 import { createServerClient } from '@tupsafe/auth/server';
+import { createAuditLog } from '@tupsafe/database/server';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -233,7 +234,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
 /**
  * DELETE /api/pds/[id]
- * Delete a PDS submission (draft only)
+ * Delete a PDS submission (draft or rejected only)
  *
  * Path Parameters:
  * - id: PDS submission UUID
@@ -245,9 +246,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
  * }
  *
  * Security:
- * - Only draft submissions can be deleted
+ * - Only draft and rejected submissions can be deleted
  * - Validates user ownership
  * - Permanent deletion (cannot be undone)
+ * - Audit logged for compliance
  */
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
@@ -289,12 +291,13 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       );
     }
 
-    // Validate that PDS can be deleted (only drafts)
-    if (existingPDS.submission.status !== 'draft') {
+    // Validate that PDS can be deleted (only drafts or rejected)
+    const allowedDeleteStatuses = ['draft', 'rejected'];
+    if (!allowedDeleteStatuses.includes(existingPDS.submission.status)) {
       return NextResponse.json(
         {
           success: false,
-          error: `Cannot delete PDS with status '${existingPDS.submission.status}'. Only draft submissions can be deleted. Please archive submitted or approved submissions instead.`,
+          error: `Cannot delete PDS with status '${existingPDS.submission.status}'. Only draft or rejected submissions can be deleted. Please archive submitted or approved submissions instead.`,
         },
         { status: 403 }
       );
@@ -303,13 +306,30 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     // Delete PDS submission
     await deletePDSSubmission(id, session.user.id);
 
+    // Create audit log for the deletion
+    await createAuditLog({
+      userId: session.user.id,
+      action: 'DELETE',
+      entityType: 'pds_submission',
+      entityId: id,
+      changes: {
+        deletedStatus: existingPDS.submission.status,
+        version: existingPDS.submission.version,
+        year: existingPDS.submission.year,
+        wasRejected: existingPDS.submission.status === 'rejected',
+        rejectionReason: existingPDS.submission.rejectionReason,
+      },
+      ipAddress: request.headers.get('x-forwarded-for') || undefined,
+      userAgent: request.headers.get('user-agent') || undefined,
+    });
+
     console.log(
-      `[DELETE /api/pds/[id]] Deleted draft PDS ${id} for user ${session.user.id}`
+      `[DELETE /api/pds/[id]] Deleted ${existingPDS.submission.status} PDS ${id} for user ${session.user.id}`
     );
 
     return NextResponse.json({
       success: true,
-      message: 'Draft PDS deleted successfully',
+      message: `PDS deleted successfully`,
     });
   } catch (error) {
     console.error('[DELETE /api/pds/[id]] Error deleting PDS:', error);
