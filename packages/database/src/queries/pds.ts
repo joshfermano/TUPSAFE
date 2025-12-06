@@ -836,9 +836,11 @@ export async function submitPDSForApproval(
       throw new Error('PDS submission not found or access denied');
     }
 
-    if (submission.status !== 'draft') {
+    // Allow both draft and rejected submissions to be submitted/resubmitted
+    const allowedStatuses = ['draft', 'rejected'];
+    if (!allowedStatuses.includes(submission.status)) {
       throw new Error(
-        `Cannot submit PDS with status '${submission.status}'. Only draft submissions can be submitted.`
+        `Cannot submit PDS with status '${submission.status}'. Only draft or rejected submissions can be submitted.`
       );
     }
 

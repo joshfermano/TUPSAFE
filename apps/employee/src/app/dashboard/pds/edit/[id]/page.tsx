@@ -1,158 +1,238 @@
 'use client';
 
 /**
- * PDS Edit Detail Page
- * CS Form No. 212 Revised 2025 - Edit Mode with Admin Approval Requirement
+ * PDS Edit Page
+ * CS Form No. 212 Revised 2025
  *
- * Design: Clean, minimalistic, modern, premium
- * Layout: Form sections with inline validation
- * Theme: TUP red accent - oklch(0.55_0.22_15)
- * Features: Auto-save every 30s, change tracking, optimistic updates
+ * Complete production-ready multi-step wizard for editing existing PDS submissions.
+ * Architecture matches the create page while preserving edit-specific features:
+ * - Permission checking (draft/rejected only)
+ * - Data fetching and transformation from backend
+ * - PATCH updates instead of POST creation
+ * - Authorization states (loading, not found, unauthorized)
+ *
+ * Features:
+ * - Multi-step wizard: 6 sections
+ * - React Hook Form + FormProvider context
+ * - useAutoSave hook with dual persistence (localStorage + database)
+ * - Per-section validation using form.trigger()
+ * - Magic UI components: ShimmerButton, DotPattern
+ * - Draft restoration dialog
+ * - Save status indicator (Saving/Saved/Error with timestamp)
+ * - Submission confirmation dialog with checklist
+ * - Confetti on success
  */
 
-import React, { useMemo, useState, useEffect, useCallback, use } from 'react';
-import Link from 'next/link';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+  Suspense,
+  use,
+} from 'react';
+import {
+  useUpdatePDS,
+  useSubmitPDS,
+} from '../../../../../hooks/usePDS';
+import { useForm, FormProvider } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../../../../providers/AuthProvider';
-import { usePdsSubmissionById } from '../../../../../hooks/usePdsSubmissionById';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  completePdsSchema,
-  type CompletePdsData,
-} from '../../../../../lib/validations/pds-schema';
 import { toast } from 'sonner';
-import { z } from 'zod';
-import { useUpdatePDS, useSubmitPDS } from '../../../../../hooks/usePDS';
+import confetti from 'canvas-confetti';
 import {
-  AlertCircle,
-  Save,
-  Send,
-  ChevronRight,
   User,
   Users,
   GraduationCap,
-  Award,
   Briefcase,
   Heart,
-  BookOpen,
-  Star,
+  Info,
+  CheckCircle2,
+  AlertCircle,
+  Save,
+  ArrowLeft,
+  ArrowRight,
+  Loader2,
+  FileCheck,
+  Clock,
+  XCircle,
+  AlertTriangle,
   ShieldAlert,
 } from 'lucide-react';
 
-// UI Components
-import { BlurFade } from '../../../../../components/ui/blur-fade';
-import { Card } from '../../../../../components/ui/card';
-import { Button } from '../../../../../components/ui/button';
+// Validation schemas
 import {
-  Alert,
-  AlertTitle,
-  AlertDescription,
-} from '../../../../../components/ui/alert';
-import { Progress } from '../../../../../components/ui/progress';
-import { Input } from '../../../../../components/ui/input';
-import { Label } from '../../../../../components/ui/label';
-import { Textarea } from '../../../../../components/ui/textarea';
-import { Separator } from '../../../../../components/ui/separator';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../../../../../components/ui/select';
-import { cn } from '../../../../../lib/utils';
-
-// Transformations
-import { transformPdsForSubmission } from '../../../../../lib/utils/pds-transformations';
+  completePdsSchema,
+  getPdsSectionProgress,
+  type CompletePdsData,
+} from '../../../../../lib/validations/pds-schema';
+import { z } from 'zod';
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-interface EditableSectionProps {
-  title: string;
-  icon: React.ElementType;
-  children: React.ReactNode;
-  delay?: number;
+/**
+ * Draft data structure for saving/restoring form state
+ */
+interface PdsDraftData {
+  formData: Partial<CompletePdsData>;
+  completedSections: number[];
+  currentSection: number;
+  savedAt: string;
 }
 
-// ============================================================================
-// EDITABLE SECTION COMPONENT
-// ============================================================================
-
-const EditableSection = React.memo(
-  ({ title, icon: Icon, children, delay = 0 }: EditableSectionProps) => {
-    return (
-      <BlurFade delay={delay}>
-        <Card className="p-5 hover:border-[oklch(0.55_0.22_15)] dark:hover:border-[oklch(0.65_0.24_15)] transition-colors">
-          <div className="flex items-center gap-2 mb-4">
-            <Icon className="h-5 w-5 text-[oklch(0.55_0.22_15)] dark:text-[oklch(0.65_0.24_15)]" />
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-              {title}
-            </h2>
-          </div>
-          <Separator className="mb-4" />
-          {children}
-        </Card>
-      </BlurFade>
-    );
-  }
-);
-
-EditableSection.displayName = 'EditableSection';
-
-// ============================================================================
-// FORM FIELD COMPONENT
-// ============================================================================
-
-interface FormFieldProps {
+/**
+ * Section definition for the form
+ */
+interface PDSFormSection {
+  id: string;
   label: string;
-  name: string;
-  value: string | number | null | undefined;
-  onChange: (value: string) => void;
-  error?: string;
-  placeholder?: string;
-  type?: 'text' | 'email' | 'tel' | 'number' | 'date';
-  fullWidth?: boolean;
-  required?: boolean;
+  title: string;
+  icon: typeof User;
 }
 
-const FormField = React.memo(
-  ({
-    label,
-    name,
-    value,
-    onChange,
-    error,
-    placeholder,
-    type = 'text',
-    fullWidth = false,
-    required = false,
-  }: FormFieldProps) => {
-    return (
-      <div className={cn('space-y-1.5', fullWidth && 'md:col-span-2')}>
-        <Label htmlFor={name} className="text-xs font-medium">
-          {label} {required && <span className="text-rose-500">*</span>}
-        </Label>
-        <Input
-          id={name}
-          name={name}
-          type={type}
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          className={cn(error && 'border-rose-500 focus-visible:ring-rose-500')}
-        />
-        {error && (
-          <p className="text-xs text-rose-600 dark:text-rose-400">{error}</p>
-        )}
-      </div>
-    );
-  }
-);
+// Form components
+import { FormStepSkeleton } from '../../../../../components/forms/shared';
+import { PDSSectionIndicator } from '../../../../../components/forms/shared/PDSSectionIndicator';
+import { Button } from '../../../../../components/ui/button';
+import { Badge } from '../../../../../components/ui/badge';
+import { Card } from '../../../../../components/ui/card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../../../../components/ui/alert-dialog';
 
-FormField.displayName = 'FormField';
+// UI components - Keep only essential Magic UI components with subtle effects
+import { ShimmerButton } from '../../../../../components/ui/shimmer-button';
+import { DotPattern } from '../../../../../components/ui/dot-pattern';
+import { BlurFade } from '../../../../../components/ui/blur-fade';
+
+// Hooks
+import { useAutoSave, getSavedDraft } from '../../../../../hooks/useAutoSave';
+import { useAuth } from '../../../../../providers/AuthProvider';
+import { usePdsSubmissionById } from '../../../../../hooks/usePdsSubmissionById';
+
+// Transformations
+import {
+  transformPdsForSubmission,
+  transformPdsFromBackend,
+} from '../../../../../lib/utils/pds-transformations';
+
+// Section components (lazy-loaded)
+import {
+  SectionI,
+  SectionII,
+  SectionIII,
+  SectionIV,
+  SectionV,
+  SectionVI,
+} from '../../create/sections';
+
+// ============================================================================
+// SECTION DEFINITIONS
+// ============================================================================
+
+const FORM_SECTIONS: PDSFormSection[] = [
+  {
+    id: 'section-i',
+    label: 'Section I',
+    title: 'Personal Information',
+    icon: User,
+  },
+  {
+    id: 'section-ii',
+    label: 'Section II',
+    title: 'Family Background',
+    icon: Users,
+  },
+  {
+    id: 'section-iii',
+    label: 'Section III',
+    title: 'Educational Background',
+    icon: GraduationCap,
+  },
+  {
+    id: 'section-iv',
+    label: 'Section IV',
+    title: 'Eligibility & Work',
+    icon: Briefcase,
+  },
+  {
+    id: 'section-v',
+    label: 'Section V',
+    title: 'Training & Volunteer',
+    icon: Heart,
+  },
+  {
+    id: 'section-vi',
+    label: 'Section VI',
+    title: 'Other Information',
+    icon: Info,
+  },
+];
+
+// ============================================================================
+// SECTION FIELD MAPPINGS (for validation)
+// ============================================================================
+
+/**
+ * Get the form field paths for a specific section
+ * Used for per-section validation before navigation
+ */
+const getSectionFields = (section: number): string[] => {
+  switch (section) {
+    case 0: // Section I: Personal Information
+      return [
+        'personalInfo.surname',
+        'personalInfo.firstName',
+        'personalInfo.dateOfBirth',
+        'personalInfo.placeOfBirth',
+        'personalInfo.sex',
+        'personalInfo.civilStatus',
+        'personalInfo.citizenship',
+        'personalInfo.residentialAddress.barangay',
+        'personalInfo.residentialAddress.cityMunicipality',
+        'personalInfo.residentialAddress.province',
+        'personalInfo.permanentAddress.barangay',
+        'personalInfo.permanentAddress.cityMunicipality',
+        'personalInfo.permanentAddress.province',
+        'personalInfo.emailAddress',
+      ];
+    case 1: // Section II: Family Background - Optional
+      return [];
+    case 2: // Section III: Educational Background - Optional
+      return [];
+    case 3: // Section IV: Eligibility & Work - Optional
+      return [];
+    case 4: // Section V: Training & Volunteer - Optional
+      return [];
+    case 5: // Section VI: Other Information - References required
+      return ['otherInfo.references'];
+    default:
+      return [];
+  }
+};
+
+/**
+ * Get required fields description for error messages
+ */
+const getSectionRequiredFieldsDescription = (section: number): string => {
+  switch (section) {
+    case 0:
+      return 'personal details including name, birth info, citizenship, addresses, and email';
+    case 5:
+      return 'at least 3 character references';
+    default:
+      return 'all required fields';
+  }
+};
 
 // ============================================================================
 // LOADING STATE
@@ -162,7 +242,7 @@ const LoadingState = () => (
   <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
     <div className="relative">
       <div className="h-16 w-16 rounded-full border-4 border-slate-200 dark:border-slate-800" />
-      <div className="absolute top-0 left-0 h-16 w-16 rounded-full border-4 border-[oklch(0.55_0.22_15)] border-t-transparent animate-spin" />
+      <div className="absolute top-0 left-0 h-16 w-16 rounded-full border-4 border-primary border-t-transparent animate-spin" />
     </div>
     <p className="text-slate-600 dark:text-slate-400 text-lg font-medium">
       Loading PDS for editing...
@@ -171,18 +251,37 @@ const LoadingState = () => (
 );
 
 // ============================================================================
+// NOT FOUND STATE
+// ============================================================================
+
+const NotFoundState = ({ onBack }: { onBack: () => void }) => (
+  <BlurFade delay={0.1}>
+    <Card className="p-8 text-center max-w-2xl mx-auto">
+      <AlertCircle className="h-16 w-16 mx-auto text-red-500 mb-4" />
+      <h2 className="text-2xl font-bold mb-2">PDS Not Found</h2>
+      <p className="text-slate-600 dark:text-slate-400 mb-4">
+        The requested PDS submission could not be found.
+      </p>
+      <Button onClick={onBack}>Back to PDS</Button>
+    </Card>
+  </BlurFade>
+);
+
+// ============================================================================
 // UNAUTHORIZED EDIT STATE
 // ============================================================================
 
 const UnauthorizedEditState = ({
   status,
-  pdsId
+  pdsId,
+  onBack,
+  onViewDetails,
 }: {
   status: string;
   pdsId: string;
+  onBack: () => void;
+  onViewDetails: () => void;
 }) => {
-  const router = useRouter();
-
   const getMessage = () => {
     switch (status) {
       case 'submitted':
@@ -201,7 +300,9 @@ const UnauthorizedEditState = ({
       <Card className="p-8 text-center max-w-2xl mx-auto">
         <ShieldAlert className="h-16 w-16 mx-auto text-amber-500 mb-4" />
         <h2 className="text-2xl font-bold mb-2">Editing Not Allowed</h2>
-        <p className="text-slate-600 dark:text-slate-400 mb-4">{getMessage()}</p>
+        <p className="text-slate-600 dark:text-slate-400 mb-4">
+          {getMessage()}
+        </p>
 
         <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg mb-6">
           <h3 className="font-semibold mb-2">What you can do</h3>
@@ -213,12 +314,10 @@ const UnauthorizedEditState = ({
         </div>
 
         <div className="flex gap-3 justify-center">
-          <Button variant="outline" onClick={() => router.back()}>
+          <Button variant="outline" onClick={onBack}>
             Back to PDS
           </Button>
-          <Button onClick={() => router.push(`/dashboard/pds/view/${pdsId}`)}>
-            View Details
-          </Button>
+          <Button onClick={onViewDetails}>View Details</Button>
         </div>
       </Card>
     </BlurFade>
@@ -229,7 +328,7 @@ const UnauthorizedEditState = ({
 // MAIN PAGE COMPONENT
 // ============================================================================
 
-export default function PDSEditDetailPage({
+export default function PDSEditPage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -237,178 +336,581 @@ export default function PDSEditDetailPage({
   const { id: pdsId } = use(params);
   const router = useRouter();
   const { user } = useAuth();
+  const userId = user?.id || 'guest';
 
   // Fetch complete PDS data by ID
   const { pdsData: rawPdsData, loading, error } = usePdsSubmissionById(pdsId);
 
-  // Extract submission metadata from complete data
+  // Extract submission metadata
   const submission = rawPdsData?.submission ?? null;
 
   // Check if user can edit based on status
   const canEdit = submission?.status === 'draft' || submission?.status === 'rejected';
 
-  // Create compatible data structure for form (handles different property naming conventions)
-  // Note: Using 'as any as CompletePdsData' for type compatibility between DB schema and form schema
-  // The DB returns dates as strings and has additional ID fields, while the form expects Date objects
-  // Provide default empty objects/arrays for all nested properties to prevent null access errors
-  // Memoized to prevent infinite re-renders in useEffect dependency
-  const initialData = useMemo(() => {
-    if (!rawPdsData) return null;
-    return {
-      personalInfo: rawPdsData.personalInfo ?? {},
-      family: rawPdsData.familyBackground ?? {
-        spouseSurname: '',
-        spouseFirstName: '',
-        spouseMiddleName: '',
-        spouseNameExtension: '',
-        spouseOccupation: '',
-        spouseEmployer: '',
-        spouseBusinessAddress: '',
-        spouseTelephoneNo: '',
-        fatherSurname: '',
-        fatherFirstName: '',
-        fatherMiddleName: '',
-        fatherNameExtension: '',
-        motherMaidenSurname: '',
-        motherFirstName: '',
-        motherMiddleName: '',
-      },
-      education: rawPdsData.education ?? [],
-      eligibility: rawPdsData.civilService ?? [],
-      workExperience: rawPdsData.workExperience ?? [],
-      voluntaryWork: rawPdsData.voluntaryWork ?? [],
-      learningDevelopment: rawPdsData.training ?? [],
-      otherInfo: rawPdsData.otherInfo ?? {},
-    } as any as CompletePdsData;
-  }, [rawPdsData]);
-
-  const [isSaving, setIsSaving] = useState(false);
+  // State
+  const [currentSection, setCurrentSection] = useState(0);
+  const [completedSections, setCompletedSections] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [completionPercentage, setCompletionPercentage] = useState(0);
+  const [showDraftDialog, setShowDraftDialog] = useState(false);
+  const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
   // Initialize mutations
   const updateMutation = useUpdatePDS(pdsId);
   const submitMutation = useSubmitPDS(pdsId);
 
-  // Form state - simplified for demonstration
-  // In production, use React Hook Form with proper validation
-  const [formData, setFormData] = useState<CompletePdsData | null>(initialData);
+  // Transform backend data to frontend format
+  const initialData = useMemo(() => {
+    if (!rawPdsData) return null;
+    return transformPdsFromBackend({
+      personalInfo: rawPdsData.personalInfo,
+      familyBackground: rawPdsData.familyBackground,
+      education: rawPdsData.education,
+      civilService: rawPdsData.civilService,
+      workExperience: rawPdsData.workExperience,
+      voluntaryWork: rawPdsData.voluntaryWork,
+      training: rawPdsData.training,
+      otherInfo: rawPdsData.otherInfo,
+    });
+  }, [rawPdsData]);
 
+  // Form setup - no resolver during multi-step flow to allow incomplete data
+  // Final validation happens on submission
+  const form = useForm<Partial<CompletePdsData>>({
+    defaultValues: initialData || {},
+    mode: 'onBlur',
+  });
+
+  // Initialize form with data when it loads
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
-      // Calculate initial completion
-      setCompletionPercentage(85); // Mock calculation
+      form.reset(initialData);
     }
-  }, [initialData]);
+  }, [initialData, form]);
 
-  // Auto-save every 30 seconds
-  useEffect(() => {
-    if (!hasUnsavedChanges) return;
+  // Callback-based approach for getting draft data
+  const getDraftData = useCallback(
+    (): PdsDraftData => ({
+      formData: form.getValues(),
+      completedSections,
+      currentSection,
+      savedAt: new Date().toISOString(),
+    }),
+    [completedSections, currentSection, form]
+  );
 
-    const timer = setTimeout(() => {
-      handleSaveDraft();
-    }, 30000);
+  // Save draft to database (always PATCH for edit mode)
+  const saveDraftToDatabase = useCallback(
+    async (data: PdsDraftData): Promise<void> => {
+      try {
+        // Transform form data for backend
+        const transformedData = transformPdsForSubmission(data.formData);
 
-    return () => clearTimeout(timer);
-  }, [formData, hasUnsavedChanges]);
+        // Always PATCH (not POST) for edit mode
+        const response = await fetch(`/api/pds/${pdsId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(transformedData),
+        });
 
-  const handleFieldChange = useCallback((field: string, value: any) => {
-    setFormData((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        [field]: value,
-      };
+        if (!response.ok) {
+          const errorData = await response
+            .json()
+            .catch(() => ({ error: 'Unknown error' }));
+          throw new Error(errorData.error || 'Failed to update draft');
+        }
+
+        console.log('[PDS Edit] Draft updated successfully:', pdsId);
+      } catch (error) {
+        console.error('[PDS Edit] Error saving draft to database:', error);
+        throw error;
+      }
+    },
+    [pdsId]
+  );
+
+  // Auto-save setup with database persistence (60-second intervals)
+  const { saveStatus, lastSaved, saveNow, clearSaved } =
+    useAutoSave<PdsDraftData>({
+      key: `pds-edit-${pdsId}`,
+      getData: getDraftData,
+      debounceMs: 60000,
+      autoSaveIntervalMs: 60000,
+      enabled: !isSubmitting && canEdit, // Permission check
+      showToast: false,
+      onSave: async (data: PdsDraftData) => {
+        await saveDraftToDatabase(data);
+      },
+      onError: (error) => {
+        console.error('Draft save error:', error);
+      },
     });
-    setHasUnsavedChanges(true);
-  }, []);
 
-  const handleSaveDraft = useCallback(async () => {
-    if (!formData) return;
+  // Check for localStorage draft restoration (only if newer than database)
+  useEffect(() => {
+    if (!initialData || !userId || !submission) return;
 
-    setIsSaving(true);
-    try {
-      // Transform data structure to match backend expectations
-      const transformedData = transformPdsForSubmission(formData);
+    const savedDraft = getSavedDraft<PdsDraftData>(`pds-edit-${pdsId}`);
 
-      // Update PDS draft via mutation
-      await updateMutation.mutateAsync(transformedData as any);
+    if (savedDraft && savedDraft.savedAt) {
+      const savedTime = new Date(savedDraft.savedAt);
+      const lastFetchTime = new Date(submission.updatedAt || 0);
 
-      setHasUnsavedChanges(false);
-      toast.success('Draft saved successfully');
-    } catch (error) {
-      console.error('Save draft error:', error);
-      toast.error('Failed to save draft', {
-        description: error instanceof Error ? error.message : 'Please try again.',
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  }, [pdsId, formData, updateMutation]);
-
-  const handleSubmit = useCallback(async () => {
-    if (!formData) return;
-
-    setIsSubmitting(true);
-
-    try {
-      // Validate
-      const validatedData = completePdsSchema.parse(formData);
-
-      // Transform data structure to match backend expectations
-      const transformedData = transformPdsForSubmission(validatedData);
-
-      // Save changes if needed
-      if (hasUnsavedChanges) {
-        await updateMutation.mutateAsync(transformedData as any);
+      // Show dialog ONLY if localStorage is newer than database
+      if (savedTime > lastFetchTime) {
+        setShowDraftDialog(true);
       }
-
-      // Submit for review
-      await submitMutation.mutateAsync();
-
-      // Clear unsaved flag
-      setHasUnsavedChanges(false);
-
-      toast.success('PDS Submitted Successfully!', {
-        description: 'Your changes have been submitted for admin review.',
-      });
-
-      // Redirect
-      setTimeout(() => {
-        router.push(`/dashboard/pds/view/${pdsId}`);
-      }, 1500);
-
-    } catch (error) {
-      console.error('Submit error:', error);
-
-      if (error instanceof z.ZodError) {
-        const firstError = error.errors[0];
-        toast.error('Validation Error', {
-          description: `${firstError.path.join('.')}: ${firstError.message}`,
-        });
-      } else {
-        toast.error('Submission Failed', {
-          description: error instanceof Error ? error.message : 'Unable to submit PDS.',
-        });
-      }
-    } finally {
-      setIsSubmitting(false);
     }
-  }, [pdsId, formData, hasUnsavedChanges, updateMutation, submitMutation, router]);
+  }, [initialData, pdsId, userId, submission]);
 
-  const handleCancel = useCallback(() => {
-    if (hasUnsavedChanges) {
+  // Handle draft restoration
+  const handleRestoreDraft = useCallback(() => {
+    const savedDraft = getSavedDraft<PdsDraftData>(`pds-edit-${pdsId}`);
+    if (savedDraft && savedDraft.formData) {
+      // Restore form data
+      form.reset(savedDraft.formData);
+
+      // Restore completed sections
       if (
-        confirm('You have unsaved changes. Are you sure you want to leave?')
+        savedDraft.completedSections &&
+        Array.isArray(savedDraft.completedSections)
       ) {
-        router.back();
+        setCompletedSections(savedDraft.completedSections);
+      } else {
+        // Fallback: Calculate which sections are completed
+        const progress = getPdsSectionProgress(savedDraft.formData);
+        const completed: number[] = [];
+        Object.entries(progress).forEach(([, value], index) => {
+          if (value >= 100) {
+            completed.push(index);
+          }
+        });
+        setCompletedSections(completed);
       }
-    } else {
-      router.back();
+
+      // Restore current section position
+      if (
+        typeof savedDraft.currentSection === 'number' &&
+        savedDraft.currentSection >= 0
+      ) {
+        setCurrentSection(savedDraft.currentSection);
+      }
+
+      const savedTime = savedDraft.savedAt
+        ? new Date(savedDraft.savedAt).toLocaleString()
+        : 'previously';
+      toast.success('Draft Restored', {
+        description: `Your local changes from ${savedTime} have been loaded.`,
+      });
     }
-  }, [hasUnsavedChanges, router]);
+    setShowDraftDialog(false);
+  }, [pdsId, form]);
+
+  const handleDiscardDraft = useCallback(() => {
+    clearSaved();
+    setShowDraftDialog(false);
+    toast.info('Local Draft Discarded', {
+      description: 'Using the database version.',
+    });
+  }, [clearSaved]);
+
+  // Manual save handler
+  const handleSaveNow = useCallback(async (): Promise<void> => {
+    try {
+      const draftData = getDraftData();
+      await saveDraftToDatabase(draftData);
+      await saveNow();
+
+      toast.success('Draft Saved', {
+        description: 'Your changes have been saved successfully.',
+      });
+    } catch (error) {
+      console.error('[PDS Edit] Failed to save draft:', error);
+      toast.error('Failed to save draft', {
+        description:
+          error instanceof Error ? error.message : 'Please try again.',
+        duration: 5000,
+      });
+    }
+  }, [getDraftData, saveDraftToDatabase, saveNow]);
+
+  // Navigation handlers
+  const handleNext = useCallback(async () => {
+    const sectionFields = getSectionFields(currentSection);
+
+    // If there are required fields, validate them
+    if (sectionFields.length > 0) {
+      const isValid = await form.trigger(
+        sectionFields as Parameters<typeof form.trigger>[0]
+      );
+
+      if (!isValid) {
+        const requiredFieldsDesc =
+          getSectionRequiredFieldsDescription(currentSection);
+        toast.error('Please fill in all required fields', {
+          description: `Required: ${requiredFieldsDesc}`,
+        });
+        return;
+      }
+    }
+
+    // Mark section as completed
+    if (!completedSections.includes(currentSection)) {
+      setCompletedSections([...completedSections, currentSection]);
+    }
+
+    // Move to next section
+    if (currentSection < FORM_SECTIONS.length - 1) {
+      setCurrentSection(currentSection + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [currentSection, completedSections, form]);
+
+  const handlePrevious = useCallback(() => {
+    if (currentSection > 0) {
+      setCurrentSection(currentSection - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [currentSection]);
+
+  const handleSectionClick = useCallback(
+    (sectionIndex: number) => {
+      if (
+        sectionIndex <= currentSection ||
+        completedSections.includes(sectionIndex - 1)
+      ) {
+        setCurrentSection(sectionIndex);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    },
+    [currentSection, completedSections]
+  );
+
+  // Form submission with sequential mutations
+  const handleSubmit = useCallback(
+    async (data: Partial<CompletePdsData>) => {
+      setIsSubmitting(true);
+
+      try {
+        // STEP 1: Prepare data for validation with type conversions
+        const dataWithTypeConversions = { ...data };
+
+        // Convert Personal Info date/number fields
+        if (dataWithTypeConversions.personalInfo) {
+          dataWithTypeConversions.personalInfo = {
+            ...dataWithTypeConversions.personalInfo,
+            dateOfBirth: dataWithTypeConversions.personalInfo.dateOfBirth
+              ? dataWithTypeConversions.personalInfo.dateOfBirth instanceof Date
+                ? dataWithTypeConversions.personalInfo.dateOfBirth
+                : new Date(dataWithTypeConversions.personalInfo.dateOfBirth)
+              : null,
+            heightM: dataWithTypeConversions.personalInfo.heightM
+              ? typeof dataWithTypeConversions.personalInfo.heightM === 'number'
+                ? dataWithTypeConversions.personalInfo.heightM
+                : parseFloat(
+                    dataWithTypeConversions.personalInfo.heightM as any
+                  )
+              : null,
+            weightKg: dataWithTypeConversions.personalInfo.weightKg
+              ? typeof dataWithTypeConversions.personalInfo.weightKg ===
+                'number'
+                ? dataWithTypeConversions.personalInfo.weightKg
+                : parseFloat(
+                    dataWithTypeConversions.personalInfo.weightKg as any
+                  )
+              : null,
+          } as any;
+        }
+
+        // Convert Family Background - Children dateOfBirth
+        if (dataWithTypeConversions.family?.children) {
+          dataWithTypeConversions.family.children =
+            dataWithTypeConversions.family.children.map((child: any) => ({
+              ...child,
+              dateOfBirth: child.dateOfBirth
+                ? child.dateOfBirth instanceof Date
+                  ? child.dateOfBirth
+                  : new Date(child.dateOfBirth)
+                : null,
+            }));
+        }
+
+        // Convert Civil Service Eligibility dates
+        if (dataWithTypeConversions.eligibility) {
+          dataWithTypeConversions.eligibility =
+            dataWithTypeConversions.eligibility.map((item: any) => ({
+              ...item,
+              rating: item.rating
+                ? typeof item.rating === 'number'
+                  ? item.rating
+                  : parseFloat(item.rating)
+                : null,
+              dateOfExam: item.dateOfExam
+                ? item.dateOfExam instanceof Date
+                  ? item.dateOfExam
+                  : new Date(item.dateOfExam)
+                : null,
+              licenseValidityDate: item.licenseValidityDate
+                ? item.licenseValidityDate instanceof Date
+                  ? item.licenseValidityDate
+                  : new Date(item.licenseValidityDate)
+                : null,
+            }));
+        }
+
+        // Convert Work Experience dates and salary
+        if (dataWithTypeConversions.workExperience) {
+          dataWithTypeConversions.workExperience =
+            dataWithTypeConversions.workExperience.map((item: any) => ({
+              ...item,
+              dateFrom: item.dateFrom
+                ? item.dateFrom instanceof Date
+                  ? item.dateFrom
+                  : new Date(item.dateFrom)
+                : null,
+              dateTo: item.dateTo
+                ? item.dateTo instanceof Date
+                  ? item.dateTo
+                  : new Date(item.dateTo)
+                : null,
+              monthlySalary: item.monthlySalary
+                ? typeof item.monthlySalary === 'number'
+                  ? item.monthlySalary
+                  : parseFloat(item.monthlySalary)
+                : null,
+            }));
+        }
+
+        // Convert Voluntary Work dates and hours
+        if (dataWithTypeConversions.voluntaryWork) {
+          dataWithTypeConversions.voluntaryWork =
+            dataWithTypeConversions.voluntaryWork.map((item: any) => ({
+              ...item,
+              dateFrom: item.dateFrom
+                ? item.dateFrom instanceof Date
+                  ? item.dateFrom
+                  : new Date(item.dateFrom)
+                : null,
+              dateTo: item.dateTo
+                ? item.dateTo instanceof Date
+                  ? item.dateTo
+                  : new Date(item.dateTo)
+                : null,
+              numberOfHours: item.numberOfHours
+                ? typeof item.numberOfHours === 'number'
+                  ? item.numberOfHours
+                  : parseFloat(item.numberOfHours)
+                : null,
+            }));
+        }
+
+        // Convert Learning Development dates and hours
+        if (dataWithTypeConversions.learningDevelopment) {
+          dataWithTypeConversions.learningDevelopment =
+            dataWithTypeConversions.learningDevelopment.map((item: any) => ({
+              ...item,
+              dateFrom: item.dateFrom
+                ? item.dateFrom instanceof Date
+                  ? item.dateFrom
+                  : new Date(item.dateFrom)
+                : null,
+              dateTo: item.dateTo
+                ? item.dateTo instanceof Date
+                  ? item.dateTo
+                  : new Date(item.dateTo)
+                : null,
+              hours: item.hours
+                ? typeof item.hours === 'number'
+                  ? item.hours
+                  : parseFloat(item.hours)
+                : null,
+            }));
+        }
+
+        // Filter out empty references
+        if (dataWithTypeConversions.otherInfo?.references) {
+          dataWithTypeConversions.otherInfo.references =
+            dataWithTypeConversions.otherInfo.references.filter(
+              (ref: any) =>
+                ref.name &&
+                ref.name.trim() !== '' &&
+                ref.address &&
+                ref.address.trim() !== '' &&
+                ref.telephoneNo &&
+                ref.telephoneNo.trim() !== ''
+            );
+        }
+
+        // STEP 2: Validate using the schema
+        const validatedData = completePdsSchema.parse(dataWithTypeConversions);
+
+        // STEP 3: Transform to backend format
+        const backendData = transformPdsForSubmission(dataWithTypeConversions);
+
+        // Update existing PDS (PATCH)
+        await updateMutation.mutateAsync(backendData as any);
+
+        // Submit for review (status: draft/rejected → submitted)
+        await submitMutation.mutateAsync();
+
+        // Clear draft from localStorage
+        clearSaved();
+
+        // Success feedback
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+        });
+
+        toast.success('PDS Updated Successfully!', {
+          description: 'Your changes have been submitted for admin review.',
+        });
+
+        // Redirect to view page (not pending)
+        setTimeout(() => {
+          router.push(`/dashboard/pds/view/${pdsId}`);
+        }, 2000);
+      } catch (error) {
+        console.error('Submission error:', error);
+
+        if (error instanceof z.ZodError) {
+          // Format validation errors
+          const firstError = error.errors[0];
+          const errorPath = firstError.path.join('.');
+
+          let errorMessage: string;
+          let errorTitle = 'Validation Failed';
+
+          // Special handling for common errors
+          if (errorPath.includes('references')) {
+            errorTitle = 'Character References Required';
+            errorMessage =
+              'You must provide at least 3 complete character references.';
+          } else if (errorPath.includes('dateOfBirth')) {
+            errorTitle = 'Date of Birth Required';
+            errorMessage = 'Please provide a valid date of birth.';
+          } else {
+            errorMessage = firstError.message;
+          }
+
+          toast.error(errorTitle, {
+            description: errorMessage,
+            duration: 8000,
+          });
+
+          // Navigate to section with error
+          const errorSection = getSectionForFieldPath(errorPath);
+          if (errorSection !== null) {
+            setCurrentSection(errorSection);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        } else {
+          toast.error('Update Failed', {
+            description:
+              error instanceof Error ? error.message : 'Please try again.',
+          });
+        }
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [updateMutation, submitMutation, clearSaved, router, pdsId]
+  );
+
+  /**
+   * Helper to determine which section a field path belongs to
+   */
+  const getSectionForFieldPath = (fieldPath: string): number | null => {
+    if (fieldPath.startsWith('personalInfo')) return 0;
+    if (fieldPath.startsWith('family')) return 1;
+    if (fieldPath.startsWith('education')) return 2;
+    if (
+      fieldPath.startsWith('eligibility') ||
+      fieldPath.startsWith('workExperience')
+    )
+      return 3;
+    if (
+      fieldPath.startsWith('voluntaryWork') ||
+      fieldPath.startsWith('learningDevelopment')
+    )
+      return 4;
+    if (fieldPath.startsWith('otherInfo')) return 5;
+    return null;
+  };
+
+  // Save status display
+  const saveStatusDisplay = useMemo(() => {
+    switch (saveStatus) {
+      case 'saving':
+        return (
+          <Badge
+            variant="outline"
+            className="border-blue-300 bg-blue-50 dark:bg-blue-950 dark:border-blue-700">
+            <Loader2 className="h-3 w-3 mr-1.5 animate-spin text-blue-600 dark:text-blue-400" />
+            <span className="text-blue-700 dark:text-blue-300">
+              <span className="sm:hidden">Saving</span>
+              <span className="hidden sm:inline">Saving...</span>
+            </span>
+          </Badge>
+        );
+      case 'saved':
+        return (
+          <Badge
+            variant="outline"
+            className="border-green-300 bg-green-50 dark:bg-green-950 dark:border-green-700">
+            <CheckCircle2 className="h-3 w-3 mr-1.5 text-green-600 dark:text-green-400" />
+            <span className="text-green-700 dark:text-green-300">
+              <span className="sm:hidden">Saved</span>
+              <span className="hidden sm:inline">
+                Saved{' '}
+                {lastSaved
+                  ? `at ${lastSaved.toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}`
+                  : ''}
+              </span>
+            </span>
+          </Badge>
+        );
+      case 'error':
+        return (
+          <Badge
+            variant="outline"
+            className="border-red-300 bg-red-50 dark:bg-red-950 dark:border-red-700">
+            <XCircle className="h-3 w-3 mr-1.5 text-red-600 dark:text-red-400" />
+            <span className="text-red-700 dark:text-red-300">
+              <span className="sm:hidden">Error</span>
+              <span className="hidden sm:inline">Save failed</span>
+            </span>
+          </Badge>
+        );
+      default:
+        return null;
+    }
+  }, [saveStatus, lastSaved]);
+
+  // Render current section - NO key prop to prevent remounting
+  const renderSection = useMemo(() => {
+    switch (currentSection) {
+      case 0:
+        return <SectionI />;
+      case 1:
+        return <SectionII />;
+      case 2:
+        return <SectionIII />;
+      case 3:
+        return <SectionIV />;
+      case 4:
+        return <SectionV />;
+      case 5:
+        return <SectionVI />;
+      default:
+        return null;
+    }
+  }, [currentSection]);
+
+  const isLastSection = currentSection === FORM_SECTIONS.length - 1;
 
   // Loading state
   if (loading) {
@@ -418,348 +920,250 @@ export default function PDSEditDetailPage({
   // Error or not found state
   if (error || !rawPdsData || !submission) {
     return (
-      <BlurFade delay={0.1}>
-        <Card className="p-8 text-center max-w-2xl mx-auto">
-          <h2 className="text-2xl font-bold mb-2">PDS Not Found</h2>
-          <p className="text-slate-600 dark:text-slate-400 mb-4">
-            {error || 'The requested PDS submission could not be found.'}
-          </p>
-          <Button onClick={() => router.back()}>
-            Back to PDS
-          </Button>
-        </Card>
-      </BlurFade>
+      <NotFoundState
+        onBack={() => router.back()}
+      />
     );
   }
 
   // Permission check - only allow editing if status is draft or rejected
   if (!canEdit) {
-    return <UnauthorizedEditState status={submission.status} pdsId={pdsId} />;
+    return (
+      <UnauthorizedEditState
+        status={submission.status}
+        pdsId={pdsId}
+        onBack={() => router.back()}
+        onViewDetails={() => router.push(`/dashboard/pds/view/${pdsId}`)}
+      />
+    );
   }
 
   // Cannot proceed without form data
-  if (!formData) {
+  if (!initialData) {
     return <LoadingState />;
   }
 
   return (
-    <div className="space-y-6 pb-10">
-      {/* Breadcrumb */}
-      <BlurFade delay={0.05}>
-        <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-          <Link
-            href="/dashboard"
-            className="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
-            Dashboard
-          </Link>
-          <ChevronRight className="h-4 w-4" />
-          <Link
-            href="/dashboard/pds/view"
-            className="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
-            PDS
-          </Link>
-          <ChevronRight className="h-4 w-4" />
-          <span className="text-slate-900 dark:text-slate-100 font-medium">
-            Edit
-          </span>
-        </div>
-      </BlurFade>
+    <div className="relative min-h-screen">
+      {/* Subtle background pattern */}
+      <DotPattern
+        className="fixed inset-0 -z-10 opacity-[0.03] dark:opacity-[0.05]"
+        width={20}
+        height={20}
+        cx={1}
+        cy={1}
+        cr={1}
+      />
 
-      {/* Admin Approval Warning */}
-      <BlurFade delay={0.1}>
-        <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/10">
-          <AlertCircle className="h-4 w-4 text-amber-600" />
-          <AlertTitle className="text-amber-900 dark:text-amber-400">
-            Admin Approval Required
-          </AlertTitle>
-          <AlertDescription className="text-amber-700 dark:text-amber-500">
-            Changes to your PDS require administrator approval before taking
-            effect. Your current data remains active until changes are approved.
-          </AlertDescription>
-        </Alert>
-      </BlurFade>
-
-      {/* Header */}
-      <BlurFade delay={0.15}>
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-              Edit Personal Data Sheet
-            </h1>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-              CY {submission.year} • Editing mode
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {hasUnsavedChanges && (
-              <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-                Unsaved changes
-              </span>
-            )}
-            <Button variant="ghost" size="sm" onClick={handleCancel}>
-              Cancel
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSaveDraft}
-              disabled={isSaving || !hasUnsavedChanges}>
-              <Save className="h-4 w-4 mr-2" />
-              {isSaving ? 'Saving...' : 'Save Draft'}
-            </Button>
-            <Button
-              size="sm"
-              className="bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]"
-              onClick={handleSubmit}
-              disabled={isSubmitting}>
-              <Send className="h-4 w-4 mr-2" />
-              {isSubmitting ? 'Submitting...' : 'Submit for Review'}
-            </Button>
-          </div>
-        </div>
-      </BlurFade>
-
-      {/* Progress Indicator */}
-      <BlurFade delay={0.2}>
-        <div className="flex items-center gap-3">
-          <Progress value={completionPercentage} className="h-2 flex-1" />
-          <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
-            {completionPercentage}%
-          </span>
-        </div>
-      </BlurFade>
-
-      {/* I. PERSONAL INFORMATION */}
-      <EditableSection title="I. Personal Information" icon={User} delay={0.25}>
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              label="Surname"
-              name="surname"
-              value={formData.personalInfo.surname}
-              onChange={(val) =>
-                handleFieldChange('personalInfo', {
-                  ...formData.personalInfo,
-                  surname: val,
-                })
-              }
-              required
-            />
-            <FormField
-              label="First Name"
-              name="firstName"
-              value={formData.personalInfo.firstName}
-              onChange={(val) =>
-                handleFieldChange('personalInfo', {
-                  ...formData.personalInfo,
-                  firstName: val,
-                })
-              }
-              required
-            />
-            <FormField
-              label="Middle Name"
-              name="middleName"
-              value={formData.personalInfo.middleName}
-              onChange={(val) =>
-                handleFieldChange('personalInfo', {
-                  ...formData.personalInfo,
-                  middleName: val,
-                })
-              }
-            />
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Name Extension</Label>
-              <Select
-                value={formData.personalInfo?.nameExtension || '_none'}
-                onValueChange={(val) =>
-                  handleFieldChange('personalInfo', {
-                    ...(formData.personalInfo ?? {}),
-                    nameExtension: val === '_none' ? null : val,
-                  })
-                }>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select extension" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="_none">None</SelectItem>
-                  <SelectItem value="Jr.">Jr.</SelectItem>
-                  <SelectItem value="Sr.">Sr.</SelectItem>
-                  <SelectItem value="II">II</SelectItem>
-                  <SelectItem value="III">III</SelectItem>
-                  <SelectItem value="IV">IV</SelectItem>
-                  <SelectItem value="V">V</SelectItem>
-                </SelectContent>
-              </Select>
+      {/* Main content */}
+      <div className="max-w-5xl mx-auto space-y-8 pb-8">
+        {/* Header - Clean, Professional */}
+        <div className="pb-8 mb-8 border-b border-slate-200 dark:border-slate-800">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+                Edit Personal Data Sheet
+              </h1>
+              <div className="flex items-center gap-2">
+                <Badge
+                  variant="outline"
+                  className="text-xs font-normal border-slate-300 dark:border-slate-700 w-fit">
+                  CS Form No. 212 Revised 2025
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className={
+                    submission.status === 'draft'
+                      ? 'border-amber-300 bg-amber-50 dark:bg-amber-950 dark:border-amber-700 text-amber-700 dark:text-amber-300'
+                      : 'border-red-300 bg-red-50 dark:bg-red-950 dark:border-red-700 text-red-700 dark:text-red-300'
+                  }>
+                  {submission.status === 'draft' ? 'Draft' : 'Rejected'}
+                </Badge>
+              </div>
             </div>
-          </div>
 
-          <div className="text-sm text-slate-600 dark:text-slate-400 mt-6">
-            <p className="font-medium mb-2">
-              Note: This is a simplified edit form for demonstration purposes.
-            </p>
-            <p>
-              In production, all 8 sections would have fully functional form
-              fields with:
-            </p>
-            <ul className="list-disc list-inside space-y-1 mt-2 text-xs">
-              <li>Complete field validation using Zod schemas</li>
-              <li>
-                Dynamic array fields for children, work experience, education,
-                etc.
-              </li>
-              <li>Address autocomplete for Philippine locations</li>
-              <li>Date pickers for all date fields</li>
-              <li>File upload for supporting documents</li>
-              <li>Real-time validation feedback</li>
-              <li>Auto-save with optimistic UI updates</li>
-              <li>Change tracking and diff visualization</li>
-            </ul>
-          </div>
-        </div>
-      </EditableSection>
-
-      {/* II. FAMILY BACKGROUND */}
-      <EditableSection title="II. Family Background" icon={Users} delay={0.3}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            label="Spouse Surname"
-            name="spouseSurname"
-            value={formData.family?.spouseSurname ?? ''}
-            onChange={(val) =>
-              handleFieldChange('family', {
-                ...(formData.family ?? {}),
-                spouseSurname: val,
-              })
-            }
-          />
-          <FormField
-            label="Spouse First Name"
-            name="spouseFirstName"
-            value={formData.family?.spouseFirstName ?? ''}
-            onChange={(val) =>
-              handleFieldChange('family', {
-                ...(formData.family ?? {}),
-                spouseFirstName: val,
-              })
-            }
-          />
-        </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-4">
-          Additional family fields would be implemented here...
-        </p>
-      </EditableSection>
-
-      {/* III. EDUCATIONAL BACKGROUND */}
-      <EditableSection
-        title="III. Educational Background"
-        icon={GraduationCap}
-        delay={0.35}>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          Dynamic education level entries (Elementary, Secondary, Vocational,
-          College, Graduate Studies) would be implemented here with add/remove
-          functionality.
-        </p>
-      </EditableSection>
-
-      {/* IV. CIVIL SERVICE ELIGIBILITY */}
-      <EditableSection
-        title="IV. Civil Service Eligibility"
-        icon={Award}
-        delay={0.4}>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          Dynamic eligibility entries with add/remove functionality would be
-          implemented here.
-        </p>
-      </EditableSection>
-
-      {/* V. WORK EXPERIENCE */}
-      <EditableSection title="V. Work Experience" icon={Briefcase} delay={0.45}>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          Dynamic work experience entries with add/remove functionality would be
-          implemented here.
-        </p>
-      </EditableSection>
-
-      {/* VI. VOLUNTARY WORK */}
-      <EditableSection title="VI. Voluntary Work" icon={Heart} delay={0.5}>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          Dynamic voluntary work entries with add/remove functionality would be
-          implemented here.
-        </p>
-      </EditableSection>
-
-      {/* VII. LEARNING & DEVELOPMENT */}
-      <EditableSection
-        title="VII. Learning and Development Interventions"
-        icon={BookOpen}
-        delay={0.55}>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          Dynamic training/seminar entries with add/remove functionality would
-          be implemented here.
-        </p>
-      </EditableSection>
-
-      {/* VIII. OTHER INFORMATION */}
-      <EditableSection title="VIII. Other Information" icon={Star} delay={0.6}>
-        <div className="space-y-6">
-          <div>
-            <h3 className="text-sm font-semibold mb-3 text-slate-900 dark:text-slate-100">
-              Special Skills and Hobbies
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Tag input for skills would be implemented here...
-            </p>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-semibold mb-3 text-slate-900 dark:text-slate-100">
-              Supplementary Questions
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Yes/No questions with conditional detail fields would be
-              implemented here...
-            </p>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-semibold mb-3 text-slate-900 dark:text-slate-100">
-              Character References
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Minimum 3, maximum 5 references with add/remove functionality
-              would be implemented here...
-            </p>
-          </div>
-        </div>
-      </EditableSection>
-
-      {/* Bottom Actions */}
-      <BlurFade delay={0.65}>
-        <Card className="p-5 bg-slate-50 dark:bg-slate-900/50">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-sm text-slate-600 dark:text-slate-400">
-              <p className="font-medium">Ready to submit?</p>
-              <p className="text-xs">
-                Your changes will be sent to admin for review
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleCancel}>
-                Cancel
-              </Button>
+            {/* Save status - Always visible, mobile responsive */}
+            <div className="flex items-center gap-2 sm:gap-4">
+              {saveStatusDisplay}
               <Button
+                variant="outline"
                 size="sm"
-                className="bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]"
-                onClick={handleSubmit}
-                disabled={isSubmitting}>
-                <Send className="h-4 w-4 mr-2" />
-                {isSubmitting ? 'Submitting...' : 'Submit for Review'}
+                onClick={handleSaveNow}
+                disabled={isSubmitting}
+                className="border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900">
+                <Save className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Save Now</span>
               </Button>
             </div>
           </div>
-        </Card>
-      </BlurFade>
+
+          {/* Section progress indicator */}
+          <PDSSectionIndicator
+            sections={FORM_SECTIONS}
+            currentSection={currentSection}
+            completedSections={completedSections}
+            onSectionClick={handleSectionClick}
+          />
+        </div>
+
+        {/* Form */}
+        <FormProvider {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)}>
+            {/* Section content - No key prop to prevent remounting */}
+            <Suspense fallback={<FormStepSkeleton fieldCount={10} />}>
+              <div className="mb-10">{renderSection}</div>
+            </Suspense>
+
+            {/* Navigation buttons */}
+            <div className="flex items-center justify-between gap-4 pt-10 border-t border-slate-200 dark:border-slate-800">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handlePrevious}
+                disabled={currentSection === 0 || isSubmitting}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Previous
+              </Button>
+
+              <div className="flex items-center gap-3">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleSaveNow}
+                  disabled={isSubmitting}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Draft
+                </Button>
+
+                {isLastSection ? (
+                  <Button
+                    type="button"
+                    onClick={() => setShowSubmitDialog(true)}
+                    disabled={isSubmitting}
+                    size="lg"
+                    className="min-w-[180px] bg-amber-600 hover:bg-amber-700 text-white font-semibold border-2 border-amber-400 animate-pulse-border dark:bg-amber-500 dark:hover:bg-amber-600 dark:border-amber-300">
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <FileCheck className="h-4 w-4 mr-2" />
+                        Submit for Review
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <ShimmerButton
+                    type="button"
+                    onClick={handleNext}
+                    disabled={isSubmitting}>
+                    Next Section
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </ShimmerButton>
+                )}
+              </div>
+            </div>
+          </form>
+        </FormProvider>
+      </div>
+
+      {/* Draft restoration dialog */}
+      <AlertDialog open={showDraftDialog} onOpenChange={setShowDraftDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-primary" />
+              Resume Local Draft?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              We found newer changes in your browser storage. Would you like to
+              restore them, or use the version from the database?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleDiscardDraft}>
+              Use Database Version
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleRestoreDraft}>
+              Restore Local Changes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Submission confirmation dialog */}
+      <AlertDialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
+        <AlertDialogContent className="max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-xl">
+              <AlertCircle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+              Ready to Submit Your Changes?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-4">
+                <p className="text-base">
+                  Please review your changes before proceeding. Once submitted,
+                  you won&apos;t be able to edit until reviewed by an
+                  administrator.
+                </p>
+
+                {/* Warning checklist */}
+                <div className="rounded-lg border-2 border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-4 space-y-3">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                    <div className="space-y-2 text-sm text-amber-900 dark:text-amber-100">
+                      <p className="font-semibold">
+                        Before submitting, please confirm:
+                      </p>
+                      <ul className="space-y-1.5 ml-1">
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+                          <span>
+                            Have you reviewed all sections for accuracy?
+                          </span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+                          <span>Are all required fields completed?</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+                          <span>
+                            Did you provide at least 3 character references?
+                          </span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-sm text-muted-foreground">
+                  After submission, you won&apos;t be able to edit until
+                  reviewed by HR.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel
+              onClick={() => setShowSubmitDialog(false)}
+              className="sm:mr-2">
+              Cancel - Continue Editing
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowSubmitDialog(false);
+                form.handleSubmit(handleSubmit)();
+              }}
+              className="bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600">
+              <FileCheck className="h-4 w-4 mr-2" />
+              Yes, Submit Changes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
