@@ -474,6 +474,7 @@ export const pdsSubmissions = pgTable(
     approvedBy: uuid('approved_by'),
     approvedAt: timestamp('approved_at'),
     rejectionReason: text('rejection_reason'), // Reason for rejection if status is 'rejected'
+    reviewNotes: text('review_notes'), // Optional review feedback from admin/HR
     pdfFilePath: text('pdf_file_path'), // Supabase Storage path to generated PDF
     isLatest: boolean('is_latest').default(true).notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),

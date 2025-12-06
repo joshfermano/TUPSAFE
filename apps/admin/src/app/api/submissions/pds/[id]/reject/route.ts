@@ -127,6 +127,7 @@ export async function POST(
         approvedBy: sessionUser.id, // Track who rejected
         approvedAt: now,
         rejectionReason: validatedData.reason,
+        reviewNotes: null, // Clear any previous approval notes
         isLatest: false, // Allow user to create new PDS
         updatedAt: now,
       })
@@ -167,7 +168,6 @@ export async function POST(
         rejectedAt: now.toISOString(),
         version: submission.version,
         rejectionReason: validatedData.reason,
-        internalNotes: validatedData.notes,
       },
       ipAddress: request.headers.get('x-forwarded-for') || undefined,
       userAgent: request.headers.get('user-agent') || undefined,

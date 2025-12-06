@@ -151,7 +151,6 @@ export async function POST(
         rejectedAt: now.toISOString(),
         fiscalYear: submission.year,
         rejectionReason: validatedData.reason,
-        internalNotes: validatedData.notes,
       },
       ipAddress: request.headers.get('x-forwarded-for') || undefined,
       userAgent: request.headers.get('user-agent') || undefined,

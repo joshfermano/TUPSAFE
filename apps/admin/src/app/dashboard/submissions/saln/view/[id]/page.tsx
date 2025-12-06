@@ -1112,7 +1112,6 @@ export default function SalnSubmissionViewPage() {
           employeeName={`${employee.firstName} ${employee.lastName}`}
           onApprove={handleApprove}
           onReject={handleReject}
-          onRequestChanges={handleRequestChanges}
           isSubmitting={isSubmitting}
         />
       )}

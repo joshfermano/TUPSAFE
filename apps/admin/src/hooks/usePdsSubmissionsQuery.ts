@@ -298,94 +298,6 @@ export function usePdsSubmissionsQuery(filters: PdsSubmissionsFilters = {}) {
     },
   });
 
-  /**
-   * Mutation to request changes on a submission (return to draft)
-   */
-  const requestChangesMutation = useMutation({
-    mutationFn: async ({
-      submissionId,
-      reviewNotes,
-      reviewedBy,
-    }: {
-      submissionId: string;
-      reviewNotes: string;
-      reviewedBy: string;
-    }) => {
-      // Validate notes length
-      if (reviewNotes.length < 10) {
-        throw new Error('Notes must be at least 10 characters');
-      }
-
-      const response = await fetch(
-        `/api/submissions/pds/${submissionId}/request-changes`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            notes: reviewNotes,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(
-          errorData?.error ||
-            `Failed to request changes: ${response.statusText}`
-        );
-      }
-
-      const data = await response.json();
-      return data;
-    },
-    onMutate: async ({ submissionId }) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: pdsSubmissionsKeys.all });
-
-      // Snapshot previous value
-      const previousSubmissions = queryClient.getQueryData<PdsSubmissionsListResponse>(
-        pdsSubmissionsKeys.list(filters)
-      );
-
-      // Optimistically update status to draft
-      queryClient.setQueryData<PdsSubmissionsListResponse>(
-        pdsSubmissionsKeys.list(filters),
-        (old) => {
-          if (!old) return old;
-          return {
-            ...old,
-            submissions: old.submissions.map((item) =>
-              item.id === submissionId
-                ? {
-                    ...item,
-                    status: 'draft' as const,
-                    updatedAt: new Date(),
-                  }
-                : item
-            ),
-          };
-        }
-      );
-
-      return { previousSubmissions };
-    },
-    onError: (_err, _variables, context) => {
-      // Rollback on error
-      if (context?.previousSubmissions) {
-        queryClient.setQueryData(
-          pdsSubmissionsKeys.list(filters),
-          context.previousSubmissions
-        );
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: pdsSubmissionsKeys.all });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-      queryClient.invalidateQueries({ queryKey: ['pds', 'stats'] });
-    },
-  });
 
   return {
     ...query,
@@ -401,10 +313,6 @@ export function usePdsSubmissionsQuery(filters: PdsSubmissionsFilters = {}) {
     rejectSubmissionAsync: rejectSubmissionMutation.mutateAsync,
     isRejecting: rejectSubmissionMutation.isPending,
     rejectError: rejectSubmissionMutation.error,
-    requestChanges: requestChangesMutation.mutate,
-    requestChangesAsync: requestChangesMutation.mutateAsync,
-    isRequestingChanges: requestChangesMutation.isPending,
-    requestChangesError: requestChangesMutation.error,
   };
 }
 

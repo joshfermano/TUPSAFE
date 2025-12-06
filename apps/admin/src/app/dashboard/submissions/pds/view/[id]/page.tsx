@@ -106,17 +106,15 @@ export default function PdsSubmissionViewPage() {
 
   const [isReviewDialogOpen, setIsReviewDialogOpen] = React.useState(false);
   const [reviewAction, setReviewAction] = React.useState<
-    'approve' | 'reject' | 'request_changes'
+    'approve' | 'reject'
   >('approve');
 
   const {
     useCompleteSubmission,
     approveSubmissionAsync,
     rejectSubmissionAsync,
-    requestChangesAsync,
     isApproving,
     isRejecting,
-    isRequestingChanges,
   } = usePdsSubmissionsQuery();
 
   const {
@@ -126,7 +124,7 @@ export default function PdsSubmissionViewPage() {
     refetch,
   } = useCompleteSubmission(submissionId);
 
-  const isSubmitting = isApproving || isRejecting || isRequestingChanges;
+  const isSubmitting = isApproving || isRejecting;
 
   const { downloadPDF, openPDFInNewTab, isGenerating } = usePDSPdf();
 
@@ -174,24 +172,6 @@ export default function PdsSubmissionViewPage() {
       });
     },
     [submissionId, user?.id, rejectSubmissionAsync]
-  );
-
-  // Handle request changes
-  const handleRequestChanges = React.useCallback(
-    async (notes: string) => {
-      if (!user?.id) return;
-
-      await requestChangesAsync({
-        submissionId,
-        reviewNotes: notes,
-        reviewedBy: user.id,
-      });
-
-      toast.success('Changes Requested', {
-        description: 'The employee will be notified to revise their submission',
-      });
-    },
-    [submissionId, user?.id, requestChangesAsync]
   );
 
   // Handle PDF export
@@ -1716,7 +1696,6 @@ export default function PdsSubmissionViewPage() {
         defaultAction={reviewAction}
         onApprove={handleApprove}
         onReject={handleReject}
-        onRequestChanges={handleRequestChanges}
         isSubmitting={isSubmitting}
       />
     </>

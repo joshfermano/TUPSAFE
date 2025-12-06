@@ -31,6 +31,7 @@ export interface PdsSubmission {
   approvedBy: string | null;
   approvedAt: Date | null;
   rejectionReason: string | null;
+  reviewNotes: string | null;
   pdfFilePath: string | null;
   isLatest: boolean;
   createdAt: Date;
@@ -197,6 +198,7 @@ export const mockPdsSubmissions: PdsSubmission[] = [
     approvedBy: '01927d4e-8b45-7f52-b123-456789abcde0',
     approvedAt: new Date('2024-12-16T14:30:00Z'),
     rejectionReason: null,
+    reviewNotes: 'Excellent submission. All information complete and accurate.',
     pdfFilePath: '/pds/2024/pds-01927d4e-8b45-8000-0001-000000000001.pdf',
     isLatest: true,
     createdAt: new Date('2024-12-10T08:00:00Z'),
@@ -212,6 +214,7 @@ export const mockPdsSubmissions: PdsSubmission[] = [
     approvedBy: null,
     approvedAt: null,
     rejectionReason: null,
+    reviewNotes: null,
     pdfFilePath: null,
     isLatest: true,
     createdAt: new Date('2024-12-18T07:15:00Z'),
@@ -227,6 +230,7 @@ export const mockPdsSubmissions: PdsSubmission[] = [
     approvedBy: null,
     approvedAt: null,
     rejectionReason: null,
+    reviewNotes: null,
     pdfFilePath: null,
     isLatest: true,
     createdAt: new Date('2024-12-20T09:20:00Z'),
@@ -242,6 +246,7 @@ export const mockPdsSubmissions: PdsSubmission[] = [
     approvedBy: null,
     approvedAt: null,
     rejectionReason: null,
+    reviewNotes: null,
     pdfFilePath: null,
     isLatest: true,
     createdAt: new Date('2024-12-25T13:00:00Z'),
@@ -258,6 +263,7 @@ export const mockPdsSubmissions: PdsSubmission[] = [
     approvedAt: new Date('2024-12-19T15:20:00Z'),
     rejectionReason:
       'Missing educational background details and work experience documentation.',
+    reviewNotes: null,
     pdfFilePath: null,
     isLatest: true,
     createdAt: new Date('2024-12-15T10:00:00Z'),

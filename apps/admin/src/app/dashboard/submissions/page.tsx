@@ -134,19 +134,19 @@ export default function SubmissionsPage() {
     }
   };
 
-  const handleConfirmReject = async (reason: string, notes?: string) => {
+  const handleConfirmReject = async (reason: string) => {
     if (!currentSubmission) return;
 
     try {
       if (currentSubmission.type === 'pds') {
         await rejectPDSMutation.mutateAsync({
           id: currentSubmission.id,
-          data: { reason, notes },
+          data: { reason },
         });
       } else {
         await rejectSALNMutation.mutateAsync({
           id: currentSubmission.id,
-          data: { reason, notes },
+          data: { reason },
         });
       }
       setRejectDialogOpen(false);

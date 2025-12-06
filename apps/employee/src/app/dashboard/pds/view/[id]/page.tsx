@@ -36,6 +36,7 @@ import {
   Star,
   Loader2,
   Info,
+  CheckCircle,
   XCircle,
 } from 'lucide-react';
 
@@ -200,13 +201,15 @@ export default function PDSViewDetailPage({
   const submission = rawPdsData?.submission ?? null;
 
   // Create compatible data structure for view (handles different property naming conventions)
-  const pdsData = rawPdsData ? {
-    ...rawPdsData,
-    // Add fallback property names for compatibility with view components
-    family: rawPdsData.familyBackground,
-    eligibility: rawPdsData.civilService,
-    learningDevelopment: rawPdsData.training,
-  } as any : null;
+  const pdsData = rawPdsData
+    ? ({
+        ...rawPdsData,
+        // Add fallback property names for compatibility with view components
+        family: rawPdsData.familyBackground,
+        eligibility: rawPdsData.civilService,
+        learningDevelopment: rawPdsData.training,
+      } as any)
+    : null;
 
   const canEdit =
     submission?.status === 'draft' || submission?.status === 'rejected';
@@ -366,7 +369,9 @@ export default function PDSViewDetailPage({
                 className="gap-2"
                 onClick={handleDownload}
                 disabled={isGenerating || !canDownloadPDF}
-                title={!canDownloadPDF ? getPdfRestrictionMessage() : undefined}>
+                title={
+                  !canDownloadPDF ? getPdfRestrictionMessage() : undefined
+                }>
                 {isGenerating ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
@@ -380,7 +385,9 @@ export default function PDSViewDetailPage({
                 className="gap-2"
                 onClick={handlePrint}
                 disabled={isGenerating || !canDownloadPDF}
-                title={!canDownloadPDF ? getPdfRestrictionMessage() : undefined}>
+                title={
+                  !canDownloadPDF ? getPdfRestrictionMessage() : undefined
+                }>
                 {isGenerating ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
@@ -409,6 +416,25 @@ export default function PDSViewDetailPage({
         </div>
       </BlurFade>
 
+      {/* Approval Feedback Panel */}
+      {submission.status === 'approved' && submission.reviewNotes && (
+        <BlurFade delay={0.12}>
+          <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                  Reviewer Feedback
+                </h3>
+                <p className="text-sm text-emerald-600 dark:text-emerald-500 mt-1 whitespace-pre-wrap">
+                  {submission.reviewNotes}
+                </p>
+              </div>
+            </div>
+          </div>
+        </BlurFade>
+      )}
+
       {/* Rejection Feedback Panel */}
       {submission.status === 'rejected' && submission.rejectionReason && (
         <BlurFade delay={0.12}>
@@ -426,8 +452,7 @@ export default function PDSViewDetailPage({
                   variant="outline"
                   size="sm"
                   className="mt-3 border-rose-300 hover:bg-rose-100 dark:border-rose-700 dark:hover:bg-rose-900/20"
-                  onClick={handleEdit}
-                >
+                  onClick={handleEdit}>
                   <Edit className="h-3.5 w-3.5 mr-1.5" />
                   Edit & Resubmit
                 </Button>
