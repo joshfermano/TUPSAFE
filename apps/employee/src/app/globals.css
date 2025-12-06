@@ -809,6 +809,20 @@
     animation: magicui-reveal var(--magicui-duration-normal) var(--magicui-ease-out);
   }
 
+  /* Pulse Border - For submit button visual distinction */
+  @keyframes pulse-border {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
+    }
+  }
+
+  .animate-pulse-border {
+    animation: pulse-border 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
   /* ========================================================================
      MAGICUI HOVER EFFECTS
      Interactive hover states for premium feel

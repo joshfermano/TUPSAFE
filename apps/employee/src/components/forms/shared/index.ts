@@ -1,18 +1,17 @@
 /**
  * Shared Form Components
- *
- * Export barrel for all shared form components used across
- * PDS and SALN form modules.
+ * Reusable components used across PDS sections
  */
 
-export { FormStepIndicator } from './FormStepIndicator';
-export type { FormStep, FormStepIndicatorProps } from './FormStepIndicator';
-
+// Existing shared components
 export { AddressInput } from './AddressInput';
-export type { AddressInputProps } from './AddressInput';
-
 export { CurrencyInput } from './CurrencyInput';
-export type { CurrencyInputProps } from './CurrencyInput';
+export { FormSection } from './FormSection';
+export { FormStepIndicator, type FormStep } from './FormStepIndicator';
+export { FormStepSkeleton } from './FormStepSkeleton';
+export { PDSSectionIndicator } from './PDSSectionIndicator';
 
-export { FormStepSkeleton, FormStepSkeletonCompact } from './FormStepSkeleton';
-export type { FormStepSkeletonProps } from './FormStepSkeleton';
+// Phase 3 performance optimization components
+export { DateRangeInput } from './DateRangeInput';
+export { ArrayItemHeader } from './ArrayItemHeader';
+export { NumberInput } from './NumberInput';

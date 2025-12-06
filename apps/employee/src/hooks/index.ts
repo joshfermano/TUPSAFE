@@ -385,6 +385,7 @@ export { useOpenPositionsQuery as useOpenPositions } from './useApplicationsQuer
 export {
   usePDSSubmissions,
   usePDSSubmission,
+  useLatestPDS,
   useArchivedPDS,
   useCreatePDS,
   useUpdatePDS,

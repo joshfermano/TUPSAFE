@@ -26,6 +26,7 @@ export interface PDSSubmission {
   userId: string;
   status: PDSStatus;
   version: number;
+  year: number;
   submittedAt: string | null;
   reviewedAt: string | null;
   approvedAt: string | null;
@@ -283,6 +284,49 @@ export function useArchivedPDS() {
     queryFn: fetchArchivedPDS,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: 2,
+  });
+}
+
+/**
+ * Fetch the user's latest PDS submission
+ */
+async function fetchLatestPDS() {
+  const response = await fetch('/api/pds/latest', {
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch latest PDS');
+  }
+
+  const result = await response.json();
+  return result.data;
+}
+
+/**
+ * Hook to fetch the user's latest PDS submission
+ *
+ * Returns minimal data about the most recent PDS (status, year, approval date).
+ * Used by components like DeadlineSection to determine visibility.
+ *
+ * @returns Query result with latest PDS info or null
+ *
+ * @example
+ * ```tsx
+ * const { data: latest, isLoading } = useLatestPDS();
+ * if (latest?.status === 'approved' && latest?.year === 2025) {
+ *   // Hide deadline for this year
+ * }
+ * ```
+ */
+export function useLatestPDS() {
+  return useQuery({
+    queryKey: [...pdsKeys.all, 'latest'] as const,
+    queryFn: fetchLatestPDS,
+    staleTime: 2 * 60 * 1000, // 2 minutes (dynamic content)
+    gcTime: 5 * 60 * 1000, // 5 minutes
     retry: 2,
   });
 }

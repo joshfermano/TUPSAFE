@@ -30,7 +30,11 @@ import {
   useRef,
   Suspense,
 } from 'react';
-import { useCreatePDS, useSubmitPDS, useUpdatePDS } from '../../../../hooks/usePDS';
+import {
+  useCreatePDS,
+  useSubmitPDS,
+  useUpdatePDS,
+} from '../../../../hooks/usePDS';
 import { useForm, FormProvider } from 'react-hook-form';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
@@ -50,6 +54,8 @@ import {
   Loader2,
   FileCheck,
   Clock,
+  XCircle,
+  AlertTriangle,
 } from 'lucide-react';
 
 // Validation schemas
@@ -110,7 +116,10 @@ import { useAutoSave, getSavedDraft } from '../../../../hooks/useAutoSave';
 import { useAuth } from '../../../../providers/AuthProvider';
 
 // Transformations
-import { transformPdsForSubmission, transformPdsFromBackend } from '../../../../lib/utils/pds-transformations';
+import {
+  transformPdsForSubmission,
+  transformPdsFromBackend,
+} from '../../../../lib/utils/pds-transformations';
 
 // Section components (lazy-loaded)
 import {
@@ -242,6 +251,11 @@ export default function PDSCreatePage() {
   const [_hasSavedDraft, setHasSavedDraft] = useState(false);
   const [createdPdsId, setCreatedPdsId] = useState<string | null>(null);
   const [draftId, setDraftId] = useState<string | null>(null); // Track draft ID for updates
+  const [hasSeenAutoSaveInfo, setHasSeenAutoSaveInfo] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return localStorage.getItem(`pds-autosave-info-seen-${userId}`) === 'true';
+  });
+  const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
   // Synchronous draft ID tracking to prevent race conditions
   const draftIdRef = useRef<string | null>(null);
@@ -265,15 +279,7 @@ export default function PDSCreatePage() {
   });
 
   // Ref-based subscription to track form changes without causing re-renders
-  const formDataRef = useRef<Partial<CompletePdsData>>(createEmptyPds());
-
-  // Subscribe to form changes without causing re-renders
-  useEffect(() => {
-    const subscription = form.watch((value) => {
-      formDataRef.current = value as Partial<CompletePdsData>;
-    });
-    return () => subscription.unsubscribe();
-  }, [form]);
+  // Removed redundant form.watch() useEffect - useAutoSave handles this via getData callback
 
   // Callback-based approach for getting draft data
   const getDraftData = useCallback(
@@ -289,7 +295,9 @@ export default function PDSCreatePage() {
   // Save draft to database (create or update)
   // Uses ref for synchronous draft ID access to prevent race conditions
   const saveDraftToDatabase = useCallback(
-    async (data: PdsDraftData): Promise<{ success: boolean; draftId?: string }> => {
+    async (
+      data: PdsDraftData
+    ): Promise<{ success: boolean; draftId?: string }> => {
       try {
         // Transform form data for backend
         const transformedData = transformPdsForSubmission(data.formData);
@@ -307,11 +315,16 @@ export default function PDSCreatePage() {
           });
 
           if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            const errorData = await response
+              .json()
+              .catch(() => ({ error: 'Unknown error' }));
             throw new Error(errorData.error || 'Failed to update draft');
           }
 
-          console.log('[PDS Create] Draft updated successfully:', currentDraftId);
+          console.log(
+            '[PDS Create] Draft updated successfully:',
+            currentDraftId
+          );
           return { success: true, draftId: currentDraftId };
         } else {
           // Create new draft
@@ -323,7 +336,9 @@ export default function PDSCreatePage() {
           });
 
           if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            const errorData = await response
+              .json()
+              .catch(() => ({ error: 'Unknown error' }));
             throw new Error(errorData.error || 'Failed to create draft');
           }
 
@@ -331,7 +346,10 @@ export default function PDSCreatePage() {
           if (result.data?.id) {
             // Update both ref and state together
             updateDraftId(result.data.id);
-            console.log('[PDS Create] Draft created successfully:', result.data.id);
+            console.log(
+              '[PDS Create] Draft created successfully:',
+              result.data.id
+            );
             return { success: true, draftId: result.data.id };
           } else {
             throw new Error('No draft ID returned from server');
@@ -345,13 +363,13 @@ export default function PDSCreatePage() {
     [updateDraftId] // Stable dependency
   );
 
-  // Auto-save setup with database persistence
+  // Auto-save setup with database persistence (60-second intervals)
   const { saveStatus, lastSaved, saveNow, clearSaved } =
     useAutoSave<PdsDraftData>({
       key: `pds-draft-${userId}`,
       getData: getDraftData,
-      debounceMs: 3000,
-      autoSaveIntervalMs: 30000,
+      debounceMs: 60000,
+      autoSaveIntervalMs: 60000,
       enabled: !isSubmitting,
       showToast: false,
       onSave: async (data: PdsDraftData) => {
@@ -491,7 +509,8 @@ export default function PDSCreatePage() {
 
       // Show error toast
       toast.error('Failed to save draft', {
-        description: error instanceof Error ? error.message : 'Please try again.',
+        description:
+          error instanceof Error ? error.message : 'Please try again.',
         duration: 5000,
       });
 
@@ -565,117 +584,127 @@ export default function PDSCreatePage() {
         if (dataWithTypeConversions.personalInfo) {
           dataWithTypeConversions.personalInfo = {
             ...dataWithTypeConversions.personalInfo,
-            dateOfBirth: dataWithTypeConversions.personalInfo.dateOfBirth 
-              ? (dataWithTypeConversions.personalInfo.dateOfBirth instanceof Date 
-                ? dataWithTypeConversions.personalInfo.dateOfBirth 
-                : new Date(dataWithTypeConversions.personalInfo.dateOfBirth))
+            dateOfBirth: dataWithTypeConversions.personalInfo.dateOfBirth
+              ? dataWithTypeConversions.personalInfo.dateOfBirth instanceof Date
+                ? dataWithTypeConversions.personalInfo.dateOfBirth
+                : new Date(dataWithTypeConversions.personalInfo.dateOfBirth)
               : null,
             heightM: dataWithTypeConversions.personalInfo.heightM
-              ? (typeof dataWithTypeConversions.personalInfo.heightM === 'number'
+              ? typeof dataWithTypeConversions.personalInfo.heightM === 'number'
                 ? dataWithTypeConversions.personalInfo.heightM
-                : parseFloat(dataWithTypeConversions.personalInfo.heightM as any))
+                : parseFloat(
+                    dataWithTypeConversions.personalInfo.heightM as any
+                  )
               : null,
             weightKg: dataWithTypeConversions.personalInfo.weightKg
-              ? (typeof dataWithTypeConversions.personalInfo.weightKg === 'number'
+              ? typeof dataWithTypeConversions.personalInfo.weightKg ===
+                'number'
                 ? dataWithTypeConversions.personalInfo.weightKg
-                : parseFloat(dataWithTypeConversions.personalInfo.weightKg as any))
+                : parseFloat(
+                    dataWithTypeConversions.personalInfo.weightKg as any
+                  )
               : null,
           } as any;
         }
 
         // Convert Family Background - Children dateOfBirth
         if (dataWithTypeConversions.family?.children) {
-          dataWithTypeConversions.family.children = dataWithTypeConversions.family.children.map((child: any) => ({
-            ...child,
-            dateOfBirth: child.dateOfBirth
-              ? (child.dateOfBirth instanceof Date
-                ? child.dateOfBirth
-                : new Date(child.dateOfBirth))
-              : null,
-          }));
+          dataWithTypeConversions.family.children =
+            dataWithTypeConversions.family.children.map((child: any) => ({
+              ...child,
+              dateOfBirth: child.dateOfBirth
+                ? child.dateOfBirth instanceof Date
+                  ? child.dateOfBirth
+                  : new Date(child.dateOfBirth)
+                : null,
+            }));
         }
 
         // Convert Civil Service Eligibility dates
         if (dataWithTypeConversions.eligibility) {
-          dataWithTypeConversions.eligibility = dataWithTypeConversions.eligibility.map((item: any) => ({
-            ...item,
-            dateOfExam: item.dateOfExam
-              ? (item.dateOfExam instanceof Date
-                ? item.dateOfExam
-                : new Date(item.dateOfExam))
-              : null,
-            licenseValidityDate: item.licenseValidityDate
-              ? (item.licenseValidityDate instanceof Date
-                ? item.licenseValidityDate
-                : new Date(item.licenseValidityDate))
-              : null,
-          }));
+          dataWithTypeConversions.eligibility =
+            dataWithTypeConversions.eligibility.map((item: any) => ({
+              ...item,
+              dateOfExam: item.dateOfExam
+                ? item.dateOfExam instanceof Date
+                  ? item.dateOfExam
+                  : new Date(item.dateOfExam)
+                : null,
+              licenseValidityDate: item.licenseValidityDate
+                ? item.licenseValidityDate instanceof Date
+                  ? item.licenseValidityDate
+                  : new Date(item.licenseValidityDate)
+                : null,
+            }));
         }
 
         // Convert Work Experience dates and salary
         if (dataWithTypeConversions.workExperience) {
-          dataWithTypeConversions.workExperience = dataWithTypeConversions.workExperience.map((item: any) => ({
-            ...item,
-            dateFrom: item.dateFrom
-              ? (item.dateFrom instanceof Date
-                ? item.dateFrom
-                : new Date(item.dateFrom))
-              : null,
-            dateTo: item.dateTo
-              ? (item.dateTo instanceof Date
-                ? item.dateTo
-                : new Date(item.dateTo))
-              : null,
-            monthlySalary: item.monthlySalary
-              ? (typeof item.monthlySalary === 'number'
-                ? item.monthlySalary
-                : parseFloat(item.monthlySalary))
-              : null,
-          }));
+          dataWithTypeConversions.workExperience =
+            dataWithTypeConversions.workExperience.map((item: any) => ({
+              ...item,
+              dateFrom: item.dateFrom
+                ? item.dateFrom instanceof Date
+                  ? item.dateFrom
+                  : new Date(item.dateFrom)
+                : null,
+              dateTo: item.dateTo
+                ? item.dateTo instanceof Date
+                  ? item.dateTo
+                  : new Date(item.dateTo)
+                : null,
+              monthlySalary: item.monthlySalary
+                ? typeof item.monthlySalary === 'number'
+                  ? item.monthlySalary
+                  : parseFloat(item.monthlySalary)
+                : null,
+            }));
         }
 
         // Convert Voluntary Work dates and hours
         if (dataWithTypeConversions.voluntaryWork) {
-          dataWithTypeConversions.voluntaryWork = dataWithTypeConversions.voluntaryWork.map((item: any) => ({
-            ...item,
-            dateFrom: item.dateFrom
-              ? (item.dateFrom instanceof Date
-                ? item.dateFrom
-                : new Date(item.dateFrom))
-              : null,
-            dateTo: item.dateTo
-              ? (item.dateTo instanceof Date
-                ? item.dateTo
-                : new Date(item.dateTo))
-              : null,
-            numberOfHours: item.numberOfHours
-              ? (typeof item.numberOfHours === 'number'
-                ? item.numberOfHours
-                : parseFloat(item.numberOfHours))
-              : null,
-          }));
+          dataWithTypeConversions.voluntaryWork =
+            dataWithTypeConversions.voluntaryWork.map((item: any) => ({
+              ...item,
+              dateFrom: item.dateFrom
+                ? item.dateFrom instanceof Date
+                  ? item.dateFrom
+                  : new Date(item.dateFrom)
+                : null,
+              dateTo: item.dateTo
+                ? item.dateTo instanceof Date
+                  ? item.dateTo
+                  : new Date(item.dateTo)
+                : null,
+              numberOfHours: item.numberOfHours
+                ? typeof item.numberOfHours === 'number'
+                  ? item.numberOfHours
+                  : parseFloat(item.numberOfHours)
+                : null,
+            }));
         }
 
         // Convert Learning Development dates and hours
         if (dataWithTypeConversions.learningDevelopment) {
-          dataWithTypeConversions.learningDevelopment = dataWithTypeConversions.learningDevelopment.map((item: any) => ({
-            ...item,
-            dateFrom: item.dateFrom
-              ? (item.dateFrom instanceof Date
-                ? item.dateFrom
-                : new Date(item.dateFrom))
-              : null,
-            dateTo: item.dateTo
-              ? (item.dateTo instanceof Date
-                ? item.dateTo
-                : new Date(item.dateTo))
-              : null,
-            hours: item.hours
-              ? (typeof item.hours === 'number'
-                ? item.hours
-                : parseFloat(item.hours))
-              : null,
-          }));
+          dataWithTypeConversions.learningDevelopment =
+            dataWithTypeConversions.learningDevelopment.map((item: any) => ({
+              ...item,
+              dateFrom: item.dateFrom
+                ? item.dateFrom instanceof Date
+                  ? item.dateFrom
+                  : new Date(item.dateFrom)
+                : null,
+              dateTo: item.dateTo
+                ? item.dateTo instanceof Date
+                  ? item.dateTo
+                  : new Date(item.dateTo)
+                : null,
+              hours: item.hours
+                ? typeof item.hours === 'number'
+                  ? item.hours
+                  : parseFloat(item.hours)
+                : null,
+            }));
         }
 
         // Filter out empty references (a reference is considered filled if it has ALL required fields)
@@ -683,9 +712,12 @@ export default function PDSCreatePage() {
           dataWithTypeConversions.otherInfo.references =
             dataWithTypeConversions.otherInfo.references.filter(
               (ref: any) =>
-                ref.name && ref.name.trim() !== '' &&
-                ref.address && ref.address.trim() !== '' &&
-                ref.telephoneNo && ref.telephoneNo.trim() !== ''
+                ref.name &&
+                ref.name.trim() !== '' &&
+                ref.address &&
+                ref.address.trim() !== '' &&
+                ref.telephoneNo &&
+                ref.telephoneNo.trim() !== ''
             );
         }
 
@@ -694,9 +726,13 @@ export default function PDSCreatePage() {
           hasPersonalInfo: !!dataWithTypeConversions.personalInfo,
           hasFamily: !!dataWithTypeConversions.family,
           hasEducation: !!dataWithTypeConversions.education,
-          educationType: Array.isArray(dataWithTypeConversions.education) ? 'array' : 'object',
-          referencesCount: dataWithTypeConversions.otherInfo?.references?.length || 0,
-          dateOfBirthType: typeof dataWithTypeConversions.personalInfo?.dateOfBirth,
+          educationType: Array.isArray(dataWithTypeConversions.education)
+            ? 'array'
+            : 'object',
+          referencesCount:
+            dataWithTypeConversions.otherInfo?.references?.length || 0,
+          dateOfBirthType:
+            typeof dataWithTypeConversions.personalInfo?.dateOfBirth,
           heightType: typeof dataWithTypeConversions.personalInfo?.heightM,
           weightType: typeof dataWithTypeConversions.personalInfo?.weightKg,
         });
@@ -724,7 +760,9 @@ export default function PDSCreatePage() {
           await updateMutation.mutateAsync(backendData as any);
         } else {
           // Create PDS (status: draft)
-          const createResult = await createMutation.mutateAsync(backendData as any);
+          const createResult = await createMutation.mutateAsync(
+            backendData as any
+          );
 
           if (!createResult?.data?.id) {
             throw new Error('Failed to create PDS - no ID returned');
@@ -756,44 +794,102 @@ export default function PDSCreatePage() {
         setTimeout(() => {
           router.push('/dashboard/pds/pending');
         }, 2000);
-
       } catch (error) {
         console.error('Submission error:', error);
 
         if (error instanceof z.ZodError) {
+          // Format all validation errors to be user-friendly
+          const formatValidationErrors = (errors: z.ZodError): string => {
+            const errorMessages = errors.errors.map((err) => {
+              // Extract field path like "education.secondary.level"
+              const path = err.path.join('.');
+
+              // Convert to human-readable format
+              const friendlyPath = path
+                .replace('personalInfo.', 'Personal Information - ')
+                .replace('family.', 'Family Background - ')
+                .replace('education.', 'Education - ')
+                .replace('eligibility.', 'Civil Service Eligibility - ')
+                .replace('workExperience.', 'Work Experience - ')
+                .replace('voluntaryWork.', 'Voluntary Work - ')
+                .replace('learningDevelopment.', 'Learning & Development - ')
+                .replace('otherInfo.', 'Other Information - ')
+                .replace('.level', '')
+                .replace('.schoolName', ' - School Name')
+                .replace('.degreeCourse', ' - Degree/Course')
+                .replace('.unitsEarned', ' - Units Earned')
+                .replace('.periodFrom', ' - Period From')
+                .replace('.periodTo', ' - Period To')
+                .replace('.yearGraduated', ' - Year Graduated')
+                .replace('.honors', ' - Honors')
+                .replace('elementary', 'Elementary')
+                .replace('secondary', 'Secondary')
+                .replace('vocational', 'Vocational')
+                .replace('college', 'College')
+                .replace('graduate', 'Graduate Studies')
+                .replace('surname', 'Surname')
+                .replace('firstName', 'First Name')
+                .replace('dateOfBirth', 'Date of Birth')
+                .replace('placeOfBirth', 'Place of Birth')
+                .replace('emailAddress', 'Email Address')
+                .replace('references', 'Character References');
+
+              return `${friendlyPath}: ${err.message}`;
+            });
+
+            return errorMessages.slice(0, 5).join('\n'); // Show max 5 errors
+          };
+
+          // Log formatted errors to console for debugging
+          const formattedErrors = formatValidationErrors(error);
+          console.error('Validation errors (formatted):\n', formattedErrors);
+          console.error('Validation errors (raw - for debugging):', error.errors);
+
           const firstError = error.errors[0];
           const errorPath = firstError.path.join('.');
-          console.error('Validation errors:', error.errors);
 
           // Provide user-friendly error messages
-          let errorMessage = firstError.message;
-          let errorTitle = 'Validation Error';
+          let errorMessage: string;
+          let errorTitle = 'Validation Failed';
 
-          // Special handling for references error
+          // Special handling for common errors
           if (errorPath.includes('references')) {
             errorTitle = 'Character References Required';
-            errorMessage = 'You must provide at least 3 complete character references. Each reference must include name, address, and telephone number.';
+            errorMessage =
+              'You must provide at least 3 complete character references. Each reference must include name, address, and telephone number.';
           } else if (errorPath.includes('dateOfBirth')) {
             errorTitle = 'Date of Birth Required';
-            errorMessage = 'Please provide a valid date of birth.';
-          } else if (errorPath.includes('heightM') || errorPath.includes('weightKg')) {
+            errorMessage = 'Please provide a valid date of birth in Personal Information.';
+          } else if (
+            errorPath.includes('heightM') ||
+            errorPath.includes('weightKg')
+          ) {
             errorTitle = 'Invalid Measurement';
             errorMessage = firstError.message;
+          } else if (error.errors.length === 1) {
+            // Single error - show formatted message
+            errorMessage = formatValidationErrors(error);
           } else {
-            errorMessage = `${errorPath}: ${firstError.message}`;
+            // Multiple errors - show all formatted
+            errorTitle = `${error.errors.length} Validation Errors`;
+            errorMessage = formatValidationErrors(error);
           }
 
           toast.error(errorTitle, {
             description: errorMessage,
+            duration: 8000, // Longer duration for multiple errors
           });
 
+          // Navigate to section with error
           const errorSection = getSectionForFieldPath(errorPath);
           if (errorSection !== null) {
             setCurrentSection(errorSection);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
           }
         } else if (createdPdsId) {
           toast.error('Submission Failed', {
-            description: 'Your PDS was saved as draft. You can submit it from the dashboard.',
+            description:
+              'Your PDS was saved as draft. You can submit it from the dashboard.',
             action: {
               label: 'Go to Dashboard',
               onClick: () => router.push('/dashboard/pds'),
@@ -801,15 +897,25 @@ export default function PDSCreatePage() {
           });
         } else {
           toast.error('Failed to save PDS', {
-            description: error instanceof Error ? error.message : 'Please try again.',
+            description:
+              error instanceof Error ? error.message : 'Please try again.',
           });
         }
       } finally {
         setIsSubmitting(false);
       }
     },
-    [createMutation, submitMutation, clearSaved, router, currentSection, createdPdsId, draftId, updateMutation]
-  );;
+    [
+      createMutation,
+      submitMutation,
+      clearSaved,
+      router,
+      currentSection,
+      createdPdsId,
+      draftId,
+      updateMutation,
+    ]
+  );
 
   /**
    * Helper to determine which section a field path belongs to
@@ -842,31 +948,52 @@ export default function PDSCreatePage() {
     return null;
   };
 
-  // Save status display
+  // Save status display - Enhanced badge design with mobile responsiveness
   const saveStatusDisplay = useMemo(() => {
     switch (saveStatus) {
       case 'saving':
         return (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-3 w-3 animate-spin" />
-            <span>Saving...</span>
-          </div>
+          <Badge
+            variant="outline"
+            className="border-blue-300 bg-blue-50 dark:bg-blue-950 dark:border-blue-700">
+            <Loader2 className="h-3 w-3 mr-1.5 animate-spin text-blue-600 dark:text-blue-400" />
+            <span className="text-blue-700 dark:text-blue-300">
+              <span className="sm:hidden">Saving</span>
+              <span className="hidden sm:inline">Saving...</span>
+            </span>
+          </Badge>
         );
       case 'saved':
         return (
-          <div className="flex items-center gap-2 text-sm text-primary">
-            <CheckCircle2 className="h-3 w-3" />
-            <span>
-              Saved {lastSaved ? `at ${lastSaved.toLocaleTimeString()}` : ''}
+          <Badge
+            variant="outline"
+            className="border-green-300 bg-green-50 dark:bg-green-950 dark:border-green-700">
+            <CheckCircle2 className="h-3 w-3 mr-1.5 text-green-600 dark:text-green-400" />
+            <span className="text-green-700 dark:text-green-300">
+              <span className="sm:hidden">Saved</span>
+              <span className="hidden sm:inline">
+                Saved{' '}
+                {lastSaved
+                  ? `at ${lastSaved.toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}`
+                  : ''}
+              </span>
             </span>
-          </div>
+          </Badge>
         );
       case 'error':
         return (
-          <div className="flex items-center gap-2 text-sm text-destructive">
-            <AlertCircle className="h-3 w-3" />
-            <span>Save failed</span>
-          </div>
+          <Badge
+            variant="outline"
+            className="border-red-300 bg-red-50 dark:bg-red-950 dark:border-red-700">
+            <XCircle className="h-3 w-3 mr-1.5 text-red-600 dark:text-red-400" />
+            <span className="text-red-700 dark:text-red-300">
+              <span className="sm:hidden">Error</span>
+              <span className="hidden sm:inline">Save failed</span>
+            </span>
+          </Badge>
         );
       default:
         return null;
@@ -923,8 +1050,8 @@ export default function PDSCreatePage() {
               </Badge>
             </div>
 
-            {/* Save status */}
-            <div className="hidden sm:flex items-center gap-4">
+            {/* Save status - Always visible, mobile responsive */}
+            <div className="flex items-center gap-2 sm:gap-4">
               {saveStatusDisplay}
               <Button
                 variant="outline"
@@ -932,8 +1059,8 @@ export default function PDSCreatePage() {
                 onClick={handleSaveAndNavigate}
                 disabled={isSubmitting}
                 className="border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900">
-                <Save className="h-4 w-4 mr-2" />
-                Save Now
+                <Save className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Save Draft</span>
               </Button>
             </div>
           </div>
@@ -947,6 +1074,40 @@ export default function PDSCreatePage() {
           />
         </div>
 
+        {/* Auto-save info banner */}
+        {!hasSeenAutoSaveInfo && (
+          <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800 p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                    Auto-save Enabled
+                  </p>
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    Your progress is automatically saved every minute. You can
+                    safely navigate away and resume later, or manually save your
+                    work using the &ldquo;Save Draft&rdquo; button.
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setHasSeenAutoSaveInfo(true);
+                  localStorage.setItem(
+                    `pds-autosave-info-seen-${userId}`,
+                    'true'
+                  );
+                }}
+                className="flex-shrink-0 h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-100 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900">
+                <XCircle className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Form */}
         <FormProvider {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)}>
@@ -957,53 +1118,55 @@ export default function PDSCreatePage() {
 
             {/* Navigation buttons */}
             <div className="flex items-center justify-between gap-4 pt-10 border-t border-slate-200 dark:border-slate-800">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handlePrevious}
+                disabled={currentSection === 0 || isSubmitting}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Previous
+              </Button>
+
+              <div className="flex items-center gap-3">
                 <Button
                   type="button"
-                  variant="outline"
-                  onClick={handlePrevious}
-                  disabled={currentSection === 0 || isSubmitting}>
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Previous
+                  variant="secondary"
+                  onClick={handleSaveAndNavigate}
+                  disabled={isSubmitting}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Draft
                 </Button>
 
-                <div className="flex items-center gap-3">
+                {isLastSection ? (
                   <Button
                     type="button"
-                    variant="secondary"
-                    onClick={handleSaveAndNavigate}
-                    disabled={isSubmitting}>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Draft
+                    onClick={() => setShowSubmitDialog(true)}
+                    disabled={isSubmitting}
+                    size="lg"
+                    className="min-w-[180px] bg-amber-600 hover:bg-amber-700 text-white font-semibold border-2 border-amber-400 animate-pulse-border dark:bg-amber-500 dark:hover:bg-amber-600 dark:border-amber-300">
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <FileCheck className="h-4 w-4 mr-2" />
+                        Submit for Review
+                      </>
+                    )}
                   </Button>
-
-                  {isLastSection ? (
-                    <ShimmerButton
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="min-w-[160px]">
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Submitting...
-                        </>
-                      ) : (
-                        <>
-                          <FileCheck className="h-4 w-4 mr-2" />
-                          Submit PDS
-                        </>
-                      )}
-                    </ShimmerButton>
-                  ) : (
-                    <ShimmerButton
-                      type="button"
-                      onClick={handleNext}
-                      disabled={isSubmitting}>
-                      Next Section
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </ShimmerButton>
-                  )}
-                </div>
+                ) : (
+                  <ShimmerButton
+                    type="button"
+                    onClick={handleNext}
+                    disabled={isSubmitting}>
+                    Next Section
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </ShimmerButton>
+                )}
               </div>
+            </div>
           </form>
         </FormProvider>
       </div>
@@ -1027,6 +1190,78 @@ export default function PDSCreatePage() {
             </AlertDialogCancel>
             <AlertDialogAction onClick={handleRestoreDraft}>
               Resume Draft
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Submission confirmation dialog */}
+      <AlertDialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
+        <AlertDialogContent className="max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-xl">
+              <AlertCircle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+              Ready to Submit Your PDS?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-4">
+                <p className="text-base">
+                  Please review your submission before proceeding. Once
+                  submitted, you won&apos;t be able to edit your PDS until it
+                  has been reviewed by an administrator.
+                </p>
+
+                {/* Warning checklist */}
+                <div className="rounded-lg border-2 border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-4 space-y-3">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                    <div className="space-y-2 text-sm text-amber-900 dark:text-amber-100">
+                      <p className="font-semibold">
+                        Before submitting, please confirm:
+                      </p>
+                      <ul className="space-y-1.5 ml-1">
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+                          <span>
+                            Have you reviewed all sections for accuracy?
+                          </span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+                          <span>Are all required fields completed?</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+                          <span>
+                            Did you provide at least 3 character references?
+                          </span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-sm text-muted-foreground">
+                  After submission, you won&apos;t be able to edit until
+                  reviewed by HR.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel
+              onClick={() => setShowSubmitDialog(false)}
+              className="sm:mr-2">
+              Cancel - Continue Editing
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowSubmitDialog(false);
+                form.handleSubmit(handleSubmit)();
+              }}
+              className="bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600">
+              <FileCheck className="h-4 w-4 mr-2" />
+              Yes, Submit for Review
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

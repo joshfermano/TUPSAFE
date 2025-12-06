@@ -1,7 +1,8 @@
 'use client';
 
 import { memo, useCallback, useMemo, useState, useEffect } from 'react';
-import { useFormContext, Controller } from 'react-hook-form';
+import { useFormContext, Controller, useWatch } from 'react-hook-form';
+import { useDebouncedCallback } from 'use-debounce';
 import { Label } from '../../ui/label';
 import { Input } from '../../ui/input';
 import {
@@ -78,23 +79,28 @@ export const AddressInput = memo(function AddressInput({
 }: AddressInputProps) {
   const {
     control,
-    watch,
     setValue,
+    getValues,
     formState: { errors },
   } = useFormContext();
 
   // Watch the "Same as" checkbox if sameAsField is provided
   const [sameAs, setSameAs] = useState(false);
 
-  // Consolidated watch subscription for cascading dropdowns - reduces from 6 watch() calls to 1
-  const watchedValues = watch([
-    `${name}.${FIELD_NAMES.region}`,
-    `${name}.${FIELD_NAMES.province}`,
-    `${name}.${FIELD_NAMES.cityMunicipality}`,
-  ]);
-  const selectedRegion = watchedValues[0] as string | undefined;
-  const selectedProvince = watchedValues[1] as string | undefined;
-  const selectedCity = watchedValues[2] as string | undefined;
+  // Use useWatch for individual field subscriptions (more performant than watch([]))
+  const selectedRegion = useWatch({
+    control,
+    name: `${name}.${FIELD_NAMES.region}`,
+    disabled: !showRegion,
+  });
+  const selectedProvince = useWatch({
+    control,
+    name: `${name}.${FIELD_NAMES.province}`,
+  });
+  const selectedCity = useWatch({
+    control,
+    name: `${name}.${FIELD_NAMES.cityMunicipality}`,
+  });
 
   // Memoized filtered data
   const provinces = useMemo(() => {
@@ -119,29 +125,36 @@ export const AddressInput = memo(function AddressInput({
     (checked: boolean) => {
       setSameAs(checked);
       if (checked && sameAsField) {
-        // Copy all address fields from the source field
-        Object.values(FIELD_NAMES).forEach((fieldName) => {
-          const sourceValue = watch(`${sameAsField}.${fieldName}`);
-          setValue(`${name}.${fieldName}`, sourceValue || '', {
-            shouldValidate: true,
-            shouldDirty: true,
+        const sourceAddress = getValues(sameAsField); // Single read instead of watch
+        if (sourceAddress && typeof sourceAddress === 'object') {
+          requestAnimationFrame(() => {
+            Object.entries(FIELD_NAMES).forEach(([_, fieldName]) => {
+              const value = sourceAddress[fieldName];
+              if (value !== undefined) {
+                setValue(`${name}.${fieldName}`, value, {
+                  shouldValidate: false,
+                  shouldDirty: true,
+                });
+              }
+            });
           });
-        });
+        }
       }
       onSameAsChange?.(checked);
     },
-    [sameAsField, name, setValue, watch, onSameAsChange]
+    [sameAsField, name, setValue, getValues, onSameAsChange]
   );
 
-  // Auto-format ZIP code to 4 digits
-  const handleZipCodeChange = useCallback(
+  // Auto-format ZIP code to 4 digits with debounce
+  const handleZipCodeChange = useDebouncedCallback(
     (value: string) => {
       const digitsOnly = value.replace(/\D/g, '').slice(0, 4);
       setValue(`${name}.${FIELD_NAMES.zipCode}`, digitsOnly, {
         shouldValidate: true,
       });
     },
-    [name, setValue]
+    300,
+    { leading: true, trailing: true }
   );
 
   // Track previous parent values to detect actual user-initiated changes
@@ -150,49 +163,74 @@ export const AddressInput = memo(function AddressInput({
   const [prevProvince, setPrevProvince] = useState<string | undefined>(selectedProvince);
   const [prevCity, setPrevCity] = useState<string | undefined>(selectedCity);
 
+  // Memoize validation checks to avoid recalculating on every render
+  const isProvinceValid = useMemo(() => {
+    if (!selectedProvince || !provinces.length) return true;
+    return provinces.some((p) => p.name === selectedProvince);
+  }, [selectedProvince, provinces]);
+
+  const isCityValid = useMemo(() => {
+    if (!selectedCity || !cities.length) return true;
+    return cities.some((c) => c.name === selectedCity);
+  }, [selectedCity, cities]);
+
   // Reset dependent fields ONLY when parent actually changes (user selects a new value)
   // Compare by name since form stores display names, not codes
   useEffect(() => {
-    // Only reset if region actually changed to a different value (not on mount/navigation)
-    if (showRegion && selectedRegion && prevRegion && selectedRegion !== prevRegion) {
-      // Region changed - check if current province is still valid
-      const isProvinceValid = provinces.some((p) => p.name === selectedProvince);
-      if (!isProvinceValid && selectedProvince) {
+    if (!showRegion || !selectedRegion || selectedRegion === prevRegion) {
+      setPrevRegion(selectedRegion);
+      return;
+    }
+
+    if (!isProvinceValid && selectedProvince) {
+      requestAnimationFrame(() => {
         setValue(`${name}.${FIELD_NAMES.province}`, '', { shouldValidate: false });
         setValue(`${name}.${FIELD_NAMES.cityMunicipality}`, '', { shouldValidate: false });
         setValue(`${name}.${FIELD_NAMES.barangay}`, '', { shouldValidate: false });
-      }
+      });
     }
+
     setPrevRegion(selectedRegion);
-  }, [selectedRegion, provinces, name, setValue, showRegion, prevRegion, selectedProvince]);
+  }, [selectedRegion, showRegion, isProvinceValid, selectedProvince, name, setValue]);
 
   useEffect(() => {
-    // Only reset if province actually changed to a different value
-    if (selectedProvince && prevProvince && selectedProvince !== prevProvince) {
-      const isCityValid = cities.some((c) => c.name === selectedCity);
-      if (!isCityValid && selectedCity) {
+    if (!selectedProvince || selectedProvince === prevProvince) {
+      setPrevProvince(selectedProvince);
+      return;
+    }
+
+    if (!isCityValid && selectedCity) {
+      requestAnimationFrame(() => {
         setValue(`${name}.${FIELD_NAMES.cityMunicipality}`, '', { shouldValidate: false });
         setValue(`${name}.${FIELD_NAMES.barangay}`, '', { shouldValidate: false });
-      }
+      });
     }
+
     setPrevProvince(selectedProvince);
-  }, [selectedProvince, cities, name, setValue, prevProvince, selectedCity]);
+  }, [selectedProvince, isCityValid, selectedCity, name, setValue]);
 
   useEffect(() => {
-    // Only reset if city actually changed to a different value
-    if (selectedCity && prevCity && selectedCity !== prevCity) {
-      const currentBarangay = watch(`${name}.${FIELD_NAMES.barangay}`);
-      const isBarangayValid = barangays.some((b) => b.name === currentBarangay);
-      if (!isBarangayValid && currentBarangay) {
-        setValue(`${name}.${FIELD_NAMES.barangay}`, '', { shouldValidate: false });
-      }
+    if (!selectedCity || selectedCity === prevCity) {
+      setPrevCity(selectedCity);
+      return;
     }
-    setPrevCity(selectedCity);
-  }, [selectedCity, barangays, name, setValue, watch, prevCity]);
 
-  // Get nested error messages
-  const getError = useCallback(
-    (fieldName: string): string | undefined => {
+    const currentBarangay = getValues(`${name}.${FIELD_NAMES.barangay}`);
+    const isBarangayValid = barangays.some((b) => b.name === currentBarangay);
+
+    if (!isBarangayValid && currentBarangay) {
+      requestAnimationFrame(() => {
+        setValue(`${name}.${FIELD_NAMES.barangay}`, '', { shouldValidate: false });
+      });
+    }
+
+    setPrevCity(selectedCity);
+  }, [selectedCity, barangays, name, setValue, getValues]);
+
+  // Memoize error lookup to avoid recalculating on every render
+  const errorLookup = useMemo(() => {
+    const lookup: Record<string, string | undefined> = {};
+    Object.values(FIELD_NAMES).forEach((fieldName) => {
       const fieldPath = `${name}.${fieldName}`;
       const parts = fieldPath.split('.');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -201,12 +239,52 @@ export const AddressInput = memo(function AddressInput({
         if (error?.[part]) {
           error = error[part];
         } else {
-          return undefined;
+          error = undefined;
+          break;
         }
       }
-      return error?.message as string | undefined;
-    },
-    [errors, name]
+      lookup[fieldName] = error?.message as string | undefined;
+    });
+    return lookup;
+  }, [errors, name]);
+
+  const getError = useCallback(
+    (fieldName: string) => errorLookup[fieldName],
+    [errorLookup]
+  );
+
+  // Memoize datalists to prevent unnecessary re-renders
+  const ProvinceDatalist = useMemo(
+    () => (
+      <datalist id={`${name}-province-list`}>
+        {(showRegion && selectedRegion ? provinces : []).map((province) => (
+          <option key={province.code} value={province.name} />
+        ))}
+      </datalist>
+    ),
+    [name, provinces, showRegion, selectedRegion]
+  );
+
+  const CityDatalist = useMemo(
+    () => (
+      <datalist id={`${name}-city-list`}>
+        {cities.map((city) => (
+          <option key={city.code} value={city.name} />
+        ))}
+      </datalist>
+    ),
+    [name, cities]
+  );
+
+  const BarangayDatalist = useMemo(
+    () => (
+      <datalist id={`${name}-barangay-list`}>
+        {barangays.map((barangay) => (
+          <option key={barangay.code} value={barangay.name} />
+        ))}
+      </datalist>
+    ),
+    [name, barangays]
   );
 
   return (
@@ -450,13 +528,7 @@ export const AddressInput = memo(function AddressInput({
                 />
               )}
             />
-            <datalist id={`${name}-province-list`}>
-              {(showRegion && selectedRegion ? provinces : []).map(
-                (province) => (
-                  <option key={province.code} value={province.name} />
-                )
-              )}
-            </datalist>
+            {ProvinceDatalist}
             {getError(FIELD_NAMES.province) && (
               <p
                 id={`${name}.${FIELD_NAMES.province}-error`}
@@ -493,11 +565,7 @@ export const AddressInput = memo(function AddressInput({
                 />
               )}
             />
-            <datalist id={`${name}-city-list`}>
-              {cities.map((city) => (
-                <option key={city.code} value={city.name} />
-              ))}
-            </datalist>
+            {CityDatalist}
             {getError(FIELD_NAMES.cityMunicipality) && (
               <p
                 id={`${name}.${FIELD_NAMES.cityMunicipality}-error`}
@@ -534,11 +602,7 @@ export const AddressInput = memo(function AddressInput({
                 />
               )}
             />
-            <datalist id={`${name}-barangay-list`}>
-              {barangays.map((barangay) => (
-                <option key={barangay.code} value={barangay.name} />
-              ))}
-            </datalist>
+            {BarangayDatalist}
             {getError(FIELD_NAMES.barangay) && (
               <p
                 id={`${name}.${FIELD_NAMES.barangay}-error`}
@@ -560,12 +624,17 @@ export const AddressInput = memo(function AddressInput({
               control={control}
               render={({ field }) => (
                 <Input
-                  {...field}
                   id={`${name}.${FIELD_NAMES.zipCode}`}
+                  type="text"
+                  inputMode="numeric"
                   placeholder="e.g., 1634"
                   maxLength={4}
                   disabled={disabled || sameAs}
+                  value={field.value || ''}
                   onChange={(e) => {
+                    // Update field immediately for visual feedback
+                    field.onChange(e.target.value);
+                    // Debounce the validation
                     handleZipCodeChange(e.target.value);
                   }}
                   aria-invalid={!!getError(FIELD_NAMES.zipCode)}

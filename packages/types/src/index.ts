@@ -16,6 +16,7 @@ export interface PDSSubmission {
   id: string;
   userId: string;
   version: number;
+  year: number; // Calendar year for this PDS (e.g., 2025 for "Annual PDS - CY 2025")
   status: SubmissionStatus;
   data: PDSData;
   submittedAt?: Date;

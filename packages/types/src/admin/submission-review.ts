@@ -78,19 +78,19 @@ export interface PDSFamilyBackground {
 }
 
 export interface PDSChild {
-  name: string;
+  fullName: string;
   dateOfBirth: string;
 }
 
 export interface PDSEducation {
   level: string;
   schoolName: string;
-  basicEducation?: string;
+  degreeCourse?: string;
   periodFrom?: string;
   periodTo?: string;
-  highestLevel?: string;
-  yearGraduated?: string;
-  scholarshipHonors?: string;
+  highestLevelEarned?: string;
+  yearGraduated?: number;
+  honorsReceived?: string;
 }
 
 export interface PDSCivilService {
@@ -114,20 +114,20 @@ export interface PDSWorkExperience {
 }
 
 export interface PDSVoluntaryWork {
-  organization?: string;
-  position?: string;
-  periodFrom?: string;
-  periodTo?: string;
+  organizationName?: string;
+  positionNature?: string;
+  dateFrom?: string;
+  dateTo?: string;
   numberOfHours?: number;
-  natureOfWork?: string;
+  organizationAddress?: string;
 }
 
 export interface PDSTraining {
   title?: string;
-  periodFrom?: string;
-  periodTo?: string;
-  numberOfHours?: number;
-  type?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  hours?: number;
+  typeOfLd?: string;
   conductedBy?: string;
 }
 

@@ -13,7 +13,7 @@
 
 import { memo } from 'react';
 import * as React from 'react';
-import { Info, Plus, X, CheckCircle2, Award, Users, Shield } from 'lucide-react';
+import { Info, Plus, CheckCircle2, Award, Users, Shield } from 'lucide-react';
 import { useFormContext, useFieldArray, type FieldPath } from 'react-hook-form';
 import {
   FormField,
@@ -22,11 +22,16 @@ import {
   FormControl,
   FormMessage,
 } from '../../../../../components/ui/form';
-import { Input } from '../../../../../components/ui/input';
 import { Button } from '../../../../../components/ui/button';
 import { Checkbox } from '../../../../../components/ui/checkbox';
 import { Textarea } from '../../../../../components/ui/textarea';
 import { type CompletePdsData } from '../../../../../lib/validations/pds-schema';
+import {
+  SkillItem,
+  RecognitionItem,
+  AssociationItem,
+  ReferenceItem,
+} from '../../../../../components/pds/array-items';
 
 // Define CSC questions outside component to prevent recreation on each render
 const CSC_QUESTIONS = [
@@ -177,32 +182,7 @@ export const SectionVI = memo(function SectionVI() {
           ) : (
             <div className="space-y-3">
               {skillFields.map((field, index) => (
-                <div key={field.id} className="flex gap-3">
-                  <FormField
-                    control={form.control}
-                    name={`otherInfo.skills.${index}`}
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormControl>
-                          <Input
-                            placeholder="e.g., Public Speaking"
-                            {...field}
-                            className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeSkill(index)}
-                    className="text-muted-foreground hover:text-destructive">
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
+                <SkillItem key={field.id} index={index} onRemove={removeSkill} />
               ))}
             </div>
           )}
@@ -246,99 +226,11 @@ export const SectionVI = memo(function SectionVI() {
           ) : (
             <div className="space-y-4">
               {recognitionFields.map((field, index) => (
-                <div
+                <RecognitionItem
                   key={field.id}
-                  className="p-5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 space-y-6">
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-medium">
-                        {index + 1}
-                      </div>
-                      <p className="text-sm font-medium">
-                        Recognition #{index + 1}
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeRecognition(index)}
-                      className="text-muted-foreground hover:text-destructive">
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name={`otherInfo.recognitions.${index}.title`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            Title of Recognition{' '}
-                            <span className="text-destructive">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="e.g., Outstanding Researcher Award"
-                              {...field}
-                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`otherInfo.recognitions.${index}.year`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            Year Received{' '}
-                            <span className="text-destructive">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              min="1950"
-                              max={new Date().getFullYear()}
-                              placeholder="e.g., 2024"
-                              {...field}
-                              onChange={(e) =>
-                                field.onChange(parseInt(e.target.value))
-                              }
-                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`otherInfo.recognitions.${index}.organization`}
-                      render={({ field }) => (
-                        <FormItem className="md:col-span-2">
-                          <FormLabel>
-                            Awarding Organization{' '}
-                            <span className="text-destructive">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="e.g., CHED"
-                              {...field}
-                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
+                  index={index}
+                  onRemove={removeRecognition}
+                />
               ))}
             </div>
           )}
@@ -382,99 +274,11 @@ export const SectionVI = memo(function SectionVI() {
           ) : (
             <div className="space-y-4">
               {associationFields.map((field, index) => (
-                <div
+                <AssociationItem
                   key={field.id}
-                  className="p-5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 space-y-6">
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-medium">
-                        {index + 1}
-                      </div>
-                      <p className="text-sm font-medium">
-                        Membership #{index + 1}
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeAssociation(index)}
-                      className="text-muted-foreground hover:text-destructive">
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name={`otherInfo.associations.${index}.name`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            Association / Organization Name{' '}
-                            <span className="text-destructive">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="e.g., Philippine Institute of Engineering"
-                              {...field}
-                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`otherInfo.associations.${index}.position`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Position / Role (if any)</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="e.g., Member, Board Member"
-                              {...field}
-                              value={field.value ?? ''}
-                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`otherInfo.associations.${index}.yearJoined`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Year Joined</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              min="1950"
-                              max={new Date().getFullYear()}
-                              placeholder="e.g., 2020"
-                              {...field}
-                              value={field.value ?? ''}
-                              onChange={(e) =>
-                                field.onChange(
-                                  e.target.value
-                                    ? parseInt(e.target.value)
-                                    : undefined
-                                )
-                              }
-                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
+                  index={index}
+                  onRemove={removeAssociation}
+                />
               ))}
             </div>
           )}
@@ -600,86 +404,12 @@ export const SectionVI = memo(function SectionVI() {
           ) : (
             <div className="space-y-4">
               {referenceFields.map((field, index) => (
-                <div
+                <ReferenceItem
                   key={field.id}
-                  className="p-5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 space-y-6">
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-medium">
-                        {index + 1}
-                      </div>
-                      <p className="text-sm font-medium">
-                        Reference #{index + 1}
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeReference(index)}
-                      disabled={referenceFields.length <= 3}
-                      className="text-muted-foreground hover:text-destructive disabled:opacity-50">
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name={`otherInfo.references.${index}.name`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Full Name <span className="text-destructive">*</span></FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="e.g., Dr. Maria Santos"
-                              {...field}
-                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`otherInfo.references.${index}.telephoneNo`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Telephone No.</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="+63-2-8123-4567"
-                              {...field}
-                              value={field.value || ''}
-                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`otherInfo.references.${index}.address`}
-                      render={({ field }) => (
-                        <FormItem className="md:col-span-2">
-                          <FormLabel>Address <span className="text-destructive">*</span></FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="Complete address"
-                              {...field}
-                              className="resize-none bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
+                  index={index}
+                  onRemove={removeReference}
+                  canRemove={referenceFields.length > 3}
+                />
               ))}
             </div>
           )}

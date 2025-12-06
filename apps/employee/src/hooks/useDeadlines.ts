@@ -139,12 +139,27 @@ export function useUpcomingDeadlines(formType?: 'pds' | 'saln') {
    */
   const deadlines: Deadline[] = (query.data?.deadlines ?? []).map((deadline) => {
     // Recalculate days remaining based on current time for accuracy
+    // IMPORTANT: Parse date in local timezone to avoid UTC offset issues
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const deadlineDate = new Date(deadline.deadlineDate);
-    deadlineDate.setHours(0, 0, 0, 0);
+
+    // Parse deadline date in local timezone (not UTC)
+    // Database returns "2025-12-19" format
+    const [year, month, day] = deadline.deadlineDate.split('-').map(Number);
+    const deadlineDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+
     const diffTime = deadlineDate.getTime() - today.getTime();
     const currentDaysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    // Debug logging
+    console.log(`[useUpcomingDeadlines] Calculating for ${deadline.formType}:`, {
+      deadlineDate: deadline.deadlineDate,
+      today: today.toISOString(),
+      deadlineDateParsed: deadlineDate.toISOString(),
+      diffTime,
+      currentDaysRemaining,
+      serverDaysRemaining: deadline.daysRemaining,
+    });
 
     return {
       ...deadline,

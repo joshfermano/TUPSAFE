@@ -130,9 +130,9 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
     transformedData.otherInfo.references =
       transformedData.otherInfo.references.filter(
         (ref: any) =>
-          (ref.name && ref.name.trim() !== '') ||
-          (ref.address && ref.address.trim() !== '') ||
-          (ref.telephoneNo && ref.telephoneNo.trim() !== '')
+          ref.name && ref.name.trim() !== '' &&
+          ref.address && ref.address.trim() !== '' &&
+          ref.telephoneNo && ref.telephoneNo.trim() !== ''
       );
   }
 

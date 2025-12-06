@@ -934,7 +934,7 @@ export default function PdsSubmissionViewPage() {
                                     <TableRow key={index}>
                                       <TableCell>{index + 1}</TableCell>
                                       <TableCell className="font-medium">
-                                        {child.name}
+                                        {child.fullName}
                                       </TableCell>
                                       <TableCell>
                                         {format(
@@ -1016,7 +1016,7 @@ export default function PdsSubmissionViewPage() {
                                     </TableCell>
                                     <TableCell>{edu.schoolName}</TableCell>
                                     <TableCell>
-                                      {edu.basicEducation || '-'}
+                                      {edu.degreeCourse || '-'}
                                     </TableCell>
                                     <TableCell>
                                       {formatYearRange(
@@ -1025,13 +1025,13 @@ export default function PdsSubmissionViewPage() {
                                       )}
                                     </TableCell>
                                     <TableCell>
-                                      {edu.highestLevel || '-'}
+                                      {edu.highestLevelEarned || '-'}
                                     </TableCell>
                                     <TableCell>
                                       {edu.yearGraduated || '-'}
                                     </TableCell>
                                     <TableCell>
-                                      {edu.scholarshipHonors || '-'}
+                                      {edu.honorsReceived || '-'}
                                     </TableCell>
                                   </TableRow>
                                 ))}
@@ -1276,25 +1276,25 @@ export default function PdsSubmissionViewPage() {
                                   <TableRow key={index}>
                                     <TableCell className="font-medium">
                                       <div>
-                                        <p>{work.organization || 'N/A'}</p>
-                                        {work.natureOfWork && (
+                                        <p>{work.organizationName || 'N/A'}</p>
+                                        {work.organizationAddress && (
                                           <p className="text-xs text-muted-foreground mt-1">
-                                            {work.natureOfWork}
+                                            {work.organizationAddress}
                                           </p>
                                         )}
                                       </div>
                                     </TableCell>
                                     <TableCell>
                                       {formatDateRange(
-                                        work.periodFrom,
-                                        work.periodTo
+                                        work.dateFrom,
+                                        work.dateTo
                                       )}
                                     </TableCell>
                                     <TableCell>
                                       {work.numberOfHours || '-'}
                                     </TableCell>
                                     <TableCell>
-                                      {work.position || '-'}
+                                      {work.positionNature || '-'}
                                     </TableCell>
                                   </TableRow>
                                 ))}
@@ -1358,21 +1358,21 @@ export default function PdsSubmissionViewPage() {
                                       {training.title || 'N/A'}
                                     </TableCell>
                                     <TableCell>
-                                      {training.periodFrom && training.periodTo
+                                      {training.dateFrom && training.dateTo
                                         ? `${format(
-                                            new Date(training.periodFrom),
+                                            new Date(training.dateFrom),
                                             'MMM dd, yyyy'
                                           )} - ${format(
-                                            new Date(training.periodTo),
+                                            new Date(training.dateTo),
                                             'MMM dd, yyyy'
                                           )}`
                                         : '-'}
                                     </TableCell>
                                     <TableCell>
-                                      {training.numberOfHours || '-'}
+                                      {training.hours || '-'}
                                     </TableCell>
                                     <TableCell>
-                                      {training.type || '-'}
+                                      {training.typeOfLd || '-'}
                                     </TableCell>
                                     <TableCell>
                                       {training.conductedBy || '-'}

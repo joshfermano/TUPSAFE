@@ -56,6 +56,13 @@ export const DeadlineCountdown = memo(function DeadlineCountdown({
   className,
   size = 'default',
 }: DeadlineCountdownProps) {
+  // Debug logging
+  console.log('[DeadlineCountdown] Received props:', {
+    daysRemaining,
+    urgencyLevel,
+    size,
+  });
+
   const isOverdue = daysRemaining < 0;
   const displayDays = Math.abs(daysRemaining);
 
@@ -168,7 +175,6 @@ export const DeadlineCountdown = memo(function DeadlineCountdown({
       <div className={cn('flex items-baseline gap-1', currentUrgency.glow)}>
         <NumberTicker
           value={displayDays}
-          direction="down"
           delay={0.1}
           className={cn(
             currentSize.number,

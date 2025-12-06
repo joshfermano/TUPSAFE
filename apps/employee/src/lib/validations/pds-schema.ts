@@ -33,11 +33,18 @@ const pagibigRegex = /^\d{4}-\d{4}-\d{4}$/; // Format: 1234-5678-9012
 const philsysRegex = /^\d{2}-\d{9}-\d{1}$/; // Format: 12-345678901-2 (PhilSys Number - PSN)
 
 // Date validation helpers
-const pastDateSchema = z.date().max(new Date(), 'Date cannot be in the future');
+// Use refine() instead of max() to evaluate current date at validation time, not module load time
+const pastDateSchema = z.date().refine(
+  (date) => date <= new Date(),
+  { message: 'Date cannot be in the future' }
+);
 
 const optionalPastDateSchema = z
   .date()
-  .max(new Date(), 'Date cannot be in the future')
+  .refine(
+    (date) => date <= new Date(),
+    { message: 'Date cannot be in the future' }
+  )
   .nullable();
 
 // ============================================================================
