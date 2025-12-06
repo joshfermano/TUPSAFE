@@ -75,12 +75,13 @@ export async function POST(request: NextRequest, context: RouteContext) {
       );
     }
 
-    // Validate PDS is in draft status
-    if (pds.submission.status !== 'draft') {
+    // Validate PDS is in draft or rejected status (rejected can be resubmitted)
+    const allowedStatuses = ['draft', 'rejected'];
+    if (!allowedStatuses.includes(pds.submission.status)) {
       return NextResponse.json(
         {
           success: false,
-          error: `Cannot submit PDS with status '${pds.submission.status}'. Only draft submissions can be submitted.`,
+          error: `Cannot submit PDS with status '${pds.submission.status}'. Only draft or rejected submissions can be submitted.`,
         },
         { status: 403 }
       );
