@@ -96,6 +96,7 @@ export function useSaln(userId: string): UseSalnReturn {
         approvedBy: null,
         approvedAt: null,
         rejectionReason: null,
+        reviewNotes: null,
         pdfFilePath: null,
         filingType: 'separate',
         createdAt: new Date(),

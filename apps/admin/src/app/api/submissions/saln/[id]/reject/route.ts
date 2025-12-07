@@ -114,6 +114,7 @@ export async function POST(
         approvedBy: sessionUser.id, // Track who rejected
         approvedAt: now,
         rejectionReason: validatedData.reason,
+        reviewNotes: null, // Clear any previous approval notes
         updatedAt: now,
       })
       .where(

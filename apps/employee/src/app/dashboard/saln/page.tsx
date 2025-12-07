@@ -14,22 +14,24 @@
  * - React.memo for all components
  * - useMemo for calculations
  * - useCallback for event handlers
- * - Memoized currency formatter
+ * - Real API data via React Query hooks
  */
 
 import { useMemo, memo, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../../providers/AuthProvider';
-import { useSaln } from '@tupsafe/mock-data/api';
+import { useSALNSubmissions, useLatestSALN } from '../../../hooks/useSaln';
+import { useDeadlineForForm } from '../../../hooks';
 import { InfoCard } from '../../../components/dashboard/InfoCard';
 import { DeadlineSection } from '../../../components/dashboard/DeadlineSection';
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent } from '../../../components/ui/card';
 import { cn } from '../../../lib/utils';
+import { EmployeeOnlyGuard } from '../../../components/guards/EmployeeOnlyGuard';
 
 // Import minimal MagicUI components
-import { BlurFade, NumberTicker } from '@tupsafe/shared-ui';
+import { BlurFade, NumberTicker, AnimatedGradientText } from '@tupsafe/shared-ui';
 
 import {
   Landmark,
@@ -89,83 +91,26 @@ const CURRENCY_FORMATTER = new Intl.NumberFormat('en-PH', {
   maximumFractionDigits: 0,
 });
 
-// Mock Data
-const MOCK_SALN_SECTIONS: SALNSection[] = [
-  {
-    id: 'real-property',
-    title: 'Real Property',
-    description: 'Land, buildings, and improvements',
-    amount: 3500000,
-    isComplete: true,
-    icon: Home,
-    items: 2,
-  },
-  {
-    id: 'personal-property',
-    title: 'Personal Property',
-    description: 'Vehicles, jewelry, and other valuables',
-    amount: 1200000,
-    isComplete: true,
-    icon: Car,
-    items: 3,
-  },
-  {
-    id: 'cash-investments',
-    title: 'Cash & Investments',
-    description: 'Bank deposits, stocks, bonds',
-    amount: 1800000,
-    isComplete: true,
-    icon: Wallet,
-    items: 5,
-  },
-  {
-    id: 'liabilities',
-    title: 'Liabilities',
-    description: 'Loans, mortgages, and other debts',
-    amount: 1650000,
-    isComplete: false,
-    icon: CreditCard,
-    items: 2,
-  },
-  {
-    id: 'business-interests',
-    title: 'Business Interests',
-    description: 'Financial interests in businesses',
-    amount: 0,
-    isComplete: true,
-    icon: Building2,
-    items: 0,
-  },
-];
+// Helper functions to calculate section totals from real data
+const calculateRealPropertyTotal = (properties: any[] | undefined | null): number => {
+  if (!properties || !Array.isArray(properties)) return 0;
+  return properties.reduce((sum, prop) => sum + (Number(prop.currentFairMarketValue) || 0), 0);
+};
 
-const MOCK_RECENT_ACTIVITY: ActivityItem[] = [
-  {
-    id: '1',
-    action: 'Updated Real Property values',
-    section: 'Assets',
-    date: new Date('2025-10-10'),
-    type: 'update',
-  },
-  {
-    id: '2',
-    action: 'Added new vehicle entry',
-    section: 'Personal Property',
-    date: new Date('2025-10-08'),
-    type: 'update',
-  },
-  {
-    id: '3',
-    action: 'Created SALN for 2025',
-    date: new Date('2025-10-01'),
-    type: 'create',
-  },
-];
+const calculatePersonalPropertyTotal = (properties: any[] | undefined | null): number => {
+  if (!properties || !Array.isArray(properties)) return 0;
+  return properties.reduce((sum, prop) => sum + (Number(prop.acquisitionCost) || 0), 0);
+};
 
-const MOCK_YEAR_SUMMARIES: YearSummary[] = [
-  { year: 2025, netWorth: 4850000, status: 'draft' },
-  { year: 2024, netWorth: 4200000, status: 'approved' },
-  { year: 2023, netWorth: 3800000, status: 'approved' },
-];
+const calculateLiabilitiesTotal = (liabilities: any[] | undefined | null): number => {
+  if (!liabilities || !Array.isArray(liabilities)) return 0;
+  return liabilities.reduce((sum, liab) => sum + (Number(liab.outstandingBalance) || 0), 0);
+};
+
+const calculateBusinessInterestsCount = (interests: any[] | undefined | null): number => {
+  if (!interests || !Array.isArray(interests)) return 0;
+  return interests.length;
+};
 
 // Memoized EmptyState component
 const EmptyState = memo(function EmptyState() {
@@ -209,9 +154,18 @@ const EmptyState = memo(function EmptyState() {
 
 export default function SalnPage() {
   const { user } = useAuth();
-  const { submissions, latest, loading, error } = useSaln(user?.id || '');
 
+  // Use real hooks for SALN data
+  const { data: submissionsResponse, isLoading, error: submissionsError } = useSALNSubmissions();
+  const { data: latest, isLoading: isLatestLoading } = useLatestSALN();
+
+  // Extract submissions from response
+  const submissions = useMemo(() => submissionsResponse?.data || [], [submissionsResponse]);
   const hasExistingSALN = submissions.length > 0;
+
+  // Combine loading states
+  const loading = isLoading || isLatestLoading;
+  const error = submissionsError?.message || null;
 
   // Memoized currency formatter
   const formatCurrency = useCallback((amount: number) => {
@@ -289,10 +243,118 @@ export default function SalnPage() {
     }
   }, []);
 
+  // Calculate SALN sections from latest real data
+  const salnSections = useMemo((): SALNSection[] => {
+    if (!latest) return [];
+
+    const realPropertyTotal = calculateRealPropertyTotal(latest.realProperties);
+    const personalPropertyTotal = calculatePersonalPropertyTotal(latest.personalProperties);
+    const liabilitiesTotal = calculateLiabilitiesTotal(latest.liabilities);
+    const businessInterestsCount = calculateBusinessInterestsCount(latest.businessInterests);
+
+    // Calculate cash & investments as part of total assets minus real and personal property
+    const totalAssets = Number(latest.totalAssets) || 0;
+    const cashInvestments = Math.max(0, totalAssets - realPropertyTotal - personalPropertyTotal);
+
+    return [
+      {
+        id: 'real-property',
+        title: 'Real Property',
+        description: 'Land, buildings, and improvements',
+        amount: realPropertyTotal,
+        isComplete: (latest.realProperties?.length || 0) > 0,
+        icon: Home,
+        items: latest.realProperties?.length || 0,
+      },
+      {
+        id: 'personal-property',
+        title: 'Personal Property',
+        description: 'Vehicles, jewelry, and other valuables',
+        amount: personalPropertyTotal,
+        isComplete: (latest.personalProperties?.length || 0) > 0,
+        icon: Car,
+        items: latest.personalProperties?.length || 0,
+      },
+      {
+        id: 'cash-investments',
+        title: 'Cash & Investments',
+        description: 'Bank deposits, stocks, bonds',
+        amount: cashInvestments,
+        isComplete: cashInvestments > 0,
+        icon: Wallet,
+        items: cashInvestments > 0 ? 1 : 0,
+      },
+      {
+        id: 'liabilities',
+        title: 'Liabilities',
+        description: 'Loans, mortgages, and other debts',
+        amount: liabilitiesTotal,
+        isComplete: (latest.liabilities?.length || 0) > 0,
+        icon: CreditCard,
+        items: latest.liabilities?.length || 0,
+      },
+      {
+        id: 'business-interests',
+        title: 'Business Interests',
+        description: 'Financial interests in businesses',
+        amount: 0,
+        isComplete: businessInterestsCount === 0,
+        icon: Building2,
+        items: businessInterestsCount,
+      },
+    ];
+  }, [latest]);
+
+  // Calculate recent activity from submissions history
+  const recentActivity = useMemo((): ActivityItem[] => {
+    if (submissions.length === 0) return [];
+
+    return submissions.slice(0, 3).map((s: any, index: number) => {
+      let action = '';
+      let section: string | undefined = undefined;
+      let type: ActivityItem['type'] = 'update';
+
+      if (s.status === 'approved') {
+        action = `SALN ${s.year} approved`;
+        type = 'approve';
+      } else if (s.status === 'submitted') {
+        action = `Submitted SALN ${s.year} for review`;
+        type = 'submit';
+      } else if (index === 0 && s.status === 'draft') {
+        action = `Created SALN for ${s.year}`;
+        type = 'create';
+      } else {
+        action = `Updated SALN ${s.year}`;
+        section = 'Various sections';
+        type = 'update';
+      }
+
+      return {
+        id: s.id,
+        action,
+        section,
+        date: new Date(s.updatedAt),
+        type,
+      };
+    });
+  }, [submissions]);
+
+  // Calculate year summaries from all submissions
+  const yearSummaries = useMemo((): YearSummary[] => {
+    return submissions
+      .sort((a: any, b: any) => b.year - a.year)
+      .slice(0, 3)
+      .map((s: any) => ({
+        year: s.year,
+        netWorth: Number(s.netWorth) || 0,
+        status: s.status as 'draft' | 'submitted' | 'approved' | 'rejected',
+      }));
+  }, [submissions]);
+
   // Memoize net worth calculation
   const netWorthChange = useMemo(() => {
     if (submissions.length < 2) return null;
-    const sorted = [...submissions].sort((a, b) => b.year - a.year);
+    const sorted = [...submissions].sort((a: any, b: any) => b.year - a.year);
     const currentYear = sorted[0];
     const previousYear = sorted[1];
     const currentNetWorth = Number(currentYear.netWorth);
@@ -333,23 +395,28 @@ export default function SalnPage() {
 
   // Empty state
   if (!hasExistingSALN) {
-    return <EmptyState />;
+    return (
+      <EmployeeOnlyGuard>
+        <EmptyState />
+      </EmployeeOnlyGuard>
+    );
   }
 
   // Main content with existing SALN
   return (
-    <div className="space-y-8 pb-8">
+    <EmployeeOnlyGuard>
+      <div className="space-y-6 pb-8">
       {/* Page Header */}
       <BlurFade delay={0.1}>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <AnimatedGradientText className="text-2xl sm:text-3xl font-bold">
                 e-SALN {latest?.year || new Date().getFullYear()}
-              </h1>
+              </AnimatedGradientText>
               {latest && getStatusBadge(latest.status)}
             </div>
-            <p className="text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
               Statement of Assets, Liabilities, and Net Worth
             </p>
           </div>
@@ -491,7 +558,7 @@ export default function SalnPage() {
             SALN Categories
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {MOCK_SALN_SECTIONS.map((section) => (
+            {salnSections.map((section) => (
               <Card
                 key={section.id}
                 className="cursor-pointer hover:shadow-md hover:border-[oklch(0.55_0.22_15)] transition-all border-slate-200 dark:border-slate-800">
@@ -554,7 +621,7 @@ export default function SalnPage() {
         <BlurFade delay={0.5} className="lg:col-span-2">
           <InfoCard title="Historical Overview" icon={Calendar}>
             <div className="space-y-4">
-              {MOCK_YEAR_SUMMARIES.map((summary) => (
+              {yearSummaries.map((summary) => (
                 <div
                   key={summary.year}
                   className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
@@ -582,7 +649,7 @@ export default function SalnPage() {
         <BlurFade delay={0.6}>
           <InfoCard title="Recent Activity" icon={Clock}>
             <div className="space-y-4">
-              {MOCK_RECENT_ACTIVITY.map((activity) => {
+              {recentActivity.map((activity) => {
                 const ActivityIcon = getActivityIcon(activity.type);
                 return (
                   <div
@@ -616,5 +683,6 @@ export default function SalnPage() {
         </BlurFade>
       </div>
     </div>
+    </EmployeeOnlyGuard>
   );
 }

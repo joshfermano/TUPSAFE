@@ -580,3 +580,56 @@ export function useArchiveSALN(id: string) {
     },
   });
 }
+
+/**
+ * Hook to get the latest SALN submission
+ *
+ * Returns the most recent SALN submission for the current year.
+ * If no submission exists for the current year, returns the latest from any year.
+ * Useful for year-over-year comparisons and dashboard displays.
+ *
+ * @returns Query with latest SALN submission or undefined
+ *
+ * @example
+ * ```tsx
+ * const { data: latestSALN, isLoading } = useLatestSALN();
+ * ```
+ */
+export function useLatestSALN() {
+  const currentYear = new Date().getFullYear();
+
+  return useQuery({
+    queryKey: [...salnKeys.all, 'latest', currentYear],
+    queryFn: async () => {
+      // Try to get current year's SALN first
+      const currentYearResponse = await fetch(
+        `/api/saln?year=${currentYear}&limit=1`,
+        { credentials: 'include' }
+      );
+
+      if (currentYearResponse.ok) {
+        const currentYearResult = await currentYearResponse.json();
+        if (currentYearResult.data && currentYearResult.data.length > 0) {
+          return currentYearResult.data[0];
+        }
+      }
+
+      // If no current year SALN, get the latest from any year
+      const latestResponse = await fetch('/api/saln?limit=1', {
+        credentials: 'include',
+      });
+
+      if (!latestResponse.ok) {
+        const error = await latestResponse.json();
+        throw new Error(error.error || 'Failed to fetch latest SALN');
+      }
+
+      const latestResult = await latestResponse.json();
+      return latestResult.data && latestResult.data.length > 0
+        ? latestResult.data[0]
+        : undefined;
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    enabled: true,
+  });
+}

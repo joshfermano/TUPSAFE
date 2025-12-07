@@ -758,6 +758,7 @@ export const salnSubmissions = pgTable(
     approvedBy: uuid('approved_by'),
     approvedAt: timestamp('approved_at'),
     rejectionReason: text('rejection_reason'), // Reason for rejection if status is 'rejected'
+    reviewNotes: text('review_notes'), // Optional review feedback from admin/HR (approval notes)
     pdfFilePath: text('pdf_file_path'), // Supabase Storage path to generated PDF
     filingType: filingTypeEnum('filing_type').default('separate').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),

@@ -1,42 +1,93 @@
+/**
+ * SALN API Route - Submit for Approval
+ * POST /api/saln/[id]/submit - Submit SALN for approval
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@tupsafe/auth/server';
-import { submitSALNForApproval } from '@tupsafe/database/server';
+import { db } from '@tupsafe/database/server';
+import { profiles } from '@tupsafe/database/schema';
+import { eq } from 'drizzle-orm';
+import {
+  getSALNSubmissionById,
+  submitSALNForApproval,
+} from '@tupsafe/database/server';
+import { completeSalnSchema } from '../../../../../lib/validations/saln-schema';
+import { transformSalnFromBackend } from '../../../../../lib/utils/saln-transformations';
+
+interface RouteContext {
+  params: Promise<{ id: string }>;
+}
 
 /**
  * POST /api/saln/[id]/submit
- * Submit SALN for approval
+ * Submit a SALN for approval
  * Changes status from 'draft' or 'rejected' to 'submitted'
- * Returns: Success status
+ *
+ * Path Parameters:
+ * - id: SALN submission UUID
+ *
+ * Returns:
+ * {
+ *   success: true,
+ *   message: string
+ * }
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, context: RouteContext) {
   try {
-    const { id } = await params;
+    // ========================================================================
+    // STEP 1: Authenticate user
+    // ========================================================================
     const supabase = await createServerClient('employee');
-
-    // Get authenticated user
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      console.error(
+        '[POST /api/saln/[id]/submit] Authentication failed:',
+        authError
+      );
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized. Please log in.' },
+        { status: 401 }
+      );
     }
 
-    // Check if user is employee (not applicant)
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('user_type, employee_id, first_name, last_name')
-      .eq('id', user.id)
-      .single();
+    // ========================================================================
+    // STEP 2: RBAC CHECK - EMPLOYEE ONLY (Source of Truth: profiles table)
+    // ========================================================================
+    const [profile] = await db
+      .select({ userType: profiles.userType })
+      .from(profiles)
+      .where(eq(profiles.id, user.id))
+      .limit(1);
 
-    if (!profile || profile.user_type !== 'employee') {
+    // ENFORCE EMPLOYEE-ONLY ACCESS
+    if (!profile || profile.userType !== 'employee') {
+      console.error(
+        `[POST /api/saln/[id]/submit] Access denied for user ${user.id}: userType=${profile?.userType || 'null'}`
+      );
       return NextResponse.json(
-        { error: 'Only employees can submit SALN submissions' },
+        {
+          success: false,
+          error: 'Access Denied',
+          message: 'SALN is only available to employees.',
+        },
         { status: 403 }
+      );
+    }
+
+    // ========================================================================
+    // STEP 3: Get SALN ID from route params
+    // ========================================================================
+    const { id } = await context.params;
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'SALN submission ID is required.' },
+        { status: 400 }
       );
     }
 
@@ -45,28 +96,109 @@ export async function POST(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(id)) {
       return NextResponse.json(
-        { error: 'Invalid SALN ID format' },
+        { success: false, error: 'Invalid SALN ID format' },
         { status: 400 }
       );
     }
 
-    // Submit SALN for approval
-    const submittedSaln = await submitSALNForApproval(id, user.id);
+    // ========================================================================
+    // STEP 4: Validate SALN exists and belongs to user
+    // ========================================================================
+    const saln = await getSALNSubmissionById(id, user.id);
+
+    if (!saln) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'SALN submission not found or access denied.',
+        },
+        { status: 404 }
+      );
+    }
+
+    // Validate SALN is in draft or rejected status (rejected can be resubmitted)
+    const allowedStatuses = ['draft', 'rejected'];
+    if (!allowedStatuses.includes(saln.status)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Cannot submit SALN with status '${saln.status}'. Only draft or rejected submissions can be submitted.`,
+        },
+        { status: 403 }
+      );
+    }
+
+    // ========================================================================
+    // STEP 5: Validate SALN completeness
+    // ========================================================================
+    // Transform to frontend format for validation
+    const frontendSaln = transformSalnFromBackend(saln);
+
+    // Validate required sections are present
+    const hasAssets =
+      (frontendSaln.realProperties && frontendSaln.realProperties.length > 0) ||
+      (frontendSaln.personalProperties &&
+        frontendSaln.personalProperties.length > 0);
+
+    if (!hasAssets) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Cannot submit incomplete SALN. At least one asset (real property or personal property) is required.',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate against complete schema
+    try {
+      completeSalnSchema.parse(frontendSaln);
+    } catch (validationError: any) {
+      console.error(
+        '[POST /api/saln/[id]/submit] Validation failed:',
+        validationError
+      );
+
+      // Extract validation errors
+      const errors =
+        validationError.errors?.map((err: any) => ({
+          path: err.path.join('.'),
+          message: err.message,
+        })) || [];
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'SALN validation failed. Please complete all required fields.',
+          details: errors.length > 0 ? errors : validationError.message,
+        },
+        { status: 400 }
+      );
+    }
+
+    // ========================================================================
+    // STEP 6: Submit SALN for approval
+    // ========================================================================
+    await submitSALNForApproval(id, user.id);
+
+    console.log(
+      `[POST /api/saln/[id]/submit] Submitted SALN ${id} for approval by user ${user.id}`
+    );
 
     return NextResponse.json({
       success: true,
-      data: submittedSaln,
-      message: `SALN for year ${submittedSaln.year} submitted successfully for approval`,
-      submittedAt: submittedSaln.submittedAt,
+      message:
+        'SALN submitted for approval successfully. You will be notified once it has been reviewed.',
     });
   } catch (error) {
-    console.error('Error submitting SALN:', error);
+    console.error('[POST /api/saln/[id]/submit] Error submitting SALN:', error);
 
     // Handle specific errors
     if (error instanceof Error) {
       if (error.message.includes('not found')) {
         return NextResponse.json(
-          { error: 'SALN submission not found' },
+          { success: false, error: 'SALN submission not found' },
           { status: 404 }
         );
       }
@@ -74,14 +206,18 @@ export async function POST(
         error.message.includes('Unauthorized') ||
         error.message.includes('Only draft')
       ) {
-        return NextResponse.json({ error: error.message }, { status: 403 });
+        return NextResponse.json(
+          { success: false, error: error.message },
+          { status: 403 }
+        );
       }
     }
 
     return NextResponse.json(
       {
-        error: 'Failed to submit SALN',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        error:
+          error instanceof Error ? error.message : 'Failed to submit SALN',
       },
       { status: 500 }
     );
