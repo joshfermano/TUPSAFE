@@ -23,10 +23,11 @@
 import React, { useMemo, useCallback, useState, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../providers/AuthProvider';
-import { useSalnQuery } from '../../../../hooks/useSalnQuery';
-import { BlurFade, Badge, NumberTicker } from '@tupsafe/shared-ui';
+import { useSALNSubmissions } from '../../../../hooks/useSaln';
+import { BlurFade, Badge, NumberTicker, AnimatedGradientText } from '@tupsafe/shared-ui';
 import { Card, CardContent } from '../../../../components/ui/card';
 import { Button } from '../../../../components/ui/button';
+import { EmployeeOnlyGuard } from '../../../../components/guards/EmployeeOnlyGuard';
 import {
   Select,
   SelectContent,
@@ -317,7 +318,13 @@ SkeletonCard.displayName = 'SkeletonCard';
 export default function SalnSubmissionsPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { submissions, isLoading, error } = useSalnQuery(user?.id || '');
+
+  // Use real hook for SALN submissions
+  const { data: submissionsResponse, isLoading, error: submissionsError } = useSALNSubmissions();
+
+  // Extract all submissions from response
+  const allSubmissions = useMemo(() => submissionsResponse?.data || [], [submissionsResponse]);
+  const error = submissionsError;
 
   // Filter and sort state
   const [sortBy, setSortBy] = useState<SortOption>('year-desc');
@@ -325,8 +332,8 @@ export default function SalnSubmissionsPage() {
 
   // Filter only approved submissions
   const approvedSubmissions = useMemo(() => {
-    return submissions.filter((s) => s.status === 'approved') as ApprovedSalnSubmission[];
-  }, [submissions]);
+    return allSubmissions.filter((s: any) => s.status === 'approved') as ApprovedSalnSubmission[];
+  }, [allSubmissions]);
 
   // Apply search and sort
   const filteredSubmissions = useMemo(() => {
@@ -448,16 +455,17 @@ export default function SalnSubmissionsPage() {
   const isEmpty = filteredSubmissions.length === 0;
 
   return (
+    <EmployeeOnlyGuard>
     <div className="min-h-screen pb-10">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <BlurFade delay={0}>
-            <div>
-              <div className="flex items-center gap-2.5 mb-1.5">
-                <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2.5">
+                <AnimatedGradientText className="text-2xl sm:text-3xl font-bold">
                   Approved SALN Submissions
-                </h1>
+                </AnimatedGradientText>
                 <Badge
                   className={cn(
                     'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
@@ -560,5 +568,6 @@ export default function SalnSubmissionsPage() {
         )}
       </div>
     </div>
+    </EmployeeOnlyGuard>
   );
 }

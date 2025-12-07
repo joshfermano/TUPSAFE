@@ -14,8 +14,9 @@
 import React, { useMemo, useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../providers/AuthProvider';
-import { useSaln } from '@tupsafe/mock-data/api';
+import { useSALNSubmissions } from '../../../../hooks/useSaln';
 import { differenceInYears, format, formatDistanceToNow } from 'date-fns';
+import { EmployeeOnlyGuard } from '../../../../components/guards/EmployeeOnlyGuard';
 import {
   FileText,
   Download,
@@ -41,8 +42,8 @@ import {
   Info,
 } from 'lucide-react';
 
-import { NumberTicker } from '../../../../components/ui/number-ticker';
-import { BlurFade } from '../../../../components/ui/blur-fade';
+import { NumberTicker, AnimatedGradientText } from '@tupsafe/shared-ui';
+import { BlurFade } from '@tupsafe/shared-ui';
 import { Button } from '../../../../components/ui/button';
 import { Badge } from '../../../../components/ui/badge';
 import { Card, CardContent } from '../../../../components/ui/card';
@@ -550,7 +551,15 @@ const EmptyState = ({ onBackToActive }: { onBackToActive: () => void }) => (
 export default function SALNArchivePage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { submissions, loading, error } = useSaln(user?.id || '');
+
+  // Use real hook for SALN submissions
+  const { data: submissionsResponse, isLoading, error: submissionsError } = useSALNSubmissions();
+
+  // Extract all submissions from response
+  const allSubmissions = useMemo(() => submissionsResponse?.data || [], [submissionsResponse]);
+
+  const loading = isLoading;
+  const error = submissionsError?.message || null;
 
   // Filter and sort state
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -561,7 +570,7 @@ export default function SALNArchivePage() {
 
   // Filter archived submissions (5+ years old) and parse currency strings
   const archivedSubmissions = useMemo(() => {
-    const filtered = submissions.map(parseSubmission).filter((submission) => {
+    const filtered = allSubmissions.map(parseSubmission).filter((submission: SalnSubmissionWithNumbers) => {
       const yearEnd = new Date(submission.year, 11, 31); // December 31 of submission year
       const age = differenceInYears(new Date(), yearEnd);
       return age >= 5; // Show 5+ years old
@@ -571,18 +580,18 @@ export default function SALNArchivePage() {
     let statusFiltered =
       statusFilter === 'all'
         ? filtered
-        : filtered.filter((s) => s.status === statusFilter);
+        : filtered.filter((s: SalnSubmissionWithNumbers) => s.status === statusFilter);
 
     // Apply decade filter
     if (decadeFilter !== 'all') {
       const decadeStart = parseInt(decadeFilter);
       statusFiltered = statusFiltered.filter(
-        (s) => s.year >= decadeStart && s.year < decadeStart + 10
+        (s: SalnSubmissionWithNumbers) => s.year >= decadeStart && s.year < decadeStart + 10
       );
     }
 
     // Apply sorting
-    return statusFiltered.sort((a, b) => {
+    return statusFiltered.sort((a: SalnSubmissionWithNumbers, b: SalnSubmissionWithNumbers) => {
       switch (sortBy) {
         case 'date-desc':
           return b.year - a.year;
@@ -598,28 +607,28 @@ export default function SALNArchivePage() {
           return 0;
       }
     });
-  }, [submissions, statusFilter, sortBy, decadeFilter]);
+  }, [allSubmissions, statusFilter, sortBy, decadeFilter]);
 
   // Get available decades for filtering
   const availableDecades = useMemo(() => {
     const decades = new Set<number>();
-    archivedSubmissions.forEach((submission) => {
+    archivedSubmissions.forEach((submission: SalnSubmissionWithNumbers) => {
       const decade = Math.floor(submission.year / 10) * 10;
       decades.add(decade);
     });
-    return Array.from(decades).sort((a, b) => b - a);
+    return Array.from(decades).sort((a: number, b: number) => b - a);
   }, [archivedSubmissions]);
 
   // Calculate statistics
   const stats = useMemo(() => {
     const oldest = archivedSubmissions[archivedSubmissions.length - 1];
     const approvedSubmissions = archivedSubmissions.filter(
-      (s) => s.status === 'approved'
+      (s: SalnSubmissionWithNumbers) => s.status === 'approved'
     );
 
     const avgNetWorth =
       approvedSubmissions.length > 0
-        ? approvedSubmissions.reduce((sum, s) => sum + s.netWorth, 0) /
+        ? approvedSubmissions.reduce((sum: number, s: SalnSubmissionWithNumbers) => sum + s.netWorth, 0) /
           approvedSubmissions.length
         : 0;
 
@@ -659,19 +668,20 @@ export default function SALNArchivePage() {
   if (error) return <ErrorState error={error} />;
 
   return (
+    <EmployeeOnlyGuard>
     <div className="min-h-screen pb-12 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <AnimatedGradientText className="text-2xl sm:text-3xl font-bold">
               SALN Archive
-            </h1>
+            </AnimatedGradientText>
             <Badge className="bg-gradient-to-r from-amber-600 to-amber-700 text-white border-0 px-2 py-0.5 text-xs">
               Historical Records
             </Badge>
           </div>
-          <p className="text-slate-600 dark:text-slate-400 text-sm">
+          <p className="text-sm text-slate-600 dark:text-slate-400">
             View archived financial disclosures from 5 or more years ago
           </p>
         </div>
@@ -808,7 +818,7 @@ export default function SALNArchivePage() {
         </BlurFade>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {archivedSubmissions.map((submission, index) => {
+          {archivedSubmissions.map((submission: SalnSubmissionWithNumbers, index: number) => {
             const yearEnd = new Date(submission.year, 11, 31);
             const yearsArchived = differenceInYears(new Date(), yearEnd);
 
@@ -828,5 +838,6 @@ export default function SALNArchivePage() {
         </div>
       )}
     </div>
+    </EmployeeOnlyGuard>
   );
 }

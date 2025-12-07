@@ -3,8 +3,9 @@
 import React, { useMemo, useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../providers/AuthProvider';
-import { useSaln } from '@tupsafe/mock-data/api';
+import { useSALNSubmissions } from '../../../../hooks/useSaln';
 import { differenceInYears, format, formatDistanceToNow } from 'date-fns';
+import { EmployeeOnlyGuard } from '../../../../components/guards/EmployeeOnlyGuard';
 import {
   FileText,
   Download,
@@ -29,8 +30,8 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
-import { NumberTicker } from '../../../../components/ui/number-ticker';
-import { BlurFade } from '../../../../components/ui/blur-fade';
+import { NumberTicker, AnimatedGradientText } from '@tupsafe/shared-ui';
+import { BlurFade } from '@tupsafe/shared-ui';
 import { Button } from '../../../../components/ui/button';
 import { Badge } from '../../../../components/ui/badge';
 import { Card, CardContent } from '../../../../components/ui/card';
@@ -557,7 +558,15 @@ const EmptyState = ({
 export default function SALNViewPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { submissions, loading, error } = useSaln(user?.id || '');
+
+  // Use real hook for SALN submissions
+  const { data: submissionsResponse, isLoading, error: submissionsError } = useSALNSubmissions();
+
+  // Extract submissions from response
+  const allSubmissions = useMemo(() => submissionsResponse?.data || [], [submissionsResponse]);
+
+  const loading = isLoading;
+  const error = submissionsError?.message || null;
 
   // Filter and sort state
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -567,7 +576,7 @@ export default function SALNViewPage() {
 
   // Filter active submissions (0-5 years old) and parse currency strings
   const activeSubmissions = useMemo(() => {
-    const filtered = submissions.map(parseSubmission).filter((submission) => {
+    const filtered = allSubmissions.map(parseSubmission).filter((submission: any) => {
       const age = differenceInYears(
         new Date(),
         new Date(submission.year, 11, 31)
@@ -579,10 +588,10 @@ export default function SALNViewPage() {
     const statusFiltered =
       statusFilter === 'all'
         ? filtered
-        : filtered.filter((s) => s.status === statusFilter);
+        : filtered.filter((s: any) => s.status === statusFilter);
 
     // Apply sorting
-    return statusFiltered.sort((a, b) => {
+    return statusFiltered.sort((a: any, b: any) => {
       switch (sortBy) {
         case 'date-desc':
           return b.year - a.year;
@@ -598,7 +607,7 @@ export default function SALNViewPage() {
           return 0;
       }
     });
-  }, [submissions, statusFilter, sortBy]);
+  }, [allSubmissions, statusFilter, sortBy]);
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -613,8 +622,8 @@ export default function SALNViewPage() {
 
     // Calculate average annual change
     const approvedSubmissions = activeSubmissions
-      .filter((s) => s.status === 'approved')
-      .sort((a, b) => b.year - a.year);
+      .filter((s: any) => s.status === 'approved')
+      .sort((a: any, b: any) => b.year - a.year);
 
     let avgAnnualChange = 0;
     if (approvedSubmissions.length >= 2) {
@@ -638,7 +647,7 @@ export default function SALNViewPage() {
       total: activeSubmissions.length,
       latestNetWorth: latest?.netWorth || 0,
       netWorthChange,
-      approved: activeSubmissions.filter((s) => s.status === 'approved').length,
+      approved: activeSubmissions.filter((s: any) => s.status === 'approved').length,
       avgAnnualChange,
     };
   }, [activeSubmissions]);
@@ -680,14 +689,15 @@ export default function SALNViewPage() {
   if (error) return <ErrorState error={error} />;
 
   return (
+    <EmployeeOnlyGuard>
     <div className="relative min-h-screen pb-12">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100 mb-1">
+          <div className="space-y-1">
+            <AnimatedGradientText className="text-2xl sm:text-3xl font-bold">
               SALN Submissions
-            </h1>
+            </AnimatedGradientText>
             <p className="text-sm text-slate-600 dark:text-slate-400">
               View and manage your Statement of Assets, Liabilities, and Net
               Worth from the last 5 years
@@ -807,7 +817,7 @@ export default function SALNViewPage() {
           </BlurFade>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {activeSubmissions.map((submission, index) => (
+            {activeSubmissions.map((submission: any, index: number) => (
               <BlurFade key={submission.id} delay={0.2 + index * 0.05}>
                 <SALNCard
                   submission={submission}
@@ -824,5 +834,6 @@ export default function SALNViewPage() {
         )}
       </div>
     </div>
+    </EmployeeOnlyGuard>
   );
 }

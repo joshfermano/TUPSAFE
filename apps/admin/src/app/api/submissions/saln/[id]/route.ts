@@ -81,6 +81,7 @@ export async function GET(
         approvedBy: salnSubmissions.approvedBy,
         approvedAt: salnSubmissions.approvedAt,
         rejectionReason: salnSubmissions.rejectionReason,
+        reviewNotes: salnSubmissions.reviewNotes,
         totalAssets: salnSubmissions.totalAssets,
         totalLiabilities: salnSubmissions.totalLiabilities,
         netWorth: salnSubmissions.netWorth,
@@ -251,7 +252,7 @@ export async function GET(
         submittedAt: submission.submittedAt,
         reviewedBy: reviewedBy,
         reviewedAt: submission.approvedAt,
-        reviewNotes: null, // Add this field to schema if needed
+        reviewNotes: submission.reviewNotes,
         rejectionReason: submission.rejectionReason,
         netWorth: submission.netWorth || '0',
       },

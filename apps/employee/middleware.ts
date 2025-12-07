@@ -166,6 +166,31 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(redirectUrl);
     }
 
+    /**
+     * SALN Route Protection - EMPLOYEE-ONLY
+     *
+     * SALN (Statement of Assets, Liabilities, and Net Worth) is only accessible to employees.
+     * Applicants should NOT have access to SALN functionality per CSC requirements.
+     *
+     * This provides an additional layer of protection before API/page-level checks.
+     */
+    if (pathname.startsWith('/dashboard/saln')) {
+      const userType = user.user_metadata?.user_type;
+
+      if (userType === 'applicant') {
+        console.log(`[Middleware] ❌ Blocking applicant ${userId} from SALN: ${pathname}`);
+        const redirectUrl = new URL('/dashboard', request.url);
+        redirectUrl.searchParams.set('error', 'saln_employee_only');
+        redirectUrl.searchParams.set(
+          'message',
+          'SALN is only available to employees. Applicants can only access PDS.'
+        );
+        return NextResponse.redirect(redirectUrl);
+      }
+
+      console.log(`[Middleware] ✅ Allowing employee ${userId} to access SALN: ${pathname}`);
+    }
+
     // Log successful access with detailed context
     console.log(`[Middleware] ✅ Allowing access:`, {
       userId,

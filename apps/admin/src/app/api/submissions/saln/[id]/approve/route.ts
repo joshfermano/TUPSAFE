@@ -111,6 +111,7 @@ export async function POST(
         status: 'approved',
         approvedBy: sessionUser.id,
         approvedAt: now,
+        reviewNotes: validatedData.notes || null, // Store approval notes
         updatedAt: now,
       })
       .where(

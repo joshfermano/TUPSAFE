@@ -13,8 +13,9 @@ import React, { useMemo, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../../providers/AuthProvider';
-import { useSaln } from '@tupsafe/mock-data/api';
+import { useSALNSubmission } from '../../../../../hooks/useSaln';
 import { format } from 'date-fns';
+import { EmployeeOnlyGuard } from '../../../../../components/guards/EmployeeOnlyGuard';
 import {
   Download,
   Printer,
@@ -191,18 +192,13 @@ export default function SALNViewDetailPage({
   const { id: salnId } = use(params);
   const router = useRouter();
   const { user } = useAuth();
-  const { submissions, getCompleteSubmission, loading } = useSaln(
-    user?.id || ''
-  );
-  const submission = useMemo(
-    () => submissions.find((s) => s.id === salnId),
-    [submissions, salnId]
-  );
 
-  const salnData = useMemo(
-    () => getCompleteSubmission(salnId),
-    [salnId, getCompleteSubmission]
-  ) as CompleteSalnData | null;
+  // Use new React Query hook
+  const { data: salnData, isLoading } = useSALNSubmission(salnId);
+  const loading = isLoading;
+
+  // Extract submission data from salnData
+  const submission = salnData;
 
   const canEdit =
     submission?.status === 'draft' || submission?.status === 'rejected';
@@ -222,23 +218,24 @@ export default function SALNViewDetailPage({
   // Calculate totals
   const totalRealProperty =
     salnData.realProperties?.reduce(
-      (sum, prop) => sum + (Number(prop.currentFairMarketValue) || 0),
+      (sum: number, prop: any) => sum + (Number(prop.currentFairMarketValue) || 0),
       0
     ) || 0;
   const totalPersonalProperty =
     salnData.personalProperties?.reduce(
-      (sum, prop) => sum + (Number(prop.acquisitionCost) || 0),
+      (sum: number, prop: any) => sum + (Number(prop.acquisitionCost) || 0),
       0
     ) || 0;
   const totalAssets = totalRealProperty + totalPersonalProperty;
   const totalLiabilities =
     salnData.liabilities?.reduce(
-      (sum, liability) => sum + (Number(liability.outstandingBalance) || 0),
+      (sum: number, liability: any) => sum + (Number(liability.outstandingBalance) || 0),
       0
     ) || 0;
   const netWorth = totalAssets - totalLiabilities;
 
   return (
+    <EmployeeOnlyGuard>
     <div className="space-y-6 pb-10">
       {/* Breadcrumb */}
       <BlurFade delay={0.05}>
@@ -411,7 +408,7 @@ export default function SALNViewDetailPage({
                 </tr>
               </thead>
               <tbody>
-                {salnData.realProperties.map((prop, index) => (
+                {salnData.realProperties.map((prop: any, index: number) => (
                   <tr
                     key={index}
                     className="border-b border-slate-100 dark:border-slate-900 hover:bg-slate-50 dark:hover:bg-slate-900/50">
@@ -478,7 +475,7 @@ export default function SALNViewDetailPage({
                 </tr>
               </thead>
               <tbody>
-                {salnData.personalProperties.map((prop, index) => (
+                {salnData.personalProperties.map((prop: any, index: number) => (
                   <tr
                     key={index}
                     className="border-b border-slate-100 dark:border-slate-900 hover:bg-slate-50 dark:hover:bg-slate-900/50">
@@ -534,7 +531,7 @@ export default function SALNViewDetailPage({
                 </tr>
               </thead>
               <tbody>
-                {salnData.liabilities.map((liability, index) => (
+                {salnData.liabilities.map((liability: any, index: number) => (
                   <tr
                     key={index}
                     className="border-b border-slate-100 dark:border-slate-900 hover:bg-slate-50 dark:hover:bg-slate-900/50">
@@ -593,7 +590,7 @@ export default function SALNViewDetailPage({
                 </tr>
               </thead>
               <tbody>
-                {salnData.businessInterests.map((business, index) => (
+                {salnData.businessInterests.map((business: any, index: number) => (
                   <tr
                     key={index}
                     className="border-b border-slate-100 dark:border-slate-900 hover:bg-slate-50 dark:hover:bg-slate-900/50">
@@ -642,7 +639,7 @@ export default function SALNViewDetailPage({
                 </tr>
               </thead>
               <tbody>
-                {salnData.relativesInGov.map((relative, index) => (
+                {salnData.relativesInGov.map((relative: any, index: number) => (
                   <tr
                     key={index}
                     className="border-b border-slate-100 dark:border-slate-900 hover:bg-slate-50 dark:hover:bg-slate-900/50">
@@ -666,5 +663,6 @@ export default function SALNViewDetailPage({
         </Section>
       )}
     </div>
+    </EmployeeOnlyGuard>
   );
 }

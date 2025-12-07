@@ -4,9 +4,11 @@ import { motion } from 'framer-motion';
 import { Landmark, Clock, ArrowLeft, TrendingUp, FileCheck, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '../../../../components/ui/button';
+import { EmployeeOnlyGuard } from '../../../../components/guards/EmployeeOnlyGuard';
 
 export default function SALNPendingPage() {
   return (
+    <EmployeeOnlyGuard>
     <div className="min-h-screen flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -133,5 +135,6 @@ export default function SALNPendingPage() {
         </motion.p>
       </motion.div>
     </div>
+    </EmployeeOnlyGuard>
   );
 }

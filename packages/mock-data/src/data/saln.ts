@@ -77,6 +77,7 @@ export const mockSalnSubmissions: SalnSubmission[] = [
     approvedBy: '01927d4e-8b45-7f52-b123-456789abcde2',
     approvedAt: new Date('2024-04-20T14:30:00Z'),
     rejectionReason: null,
+    reviewNotes: null,
     pdfFilePath: '/saln/2024/saln-01927d4e-8b45-9000-0001-000000000001.pdf',
     filingType: 'separate',
     createdAt: new Date('2024-04-01T08:00:00Z'),
@@ -94,6 +95,7 @@ export const mockSalnSubmissions: SalnSubmission[] = [
     approvedBy: '01927d4e-8b45-7f52-b123-456789abcde2',
     approvedAt: new Date('2023-04-15T16:00:00Z'),
     rejectionReason: null,
+    reviewNotes: null,
     pdfFilePath: '/saln/2023/saln-01927d4e-8b45-9000-0001-000000000002.pdf',
     filingType: 'separate',
     createdAt: new Date('2023-03-25T07:15:00Z'),
@@ -111,6 +113,7 @@ export const mockSalnSubmissions: SalnSubmission[] = [
     approvedBy: null,
     approvedAt: null,
     rejectionReason: null,
+    reviewNotes: null,
     pdfFilePath: null,
     filingType: 'joint',
     createdAt: new Date('2024-04-05T09:00:00Z'),
@@ -128,6 +131,7 @@ export const mockSalnSubmissions: SalnSubmission[] = [
     approvedBy: null,
     approvedAt: null,
     rejectionReason: null,
+    reviewNotes: null,
     pdfFilePath: null,
     filingType: 'separate',
     createdAt: new Date('2024-03-30T10:30:00Z'),
@@ -145,6 +149,7 @@ export const mockSalnSubmissions: SalnSubmission[] = [
     approvedBy: null,
     approvedAt: null,
     rejectionReason: null,
+    reviewNotes: null,
     pdfFilePath: null,
     filingType: 'joint',
     createdAt: new Date('2024-04-20T13:00:00Z'),
@@ -163,6 +168,7 @@ export const mockSalnSubmissions: SalnSubmission[] = [
     approvedAt: new Date('2024-04-10T09:45:00Z'),
     rejectionReason:
       'Incomplete information regarding business interests. Please provide detailed information about all business ventures.',
+    reviewNotes: null,
     pdfFilePath: null,
     filingType: 'separate',
     createdAt: new Date('2024-03-28T11:00:00Z'),
@@ -643,6 +649,7 @@ export function generateMockSalnSubmission(
       status === 'rejected'
         ? 'Requires additional documentation and clarification.'
         : null,
+    reviewNotes: null,
     pdfFilePath:
       status === 'approved' ? `/saln/${year}/saln-${uuidv7()}.pdf` : null,
     filingType,

@@ -17,12 +17,14 @@
  * - Mobile-responsive design
  */
 
-import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
+import { z } from 'zod';
+import { EmployeeOnlyGuard } from '../../../../components/guards/EmployeeOnlyGuard';
 import {
   User,
   Building,
@@ -77,6 +79,13 @@ import { DotPattern } from '../../../../components/ui/dot-pattern';
 // Hooks
 import { useAutoSave, getSavedDraft } from '../../../../hooks/useAutoSave';
 import { useAuth } from '../../../../providers/AuthProvider';
+import { useCreateSALN, useUpdateSALN, useSubmitSALN } from '../../../../hooks/useSaln';
+
+// Transformations
+import {
+  transformSalnForSubmission,
+  transformSalnFromBackend,
+} from '../../../../lib/utils/saln-transformations';
 
 // Step components
 import {
@@ -139,13 +148,31 @@ const FORM_STEPS: FormStep[] = [
 ];
 
 // ============================================================================
+// TYPES
+// ============================================================================
+
+/**
+ * Draft data structure for saving/restoring form state
+ */
+interface SalnDraftData {
+  formData: Partial<CompleteSalnData>;
+  completedSteps: number[];
+  currentStep: number;
+  savedAt: string;
+}
+
+// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
 export default function SALNCreatePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const userId = user?.id || 'guest';
+
+  // Check if loading from existing draft
+  const draftIdFromUrl = searchParams.get('draftId');
 
   // State
   const [currentStep, setCurrentStep] = useState(0);
@@ -154,30 +181,98 @@ export default function SALNCreatePage() {
   const [showDraftDialog, setShowDraftDialog] = useState(false);
   const selectedYear = new Date().getFullYear();
 
-  // Form setup
-  const form = useForm<CompleteSalnData>({
-    // @ts-expect-error - Complex nested schema type compatibility
-    resolver: zodResolver(completeSalnSchema),
+  // Ref-based draft ID tracking to prevent race conditions
+  const draftIdRef = useRef<string | null>(null);
+  const [hasDraftId, setHasDraftId] = useState(false);
+
+  // Helper to update both ref and state together
+  const updateDraftId = useCallback((newDraftId: string | null) => {
+    draftIdRef.current = newDraftId;
+    setHasDraftId(!!newDraftId);
+  }, []);
+
+  // Initialize mutations
+  const createSALNMutation = useCreateSALN();
+  const updateSALNMutation = useUpdateSALN(draftIdRef.current || '');
+  const submitSALNMutation = useSubmitSALN(draftIdRef.current || '');
+
+  // Form setup - no resolver during multi-step flow
+  // Final validation happens on submission
+  const form = useForm<Partial<CompleteSalnData>>({
     defaultValues: createEmptySaln(selectedYear, userId),
-    mode: 'onChange',
+    mode: 'onBlur',
   });
 
-  const formData = form.watch();
+  // Callback-based approach for getting draft data
+  const getDraftData = useCallback(
+    (): SalnDraftData => ({
+      formData: form.getValues(),
+      completedSteps,
+      currentStep,
+      savedAt: new Date().toISOString(),
+    }),
+    [completedSteps, currentStep, form]
+  );
 
-  // Auto-save setup
-  const { saveStatus, lastSaved, saveNow, clearSaved } = useAutoSave({
+  // Save draft to database (create or update)
+  const saveDraftToDatabase = useCallback(
+    async (data: SalnDraftData): Promise<{ success: boolean; draftId?: string }> => {
+      try {
+        // Transform form data for backend
+        const transformedData = transformSalnForSubmission(data.formData);
+
+        // Read from ref (synchronous) instead of state (asynchronous)
+        const currentDraftId = draftIdRef.current;
+
+        if (currentDraftId) {
+          // Update existing draft
+          console.log('[SALN Create] Updating draft:', currentDraftId);
+          await updateSALNMutation.mutateAsync(transformedData as any);
+          console.log('[SALN Create] Draft updated successfully:', currentDraftId);
+          return { success: true, draftId: currentDraftId };
+        } else {
+          // Create new draft
+          console.log('[SALN Create] Creating new draft submission');
+          const result = await createSALNMutation.mutateAsync(transformedData as any);
+
+          if (result?.data?.id) {
+            // Update both ref and state together
+            updateDraftId(result.data.id);
+            console.log('[SALN Create] Draft created successfully:', result.data.id);
+            return { success: true, draftId: result.data.id };
+          } else {
+            throw new Error('No draft ID returned from server');
+          }
+        }
+      } catch (error) {
+        console.error('[SALN Create] Error saving draft to database:', error);
+        throw error;
+      }
+    },
+    [updateDraftId, createSALNMutation, updateSALNMutation]
+  );
+
+  // Auto-save setup with database persistence (60-second intervals)
+  const { saveStatus, lastSaved, saveNow, clearSaved } = useAutoSave<SalnDraftData>({
     key: `saln-draft-${userId}-${selectedYear}`,
-    data: formData,
-    debounceMs: 2000,
-    autoSaveIntervalMs: 30000,
+    getData: getDraftData,
+    debounceMs: 60000,
+    autoSaveIntervalMs: 60000,
     enabled: !isSubmitting,
     showToast: false,
+    onSave: async (data: SalnDraftData) => {
+      await saveDraftToDatabase(data);
+    },
+    onError: (error) => {
+      console.error('Draft save error:', error);
+    },
   });
 
-  // Real-time financial calculations
+  // Real-time financial calculations using callback instead of watch
   const financialSummary = useMemo(() => {
-    return calculateSalnSummary(formData);
-  }, [formData]);
+    const currentFormData = form.getValues();
+    return calculateSalnSummary(currentFormData);
+  }, [form]);
 
   // Update form calculations in real-time (with deep equality check to prevent infinite loops)
   useEffect(() => {
@@ -193,25 +288,86 @@ export default function SALNCreatePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [financialSummary]);
 
-  // Check for saved draft on mount
+  // Load draft from database if draftId is present in URL
   useEffect(() => {
-    const savedDraft = getSavedDraft<Partial<CompleteSalnData>>(
-      `saln-draft-${userId}-${selectedYear}`
-    );
-    if (savedDraft && Object.keys(savedDraft).length > 0) {
-      setShowDraftDialog(true);
+    if (draftIdFromUrl) {
+      // Load draft from database
+      fetch(`/api/saln/${draftIdFromUrl}`)
+        .then(async (res) => {
+          if (!res.ok) {
+            throw new Error('Failed to load draft');
+          }
+          return res.json();
+        })
+        .then((result) => {
+          if (result.success && result.data) {
+            const salnData = result.data;
+
+            // Set draft ID for future updates
+            updateDraftId(draftIdFromUrl);
+
+            // Transform backend data to frontend format
+            const formData = transformSalnFromBackend(salnData);
+
+            // Reset form with transformed data
+            form.reset(formData);
+
+            toast.success('Draft Loaded', {
+              description: 'Your saved draft has been loaded.',
+            });
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to load draft:', error);
+          toast.error('Failed to Load Draft', {
+            description: 'Could not load your saved draft. Starting fresh.',
+          });
+        });
+    } else {
+      // Check for saved draft in localStorage if no URL parameter
+      const savedDraft = getSavedDraft<SalnDraftData>(
+        `saln-draft-${userId}-${selectedYear}`
+      );
+      if (
+        savedDraft &&
+        savedDraft.formData &&
+        Object.keys(savedDraft.formData).length > 0
+      ) {
+        setShowDraftDialog(true);
+      }
     }
-  }, [userId, selectedYear]);
+  }, [draftIdFromUrl, userId, selectedYear, form, updateDraftId]);
 
   // Handle draft restoration
   const handleRestoreDraft = useCallback(() => {
-    const savedDraft = getSavedDraft<Partial<CompleteSalnData>>(
+    const savedDraft = getSavedDraft<SalnDraftData>(
       `saln-draft-${userId}-${selectedYear}`
     );
-    if (savedDraft) {
-      form.reset(savedDraft);
+    if (savedDraft && savedDraft.formData) {
+      // Restore form data
+      form.reset(savedDraft.formData);
+
+      // Restore completed steps from saved draft
+      if (
+        savedDraft.completedSteps &&
+        Array.isArray(savedDraft.completedSteps)
+      ) {
+        setCompletedSteps(savedDraft.completedSteps);
+      }
+
+      // Restore current step position
+      if (
+        typeof savedDraft.currentStep === 'number' &&
+        savedDraft.currentStep >= 0
+      ) {
+        setCurrentStep(savedDraft.currentStep);
+      }
+
+      const savedTime = savedDraft.savedAt
+        ? new Date(savedDraft.savedAt).toLocaleString()
+        : 'previously';
       toast.success('Draft Restored', {
-        description: 'Your previous work has been loaded.',
+        description: `Your work from ${savedTime} has been loaded.`,
       });
     }
     setShowDraftDialog(false);
@@ -271,19 +427,30 @@ export default function SALNCreatePage() {
     [currentStep, completedSteps]
   );
 
-  // Form submission
+  // Form submission with real API integration
   const handleSubmit = useCallback(
-    async (data: CompleteSalnData) => {
+    async (data: Partial<CompleteSalnData>) => {
       setIsSubmitting(true);
 
       try {
-        // Validate complete form
+        // Step 1: Validate complete form
         completeSalnSchema.parse(data);
 
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        // Step 2: Ensure draft exists
+        const currentDraftId = draftIdRef.current;
+        if (!currentDraftId) {
+          // Create draft first if it doesn't exist
+          const draftData = getDraftData();
+          const result = await saveDraftToDatabase(draftData);
+          if (!result.draftId) {
+            throw new Error('Failed to create draft before submission');
+          }
+        }
 
-        // Show success
+        // Step 3: Submit for approval
+        await submitSALNMutation.mutateAsync();
+
+        // Step 4: Success feedback
         confetti({
           particleCount: 100,
           spread: 70,
@@ -295,58 +462,91 @@ export default function SALNCreatePage() {
             'Your Statement of Assets, Liabilities, and Net Worth has been submitted for review.',
         });
 
-        // Clear draft
+        // Clear draft from localStorage
         clearSaved();
 
-        // Redirect
+        // Step 5: Redirect
         setTimeout(() => {
           router.push('/dashboard/saln');
         }, 2000);
       } catch (error) {
         console.error('Submission error:', error);
-        toast.error('Submission Failed', {
-          description: 'Please review your form and try again.',
-        });
+
+        if (error instanceof z.ZodError) {
+          const firstError = error.errors[0];
+          toast.error('Validation Error', {
+            description: firstError.message,
+            duration: 5000,
+          });
+        } else {
+          toast.error('Submission Failed', {
+            description:
+              error instanceof Error
+                ? error.message
+                : 'Please review your form and try again.',
+          });
+        }
       } finally {
         setIsSubmitting(false);
       }
     },
-    [clearSaved, router]
+    [clearSaved, router, submitSALNMutation, getDraftData, saveDraftToDatabase]
   );
 
-  // Save status display
+  // Save status display - Enhanced badge design
   const saveStatusDisplay = useMemo(() => {
     switch (saveStatus) {
       case 'saving':
         return (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-3 w-3 animate-spin" />
-            <span>Saving...</span>
-          </div>
+          <Badge
+            variant="outline"
+            className="border-blue-300 bg-blue-50 dark:bg-blue-950 dark:border-blue-700">
+            <Loader2 className="h-3 w-3 mr-1.5 animate-spin text-blue-600 dark:text-blue-400" />
+            <span className="text-blue-700 dark:text-blue-300">
+              <span className="sm:hidden">Saving</span>
+              <span className="hidden sm:inline">Saving...</span>
+            </span>
+          </Badge>
         );
       case 'saved':
         return (
-          <div className="flex items-center gap-2 text-sm text-primary">
-            <CheckCircle2 className="h-3 w-3" />
-            <span>
-              Saved {lastSaved ? `at ${lastSaved.toLocaleTimeString()}` : ''}
+          <Badge
+            variant="outline"
+            className="border-green-300 bg-green-50 dark:bg-green-950 dark:border-green-700">
+            <CheckCircle2 className="h-3 w-3 mr-1.5 text-green-600 dark:text-green-400" />
+            <span className="text-green-700 dark:text-green-300">
+              <span className="sm:hidden">Saved</span>
+              <span className="hidden sm:inline">
+                Saved{' '}
+                {lastSaved
+                  ? `at ${lastSaved.toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}`
+                  : ''}
+              </span>
             </span>
-          </div>
+          </Badge>
         );
       case 'error':
         return (
-          <div className="flex items-center gap-2 text-sm text-destructive">
-            <AlertCircle className="h-3 w-3" />
-            <span>Save failed</span>
-          </div>
+          <Badge
+            variant="outline"
+            className="border-red-300 bg-red-50 dark:bg-red-950 dark:border-red-700">
+            <AlertCircle className="h-3 w-3 mr-1.5 text-red-600 dark:text-red-400" />
+            <span className="text-red-700 dark:text-red-300">
+              <span className="sm:hidden">Error</span>
+              <span className="hidden sm:inline">Save failed</span>
+            </span>
+          </Badge>
         );
       default:
         return null;
     }
   }, [saveStatus, lastSaved]);
 
-  // Render current step
-  const renderStep = useCallback(() => {
+  // Render current step - NO key prop to prevent remounting
+  const renderStep = useMemo(() => {
     switch (currentStep) {
       case 0:
         return <DeclarantInfo />;
@@ -361,15 +561,16 @@ export default function SALNCreatePage() {
       case 5:
         return <NetWorthSummary summary={financialSummary} />;
       case 6:
-        return <ReviewSubmit data={formData} summary={financialSummary} />;
+        return <ReviewSubmit data={form.getValues()} summary={financialSummary} />;
       default:
         return null;
     }
-  }, [currentStep, formData, financialSummary]);
+  }, [currentStep, financialSummary, form]);
 
   const isLastStep = currentStep === FORM_STEPS.length - 1;
 
   return (
+    <EmployeeOnlyGuard>
     <div className="relative min-h-screen">
       {/* Subtle background pattern */}
       <DotPattern
@@ -426,12 +627,11 @@ export default function SALNCreatePage() {
 
         {/* Form */}
         <FormProvider {...form}>
-          {}
-          {/* Type assertion needed: Complex nested form schema type inference */}
-          <form onSubmit={form.handleSubmit(handleSubmit as any)}>
-            <BlurFade delay={0.2} key={currentStep}>
+          <form onSubmit={form.handleSubmit(handleSubmit)}>
+            <BlurFade delay={0.2}>
               <Suspense fallback={<FormStepSkeleton fieldCount={7} />}>
-                <div className="mb-10">{renderStep()}</div>
+                {/* Step content - No key prop to prevent remounting */}
+                <div className="mb-10">{renderStep}</div>
               </Suspense>
             </BlurFade>
 
@@ -514,5 +714,6 @@ export default function SALNCreatePage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </EmployeeOnlyGuard>
   );
 }

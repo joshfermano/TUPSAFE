@@ -14,8 +14,9 @@ import React, { useMemo, useState, useEffect, useCallback, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../../providers/AuthProvider';
-import { useSaln } from '@tupsafe/mock-data/api';
+import { useSALNSubmission, useUpdateSALN, useSubmitSALN } from '../../../../../hooks/useSaln';
 import { toast } from 'sonner';
+import { EmployeeOnlyGuard } from '../../../../../components/guards/EmployeeOnlyGuard';
 import {
   AlertCircle,
   Save,
@@ -170,22 +171,16 @@ export default function SALNEditDetailPage({
   const { id: salnId } = use(params);
   const router = useRouter();
   const { user } = useAuth();
-  const {
-    submissions,
-    getCompleteSubmission,
-    updateSubmission,
-    submitForReview,
-    loading,
-  } = useSaln(user?.id || '');
-  const submission = useMemo(
-    () => submissions.find((s) => s.id === salnId),
-    [submissions, salnId]
-  );
 
-  const initialData = useMemo(
-    () => getCompleteSubmission(salnId),
-    [salnId, getCompleteSubmission]
-  ) as CompleteSalnData | null;
+  // Use new React Query hooks
+  const { data: salnData, isLoading } = useSALNSubmission(salnId);
+  const updateMutation = useUpdateSALN(salnId);
+  const submitMutation = useSubmitSALN(salnId);
+  const loading = isLoading;
+
+  // Extract submission data from salnData
+  const submission = salnData;
+  const initialData = salnData as CompleteSalnData | null;
 
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -263,16 +258,15 @@ export default function SALNEditDetailPage({
         },
       };
 
-      // Cast to any to bypass strict type checking - dataToSave structure is correct
-      await updateSubmission(salnId, dataToSave as any);
+      // Use mutation to update
+      await updateMutation.mutateAsync(dataToSave as any);
       setHasUnsavedChanges(false);
-      toast.success('Draft saved successfully');
     } catch (error) {
-      toast.error('Failed to save draft');
+      // Error handling is done in the mutation
     } finally {
       setIsSaving(false);
     }
-  }, [salnId, formData, updateSubmission]);
+  }, [salnId, formData, updateMutation]);
 
   const handleSubmit = useCallback(async () => {
     if (!formData) return;
@@ -309,18 +303,17 @@ export default function SALNEditDetailPage({
         },
       };
 
-      // Save first - cast to any to bypass strict type checking
-      await updateSubmission(salnId, dataToSave as any);
+      // Save first using mutation
+      await updateMutation.mutateAsync(dataToSave as any);
       // Then submit for review
-      await submitForReview(salnId);
-      toast.success('SALN submitted for admin review');
+      await submitMutation.mutateAsync();
       router.push('/dashboard/saln/view');
     } catch (error) {
-      toast.error('Failed to submit SALN');
+      // Error handling is done in the mutations
     } finally {
       setIsSubmitting(false);
     }
-  }, [salnId, formData, updateSubmission, submitForReview, router]);
+  }, [salnId, formData, updateMutation, submitMutation, router]);
 
   const handleCancel = useCallback(() => {
     if (hasUnsavedChanges) {
@@ -358,6 +351,7 @@ export default function SALNEditDetailPage({
   }
 
   return (
+    <EmployeeOnlyGuard>
     <div className="space-y-6 pb-10">
       {/* Breadcrumb */}
       <BlurFade delay={0.05}>
@@ -664,5 +658,6 @@ export default function SALNEditDetailPage({
         </Card>
       </BlurFade>
     </div>
+    </EmployeeOnlyGuard>
   );
 }
