@@ -21,8 +21,6 @@ import { useMemo, memo, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../../providers/AuthProvider';
 import { useSALNSubmissions, useLatestSALN } from '../../../hooks/useSaln';
-import { useDeadlineForForm } from '../../../hooks';
-import { InfoCard } from '../../../components/dashboard/InfoCard';
 import { DeadlineSection } from '../../../components/dashboard/DeadlineSection';
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
@@ -31,7 +29,7 @@ import { cn } from '../../../lib/utils';
 import { EmployeeOnlyGuard } from '../../../components/guards/EmployeeOnlyGuard';
 
 // Import minimal MagicUI components
-import { BlurFade, NumberTicker, AnimatedGradientText } from '@tupsafe/shared-ui';
+import { BlurFade, NumberTicker, ShimmerButton } from '@tupsafe/shared-ui';
 
 import {
   Landmark,
@@ -54,9 +52,12 @@ import {
   BarChart3,
   ArrowUpRight,
   ArrowDownRight,
-  Archive,
+  FileEdit,
+  FileText,
+  Sparkles,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 // Types for UI display
 interface SALNSection {
@@ -112,47 +113,81 @@ const calculateBusinessInterestsCount = (interests: any[] | undefined | null): n
   return interests.length;
 };
 
+// Stats Card Component - Modern, minimal design
+const StatsCard = memo(function StatsCard({
+  title,
+  value,
+  icon: Icon,
+  delay,
+}: {
+  title: string;
+  value: number;
+  icon: LucideIcon;
+  delay: number;
+}) {
+  return (
+    <BlurFade delay={delay}>
+      <Card className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 shadow-sm">
+        <CardContent className="p-5">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
+              <Icon className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+            </div>
+          </div>
+          <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+            {title}
+          </p>
+          <div className="flex items-baseline gap-0.5">
+            <NumberTicker
+              value={value}
+              className="text-2xl font-bold text-slate-900 dark:text-slate-100"
+            />
+          </div>
+        </CardContent>
+      </Card>
+    </BlurFade>
+  );
+});
+
 // Memoized EmptyState component
 const EmptyState = memo(function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-5 px-4">
-      {/* Icon Container */}
-      <div className="relative flex items-center justify-center w-20 h-20 rounded-2xl bg-slate-100 dark:bg-slate-800">
-        <Landmark className="h-10 w-10 text-slate-400 dark:text-slate-500" />
-      </div>
+    <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-6 px-4">
+      <BlurFade delay={0.1}>
+        <div className="relative flex items-center justify-center w-20 h-20">
+          <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 blur-xl" />
+          <div className="relative flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+            <FileText className="h-10 w-10 text-primary" />
+          </div>
+        </div>
+      </BlurFade>
 
-      {/* Text Content */}
-      <div className="text-center space-y-2 max-w-md">
-        <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
-          No Active SALN Submissions
-        </h3>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          You haven&apos;t created any Statement of Assets, Liabilities, and Net
-          Worth in the last 5 years. Start a new submission or view your
-          archived records.
-        </p>
-      </div>
+      <BlurFade delay={0.2}>
+        <div className="text-center space-y-2 max-w-md">
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+            Start Your SALN Statement
+          </h2>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            The Statement of Assets, Liabilities, and Net Worth (e-SALN) is a comprehensive
+            declaration required annually to promote transparency and accountability.
+          </p>
+        </div>
+      </BlurFade>
 
-      {/* Action Buttons */}
-      <div className="flex gap-3">
+      <BlurFade delay={0.3}>
         <Link href="/dashboard/saln/create">
-          <Button className="gap-2 bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)] text-white">
+          <ShimmerButton className="gap-2">
             <Plus className="h-4 w-4" />
             Create New SALN
-          </Button>
+          </ShimmerButton>
         </Link>
-        <Link href="/dashboard/saln/archive">
-          <Button variant="outline" className="gap-2">
-            <Archive className="h-4 w-4" />
-            View Archive
-          </Button>
-        </Link>
-      </div>
+      </BlurFade>
     </div>
   );
 });
 
 export default function SalnPage() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { user } = useAuth();
 
   // Use real hooks for SALN data
@@ -177,38 +212,29 @@ export default function SalnPage() {
     (status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'reviewing') => {
       const variants = {
         draft: {
-          variant: 'secondary' as const,
           icon: Clock,
           label: 'Draft',
-          className:
-            'bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400',
+          className: 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border-amber-200 dark:border-amber-900/50',
         },
         submitted: {
-          variant: 'default' as const,
           icon: Send,
           label: 'Submitted',
-          className:
-            'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400',
+          className: 'bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border-blue-200 dark:border-blue-900/50',
         },
         reviewing: {
-          variant: 'default' as const,
           icon: Eye,
           label: 'Under Review',
-          className:
-            'bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400',
+          className: 'bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-400 border-violet-200 dark:border-violet-900/50',
         },
         approved: {
-          variant: 'default' as const,
           icon: CheckCircle2,
           label: 'Approved',
-          className:
-            'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400',
+          className: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/50',
         },
         rejected: {
-          variant: 'destructive' as const,
           icon: AlertCircle,
           label: 'Rejected',
-          className: '',
+          className: 'bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400 border-red-200 dark:border-red-900/50',
         },
       };
 
@@ -216,10 +242,8 @@ export default function SalnPage() {
       const IconComponent = config.icon;
 
       return (
-        <Badge
-          variant={config.variant}
-          className={cn('font-semibold', config.className)}>
-          <IconComponent className="h-3 w-3 mr-1" />
+        <Badge className={cn('font-medium px-3 py-1.5 text-sm border', config.className)}>
+          <IconComponent className="h-3.5 w-3.5 mr-1.5" />
           {config.label}
         </Badge>
       );
@@ -351,6 +375,37 @@ export default function SalnPage() {
       }));
   }, [submissions]);
 
+  // Calculate statistics from real data - MUST be before early returns
+  const stats = useMemo(() => {
+    if (!hasExistingSALN) {
+      return {
+        totalSubmissions: 0,
+        pendingReviews: 0,
+        approvalRate: 0,
+        rejected: 0,
+      };
+    }
+
+    const totalSubmissions = submissions.length;
+    const approvedCount = submissions.filter((s: any) => s.status === 'approved').length;
+    const pendingReviews = submissions.filter(
+      (s: any) => s.status === 'submitted' || s.status === 'reviewing'
+    ).length;
+    const rejected = submissions.filter((s: any) => s.status === 'rejected').length;
+
+    const approvalRate =
+      totalSubmissions > 0
+        ? Math.round((approvedCount / totalSubmissions) * 100)
+        : 0;
+
+    return {
+      totalSubmissions,
+      pendingReviews,
+      approvalRate,
+      rejected,
+    };
+  }, [hasExistingSALN, submissions]);
+
   // Memoize net worth calculation
   const netWorthChange = useMemo(() => {
     if (submissions.length < 2) return null;
@@ -410,66 +465,189 @@ export default function SalnPage() {
       <BlurFade delay={0.1}>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <AnimatedGradientText className="text-2xl sm:text-3xl font-bold">
-                e-SALN {latest?.year || new Date().getFullYear()}
-              </AnimatedGradientText>
-              {latest && getStatusBadge(latest.status)}
-            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">
+              Statement of Assets, Liabilities, and Net Worth (e-SALN)
+            </h1>
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              Statement of Assets, Liabilities, and Net Worth
+              Manage your annual SALN declarations and compliance requirements
             </p>
           </div>
+          {latest && (
+            <div className="flex items-center gap-3">
+              {getStatusBadge(latest.status)}
+              <div className="text-right hidden sm:block">
+                <p className="text-xs text-slate-500 dark:text-slate-400">Last updated</p>
+                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                  {new Date(latest.updatedAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </BlurFade>
 
-      {/* Deadline Section - Persistent */}
+      {/* Deadline Section */}
       <DeadlineSection formType="saln" />
 
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatsCard
+          title="Total Submissions"
+          value={stats.totalSubmissions}
+          icon={FileText}
+          delay={0.15}
+        />
+        <StatsCard
+          title="Pending Reviews"
+          value={stats.pendingReviews}
+          icon={Clock}
+          delay={0.2}
+        />
+        <StatsCard
+          title="Approved"
+          value={stats.totalSubmissions - stats.rejected - stats.pendingReviews}
+          icon={CheckCircle2}
+          delay={0.25}
+        />
+        <StatsCard
+          title="Approval Rate"
+          value={stats.approvalRate}
+          icon={TrendingUp}
+          delay={0.3}
+        />
+      </div>
+
       {/* Quick Actions */}
-      <BlurFade delay={0.2}>
-        <InfoCard title="Quick Actions" icon={Landmark}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5">
-            <Link href="/dashboard/saln/view" className="w-full">
+      <BlurFade delay={0.35}>
+        <Card className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
+                <Sparkles className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+              </div>
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                Quick Actions
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              <Link href="/dashboard/saln/create" className="w-full">
+                <ShimmerButton className="w-full h-10 text-sm gap-2">
+                  <Plus className="h-4 w-4" />
+                  Create New
+                </ShimmerButton>
+              </Link>
+              <Link href="/dashboard/saln/view" className="w-full">
+                <Button
+                  variant="outline"
+                  className="w-full h-10 text-sm gap-2 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800">
+                  <Eye className="h-4 w-4" />
+                  View All
+                </Button>
+              </Link>
+              <Link href="/dashboard/saln/drafts" className="w-full">
+                <Button
+                  variant="outline"
+                  className="w-full h-10 text-sm gap-2 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800">
+                  <FileEdit className="h-4 w-4" />
+                  Drafts
+                </Button>
+              </Link>
               <Button
                 variant="outline"
-                className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-[oklch(0.55_0.22_15)] transition-colors">
-                <Eye className="h-3.5 w-3.5 mr-2" />
-                View Submissions
+                className="w-full h-10 text-sm gap-2 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800">
+                <Download className="h-4 w-4" />
+                Download
               </Button>
-            </Link>
-            <Link href="/dashboard/saln/archive" className="w-full">
               <Button
                 variant="outline"
-                className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors">
-                <Archive className="h-3.5 w-3.5 mr-2" />
-                View Archive
+                className="w-full h-10 text-sm gap-2 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800">
+                <Printer className="h-4 w-4" />
+                Print
               </Button>
-            </Link>
-            <Button
-              variant="outline"
-              className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-950/30 transition-colors">
-              <Download className="h-3.5 w-3.5 mr-2" />
-              Download PDF
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors">
-              <Printer className="h-3.5 w-3.5 mr-2" />
-              Print SALN
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full h-8 justify-start text-xs border-slate-200 dark:border-slate-700 hover:border-[oklch(0.55_0.22_15)] transition-colors">
-              <Send className="h-3.5 w-3.5 mr-2" />
-              Submit for Review
-            </Button>
-          </div>
-        </InfoCard>
+            </div>
+          </CardContent>
+        </Card>
       </BlurFade>
 
+      {/* Latest Submission */}
+      {latest && (
+        <BlurFade delay={0.4}>
+          <Card className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
+                  <FileText className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                </div>
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                  Latest Submission
+                </h3>
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.05 }}
+              >
+                <Card className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
+                          <Landmark className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                              SALN {latest.year}
+                            </h4>
+                            {getStatusBadge(latest.status)}
+                          </div>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            Updated {new Date(latest.updatedAt).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <Link href={`/dashboard/saln/view/${latest.id}`}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                        {latest.status === 'approved' && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </CardContent>
+          </Card>
+        </BlurFade>
+      )}
+
       {/* Net Worth Overview Card */}
-      <BlurFade delay={0.3}>
+      <BlurFade delay={0.45}>
         <Card className="border-slate-200 dark:border-slate-800 hover:border-[oklch(0.55_0.22_15)] transition-colors">
           <CardContent className="p-5">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -552,64 +730,57 @@ export default function SalnPage() {
       </BlurFade>
 
       {/* SALN Categories Grid */}
-      <BlurFade delay={0.4}>
+      <BlurFade delay={0.5}>
         <div>
           <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
             SALN Categories
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {salnSections.map((section) => (
-              <Card
+            {salnSections.map((section, index) => (
+              <motion.div
                 key={section.id}
-                className="cursor-pointer hover:shadow-md hover:border-[oklch(0.55_0.22_15)] transition-all border-slate-200 dark:border-slate-800">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between mb-3">
-                    <div
-                      className={cn(
-                        'flex h-10 w-10 items-center justify-center rounded-lg',
-                        'bg-white dark:bg-slate-800'
-                      )}>
-                      <section.icon
-                        className={cn(
-                          'h-5 w-5',
-                          section.isComplete
-                            ? 'text-red-600 dark:text-red-400'
-                            : 'text-red-500 dark:text-red-500'
-                        )}
-                      />
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: index * 0.03 }}
+              >
+                <Card
+                  className="cursor-pointer hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50">
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
+                        <section.icon className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+                      </div>
+                      {section.isComplete ? (
+                        <Badge className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/50 px-2 py-0.5 text-xs border">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Complete
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border-amber-200 dark:border-amber-900/50 px-2 py-0.5 text-xs border">
+                          <Clock className="h-3 w-3 mr-1" />
+                          In Progress
+                        </Badge>
+                      )}
                     </div>
-                    {section.isComplete ? (
-                      <Badge className="bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400 px-2 py-0.5 text-xs">
-                        <CheckCircle2 className="h-3 w-3 mr-1" />
-                        Complete
-                      </Badge>
-                    ) : (
-                      <Badge
-                        variant="secondary"
-                        className="bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400 px-2 py-0.5 text-xs">
-                        <Clock className="h-3 w-3 mr-1" />
-                        In Progress
-                      </Badge>
-                    )}
-                  </div>
 
-                  <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-1.5">
-                    {section.title}
-                  </h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 mb-3">
-                    {section.description}
-                  </p>
+                    <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-1.5">
+                      {section.title}
+                    </h3>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mb-3">
+                      {section.description}
+                    </p>
 
-                  <div className="flex items-center justify-between">
-                    <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                      ₱<NumberTicker value={section.amount} />
-                    </span>
-                    <span className="text-xs text-slate-600 dark:text-slate-400">
-                      {section.items} {section.items === 1 ? 'item' : 'items'}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                        ₱<NumberTicker value={section.amount} />
+                      </span>
+                      <span className="text-xs text-slate-600 dark:text-slate-400">
+                        {section.items} {section.items === 1 ? 'item' : 'items'}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -618,68 +789,88 @@ export default function SalnPage() {
       {/* Year Summaries and Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Year Summaries */}
-        <BlurFade delay={0.5} className="lg:col-span-2">
-          <InfoCard title="Historical Overview" icon={Calendar}>
-            <div className="space-y-4">
-              {yearSummaries.map((summary) => (
-                <div
-                  key={summary.year}
-                  className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-tup-crimson-subtle to-tup-crimson-subtle dark:from-primary/50 dark:to-tup-crimson-dark/50">
-                      <Calendar className="h-6 w-6 text-primary dark:text-tup-crimson-light" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-slate-900 dark:text-slate-100">
-                        SALN {summary.year}
-                      </p>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        ₱<NumberTicker value={summary.netWorth} />
-                      </p>
-                    </div>
-                  </div>
-                  {getStatusBadge(summary.status)}
+        <BlurFade delay={0.55} className="lg:col-span-2">
+          <Card className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
+                  <Calendar className="h-4 w-4 text-slate-600 dark:text-slate-400" />
                 </div>
-              ))}
-            </div>
-          </InfoCard>
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                  Historical Overview
+                </h3>
+              </div>
+              <div className="space-y-4">
+                {yearSummaries.map((summary) => (
+                  <div
+                    key={summary.year}
+                    className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
+                        <Calendar className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-900 dark:text-slate-100">
+                          SALN {summary.year}
+                        </p>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                          ₱<NumberTicker value={summary.netWorth} />
+                        </p>
+                      </div>
+                    </div>
+                    {getStatusBadge(summary.status)}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </BlurFade>
 
         {/* Recent Activity */}
         <BlurFade delay={0.6}>
-          <InfoCard title="Recent Activity" icon={Clock}>
-            <div className="space-y-4">
-              {recentActivity.map((activity) => {
-                const ActivityIcon = getActivityIcon(activity.type);
-                return (
-                  <div
-                    key={activity.id}
-                    className="flex items-start gap-3 pb-4 border-b border-slate-200 dark:border-slate-800 last:border-0 last:pb-0">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tup-crimson-subtle dark:bg-primary/30 flex-shrink-0">
-                      <ActivityIcon className="h-4 w-4 text-primary dark:text-tup-crimson-light" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                        {activity.action}
-                      </p>
-                      {activity.section && (
-                        <p className="text-xs text-slate-600 dark:text-slate-400">
-                          {activity.section}
+          <Card className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
+                  <Clock className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                </div>
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                  Recent Activity
+                </h3>
+              </div>
+              <div className="space-y-4">
+                {recentActivity.map((activity) => {
+                  const ActivityIcon = getActivityIcon(activity.type);
+                  return (
+                    <div
+                      key={activity.id}
+                      className="flex items-start gap-3 pb-4 border-b border-slate-200 dark:border-slate-800 last:border-0 last:pb-0">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 flex-shrink-0">
+                        <ActivityIcon className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                          {activity.action}
                         </p>
-                      )}
-                      <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
-                        {activity.date.toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
-                      </p>
+                        {activity.section && (
+                          <p className="text-xs text-slate-600 dark:text-slate-400">
+                            {activity.section}
+                          </p>
+                        )}
+                        <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
+                          {activity.date.toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </InfoCard>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
         </BlurFade>
       </div>
     </div>

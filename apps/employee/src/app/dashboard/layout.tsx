@@ -331,6 +331,7 @@ const DashboardSidebar = memo(function DashboardSidebar({
         subItems: [
           { name: 'Overview', href: '/dashboard/saln' },
           { name: 'Create', href: '/dashboard/saln/create' },
+          { name: 'Drafts', href: '/dashboard/saln/drafts' },
           { name: 'Submissions', href: '/dashboard/saln/submissions' },
           { name: 'Pending', href: '/dashboard/saln/pending' },
           { name: 'Archive', href: '/dashboard/saln/archive' },

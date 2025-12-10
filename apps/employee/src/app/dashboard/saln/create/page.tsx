@@ -41,6 +41,9 @@ import {
   Loader2,
   FileCheck,
   Clock,
+  Info,
+  XCircle,
+  AlertTriangle,
 } from 'lucide-react';
 
 // Validation schemas
@@ -72,7 +75,6 @@ import {
 
 // Magic UI components
 import { ShimmerButton } from '../../../../components/ui/shimmer-button';
-import { AnimatedGradientText } from '../../../../components/ui/animated-gradient-text';
 import { BlurFade } from '../../../../components/ui/blur-fade';
 import { DotPattern } from '../../../../components/ui/dot-pattern';
 
@@ -179,6 +181,11 @@ export default function SALNCreatePage() {
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDraftDialog, setShowDraftDialog] = useState(false);
+  const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+  const [hasSeenAutoSaveInfo, setHasSeenAutoSaveInfo] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return localStorage.getItem(`saln-autosave-info-seen-${userId}`) === 'true';
+  });
   const selectedYear = new Date().getFullYear();
 
   // Ref-based draft ID tracking to prevent race conditions
@@ -381,6 +388,37 @@ export default function SALNCreatePage() {
     });
   }, [clearSaved]);
 
+  // Manual save and navigate handler
+  const handleSaveAndNavigate = useCallback(async (): Promise<void> => {
+    try {
+      const draftData = getDraftData();
+
+      // Save to database directly with error propagation
+      await saveDraftToDatabase(draftData);
+
+      // Also save to localStorage via saveNow (for offline backup)
+      await saveNow();
+
+      // If we get here, save was successful
+      toast.success('Draft Saved', {
+        description: hasDraftId
+          ? 'Your draft has been updated.'
+          : 'Your draft has been saved successfully.',
+      });
+
+      // Navigate to drafts page after successful save
+      router.push('/dashboard/saln/drafts');
+    } catch (error) {
+      console.error('[SALN Create] Failed to save draft:', error);
+
+      toast.error('Failed to save draft', {
+        description:
+          error instanceof Error ? error.message : 'Please try again.',
+        duration: 5000,
+      });
+    }
+  }, [getDraftData, saveDraftToDatabase, saveNow, hasDraftId, router]);
+
   // Validate current step
   const validateCurrentStep = useCallback(async (): Promise<boolean> => {
     const isValid = await form.trigger();
@@ -571,7 +609,7 @@ export default function SALNCreatePage() {
 
   return (
     <EmployeeOnlyGuard>
-    <div className="relative min-h-screen">
+    <div className="relative">
       {/* Subtle background pattern */}
       <DotPattern
         className="fixed inset-0 -z-10 opacity-[0.03] dark:opacity-[0.05]"
@@ -583,47 +621,79 @@ export default function SALNCreatePage() {
       />
 
       {/* Main content */}
-      <div className="relative z-10 container max-w-5xl mx-auto px-6 py-12">
-        {/* Header */}
-        <div className="pb-8 mb-8 border-b border-slate-200/50 dark:border-slate-800/50">
-          <BlurFade delay={0.1}>
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                <AnimatedGradientText className="text-2xl sm:text-3xl font-semibold">
-                  Create SALN Statement
-                </AnimatedGradientText>
-                <Badge
-                  variant="outline"
-                  className="text-xs font-normal border-slate-300/50 dark:border-slate-700/50 w-fit">
-                  CSC Form No. SALN 2019
-                </Badge>
-              </div>
-
-              {/* Save status */}
-              <div className="hidden sm:flex items-center gap-4">
-                {saveStatusDisplay}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={saveNow}
-                  disabled={isSubmitting}
-                  className="border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Draft
-                </Button>
-              </div>
+      <div className="max-w-5xl mx-auto space-y-8 pb-8">
+        {/* Header - Clean, Professional */}
+        <div className="pb-8 mb-8 border-b border-slate-200 dark:border-slate-800">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+                Create SALN Statement
+              </h1>
+              <Badge
+                variant="outline"
+                className="text-xs font-normal border-slate-300 dark:border-slate-700 w-fit">
+                CSC Form No. SALN 2019
+              </Badge>
             </div>
 
-            {/* Progress indicator */}
-            <FormStepIndicator
-              steps={FORM_STEPS}
-              currentStep={currentStep}
-              completedSteps={completedSteps}
-              onStepClick={handleStepClick}
-              compact={false}
-            />
-          </BlurFade>
+            {/* Save status - Always visible, mobile responsive */}
+            <div className="flex items-center gap-2 sm:gap-4">
+              {saveStatusDisplay}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSaveAndNavigate}
+                disabled={isSubmitting}
+                className="border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900">
+                <Save className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Save Draft</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Progress indicator */}
+          <FormStepIndicator
+            steps={FORM_STEPS}
+            currentStep={currentStep}
+            completedSteps={completedSteps}
+            onStepClick={handleStepClick}
+            compact={false}
+          />
         </div>
+
+        {/* Auto-save info banner */}
+        {!hasSeenAutoSaveInfo && (
+          <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800 p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                    Auto-save Enabled
+                  </p>
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    Your progress is automatically saved every minute. You can
+                    safely navigate away and resume later, or manually save your
+                    work using the &ldquo;Save Draft&rdquo; button.
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setHasSeenAutoSaveInfo(true);
+                  localStorage.setItem(
+                    `saln-autosave-info-seen-${userId}`,
+                    'true'
+                  );
+                }}
+                className="flex-shrink-0 h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-100 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900">
+                <XCircle className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Form */}
         <FormProvider {...form}>
@@ -637,7 +707,7 @@ export default function SALNCreatePage() {
 
             {/* Navigation buttons */}
             <BlurFade delay={0.3}>
-              <div className="flex items-center justify-between gap-4 pt-10 border-t border-border/50">
+              <div className="flex items-center justify-between gap-4 pt-10 border-t border-slate-200 dark:border-slate-800">
                 <Button
                   type="button"
                   variant="outline"
@@ -651,17 +721,19 @@ export default function SALNCreatePage() {
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={saveNow}
+                    onClick={handleSaveAndNavigate}
                     disabled={isSubmitting}>
                     <Save className="h-4 w-4 mr-2" />
                     Save Draft
                   </Button>
 
                   {isLastStep ? (
-                    <ShimmerButton
-                      type="submit"
+                    <Button
+                      type="button"
+                      onClick={() => setShowSubmitDialog(true)}
                       disabled={isSubmitting}
-                      className="min-w-[160px]">
+                      size="lg"
+                      className="min-w-[180px] bg-amber-600 hover:bg-amber-700 text-white font-semibold border-2 border-amber-400 animate-pulse-border dark:bg-amber-500 dark:hover:bg-amber-600 dark:border-amber-300">
                       {isSubmitting ? (
                         <>
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -670,16 +742,16 @@ export default function SALNCreatePage() {
                       ) : (
                         <>
                           <FileCheck className="h-4 w-4 mr-2" />
-                          Submit SALN
+                          Submit for Review
                         </>
                       )}
-                    </ShimmerButton>
+                    </Button>
                   ) : (
                     <ShimmerButton
                       type="button"
                       onClick={handleNext}
                       disabled={isSubmitting}>
-                      Next
+                      Next Section
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </ShimmerButton>
                   )}
@@ -709,6 +781,86 @@ export default function SALNCreatePage() {
             </AlertDialogCancel>
             <AlertDialogAction onClick={handleRestoreDraft}>
               Resume Draft
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Submission confirmation dialog */}
+      <AlertDialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
+        <AlertDialogContent className="max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-xl">
+              <AlertCircle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+              Ready to Submit Your SALN?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-4">
+                <p className="text-base">
+                  Please review your submission before proceeding. Once
+                  submitted, you won&apos;t be able to edit your SALN until it
+                  has been reviewed by an administrator.
+                </p>
+
+                {/* Warning checklist */}
+                <div className="rounded-lg border-2 border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-4 space-y-3">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                    <div className="space-y-2 text-sm text-amber-900 dark:text-amber-100">
+                      <p className="font-semibold">
+                        Before submitting, please confirm:
+                      </p>
+                      <ul className="space-y-1.5 ml-1">
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+                          <span>
+                            Have you reviewed all sections for accuracy?
+                          </span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+                          <span>
+                            Are all assets, liabilities, and properties listed?
+                          </span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+                          <span>
+                            Did you include all business interests and government relatives?
+                          </span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+                          <span>
+                            Is the net worth calculation accurate?
+                          </span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-sm text-muted-foreground">
+                  After submission, you won&apos;t be able to edit until
+                  reviewed by HR.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel
+              onClick={() => setShowSubmitDialog(false)}
+              className="sm:mr-2">
+              Cancel - Continue Editing
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowSubmitDialog(false);
+                form.handleSubmit(handleSubmit)();
+              }}
+              className="bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600">
+              <FileCheck className="h-4 w-4 mr-2" />
+              Yes, Submit for Review
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

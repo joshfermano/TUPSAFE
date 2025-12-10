@@ -2,9 +2,9 @@
 
 import React, { memo, useMemo } from 'react';
 import { BlurFade, Badge } from '@tupsafe/shared-ui';
-import { Card, CardContent } from '../../../../../components/ui/card';
-import { Button } from '../../../../../components/ui/button';
-import { Progress } from '../../../../../components/ui/progress';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import {
   FileText,
   Eye,
@@ -12,24 +12,25 @@ import {
   FileEdit,
   Clock,
   XCircle,
+  CheckCircle2,
   User,
   Calendar,
 } from 'lucide-react';
-import { cn } from '../../../../../lib/utils';
+import { cn } from '@/lib/utils';
 import { format, differenceInDays } from 'date-fns';
 
-interface PendingCardProps {
+interface SubmissionCardProps {
   submission: {
     id: string;
     version: number;
-    status: 'draft' | 'submitted' | 'reviewing' | 'rejected';
+    status: 'draft' | 'submitted' | 'reviewing' | 'approved' | 'rejected';
     createdAt: string;
     updatedAt: string;
     submittedAt?: string;
+    approvedAt?: string;
     reviewedBy?: string;
-    rejectionReason?: string;
   };
-  onContinue: () => void;
+  onEdit: () => void;
   onView: () => void;
   onDownload: () => void;
   delay?: number;
@@ -43,6 +44,8 @@ const STATUS_COLORS = {
     'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border-blue-200 dark:border-blue-800',
   reviewing:
     'bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400 border-purple-200 dark:border-purple-800',
+  approved:
+    'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
   rejected:
     'bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 border-rose-200 dark:border-rose-800',
 } as const;
@@ -51,12 +54,13 @@ const STATUS_ICONS = {
   draft: FileEdit,
   submitted: Clock,
   reviewing: Clock,
+  approved: CheckCircle2,
   rejected: XCircle,
 } as const;
 
 // Calculate completion based on status
 const calculateCompletion = (
-  status: 'draft' | 'submitted' | 'reviewing' | 'rejected'
+  status: 'draft' | 'submitted' | 'reviewing' | 'approved' | 'rejected'
 ): number => {
   switch (status) {
     case 'draft':
@@ -65,6 +69,8 @@ const calculateCompletion = (
       return 95;
     case 'reviewing':
       return 98;
+    case 'approved':
+      return 100;
     case 'rejected':
       return 100;
     default:
@@ -72,14 +78,14 @@ const calculateCompletion = (
   }
 };
 
-export const PendingCard = memo(
+export const SubmissionCard = memo(
   ({
     submission,
-    onContinue,
+    onEdit,
     onView,
     onDownload,
     delay = 0,
-  }: PendingCardProps) => {
+  }: SubmissionCardProps) => {
     const completion = useMemo(
       () => calculateCompletion(submission.status),
       [submission.status]
@@ -92,6 +98,8 @@ export const PendingCard = memo(
 
     const isDraft = submission.status === 'draft';
     const isRejected = submission.status === 'rejected';
+    const isApproved = submission.status === 'approved';
+    const canEdit = isDraft || isRejected;
 
     return (
       <BlurFade delay={delay}>
@@ -108,6 +116,8 @@ export const PendingCard = memo(
                 <p className="text-xs text-slate-600 dark:text-slate-400">
                   {isDraft
                     ? `Last saved ${format(new Date(submission.updatedAt), 'MMM d, yyyy')}`
+                    : isApproved
+                    ? `Approved ${format(new Date(submission.approvedAt || submissionDate), 'MMM d, yyyy')}`
                     : `Submitted ${format(new Date(submissionDate), 'MMM d, yyyy')}`}
                 </p>
               </div>
@@ -149,7 +159,7 @@ export const PendingCard = memo(
                   {submission.reviewedBy}
                 </span>
               )}
-              {!isDraft && (
+              {!isDraft && !isApproved && (
                 <span className="flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
                   {daysPending} {daysPending === 1 ? 'day' : 'days'} pending
@@ -157,34 +167,17 @@ export const PendingCard = memo(
               )}
             </div>
 
-            {/* Rejection Reason Alert - Show prominently before action buttons */}
-            {isRejected && submission.rejectionReason && (
-              <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800/30 rounded-lg p-3">
-                <div className="flex items-start gap-2.5">
-                  <XCircle className="h-4 w-4 shrink-0 mt-0.5 text-rose-600 dark:text-rose-400" />
-                  <div className="flex-1 space-y-1">
-                    <h4 className="text-xs font-semibold text-rose-800 dark:text-rose-300">
-                      Rejection Reason
-                    </h4>
-                    <p className="text-xs text-rose-700 dark:text-rose-400 leading-relaxed">
-                      {submission.rejectionReason}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Action Buttons */}
             <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
-              {isDraft ? (
+              {canEdit ? (
                 <>
                   <Button
                     variant="default"
                     size="sm"
-                    onClick={onContinue}
+                    onClick={onEdit}
                     className="col-span-2 gap-1.5 h-8 text-xs bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]">
                     <FileEdit className="h-3.5 w-3.5" />
-                    Continue Editing
+                    {isDraft ? 'Continue Editing' : 'Edit & Resubmit'}
                   </Button>
                   <Button
                     variant="outline"
@@ -195,55 +188,38 @@ export const PendingCard = memo(
                     View
                   </Button>
                 </>
-              ) : isRejected ? (
-                <>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={onContinue}
-                    className="col-span-2 gap-1.5 h-8 text-xs bg-rose-600 hover:bg-rose-700 dark:bg-rose-700 dark:hover:bg-rose-800">
-                    <FileEdit className="h-3.5 w-3.5" />
-                    Edit & Resubmit
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={onView}
-                    className="gap-1.5 h-8 text-xs border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20">
-                    <Eye className="h-3.5 w-3.5" />
-                    View
-                  </Button>
-                </>
               ) : (
                 <>
                   <Button
                     variant="default"
                     size="sm"
                     onClick={onView}
-                    className="gap-1.5 h-8 text-xs bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]">
+                    className="col-span-2 gap-1.5 h-8 text-xs bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]">
                     <Eye className="h-3.5 w-3.5" />
-                    View
+                    View Details
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={onDownload}
-                    className="gap-1.5 h-8 text-xs col-span-2">
-                    <Download className="h-3.5 w-3.5" />
-                    Download PDF
-                  </Button>
+                  {isApproved && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={onDownload}
+                      className="gap-1.5 h-8 text-xs">
+                      <Download className="h-3.5 w-3.5" />
+                      PDF
+                    </Button>
+                  )}
                 </>
               )}
             </div>
 
             {/* Status-specific notices */}
-            {isRejected && !submission.rejectionReason && (
+            {isRejected && (
               <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800/30 rounded-lg p-2.5">
-                <p className="text-xs text-rose-700 dark:text-rose-500 flex items-start gap-1.5">
-                  <XCircle className="h-3 w-3 shrink-0 mt-0.5" />
+                <p className="text-xs text-rose-700 dark:text-rose-500 flex items-center gap-1.5">
+                  <XCircle className="h-3 w-3 shrink-0" />
                   <span>
-                    This submission was rejected. Please review and make the
-                    necessary corrections before resubmitting.
+                    This submission was rejected. Please review feedback and
+                    resubmit.
                   </span>
                 </p>
               </div>
@@ -260,6 +236,18 @@ export const PendingCard = memo(
                 </p>
               </div>
             )}
+
+            {isApproved && (
+              <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30 rounded-lg p-2.5">
+                <p className="text-xs text-emerald-700 dark:text-emerald-500 flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3 w-3 shrink-0" />
+                  <span>
+                    This submission has been approved and is now part of your
+                    official record.
+                  </span>
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </BlurFade>
@@ -267,4 +255,4 @@ export const PendingCard = memo(
   }
 );
 
-PendingCard.displayName = 'PendingCard';
+SubmissionCard.displayName = 'SubmissionCard';

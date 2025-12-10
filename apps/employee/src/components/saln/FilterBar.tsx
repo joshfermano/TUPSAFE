@@ -8,17 +8,11 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../../../components/ui/select';
-import { Input } from '../../../../../components/ui/input';
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { Filter, SortAsc, Search } from 'lucide-react';
 
-export type StatusFilter =
-  | 'all'
-  | 'draft'
-  | 'submitted'
-  | 'reviewing'
-  | 'approved'
-  | 'rejected';
+export type StatusFilter = 'all' | 'submitted' | 'reviewing';
 export type SortOption = 'date-desc' | 'date-asc' | 'status' | 'progress';
 
 interface FilterBarProps {
@@ -47,7 +41,7 @@ export const FilterBar = memo(
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
               type="text"
-              placeholder="Search by version number..."
+              placeholder="Search by year..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               className="pl-9 h-9"
@@ -65,11 +59,8 @@ export const FilterBar = memo(
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
                 <SelectItem value="submitted">Submitted</SelectItem>
                 <SelectItem value="reviewing">Reviewing</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
               </SelectContent>
             </Select>
           </div>

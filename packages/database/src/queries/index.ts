@@ -9,8 +9,41 @@
 
 export * from './departments';
 export * from './settings';
-export * from './saln';
-export * from './pds';
+
+// Export SALN queries with specific named exports to avoid conflicts
+export {
+  getSALNSubmissions,
+  getSALNSubmissionById,
+  getSALNByYear,
+  getActiveDraft as getActiveSALNDraft,
+  createSALNSubmission,
+  updateSALNSubmission,
+  calculateSALNTotals,
+  submitSALNForApproval,
+  approveSALN,
+  rejectSALN,
+  archiveSALNSubmission,
+  getArchivedSALN,
+  getSALNStatistics,
+  compareSALNYears,
+} from './saln';
+
+// Export PDS queries with specific named exports to avoid conflicts
+export {
+  getPDSSubmissions,
+  getPDSSubmissionById,
+  getActiveDraft as getActivePDSDraft,
+  getLatestPDSSubmission,
+  createPDSSubmission,
+  updatePDSSubmission,
+  submitPDSForApproval,
+  approvePDS,
+  rejectPDS,
+  archivePDSSubmission,
+  getArchivedPDS,
+  deletePDSSubmission,
+  getPDSStatistics,
+} from './pds';
 
 // Export types for convenience
 export type {

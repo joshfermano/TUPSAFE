@@ -2,9 +2,9 @@
 
 import React, { memo } from 'react';
 import { BlurFade, NumberTicker } from '@tupsafe/shared-ui';
-import { Card, CardContent } from '../../../../../components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { FileText, FileEdit, Clock, CheckCircle2, XCircle } from 'lucide-react';
-import { cn } from '../../../../../lib/utils';
+import { cn } from '@/lib/utils';
 
 interface StatsSectionProps {
   total: number;

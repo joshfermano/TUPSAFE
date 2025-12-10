@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useCallback, useState } from 'react';
+import React, { useMemo, useCallback, useState, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../providers/AuthProvider';
 import { useSALNSubmissions } from '../../../../hooks/useSaln';
@@ -21,17 +21,20 @@ import {
   XCircle,
   Clock,
   FileEdit,
-  Archive,
   TrendingUp,
   TrendingDown,
   DollarSign,
   Building2,
   CreditCard,
   AlertCircle,
+  Loader2,
+  Search,
+  Calendar,
+  User,
+  Trash2,
 } from 'lucide-react';
 
-import { NumberTicker, AnimatedGradientText } from '@tupsafe/shared-ui';
-import { BlurFade } from '@tupsafe/shared-ui';
+import { NumberTicker, BlurFade } from '@tupsafe/shared-ui';
 import { Button } from '../../../../components/ui/button';
 import { Badge } from '../../../../components/ui/badge';
 import { Card, CardContent } from '../../../../components/ui/card';
@@ -47,10 +50,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../../../components/ui/select';
+import { Input } from '../../../../components/ui/input';
 import { cn } from '../../../../lib/utils';
 import { parseCurrencyFromDb } from '../../../../lib/validations/saln-schema';
+import { useDebounce } from '../../../../hooks/useDebounce';
 
-// Type for SALN submission with parsed numbers
+// Type definitions
+type SortOption = 'date-desc' | 'date-asc' | 'year-desc' | 'year-asc';
+type StatusFilter = 'all' | 'approved' | 'rejected';
+
 interface SalnSubmissionWithNumbers {
   id: string;
   userId: string;
@@ -62,35 +70,14 @@ interface SalnSubmissionWithNumbers {
   submittedAt: Date | null;
   approvedBy: string | null;
   approvedAt: Date | null;
+  rejectionReason: string | null;
+  reviewNotes: string | null;
   filingType: 'joint' | 'separate' | 'not_applicable';
   createdAt: Date;
   updatedAt: Date;
 }
 
-// Status badge color configuration with TUP Manila Crimson theme
-const STATUS_COLORS = {
-  draft:
-    'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border-amber-200 dark:border-amber-800',
-  submitted:
-    'bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400 border-purple-200 dark:border-purple-800',
-  reviewing:
-    'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-  approved:
-    'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
-  rejected:
-    'bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 border-rose-200 dark:border-rose-800',
-};
-
-const STATUS_ICONS = {
-  draft: FileEdit,
-  submitted: Clock,
-  reviewing: Clock,
-  approved: CheckCircle2,
-  rejected: XCircle,
-};
-
 // Parse string currency from database to number
-// Type assertion needed: Database returns string | null for currency fields, we parse to number
 const parseSubmission = (submission: {
   id: string;
   userId: string;
@@ -102,6 +89,8 @@ const parseSubmission = (submission: {
   submittedAt: Date | null;
   approvedBy: string | null;
   approvedAt: Date | null;
+  rejectionReason: string | null;
+  reviewNotes: string | null;
   filingType: 'joint' | 'separate' | 'not_applicable';
   createdAt: Date;
   updatedAt: Date;
@@ -110,6 +99,8 @@ const parseSubmission = (submission: {
   totalAssets: parseCurrencyFromDb(submission.totalAssets),
   totalLiabilities: parseCurrencyFromDb(submission.totalLiabilities),
   netWorth: parseCurrencyFromDb(submission.netWorth),
+  rejectionReason: submission.rejectionReason || null,
+  reviewNotes: submission.reviewNotes || null,
 });
 
 // Calculate year-over-year change
@@ -126,152 +117,136 @@ const calculateYearOverYearChange = (
   );
 };
 
-// Statistics Card Component - Clean & Compact
-interface StatsCardProps {
-  label: string;
-  value: number;
-  icon?: React.ElementType;
-  color?: 'default' | 'green' | 'red' | 'yellow' | 'blue' | 'crimson';
-  prefix?: string;
-  suffix?: string;
-  showChange?: boolean;
-  changeValue?: number;
-}
+/**
+ * Loading State Component - Matches PDS pattern
+ */
+const LoadingState = memo(() => (
+  <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+    <Loader2 className="h-12 w-12 animate-spin text-[oklch(0.55_0.22_15)]" />
+    <p className="text-slate-600 dark:text-slate-400">Loading submissions...</p>
+  </div>
+));
+LoadingState.displayName = 'LoadingState';
 
-const StatsCard = React.memo(
-  ({
-    label,
-    value,
-    icon: Icon,
-    color = 'default',
-    prefix,
-    suffix,
-    showChange = false,
-    changeValue,
-  }: StatsCardProps) => {
-    const iconColor = {
-      default:
-        'text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800',
-      green:
-        'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30',
-      red: 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30',
-      yellow:
-        'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30',
-      blue: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30',
-      crimson:
-        'text-[oklch(0.55_0.22_15)] dark:text-[oklch(0.65_0.22_15)] bg-[oklch(0.55_0.22_15)]/5 dark:bg-[oklch(0.55_0.22_15)]/10',
-    };
+/**
+ * Error State Component - Matches PDS pattern
+ */
+const ErrorState = memo<{ message: string }>(({ message }) => (
+  <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+    <div className="rounded-full bg-rose-100 dark:bg-rose-950/30 p-4">
+      <AlertCircle className="h-12 w-12 text-rose-600 dark:text-rose-400" />
+    </div>
+    <div className="text-center space-y-2">
+      <h3 className="text-xl font-semibold">Error Loading Submissions</h3>
+      <p className="text-slate-600 dark:text-slate-400 max-w-md">{message}</p>
+    </div>
+  </div>
+));
+ErrorState.displayName = 'ErrorState';
 
-    return (
-      <Card className="relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-[oklch(0.55_0.22_15)]">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                {label}
-              </p>
-              <div className="flex items-baseline gap-2">
-                <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                  {prefix && <span className="text-lg">{prefix}</span>}
-                  <NumberTicker value={value} />
-                  {suffix && <span className="text-lg ml-1">{suffix}</span>}
-                </div>
-                {showChange &&
-                  changeValue !== undefined &&
-                  changeValue !== null && (
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        'ml-1 gap-1',
-                        changeValue >= 0
-                          ? 'border-emerald-500 text-emerald-700 dark:text-emerald-400'
-                          : 'border-rose-500 text-rose-700 dark:text-rose-400'
-                      )}>
-                      {changeValue >= 0 ? (
-                        <TrendingUp className="h-3 w-3" />
-                      ) : (
-                        <TrendingDown className="h-3 w-3" />
-                      )}
-                      <span className="text-xs font-semibold">
-                        {changeValue >= 0 ? '+' : ''}
-                        {changeValue.toFixed(1)}%
-                      </span>
-                    </Badge>
-                  )}
-              </div>
-            </div>
-            {Icon && (
-              <div className={cn('p-2.5 rounded-lg', iconColor[color])}>
-                <Icon className="h-5 w-5" />
-              </div>
-            )}
+/**
+ * Empty State Component - Matches PDS pattern with proper styling
+ */
+const EmptyState = memo<{
+  hasFilters: boolean;
+  onClearFilters: () => void;
+  onCreateNew: () => void;
+}>(({ hasFilters, onClearFilters, onCreateNew }) => (
+  <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-5 px-4">
+    <div className="rounded-2xl bg-slate-100 dark:bg-slate-800 p-5">
+      <FileText className="h-20 w-20 text-slate-600 dark:text-slate-400" />
+    </div>
+    <div className="text-center space-y-2">
+      <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+        {hasFilters ? 'No Results Found' : 'No SALN Submissions'}
+      </h3>
+      <p className="text-sm text-slate-600 dark:text-slate-400 max-w-md">
+        {hasFilters
+          ? 'No submissions match your current filters. Try adjusting your search.'
+          : "You don't have any approved or rejected SALN submissions yet. Create your first SALN to get started."}
+      </p>
+    </div>
+    <div className="flex gap-3">
+      {hasFilters ? (
+        <Button variant="outline" size="sm" onClick={onClearFilters}>
+          Clear Filters
+        </Button>
+      ) : (
+        <Button
+          onClick={onCreateNew}
+          className="gap-2 bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]">
+          <Plus className="h-4 w-4" />
+          Create New SALN
+        </Button>
+      )}
+    </div>
+  </div>
+));
+EmptyState.displayName = 'EmptyState';
+
+/**
+ * Stats Card Component - Matches PDS pattern exactly
+ */
+const StatsCard = memo<{
+  title: string;
+  value: number | string;
+  icon: React.ReactNode;
+  delay: number;
+}>(({ title, value, icon, delay }) => (
+  <BlurFade delay={delay} inView>
+    <Card className="border-slate-200 dark:border-slate-800">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <p className="text-sm text-slate-600 dark:text-slate-400">{title}</p>
+            <p className="text-2xl font-bold">
+              {typeof value === 'number' ? <NumberTicker value={value} /> : value}
+            </p>
           </div>
-        </CardContent>
-      </Card>
-    );
-  }
-);
-
+          <div className="rounded-full bg-slate-100 dark:bg-slate-800 p-3">{icon}</div>
+        </div>
+      </CardContent>
+    </Card>
+  </BlurFade>
+));
 StatsCard.displayName = 'StatsCard';
 
-// SALN Card Component - Clean & Compact
-interface SALNCardProps {
+/**
+ * Approved SALN Card - Matches PDS approved card pattern
+ */
+const ApprovedCard = memo<{
   submission: SalnSubmissionWithNumbers;
   previousYear?: SalnSubmissionWithNumbers;
-  isLatest?: boolean;
-  onView: () => void;
-  onEdit: () => void;
-  onDownload: () => void;
-  onPrint: () => void;
-}
+  delay: number;
+  onView: (id: string) => void;
+  onDownload: (id: string) => void;
+  onPrint: (id: string) => void;
+}>(({ submission, previousYear, delay, onView, onDownload, onPrint }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const yearOverYearChange = calculateYearOverYearChange(submission, previousYear);
 
-const SALNCard = React.memo(
-  ({
-    submission,
-    previousYear,
-    isLatest = false,
-    onView,
-    onEdit,
-    onDownload,
-    onPrint,
-  }: SALNCardProps) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const StatusIcon = STATUS_ICONS[submission.status];
-    const yearOverYearChange = calculateYearOverYearChange(
-      submission,
-      previousYear
-    );
-
-    return (
-      <Card className="group transition-all duration-200 hover:shadow-md hover:border-[oklch(0.55_0.22_15)]">
-        <div className="p-5 space-y-3.5">
-          {/* Header: Year + Status + Latest Badge */}
-          <div className="flex justify-between items-start gap-3">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-0.5">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                  SALN {submission.year}
-                </h3>
-                {isLatest && (
-                  <Badge className="bg-[oklch(0.55_0.22_15)] text-white text-xs border-0">
-                    Latest
-                  </Badge>
-                )}
+  return (
+    <BlurFade delay={delay} inView>
+      <Card className="border-slate-200 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all duration-300">
+        <CardContent className="p-5 space-y-3.5">
+          {/* Header */}
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-emerald-100 dark:bg-emerald-950/30 p-2.5">
+                <FileText className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
               </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                As of December 31, {submission.year}
-              </p>
+              <div>
+                <h3 className="font-semibold text-lg">SALN {submission.year}</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  As of December 31, {submission.year}
+                </p>
+              </div>
             </div>
             <Badge
               variant="outline"
-              className={cn(
-                'gap-1 px-2.5 py-0.5',
-                STATUS_COLORS[submission.status]
-              )}>
-              <StatusIcon className="h-3 w-3" />
-              <span className="capitalize font-medium text-xs">
-                {submission.status}
-              </span>
+              className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">
+              <CheckCircle2 className="h-3 w-3 mr-1" />
+              Approved
             </Badge>
           </div>
 
@@ -347,14 +322,37 @@ const SALNCard = React.memo(
             </div>
           </div>
 
-          {/* Last Updated */}
-          <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            Last updated{' '}
-            {formatDistanceToNow(new Date(submission.updatedAt), {
-              addSuffix: true,
-            })}
-          </p>
+          {/* Details */}
+          <div className="space-y-2">
+            {submission.submittedAt && (
+              <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                <Calendar className="h-4 w-4" />
+                <span>Submitted: {format(submission.submittedAt, 'MMM dd, yyyy')}</span>
+              </div>
+            )}
+            {submission.approvedAt && (
+              <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="h-4 w-4" />
+                <span>Approved: {format(submission.approvedAt, 'MMM dd, yyyy')}</span>
+              </div>
+            )}
+            {submission.approvedBy && (
+              <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                <User className="h-4 w-4" />
+                <span>Approved by: {submission.approvedBy}</span>
+              </div>
+            )}
+            {submission.reviewNotes && (
+              <div className="mt-3 p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400 mb-1">
+                  Review Notes
+                </p>
+                <p className="text-sm text-slate-700 dark:text-slate-300">
+                  {submission.reviewNotes}
+                </p>
+              </div>
+            )}
+          </div>
 
           {/* Expandable Details */}
           <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -374,35 +372,13 @@ const SALNCard = React.memo(
             <CollapsibleContent className="mt-2">
               <div className="space-y-1.5 text-xs">
                 <div className="flex justify-between items-center py-1.5 border-b border-slate-200 dark:border-slate-800">
-                  <span className="text-slate-600 dark:text-slate-400">
-                    Filing Type
-                  </span>
+                  <span className="text-slate-600 dark:text-slate-400">Filing Type</span>
                   <span className="font-medium capitalize text-slate-900 dark:text-slate-100">
                     {submission.filingType === 'not_applicable'
                       ? 'N/A'
                       : submission.filingType}
                   </span>
                 </div>
-                {submission.submittedAt && (
-                  <div className="flex justify-between items-center py-1.5 border-b border-slate-200 dark:border-slate-800">
-                    <span className="text-slate-600 dark:text-slate-400">
-                      Submitted
-                    </span>
-                    <span className="font-medium text-slate-900 dark:text-slate-100">
-                      {format(new Date(submission.submittedAt), 'MMM d, yyyy')}
-                    </span>
-                  </div>
-                )}
-                {submission.approvedAt && (
-                  <div className="flex justify-between items-center py-1.5 border-b border-slate-200 dark:border-slate-800">
-                    <span className="text-slate-600 dark:text-slate-400">
-                      Approved
-                    </span>
-                    <span className="font-medium text-emerald-700 dark:text-emerald-400">
-                      {format(new Date(submission.approvedAt), 'MMM d, yyyy')}
-                    </span>
-                  </div>
-                )}
                 {yearOverYearChange !== null && previousYear && (
                   <>
                     <div className="flex justify-between items-center py-1.5 border-b border-slate-200 dark:border-slate-800">
@@ -428,9 +404,7 @@ const SALNCard = React.memo(
                             ? 'text-emerald-700 dark:text-emerald-400'
                             : 'text-rose-700 dark:text-rose-400'
                         )}>
-                        {submission.netWorth - previousYear.netWorth >= 0
-                          ? '+'
-                          : ''}
+                        {submission.netWorth - previousYear.netWorth >= 0 ? '+' : ''}
                         ₱{' '}
                         {Math.abs(
                           submission.netWorth - previousYear.netWorth
@@ -446,213 +420,279 @@ const SALNCard = React.memo(
             </CollapsibleContent>
           </Collapsible>
 
-          {/* Action Buttons */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+          {/* Actions - Matches PDS pattern with flex-wrap gap-2 */}
+          <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
             <Button
               variant="outline"
               size="sm"
-              onClick={onView}
-              className="gap-1.5 h-8 text-xs">
-              <Eye className="h-3.5 w-3.5" />
+              onClick={() => onView(submission.id)}
+              className="flex-1 min-w-[100px]">
+              <Eye className="h-4 w-4 mr-2" />
               View
             </Button>
-            {(submission.status === 'draft' ||
-              submission.status === 'rejected') && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onEdit}
-                className="gap-1.5 h-8 text-xs">
-                <Edit className="h-3.5 w-3.5" />
-                Edit
-              </Button>
-            )}
             <Button
               variant="outline"
               size="sm"
-              onClick={onDownload}
-              className="gap-1.5 h-8 text-xs">
-              <Download className="h-3.5 w-3.5" />
-              PDF
+              onClick={() => onDownload(submission.id)}
+              className="flex-1 min-w-[100px]">
+              <Download className="h-4 w-4 mr-2" />
+              Download
             </Button>
             <Button
               variant="outline"
               size="sm"
-              onClick={onPrint}
-              className="gap-1.5 h-8 text-xs">
-              <Printer className="h-3.5 w-3.5" />
+              onClick={() => onPrint(submission.id)}
+              className="flex-1 min-w-[100px]">
+              <Printer className="h-4 w-4 mr-2" />
               Print
             </Button>
           </div>
-        </div>
+        </CardContent>
       </Card>
-    );
-  }
-);
+    </BlurFade>
+  );
+});
+ApprovedCard.displayName = 'ApprovedCard';
 
-SALNCard.displayName = 'SALNCard';
+/**
+ * Rejected SALN Card - Matches PDS rejected card pattern
+ */
+const RejectedCard = memo<{
+  submission: SalnSubmissionWithNumbers;
+  delay: number;
+  onView: (id: string) => void;
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
+}>(({ submission, delay, onView, onEdit, onDelete }) => (
+  <BlurFade delay={delay} inView>
+    <Card className="border-slate-200 dark:border-slate-800 hover:border-rose-300 dark:hover:border-rose-700 transition-all duration-300">
+      <CardContent className="p-5 space-y-3.5">
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-rose-100 dark:bg-rose-950/30 p-2.5">
+              <FileText className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg">SALN {submission.year}</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                As of December 31, {submission.year}
+              </p>
+            </div>
+          </div>
+          <Badge
+            variant="outline"
+            className="bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 border-rose-200 dark:border-rose-800">
+            <XCircle className="h-3 w-3 mr-1" />
+            Rejected
+          </Badge>
+        </div>
 
-// Loading State Component
-const LoadingState = () => (
-  <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-    <div className="relative">
-      <div className="h-16 w-16 rounded-full border-4 border-slate-200 dark:border-slate-800" />
-      <div className="absolute top-0 left-0 h-16 w-16 rounded-full border-4 border-[oklch(0.55_0.22_15)] border-t-transparent animate-spin" />
+        {/* Details */}
+        <div className="space-y-2">
+          {submission.submittedAt && (
+            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+              <Calendar className="h-4 w-4" />
+              <span>Submitted: {format(submission.submittedAt, 'MMM dd, yyyy')}</span>
+            </div>
+          )}
+          {submission.approvedBy && (
+            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+              <User className="h-4 w-4" />
+              <span>Reviewed by: {submission.approvedBy}</span>
+            </div>
+          )}
+          {submission.rejectionReason && (
+            <div className="mt-3 p-3 bg-rose-50 dark:bg-rose-950/20 rounded-lg border border-rose-200 dark:border-rose-800">
+              <p className="text-xs font-medium text-rose-700 dark:text-rose-400 mb-1">
+                Rejection Reason
+              </p>
+              <p className="text-sm text-slate-700 dark:text-slate-300">
+                {submission.rejectionReason}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Actions - Matches PDS pattern with flex-wrap gap-2 */}
+        <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onView(submission.id)}
+            className="flex-1 min-w-[100px]">
+            <Eye className="h-4 w-4 mr-2" />
+            View
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onEdit(submission.id)}
+            className="flex-1 min-w-[100px]">
+            <FileEdit className="h-4 w-4 mr-2" />
+            Edit & Resubmit
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onDelete(submission.id)}
+            className="flex-1 min-w-[100px] text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20">
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  </BlurFade>
+));
+RejectedCard.displayName = 'RejectedCard';
+
+/**
+ * Filter Bar Component - Matches PDS pattern exactly
+ */
+const FilterBar = memo<{
+  statusFilter: StatusFilter;
+  sortBy: SortOption;
+  searchQuery: string;
+  onStatusChange: (status: StatusFilter) => void;
+  onSortChange: (sort: SortOption) => void;
+  onSearchChange: (query: string) => void;
+}>(({ statusFilter, sortBy, searchQuery, onStatusChange, onSortChange, onSearchChange }) => (
+  <BlurFade delay={0.35} inView>
+    <div className="flex flex-col lg:flex-row gap-3">
+      {/* Search Input */}
+      <div className="relative flex-1 max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <Input
+          type="text"
+          placeholder="Search by year..."
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="pl-9 h-9"
+        />
+      </div>
+
+      {/* Status Filter */}
+      <div className="flex items-center gap-2">
+        <Filter className="h-4 w-4 text-slate-600 dark:text-slate-400 shrink-0" />
+        <Select value={statusFilter} onValueChange={(v) => onStatusChange(v as StatusFilter)}>
+          <SelectTrigger className="w-full sm:w-[160px] h-9">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="approved">Approved</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Sort Options */}
+      <div className="flex items-center gap-2">
+        <SortAsc className="h-4 w-4 text-slate-600 dark:text-slate-400 shrink-0" />
+        <Select value={sortBy} onValueChange={(v) => onSortChange(v as SortOption)}>
+          <SelectTrigger className="w-full sm:w-[160px] h-9">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="date-desc">Newest First</SelectItem>
+            <SelectItem value="date-asc">Oldest First</SelectItem>
+            <SelectItem value="year-desc">Year (Newest)</SelectItem>
+            <SelectItem value="year-asc">Year (Oldest)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
     </div>
-    <p className="text-slate-600 dark:text-slate-400 text-lg font-medium">
-      Loading your SALN submissions...
-    </p>
-  </div>
-);
+  </BlurFade>
+));
+FilterBar.displayName = 'FilterBar';
 
-// Error State Component
-const ErrorState = ({ error }: { error: string }) => (
-  <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-    <AlertCircle className="h-16 w-16 text-rose-500" />
-    <p className="text-slate-900 dark:text-slate-100 text-xl font-semibold">
-      Something went wrong
-    </p>
-    <p className="text-slate-600 dark:text-slate-400">{error}</p>
-    <Button onClick={() => window.location.reload()}>Try Again</Button>
-  </div>
-);
-
-// Empty State Component
-const EmptyState = ({
-  onCreateNew,
-  onViewArchive,
-}: {
-  onCreateNew: () => void;
-  onViewArchive: () => void;
-}) => (
-  <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 px-4">
-    <div className="relative">
-      <FileText className="h-20 w-20 text-slate-300 dark:text-slate-700" />
-    </div>
-    <div className="text-center space-y-2">
-      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-        No Active SALN Submissions
-      </h3>
-      <p className="text-sm text-slate-600 dark:text-slate-400 max-w-md">
-        You haven&apos;t filed any Statement of Assets, Liabilities, and Net
-        Worth in the last 5 years. Start a new submission or view your archived
-        records.
-      </p>
-    </div>
-    <div className="flex gap-3">
-      <Button
-        onClick={onCreateNew}
-        className="gap-2 bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]">
-        <Plus className="h-4 w-4" />
-        Create New SALN
-      </Button>
-      <Button variant="outline" onClick={onViewArchive} className="gap-2">
-        <Archive className="h-4 w-4" />
-        View Archive
-      </Button>
-    </div>
-  </div>
-);
-
-// Main SALN View Page
+/**
+ * Main SALN Submissions Page
+ */
 export default function SALNViewPage() {
   const router = useRouter();
   const { user } = useAuth();
 
   // Use real hook for SALN submissions
-  const { data: submissionsResponse, isLoading, error: submissionsError } = useSALNSubmissions();
+  const { data: submissions, isLoading, error } = useSALNSubmissions();
 
   // Extract submissions from response
-  const allSubmissions = useMemo(() => submissionsResponse?.data || [], [submissionsResponse]);
+  const allSubmissions = useMemo(
+    () => submissions || [],
+    [submissions]
+  );
 
   const loading = isLoading;
-  const error = submissionsError?.message || null;
+  const errorMessage = error?.message || null;
 
   // Filter and sort state
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<
-    'date-desc' | 'date-asc' | 'networth-desc' | 'networth-asc' | 'status'
-  >('date-desc');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [sortBy, setSortBy] = useState<SortOption>('date-desc');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Filter active submissions (0-5 years old) and parse currency strings
-  const activeSubmissions = useMemo(() => {
-    const filtered = allSubmissions.map(parseSubmission).filter((submission: any) => {
-      const age = differenceInYears(
-        new Date(),
-        new Date(submission.year, 11, 31)
+  // Debounce search query for performance
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  // Filter approved and rejected submissions only
+  const filteredSubmissions = useMemo(() => {
+    if (!allSubmissions) return [];
+
+    // Parse submissions and filter to only approved/rejected
+    let filtered = allSubmissions
+      .map(parseSubmission)
+      .filter(
+        (submission: SalnSubmissionWithNumbers) =>
+          submission.status === 'approved' || submission.status === 'rejected'
       );
-      return age < 5;
-    });
 
     // Apply status filter
-    const statusFiltered =
-      statusFilter === 'all'
-        ? filtered
-        : filtered.filter((s: any) => s.status === statusFilter);
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter((s: SalnSubmissionWithNumbers) => s.status === statusFilter);
+    }
+
+    // Apply search filter
+    if (debouncedSearchQuery) {
+      const query = debouncedSearchQuery.toLowerCase();
+      filtered = filtered.filter((s: SalnSubmissionWithNumbers) => s.year.toString().includes(query));
+    }
 
     // Apply sorting
-    return statusFiltered.sort((a: any, b: any) => {
+    return filtered.sort((a: SalnSubmissionWithNumbers, b: SalnSubmissionWithNumbers) => {
       switch (sortBy) {
-        case 'date-desc':
+        case 'date-desc': {
+          const dateA = a.approvedAt || a.submittedAt || new Date(0);
+          const dateB = b.approvedAt || b.submittedAt || new Date(0);
+          return new Date(dateB).getTime() - new Date(dateA).getTime();
+        }
+        case 'date-asc': {
+          const dateA = a.approvedAt || a.submittedAt || new Date(0);
+          const dateB = b.approvedAt || b.submittedAt || new Date(0);
+          return new Date(dateA).getTime() - new Date(dateB).getTime();
+        }
+        case 'year-desc':
           return b.year - a.year;
-        case 'date-asc':
+        case 'year-asc':
           return a.year - b.year;
-        case 'networth-desc':
-          return b.netWorth - a.netWorth;
-        case 'networth-asc':
-          return a.netWorth - b.netWorth;
-        case 'status':
-          return a.status.localeCompare(b.status);
         default:
           return 0;
       }
     });
-  }, [allSubmissions, statusFilter, sortBy]);
+  }, [allSubmissions, statusFilter, debouncedSearchQuery, sortBy]);
 
   // Calculate statistics
   const stats = useMemo(() => {
-    const latest = activeSubmissions[0];
-    const previous = activeSubmissions[1];
-    const netWorthChange =
-      latest && previous
-        ? ((latest.netWorth - previous.netWorth) /
-            Math.abs(previous.netWorth)) *
-          100
-        : 0;
-
-    // Calculate average annual change
-    const approvedSubmissions = activeSubmissions
-      .filter((s: any) => s.status === 'approved')
-      .sort((a: any, b: any) => b.year - a.year);
-
-    let avgAnnualChange = 0;
-    if (approvedSubmissions.length >= 2) {
-      const changes = [];
-      for (let i = 0; i < approvedSubmissions.length - 1; i++) {
-        const curr = approvedSubmissions[i];
-        const prev = approvedSubmissions[i + 1];
-        if (prev.netWorth !== 0) {
-          changes.push(
-            ((curr.netWorth - prev.netWorth) / Math.abs(prev.netWorth)) * 100
-          );
-        }
-      }
-      if (changes.length > 0) {
-        avgAnnualChange =
-          changes.reduce((sum, val) => sum + val, 0) / changes.length;
-      }
-    }
+    const approved = filteredSubmissions.filter((s: SalnSubmissionWithNumbers) => s.status === 'approved').length;
+    const rejected = filteredSubmissions.filter((s: SalnSubmissionWithNumbers) => s.status === 'rejected').length;
 
     return {
-      total: activeSubmissions.length,
-      latestNetWorth: latest?.netWorth || 0,
-      netWorthChange,
-      approved: activeSubmissions.filter((s: any) => s.status === 'approved').length,
-      avgAnnualChange,
+      total: filteredSubmissions.length,
+      approved,
+      rejected,
     };
-  }, [activeSubmissions]);
+  }, [filteredSubmissions]);
 
-  // Handlers
+  // Event handlers
   const handleView = useCallback(
     (id: string) => {
       router.push(`/dashboard/saln/view/${id}`);
@@ -667,173 +707,163 @@ export default function SALNViewPage() {
     [router]
   );
 
-  const handleDownload = useCallback((id: string) => {
-    console.log('Download PDF:', id);
-    // TODO: Implement PDF download
-  }, []);
+  const handleDownload = useCallback(
+    (id: string) => {
+      router.push(`/dashboard/saln/view/${id}`);
+    },
+    [router]
+  );
 
-  const handlePrint = useCallback((id: string) => {
-    console.log('Print:', id);
-    // TODO: Implement print functionality
+  const handlePrint = useCallback(
+    (id: string) => {
+      router.push(`/dashboard/saln/view/${id}`);
+    },
+    [router]
+  );
+
+  const handleDelete = useCallback((id: string) => {
+    // TODO: Implement delete functionality with confirmation
+    console.log('Delete submission:', id);
   }, []);
 
   const handleCreateNew = useCallback(() => {
     router.push('/dashboard/saln/create');
   }, [router]);
 
-  const handleViewArchive = useCallback(() => {
-    router.push('/dashboard/saln/archive');
-  }, [router]);
+  const handleClearFilters = useCallback(() => {
+    setStatusFilter('all');
+    setSearchQuery('');
+    setSortBy('date-desc');
+  }, []);
 
-  if (loading) return <LoadingState />;
-  if (error) return <ErrorState error={error} />;
+  const hasActiveFilters = useMemo(
+    () => statusFilter !== 'all' || debouncedSearchQuery !== '',
+    [statusFilter, debouncedSearchQuery]
+  );
+
+  // Loading state
+  if (loading) {
+    return (
+      <EmployeeOnlyGuard>
+        <div className="min-h-screen pb-10">
+          <LoadingState />
+        </div>
+      </EmployeeOnlyGuard>
+    );
+  }
+
+  // Error state
+  if (errorMessage) {
+    return (
+      <EmployeeOnlyGuard>
+        <div className="min-h-screen pb-10">
+          <ErrorState message={errorMessage || 'Failed to load submissions'} />
+        </div>
+      </EmployeeOnlyGuard>
+    );
+  }
+
+  const isEmpty = filteredSubmissions.length === 0;
 
   return (
     <EmployeeOnlyGuard>
-    <div className="relative min-h-screen pb-12">
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="space-y-1">
-            <AnimatedGradientText className="text-2xl sm:text-3xl font-bold">
-              SALN Submissions
-            </AnimatedGradientText>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              View and manage your Statement of Assets, Liabilities, and Net
-              Worth from the last 5 years
-            </p>
+      <div className="min-h-screen pb-10">
+        <div className="space-y-6">
+          {/* Header - Matches PDS pattern */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <BlurFade delay={0}>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 mb-1.5">
+                  SALN Submissions
+                </h1>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  View all your approved and rejected SALN submissions
+                </p>
+              </div>
+            </BlurFade>
           </div>
-          <Button
-            onClick={handleCreateNew}
-            className="gap-2 shrink-0 bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]">
-            <Plus className="h-4 w-4" />
-            Create New SALN
-          </Button>
-        </div>
 
-        {/* Statistics */}
-        {activeSubmissions.length > 0 && (
-          <BlurFade delay={0.1}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {/* Statistics - Matches PDS pattern with grid-cols-2 lg:grid-cols-3 gap-3.5 */}
+          {!isEmpty && (
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3.5">
               <StatsCard
-                label="Total Submissions"
+                title="Total Submissions"
                 value={stats.total}
-                icon={FileText}
-                color="crimson"
+                icon={<FileText className="h-5 w-5 text-slate-600 dark:text-slate-400" />}
+                delay={0.1}
               />
               <StatsCard
-                label="Latest Net Worth"
-                value={stats.latestNetWorth}
-                prefix="₱ "
-                icon={DollarSign}
-                color="green"
-              />
-              <StatsCard
-                label="Year-over-Year Change"
-                value={Math.abs(stats.netWorthChange)}
-                prefix={stats.netWorthChange >= 0 ? '+' : '-'}
-                suffix="%"
-                icon={stats.netWorthChange >= 0 ? TrendingUp : TrendingDown}
-                color={stats.netWorthChange >= 0 ? 'green' : 'red'}
-              />
-              <StatsCard
-                label="Approved SALNs"
+                title="Approved"
                 value={stats.approved}
-                icon={CheckCircle2}
-                color="green"
+                icon={
+                  <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                }
+                delay={0.15}
+              />
+              <StatsCard
+                title="Rejected"
+                value={stats.rejected}
+                icon={<XCircle className="h-5 w-5 text-rose-600 dark:text-rose-400" />}
+                delay={0.2}
               />
             </div>
-          </BlurFade>
-        )}
+          )}
 
-        {/* Filters and Sort */}
-        {activeSubmissions.length > 0 && (
-          <BlurFade delay={0.15}>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="flex items-center gap-2 flex-1">
-                <Filter className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full sm:w-[180px] h-9">
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="submitted">Submitted</SelectItem>
-                    <SelectItem value="reviewing">Reviewing</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2 flex-1">
-                <SortAsc className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-                <Select
-                  value={sortBy}
-                  onValueChange={(v) =>
-                    setSortBy(
-                      v as
-                        | 'date-desc'
-                        | 'date-asc'
-                        | 'networth-desc'
-                        | 'networth-asc'
-                        | 'status'
-                    )
-                  }>
-                  <SelectTrigger className="w-full sm:w-[180px] h-9">
-                    <SelectValue placeholder="Sort by" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="date-desc">Newest First</SelectItem>
-                    <SelectItem value="date-asc">Oldest First</SelectItem>
-                    <SelectItem value="networth-desc">
-                      Highest Net Worth
-                    </SelectItem>
-                    <SelectItem value="networth-asc">
-                      Lowest Net Worth
-                    </SelectItem>
-                    <SelectItem value="status">Status</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button
-                variant="outline"
-                onClick={handleViewArchive}
-                className="gap-2 h-9">
-                <Archive className="h-4 w-4" />
-                View Archive
-              </Button>
-            </div>
-          </BlurFade>
-        )}
-
-        {/* Cards Grid or Empty State */}
-        {activeSubmissions.length === 0 ? (
-          <BlurFade delay={0.2}>
-            <EmptyState
-              onCreateNew={handleCreateNew}
-              onViewArchive={handleViewArchive}
+          {/* Filter Bar - Matches PDS pattern */}
+          {!isEmpty && (
+            <FilterBar
+              statusFilter={statusFilter}
+              sortBy={sortBy}
+              searchQuery={searchQuery}
+              onStatusChange={setStatusFilter}
+              onSortChange={setSortBy}
+              onSearchChange={setSearchQuery}
             />
-          </BlurFade>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {activeSubmissions.map((submission: any, index: number) => (
-              <BlurFade key={submission.id} delay={0.2 + index * 0.05}>
-                <SALNCard
-                  submission={submission}
-                  previousYear={activeSubmissions[index + 1]}
-                  isLatest={index === 0}
-                  onView={() => handleView(submission.id)}
-                  onEdit={() => handleEdit(submission.id)}
-                  onDownload={() => handleDownload(submission.id)}
-                  onPrint={() => handlePrint(submission.id)}
-                />
-              </BlurFade>
-            ))}
-          </div>
-        )}
+          )}
+
+          {/* Submissions Grid or Empty State */}
+          {isEmpty ? (
+            <BlurFade delay={0.4}>
+              <EmptyState
+                hasFilters={hasActiveFilters}
+                onClearFilters={handleClearFilters}
+                onCreateNew={handleCreateNew}
+              />
+            </BlurFade>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredSubmissions.map((submission: SalnSubmissionWithNumbers, index: number) => {
+                const previousYear = filteredSubmissions[index + 1];
+
+                if (submission.status === 'approved') {
+                  return (
+                    <ApprovedCard
+                      key={submission.id}
+                      submission={submission}
+                      previousYear={previousYear}
+                      delay={0.4 + index * 0.05}
+                      onView={handleView}
+                      onDownload={handleDownload}
+                      onPrint={handlePrint}
+                    />
+                  );
+                } else {
+                  return (
+                    <RejectedCard
+                      key={submission.id}
+                      submission={submission}
+                      delay={0.4 + index * 0.05}
+                      onView={handleView}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                    />
+                  );
+                }
+              })}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
     </EmployeeOnlyGuard>
   );
 }
