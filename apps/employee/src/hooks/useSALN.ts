@@ -322,7 +322,16 @@ async function archiveSALN(id: string) {
 export function useSALNSubmissions(filters?: SALNFilters) {
   return useQuery({
     queryKey: salnKeys.list(filters),
-    queryFn: () => fetchSALNSubmissions(filters),
+    queryFn: async () => {
+      const response = await fetchSALNSubmissions(filters);
+
+      if (!response.success || !response.data) {
+        console.error('[useSALNSubmissions] Invalid response:', response);
+        return [];
+      }
+
+      return response.data; // Extract and return only the data array
+    },
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     retry: 2,
@@ -627,7 +636,7 @@ export function useLatestSALN() {
       const latestResult = await latestResponse.json();
       return latestResult.data && latestResult.data.length > 0
         ? latestResult.data[0]
-        : undefined;
+        : null;
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
     enabled: true,

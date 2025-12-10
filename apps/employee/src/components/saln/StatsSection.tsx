@@ -2,9 +2,9 @@
 
 import React, { memo } from 'react';
 import { BlurFade, NumberTicker } from '@tupsafe/shared-ui';
-import { Card, CardContent } from '../../../../../components/ui/card';
-import { FileEdit, Clock, Eye, XCircle } from 'lucide-react';
-import { cn } from '../../../../../lib/utils';
+import { Card, CardContent } from '@/components/ui/card';
+import { Clock, Eye } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface StatsSectionProps {
   totalPending: number;

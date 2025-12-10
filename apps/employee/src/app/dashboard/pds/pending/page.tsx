@@ -6,14 +6,14 @@ import { useAuth } from '../../../../providers/AuthProvider';
 import { usePdsQuery } from '../../../../hooks/usePdsQuery';
 import { BlurFade, Badge } from '@tupsafe/shared-ui';
 import { Clock, FileEdit } from 'lucide-react';
-import { StatsSection } from './components/StatsSection';
+import { StatsSection } from '@/components/pds/pending/StatsSection';
 import {
   FilterBar,
   type StatusFilter,
   type SortOption,
-} from './components/FilterBar';
-import { EmptyState } from './components/EmptyState';
-import { PendingCard } from './components/PendingCard';
+} from '@/components/pds/pending/FilterBar';
+import { EmptyState } from '@/components/pds/pending/EmptyState';
+import { PendingCard } from '@/components/pds/pending/PendingCard';
 import { useDebounce } from '../../../../hooks/useDebounce';
 
 // Loading State Component

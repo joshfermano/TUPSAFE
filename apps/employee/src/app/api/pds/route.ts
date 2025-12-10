@@ -9,7 +9,7 @@ import {
   getPDSSubmissions,
   createPDSSubmission,
   updatePDSSubmission,
-  getActiveDraft,
+  getActivePDSDraft,
   type PDSFilterOptions,
   type CreatePDSData,
 } from '@tupsafe/database/server';
@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for existing draft within 24 hours (deduplication)
-    const existingDraftId = await getActiveDraft(session.user.id);
+    const existingDraftId = await getActivePDSDraft(session.user.id);
 
     if (existingDraftId) {
       // Update existing draft instead of creating new one

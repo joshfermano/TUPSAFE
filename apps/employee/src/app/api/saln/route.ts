@@ -12,6 +12,8 @@ import { eq } from 'drizzle-orm';
 import {
   getSALNSubmissions,
   createSALNSubmission,
+  getActiveSALNDraft,
+  updateSALNSubmission,
   type CreateSalnInput,
 } from '@tupsafe/database/server';
 import { transformSalnForSubmission } from '../../../lib/utils/saln-transformations';
@@ -40,17 +42,19 @@ export async function GET(request: NextRequest) {
     // ========================================================================
     const supabase = await createServerClient('employee');
     const {
-      data: { user },
+      data: { session },
       error: authError,
-    } = await supabase.auth.getUser();
+    } = await supabase.auth.getSession();
 
-    if (authError || !user) {
+    if (authError || !session) {
       console.error('[GET /api/saln] Authentication failed:', authError);
       return NextResponse.json(
         { success: false, error: 'Unauthorized. Please log in.' },
         { status: 401 }
       );
     }
+
+    const user = session.user;
 
     // ========================================================================
     // STEP 2: RBAC CHECK - EMPLOYEE ONLY (Source of Truth: profiles table)
@@ -203,17 +207,19 @@ export async function POST(request: NextRequest) {
     // ========================================================================
     const supabase = await createServerClient('employee');
     const {
-      data: { user },
+      data: { session },
       error: authError,
-    } = await supabase.auth.getUser();
+    } = await supabase.auth.getSession();
 
-    if (authError || !user) {
+    if (authError || !session) {
       console.error('[POST /api/saln] Authentication failed:', authError);
       return NextResponse.json(
         { success: false, error: 'Unauthorized. Please log in.' },
         { status: 401 }
       );
     }
+
+    const user = session.user;
 
     // ========================================================================
     // STEP 2: RBAC CHECK - EMPLOYEE ONLY (Source of Truth: profiles table)
@@ -296,7 +302,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ========================================================================
-    // STEP 5: Create SALN submission
+    // STEP 5: Check for existing draft (deduplication)
     // ========================================================================
     const salnInput: CreateSalnInput = {
       year,
@@ -308,6 +314,31 @@ export async function POST(request: NextRequest) {
       relativesInGov: transformedData.relativesInGov || [],
     };
 
+    // Check for existing draft within 24 hours (deduplication)
+    const existingDraftId = await getActiveSALNDraft(user.id, year);
+
+    if (existingDraftId) {
+      console.log(
+        `[POST /api/saln] Found existing draft ${existingDraftId}, updating instead of creating new`
+      );
+
+      // Update existing draft
+      await updateSALNSubmission(existingDraftId, user.id, salnInput);
+
+      return NextResponse.json(
+        {
+          success: true,
+          data: { id: existingDraftId },
+          message: 'Draft updated successfully',
+        },
+        { status: 200 }
+      );
+    }
+
+    // ========================================================================
+    // STEP 6: Create SALN submission
+    // ========================================================================
+    // No recent draft exists - create new one
     const newSaln = await createSALNSubmission(user.id, salnInput);
 
     console.log(

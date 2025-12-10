@@ -6,7 +6,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { usePdsQuery } from '@/hooks/usePdsQuery';
 import { BlurFade, Badge } from '@tupsafe/shared-ui';
 import { FileEdit, Inbox } from 'lucide-react';
-import { DraftCard, FilterBar, EmptyState, type SortOption } from '@/components/pds';
+import { DraftCard, DraftsFilterBar as FilterBar, DraftsEmptyState as EmptyState, type DraftsSortOption as SortOption } from '@/components/pds';
 import { useDebounce } from '@/hooks/useDebounce';
 
 // Loading State Component

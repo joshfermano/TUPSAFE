@@ -7,7 +7,7 @@
  * @module queries/saln
  */
 
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, gte } from 'drizzle-orm';
 import { db } from '../db';
 import {
   salnSubmissions,
@@ -209,6 +209,43 @@ export async function getSALNByYear(
   });
 
   return submission ? (submission as CompleteSaln) : null;
+}
+
+/**
+ * Get the active draft for a user (within 24 hours and current year)
+ * Returns the most recently created draft within the last 24 hours for the specified year
+ *
+ * @param userId - The user ID to find draft for
+ * @param year - Optional year to check (defaults to current year)
+ * @returns Draft ID if found, null otherwise
+ */
+export async function getActiveDraft(
+  userId: string,
+  year?: number
+): Promise<string | null> {
+  try {
+    const targetYear = year || new Date().getFullYear();
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    const [result] = await db
+      .select({ id: salnSubmissions.id })
+      .from(salnSubmissions)
+      .where(
+        and(
+          eq(salnSubmissions.userId, userId),
+          eq(salnSubmissions.year, targetYear),
+          eq(salnSubmissions.status, 'draft'),
+          gte(salnSubmissions.createdAt, twentyFourHoursAgo)
+        )
+      )
+      .orderBy(desc(salnSubmissions.createdAt))
+      .limit(1);
+
+    return result?.id || null;
+  } catch (error) {
+    console.error('[getActiveDraft] Error:', error);
+    return null;
+  }
 }
 
 /**

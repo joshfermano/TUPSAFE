@@ -1,140 +1,358 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { Landmark, Clock, ArrowLeft, TrendingUp, FileCheck, Shield } from 'lucide-react';
-import Link from 'next/link';
-import { Button } from '../../../../components/ui/button';
+import React, { useMemo, useCallback, useState, memo } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../../../../providers/AuthProvider';
+import { useSALNSubmissions, type SALNSubmission } from '../../../../hooks/useSaln';
+import { BlurFade, Badge } from '@tupsafe/shared-ui';
+import { Clock, Landmark } from 'lucide-react';
 import { EmployeeOnlyGuard } from '../../../../components/guards/EmployeeOnlyGuard';
+import { StatsSection } from '@/components/saln/StatsSection';
+import {
+  FilterBar,
+  type StatusFilter,
+  type SortOption,
+} from '@/components/saln/FilterBar';
+import { EmptyState } from '@/components/saln/EmptyState';
+import { PendingCard } from '@/components/saln/PendingCard';
+import { useDebounce } from '../../../../hooks/useDebounce';
 
+// Loading State Component
+const LoadingState = memo(() => (
+  <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-3.5">
+    <div className="relative">
+      <div className="h-12 w-12 rounded-full border-4 border-slate-200 dark:border-slate-800" />
+      <div className="absolute top-0 left-0 h-12 w-12 rounded-full border-4 border-[oklch(0.55_0.22_15)] border-t-transparent animate-spin" />
+    </div>
+    <p className="text-slate-600 dark:text-slate-400 text-base font-medium">
+      Loading pending submissions...
+    </p>
+  </div>
+));
+
+LoadingState.displayName = 'LoadingState';
+
+// Error State Component
+const ErrorState = memo(({ error }: { error: string }) => (
+  <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-3.5">
+    <div className="relative flex items-center justify-center w-20 h-20 rounded-2xl bg-rose-100 dark:bg-rose-900/20">
+      <Landmark className="h-10 w-10 text-rose-500" />
+    </div>
+    <p className="text-slate-900 dark:text-slate-100 text-lg font-semibold">
+      Something went wrong
+    </p>
+    <p className="text-slate-600 dark:text-slate-400 text-sm max-w-md text-center">
+      {error}
+    </p>
+    <button
+      onClick={() => window.location.reload()}
+      className="px-4 py-2 bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)] text-white rounded-lg transition-colors">
+      Try Again
+    </button>
+  </div>
+));
+
+ErrorState.displayName = 'ErrorState';
+
+// Skeleton Loading Cards
+const SkeletonCard = memo(({ delay = 0 }: { delay?: number }) => (
+  <BlurFade delay={delay}>
+    <div className="h-full border border-slate-200 dark:border-slate-800 rounded-lg p-5 space-y-3.5 animate-pulse">
+      <div className="flex justify-between items-start gap-4">
+        <div className="flex-1 space-y-2">
+          <div className="h-5 bg-slate-200 dark:bg-slate-800 rounded w-32" />
+          <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-24" />
+        </div>
+        <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-20" />
+      </div>
+      <div className="space-y-1.5">
+        <div className="flex justify-between">
+          <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-16" />
+          <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-10" />
+        </div>
+        <div className="h-1.5 bg-slate-200 dark:bg-slate-800 rounded" />
+      </div>
+      <div className="flex gap-2">
+        <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-20" />
+        <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-24" />
+      </div>
+      <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+        <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded" />
+        <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded" />
+        <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded" />
+      </div>
+    </div>
+  </BlurFade>
+));
+
+SkeletonCard.displayName = 'SkeletonCard';
+
+// Calculate completion for sorting
+const calculateCompletion = (
+  status: 'submitted' | 'reviewing'
+): number => {
+  switch (status) {
+    case 'submitted':
+      return 95;
+    case 'reviewing':
+      return 98;
+    default:
+      return 0;
+  }
+};
+
+// Helper to safely handle date fields (API returns strings already)
+const safeDate = (date: string | null | undefined): string | undefined => {
+  return date || undefined;
+};
+
+// Main SALN Pending Page
+function SALNPendingPageContent() {
+  const router = useRouter();
+  const { user } = useAuth();
+
+  // Fetch submissions using real API hook
+  const {
+    data: allSubmissions,
+    isLoading: loading,
+    error: queryError,
+  } = useSALNSubmissions();
+
+  const error = queryError ? { message: queryError.message } : null;
+
+  // Filter and sort state
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [sortBy, setSortBy] = useState<SortOption>('date-desc');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Debounce search query for performance
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  // Filter pending submissions (only submitted and reviewing)
+  const pendingSubmissions = useMemo(() => {
+    if (!allSubmissions) return [];
+
+    const pendingStatuses = ['submitted', 'reviewing'];
+
+    let filtered = allSubmissions.filter((submission: SALNSubmission) =>
+      pendingStatuses.includes(submission.status)
+    );
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter((s: SALNSubmission) => s.status === statusFilter);
+    }
+
+    // Apply search filter
+    if (debouncedSearchQuery) {
+      filtered = filtered.filter((s: SALNSubmission) =>
+        s.year.toString().includes(debouncedSearchQuery)
+      );
+    }
+
+    // Apply sorting
+    return filtered.sort((a: SALNSubmission, b: SALNSubmission) => {
+      switch (sortBy) {
+        case 'date-desc':
+          return (
+            new Date(b.updatedAt).getTime() -
+            new Date(a.updatedAt).getTime()
+          );
+        case 'date-asc':
+          return (
+            new Date(a.updatedAt).getTime() -
+            new Date(a.updatedAt).getTime()
+          );
+        case 'status':
+          return a.status.localeCompare(b.status);
+        case 'progress': {
+          const progressA = calculateCompletion(
+            a.status as 'submitted' | 'reviewing'
+          );
+          const progressB = calculateCompletion(
+            b.status as 'submitted' | 'reviewing'
+          );
+          return progressB - progressA;
+        }
+        default:
+          return 0;
+      }
+    });
+  }, [allSubmissions, statusFilter, debouncedSearchQuery, sortBy]);
+
+  // Calculate statistics
+  const stats = useMemo(() => {
+    const submitted = pendingSubmissions.filter(
+      (s: SALNSubmission) => s.status === 'submitted'
+    ).length;
+    const reviewing = pendingSubmissions.filter(
+      (s: SALNSubmission) => s.status === 'reviewing'
+    ).length;
+
+    return {
+      total: pendingSubmissions.length,
+      submitted,
+      reviewing,
+    };
+  }, [pendingSubmissions]);
+
+  // Handlers
+  const handleContinue = useCallback(
+    (id: string) => {
+      router.push(`/dashboard/saln/edit/${id}`);
+    },
+    [router]
+  );
+
+  const handleView = useCallback(
+    (id: string) => {
+      router.push(`/dashboard/saln/view/${id}`);
+    },
+    [router]
+  );
+
+  const handleDownload = useCallback(
+    (id: string) => {
+      // Navigate to the detailed view where PDF download is implemented
+      router.push(`/dashboard/saln/view/${id}`);
+    },
+    [router]
+  );
+
+  const handleClearFilters = useCallback(() => {
+    setStatusFilter('all');
+    setSearchQuery('');
+    setSortBy('date-desc');
+  }, []);
+
+  const hasActiveFilters = useMemo(
+    () => statusFilter !== 'all' || debouncedSearchQuery !== '',
+    [statusFilter, debouncedSearchQuery]
+  );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen pb-12">
+        <div className="space-y-6">
+          {/* Header Skeleton */}
+          <div className="space-y-2 animate-pulse">
+            <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded w-48" />
+            <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-96" />
+          </div>
+
+          {/* Stats Skeleton */}
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {[...Array(3)].map((_, i) => (
+              <div
+                key={i}
+                className="h-20 bg-slate-200 dark:bg-slate-800 rounded animate-pulse"
+              />
+            ))}
+          </div>
+
+          {/* Cards Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pt-6">
+            {[...Array(6)].map((_, i) => (
+              <SkeletonCard key={i} delay={i * 0.05} />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) return <ErrorState error={error.message || 'An error occurred'} />;
+
+  const isEmpty = pendingSubmissions.length === 0;
+
+  return (
+    <div className="min-h-screen pb-12">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <BlurFade delay={0}>
+            <div>
+              <div className="flex items-center gap-2.5 mb-1.5">
+                <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">
+                  Pending SALN Submissions
+                </h1>
+                <Badge
+                  variant="outline"
+                  className="border-blue-500 text-blue-700 dark:border-blue-600 dark:text-blue-500 px-2 py-0.5 text-xs">
+                  <Clock className="h-3 w-3 mr-1" />
+                  In Progress
+                </Badge>
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Manage your draft, submitted, and in-review SALN submissions
+              </p>
+            </div>
+          </BlurFade>
+        </div>
+
+        {/* Statistics */}
+        {!isEmpty && (
+          <StatsSection
+            totalPending={stats.total}
+            submittedCount={stats.submitted}
+            reviewingCount={stats.reviewing}
+          />
+        )}
+
+        {/* Filters and Sort */}
+        {!isEmpty && (
+          <FilterBar
+            statusFilter={statusFilter}
+            sortBy={sortBy}
+            searchQuery={searchQuery}
+            onStatusChange={setStatusFilter}
+            onSortChange={setSortBy}
+            onSearchChange={setSearchQuery}
+          />
+        )}
+
+        {/* Cards Grid or Empty State */}
+        {isEmpty ? (
+          <BlurFade delay={0.4}>
+            <EmptyState
+              hasFilters={hasActiveFilters}
+              onClearFilters={handleClearFilters}
+            />
+          </BlurFade>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {pendingSubmissions.map((submission: SALNSubmission, index: number) => (
+              <PendingCard
+                key={submission.id}
+                submission={{
+                  id: submission.id,
+                  year: submission.year,
+                  status: submission.status as
+                    | 'submitted'
+                    | 'reviewing',
+                  createdAt: submission.createdAt,
+                  updatedAt: submission.updatedAt,
+                  submittedAt: safeDate(submission.submittedAt),
+                  reviewedBy: undefined, // Not available for pending submissions
+                }}
+                onContinue={() => handleContinue(submission.id)}
+                onView={() => handleView(submission.id)}
+                onDownload={() => handleDownload(submission.id)}
+                delay={0.4 + index * 0.05}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Main export with guard
 export default function SALNPendingPage() {
   return (
     <EmployeeOnlyGuard>
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="max-w-2xl w-full">
-        {/* Card Container */}
-        <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl">
-          {/* Subtle gradient background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent pointer-events-none" />
-
-          {/* Content */}
-          <div className="relative z-10 p-12 text-center">
-            {/* Icon with subtle animation */}
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-              className="mx-auto w-24 h-24 rounded-full bg-emerald-500/10 flex items-center justify-center mb-6">
-              <div className="relative">
-                <Landmark className="h-12 w-12 text-emerald-600 dark:text-emerald-500" />
-                <motion.div
-                  animate={{
-                    scale: [1, 1.2, 1],
-                    opacity: [0.5, 0.8, 0.5],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                  }}
-                  className="absolute -top-1 -right-1">
-                  <Clock className="h-5 w-5 text-amber-500" />
-                </motion.div>
-              </div>
-            </motion.div>
-
-            {/* Title */}
-            <motion.h1
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-3">
-              SALN Pending Submissions
-            </motion.h1>
-
-            {/* Description */}
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-              className="text-lg text-slate-600 dark:text-slate-400 mb-8 max-w-md mx-auto">
-              This feature is currently under development. You will be able to view and manage your pending SALN submissions here soon.
-            </motion.p>
-
-            {/* Feature highlights */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="mb-10 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                <div className="flex justify-center mb-2">
-                  <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-500" />
-                </div>
-                <div className="font-semibold text-slate-900 dark:text-slate-100 mb-1">
-                  Track Progress
-                </div>
-                <div className="text-slate-600 dark:text-slate-400">
-                  Monitor submission status
-                </div>
-              </div>
-              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                <div className="flex justify-center mb-2">
-                  <FileCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-500" />
-                </div>
-                <div className="font-semibold text-slate-900 dark:text-slate-100 mb-1">
-                  Review Feedback
-                </div>
-                <div className="text-slate-600 dark:text-slate-400">
-                  View verification notes
-                </div>
-              </div>
-              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                <div className="flex justify-center mb-2">
-                  <Shield className="h-5 w-5 text-emerald-600 dark:text-emerald-500" />
-                </div>
-                <div className="font-semibold text-slate-900 dark:text-slate-100 mb-1">
-                  Compliance Status
-                </div>
-                <div className="text-slate-600 dark:text-slate-400">
-                  Check annual requirements
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Action Button */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}>
-              <Link href="/dashboard/saln">
-                <Button
-                  size="lg"
-                  className="gap-2 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300">
-                  <ArrowLeft className="h-4 w-4" />
-                  Back to SALN Dashboard
-                </Button>
-              </Link>
-            </motion.div>
-          </div>
-
-          {/* Bottom accent - emerald theme for SALN */}
-          <div className="h-2 bg-gradient-to-r from-emerald-500/30 via-emerald-600 to-emerald-500/30" />
-        </div>
-
-        {/* Additional info */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.7 }}
-          className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
-          Expected release: Coming soon
-        </motion.p>
-      </motion.div>
-    </div>
+      <SALNPendingPageContent />
     </EmployeeOnlyGuard>
   );
 }

@@ -8,8 +8,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../../../components/ui/select';
-import { Input } from '../../../../../components/ui/input';
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { Filter, SortAsc, Search } from 'lucide-react';
 
 export type StatusFilter = 'all' | 'submitted' | 'reviewing';

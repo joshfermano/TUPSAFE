@@ -2,35 +2,34 @@
 
 import React, { memo, useMemo } from 'react';
 import { BlurFade, Badge } from '@tupsafe/shared-ui';
-import { Card, CardContent } from '../../../../../components/ui/card';
-import { Button } from '../../../../../components/ui/button';
-import { Progress } from '../../../../../components/ui/progress';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import {
-  FileText,
+  Landmark,
   Eye,
   Download,
   FileEdit,
   Clock,
   XCircle,
-  CheckCircle2,
   User,
   Calendar,
 } from 'lucide-react';
-import { cn } from '../../../../../lib/utils';
+import { cn } from '@/lib/utils';
 import { format, differenceInDays } from 'date-fns';
 
-interface SubmissionCardProps {
+interface PendingCardProps {
   submission: {
     id: string;
-    version: number;
-    status: 'draft' | 'submitted' | 'reviewing' | 'approved' | 'rejected';
+    year: number;
+    status: 'draft' | 'submitted' | 'reviewing' | 'rejected';
     createdAt: string;
     updatedAt: string;
     submittedAt?: string;
-    approvedAt?: string;
     reviewedBy?: string;
+    rejectionReason?: string;
   };
-  onEdit: () => void;
+  onContinue: () => void;
   onView: () => void;
   onDownload: () => void;
   delay?: number;
@@ -43,9 +42,7 @@ const STATUS_COLORS = {
   submitted:
     'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border-blue-200 dark:border-blue-800',
   reviewing:
-    'bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400 border-purple-200 dark:border-purple-800',
-  approved:
-    'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
+    'bg-violet-100 text-violet-700 dark:bg-violet-950/30 dark:text-violet-400 border-violet-200 dark:border-violet-800',
   rejected:
     'bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 border-rose-200 dark:border-rose-800',
 } as const;
@@ -54,13 +51,12 @@ const STATUS_ICONS = {
   draft: FileEdit,
   submitted: Clock,
   reviewing: Clock,
-  approved: CheckCircle2,
   rejected: XCircle,
 } as const;
 
 // Calculate completion based on status
 const calculateCompletion = (
-  status: 'draft' | 'submitted' | 'reviewing' | 'approved' | 'rejected'
+  status: 'draft' | 'submitted' | 'reviewing' | 'rejected'
 ): number => {
   switch (status) {
     case 'draft':
@@ -69,8 +65,6 @@ const calculateCompletion = (
       return 95;
     case 'reviewing':
       return 98;
-    case 'approved':
-      return 100;
     case 'rejected':
       return 100;
     default:
@@ -78,14 +72,14 @@ const calculateCompletion = (
   }
 };
 
-export const SubmissionCard = memo(
+export const PendingCard = memo(
   ({
     submission,
-    onEdit,
+    onContinue,
     onView,
     onDownload,
     delay = 0,
-  }: SubmissionCardProps) => {
+  }: PendingCardProps) => {
     const completion = useMemo(
       () => calculateCompletion(submission.status),
       [submission.status]
@@ -98,8 +92,7 @@ export const SubmissionCard = memo(
 
     const isDraft = submission.status === 'draft';
     const isRejected = submission.status === 'rejected';
-    const isApproved = submission.status === 'approved';
-    const canEdit = isDraft || isRejected;
+    const isReviewing = submission.status === 'reviewing';
 
     return (
       <BlurFade delay={delay}>
@@ -109,15 +102,14 @@ export const SubmissionCard = memo(
             <div className="flex justify-between items-start gap-4">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1.5">
+                  <Landmark className="h-5 w-5 text-emerald-600 dark:text-emerald-500" />
                   <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                    PDS Version {submission.version}
+                    SALN {submission.year}
                   </h3>
                 </div>
                 <p className="text-xs text-slate-600 dark:text-slate-400">
                   {isDraft
                     ? `Last saved ${format(new Date(submission.updatedAt), 'MMM d, yyyy')}`
-                    : isApproved
-                    ? `Approved ${format(new Date(submission.approvedAt || submissionDate), 'MMM d, yyyy')}`
                     : `Submitted ${format(new Date(submissionDate), 'MMM d, yyyy')}`}
                 </p>
               </div>
@@ -127,7 +119,12 @@ export const SubmissionCard = memo(
                   'gap-1.5 px-2 py-0.5 text-xs',
                   STATUS_COLORS[submission.status]
                 )}>
-                <StatusIcon className="h-3 w-3" />
+                <StatusIcon
+                  className={cn(
+                    'h-3 w-3',
+                    isReviewing && 'animate-spin'
+                  )}
+                />
                 <span className="capitalize font-medium">
                   {submission.status}
                 </span>
@@ -150,8 +147,8 @@ export const SubmissionCard = memo(
             {/* Metadata */}
             <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
               <span className="flex items-center gap-1">
-                <FileText className="h-3 w-3" />
-                Version {submission.version}
+                <Landmark className="h-3 w-3" />
+                Year {submission.year}
               </span>
               {submission.reviewedBy && (
                 <span className="flex items-center gap-1">
@@ -159,7 +156,7 @@ export const SubmissionCard = memo(
                   {submission.reviewedBy}
                 </span>
               )}
-              {!isDraft && !isApproved && (
+              {!isDraft && (
                 <span className="flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
                   {daysPending} {daysPending === 1 ? 'day' : 'days'} pending
@@ -167,17 +164,34 @@ export const SubmissionCard = memo(
               )}
             </div>
 
+            {/* Rejection Reason Alert - Show prominently before action buttons */}
+            {isRejected && submission.rejectionReason && (
+              <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800/30 rounded-lg p-3">
+                <div className="flex items-start gap-2.5">
+                  <XCircle className="h-4 w-4 shrink-0 mt-0.5 text-rose-600 dark:text-rose-400" />
+                  <div className="flex-1 space-y-1">
+                    <h4 className="text-xs font-semibold text-rose-800 dark:text-rose-300">
+                      Rejection Reason
+                    </h4>
+                    <p className="text-xs text-rose-700 dark:text-rose-400 leading-relaxed">
+                      {submission.rejectionReason}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Action Buttons */}
             <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
-              {canEdit ? (
+              {isDraft ? (
                 <>
                   <Button
                     variant="default"
                     size="sm"
-                    onClick={onEdit}
+                    onClick={onContinue}
                     className="col-span-2 gap-1.5 h-8 text-xs bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]">
                     <FileEdit className="h-3.5 w-3.5" />
-                    {isDraft ? 'Continue Editing' : 'Edit & Resubmit'}
+                    Continue Editing
                   </Button>
                   <Button
                     variant="outline"
@@ -188,62 +202,67 @@ export const SubmissionCard = memo(
                     View
                   </Button>
                 </>
+              ) : isRejected ? (
+                <>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={onContinue}
+                    className="col-span-2 gap-1.5 h-8 text-xs bg-rose-600 hover:bg-rose-700 dark:bg-rose-700 dark:hover:bg-rose-800">
+                    <FileEdit className="h-3.5 w-3.5" />
+                    Edit & Resubmit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onView}
+                    className="gap-1.5 h-8 text-xs border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20">
+                    <Eye className="h-3.5 w-3.5" />
+                    View
+                  </Button>
+                </>
               ) : (
                 <>
                   <Button
                     variant="default"
                     size="sm"
                     onClick={onView}
-                    className="col-span-2 gap-1.5 h-8 text-xs bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]">
+                    className="gap-1.5 h-8 text-xs bg-[oklch(0.55_0.22_15)] hover:bg-[oklch(0.50_0.22_15)]">
                     <Eye className="h-3.5 w-3.5" />
-                    View Details
+                    View
                   </Button>
-                  {isApproved && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={onDownload}
-                      className="gap-1.5 h-8 text-xs">
-                      <Download className="h-3.5 w-3.5" />
-                      PDF
-                    </Button>
-                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onDownload}
+                    className="gap-1.5 h-8 text-xs col-span-2">
+                    <Download className="h-3.5 w-3.5" />
+                    Download PDF
+                  </Button>
                 </>
               )}
             </div>
 
             {/* Status-specific notices */}
-            {isRejected && (
+            {isRejected && !submission.rejectionReason && (
               <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800/30 rounded-lg p-2.5">
-                <p className="text-xs text-rose-700 dark:text-rose-500 flex items-center gap-1.5">
-                  <XCircle className="h-3 w-3 shrink-0" />
+                <p className="text-xs text-rose-700 dark:text-rose-500 flex items-start gap-1.5">
+                  <XCircle className="h-3 w-3 shrink-0 mt-0.5" />
                   <span>
-                    This submission was rejected. Please review feedback and
-                    resubmit.
+                    This submission was rejected. Please review and make the
+                    necessary corrections before resubmitting.
                   </span>
                 </p>
               </div>
             )}
 
             {submission.status === 'reviewing' && (
-              <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800/30 rounded-lg p-2.5">
-                <p className="text-xs text-purple-700 dark:text-purple-500 flex items-center gap-1.5">
-                  <Clock className="h-3 w-3 shrink-0" />
+              <div className="bg-violet-50 dark:bg-violet-950/20 border border-violet-200 dark:border-violet-800/30 rounded-lg p-2.5">
+                <p className="text-xs text-violet-700 dark:text-violet-500 flex items-center gap-1.5">
+                  <Clock className="h-3 w-3 shrink-0 animate-spin" />
                   <span>
                     Your submission is currently under review. You will be
                     notified of any updates.
-                  </span>
-                </p>
-              </div>
-            )}
-
-            {isApproved && (
-              <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30 rounded-lg p-2.5">
-                <p className="text-xs text-emerald-700 dark:text-emerald-500 flex items-center gap-1.5">
-                  <CheckCircle2 className="h-3 w-3 shrink-0" />
-                  <span>
-                    This submission has been approved and is now part of your
-                    official record.
                   </span>
                 </p>
               </div>
@@ -255,4 +274,4 @@ export const SubmissionCard = memo(
   }
 );
 
-SubmissionCard.displayName = 'SubmissionCard';
+PendingCard.displayName = 'PendingCard';

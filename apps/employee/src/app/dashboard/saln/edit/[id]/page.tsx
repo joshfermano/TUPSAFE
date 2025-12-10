@@ -352,7 +352,7 @@ export default function SALNEditDetailPage({
 
   return (
     <EmployeeOnlyGuard>
-    <div className="space-y-6 pb-10">
+    <div className="space-y-6 pb-8">
       {/* Breadcrumb */}
       <BlurFade delay={0.05}>
         <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
