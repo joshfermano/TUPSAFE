@@ -4,11 +4,13 @@
  * SALN Step 2: Real Properties
  * Land, houses, buildings, and other real estate
  *
- * FIXED: Replaced Radix UI Select with native HTML select to eliminate infinite loops
+ * Design Pattern: Matches PDS form with gradient header cards
+ * - Clean gradient header with icon
+ * - Step number and descriptive subtitle
+ * - Consistent spacing and styling
  *
- * Rebuilt with:
+ * Features:
  * - EnhancedCard for property items
- * - EnhancedFormSection for clean layout
  * - Native HTML select for all dropdowns
  * - BlurFade for staggered animations
  * - React.memo for performance
@@ -16,7 +18,8 @@
 
 import { memo, useMemo } from 'react';
 import { useFormContext, useFieldArray, Controller } from 'react-hook-form';
-import { Building, Plus, Trash2 } from 'lucide-react';
+import { HomeIcon } from '@radix-ui/react-icons';
+import { Plus, Trash2 } from 'lucide-react';
 import { CurrencyInput } from '../../../../../components/forms/shared/CurrencyInput';
 import { Label } from '../../../../../components/ui/label';
 import { Button } from '../../../../../components/ui/button';
@@ -88,15 +91,31 @@ export const RealProperties = memo(function RealProperties() {
 
   return (
     <div className="space-y-8">
+      {/* Step Header - Clean, Professional */}
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-gradient-to-br from-slate-50 to-white dark:from-slate-900 dark:to-slate-950 p-6">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <HomeIcon className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-primary">Step 2</p>
+            <h2 className="text-2xl font-bold text-foreground">
+              Real Properties
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              List all real estate properties you own (land, houses, buildings, etc.)
+            </p>
+          </div>
+        </div>
+      </div>
+
       <BlurFade delay={0.1}>
-        <EnhancedFormSection
-          title="Real Properties"
-          subtitle="List all real estate properties you own (land, houses, buildings, etc.)"
-          variant="default">
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm hover:shadow-md transition-shadow duration-200">
+          <div className="p-6 sm:p-8">
           {fields.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed rounded-lg border-slate-200/50 dark:border-slate-800/50">
-              <Building className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+              <HomeIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-sm text-muted-foreground mb-4">
                 No real properties added yet
               </p>
               <Button type="button" onClick={addRealProperty} variant="outline">
@@ -323,7 +342,8 @@ export const RealProperties = memo(function RealProperties() {
               </BlurFade>
             </div>
           )}
-        </EnhancedFormSection>
+          </div>
+        </div>
       </BlurFade>
     </div>
   );

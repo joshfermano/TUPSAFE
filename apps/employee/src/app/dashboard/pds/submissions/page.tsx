@@ -3,7 +3,7 @@
 import React, { useMemo, useCallback, useState, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../providers/AuthProvider';
-import { usePdsQuery } from '../../../../hooks/usePdsQuery';
+import { usePDSSubmissions, type PDSSubmission } from '../../../../hooks/usePDS';
 import { BlurFade, Badge, NumberTicker } from '@tupsafe/shared-ui';
 import { Card, CardContent } from '../../../../components/ui/card';
 import { Button } from '../../../../components/ui/button';
@@ -44,8 +44,8 @@ interface Submission {
   year: number;
   version: number;
   status: string;
-  submittedAt: Date | null;
-  approvedAt: Date | null;
+  submittedAt: string | null;
+  approvedAt: string | null;
   approvedBy: string | null;
   rejectionReason: string | null;
   reviewNotes: string | null;
@@ -396,7 +396,18 @@ FilterBar.displayName = 'FilterBar';
 export default function SubmissionsPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { submissions, loading, error } = usePdsQuery(user?.id || '');
+  const {
+    data: pdsResponse,
+    isLoading: loading,
+    error: queryError,
+  } = usePDSSubmissions();
+
+  const submissions = useMemo(() => {
+    if (!pdsResponse?.data) return [];
+    return pdsResponse.data;
+  }, [pdsResponse]);
+
+  const error = queryError?.message || null;
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sortBy, setSortBy] = useState<SortOption>('date-desc');
@@ -407,30 +418,30 @@ export default function SubmissionsPage() {
 
   // Filter submissions (approved + rejected only)
   const filteredSubmissions = useMemo(() => {
-    if (!submissions) return [];
+    if (!submissions || submissions.length === 0) return [];
 
     let filtered = submissions.filter(
-      (submission) =>
+      (submission: PDSSubmission) =>
         submission.status === 'approved' || submission.status === 'rejected'
     );
 
     // Apply status filter
     if (statusFilter !== 'all') {
-      filtered = filtered.filter((s) => s.status === statusFilter);
+      filtered = filtered.filter((s: PDSSubmission) => s.status === statusFilter);
     }
 
     // Apply search filter
     if (debouncedSearchQuery) {
       const query = debouncedSearchQuery.toLowerCase();
       filtered = filtered.filter(
-        (s) =>
+        (s: PDSSubmission) =>
           s.year.toString().includes(query) ||
           s.version.toString().includes(query)
       );
     }
 
     // Apply sorting
-    return filtered.sort((a, b) => {
+    return filtered.sort((a: PDSSubmission, b: PDSSubmission) => {
       switch (sortBy) {
         case 'date-desc': {
           const dateA = a.approvedAt || a.submittedAt || new Date(0);
@@ -454,8 +465,8 @@ export default function SubmissionsPage() {
 
   // Calculate statistics
   const stats = useMemo(() => {
-    const approved = filteredSubmissions.filter((s) => s.status === 'approved').length;
-    const rejected = filteredSubmissions.filter((s) => s.status === 'rejected').length;
+    const approved = filteredSubmissions.filter((s: PDSSubmission) => s.status === 'approved').length;
+    const rejected = filteredSubmissions.filter((s: PDSSubmission) => s.status === 'rejected').length;
 
     return {
       total: filteredSubmissions.length,
@@ -601,7 +612,7 @@ export default function SubmissionsPage() {
           </BlurFade>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredSubmissions.map((submission, index) => {
+            {filteredSubmissions.map((submission: PDSSubmission, index: number) => {
               const mappedSubmission: Submission = {
                 id: submission.id,
                 year: submission.year,
@@ -609,9 +620,9 @@ export default function SubmissionsPage() {
                 status: submission.status,
                 submittedAt: submission.submittedAt,
                 approvedAt: submission.approvedAt,
-                approvedBy: submission.approvedBy,
-                rejectionReason: submission.rejectionReason ?? null,
-                reviewNotes: submission.reviewNotes ?? null,
+                approvedBy: null,
+                rejectionReason: null,
+                reviewNotes: null,
               };
 
               if (submission.status === 'approved') {

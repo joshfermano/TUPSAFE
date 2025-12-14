@@ -3,7 +3,7 @@
 import React, { useMemo, useCallback, useState, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers/AuthProvider';
-import { usePdsQuery } from '@/hooks/usePdsQuery';
+import { usePDSSubmissions, type PDSSubmission } from '@/hooks/usePDS';
 import { BlurFade, Badge } from '@tupsafe/shared-ui';
 import { FileEdit, Inbox } from 'lucide-react';
 import { DraftCard, DraftsFilterBar as FilterBar, DraftsEmptyState as EmptyState, type DraftsSortOption as SortOption } from '@/components/pds';
@@ -97,7 +97,18 @@ const toISOString = (date: Date | string | null | undefined): string | undefined
 export default function PDSDraftsPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { submissions, loading, error } = usePdsQuery(user?.id || '');
+  const {
+    data: pdsResponse,
+    isLoading: loading,
+    error: queryError,
+  } = usePDSSubmissions({ status: 'draft' });
+
+  const submissions = useMemo(() => {
+    if (!pdsResponse?.data) return [];
+    return pdsResponse.data;
+  }, [pdsResponse]);
+
+  const error = queryError?.message || null;
 
   // Filter and sort state
   const [sortBy, setSortBy] = useState<SortOption>('date-desc');
@@ -106,19 +117,19 @@ export default function PDSDraftsPage() {
   // Debounce search query for performance
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  // Filter draft submissions only
+  // Filter draft submissions only (already filtered by hook, but keep for search)
   const draftSubmissions = useMemo(() => {
-    let filtered = submissions.filter((submission) => submission.status === 'draft');
+    let filtered = submissions;
 
     // Apply search filter
     if (debouncedSearchQuery) {
-      filtered = filtered.filter((s) =>
+      filtered = filtered.filter((s: PDSSubmission) =>
         s.version.toString().includes(debouncedSearchQuery)
       );
     }
 
     // Apply sorting
-    return filtered.sort((a, b) => {
+    return filtered.sort((a: PDSSubmission, b: PDSSubmission) => {
       switch (sortBy) {
         case 'date-desc':
           return (
@@ -248,7 +259,7 @@ export default function PDSDraftsPage() {
           </BlurFade>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {draftSubmissions.map((submission, index) => (
+            {draftSubmissions.map((submission: PDSSubmission, index: number) => (
               <DraftCard
                 key={submission.id}
                 submission={{

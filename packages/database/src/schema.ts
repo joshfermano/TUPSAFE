@@ -761,6 +761,11 @@ export const salnSubmissions = pgTable(
     reviewNotes: text('review_notes'), // Optional review feedback from admin/HR (approval notes)
     pdfFilePath: text('pdf_file_path'), // Supabase Storage path to generated PDF
     filingType: filingTypeEnum('filing_type').default('separate').notNull(),
+    // SALN Metadata fields (from Step 1 - Declarant Info)
+    spouseName: text('spouse_name'), // Spouse name for joint filing
+    position: text('position'), // Employee position/rank
+    agency: text('agency'), // Office/Agency name
+    officeAddress: text('office_address'), // Office address
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
@@ -1423,8 +1428,10 @@ export const applicationStatusHistoryRelations = relations(
   })
 );
 
-// Export all tables for drizzle-kit
+// Export all tables and relations for drizzle-kit
+// IMPORTANT: Relations MUST be exported for Drizzle's relational query API (.with()) to work
 export const schema = {
+  // Core tables
   profiles,
   departments,
   positions,
@@ -1463,4 +1470,23 @@ export const schema = {
   employeeIdRegistry,
   // User preferences
   userPreferences,
+
+  // Relations (required for Drizzle relational queries)
+  profilesRelations,
+  userPreferencesRelations,
+  departmentsRelations,
+  positionsRelations,
+  // PDS Relations
+  pdsSubmissionsRelations,
+  // SALN Relations (CRITICAL for .with() queries)
+  salnSubmissionsRelations,
+  salnRealPropertiesRelations,
+  salnPersonalPropertiesRelations,
+  salnLiabilitiesRelations,
+  salnBusinessInterestsRelations,
+  salnRelativesInGovRelations,
+  // Job Application Relations
+  openPositionsRelations,
+  jobApplicationsRelations,
+  applicationStatusHistoryRelations,
 };

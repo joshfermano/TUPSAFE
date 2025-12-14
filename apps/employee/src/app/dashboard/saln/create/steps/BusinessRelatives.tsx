@@ -4,18 +4,22 @@
  * SALN Step 5: Business Interests & Relatives in Government
  * Combined section for business connections and government relatives
  *
- * Rebuilt with:
+ * Design Pattern: Matches PDS form with gradient header cards
+ * - Clean gradient header with icon
+ * - Step number and descriptive subtitle
+ * - Consistent spacing and styling
+ *
+ * Features:
  * - EnhancedCard for business/relative items
- * - EnhancedFormSection for two main sections
  * - EnhancedInput for text fields
  * - BlurFade for staggered animations
  * - React.memo for performance
- * - Fixed Select components using defaultValue (no infinite loops)
  */
 
 import { memo } from 'react';
 import { useFormContext, useFieldArray, Controller } from 'react-hook-form';
-import { Briefcase, Users, Plus, Trash2, Info } from 'lucide-react';
+import { BackpackIcon, PersonIcon } from '@radix-ui/react-icons';
+import { Plus, Trash2, Info } from 'lucide-react';
 import { Label } from '../../../../../components/ui/label';
 import { Button } from '../../../../../components/ui/button';
 import { Badge } from '../../../../../components/ui/badge';
@@ -72,15 +76,40 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
 
   return (
     <div className="space-y-8">
+      {/* Step Header - Clean, Professional */}
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-gradient-to-br from-slate-50 to-white dark:from-slate-900 dark:to-slate-950 p-6">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <BackpackIcon className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-primary">Step 5</p>
+            <h2 className="text-2xl font-bold text-foreground">
+              Business Interests & Relatives in Government
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Disclose business connections and government service relatives
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Business Interests Section */}
       <BlurFade delay={0.1}>
-        <EnhancedFormSection
-          title="Business Interests and Financial Connections"
-          subtitle="Disclose any business interests, partnerships, or financial connections"
-          variant="default">
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm hover:shadow-md transition-shadow duration-200">
+          <div className="p-6 sm:p-8">
+            <div className="flex items-center gap-2 mb-2">
+              <BackpackIcon className="h-5 w-5 text-primary" />
+              <h3 className="text-base font-semibold text-foreground">
+                Business Interests and Financial Connections
+              </h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-6">
+              Disclose any business interests, partnerships, or financial connections
+            </p>
           <Alert className="mb-6 border-slate-200/50 dark:border-slate-800/50">
             <Info className="h-4 w-4" />
-            <AlertDescription className="text-sm text-slate-600 dark:text-slate-400">
+            <AlertDescription className="text-sm text-muted-foreground">
               Include any business where you or your spouse have an interest
               (stockholder, partner, officer, director, etc.). If none, you may
               skip this section.
@@ -89,11 +118,11 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
 
           {businessFields.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed rounded-lg border-slate-200/50 dark:border-slate-800/50">
-              <Briefcase className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-slate-600 dark:text-slate-400 mb-2">
+              <BackpackIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-foreground mb-2">
                 No business interests added
               </p>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 If you have no business interests, you can skip this section
               </p>
               <Button
@@ -186,21 +215,33 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
                             <Controller
                               name={`businessInterests.${index}.dateOfAcquisition`}
                               control={control}
-                              render={({ field }) => (
-                                <EnhancedInput
-                                  type="date"
-                                  {...field}
-                                  value={
-                                    field.value instanceof Date
-                                      ? field.value.toISOString().split('T')[0]
-                                      : field.value
+                              render={({ field }) => {
+                                // Normalize value to YYYY-MM-DD string format
+                                let displayValue = '';
+                                if (field.value instanceof Date) {
+                                  displayValue = field.value.toISOString().split('T')[0];
+                                } else if (typeof field.value === 'string' && field.value) {
+                                  // Handle ISO string from localStorage
+                                  try {
+                                    displayValue = new Date(field.value).toISOString().split('T')[0];
+                                  } catch {
+                                    displayValue = field.value;
                                   }
-                                  onChange={(e) =>
-                                    field.onChange(new Date(e.target.value))
-                                  }
-                                  max={new Date().toISOString().split('T')[0]}
-                                />
-                              )}
+                                }
+
+                                return (
+                                  <EnhancedInput
+                                    type="date"
+                                    value={displayValue}
+                                    onChange={(e) => {
+                                      const dateStr = e.target.value;
+                                      // Store as Date object for consistency with form state
+                                      field.onChange(dateStr ? new Date(dateStr) : null);
+                                    }}
+                                    max={new Date().toISOString().split('T')[0]}
+                                  />
+                                );
+                              }}
                             />
                           </div>
                         </div>
@@ -220,18 +261,26 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
               </Button>
             </div>
           )}
-        </EnhancedFormSection>
+          </div>
+        </div>
       </BlurFade>
 
       {/* Relatives in Government Section */}
       <BlurFade delay={0.2}>
-        <EnhancedFormSection
-          title="Relatives in Government Service"
-          subtitle="List relatives within 4th civil degree working in government"
-          variant="default">
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm hover:shadow-md transition-shadow duration-200">
+          <div className="p-6 sm:p-8">
+            <div className="flex items-center gap-2 mb-2">
+              <PersonIcon className="h-5 w-5 text-primary" />
+              <h3 className="text-base font-semibold text-foreground">
+                Relatives in Government Service
+              </h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-6">
+              List relatives within 4th civil degree working in government
+            </p>
           <Alert className="mb-6 border-slate-200/50 dark:border-slate-800/50">
             <Info className="h-4 w-4" />
-            <AlertDescription className="text-sm text-slate-600 dark:text-slate-400">
+            <AlertDescription className="text-sm text-muted-foreground">
               Disclose relatives within the 4th civil degree (by consanguinity
               or affinity) currently employed in government. If none, you may
               skip this section.
@@ -240,11 +289,11 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
 
           {relativeFields.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed rounded-lg border-slate-200/50 dark:border-slate-800/50">
-              <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-slate-600 dark:text-slate-400 mb-2">
+              <PersonIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-foreground mb-2">
                 No relatives in government added
               </p>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 If you have no relatives in government service, you can skip
                 this section
               </p>
@@ -371,7 +420,8 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
               </Button>
             </div>
           )}
-        </EnhancedFormSection>
+          </div>
+        </div>
       </BlurFade>
     </div>
   );

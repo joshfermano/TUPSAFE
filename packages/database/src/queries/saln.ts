@@ -49,6 +49,10 @@ export interface CompleteSaln extends SalnSubmission {
 export interface CreateSalnInput {
   year: number;
   filingType: 'joint' | 'separate' | 'not_applicable';
+  spouseName?: string;
+  position?: string;
+  agency?: string;
+  officeAddress?: string;
   realProperties?: Omit<NewSalnRealProperty, 'salnSubmissionId'>[];
   personalProperties?: Omit<NewSalnPersonalProperty, 'salnSubmissionId'>[];
   liabilities?: Omit<NewSalnLiability, 'salnSubmissionId'>[];
@@ -62,6 +66,10 @@ export interface CreateSalnInput {
 export interface UpdateSalnInput {
   year?: number;
   filingType?: 'joint' | 'separate' | 'not_applicable';
+  spouseName?: string;
+  position?: string;
+  agency?: string;
+  officeAddress?: string;
   realProperties?: Omit<NewSalnRealProperty, 'salnSubmissionId'>[];
   personalProperties?: Omit<NewSalnPersonalProperty, 'salnSubmissionId'>[];
   liabilities?: Omit<NewSalnLiability, 'salnSubmissionId'>[];
@@ -274,6 +282,10 @@ export async function createSALNSubmission(
         userId,
         year: data.year,
         filingType: data.filingType,
+        spouseName: data.spouseName,
+        position: data.position,
+        agency: data.agency,
+        officeAddress: data.officeAddress,
         status: 'draft',
         totalAssets: '0',
         totalLiabilities: '0',
@@ -407,13 +419,25 @@ export async function updateSALNSubmission(
   }
 
   return await db.transaction(async (tx) => {
-    // Update main submission if year or filing type changed
-    if (data.year !== undefined || data.filingType !== undefined) {
+    // Update main submission metadata fields
+    const hasMetadataUpdates =
+      data.year !== undefined ||
+      data.filingType !== undefined ||
+      data.spouseName !== undefined ||
+      data.position !== undefined ||
+      data.agency !== undefined ||
+      data.officeAddress !== undefined;
+
+    if (hasMetadataUpdates) {
       await tx
         .update(salnSubmissions)
         .set({
           ...(data.year !== undefined && { year: data.year }),
           ...(data.filingType !== undefined && { filingType: data.filingType }),
+          ...(data.spouseName !== undefined && { spouseName: data.spouseName }),
+          ...(data.position !== undefined && { position: data.position }),
+          ...(data.agency !== undefined && { agency: data.agency }),
+          ...(data.officeAddress !== undefined && { officeAddress: data.officeAddress }),
           updatedAt: new Date(),
         })
         .where(eq(salnSubmissions.id, id));
@@ -665,6 +689,47 @@ async function calculateTotalsInTransaction(
     totalLiabilities: Math.round(totalLiabilities * 100) / 100,
     netWorth: Math.round(netWorth * 100) / 100,
   };
+}
+
+/**
+ * Delete a SALN submission (drafts only)
+ * Cascading deletes all related records
+ *
+ * @param id - SALN submission ID
+ * @param userId - User ID for ownership validation
+ * @returns Deleted SALN submission
+ * @throws Error if SALN not found, not owned by user, or not a draft
+ */
+export async function deleteSALNSubmission(
+  id: string,
+  userId: string
+): Promise<SalnSubmission> {
+  // Validate ownership and draft status
+  const existing = await getSALNSubmissionById(id, userId);
+  if (!existing) {
+    throw new Error('SALN submission not found');
+  }
+
+  if (existing.status !== 'draft') {
+    throw new Error('Only draft SALNs can be deleted');
+  }
+
+  return await db.transaction(async (tx) => {
+    // Delete child records first (foreign key constraints)
+    await tx.delete(salnRealProperties).where(eq(salnRealProperties.salnSubmissionId, id));
+    await tx.delete(salnPersonalProperties).where(eq(salnPersonalProperties.salnSubmissionId, id));
+    await tx.delete(salnLiabilities).where(eq(salnLiabilities.salnSubmissionId, id));
+    await tx.delete(salnBusinessInterests).where(eq(salnBusinessInterests.salnSubmissionId, id));
+    await tx.delete(salnRelativesInGov).where(eq(salnRelativesInGov.salnSubmissionId, id));
+
+    // Delete main submission record
+    const [deleted] = await tx
+      .delete(salnSubmissions)
+      .where(eq(salnSubmissions.id, id))
+      .returning();
+
+    return deleted;
+  });
 }
 
 /**

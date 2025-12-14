@@ -2,9 +2,8 @@
 
 import React, { useMemo, useCallback, useState, memo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../../../providers/AuthProvider';
 import { useSALNSubmissions } from '../../../../hooks/useSaln';
-import { differenceInYears, format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { EmployeeOnlyGuard } from '../../../../components/guards/EmployeeOnlyGuard';
 import {
   FileText,
@@ -57,7 +56,7 @@ import { useDebounce } from '../../../../hooks/useDebounce';
 
 // Type definitions
 type SortOption = 'date-desc' | 'date-asc' | 'year-desc' | 'year-asc';
-type StatusFilter = 'all' | 'approved' | 'rejected';
+type StatusFilter = 'all' | 'draft' | 'submitted' | 'reviewing' | 'approved' | 'rejected';
 
 interface SalnSubmissionWithNumbers {
   id: string;
@@ -163,7 +162,7 @@ const EmptyState = memo<{
       <p className="text-sm text-slate-600 dark:text-slate-400 max-w-md">
         {hasFilters
           ? 'No submissions match your current filters. Try adjusting your search.'
-          : "You don't have any approved or rejected SALN submissions yet. Create your first SALN to get started."}
+          : "You don't have any SALN submissions yet. Create your first SALN to get started."}
       </p>
     </div>
     <div className="flex gap-3">
@@ -548,6 +547,328 @@ const RejectedCard = memo<{
 RejectedCard.displayName = 'RejectedCard';
 
 /**
+ * Draft SALN Card - For draft status submissions
+ */
+const DraftCard = memo<{
+  submission: SalnSubmissionWithNumbers;
+  delay: number;
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
+}>(({ submission, delay, onEdit, onDelete }) => (
+  <BlurFade delay={delay} inView>
+    <Card className="border-slate-200 dark:border-slate-800 hover:border-amber-300 dark:hover:border-amber-700 transition-all duration-300">
+      <CardContent className="p-5 space-y-3.5">
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-amber-100 dark:bg-amber-950/30 p-2.5">
+              <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg">SALN {submission.year}</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                As of December 31, {submission.year}
+              </p>
+            </div>
+          </div>
+          <Badge
+            variant="outline"
+            className="bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border-amber-200 dark:border-amber-800">
+            <Clock className="h-3 w-3 mr-1" />
+            Draft
+          </Badge>
+        </div>
+
+        {/* Details */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+            <Calendar className="h-4 w-4" />
+            <span>
+              Created: {formatDistanceToNow(submission.createdAt, { addSuffix: true })}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+            <Clock className="h-4 w-4" />
+            <span>
+              Updated: {formatDistanceToNow(submission.updatedAt, { addSuffix: true })}
+            </span>
+          </div>
+
+          {/* Draft Notice */}
+          <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+            <p className="text-xs font-medium text-amber-700 dark:text-amber-400 mb-1">
+              Draft Status
+            </p>
+            <p className="text-sm text-slate-700 dark:text-slate-300">
+              This SALN is saved as a draft. Continue editing to complete and submit it.
+            </p>
+          </div>
+        </div>
+
+        {/* Actions - Edit and Delete for drafts */}
+        <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onEdit(submission.id)}
+            className="flex-1 min-w-[100px] bg-[oklch(0.55_0.22_15)] text-white hover:bg-[oklch(0.50_0.22_15)]">
+            <Edit className="h-4 w-4 mr-2" />
+            Continue Editing
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onDelete(submission.id)}
+            className="flex-1 min-w-[100px] text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20">
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  </BlurFade>
+));
+DraftCard.displayName = 'DraftCard';
+
+/**
+ * Submitted SALN Card - For submitted status (pending review)
+ */
+const SubmittedCard = memo<{
+  submission: SalnSubmissionWithNumbers;
+  delay: number;
+  onView: (id: string) => void;
+}>(({ submission, delay, onView }) => (
+  <BlurFade delay={delay} inView>
+    <Card className="border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-300">
+      <CardContent className="p-5 space-y-3.5">
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-blue-100 dark:bg-blue-950/30 p-2.5">
+              <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg">SALN {submission.year}</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                As of December 31, {submission.year}
+              </p>
+            </div>
+          </div>
+          <Badge
+            variant="outline"
+            className="bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border-blue-200 dark:border-blue-800">
+            <Clock className="h-3 w-3 mr-1" />
+            Pending Review
+          </Badge>
+        </div>
+
+        {/* Financial Summary */}
+        <div className="space-y-2">
+          {/* Total Assets */}
+          <div className="flex justify-between items-center p-2.5 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" />
+              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Total Assets
+              </span>
+            </div>
+            <span className="text-sm font-bold text-blue-700 dark:text-blue-400">
+              ₱ <NumberTicker value={submission.totalAssets} />
+            </span>
+          </div>
+
+          {/* Total Liabilities */}
+          <div className="flex justify-between items-center p-2.5 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <CreditCard className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" />
+              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Total Liabilities
+              </span>
+            </div>
+            <span className="text-sm font-bold text-rose-700 dark:text-rose-400">
+              ₱ <NumberTicker value={submission.totalLiabilities} />
+            </span>
+          </div>
+
+          {/* Net Worth */}
+          <div className="relative p-3 bg-slate-50 dark:bg-slate-900/50 border border-[oklch(0.55_0.22_15)]/20 rounded-lg">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4 text-[oklch(0.55_0.22_15)]" />
+                <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  Net Worth
+                </span>
+              </div>
+              <span
+                className={cn(
+                  'text-base font-bold',
+                  submission.netWorth >= 0
+                    ? 'text-emerald-700 dark:text-emerald-400'
+                    : 'text-rose-700 dark:text-rose-400'
+                )}>
+                ₱ <NumberTicker value={submission.netWorth} />
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Details */}
+        <div className="space-y-2">
+          {submission.submittedAt && (
+            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+              <Calendar className="h-4 w-4" />
+              <span>Submitted: {format(submission.submittedAt, 'MMM dd, yyyy')}</span>
+            </div>
+          )}
+
+          {/* Pending Notice */}
+          <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <p className="text-xs font-medium text-blue-700 dark:text-blue-400 mb-1">
+              Pending Review
+            </p>
+            <p className="text-sm text-slate-700 dark:text-slate-300">
+              Your SALN has been submitted and is waiting for review by HR.
+            </p>
+          </div>
+        </div>
+
+        {/* Actions - View only for submitted */}
+        <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onView(submission.id)}
+            className="flex-1 min-w-[100px]">
+            <Eye className="h-4 w-4 mr-2" />
+            View Details
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  </BlurFade>
+));
+SubmittedCard.displayName = 'SubmittedCard';
+
+/**
+ * Reviewing SALN Card - For reviewing status (under review)
+ */
+const ReviewingCard = memo<{
+  submission: SalnSubmissionWithNumbers;
+  delay: number;
+  onView: (id: string) => void;
+}>(({ submission, delay, onView }) => (
+  <BlurFade delay={delay} inView>
+    <Card className="border-slate-200 dark:border-slate-800 hover:border-purple-300 dark:hover:border-purple-700 transition-all duration-300">
+      <CardContent className="p-5 space-y-3.5">
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-purple-100 dark:bg-purple-950/30 p-2.5">
+              <FileText className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg">SALN {submission.year}</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                As of December 31, {submission.year}
+              </p>
+            </div>
+          </div>
+          <Badge
+            variant="outline"
+            className="bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400 border-purple-200 dark:border-purple-800">
+            <Eye className="h-3 w-3 mr-1" />
+            Under Review
+          </Badge>
+        </div>
+
+        {/* Financial Summary */}
+        <div className="space-y-2">
+          {/* Total Assets */}
+          <div className="flex justify-between items-center p-2.5 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" />
+              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Total Assets
+              </span>
+            </div>
+            <span className="text-sm font-bold text-purple-700 dark:text-purple-400">
+              ₱ <NumberTicker value={submission.totalAssets} />
+            </span>
+          </div>
+
+          {/* Total Liabilities */}
+          <div className="flex justify-between items-center p-2.5 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <CreditCard className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" />
+              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Total Liabilities
+              </span>
+            </div>
+            <span className="text-sm font-bold text-rose-700 dark:text-rose-400">
+              ₱ <NumberTicker value={submission.totalLiabilities} />
+            </span>
+          </div>
+
+          {/* Net Worth */}
+          <div className="relative p-3 bg-slate-50 dark:bg-slate-900/50 border border-[oklch(0.55_0.22_15)]/20 rounded-lg">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4 text-[oklch(0.55_0.22_15)]" />
+                <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  Net Worth
+                </span>
+              </div>
+              <span
+                className={cn(
+                  'text-base font-bold',
+                  submission.netWorth >= 0
+                    ? 'text-emerald-700 dark:text-emerald-400'
+                    : 'text-rose-700 dark:text-rose-400'
+                )}>
+                ₱ <NumberTicker value={submission.netWorth} />
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Details */}
+        <div className="space-y-2">
+          {submission.submittedAt && (
+            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+              <Calendar className="h-4 w-4" />
+              <span>Submitted: {format(submission.submittedAt, 'MMM dd, yyyy')}</span>
+            </div>
+          )}
+
+          {/* Review Notice */}
+          <div className="mt-3 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
+            <p className="text-xs font-medium text-purple-700 dark:text-purple-400 mb-1">
+              Under Review
+            </p>
+            <p className="text-sm text-slate-700 dark:text-slate-300">
+              Your SALN is currently being reviewed by HR. You&apos;ll be notified once the review is complete.
+            </p>
+          </div>
+        </div>
+
+        {/* Actions - View only for reviewing */}
+        <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onView(submission.id)}
+            className="flex-1 min-w-[100px]">
+            <Eye className="h-4 w-4 mr-2" />
+            View Details
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  </BlurFade>
+));
+ReviewingCard.displayName = 'ReviewingCard';
+
+/**
  * Filter Bar Component - Matches PDS pattern exactly
  */
 const FilterBar = memo<{
@@ -581,6 +902,9 @@ const FilterBar = memo<{
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="draft">Draft</SelectItem>
+            <SelectItem value="submitted">Submitted</SelectItem>
+            <SelectItem value="reviewing">Under Review</SelectItem>
             <SelectItem value="approved">Approved</SelectItem>
             <SelectItem value="rejected">Rejected</SelectItem>
           </SelectContent>
@@ -612,15 +936,14 @@ FilterBar.displayName = 'FilterBar';
  */
 export default function SALNViewPage() {
   const router = useRouter();
-  const { user } = useAuth();
 
   // Use real hook for SALN submissions
-  const { data: submissions, isLoading, error } = useSALNSubmissions();
+  const { data: submissionsResponse, isLoading, error } = useSALNSubmissions();
 
   // Extract submissions from response
   const allSubmissions = useMemo(
-    () => submissions || [],
-    [submissions]
+    () => submissionsResponse?.data || [],
+    [submissionsResponse]
   );
 
   const loading = isLoading;
@@ -634,17 +957,12 @@ export default function SALNViewPage() {
   // Debounce search query for performance
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  // Filter approved and rejected submissions only
+  // Filter submissions based on status
   const filteredSubmissions = useMemo(() => {
     if (!allSubmissions) return [];
 
-    // Parse submissions and filter to only approved/rejected
-    let filtered = allSubmissions
-      .map(parseSubmission)
-      .filter(
-        (submission: SalnSubmissionWithNumbers) =>
-          submission.status === 'approved' || submission.status === 'rejected'
-      );
+    // Parse submissions - show ALL statuses
+    let filtered = allSubmissions.map(parseSubmission);
 
     // Apply status filter
     if (statusFilter !== 'all') {
@@ -682,11 +1000,17 @@ export default function SALNViewPage() {
 
   // Calculate statistics
   const stats = useMemo(() => {
+    const draft = filteredSubmissions.filter((s: SalnSubmissionWithNumbers) => s.status === 'draft').length;
+    const submitted = filteredSubmissions.filter((s: SalnSubmissionWithNumbers) => s.status === 'submitted').length;
+    const reviewing = filteredSubmissions.filter((s: SalnSubmissionWithNumbers) => s.status === 'reviewing').length;
     const approved = filteredSubmissions.filter((s: SalnSubmissionWithNumbers) => s.status === 'approved').length;
     const rejected = filteredSubmissions.filter((s: SalnSubmissionWithNumbers) => s.status === 'rejected').length;
 
     return {
       total: filteredSubmissions.length,
+      draft,
+      submitted,
+      reviewing,
       approved,
       rejected,
     };
@@ -777,7 +1101,7 @@ export default function SALNViewPage() {
                   SALN Submissions
                 </h1>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
-                  View all your approved and rejected SALN submissions
+                  View all your SALN submissions and track their status
                 </p>
               </div>
             </BlurFade>
@@ -834,30 +1158,69 @@ export default function SALNViewPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {filteredSubmissions.map((submission: SalnSubmissionWithNumbers, index: number) => {
                 const previousYear = filteredSubmissions[index + 1];
+                const delay = 0.4 + index * 0.05;
 
-                if (submission.status === 'approved') {
-                  return (
-                    <ApprovedCard
-                      key={submission.id}
-                      submission={submission}
-                      previousYear={previousYear}
-                      delay={0.4 + index * 0.05}
-                      onView={handleView}
-                      onDownload={handleDownload}
-                      onPrint={handlePrint}
-                    />
-                  );
-                } else {
-                  return (
-                    <RejectedCard
-                      key={submission.id}
-                      submission={submission}
-                      delay={0.4 + index * 0.05}
-                      onView={handleView}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                    />
-                  );
+                // Render appropriate card based on submission status
+                switch (submission.status) {
+                  case 'draft':
+                    return (
+                      <DraftCard
+                        key={submission.id}
+                        submission={submission}
+                        delay={delay}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                      />
+                    );
+
+                  case 'submitted':
+                    return (
+                      <SubmittedCard
+                        key={submission.id}
+                        submission={submission}
+                        delay={delay}
+                        onView={handleView}
+                      />
+                    );
+
+                  case 'reviewing':
+                    return (
+                      <ReviewingCard
+                        key={submission.id}
+                        submission={submission}
+                        delay={delay}
+                        onView={handleView}
+                      />
+                    );
+
+                  case 'approved':
+                    return (
+                      <ApprovedCard
+                        key={submission.id}
+                        submission={submission}
+                        previousYear={previousYear}
+                        delay={delay}
+                        onView={handleView}
+                        onDownload={handleDownload}
+                        onPrint={handlePrint}
+                      />
+                    );
+
+                  case 'rejected':
+                    return (
+                      <RejectedCard
+                        key={submission.id}
+                        submission={submission}
+                        delay={delay}
+                        onView={handleView}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                      />
+                    );
+
+                  default:
+                    // Fallback for any unexpected status
+                    return null;
                 }
               })}
             </div>

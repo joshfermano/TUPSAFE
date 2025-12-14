@@ -51,14 +51,16 @@ import {
   completeSalnSchema,
   createEmptySaln,
   calculateSalnSummary,
+  getSalnSectionProgress,
+  getOverallSalnProgress,
   type CompleteSalnData,
 } from '../../../../lib/validations/saln-schema';
 
 // Form components
 import {
-  FormStepIndicator,
+  SALNStepIndicator,
   FormStepSkeleton,
-  type FormStep,
+  type SALNStep,
 } from '../../../../components/forms/shared';
 import { Button } from '../../../../components/ui/button';
 import { Badge } from '../../../../components/ui/badge';
@@ -104,7 +106,7 @@ import {
 // STEP DEFINITIONS
 // ============================================================================
 
-const FORM_STEPS: FormStep[] = [
+const FORM_STEPS: SALNStep[] = [
   {
     id: 'declarant-info',
     label: 'Declarant Info',
@@ -164,6 +166,59 @@ interface SalnDraftData {
 }
 
 // ============================================================================
+// SECTION FIELD MAPPINGS (for validation)
+// ============================================================================
+
+/**
+ * Get the form field paths for a specific step
+ * Used for per-step validation before navigation
+ */
+const getSectionFields = (step: number): string[] => {
+  switch (step) {
+    case 0: // Step 0: Declarant Info
+      return [
+        'submission.year',
+        'submission.filingType',
+        // Spouse name is conditionally required based on filingType
+        // This is handled by the schema's refine() method
+      ];
+    case 1: // Step 1: Real Properties - Optional
+      return [];
+    case 2: // Step 2: Personal Properties - Optional
+      return [];
+    case 3: // Step 3: Liabilities - Optional
+      return [];
+    case 4: // Step 4: Business & Relatives - Optional
+      return [];
+    case 5: // Step 5: Net Worth Summary - Read-only, no validation needed
+      return [];
+    case 6: // Step 6: Review & Submit - Full validation done on submit
+      return [];
+    default:
+      return [];
+  }
+};
+
+/**
+ * Get required fields description for error messages
+ */
+const getSectionRequiredFieldsDescription = (step: number): string => {
+  switch (step) {
+    case 0:
+      return 'year and filing type';
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+      return 'all fields in this section';
+    default:
+      return 'all required fields';
+  }
+};
+
+// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
@@ -209,6 +264,9 @@ export default function SALNCreatePage() {
     defaultValues: createEmptySaln(selectedYear, userId),
     mode: 'onBlur',
   });
+
+  // Extract watch from form methods
+  const { watch } = form;
 
   // Callback-based approach for getting draft data
   const getDraftData = useCallback(
@@ -275,23 +333,40 @@ export default function SALNCreatePage() {
     },
   });
 
-  // Real-time financial calculations using callback instead of watch
-  const financialSummary = useMemo(() => {
-    const currentFormData = form.getValues();
-    return calculateSalnSummary(currentFormData);
-  }, [form]);
+  // Watch the actual field arrays that matter for calculations
+  const realProperties = watch('realProperties') || [];
+  const personalProperties = watch('personalProperties') || [];
+  const liabilities = watch('liabilities') || [];
 
-  // Update form calculations in real-time (with deep equality check to prevent infinite loops)
+  // Real-time financial calculations based on watched arrays
+  const financialSummary = useMemo(() => {
+    console.log('[SALN Create] Calculating financial summary:', {
+      realProperties,
+      personalProperties,
+      liabilities,
+    });
+
+    const summary = calculateSalnSummary({
+      realProperties,
+      personalProperties,
+      liabilities,
+    });
+
+    console.log('[SALN Create] Calculated summary:', summary);
+    return summary;
+  }, [realProperties, personalProperties, liabilities]);
+
+  // Calculate real-time progress based on form data
+  const formProgress = useMemo(() => {
+    const formData = form.getValues();
+    return getOverallSalnProgress(formData);
+  }, [form, realProperties, personalProperties, liabilities]);
+
+  // Update form calculations in real-time
   useEffect(() => {
-    const currentCalculations = form.getValues('calculations');
-    // Only update if calculations have actually changed
-    if (
-      JSON.stringify(currentCalculations) !== JSON.stringify(financialSummary)
-    ) {
-      form.setValue('calculations', financialSummary, {
-        shouldValidate: false,
-      });
-    }
+    form.setValue('calculations', financialSummary, {
+      shouldValidate: false,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [financialSummary]);
 
@@ -318,6 +393,21 @@ export default function SALNCreatePage() {
 
             // Reset form with transformed data
             form.reset(formData);
+
+            // Calculate completed steps based on loaded data
+            const sectionProgress = getSalnSectionProgress(formData);
+            const completed: number[] = [];
+
+            // Map section progress to step indices
+            // Only mark as completed if 100% filled
+            if (sectionProgress.declarantInfo >= 100) completed.push(0);
+            if (sectionProgress.realProperties >= 100) completed.push(1);
+            if (sectionProgress.personalProperties >= 100) completed.push(2);
+            if (sectionProgress.liabilities >= 100) completed.push(3);
+            if (sectionProgress.businessInterests >= 100) completed.push(4);
+            if (sectionProgress.relativesInGov >= 100) completed.push(5);
+
+            setCompletedSteps(completed);
 
             toast.success('Draft Loaded', {
               description: 'Your saved draft has been loaded.',
@@ -354,13 +444,20 @@ export default function SALNCreatePage() {
       // Restore form data
       form.reset(savedDraft.formData);
 
-      // Restore completed steps from saved draft
-      if (
-        savedDraft.completedSteps &&
-        Array.isArray(savedDraft.completedSteps)
-      ) {
-        setCompletedSteps(savedDraft.completedSteps);
-      }
+      // Calculate completed steps based on actual form data
+      const sectionProgress = getSalnSectionProgress(savedDraft.formData);
+      const completed: number[] = [];
+
+      // Map section progress to step indices
+      // Only mark as completed if 100% filled
+      if (sectionProgress.declarantInfo >= 100) completed.push(0);
+      if (sectionProgress.realProperties >= 100) completed.push(1);
+      if (sectionProgress.personalProperties >= 100) completed.push(2);
+      if (sectionProgress.liabilities >= 100) completed.push(3);
+      if (sectionProgress.businessInterests >= 100) completed.push(4);
+      if (sectionProgress.relativesInGov >= 100) completed.push(5);
+
+      setCompletedSteps(completed);
 
       // Restore current step position
       if (
@@ -419,21 +516,24 @@ export default function SALNCreatePage() {
     }
   }, [getDraftData, saveDraftToDatabase, saveNow, hasDraftId, router]);
 
-  // Validate current step
-  const validateCurrentStep = useCallback(async (): Promise<boolean> => {
-    const isValid = await form.trigger();
-    return isValid;
-  }, [form]);
-
   // Navigation handlers
   const handleNext = useCallback(async () => {
-    const isValid = await validateCurrentStep();
+    const sectionFields = getSectionFields(currentStep);
 
-    if (!isValid) {
-      toast.error('Validation Error', {
-        description: 'Please fix the errors before proceeding.',
-      });
-      return;
+    // If there are required fields, validate them
+    if (sectionFields.length > 0) {
+      const isValid = await form.trigger(
+        sectionFields as Parameters<typeof form.trigger>[0]
+      );
+
+      if (!isValid) {
+        const requiredFieldsDesc =
+          getSectionRequiredFieldsDescription(currentStep);
+        toast.error('Please fill in all required fields', {
+          description: `Required: ${requiredFieldsDesc}`,
+        });
+        return;
+      }
     }
 
     // Mark step as completed
@@ -446,7 +546,7 @@ export default function SALNCreatePage() {
       setCurrentStep(currentStep + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [currentStep, completedSteps, validateCurrentStep]);
+  }, [currentStep, completedSteps, form]);
 
   const handlePrevious = useCallback(() => {
     if (currentStep > 0) {
@@ -652,12 +752,12 @@ export default function SALNCreatePage() {
           </div>
 
           {/* Progress indicator */}
-          <FormStepIndicator
+          <SALNStepIndicator
             steps={FORM_STEPS}
             currentStep={currentStep}
             completedSteps={completedSteps}
             onStepClick={handleStepClick}
-            compact={false}
+            progressPercentage={formProgress}
           />
         </div>
 

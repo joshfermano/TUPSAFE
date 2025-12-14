@@ -3,8 +3,8 @@
 import React, { useMemo, useCallback, useState, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../providers/AuthProvider';
-import { usePds } from '@tupsafe/mock-data/api';
-import type { PdsSubmission } from '@tupsafe/mock-data';
+import { useArchivedPDS } from '../../../../hooks/usePDS';
+import type { PDSSubmission } from '../../../../hooks/usePDS';
 import { differenceInYears, format } from 'date-fns';
 import {
   FileText,
@@ -66,7 +66,7 @@ const STATUS_ICONS = {
 } as const;
 
 // Calculate PDS completion percentage
-const calculateCompletion = (submission: PdsSubmission): number => {
+const calculateCompletion = (submission: PDSSubmission): number => {
   if (submission.status === 'approved') return 100;
   if (submission.status === 'submitted' || submission.status === 'reviewing')
     return 95;
@@ -141,7 +141,7 @@ StatsCard.displayName = 'StatsCard';
 
 // Archived PDS Card Component
 interface ArchivedPDSCardProps {
-  submission: PdsSubmission;
+  submission: PDSSubmission;
   onView: () => void;
   onDownload: () => void;
   onPrint: () => void;
@@ -400,7 +400,7 @@ EmptyState.displayName = 'EmptyState';
 // Year Group Component
 interface YearGroupProps {
   year: number;
-  submissions: PdsSubmission[];
+  submissions: PDSSubmission[];
   onView: (id: string) => void;
   onDownload: (id: string) => void;
   onPrint: (id: string) => void;
@@ -460,7 +460,18 @@ YearGroup.displayName = 'YearGroup';
 export default function PDSArchivePage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { submissions, loading, error } = usePds(user?.id || '');
+  const {
+    data: archivedData,
+    isLoading: loading,
+    error: queryError,
+  } = useArchivedPDS();
+
+  const submissions = useMemo(() => {
+    if (!archivedData) return [];
+    return archivedData;
+  }, [archivedData]);
+
+  const error = queryError?.message || null;
 
   // Filter and sort state
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -472,7 +483,7 @@ export default function PDSArchivePage() {
 
   // Filter archived submissions (5+ years old)
   const archivedSubmissions = useMemo(() => {
-    const filtered = submissions.filter((submission) => {
+    const filtered = submissions.filter((submission: PDSSubmission) => {
       const submissionDate = submission.submittedAt || submission.createdAt;
       const age = differenceInYears(new Date(), new Date(submissionDate));
       return age >= 5;
@@ -481,17 +492,17 @@ export default function PDSArchivePage() {
     const statusFiltered =
       statusFilter === 'all'
         ? filtered
-        : filtered.filter((s) => s.status === statusFilter);
+        : filtered.filter((s: PDSSubmission) => s.status === statusFilter);
 
     const decadeFiltered =
       decadeFilter === 'all'
         ? statusFiltered
-        : statusFiltered.filter((s) => {
+        : statusFiltered.filter((s: PDSSubmission) => {
             const year = new Date(s.submittedAt || s.createdAt).getFullYear();
             return getDecade(year) === decadeFilter;
           });
 
-    return decadeFiltered.sort((a, b) => {
+    return decadeFiltered.sort((a: PDSSubmission, b: PDSSubmission) => {
       switch (sortBy) {
         case 'date-desc':
           return (
@@ -513,8 +524,8 @@ export default function PDSArchivePage() {
 
   // Group submissions by year
   const groupedByYear = useMemo(() => {
-    const groups: Record<number, PdsSubmission[]> = {};
-    archivedSubmissions.forEach((submission) => {
+    const groups: Record<number, PDSSubmission[]> = {};
+    archivedSubmissions.forEach((submission: PDSSubmission) => {
       const year = new Date(
         submission.submittedAt || submission.createdAt
       ).getFullYear();
@@ -532,14 +543,14 @@ export default function PDSArchivePage() {
   const availableDecades = useMemo(() => {
     const decades = new Set<string>();
     submissions
-      .filter((s) => {
+      .filter((s: PDSSubmission) => {
         const age = differenceInYears(
           new Date(),
           new Date(s.submittedAt || s.createdAt)
         );
         return age >= 5;
       })
-      .forEach((s) => {
+      .forEach((s: PDSSubmission) => {
         const year = new Date(s.submittedAt || s.createdAt).getFullYear();
         decades.add(getDecade(year));
       });
@@ -552,7 +563,7 @@ export default function PDSArchivePage() {
       return { total: 0, approved: 0, rejected: 0, oldestYear: 0 };
     }
 
-    const oldestSubmission = archivedSubmissions.reduce((oldest, current) => {
+    const oldestSubmission = archivedSubmissions.reduce((oldest: PDSSubmission, current: PDSSubmission) => {
       const currentDate = new Date(current.submittedAt || current.createdAt);
       const oldestDate = new Date(oldest.submittedAt || oldest.createdAt);
       return currentDate < oldestDate ? current : oldest;
@@ -564,9 +575,9 @@ export default function PDSArchivePage() {
 
     return {
       total: archivedSubmissions.length,
-      approved: archivedSubmissions.filter((s) => s.status === 'approved')
+      approved: archivedSubmissions.filter((s: PDSSubmission) => s.status === 'approved')
         .length,
-      rejected: archivedSubmissions.filter((s) => s.status === 'rejected')
+      rejected: archivedSubmissions.filter((s: PDSSubmission) => s.status === 'rejected')
         .length,
       oldestYear,
     };
@@ -757,7 +768,7 @@ export default function PDSArchivePage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {archivedSubmissions.map((submission, index) => (
+            {archivedSubmissions.map((submission: PDSSubmission, index: number) => (
               <ArchivedPDSCard
                 key={submission.id}
                 submission={submission}

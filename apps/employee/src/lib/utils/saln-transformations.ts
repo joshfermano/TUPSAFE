@@ -65,6 +65,10 @@ export function transformSalnForSubmission(data: Partial<CompleteSalnData>): any
   const submission = data.submission || {
     year: new Date().getFullYear(),
     filingType: 'separate' as const,
+    spouseName: null,
+    position: undefined,
+    agency: undefined,
+    officeAddress: undefined,
   };
 
   // ========================================================================
@@ -102,12 +106,16 @@ export function transformSalnForSubmission(data: Partial<CompleteSalnData>): any
   // ========================================================================
   // STEP 5: Transform Business Interests (Section V)
   // ========================================================================
-  const businessInterests = (data.businessInterests || []).map((interest: any) => ({
-    entityName: interest.entityName,
-    businessAddress: interest.businessAddress,
-    natureOfBusiness: interest.natureOfBusiness,
-    dateOfAcquisition: stringToDate(interest.dateOfAcquisition),
-  }));
+  const businessInterests = (data.businessInterests || []).map((interest: any) => {
+    // Convert date to ISO string for database storage
+    const date = stringToDate(interest.dateOfAcquisition);
+    return {
+      entityName: interest.entityName,
+      businessAddress: interest.businessAddress,
+      natureOfBusiness: interest.natureOfBusiness,
+      dateOfAcquisition: date ? date.toISOString() : null,
+    };
+  });
 
   // ========================================================================
   // STEP 6: Transform Relatives in Government (Section VI)
@@ -125,6 +133,10 @@ export function transformSalnForSubmission(data: Partial<CompleteSalnData>): any
   return {
     year: submission.year,
     filingType: submission.filingType || 'separate',
+    spouseName: submission.spouseName || undefined,
+    position: submission.position || undefined,
+    agency: submission.agency || undefined,
+    officeAddress: submission.officeAddress || undefined,
     realProperties,
     personalProperties,
     liabilities,

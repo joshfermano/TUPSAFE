@@ -22,11 +22,11 @@
 import React, { useMemo, useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../providers/AuthProvider';
-import { usePds } from '@tupsafe/mock-data/api';
+import { usePDSSubmissions } from '../../../../hooks/usePDS';
 import { usePDSPdf } from '../../../../hooks/usePDSPdf';
 import { transformPdsForPdf } from '../../../../lib/utils/pds-transformations';
 import { toast } from 'sonner';
-import type { PdsSubmission } from '@tupsafe/mock-data';
+import type { PDSSubmission } from '../../../../hooks/usePDS';
 import { differenceInYears, format, formatDistanceToNow } from 'date-fns';
 import {
   FileText,
@@ -100,7 +100,7 @@ const STATUS_ICONS = {
 // UTILITY FUNCTIONS
 // ============================================================================
 
-const calculateCompletion = (submission: PdsSubmission): number => {
+const calculateCompletion = (submission: PDSSubmission): number => {
   if (submission.status === 'approved') return 100;
   if (submission.status === 'submitted' || submission.status === 'reviewing')
     return 95;
@@ -188,7 +188,7 @@ const getPdfRestrictionMessage = (
 };
 
 interface PDSCardProps {
-  submission: PdsSubmission;
+  submission: PDSSubmission;
   onView: () => void;
   onEdit: () => void;
   onDownload: () => void;
@@ -511,9 +511,18 @@ const EmptyState = ({
 export default function PDSViewPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { submissions, getCompleteSubmission, loading, error } = usePds(
-    user?.id || ''
-  );
+  const {
+    data: pdsResponse,
+    isLoading: loading,
+    error: queryError,
+  } = usePDSSubmissions();
+
+  const submissions = useMemo(() => {
+    if (!pdsResponse?.data) return [];
+    return pdsResponse.data;
+  }, [pdsResponse]);
+
+  const error = queryError?.message || null;
 
   // PDF generation hook
   const { downloadPDF, openPDFInNewTab, isGenerating } = usePDSPdf();
@@ -529,7 +538,7 @@ export default function PDSViewPage() {
 
   // Filter active submissions (0-5 years old)
   const activeSubmissions = useMemo(() => {
-    const filtered = submissions.filter((submission) => {
+    const filtered = submissions.filter((submission: PDSSubmission) => {
       const submissionDate = submission.submittedAt || submission.createdAt;
       const age = differenceInYears(new Date(), new Date(submissionDate));
       return age < 5;
@@ -539,10 +548,10 @@ export default function PDSViewPage() {
     const statusFiltered =
       statusFilter === 'all'
         ? filtered
-        : filtered.filter((s) => s.status === statusFilter);
+        : filtered.filter((s: PDSSubmission) => s.status === statusFilter);
 
     // Apply sorting
-    return statusFiltered.sort((a, b) => {
+    return statusFiltered.sort((a: PDSSubmission, b: PDSSubmission) => {
       switch (sortBy) {
         case 'date-desc':
           return (
@@ -566,11 +575,11 @@ export default function PDSViewPage() {
   const stats = useMemo(
     () => ({
       total: activeSubmissions.length,
-      approved: activeSubmissions.filter((s) => s.status === 'approved').length,
+      approved: activeSubmissions.filter((s: PDSSubmission) => s.status === 'approved').length,
       pending: activeSubmissions.filter(
-        (s) => s.status === 'submitted' || s.status === 'reviewing'
+        (s: PDSSubmission) => s.status === 'submitted' || s.status === 'reviewing'
       ).length,
-      drafts: activeSubmissions.filter((s) => s.status === 'draft').length,
+      drafts: activeSubmissions.filter((s: PDSSubmission) => s.status === 'draft').length,
     }),
     [activeSubmissions]
   );
@@ -592,11 +601,10 @@ export default function PDSViewPage() {
 
   const handleDownload = useCallback(
     async (id: string) => {
-      const pdsData = getCompleteSubmission(id);
-      const submission = submissions.find((s) => s.id === id);
+      const submission = submissions.find((s: PDSSubmission) => s.id === id);
 
-      if (!pdsData || !submission) {
-        toast.error('PDS data not available', {
+      if (!submission) {
+        toast.error('PDS submission not found', {
           description: 'Unable to generate PDF. Please try again.',
         });
         return;
@@ -604,6 +612,22 @@ export default function PDSViewPage() {
 
       setProcessingId(id);
       try {
+        // Fetch complete PDS data
+        const response = await fetch(`/api/pds/${id}`, {
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch PDS data');
+        }
+
+        const result = await response.json();
+        if (!result.success || !result.data) {
+          throw new Error(result.error || 'Failed to fetch PDS data');
+        }
+
+        const pdsData = result.data;
+
         const pdfData = transformPdsForPdf({
           ...pdsData,
           id: submission.id,
@@ -629,16 +653,15 @@ export default function PDSViewPage() {
         setProcessingId(null);
       }
     },
-    [getCompleteSubmission, submissions, downloadPDF]
+    [submissions, downloadPDF]
   );
 
   const handlePrint = useCallback(
     async (id: string) => {
-      const pdsData = getCompleteSubmission(id);
-      const submission = submissions.find((s) => s.id === id);
+      const submission = submissions.find((s: PDSSubmission) => s.id === id);
 
-      if (!pdsData || !submission) {
-        toast.error('PDS data not available', {
+      if (!submission) {
+        toast.error('PDS submission not found', {
           description: 'Unable to generate PDF for printing. Please try again.',
         });
         return;
@@ -646,6 +669,22 @@ export default function PDSViewPage() {
 
       setProcessingId(id);
       try {
+        // Fetch complete PDS data
+        const response = await fetch(`/api/pds/${id}`, {
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch PDS data');
+        }
+
+        const result = await response.json();
+        if (!result.success || !result.data) {
+          throw new Error(result.error || 'Failed to fetch PDS data');
+        }
+
+        const pdsData = result.data;
+
         const pdfData = transformPdsForPdf({
           ...pdsData,
           id: submission.id,
@@ -672,7 +711,7 @@ export default function PDSViewPage() {
         setProcessingId(null);
       }
     },
-    [getCompleteSubmission, submissions, openPDFInNewTab]
+    [submissions, openPDFInNewTab]
   );
 
   const handleCreateNew = useCallback(() => {
@@ -796,7 +835,7 @@ export default function PDSViewPage() {
           </BlurFade>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {activeSubmissions.map((submission, index) => (
+            {activeSubmissions.map((submission: PDSSubmission, index: number) => (
               <BlurFade key={submission.id} delay={0.2 + index * 0.05}>
                 <PDSCard
                   submission={submission}

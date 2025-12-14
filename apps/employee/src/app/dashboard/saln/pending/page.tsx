@@ -113,12 +113,18 @@ function SALNPendingPageContent() {
 
   // Fetch submissions using real API hook
   const {
-    data: allSubmissions,
+    data: submissionsResponse,
     isLoading: loading,
     error: queryError,
   } = useSALNSubmissions();
 
   const error = queryError ? { message: queryError.message } : null;
+
+  // Extract submissions from response
+  const allSubmissions = useMemo(
+    () => submissionsResponse?.data || [],
+    [submissionsResponse]
+  );
 
   // Filter and sort state
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -130,7 +136,7 @@ function SALNPendingPageContent() {
 
   // Filter pending submissions (only submitted and reviewing)
   const pendingSubmissions = useMemo(() => {
-    if (!allSubmissions) return [];
+    if (!allSubmissions || allSubmissions.length === 0) return [];
 
     const pendingStatuses = ['submitted', 'reviewing'];
 

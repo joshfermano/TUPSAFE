@@ -534,7 +534,7 @@ export default function SalnPage() {
               </h3>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               <Link href="/dashboard/saln/create" className="w-full">
                 <ShimmerButton className="w-full h-10 text-sm gap-2">
                   <Plus className="h-4 w-4" />
@@ -549,6 +549,14 @@ export default function SalnPage() {
                   View All
                 </Button>
               </Link>
+              <Link href="/dashboard/saln/pending" className="w-full">
+                <Button
+                  variant="outline"
+                  className="w-full h-10 text-sm gap-2 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800">
+                  <Clock className="h-4 w-4" />
+                  Pending
+                </Button>
+              </Link>
               <Link href="/dashboard/saln/drafts" className="w-full">
                 <Button
                   variant="outline"
@@ -557,17 +565,19 @@ export default function SalnPage() {
                   Drafts
                 </Button>
               </Link>
+              <Link href="/dashboard/saln/submissions" className="w-full">
+                <Button
+                  variant="outline"
+                  className="w-full h-10 text-sm gap-2 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Approved
+                </Button>
+              </Link>
               <Button
                 variant="outline"
                 className="w-full h-10 text-sm gap-2 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800">
                 <Download className="h-4 w-4" />
                 Download
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full h-10 text-sm gap-2 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800">
-                <Printer className="h-4 w-4" />
-                Print
               </Button>
             </div>
           </CardContent>

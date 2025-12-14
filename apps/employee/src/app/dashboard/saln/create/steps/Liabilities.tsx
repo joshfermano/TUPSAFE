@@ -4,9 +4,13 @@
  * SALN Step 4: Liabilities
  * Debts, loans, mortgages, and other financial obligations
  *
- * Rebuilt with:
+ * Design Pattern: Matches PDS form with gradient header cards
+ * - Clean gradient header with icon
+ * - Step number and descriptive subtitle
+ * - Consistent spacing and styling
+ *
+ * Features:
  * - EnhancedCard for liability items
- * - EnhancedFormSection for clean layout
  * - EnhancedInput for text fields
  * - BlurFade for staggered animations
  * - React.memo for performance
@@ -14,7 +18,8 @@
 
 import { memo, useMemo } from 'react';
 import { useFormContext, useFieldArray, Controller } from 'react-hook-form';
-import { CreditCard, Plus, Trash2, Info } from 'lucide-react';
+import { StackIcon } from '@radix-ui/react-icons';
+import { Plus, Trash2, Info } from 'lucide-react';
 import { CurrencyInput } from '../../../../../components/forms/shared/CurrencyInput';
 import { Label } from '../../../../../components/ui/label';
 import { Button } from '../../../../../components/ui/button';
@@ -55,11 +60,16 @@ export const Liabilities = memo(function Liabilities() {
   const liabilities = watch('liabilities') || [];
 
   const totalLiabilities = useMemo(() => {
-    return liabilities.reduce(
-      (sum: number, liability: LiabilityItem) =>
-        sum + (liability.outstandingBalance || 0),
+    console.log('[Liabilities Step] Current liabilities:', liabilities);
+    const total = liabilities.reduce(
+      (sum: number, liability: LiabilityItem) => {
+        console.log('[Liabilities Step] Processing liability:', liability, 'Outstanding balance:', liability.outstandingBalance);
+        return sum + (liability.outstandingBalance || 0);
+      },
       0
     );
+    console.log('[Liabilities Step] Total liabilities:', total);
+    return total;
   }, [liabilities]);
 
   const addLiability = () => {
@@ -72,14 +82,30 @@ export const Liabilities = memo(function Liabilities() {
 
   return (
     <div className="space-y-8">
+      {/* Step Header - Clean, Professional */}
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-gradient-to-br from-slate-50 to-white dark:from-slate-900 dark:to-slate-950 p-6">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <StackIcon className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-primary">Step 4</p>
+            <h2 className="text-2xl font-bold text-foreground">
+              Liabilities
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              List all debts, loans, and financial obligations
+            </p>
+          </div>
+        </div>
+      </div>
+
       <BlurFade delay={0.1}>
-        <EnhancedFormSection
-          title="Liabilities"
-          subtitle="List all debts, loans, and financial obligations"
-          variant="default">
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm hover:shadow-md transition-shadow duration-200">
+          <div className="p-6 sm:p-8">
           <Alert className="mb-6 border-slate-200/50 dark:border-slate-800/50">
             <Info className="h-4 w-4" />
-            <AlertDescription className="text-sm text-slate-600 dark:text-slate-400">
+            <AlertDescription className="text-sm text-muted-foreground">
               Include all outstanding debts such as home mortgages, car loans,
               personal loans, credit card balances, and business loans. If you
               have no debts, you may skip this section.
@@ -88,11 +114,11 @@ export const Liabilities = memo(function Liabilities() {
 
           {fields.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed rounded-lg border-slate-200/50 dark:border-slate-800/50">
-              <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-slate-600 dark:text-slate-400 mb-2">
+              <StackIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-foreground mb-2">
                 No liabilities added
               </p>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 If you have no debts or loans, you can proceed to the next step
               </p>
               <Button type="button" onClick={addLiability} variant="outline">
@@ -215,7 +241,8 @@ export const Liabilities = memo(function Liabilities() {
               </BlurFade>
             </div>
           )}
-        </EnhancedFormSection>
+          </div>
+        </div>
       </BlurFade>
     </div>
   );
