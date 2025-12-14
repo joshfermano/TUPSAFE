@@ -1313,6 +1313,57 @@ export const salnSubmissionsRelations = relations(
   })
 );
 
+// SALN Child Table Relations (inverse relations for many-to-one)
+export const salnRealPropertiesRelations = relations(
+  salnRealProperties,
+  ({ one }) => ({
+    submission: one(salnSubmissions, {
+      fields: [salnRealProperties.salnSubmissionId],
+      references: [salnSubmissions.id],
+    }),
+  })
+);
+
+export const salnPersonalPropertiesRelations = relations(
+  salnPersonalProperties,
+  ({ one }) => ({
+    submission: one(salnSubmissions, {
+      fields: [salnPersonalProperties.salnSubmissionId],
+      references: [salnSubmissions.id],
+    }),
+  })
+);
+
+export const salnLiabilitiesRelations = relations(
+  salnLiabilities,
+  ({ one }) => ({
+    submission: one(salnSubmissions, {
+      fields: [salnLiabilities.salnSubmissionId],
+      references: [salnSubmissions.id],
+    }),
+  })
+);
+
+export const salnBusinessInterestsRelations = relations(
+  salnBusinessInterests,
+  ({ one }) => ({
+    submission: one(salnSubmissions, {
+      fields: [salnBusinessInterests.salnSubmissionId],
+      references: [salnSubmissions.id],
+    }),
+  })
+);
+
+export const salnRelativesInGovRelations = relations(
+  salnRelativesInGov,
+  ({ one }) => ({
+    submission: one(salnSubmissions, {
+      fields: [salnRelativesInGov.salnSubmissionId],
+      references: [salnSubmissions.id],
+    }),
+  })
+);
+
 // Job Application System Relations
 export const openPositionsRelations = relations(
   openPositions,

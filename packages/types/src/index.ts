@@ -1,5 +1,3 @@
-// Common types for TUPSAFE applications
-
 export interface User {
   id: string;
   email: string;
