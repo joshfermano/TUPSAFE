@@ -157,7 +157,7 @@ export const RELATIONSHIP_TYPE = [
 export const declarantInfoSchema = z.object({
   // Submission metadata (from database schema)
   id: z.string().uuid().optional(), // UUID v7, optional for new submissions
-  userId: z.string().uuid(), // References auth.users.id
+  userId: z.string().uuid().optional(), // References auth.users.id (added server-side)
   year: z
     .number()
     .int('Year must be a whole number')
@@ -568,10 +568,10 @@ export type RelationshipType = (typeof RELATIONSHIP_TYPE)[number];
  * Create an empty SALN submission for a given year
  * Compatible with both mock-data and database structures
  * @param year - The year for the SALN submission
- * @param userId - The user's UUID
+ * @param userId - The user's UUID (optional, can be added server-side)
  * @returns Empty SALN data object with default values
  */
-export function createEmptySaln(year: number, userId: string): Partial<CompleteSalnData> {
+export function createEmptySaln(year: number, userId?: string): Partial<CompleteSalnData> {
   return {
     submission: {
       userId,
@@ -785,7 +785,7 @@ export function getSalnSectionProgress(
 
   // Section I: Declarant Information (required fields)
   if (data.submission) {
-    const requiredFields = ['userId', 'year', 'filingType'];
+    const requiredFields = ['year', 'filingType'];
     const filled = requiredFields.filter(
       (field) => !!data.submission?.[field as keyof typeof data.submission]
     ).length;

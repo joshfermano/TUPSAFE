@@ -1,6 +1,7 @@
 'use client';
 
 import React, { memo, useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { BlurFade, Badge } from '@tupsafe/shared-ui';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,6 @@ import {
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
-import { useDeletePDS } from '@/hooks/usePdsQuery';
 import { showDeleteSuccessToast, showDeleteErrorToast } from '@/lib/toast-templates';
 
 interface DraftCardProps {
@@ -42,7 +42,25 @@ export const DraftCard = memo(
     delay = 0,
   }: DraftCardProps) => {
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-    const { deletePDS, isPending } = useDeletePDS();
+    const queryClient = useQueryClient();
+
+    // Delete mutation
+    const { mutateAsync: deletePDS, isPending } = useMutation({
+      mutationFn: async (id: string) => {
+        const response = await fetch(`/api/pds/${id}`, {
+          method: 'DELETE',
+          credentials: 'include',
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to delete draft');
+        }
+        return response.json();
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['pds'] });
+      },
+    });
 
     // Calculate time since last update
     const lastModified = new Date(submission.updatedAt);

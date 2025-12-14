@@ -3,7 +3,7 @@
 import React, { useMemo, useCallback, useState, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../providers/AuthProvider';
-import { usePdsQuery } from '../../../../hooks/usePdsQuery';
+import { usePDSSubmissions, type PDSSubmission } from '../../../../hooks/usePDS';
 import { BlurFade, Badge } from '@tupsafe/shared-ui';
 import { Clock, FileEdit } from 'lucide-react';
 import { StatsSection } from '@/components/pds/pending/StatsSection';
@@ -111,7 +111,18 @@ const toISOString = (date: Date | string | null | undefined): string | undefined
 export default function PDSPendingPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { submissions, loading, error } = usePdsQuery(user?.id || '');
+  const {
+    data: pdsResponse,
+    isLoading: loading,
+    error: queryError,
+  } = usePDSSubmissions();
+
+  const submissions = useMemo(() => {
+    if (!pdsResponse?.data) return [];
+    return pdsResponse.data;
+  }, [pdsResponse]);
+
+  const error = queryError?.message || null;
 
   // Filter and sort state
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -125,24 +136,24 @@ export default function PDSPendingPage() {
   const pendingSubmissions = useMemo(() => {
     const pendingStatuses = ['submitted', 'reviewing'];
 
-    let filtered = submissions.filter((submission) =>
+    let filtered = submissions.filter((submission: PDSSubmission) =>
       pendingStatuses.includes(submission.status)
     );
 
     // Apply status filter
     if (statusFilter !== 'all') {
-      filtered = filtered.filter((s) => s.status === statusFilter);
+      filtered = filtered.filter((s: PDSSubmission) => s.status === statusFilter);
     }
 
     // Apply search filter
     if (debouncedSearchQuery) {
-      filtered = filtered.filter((s) =>
+      filtered = filtered.filter((s: PDSSubmission) =>
         s.version.toString().includes(debouncedSearchQuery)
       );
     }
 
     // Apply sorting
-    return filtered.sort((a, b) => {
+    return filtered.sort((a: PDSSubmission, b: PDSSubmission) => {
       switch (sortBy) {
         case 'date-desc':
           return (
@@ -174,10 +185,10 @@ export default function PDSPendingPage() {
   // Calculate statistics (drafts and rejected excluded from pending submissions)
   const stats = useMemo(() => {
     const submitted = pendingSubmissions.filter(
-      (s) => s.status === 'submitted'
+      (s: PDSSubmission) => s.status === 'submitted'
     ).length;
     const reviewing = pendingSubmissions.filter(
-      (s) => s.status === 'reviewing'
+      (s: PDSSubmission) => s.status === 'reviewing'
     ).length;
 
     return {
@@ -312,7 +323,7 @@ export default function PDSPendingPage() {
           </BlurFade>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {pendingSubmissions.map((submission, index) => (
+            {pendingSubmissions.map((submission: PDSSubmission, index: number) => (
               <PendingCard
                 key={submission.id}
                 submission={{
@@ -324,7 +335,7 @@ export default function PDSPendingPage() {
                   createdAt: toISOString(submission.createdAt) || new Date().toISOString(),
                   updatedAt: toISOString(submission.updatedAt) || new Date().toISOString(),
                   submittedAt: toISOString(submission.submittedAt),
-                  reviewedBy: submission.approvedBy ?? undefined,
+                  reviewedBy: undefined,
                 }}
                 onContinue={() => handleContinue(submission.id)}
                 onView={() => handleView(submission.id)}

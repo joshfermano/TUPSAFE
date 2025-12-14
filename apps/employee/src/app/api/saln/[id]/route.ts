@@ -12,6 +12,7 @@ import { eq } from 'drizzle-orm';
 import {
   getSALNSubmissionById,
   updateSALNSubmission,
+  deleteSALNSubmission,
   type UpdateSalnInput,
 } from '@tupsafe/database/server';
 import {
@@ -340,30 +341,21 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     // ========================================================================
-    // STEP 7: Prepare update input
+    // STEP 7: Prepare update input (always send all sections)
+    // This ensures deletions are properly reflected (empty arrays clear DB)
     // ========================================================================
     const updateInput: UpdateSalnInput = {
-      ...(transformedData.year !== undefined && {
-        year: parseInt(transformedData.year),
-      }),
-      ...(transformedData.filingType && {
-        filingType: transformedData.filingType,
-      }),
-      ...(transformedData.realProperties !== undefined && {
-        realProperties: transformedData.realProperties,
-      }),
-      ...(transformedData.personalProperties !== undefined && {
-        personalProperties: transformedData.personalProperties,
-      }),
-      ...(transformedData.liabilities !== undefined && {
-        liabilities: transformedData.liabilities,
-      }),
-      ...(transformedData.businessInterests !== undefined && {
-        businessInterests: transformedData.businessInterests,
-      }),
-      ...(transformedData.relativesInGov !== undefined && {
-        relativesInGov: transformedData.relativesInGov,
-      }),
+      year: transformedData.year !== undefined ? parseInt(transformedData.year) : undefined,
+      filingType: transformedData.filingType,
+      spouseName: transformedData.spouseName,
+      position: transformedData.position,
+      agency: transformedData.agency,
+      officeAddress: transformedData.officeAddress,
+      realProperties: transformedData.realProperties || [],
+      personalProperties: transformedData.personalProperties || [],
+      liabilities: transformedData.liabilities || [],
+      businessInterests: transformedData.businessInterests || [],
+      relativesInGov: transformedData.relativesInGov || [],
     };
 
     // ========================================================================
@@ -406,6 +398,117 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         success: false,
         error:
           error instanceof Error ? error.message : 'Failed to update SALN',
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * DELETE /api/saln/[id]
+ * Delete a SALN draft
+ *
+ * Only draft SALNs can be deleted.
+ * All related records are deleted in a transaction.
+ *
+ * Returns:
+ * {
+ *   success: true,
+ *   message: "SALN draft deleted successfully"
+ * }
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    // ========================================================================
+    // STEP 1: Authenticate user
+    // ========================================================================
+    const supabase = await createServerClient('employee');
+    const {
+      data: { session },
+      error: authError,
+    } = await supabase.auth.getSession();
+
+    if (authError || !session) {
+      console.error('[DELETE /api/saln/[id]] Authentication failed:', authError);
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized. Please log in.' },
+        { status: 401 }
+      );
+    }
+
+    const user = session.user;
+
+    // ========================================================================
+    // STEP 2: RBAC CHECK - EMPLOYEE ONLY
+    // ========================================================================
+    const [profile] = await db
+      .select({ userType: profiles.userType })
+      .from(profiles)
+      .where(eq(profiles.id, user.id))
+      .limit(1);
+
+    if (!profile || profile.userType !== 'employee') {
+      console.error(
+        `[DELETE /api/saln/[id]] Access denied for user ${user.id}: userType=${profile?.userType || 'null'}`
+      );
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Access Denied',
+          message: 'SALN deletion is only available to employees.',
+        },
+        { status: 403 }
+      );
+    }
+
+    // ========================================================================
+    // STEP 3: Get ID from params
+    // ========================================================================
+    const { id } = await params;
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'SALN ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // ========================================================================
+    // STEP 4: Delete SALN (validation happens in query function)
+    // ========================================================================
+    await deleteSALNSubmission(id, user.id);
+
+    return NextResponse.json({
+      success: true,
+      message: 'SALN draft deleted successfully',
+    });
+  } catch (error) {
+    console.error('[DELETE /api/saln/[id]] Error:', error);
+
+    // Handle specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes('not found')) {
+        return NextResponse.json(
+          { success: false, error: error.message },
+          { status: 404 }
+        );
+      }
+      if (error.message.includes('Only draft')) {
+        return NextResponse.json(
+          { success: false, error: error.message },
+          { status: 400 }
+        );
+      }
+    }
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to delete SALN draft',
+        message: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

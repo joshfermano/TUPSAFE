@@ -10,6 +10,7 @@ export { FormSection } from './FormSection';
 export { FormStepIndicator, type FormStep } from './FormStepIndicator';
 export { FormStepSkeleton } from './FormStepSkeleton';
 export { PDSSectionIndicator } from './PDSSectionIndicator';
+export { SALNStepIndicator, type SALNStep } from './SALNStepIndicator';
 
 // Phase 3 performance optimization components
 export { DateRangeInput } from './DateRangeInput';

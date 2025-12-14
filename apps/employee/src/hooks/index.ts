@@ -1,47 +1,10 @@
 /**
- * React Query Wrapper Hooks for Mock Data
+ * React Query Hooks
  *
- * This module provides React Query-powered wrappers around the mock data hooks
- * from @tupsafe/mock-data/api. These wrappers add:
- *
- * - Automatic caching with configurable stale times
- * - Background refetching for fresh data
- * - Optimistic updates for instant UI feedback
- * - Error handling and retry logic
- * - Prefetching capabilities
- * - Query invalidation utilities
+ * This module exports all custom hooks for the employee portal.
  *
  * @module hooks
  */
-
-// Profile hooks
-export {
-  useProfileQuery,
-  useInvalidateProfile,
-  profileKeys,
-} from './useProfileQuery';
-
-// PDS hooks (legacy - use usePDS.ts hooks instead)
-export {
-  usePdsQuery,
-  useInvalidatePds,
-  pdsKeys as legacyPdsKeys,
-} from './usePdsQuery';
-
-// SALN hooks (legacy - use useSALN.ts hooks instead)
-export {
-  useSalnQuery,
-  useInvalidateSaln,
-  salnKeys as legacySalnKeys,
-} from './useSalnQuery';
-
-// Dashboard hooks
-export {
-  useDashboardQuery,
-  useInvalidateDashboard,
-  useRefreshDashboard,
-  dashboardKeys,
-} from './useDashboardQuery';
 
 // ============================================================================
 // Deadline Hooks

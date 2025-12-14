@@ -302,11 +302,15 @@ export async function POST(request: NextRequest) {
     }
 
     // ========================================================================
-    // STEP 5: Check for existing draft (deduplication)
+    // STEP 5: Create SALN input with all fields including metadata
     // ========================================================================
     const salnInput: CreateSalnInput = {
       year,
       filingType: transformedData.filingType,
+      spouseName: transformedData.spouseName,
+      position: transformedData.position,
+      agency: transformedData.agency,
+      officeAddress: transformedData.officeAddress,
       realProperties: transformedData.realProperties || [],
       personalProperties: transformedData.personalProperties || [],
       liabilities: transformedData.liabilities || [],

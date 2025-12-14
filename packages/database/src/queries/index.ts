@@ -19,6 +19,7 @@ export {
   createSALNSubmission,
   updateSALNSubmission,
   calculateSALNTotals,
+  deleteSALNSubmission,
   submitSALNForApproval,
   approveSALN,
   rejectSALN,

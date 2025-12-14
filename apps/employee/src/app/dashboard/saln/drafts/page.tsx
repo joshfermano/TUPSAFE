@@ -318,9 +318,9 @@ export default function SALNDraftsPage() {
   // Extract submissions from response
   const submissions = useMemo(() => response?.data || [], [response]);
 
-  // Filter draft submissions only
+  // Filter and sort draft submissions (already filtered by API with status: 'draft')
   const draftSubmissions = useMemo(() => {
-    let filtered = submissions.filter((submission: SALNSubmission) => submission.status === 'draft');
+    let filtered = submissions; // API already filters by status: 'draft'
 
     // Apply search filter
     if (debouncedSearchQuery) {
@@ -361,12 +361,10 @@ export default function SALNDraftsPage() {
     });
   }, [submissions, debouncedSearchQuery, yearFilter, sortBy]);
 
-  // Get available years for filter
+  // Get available years for filter (submissions already filtered by API)
   const availableYears = useMemo(() => {
     const years = new Set<number>(
-      submissions
-        .filter((s: SALNSubmission) => s.status === 'draft')
-        .map((s: SALNSubmission) => s.year)
+      submissions.map((s: SALNSubmission) => s.year)
     );
     return Array.from(years).sort((a: number, b: number) => b - a);
   }, [submissions]);
