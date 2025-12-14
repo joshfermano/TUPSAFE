@@ -42,7 +42,7 @@ export interface PersonalProperty {
 
 export interface Liability {
   nature: string;
-  creditor: string;
+  creditorName: string;
   outstandingBalance: number;
 }
 
@@ -69,8 +69,22 @@ export interface SALNSubmission {
   submittedAt: string | null;
   reviewedAt: string | null;
   approvedAt: string | null;
+  approvedBy: string | null;
+  rejectedAt: string | null;
+  rejectedBy: string | null;
   createdAt: string;
   updatedAt: string;
+  // Financial fields
+  totalAssets: string;
+  totalLiabilities: string;
+  netWorth: string;
+  // Metadata
+  spouseName: string | null;
+  position: string | null;
+  agency: string | null;
+  officeAddress: string | null;
+  pdfFilePath: string | null;
+  // Relations
   realProperties: RealProperty[];
   personalProperties: PersonalProperty[];
   liabilities: Liability[];
@@ -83,6 +97,20 @@ export interface SALNFilters {
   status?: SALNStatus;
   page?: number;
   limit?: number;
+}
+
+/**
+ * API Response wrapper for SALN submissions list
+ */
+export interface SALNSubmissionsResponse {
+  success: boolean;
+  data: SALNSubmission[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    hasMore: boolean;
+  };
 }
 
 export interface CreateSALNData {

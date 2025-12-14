@@ -24,7 +24,9 @@ import {
 } from '@/hooks/useSalnSubmissionsQuery';
 import { useSalnStatsQuery } from '@/hooks/useSalnStatsQuery';
 import { useDepartmentsQuery } from '@/hooks/useDepartmentsQuery';
+import { useAuth } from '@/context/AuthContext';
 import { DeadlineManagementCard } from '@/components/deadlines';
+import { ReviewDialog } from '@/components/admin/ReviewDialog';
 import type { SalnSubmissionListItem } from '@tupsafe/types';
 import {
   EmptyState,
@@ -137,13 +139,31 @@ const useCountingAnimation = (end: number, duration: number = 1500) => {
 };
 
 // SALN Submission Row Component (memoized)
+interface SalnSubmissionRowProps {
+  submission: SalnSubmissionListItem;
+  index: number;
+  onApprove: (id: string, notes?: string) => Promise<void>;
+  onReject: (id: string, notes: string) => Promise<void>;
+  isSubmitting: boolean;
+}
+
 const SalnSubmissionRow = memo(
-  ({ submission, index }: { submission: SalnSubmissionListItem; index: number }) => {
+  ({ submission, index, onApprove, onReject, isSubmitting }: SalnSubmissionRowProps) => {
     const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+    const [approveRejectDialogOpen, setApproveRejectDialogOpen] = useState(false);
+    const [reviewAction, setReviewAction] = useState<'approve' | 'reject'>('approve');
 
     const handleAction = useCallback((action: string) => {
-      console.log(`Action: ${action} for submission:`, submission.id);
-      // TODO: Implement actions
+      if (action === 'approve') {
+        setReviewAction('approve');
+        setApproveRejectDialogOpen(true);
+      } else if (action === 'reject') {
+        setReviewAction('reject');
+        setApproveRejectDialogOpen(true);
+      } else if (action === 'download') {
+        console.log('Download PDF:', submission.id);
+        // TODO: Implement PDF download
+      }
     }, [submission.id]);
 
     const employeeName = `${submission.employee.firstName} ${submission.employee.lastName}`;
@@ -299,6 +319,20 @@ const SalnSubmissionRow = memo(
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Approve/Reject Review Dialog */}
+        <ReviewDialog
+          open={approveRejectDialogOpen}
+          onOpenChange={setApproveRejectDialogOpen}
+          submissionId={submission.id}
+          submissionType="saln"
+          currentStatus={submission.status}
+          employeeName={employeeName}
+          defaultAction={reviewAction}
+          onApprove={async (notes) => await onApprove(submission.id, notes)}
+          onReject={async (notes) => await onReject(submission.id, notes)}
+          isSubmitting={isSubmitting}
+        />
       </>
     );
   }
@@ -331,6 +365,9 @@ export default function SalnSubmissionsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
 
+  // Get authenticated user
+  const { user } = useAuth();
+
   // Build filters object
   const filters = useMemo<SalnSubmissionsFilters>(
     () => ({
@@ -342,13 +379,45 @@ export default function SalnSubmissionsPage() {
     [statusFilter, yearFilter, departmentFilter, searchQuery]
   );
 
-  // Fetch submissions with filters
+  // Fetch submissions with filters and mutations
   const {
     submissions,
     isLoading,
     isError,
     error,
+    approveSubmissionAsync,
+    rejectSubmissionAsync,
+    isApproving,
+    isRejecting,
   } = useSalnSubmissionsQuery(filters);
+
+  const isSubmitting = isApproving || isRejecting;
+
+  // Approve handler
+  const handleApprove = useCallback(
+    async (id: string, notes?: string) => {
+      if (!user?.id) return;
+      await approveSubmissionAsync({
+        submissionId: id,
+        reviewNotes: notes,
+        reviewedBy: user.id,
+      });
+    },
+    [user?.id, approveSubmissionAsync]
+  );
+
+  // Reject handler
+  const handleReject = useCallback(
+    async (id: string, notes: string) => {
+      if (!user?.id) return;
+      await rejectSubmissionAsync({
+        submissionId: id,
+        reviewNotes: notes,
+        reviewedBy: user.id,
+      });
+    },
+    [user?.id, rejectSubmissionAsync]
+  );
 
   // Fetch SALN statistics for analytics
   const { data: salnStats, isLoading: statsLoading } = useSalnStatsQuery();
@@ -669,6 +738,9 @@ export default function SalnSubmissionsPage() {
                         key={submission.id}
                         submission={submission}
                         index={index}
+                        onApprove={handleApprove}
+                        onReject={handleReject}
+                        isSubmitting={isSubmitting}
                       />
                     ))}
                   </EnhancedTableBody>

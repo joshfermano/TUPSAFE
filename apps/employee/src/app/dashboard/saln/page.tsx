@@ -20,7 +20,7 @@
 import { useMemo, memo, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../../providers/AuthProvider';
-import { useSALNSubmissions, useLatestSALN } from '../../../hooks/useSaln';
+import { useSALNSubmissions } from '../../../hooks/useSaln';
 import { DeadlineSection } from '../../../components/dashboard/DeadlineSection';
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
@@ -190,16 +190,21 @@ export default function SalnPage() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { user } = useAuth();
 
-  // Use real hooks for SALN data
+  // Use real hooks for SALN data (matching PDS pattern)
   const { data: submissionsResponse, isLoading, error: submissionsError } = useSALNSubmissions();
-  const { data: latest, isLoading: isLatestLoading } = useLatestSALN();
 
-  // Extract submissions from response
-  const submissions = useMemo(() => submissionsResponse?.data || [], [submissionsResponse]);
+  // Extract submissions from response (like PDS does)
+  const submissions = useMemo(() => {
+    if (!submissionsResponse?.data) return [];
+    return submissionsResponse.data;
+  }, [submissionsResponse]);
+
+  // Derive latest from submissions array (like PDS does - no separate API call)
+  const latest = submissions[0] ?? null;
   const hasExistingSALN = submissions.length > 0;
 
-  // Combine loading states
-  const loading = isLoading || isLatestLoading;
+  // Loading state (only from submissions query, like PDS)
+  const loading = isLoading;
   const error = submissionsError?.message || null;
 
   // Memoized currency formatter

@@ -450,6 +450,39 @@ export {
 export { usePDSPdf, type UsePDSPdfReturn } from './usePDSPdf';
 
 /**
+ * SALN PDF Generation Hook
+ *
+ * Client-side PDF generation for SALN (Statement of Assets, Liabilities and Net Worth) documents.
+ * Provides download, preview, and blob generation functionality.
+ *
+ * @example
+ * ```tsx
+ * import { useSALNPdf } from '@/hooks';
+ * import { toast } from 'sonner';
+ *
+ * function SALNActions({ salnData }: { salnData: SALNData }) {
+ *   const { downloadPDF, isGenerating } = useSALNPdf();
+ *
+ *   const handleDownload = async () => {
+ *     try {
+ *       await downloadPDF(salnData);
+ *       toast.success('PDF downloaded successfully');
+ *     } catch (error) {
+ *       toast.error('Failed to generate PDF');
+ *     }
+ *   };
+ *
+ *   return (
+ *     <button onClick={handleDownload} disabled={isGenerating}>
+ *       {isGenerating ? 'Generating...' : 'Download PDF'}
+ *     </button>
+ *   );
+ * }
+ * ```
+ */
+export { useSALNPdf, type UseSALNPdfReturn } from './useSALNPdf';
+
+/**
  * Usage Examples
  *
  * @example Basic usage

@@ -24,6 +24,9 @@ import React, { useMemo, useCallback, useState, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../providers/AuthProvider';
 import { useSALNSubmissions } from '../../../../hooks/useSaln';
+import { useSALNPdf } from '../../../../hooks/useSALNPdf';
+import type { SALNData } from '../../../../components/saln/pdf';
+import { toast } from 'sonner';
 import { BlurFade, Badge, NumberTicker, AnimatedGradientText } from '@tupsafe/shared-ui';
 import { Card, CardContent } from '../../../../components/ui/card';
 import { Button } from '../../../../components/ui/button';
@@ -265,7 +268,8 @@ const ApprovedSalnCard = memo(
                 variant="outline"
                 size="sm"
                 onClick={onDownload}
-                className="text-xs">
+                className="text-xs"
+                disabled={false}>
                 <Download className="h-3.5 w-3.5 mr-1.5" />
                 PDF
               </Button>
@@ -273,7 +277,8 @@ const ApprovedSalnCard = memo(
                 variant="outline"
                 size="sm"
                 onClick={onPrint}
-                className="text-xs">
+                className="text-xs"
+                disabled={false}>
                 <Printer className="h-3.5 w-3.5 mr-1.5" />
                 Print
               </Button>
@@ -317,7 +322,8 @@ SkeletonCard.displayName = 'SkeletonCard';
 // Main SALN Submissions Page
 export default function SalnSubmissionsPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const { downloadPDF, openPDFInNewTab, isGenerating } = useSALNPdf();
 
   // Use real hook for SALN submissions
   const { data: submissionsResponse, isLoading, error: submissionsError } = useSALNSubmissions();
@@ -325,6 +331,60 @@ export default function SalnSubmissionsPage() {
   // Extract all submissions from response
   const allSubmissions = useMemo(() => submissionsResponse?.data || [], [submissionsResponse]);
   const error = submissionsError;
+
+  // Transform submission data to SALNData format for PDF
+  const transformSALNToData = useCallback(
+    (submission: any): SALNData => {
+      return {
+        id: submission.id,
+        year: submission.year,
+        filingType: submission.filingType || 'not_applicable',
+        declarantInfo: {
+          surname: profile?.lastName || '',
+          firstName: profile?.firstName || '',
+          middleInitial: profile?.middleName || null,
+          position: submission.position || '',
+          agency:
+            submission.agency ||
+            'Technological University of the Philippines - Manila',
+          officeAddress: submission.officeAddress || '',
+        },
+        spouseInfo:
+          submission.filingType === 'joint' && submission.spouseName
+            ? {
+                surname: submission.spouseName?.split(' ').pop() || '',
+                firstName: submission.spouseName?.split(' ')[0] || '',
+                middleInitial: submission.spouseName?.split(' ')[1]?.charAt(0) || null,
+                position: '',
+                agency: '',
+                officeAddress: '',
+              }
+            : undefined,
+        children: [],
+        realProperties: submission.realProperties || [],
+        personalProperties: submission.personalProperties || [],
+        liabilities: submission.liabilities || [],
+        businessInterests:
+          submission.businessInterests?.map((bi: any) => ({
+            entityName: bi.businessName || bi.entityName || '',
+            businessAddress: bi.businessAddress || '',
+            natureOfBusiness: bi.nature || bi.natureOfBusiness || '',
+            dateOfAcquisition: bi.dateAcquired || bi.dateOfAcquisition || '',
+          })) || [],
+        relativesInGov:
+          submission.relativesInGov?.map((rel: any) => ({
+            name: rel.name || '',
+            relationship: rel.relationship || '',
+            position: rel.position || '',
+            agencyAddress: rel.agency || rel.agencyAddress || '',
+          })) || [],
+        totalAssets: parseFloat(submission.totalAssets || '0'),
+        totalLiabilities: parseFloat(submission.totalLiabilities || '0'),
+        netWorth: parseFloat(submission.netWorth || '0'),
+      };
+    },
+    [profile]
+  );
 
   // Filter and sort state
   const [sortBy, setSortBy] = useState<SortOption>('year-desc');
@@ -399,15 +459,42 @@ export default function SalnSubmissionsPage() {
     [router]
   );
 
-  const handleDownload = useCallback((id: string) => {
-    console.log('Download PDF:', id);
-    // TODO: Implement PDF download
-  }, []);
+  const handleDownload = useCallback(
+    async (id: string) => {
+      try {
+        const submission = approvedSubmissions.find((s) => s.id === id);
+        if (!submission) {
+          toast.error('Submission not found');
+          return;
+        }
+        const salnPdfData = transformSALNToData(submission);
+        await downloadPDF(salnPdfData);
+        toast.success('SALN PDF downloaded successfully');
+      } catch (error) {
+        toast.error('Failed to generate PDF');
+        console.error('PDF generation error:', error);
+      }
+    },
+    [approvedSubmissions, transformSALNToData, downloadPDF]
+  );
 
-  const handlePrint = useCallback((id: string) => {
-    console.log('Print SALN:', id);
-    // TODO: Implement print functionality
-  }, []);
+  const handlePrint = useCallback(
+    async (id: string) => {
+      try {
+        const submission = approvedSubmissions.find((s) => s.id === id);
+        if (!submission) {
+          toast.error('Submission not found');
+          return;
+        }
+        const salnPdfData = transformSALNToData(submission);
+        await openPDFInNewTab(salnPdfData);
+      } catch (error) {
+        toast.error('Failed to open PDF');
+        console.error('PDF preview error:', error);
+      }
+    },
+    [approvedSubmissions, transformSALNToData, openPDFInNewTab]
+  );
 
   const handleClearFilters = useCallback(() => {
     setSearchQuery('');
