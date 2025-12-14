@@ -65,6 +65,9 @@ export async function GET(request: NextRequest) {
       .where(eq(profiles.id, user.id))
       .limit(1);
 
+    // DEBUG: Log profile check result
+    console.log(`[GET /api/saln] Profile check: userId=${user.id}, userType=${profile?.userType || 'null'}`);
+
     // ENFORCE EMPLOYEE-ONLY ACCESS
     if (!profile || profile.userType !== 'employee') {
       console.error(
@@ -87,13 +90,10 @@ export async function GET(request: NextRequest) {
     const year = searchParams.get('year')
       ? parseInt(searchParams.get('year')!)
       : undefined;
-    const status = searchParams.get('status') as
-      | 'draft'
-      | 'submitted'
-      | 'reviewing'
-      | 'approved'
-      | 'rejected'
-      | undefined;
+    const statusParam = searchParams.get('status');
+    const status = statusParam
+      ? (statusParam as 'draft' | 'submitted' | 'reviewing' | 'approved' | 'rejected')
+      : undefined;
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = Math.min(parseInt(searchParams.get('limit') || '10', 10), 100);
 
@@ -150,9 +150,15 @@ export async function GET(request: NextRequest) {
       pageSize: limit,
     });
 
-    console.log(
-      `[GET /api/saln] Retrieved ${submissions.length} SALN submissions for user ${user.id}`
-    );
+    // DEBUG: Log query details and results
+    console.log(`[GET /api/saln] Query params: year=${year}, status=${status}, page=${page}, limit=${limit}`);
+    console.log(`[GET /api/saln] User ID for query: ${user.id}`);
+    console.log(`[GET /api/saln] Submissions found: ${submissions.length}`);
+    if (submissions.length > 0) {
+      console.log(`[GET /api/saln] First submission ID: ${submissions[0].id}, year: ${submissions[0].year}, status: ${submissions[0].status}`);
+    } else {
+      console.log(`[GET /api/saln] No submissions found for user ${user.id}`);
+    }
 
     return NextResponse.json({
       success: true,

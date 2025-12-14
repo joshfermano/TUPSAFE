@@ -14,7 +14,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../../providers/AuthProvider';
 import { useSALNSubmission } from '../../../../../hooks/useSaln';
+import { useSALNPdf } from '../../../../../hooks/useSALNPdf';
+import type { SALNData } from '../../../../../components/saln/pdf';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 import { EmployeeOnlyGuard } from '../../../../../components/guards/EmployeeOnlyGuard';
 import {
   Download,
@@ -191,10 +194,11 @@ export default function SALNViewDetailPage({
 }) {
   const { id: salnId } = use(params);
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   // Use new React Query hook
   const { data: salnData, isLoading } = useSALNSubmission(salnId);
+  const { downloadPDF, openPDFInNewTab, isGenerating } = useSALNPdf();
   const loading = isLoading;
 
   // Extract submission data from salnData
@@ -202,6 +206,60 @@ export default function SALNViewDetailPage({
 
   const canEdit =
     submission?.status === 'draft' || submission?.status === 'rejected';
+
+  // Transform submission data to SALNData format for PDF
+  const transformSALNToData = (
+    submission: any,
+    profile: any
+  ): SALNData => {
+    return {
+      id: submission.id,
+      year: submission.year,
+      filingType: submission.filingType || 'not_applicable',
+      declarantInfo: {
+        surname: profile?.lastName || '',
+        firstName: profile?.firstName || '',
+        middleInitial: profile?.middleName || null,
+        position: submission.position || '',
+        agency:
+          submission.agency ||
+          'Technological University of the Philippines - Manila',
+        officeAddress: submission.officeAddress || '',
+      },
+      spouseInfo:
+        submission.filingType === 'joint' && submission.spouseName
+          ? {
+              surname: submission.spouseName?.split(' ').pop() || '',
+              firstName: submission.spouseName?.split(' ')[0] || '',
+              middleInitial: submission.spouseName?.split(' ')[1]?.charAt(0) || null,
+              position: '',
+              agency: '',
+              officeAddress: '',
+            }
+          : undefined,
+      children: [],
+      realProperties: submission.realProperties || [],
+      personalProperties: submission.personalProperties || [],
+      liabilities: submission.liabilities || [],
+      businessInterests:
+        submission.businessInterests?.map((bi: any) => ({
+          entityName: bi.businessName || bi.entityName || '',
+          businessAddress: bi.businessAddress || '',
+          natureOfBusiness: bi.nature || bi.natureOfBusiness || '',
+          dateOfAcquisition: bi.dateAcquired || bi.dateOfAcquisition || '',
+        })) || [],
+      relativesInGov:
+        submission.relativesInGov?.map((rel: any) => ({
+          name: rel.name || '',
+          relationship: rel.relationship || '',
+          position: rel.position || '',
+          agencyAddress: rel.agency || rel.agencyAddress || '',
+        })) || [],
+      totalAssets: parseFloat(submission.totalAssets || '0'),
+      totalLiabilities: parseFloat(submission.totalLiabilities || '0'),
+      netWorth: parseFloat(submission.netWorth || '0'),
+    };
+  };
 
   if (loading || !submission || !salnData) {
     return <LoadingState />;
@@ -212,8 +270,27 @@ export default function SALNViewDetailPage({
     STATUS_CONFIG[submission.status as keyof typeof STATUS_CONFIG];
 
   const handleEdit = () => router.push(`/dashboard/saln/edit/${salnId}`);
-  const handleDownload = () => console.log('Download PDF:', salnId);
-  const handlePrint = () => window.print();
+
+  const handleDownload = async () => {
+    try {
+      const salnPdfData = transformSALNToData(submission, profile);
+      await downloadPDF(salnPdfData);
+      toast.success('SALN PDF downloaded successfully');
+    } catch (error) {
+      toast.error('Failed to generate PDF');
+      console.error('PDF generation error:', error);
+    }
+  };
+
+  const handlePrint = async () => {
+    try {
+      const salnPdfData = transformSALNToData(submission, profile);
+      await openPDFInNewTab(salnPdfData);
+    } catch (error) {
+      toast.error('Failed to open PDF');
+      console.error('PDF preview error:', error);
+    }
+  };
 
   // Calculate totals
   const totalRealProperty =
@@ -281,15 +358,17 @@ export default function SALNViewDetailPage({
               variant="outline"
               size="sm"
               className="gap-2"
-              onClick={handleDownload}>
+              onClick={handleDownload}
+              disabled={isGenerating}>
               <Download className="h-4 w-4" />
-              Export PDF
+              {isGenerating ? 'Generating...' : 'Export PDF'}
             </Button>
             <Button
               variant="outline"
               size="sm"
               className="gap-2"
-              onClick={handlePrint}>
+              onClick={handlePrint}
+              disabled={isGenerating}>
               <Printer className="h-4 w-4" />
               Print
             </Button>

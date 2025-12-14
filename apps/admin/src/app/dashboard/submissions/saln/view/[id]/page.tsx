@@ -56,6 +56,8 @@ import { useSalnSubmissionsQuery } from '@/hooks/useSalnSubmissionsQuery';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/formatting-helpers';
+import { useSALNPdf } from '@/hooks/useSALNPdf';
+import type { SALNData } from '@/components/saln/pdf/types';
 
 /**
  * SALN Submission View Page
@@ -97,6 +99,8 @@ export default function SalnSubmissionViewPage() {
     error,
     refetch,
   } = useCompleteSubmission(submissionId);
+
+  const { downloadPDF, openPDFInNewTab, isGenerating } = useSALNPdf();
 
   const isSubmitting = isApproving || isRejecting || isRequestingChanges;
 
@@ -173,6 +177,81 @@ export default function SalnSubmissionViewPage() {
     return totalAssets - totalLiabilities;
   }, [salnData?.netWorth, totalAssets, totalLiabilities]);
 
+  // Extract data from the correct API response structure
+  const submission = completeSubmission?.submission;
+  const employee = completeSubmission?.employee;
+
+  // Transform SALN submission data to PDF format
+  const transformSALNToData = React.useCallback((): SALNData | null => {
+    if (!completeSubmission || !submission || !employee) return null;
+
+    // Parse spouse name if filing type is joint
+    let spouseInfo = undefined;
+    if (submission.filingType === 'joint' && salnData?.spouseName) {
+      const nameParts = salnData.spouseName.split(' ');
+      spouseInfo = {
+        surname: nameParts[nameParts.length - 1] || '',
+        firstName: nameParts[0] || '',
+        middleInitial: nameParts.length > 2 ? nameParts[1]?.charAt(0) : null,
+        position: '',
+        agency: 'Technological University of the Philippines - Manila',
+        officeAddress: submission.officeAddress || employee.officeAddress || '',
+      };
+    }
+
+    return {
+      id: submission.id,
+      year: submission.fiscalYear,
+      filingType: (submission.filingType || 'separate') as 'joint' | 'separate' | 'not_applicable',
+      declarantInfo: {
+        surname: employee.lastName,
+        firstName: employee.firstName,
+        middleInitial: employee.middleName?.charAt(0) || null,
+        position: submission.position || employee.position?.title || '',
+        agency: submission.agency || 'Technological University of the Philippines - Manila',
+        officeAddress: submission.officeAddress || employee.officeAddress || '',
+      },
+      spouseInfo,
+      children: [], // Children data not currently stored in DB
+      realProperties: (salnData?.realProperties || []).map((prop: any) => ({
+        description: prop.description,
+        kind: prop.kind,
+        exactLocation: prop.exactLocation,
+        assessedValue: parseFloat(prop.assessedValue || '0'),
+        currentFairMarketValue: parseFloat(prop.currentFairMarketValue || '0'),
+        acquisitionYear: prop.acquisitionYear,
+        acquisitionMode: prop.acquisitionMode,
+        acquisitionCost: parseFloat(prop.acquisitionCost || '0'),
+      })),
+      personalProperties: (salnData?.personalProperties || []).map((prop: any) => ({
+        description: prop.description,
+        yearAcquired: prop.yearAcquired,
+        acquisitionCost: parseFloat(prop.acquisitionCost || '0'),
+      })),
+      liabilities: (salnData?.liabilities || []).map((liability: any) => ({
+        nature: liability.nature,
+        creditorName: liability.creditorName,
+        outstandingBalance: parseFloat(liability.outstandingBalance || '0'),
+      })),
+      businessInterests: (salnData?.businessInterests || []).map((business: any) => ({
+        entityName: business.entityName,
+        businessAddress: business.businessAddress,
+        natureOfBusiness: business.natureOfBusiness,
+        dateOfAcquisition: business.dateOfAcquisition,
+      })),
+      relativesInGov: (salnData?.relativesInGov || []).map((relative: any) => ({
+        name: relative.name,
+        relationship: relative.relationship,
+        position: relative.position,
+        agencyAddress: relative.agencyAddress,
+      })),
+      totalAssets,
+      totalLiabilities,
+      netWorth,
+      submittedAt: submission.submittedAt,
+    };
+  }, [completeSubmission, submission, employee, salnData, totalAssets, totalLiabilities, netWorth]);
+
   // Handle approval
   const handleApprove = React.useCallback(
     async (notes?: string) => {
@@ -227,12 +306,48 @@ export default function SalnSubmissionViewPage() {
     [submissionId, user?.id, requestChangesAsync]
   );
 
-  // Handle PDF export
-  const handleExportPdf = React.useCallback(() => {
-    toast.info('PDF Export', {
-      description: 'PDF export functionality will be implemented soon',
-    });
-  }, []);
+  // Handle PDF download
+  const handleExportPdf = React.useCallback(async () => {
+    const salnData = transformSALNToData();
+
+    if (!salnData) {
+      toast.error('Cannot generate PDF', {
+        description: 'SALN data is not available',
+      });
+      return;
+    }
+
+    try {
+      await downloadPDF(salnData);
+      toast.success('SALN PDF downloaded successfully');
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast.error('Failed to generate PDF', {
+        description: error instanceof Error ? error.message : 'An unexpected error occurred',
+      });
+    }
+  }, [transformSALNToData, downloadPDF]);
+
+  // Handle PDF preview (open in new tab)
+  const handlePreviewPdf = React.useCallback(async () => {
+    const salnData = transformSALNToData();
+
+    if (!salnData) {
+      toast.error('Cannot generate PDF', {
+        description: 'SALN data is not available',
+      });
+      return;
+    }
+
+    try {
+      await openPDFInNewTab(salnData);
+    } catch (error) {
+      console.error('PDF preview error:', error);
+      toast.error('Failed to open PDF preview', {
+        description: error instanceof Error ? error.message : 'An unexpected error occurred',
+      });
+    }
+  }, [transformSALNToData, openPDFInNewTab]);
 
   // Loading state
   if (isLoading) {
@@ -272,9 +387,6 @@ export default function SalnSubmissionViewPage() {
     );
   }
 
-  // Extract data from the correct API response structure
-  const submission = completeSubmission?.submission;
-  const employee = completeSubmission?.employee;
   const previousYear = completeSubmission?.previousYear;
   // Note: auditTrail is available in completeSubmission?.auditTrail if needed
 
@@ -343,9 +455,10 @@ export default function SalnSubmissionViewPage() {
                     variant="outline"
                     size="sm"
                     onClick={handleExportPdf}
+                    disabled={isGenerating}
                     className="gap-2">
                     <Download className="h-4 w-4" />
-                    Export PDF
+                    {isGenerating ? 'Generating...' : 'Export PDF'}
                   </Button>
                   <Button
                     onClick={() => setIsReviewDialogOpen(true)}
@@ -1088,9 +1201,10 @@ export default function SalnSubmissionViewPage() {
                       <Button
                         variant="outline"
                         onClick={handleExportPdf}
+                        disabled={isGenerating}
                         className="w-full gap-2">
                         <Download className="h-4 w-4" />
-                        Export PDF
+                        {isGenerating ? 'Generating...' : 'Export PDF'}
                       </Button>
                     </div>
                   </>

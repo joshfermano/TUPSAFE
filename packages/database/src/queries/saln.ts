@@ -134,29 +134,95 @@ export interface SalnComparison {
 export async function getSALNSubmissions(
   userId: string,
   options: SalnFilterOptions = {}
-): Promise<SalnSubmission[]> {
-  const { year, status, page = 1, pageSize = 10 } = options;
+): Promise<CompleteSaln[]> {
+  try {
+    if (!userId || typeof userId !== 'string') {
+      throw new Error('Valid user ID is required');
+    }
 
-  const conditions = [eq(salnSubmissions.userId, userId)];
+    const { year, status, page = 1, pageSize = 10 } = options;
+    const offset = (page - 1) * pageSize;
 
-  if (year !== undefined) {
-    conditions.push(eq(salnSubmissions.year, year));
+    // Build where conditions using Drizzle query builder (like PDS)
+    const conditions = [eq(salnSubmissions.userId, userId)];
+
+    if (year !== undefined) {
+      conditions.push(eq(salnSubmissions.year, year));
+    }
+
+    if (status !== undefined) {
+      conditions.push(eq(salnSubmissions.status, status));
+    }
+
+    // Query submissions using standard query builder pattern
+    const submissions = await db
+      .select()
+      .from(salnSubmissions)
+      .where(and(...conditions))
+      .orderBy(desc(salnSubmissions.year), desc(salnSubmissions.createdAt))
+      .limit(pageSize)
+      .offset(offset);
+
+    console.log(`[getSALNSubmissions] User ID for query: ${userId}`);
+    console.log(`[getSALNSubmissions] Submissions found: ${submissions.length}`);
+    if (submissions.length > 0) {
+      console.log(`[getSALNSubmissions] First submission ID: ${submissions[0].id}, year: ${submissions[0].year}, status: ${submissions[0].status}`);
+    } else {
+      console.log(`[getSALNSubmissions] No submissions found for user ${userId}`);
+    }
+
+    // Load relations for each submission
+    const completeSalns: CompleteSaln[] = await Promise.all(
+      submissions.map(async (submission) => {
+        const [
+          realProperties,
+          personalProperties,
+          liabilities,
+          businessInterests,
+          relativesInGov,
+        ] = await Promise.all([
+          db
+            .select()
+            .from(salnRealProperties)
+            .where(eq(salnRealProperties.salnSubmissionId, submission.id)),
+          db
+            .select()
+            .from(salnPersonalProperties)
+            .where(eq(salnPersonalProperties.salnSubmissionId, submission.id)),
+          db
+            .select()
+            .from(salnLiabilities)
+            .where(eq(salnLiabilities.salnSubmissionId, submission.id)),
+          db
+            .select()
+            .from(salnBusinessInterests)
+            .where(eq(salnBusinessInterests.salnSubmissionId, submission.id)),
+          db
+            .select()
+            .from(salnRelativesInGov)
+            .where(eq(salnRelativesInGov.salnSubmissionId, submission.id)),
+        ]);
+
+        return {
+          ...submission,
+          realProperties,
+          personalProperties,
+          liabilities,
+          businessInterests,
+          relativesInGov,
+        };
+      })
+    );
+
+    return completeSalns;
+  } catch (error) {
+    console.error('[getSALNSubmissions] Database error:', error);
+    throw new Error(
+      `Failed to fetch SALN submissions for user ${userId}: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
+    );
   }
-
-  if (status !== undefined) {
-    conditions.push(eq(salnSubmissions.status, status));
-  }
-
-  const offset = (page - 1) * pageSize;
-
-  const submissions = await db.query.salnSubmissions.findMany({
-    where: and(...conditions),
-    orderBy: [desc(salnSubmissions.year), desc(salnSubmissions.createdAt)],
-    limit: pageSize,
-    offset,
-  });
-
-  return submissions;
 }
 
 /**
