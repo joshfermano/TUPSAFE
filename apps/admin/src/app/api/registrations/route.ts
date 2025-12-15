@@ -249,7 +249,7 @@ export async function GET(request: NextRequest) {
       registrations: data,
       pagination: {
         page,
-        limit,
+        pageSize: limit,
         total,
         totalPages,
       },

@@ -4,6 +4,7 @@
  */
 
 import { z } from 'zod';
+import type { PaginationMeta } from './common';
 
 /**
  * Schema for approving a registration
@@ -134,16 +135,6 @@ export interface RegistrationStats {
     departmentName: string;
     count: number;
   }>;
-}
-
-/**
- * Pagination metadata for list responses
- */
-export interface PaginationMeta {
-  page: number;
-  pageSize: number;
-  total: number;
-  totalPages: number;
 }
 
 /**

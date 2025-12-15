@@ -8,6 +8,7 @@
  */
 
 import { z } from 'zod';
+import type { PaginationMeta } from './common';
 
 // ============================================================================
 // VALIDATION SCHEMAS
@@ -186,16 +187,6 @@ export interface RegistrationStats {
     timestamp: Date;
     reviewerName: string;
   }>;
-}
-
-/**
- * Pagination metadata
- */
-export interface PaginationMeta {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
 }
 
 /**

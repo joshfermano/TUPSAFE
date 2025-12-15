@@ -1,94 +1,300 @@
 /**
- * Positions List API - GET /api/positions
- *
- * Provides a simple list of all active positions for form dropdowns
- * Used by various admin pages for position selection
+ * Position Management API - List and Create Positions
+ * GET /api/positions - List positions with pagination, filtering, and search
+ * POST /api/positions - Create a new position
  *
  * Features:
- * - Returns all active positions
- * - Sorted alphabetically by title
- * - Includes department relationship
- * - Minimal authentication (authenticated users only)
- * - Cached for performance
+ * - Department-based filtering
+ * - Search by title (case-insensitive)
+ * - Include inactive positions option
+ * - Sorting by title, gradeLevel, or createdAt
+ * - Pagination support
+ * - Full department information in response
+ * - Role-based authorization
  *
  * Security:
- * - Requires authenticated user (any role)
- * - No sensitive data exposed
+ * - Requires admin, hr, or supervisor role for viewing
+ * - Requires admin or hr role for creating
+ * - Audit logging for all create operations
  */
 
-import { NextResponse } from 'next/server';
-import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
-import { db, positions } from '@tupsafe/database/server';
-import { eq, asc } from 'drizzle-orm';
+import { NextRequest, NextResponse } from 'next/server';
+import { checkUserRoleFromSupabase, getUserFromSupabase } from '@tupsafe/auth/server';
+import {
+  db,
+  positions,
+  departments,
+  createPosition,
+  createAuditLogFromRequest,
+} from '@tupsafe/database/server';
+import { and, eq, ilike, sql, asc, desc } from 'drizzle-orm';
+import {
+  positionQuerySchema,
+  createPositionSchema,
+  type PositionListResponse,
+  type PositionWithDepartment,
+} from '@tupsafe/types';
+import { ZodError } from 'zod';
 
 /**
- * Position list item for API response
+ * GET /api/positions
+ * List positions with filtering, search, and sorting
  */
-export interface PositionListItem {
-  id: string;
-  title: string;
-  departmentId: string | null;
-}
-
-/**
- * Positions list response
- */
-export interface PositionsListResponse {
-  positions: PositionListItem[];
-}
-
-export async function GET() {
-  const startTime = Date.now();
-
+export async function GET(request: NextRequest) {
   try {
-    console.log('[Positions API] Request received');
+    // Verify admin/HR/supervisor permissions
+    const hasPermission = await checkUserRoleFromSupabase(
+      ['admin', 'hr', 'supervisor'],
+      'admin'
+    );
 
-    // Verify user is authenticated (any role)
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr', 'supervisor', 'employee'], 'admin');
     if (!hasPermission) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized. Admin, HR, or Supervisor role required.' },
+        { status: 403 }
+      );
     }
 
-    console.log('[Positions API] Fetching positions');
+    // Parse and validate query parameters
+    const searchParams = request.nextUrl.searchParams;
+    const queryParams = Object.fromEntries(searchParams.entries());
 
-    // Fetch all active positions, sorted by title
-    const queryStartTime = Date.now();
-    const positionsList = await db
+    const query = positionQuerySchema.parse(queryParams);
+
+    // Build WHERE conditions
+    const conditions = [];
+
+    // Active status filter
+    if (!query.includeInactive) {
+      conditions.push(eq(positions.isActive, true));
+    }
+
+    // Department filter
+    if (query.departmentId) {
+      conditions.push(eq(positions.departmentId, query.departmentId));
+    }
+
+    // Search filter - title only (case-insensitive)
+    if (query.search) {
+      const searchTerm = `%${query.search}%`;
+      conditions.push(ilike(positions.title, searchTerm));
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    // Get total count for pagination
+    const [{ total }] = await db
+      .select({ total: sql<number>`cast(count(*) as integer)` })
+      .from(positions)
+      .where(whereClause);
+
+    // Determine sort column and order
+    const sortColumn = {
+      title: positions.title,
+      gradeLevel: positions.gradeLevel,
+      createdAt: positions.createdAt,
+    }[query.sortBy!];
+
+    const orderFn = query.sortOrder === 'asc' ? asc : desc;
+
+    // Fetch positions with department information
+    const results = await db
       .select({
         id: positions.id,
         title: positions.title,
+        gradeLevel: positions.gradeLevel,
         departmentId: positions.departmentId,
+        isActive: positions.isActive,
+        createdAt: positions.createdAt,
+        departmentName: departments.name,
+        departmentCode: departments.code,
       })
       .from(positions)
-      .where(eq(positions.isActive, true))
-      .orderBy(asc(positions.title));
+      .leftJoin(departments, eq(positions.departmentId, departments.id))
+      .where(whereClause)
+      .orderBy(orderFn(sortColumn))
+      .limit(query.limit!)
+      .offset((query.page! - 1) * query.limit!);
 
-    const queryDuration = Date.now() - queryStartTime;
-    console.log(
-      `[Positions API] Query completed in ${queryDuration}ms - ${positionsList.length} positions found`
-    );
+    // Transform to PositionWithDepartment format
+    const positionsWithDepartment: PositionWithDepartment[] = results.map((row) => ({
+      id: row.id,
+      title: row.title,
+      gradeLevel: row.gradeLevel,
+      departmentId: row.departmentId,
+      isActive: row.isActive,
+      createdAt: row.createdAt,
+      department: row.departmentId
+        ? {
+            id: row.departmentId,
+            name: row.departmentName!,
+            code: row.departmentCode!,
+          }
+        : null,
+    }));
 
-    // Construct response
-    const response: PositionsListResponse = {
-      positions: positionsList,
+    const response: PositionListResponse = {
+      positions: positionsWithDepartment,
+      pagination: {
+        total: total || 0,
+        page: query.page!,
+        pageSize: query.limit!,
+        totalPages: Math.ceil((total || 0) / query.limit!),
+      },
     };
 
-    const totalDuration = Date.now() - startTime;
-    console.log(`[Positions API] Total request duration: ${totalDuration}ms`);
-
+    // Set cache headers (5 minutes)
     return NextResponse.json(response, {
       status: 200,
       headers: {
-        // Cache for 5 minutes - positions don't change frequently
         'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
-        'X-Response-Time': `${totalDuration}ms`,
       },
     });
   } catch (error) {
-    console.error('[Positions API] Error:', error);
+    console.error('Position list error:', error);
+
+    // Handle validation errors
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        {
+          error: 'Invalid query parameters',
+          details: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', '),
+        },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
       {
         error: 'Failed to fetch positions',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/positions
+ * Create a new position
+ */
+export async function POST(request: NextRequest) {
+  try {
+    // Check authorization - admin or hr only
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
+
+    if (!hasPermission) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Admin or HR role required.' },
+        { status: 403 }
+      );
+    }
+
+    // Get current user for audit logging
+    const currentUser = await getUserFromSupabase('admin');
+
+    if (!currentUser) {
+      return NextResponse.json(
+        { error: 'Failed to retrieve user information' },
+        { status: 500 }
+      );
+    }
+
+    // Parse and validate request body
+    const body = await request.json();
+    const validatedData = createPositionSchema.parse(body);
+
+    // Validate department exists and is active if provided
+    if (validatedData.departmentId) {
+      const [department] = await db
+        .select()
+        .from(departments)
+        .where(eq(departments.id, validatedData.departmentId))
+        .limit(1);
+
+      if (!department) {
+        return NextResponse.json(
+          { error: 'Department not found', details: `Department with ID '${validatedData.departmentId}' does not exist` },
+          { status: 404 }
+        );
+      }
+
+      if (!department.isActive) {
+        return NextResponse.json(
+          { error: 'Invalid department', details: 'Cannot create position in inactive department' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Create position using mutation
+    const created = await createPosition({
+      title: validatedData.title,
+      gradeLevel: validatedData.gradeLevel,
+      departmentId: validatedData.departmentId,
+    });
+
+    // Create audit log
+    await createAuditLogFromRequest(
+      currentUser.id,
+      'CREATE',
+      'position',
+      created.id,
+      { after: created },
+      request.headers
+    );
+
+    return NextResponse.json(created, { status: 201 });
+  } catch (error) {
+    console.error('Position creation error:', error);
+
+    // Handle validation errors
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        {
+          error: 'Invalid input data',
+          details: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', '),
+        },
+        { status: 400 }
+      );
+    }
+
+    // Handle specific error messages from mutations
+    if (error instanceof Error) {
+      if (error.message.includes('not found')) {
+        return NextResponse.json(
+          {
+            error: 'Department not found',
+            details: error.message,
+          },
+          { status: 404 }
+        );
+      }
+
+      if (error.message.includes('inactive department')) {
+        return NextResponse.json(
+          {
+            error: 'Invalid department',
+            details: error.message,
+          },
+          { status: 400 }
+        );
+      }
+
+      if (error.message.includes('Grade level must be')) {
+        return NextResponse.json(
+          {
+            error: 'Invalid grade level',
+            details: error.message,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    return NextResponse.json(
+      {
+        error: 'Failed to create position',
         details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }

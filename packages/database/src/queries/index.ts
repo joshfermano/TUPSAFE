@@ -50,7 +50,11 @@ export {
 export type {
   DepartmentWithChildren,
   DepartmentDetail,
+  DepartmentWithStats,
+  CollegeWithDepartments,
+  HierarchyValidation,
   PaginationOptions,
+  InactiveDepartmentOptions,
 } from './departments';
 export type {
   NotificationSettings,

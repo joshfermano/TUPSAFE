@@ -223,6 +223,7 @@ export interface AppConfig {
 // Admin-specific types
 export * from './admin/common';
 export * from './admin/user-management';
+export * from './admin/organization-management';
 export * from './admin/registration-approval';
 export * from './admin/submission-review';
 export * from './admin/dashboard-analytics';

@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
 
 import { useUsersQuery } from '@/hooks/useUsersQuery';
 import { usePdsSubmissionsQuery } from '@/hooks/usePdsSubmissionsQuery';
@@ -74,55 +75,97 @@ import {
 } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-// Mock activity log data
-function generateMockActivityLog(_userId: string): TimelineEvent[] {
-  const events: TimelineEvent[] = [
-    {
-      id: '1',
-      type: 'login',
-      title: 'User logged in',
-      description: 'Successful login from Chrome on Windows',
-      timestamp: new Date(2024, 10, 7, 9, 30),
-      icon: LogIn,
-      metadata: { ip_address: '192.168.1.100', browser: 'Chrome' },
+// Activity log item from API
+interface ActivityLogItem {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  changes: Record<string, unknown> | null;
+  createdAt: Date;
+  performedBy: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+}
+
+// Hook to fetch user activities from API
+function useUserActivities(userId: string | null) {
+  return useQuery<ActivityLogItem[], Error>({
+    queryKey: ['user-activities', userId],
+    queryFn: async () => {
+      if (!userId) throw new Error('No user ID provided');
+      const res = await fetch(`/api/users/${userId}/activities`);
+      if (!res.ok) throw new Error('Failed to fetch activities');
+      return res.json();
     },
-    {
-      id: '2',
-      type: 'submission',
-      title: 'PDS form submitted',
-      description: 'Personal Data Sheet submitted for review',
-      timestamp: new Date(2024, 10, 6, 14, 15),
-      icon: FileText,
-      metadata: { form_type: 'PDS', status: 'Submitted' },
+    enabled: !!userId,
+    staleTime: 1 * 60 * 1000, // 1 minute
+    retry: 2,
+  });
+}
+
+// Transform activity log item to timeline event
+function activityToTimelineEvent(activity: ActivityLogItem): TimelineEvent {
+  // Map action types to timeline event types
+  const mapActionToType = (action: string, entityType: string): TimelineEvent['type'] => {
+    if (action.includes('LOGIN')) return 'login';
+    if (action.includes('LOGOUT')) return 'logout';
+    if (action === 'CREATE' && (entityType.includes('pds') || entityType.includes('saln'))) {
+      return 'submission';
+    }
+    if (action === 'UPDATE') return 'update';
+    if (action.includes('STATUS') || action.includes('APPROVE') || action.includes('REJECT')) {
+      return 'status_change';
+    }
+    return 'admin_action';
+  };
+
+  // Map action types to icons and descriptions
+  const getIconAndDescription = (action: string, entityType: string) => {
+    if (action.includes('LOGIN')) {
+      return { icon: LogIn, description: 'User logged in to the system' };
+    }
+    if (action.includes('LOGOUT')) {
+      return { icon: LogOut, description: 'User logged out of the system' };
+    }
+    if (action === 'CREATE' && entityType.includes('pds')) {
+      return { icon: FileText, description: 'PDS submission created' };
+    }
+    if (action === 'UPDATE' && entityType.includes('pds')) {
+      return { icon: Edit, description: 'PDS submission updated' };
+    }
+    if (action === 'CREATE' && entityType.includes('saln')) {
+      return { icon: FileText, description: 'SALN submission created' };
+    }
+    if (action === 'UPDATE' && entityType.includes('saln')) {
+      return { icon: Edit, description: 'SALN submission updated' };
+    }
+    if (action === 'UPDATE' && entityType === 'profile') {
+      return { icon: Edit, description: 'Profile information updated' };
+    }
+    if (action === 'DELETE') {
+      return { icon: Trash2, description: `${entityType} deleted` };
+    }
+    return { icon: FileText, description: `${action} on ${entityType}` };
+  };
+
+  const { icon, description } = getIconAndDescription(activity.action, activity.entityType);
+
+  return {
+    id: activity.id,
+    type: mapActionToType(activity.action, activity.entityType),
+    title: activity.action.replace(/_/g, ' '),
+    description,
+    timestamp: new Date(activity.createdAt),
+    icon,
+    metadata: {
+      entityType: activity.entityType,
+      ...(activity.entityId && { entityId: activity.entityId }),
+      performedBy: `${activity.performedBy.firstName} ${activity.performedBy.lastName}`,
     },
-    {
-      id: '3',
-      type: 'admin_action',
-      title: 'Profile updated by admin',
-      description: 'Department assignment changed',
-      timestamp: new Date(2024, 10, 5, 11, 0),
-      icon: Edit,
-      metadata: { admin: 'HR Admin', field: 'Department' },
-    },
-    {
-      id: '4',
-      type: 'submission',
-      title: 'SALN form submitted',
-      description: 'Statement of Assets submitted for 2024',
-      timestamp: new Date(2024, 10, 4, 16, 45),
-      icon: FileText,
-      metadata: { form_type: 'SALN', year: '2024' },
-    },
-    {
-      id: '5',
-      type: 'logout',
-      title: 'User logged out',
-      description: 'Session ended',
-      timestamp: new Date(2024, 10, 3, 17, 30),
-      icon: LogOut,
-    },
-  ];
-  return events;
+  };
 }
 
 export default function UserViewPage() {
@@ -152,8 +195,14 @@ export default function UserViewPage() {
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
   const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
 
-  // Generate mock activity log
-  const activityLog = useMemo(() => generateMockActivityLog(userId), [userId]);
+  // Fetch real activity log from API
+  const { data: activities = [], isLoading: isActivitiesLoading } = useUserActivities(userId);
+
+  // Transform activities to timeline events
+  const activityLog = useMemo(
+    () => activities.map(activityToTimelineEvent),
+    [activities]
+  );
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -789,7 +838,23 @@ export default function UserViewPage() {
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[500px] pr-4">
-                <Timeline events={activityLog} />
+                {isActivitiesLoading ? (
+                  <div className="space-y-4">
+                    {[...Array(5)].map((_, i) => (
+                      <Skeleton key={i} className="h-20 w-full" />
+                    ))}
+                  </div>
+                ) : activityLog.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg font-medium">No activities found</p>
+                    <p className="text-sm mt-2">
+                      Activity logs will appear here once the user interacts with the system
+                    </p>
+                  </div>
+                ) : (
+                  <Timeline events={activityLog} />
+                )}
               </ScrollArea>
             </CardContent>
           </Card>
