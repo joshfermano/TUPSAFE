@@ -412,6 +412,11 @@ export interface SALNSubmissionDetail {
     id: string;
     fiscalYear: number;
     status: string;
+    filingType?: string | null;
+    spouseName?: string | null;
+    position?: string | null;
+    agency?: string | null;
+    officeAddress?: string | null;
     submittedAt: Date | null;
     reviewedBy?: {
       id: string;
@@ -428,7 +433,9 @@ export interface SALNSubmissionDetail {
     employeeId: string | null;
     firstName: string;
     lastName: string;
+    middleName?: string | null;
     email: string | null;
+    officeAddress?: string | null;
     department: {
       id: string;
       name: string;
@@ -440,6 +447,7 @@ export interface SALNSubmissionDetail {
     } | null;
   };
   salnData: {
+    spouseName?: string | null;
     realProperties: SALNRealProperty[];
     personalProperties: SALNPersonalProperty[];
     liabilities: SALNLiability[];

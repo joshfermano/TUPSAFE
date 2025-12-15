@@ -40,14 +40,19 @@ export function registerSALNFonts(baseUrl: string = ''): void {
         fontStyle: 'normal',
       },
       {
-        src: `${baseUrl}/fonts/roboto-latin-500-normal.woff`,
-        fontWeight: 500,
-        fontStyle: 'normal',
+        src: `${baseUrl}/fonts/roboto-latin-400-italic.woff`,
+        fontWeight: 'normal',
+        fontStyle: 'italic',
       },
       {
         src: `${baseUrl}/fonts/roboto-latin-700-normal.woff`,
         fontWeight: 'bold',
         fontStyle: 'normal',
+      },
+      {
+        src: `${baseUrl}/fonts/roboto-latin-700-italic.woff`,
+        fontWeight: 'bold',
+        fontStyle: 'italic',
       },
     ],
   });
