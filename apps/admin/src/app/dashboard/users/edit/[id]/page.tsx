@@ -17,8 +17,11 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 
 import { useUsersQuery } from '@/hooks/useUsersQuery';
+import { useDepartmentsQuery } from '@/hooks/useDepartmentsQuery';
+import { usePositionsQuery } from '@/hooks/usePositionsQuery';
 import { PageTransition } from '@/components/PageTransition';
 import { SectionCard } from '@/components/admin/SectionCard';
+import { useQuery } from '@tanstack/react-query';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -125,26 +128,21 @@ const ROLES = [
   { value: 'auditor', label: 'Auditor' },
 ];
 
-// Available departments
-const DEPARTMENTS = [
-  { value: 'none', label: 'None' },
-  { value: 'engineering', label: 'Engineering' },
-  { value: 'science', label: 'Science' },
-  { value: 'liberal_arts', label: 'Liberal Arts' },
-  { value: 'industrial_technology', label: 'Industrial Technology' },
-  { value: 'hr', label: 'Human Resources' },
-  { value: 'administration', label: 'Administration' },
-];
-
-// Available positions
-const POSITIONS = [
-  { value: 'none', label: 'None' },
-  { value: 'professor', label: 'Professor' },
-  { value: 'associate_professor', label: 'Associate Professor' },
-  { value: 'assistant_professor', label: 'Assistant Professor' },
-  { value: 'instructor', label: 'Instructor' },
-  { value: 'admin_staff', label: 'Administrative Staff' },
-];
+// Hook to fetch user email from Supabase Auth
+function useUserEmail(userId: string | null) {
+  return useQuery({
+    queryKey: ['user-email', userId],
+    queryFn: async () => {
+      if (!userId) throw new Error('No user ID provided');
+      const res = await fetch(`/api/users/${userId}/email`);
+      if (!res.ok) throw new Error('Failed to fetch email');
+      return res.json() as Promise<{ email: string; emailVerified: boolean }>;
+    },
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
+  });
+}
 
 // Suffix options
 const SUFFIXES = [
@@ -163,6 +161,11 @@ export default function EditUserPage() {
 
   const { useUserDetail, updateUserAsync, isUpdating } = useUsersQuery();
   const { data: user, isLoading, isError, error } = useUserDetail(userId);
+
+  // Fetch departments, positions, and user email
+  const { data: departments = [], isLoading: isDepartmentsLoading } = useDepartmentsQuery();
+  const { data: positions = [], isLoading: isPositionsLoading } = usePositionsQuery();
+  const { data: emailData } = useUserEmail(userId);
 
   const [showCancelDialog, setShowCancelDialog] = React.useState(false);
 
@@ -186,23 +189,40 @@ export default function EditUserPage() {
   const { dirtyFields, isDirty } = formState;
   const watchRole = watch('role');
 
-  // Pre-populate form when user data is loaded
+  // Transform API data into dropdown options
+  const departmentOptions = useMemo(() => [
+    { value: 'none', label: 'None' },
+    ...departments.map((dept) => ({
+      value: dept.id,
+      label: `${dept.name} (${dept.code})`,
+    })),
+  ], [departments]);
+
+  const positionOptions = useMemo(() => [
+    { value: 'none', label: 'None' },
+    ...positions.map((pos) => ({
+      value: pos.id,
+      label: pos.title,
+    })),
+  ], [positions]);
+
+  // Pre-populate form when user data and email are loaded
   useEffect(() => {
-    if (user) {
+    if (user && emailData) {
       reset({
         firstName: user.profile.firstName,
         lastName: user.profile.lastName,
         middleName: user.profile.middleName || '',
-        suffix: 'none', // Not stored in mock data, default to none
+        suffix: 'none', // Not stored in database, default to none
         employeeId: user.profile.employeeId ?? '',
-        email: `${user.profile.employeeId ?? ''}@tup.edu.ph`, // Mock email
+        email: emailData.email || '',
         role: user.profile.role,
         departmentId: user.profile.departmentId || 'none',
         positionId: user.profile.positionId || 'none',
         isActive: user.profile.isActive,
       });
     }
-  }, [user, reset]);
+  }, [user, emailData, reset]);
 
   const roleRequiresDepartment = useMemo(() => {
     return ['employee', 'supervisor'].includes(watchRole || '');
@@ -479,20 +499,33 @@ export default function EditUserPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Department {roleRequiresDepartment && '*'}</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={isDepartmentsLoading}
+                    >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select department" />
+                          <SelectValue
+                            placeholder={
+                              isDepartmentsLoading
+                                ? 'Loading departments...'
+                                : 'Select department'
+                            }
+                          />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {DEPARTMENTS.map((dept) => (
+                        {departmentOptions.map((dept) => (
                           <SelectItem key={dept.value} value={dept.value}>
                             {dept.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    {isDepartmentsLoading && (
+                      <FormDescription>Loading departments...</FormDescription>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -504,20 +537,33 @@ export default function EditUserPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Position {roleRequiresDepartment && '*'}</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={isPositionsLoading}
+                    >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select position" />
+                          <SelectValue
+                            placeholder={
+                              isPositionsLoading
+                                ? 'Loading positions...'
+                                : 'Select position'
+                            }
+                          />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {POSITIONS.map((position) => (
+                        {positionOptions.map((position) => (
                           <SelectItem key={position.value} value={position.value}>
                             {position.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    {isPositionsLoading && (
+                      <FormDescription>Loading positions...</FormDescription>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}

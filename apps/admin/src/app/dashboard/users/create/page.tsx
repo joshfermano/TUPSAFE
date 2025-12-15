@@ -116,14 +116,42 @@ function generatePassword(): string {
   return password;
 }
 
-function sendCredentialsEmail(email: string, username: string, password: string) {
-  // Mock email sending (replace with actual email API in production)
-  console.log('Sending credentials to:', email);
-  console.log('Username:', username);
-  console.log('Temporary Password:', password);
-  toast.success(`Credentials sent to ${email}`, {
-    description: 'The user will receive an email with login instructions.',
-  });
+async function sendCredentialsEmail(
+  email: string,
+  employeeId: string,
+  password: string,
+  firstName: string
+) {
+  try {
+    const res = await fetch('/api/auth/send-credentials', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        employeeId,
+        temporaryPassword: password,
+        firstName,
+      }),
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'Failed to send email');
+    }
+
+    const data = await res.json();
+
+    toast.success('Credentials sent successfully', {
+      description: `Login credentials have been sent to ${email}`,
+    });
+
+    return data;
+  } catch (error) {
+    toast.error('Failed to send credentials', {
+      description: error instanceof Error ? error.message : 'Unknown error',
+    });
+    throw error; // Re-throw to handle in calling code
+  }
 }
 
 export default function CreateUserPage() {
@@ -263,14 +291,25 @@ export default function CreateUserPage() {
 
         await createUserAsync(userData);
 
-        // Send credentials email if requested
-        if (sendEmail) {
-          sendCredentialsEmail(values.email, generatedUsername, generatedPassword);
-        }
-
         toast.success('User created successfully', {
           description: `${values.firstName} ${values.lastName} has been added to the system.`,
         });
+
+        // Send credentials email if requested (don't block user creation on email failure)
+        if (sendEmail) {
+          try {
+            await sendCredentialsEmail(
+              values.email,
+              values.employeeId,
+              generatedPassword,
+              values.firstName
+            );
+          } catch (emailError) {
+            // Email error already toasted in sendCredentialsEmail
+            console.error('Email sending failed:', emailError);
+            // User can still proceed to users list even if email fails
+          }
+        }
 
         router.push('/dashboard/users');
       } catch (error) {
@@ -279,7 +318,7 @@ export default function CreateUserPage() {
         });
       }
     },
-    [createUserAsync, generatedUsername, generatedPassword, router]
+    [createUserAsync, generatedPassword, router]
   );
 
   const roleRequiresDepartment = useMemo(() => {
