@@ -230,7 +230,7 @@ export function useSalnSubmissionsQuery(filters: SalnSubmissionsFilters = {}) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          notes: reviewNotes,
+          reason: reviewNotes,
         }),
       });
 

@@ -183,7 +183,14 @@ export default function SalnSubmissionViewPage() {
 
   // Transform SALN submission data to PDF format
   const transformSALNToData = React.useCallback((): SALNData | null => {
-    if (!completeSubmission || !submission || !employee) return null;
+    if (!completeSubmission || !submission || !employee) {
+      console.error('Missing required data for PDF generation:', {
+        hasCompleteSubmission: !!completeSubmission,
+        hasSubmission: !!submission,
+        hasEmployee: !!employee,
+      });
+      return null;
+    }
 
     // Parse spouse name if filing type is joint
     let spouseInfo = undefined;
@@ -193,13 +200,13 @@ export default function SalnSubmissionViewPage() {
         surname: nameParts[nameParts.length - 1] || '',
         firstName: nameParts[0] || '',
         middleInitial: nameParts.length > 2 ? nameParts[1]?.charAt(0) : null,
-        position: '',
-        agency: 'Technological University of the Philippines - Manila',
+        position: submission.position || '',
+        agency: submission.agency || 'Technological University of the Philippines - Manila',
         officeAddress: submission.officeAddress || employee.officeAddress || '',
       };
     }
 
-    return {
+    const pdfData: SALNData = {
       id: submission.id,
       year: submission.fiscalYear,
       filingType: (submission.filingType || 'separate') as 'joint' | 'separate' | 'not_applicable',
@@ -214,42 +221,54 @@ export default function SalnSubmissionViewPage() {
       spouseInfo,
       children: [], // Children data not currently stored in DB
       realProperties: (salnData?.realProperties || []).map((prop: any) => ({
-        description: prop.description,
-        kind: prop.kind,
-        exactLocation: prop.exactLocation,
+        description: prop.description || '',
+        kind: prop.kind || 'residential',
+        exactLocation: prop.exactLocation || '',
         assessedValue: parseFloat(prop.assessedValue || '0'),
         currentFairMarketValue: parseFloat(prop.currentFairMarketValue || '0'),
-        acquisitionYear: prop.acquisitionYear,
-        acquisitionMode: prop.acquisitionMode,
+        acquisitionYear: prop.acquisitionYear || new Date().getFullYear(),
+        acquisitionMode: prop.acquisitionMode || 'Purchase',
         acquisitionCost: parseFloat(prop.acquisitionCost || '0'),
       })),
       personalProperties: (salnData?.personalProperties || []).map((prop: any) => ({
-        description: prop.description,
-        yearAcquired: prop.yearAcquired,
+        description: prop.description || '',
+        yearAcquired: prop.yearAcquired || new Date().getFullYear(),
         acquisitionCost: parseFloat(prop.acquisitionCost || '0'),
       })),
       liabilities: (salnData?.liabilities || []).map((liability: any) => ({
-        nature: liability.nature,
-        creditorName: liability.creditorName,
+        nature: liability.nature || '',
+        creditorName: liability.creditorName || '',
         outstandingBalance: parseFloat(liability.outstandingBalance || '0'),
       })),
       businessInterests: (salnData?.businessInterests || []).map((business: any) => ({
-        entityName: business.entityName,
-        businessAddress: business.businessAddress,
-        natureOfBusiness: business.natureOfBusiness,
-        dateOfAcquisition: business.dateOfAcquisition,
+        entityName: business.entityName || '',
+        businessAddress: business.businessAddress || '',
+        natureOfBusiness: business.natureOfBusiness || '',
+        dateOfAcquisition: business.dateOfAcquisition || new Date().toISOString(),
       })),
       relativesInGov: (salnData?.relativesInGov || []).map((relative: any) => ({
-        name: relative.name,
-        relationship: relative.relationship,
-        position: relative.position,
-        agencyAddress: relative.agencyAddress,
+        name: relative.name || '',
+        relationship: relative.relationship || '',
+        position: relative.position || '',
+        agencyAddress: relative.agencyAddress || '',
       })),
       totalAssets,
       totalLiabilities,
       netWorth,
       submittedAt: submission.submittedAt,
     };
+
+    console.log('PDF data transformed successfully:', {
+      id: pdfData.id,
+      year: pdfData.year,
+      filingType: pdfData.filingType,
+      declarantName: `${pdfData.declarantInfo.firstName} ${pdfData.declarantInfo.surname}`,
+      realPropertiesCount: pdfData.realProperties.length,
+      personalPropertiesCount: pdfData.personalProperties.length,
+      liabilitiesCount: pdfData.liabilities.length,
+    });
+
+    return pdfData;
   }, [completeSubmission, submission, employee, salnData, totalAssets, totalLiabilities, netWorth]);
 
   // Handle approval
