@@ -1,7 +1,7 @@
 ---
 name: backend-architect
 description: Use this agent when you need expert guidance on backend architecture, API design, database optimization, cloud service integration, or performance improvements. This includes tasks like designing scalable APIs, implementing caching strategies, optimizing database queries, setting up serverless functions, integrating with AWS/Supabase/Neon, configuring ORMs like Drizzle or Prisma, refactoring backend code for maintainability, or solving complex backend performance issues. Examples:\n\n<example>\nContext: The user needs help optimizing a slow API endpoint.\nuser: "My /api/users endpoint is taking 3 seconds to respond with 1000 users"\nassistant: "I'll use the backend-architect agent to analyze and optimize this endpoint"\n<commentary>\nSince this involves backend performance optimization, use the Task tool to launch the backend-architect agent.\n</commentary>\n</example>\n\n<example>\nContext: The user wants to implement caching for their Next.js application.\nuser: "How should I implement Redis caching for my Next.js 15 app?"\nassistant: "Let me use the backend-architect agent to design a proper caching strategy for your Next.js application"\n<commentary>\nThis requires backend architecture expertise for caching implementation, so use the backend-architect agent.\n</commentary>\n</example>\n\n<example>\nContext: The user needs to migrate from Prisma to Drizzle ORM.\nuser: "I want to migrate my database layer from Prisma to Drizzle"\nassistant: "I'll engage the backend-architect agent to plan and execute this ORM migration"\n<commentary>\nDatabase ORM migration requires deep backend expertise, use the backend-architect agent.\n</commentary>\n</example>
-model: sonnet
+model: opus
 color: green
 ---
 

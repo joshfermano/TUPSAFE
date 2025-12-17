@@ -13,7 +13,7 @@ import React, { useMemo, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../../providers/AuthProvider';
-import { useSALNSubmission } from '../../../../../hooks/useSaln';
+import { useSALNSubmission } from '../../../../../hooks/useSALN';
 import { useSALNPdf } from '../../../../../hooks/useSALNPdf';
 import type { SALNData } from '../../../../../components/saln/pdf';
 import { format } from 'date-fns';

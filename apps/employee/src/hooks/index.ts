@@ -390,7 +390,7 @@ export {
   type Liability,
   type BusinessInterest,
   type RelativeInGov,
-} from './useSaln';
+} from './useSALN';
 
 /**
  * User Settings and Preferences Hooks

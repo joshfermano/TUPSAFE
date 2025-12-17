@@ -85,6 +85,11 @@ jobs:
     if: github.event_name == 'schedule' || inputs.run_cleanup
 
     steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
       - name: Clean stale caches
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -100,11 +105,12 @@ jobs:
             exit 0
           fi
 
-          # Delete caches older than 7 days
+          # Delete caches older than 7 days using Node.js for cross-platform date handling
           DELETED=0
-          THRESHOLD=$(date -d '7 days ago' --iso-8601=seconds 2>/dev/null || date -v-7d +%Y-%m-%dT%H:%M:%S 2>/dev/null || echo "")
+          THRESHOLD=$(node -e "console.log(new Date(Date.now() - 7*24*60*60*1000).toISOString())")
 
           if [ -n "$THRESHOLD" ]; then
+            echo "Deleting caches older than: $THRESHOLD"
             OLD_CACHES=$(echo "$CACHES" | jq -r --arg t "$THRESHOLD" '.[] | select(.createdAt < $t) | .id')
 
             for cache_id in $OLD_CACHES; do
@@ -115,3 +121,8 @@ jobs:
           fi
 
           echo "Deleted $DELETED stale caches" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Threshold Date | $THRESHOLD |" >> $GITHUB_STEP_SUMMARY
+          echo "| Caches Deleted | $DELETED |" >> $GITHUB_STEP_SUMMARY

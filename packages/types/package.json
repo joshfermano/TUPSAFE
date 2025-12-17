@@ -23,6 +23,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@tupsafe/database": "*",
     "zod": "^3.25.76"
   },
   "devDependencies": {
