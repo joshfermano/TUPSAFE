@@ -16,6 +16,10 @@ jobs:
     name: Build & Validate
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    outputs:
+      build-status: ${{ steps.build.outcome }}
+      typecheck-status: ${{ steps.typecheck.outcome }}
+      lint-status: ${{ steps.lint.outcome }}
 
     steps:
       - name: Checkout
@@ -23,21 +27,60 @@ jobs:
 
       - name: Setup
         uses: ./.github/actions/setup
+        with:
+          supabase-url: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          supabase-anon-key: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          supabase-service-key: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          database-url: ${{ secrets.DATABASE_URL }}
 
       - name: Build
+        id: build
         run: npm run build
 
       - name: Type Check
+        id: typecheck
         run: npm run type-check
 
       - name: Lint
+        id: lint
         run: npm run lint
 
       - name: Summary
         if: always()
         run: |
+          BUILD_STATUS="${{ steps.build.outcome }}"
+          TYPECHECK_STATUS="${{ steps.typecheck.outcome }}"
+          LINT_STATUS="${{ steps.lint.outcome }}"
+
+          status_icon() {
+            case "$1" in
+              success) echo ":white_check_mark:" ;;
+              failure) echo ":x:" ;;
+              skipped) echo ":fast_forward:" ;;
+              cancelled) echo ":no_entry:" ;;
+              *) echo ":question:" ;;
+            esac
+          }
+
+          status_text() {
+            case "$1" in
+              success) echo "Passed" ;;
+              failure) echo "Failed" ;;
+              skipped) echo "Skipped" ;;
+              cancelled) echo "Cancelled" ;;
+              *) echo "Unknown" ;;
+            esac
+          }
+
           echo "## CI Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Build | ${{ job.status == 'success' && ':white_check_mark:' || ':x:' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | $(status_icon "$BUILD_STATUS") | $(status_text "$BUILD_STATUS") |" >> $GITHUB_STEP_SUMMARY
+          echo "| Type Check | $(status_icon "$TYPECHECK_STATUS") | $(status_text "$TYPECHECK_STATUS") |" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint | $(status_icon "$LINT_STATUS") | $(status_text "$LINT_STATUS") |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "*Commit: ${{ github.sha }}*" >> $GITHUB_STEP_SUMMARY
+          echo "*Branch: ${{ github.ref_name }}*" >> $GITHUB_STEP_SUMMARY
+          echo "*Run: [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})*" >> $GITHUB_STEP_SUMMARY

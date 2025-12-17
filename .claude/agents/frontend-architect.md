@@ -1,7 +1,7 @@
 ---
 name: frontend-architect
 description: Use this agent when you need expert guidance on modern frontend development, including: building React/Next.js applications, implementing responsive designs, optimizing performance, integrating modern UI libraries, establishing design systems, solving SEO challenges, or architecting scalable frontend solutions. This agent excels at both high-level architecture decisions and detailed implementation guidance.\n\nExamples:\n- <example>\n  Context: User needs help building a new feature in their Next.js application\n  user: "I need to implement a dashboard with real-time data updates"\n  assistant: "I'll use the frontend-architect agent to help design and implement this real-time dashboard feature"\n  <commentary>\n  Since this involves frontend architecture, real-time updates, and UI implementation, the frontend-architect agent is the perfect choice.\n  </commentary>\n</example>\n- <example>\n  Context: User is facing performance issues in their React application\n  user: "My React app is running slowly when displaying large lists"\n  assistant: "Let me engage the frontend-architect agent to analyze and optimize your list rendering performance"\n  <commentary>\n  Performance optimization in React is a core expertise of the frontend-architect agent.\n  </commentary>\n</example>\n- <example>\n  Context: User needs to improve their site's SEO and metadata\n  user: "How can I improve my Next.js site's SEO ranking?"\n  assistant: "I'll use the frontend-architect agent to review and enhance your SEO implementation"\n  <commentary>\n  SEO optimization for Next.js applications falls within the frontend-architect's expertise.\n  </commentary>\n</example>
-model: sonnet
+model: opus
 color: blue
 ---
 

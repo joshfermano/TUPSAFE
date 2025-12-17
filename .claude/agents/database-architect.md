@@ -1,7 +1,7 @@
 ---
 name: database-architect
 description: Use this agent when you need expert guidance on database design, optimization, or implementation. This includes: creating ERD/ERP diagrams, designing database schemas, optimizing query performance, implementing indexes and transactions, integrating cloud database services (AWS RDS, Supabase, etc.), working with PostgreSQL or MySQL, or implementing/optimizing ORM solutions with Drizzle or Prisma. Examples:\n\n<example>\nContext: The user needs help designing a database schema for their application.\nuser: "I need to design a database for an e-commerce platform with products, orders, and customers"\nassistant: "I'll use the database-architect agent to help design an optimal database schema for your e-commerce platform"\n<commentary>\nSince the user needs database design expertise, use the Task tool to launch the database-architect agent.\n</commentary>\n</example>\n\n<example>\nContext: The user is experiencing slow query performance.\nuser: "My queries are running slowly on this users table with 10 million records"\nassistant: "Let me engage the database-architect agent to analyze and optimize your query performance"\n<commentary>\nThe user needs database optimization help, so use the database-architect agent.\n</commentary>\n</example>\n\n<example>\nContext: The user wants to integrate an ORM into their project.\nuser: "Should I use Drizzle or Prisma for my Next.js project with PostgreSQL?"\nassistant: "I'll consult the database-architect agent to provide expert guidance on choosing and implementing the right ORM for your project"\n<commentary>\nORM selection and integration requires database expertise, use the database-architect agent.\n</commentary>\n</example>
-model: sonnet
+model: opus
 color: red
 ---
 

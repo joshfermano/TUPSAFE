@@ -20,7 +20,7 @@
 import { useMemo, memo, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../../providers/AuthProvider';
-import { useSALNSubmissions } from '../../../hooks/useSaln';
+import { useSALNSubmissions } from '../../../hooks/useSALN';
 import { DeadlineSection } from '../../../components/dashboard/DeadlineSection';
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
