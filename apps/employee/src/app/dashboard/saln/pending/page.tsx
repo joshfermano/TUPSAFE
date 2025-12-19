@@ -3,7 +3,7 @@
 import React, { useMemo, useCallback, useState, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../providers/AuthProvider';
-import { useSALNSubmissions, type SALNSubmission } from '../../../../hooks/useSALN';
+import { useSALNSubmissions, type SALNSubmission } from '../../../../hooks/useSaln';
 import { BlurFade, Badge } from '@tupsafe/shared-ui';
 import { Clock, Landmark } from 'lucide-react';
 import { EmployeeOnlyGuard } from '../../../../components/guards/EmployeeOnlyGuard';

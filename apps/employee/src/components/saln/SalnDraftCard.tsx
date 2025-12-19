@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
-import type { SALNSubmission } from '@/hooks/useSALN';
+import type { SALNSubmission } from '@/hooks/useSaln';
 
 interface SalnDraftCardProps {
   submission: SALNSubmission;

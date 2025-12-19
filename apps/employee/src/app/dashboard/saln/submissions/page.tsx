@@ -23,8 +23,8 @@
 import React, { useMemo, useCallback, useState, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../providers/AuthProvider';
-import { useSALNSubmissions } from '../../../../hooks/useSALN';
-import { useSALNPdf } from '../../../../hooks/useSALNPdf';
+import { useSALNSubmissions } from '../../../../hooks/useSaln';
+import { useSALNPdf } from '../../../../hooks/useSalnPdf';
 import type { SALNData } from '../../../../components/saln/pdf';
 import { toast } from 'sonner';
 import { BlurFade, Badge, NumberTicker, AnimatedGradientText } from '@tupsafe/shared-ui';

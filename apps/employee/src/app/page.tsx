@@ -30,14 +30,12 @@ const TestimonialsSection = dynamic(
   () => import('../components/sections/TestimonialsSection'),
   { ssr: false }
 );
-const FAQSection = dynamic(
-  () => import('../components/sections/FAQSection'),
-  { ssr: false }
-);
-const CTASection = dynamic(
-  () => import('../components/sections/CTASection'),
-  { ssr: false }
-);
+const FAQSection = dynamic(() => import('../components/sections/FAQSection'), {
+  ssr: false,
+});
+const CTASection = dynamic(() => import('../components/sections/CTASection'), {
+  ssr: false,
+});
 
 export default function Home() {
   const router = useRouter();

@@ -2,7 +2,7 @@
 
 import React, { useMemo, useCallback, useState, memo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSALNSubmissions } from '../../../../hooks/useSALN';
+import { useSALNSubmissions } from '../../../../hooks/useSaln';
 import { format, formatDistanceToNow } from 'date-fns';
 import { EmployeeOnlyGuard } from '../../../../components/guards/EmployeeOnlyGuard';
 import {

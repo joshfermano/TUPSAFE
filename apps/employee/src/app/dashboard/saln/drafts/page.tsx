@@ -2,7 +2,7 @@
 
 import React, { useMemo, useCallback, useState, memo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSALNSubmissions, type SALNSubmission } from '@/hooks/useSALN';
+import { useSALNSubmissions, type SALNSubmission } from '@/hooks/useSaln';
 import { BlurFade, Badge } from '@tupsafe/shared-ui';
 import { FileEdit, Inbox, FolderOpen, Sparkles, SortAsc, Search } from 'lucide-react';
 import { SalnDraftCard } from '@/components/saln/SalnDraftCard';

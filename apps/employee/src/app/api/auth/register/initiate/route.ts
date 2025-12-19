@@ -122,7 +122,9 @@ export async function POST(
       const minutesOld = (Date.now() - createdAt.getTime()) / (1000 * 60);
 
       console.log(
-        `Found incomplete registration for ${data.email}, age: ${minutesOld.toFixed(1)} minutes`
+        `Found incomplete registration for ${
+          data.email
+        }, age: ${minutesOld.toFixed(1)} minutes`
       );
 
       // If older than OTP expiry (15 minutes), delete and allow retry
@@ -162,7 +164,9 @@ export async function POST(
             error: 'Registration already in progress',
             details: {
               email: [
-                `A verification email was recently sent. Please check your email (including spam folder) or try again in ${minutesRemaining} minute${minutesRemaining !== 1 ? 's' : ''}.`,
+                `A verification email was recently sent. Please check your email (including spam folder) or try again in ${minutesRemaining} minute${
+                  minutesRemaining !== 1 ? 's' : ''
+                }.`,
               ],
             },
           },
@@ -257,7 +261,10 @@ export async function POST(
       try {
         await supabase.auth.admin.deleteUser(userId);
       } catch (cleanupError) {
-        console.error('Failed to cleanup user after OTP failure:', cleanupError);
+        console.error(
+          'Failed to cleanup user after OTP failure:',
+          cleanupError
+        );
       }
 
       return NextResponse.json(

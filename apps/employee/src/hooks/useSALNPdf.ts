@@ -6,7 +6,7 @@
  *
  * Uses @react-pdf/renderer for client-side PDF generation.
  *
- * @module hooks/useSALNPdf
+ * @module hooks/useSalnPdf
  */
 
 import { useState, useCallback } from 'react';
@@ -119,7 +119,7 @@ function triggerDownload(blob: Blob, filename: string): void {
  *
  * @example
  * ```tsx
- * import { useSALNPdf } from '@/hooks/useSALNPdf';
+ * import { useSALNPdf } from '@/hooks/useSalnPdf';
  * import { toast } from 'sonner';
  *
  * function SALNActions({ salnData }: { salnData: SALNData }) {
