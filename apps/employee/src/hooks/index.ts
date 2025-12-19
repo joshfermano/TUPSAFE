@@ -390,7 +390,7 @@ export {
   type Liability,
   type BusinessInterest,
   type RelativeInGov,
-} from './useSALN';
+} from './useSaln';
 
 /**
  * User Settings and Preferences Hooks
@@ -480,7 +480,7 @@ export { usePDSPdf, type UsePDSPdfReturn } from './usePDSPdf';
  * }
  * ```
  */
-export { useSALNPdf, type UseSALNPdfReturn } from './useSALNPdf';
+export { useSALNPdf, type UseSALNPdfReturn } from './useSalnPdf';
 
 /**
  * Usage Examples
