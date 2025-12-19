@@ -20,9 +20,8 @@ import {
   pendingRegistrations,
   notifications,
   createAuditLog,
-  generateAdminEmployeeId,
 } from '@tupsafe/database/server';
-import { eq, or } from 'drizzle-orm';
+import { eq, or, sql } from 'drizzle-orm';
 import {
   checkUserRoleFromSupabase,
   sendWelcomeEmail,
@@ -69,10 +68,14 @@ export async function POST(
       );
     }
 
-    // Get current admin user
-    const supabase = await createServerClient('admin');
-    const { data: { session } } = await supabase.auth.getSession();
+    // Get current admin user (for audit trail)
+    const sessionClient = await createServerClient('admin');
+    const { data: { session } } = await sessionClient.auth.getSession();
     const adminUserId = session?.user?.id;
+
+    // Create admin client for admin operations
+    const { createAdminClient } = await import('@tupsafe/auth/server');
+    const supabase = await createAdminClient();
 
     if (!adminUserId) {
       return NextResponse.json(
@@ -171,9 +174,34 @@ export async function POST(
     let employeeId = profile.employeeId;
     if (profile.userType === 'employee' && !employeeId) {
       try {
-        employeeId = await generateAdminEmployeeId();
+        // Validate date of birth is present
+        if (!profile.dateOfBirth) {
+          console.error('[Approve] Employee missing date of birth:', profile.id);
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'Cannot generate employee ID: date of birth is required',
+              details: 'This user registration is missing birth date information. Please ensure birth date is collected during registration.',
+            },
+            { status: 400 }
+          );
+        }
+
+        // Call SQL function to generate employee ID based on birth date
+        // Format: TUPM-MMDD-YY-### (e.g., TUPM-0513-04-001 for May 13, 2004)
+        const result = await db.execute(
+          sql`SELECT generate_employee_id(${profile.dateOfBirth}::date) as employee_id`
+        );
+
+        employeeId = result[0]?.employee_id as string;
+
+        if (!employeeId) {
+          throw new Error('SQL function returned no employee ID');
+        }
+
+        console.log(`[Approve] Generated employee ID: ${employeeId} for birth date: ${profile.dateOfBirth}`);
       } catch (error) {
-        console.error('Error generating employee ID:', error);
+        console.error('[Approve] Error generating employee ID:', error);
         return NextResponse.json(
           {
             success: false,

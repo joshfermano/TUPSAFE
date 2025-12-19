@@ -1,9 +1,15 @@
 /**
- * Pending Approval Page
+ * Pending Approval Page - Premium Redesign
  *
- * Premium redesign matching the employee module's aesthetic
+ * A visually stunning, modern approval status page with:
+ * - Premium animated backgrounds and effects
+ * - Enhanced status cards with detailed information
+ * - Smooth entrance animations and micro-interactions
+ * - Feature cards highlighting approval process
+ * - Real-time status updates
+ * - Mobile-first responsive design
+ *
  * Shown to users after registration when their account is awaiting admin approval.
- * Displays current status and prevents access to dashboard until approved.
  */
 
 'use client';
@@ -17,18 +23,33 @@ import {
   CrossCircledIcon,
   ExclamationTriangleIcon,
   ReloadIcon,
+  EnvelopeClosedIcon,
+  PersonIcon,
+  CheckIcon,
+  InfoCircledIcon,
 } from '@radix-ui/react-icons';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { MagicCard } from '../../../components/ui/magic-card';
 import { BorderBeam } from '../../../components/ui/border-beam';
 import { AnimatedGradientText } from '../../../components/ui/animated-gradient-text';
 import AnimatedGridPattern from '../../../components/ui/animated-grid-pattern';
 import { ShimmerButton } from '../../../components/ui/shimmer-button';
+import { SparklesText } from '../../../components/ui/sparkles-text';
+import { NeonGradientCard } from '../../../components/ui/neon-gradient-card';
+import { Meteors } from '../../../components/ui/meteors';
+import { Particles } from '../../../components/ui/particles';
 import { cn } from '../../../lib/utils';
 import { useRealtimeProfile, type Profile } from '@tupsafe/database';
 
 type AccountStatus = 'pending' | 'active' | 'rejected' | 'suspended';
+
+interface FeatureCard {
+  icon: typeof InfoCircledIcon;
+  title: string;
+  description: string;
+  color: string;
+}
 
 interface StatusConfig {
   icon: typeof ClockIcon;
@@ -38,7 +59,10 @@ interface StatusConfig {
   color: string;
   bgGradient: string;
   iconBg: string;
+  glowColor: string;
+  borderColor: string;
   points: string[];
+  features: FeatureCard[];
 }
 
 function PendingApprovalContent() {
@@ -49,10 +73,12 @@ function PendingApprovalContent() {
   const [userEmail, setUserEmail] = useState<string>('');
   const [refreshing, setRefreshing] = useState(false);
   const [userId, setUserId] = useState<string>('');
+  const [authError, setAuthError] = useState(false);
 
   // Set up Realtime subscription for profile changes
+  // Only activate when userId is available to prevent session corruption
   // This will automatically detect when accountStatus changes to 'active'
-  useRealtimeProfile(userId, {
+  useRealtimeProfile(userId || '', {
     showToast: false, // We'll handle toast manually for better UX
     notifyOnFields: ['isActive'], // Monitor significant changes
     onProfileUpdate: (
@@ -131,7 +157,11 @@ function PendingApprovalContent() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      router.push('/auth/login');
+      // Don't auto-redirect to login - let user manually navigate
+      console.log('[Pending Approval] No authenticated user found');
+      setAuthError(true);
+      setLoading(false);
+      setRefreshing(false);
       return;
     }
 
@@ -183,15 +213,37 @@ function PendingApprovalContent() {
           title: 'Registration Under Review',
           message: 'Your account is being verified by our HR team',
           description:
-            'We are carefully reviewing your registration to ensure all information is accurate and complete.',
+            'We are carefully reviewing your registration to ensure all information is accurate and complete. This process typically takes 1-3 business days.',
           color: 'text-amber-600 dark:text-amber-400',
           bgGradient: 'from-amber-500/10 via-orange-500/5 to-amber-500/10',
           iconBg: 'bg-amber-500/10 dark:bg-amber-500/20',
+          glowColor: 'rgba(251, 191, 36, 0.3)',
+          borderColor: 'border-amber-500/20',
           points: [
             'Typical review time: 1-3 business days',
             'Email notification upon approval',
             'HR department verification in progress',
             'You can safely close this page',
+          ],
+          features: [
+            {
+              icon: PersonIcon,
+              title: 'Identity Verification',
+              description: 'HR is verifying your credentials and employment status',
+              color: 'text-amber-600 dark:text-amber-400',
+            },
+            {
+              icon: EnvelopeClosedIcon,
+              title: 'Email Confirmation',
+              description: "You'll receive an email once your account is approved",
+              color: 'text-blue-600 dark:text-blue-400',
+            },
+            {
+              icon: CheckIcon,
+              title: 'Auto Approval',
+              description: 'Your access will be automatically granted upon approval',
+              color: 'text-green-600 dark:text-green-400',
+            },
           ],
         };
       case 'active':
@@ -204,11 +256,33 @@ function PendingApprovalContent() {
           color: 'text-green-600 dark:text-green-400',
           bgGradient: 'from-green-500/10 via-emerald-500/5 to-green-500/10',
           iconBg: 'bg-green-500/10 dark:bg-green-500/20',
+          glowColor: 'rgba(34, 197, 94, 0.3)',
+          borderColor: 'border-green-500/20',
           points: [
             'Full access to all features',
             'PDS and SALN submission available',
             'Dashboard access granted',
             'Profile customization enabled',
+          ],
+          features: [
+            {
+              icon: CheckIcon,
+              title: 'Full Access',
+              description: 'Complete access to all portal features',
+              color: 'text-green-600 dark:text-green-400',
+            },
+            {
+              icon: PersonIcon,
+              title: 'Profile Ready',
+              description: 'Your employee profile is now active',
+              color: 'text-blue-600 dark:text-blue-400',
+            },
+            {
+              icon: InfoCircledIcon,
+              title: 'Get Started',
+              description: 'Begin submitting your PDS and SALN documents',
+              color: 'text-purple-600 dark:text-purple-400',
+            },
           ],
         };
       case 'rejected':
@@ -217,15 +291,37 @@ function PendingApprovalContent() {
           title: 'Registration Not Approved',
           message: 'Your registration could not be approved at this time',
           description:
-            'Unfortunately, we were unable to approve your registration. Please contact HR for more information.',
+            'Unfortunately, we were unable to approve your registration. Please contact HR for detailed information about the decision and next steps.',
           color: 'text-red-600 dark:text-red-400',
           bgGradient: 'from-red-500/10 via-rose-500/5 to-red-500/10',
           iconBg: 'bg-red-500/10 dark:bg-red-500/20',
+          glowColor: 'rgba(239, 68, 68, 0.3)',
+          borderColor: 'border-red-500/20',
           points: [
             'Contact HR department for details',
             'Email: hr@tup.edu.ph',
             'You may reapply if eligible',
             'Review required documentation',
+          ],
+          features: [
+            {
+              icon: EnvelopeClosedIcon,
+              title: 'Contact HR',
+              description: 'Reach out to HR for clarification on the decision',
+              color: 'text-red-600 dark:text-red-400',
+            },
+            {
+              icon: InfoCircledIcon,
+              title: 'Review Details',
+              description: 'Check your registration information for accuracy',
+              color: 'text-orange-600 dark:text-orange-400',
+            },
+            {
+              icon: ReloadIcon,
+              title: 'Reapplication',
+              description: 'You may be eligible to reapply after corrections',
+              color: 'text-blue-600 dark:text-blue-400',
+            },
           ],
         };
       case 'suspended':
@@ -234,15 +330,37 @@ function PendingApprovalContent() {
           title: 'Account Suspended',
           message: 'Your account access has been temporarily restricted',
           description:
-            'This account has been suspended. Please contact the administrator for more information.',
+            'This account has been suspended. Please contact the administrator immediately for more information about the suspension and resolution process.',
           color: 'text-orange-600 dark:text-orange-400',
           bgGradient: 'from-orange-500/10 via-red-500/5 to-orange-500/10',
           iconBg: 'bg-orange-500/10 dark:bg-orange-500/20',
+          glowColor: 'rgba(249, 115, 22, 0.3)',
+          borderColor: 'border-orange-500/20',
           points: [
             'Contact administrator immediately',
             'Email: admin@tup.edu.ph',
             'Account review may be requested',
             'Temporary access restriction',
+          ],
+          features: [
+            {
+              icon: ExclamationTriangleIcon,
+              title: 'Immediate Action',
+              description: 'Contact administration for account restoration',
+              color: 'text-orange-600 dark:text-orange-400',
+            },
+            {
+              icon: EnvelopeClosedIcon,
+              title: 'Support Available',
+              description: 'Our team is ready to assist you',
+              color: 'text-blue-600 dark:text-blue-400',
+            },
+            {
+              icon: InfoCircledIcon,
+              title: 'Review Process',
+              description: 'Account suspension can be appealed',
+              color: 'text-purple-600 dark:text-purple-400',
+            },
           ],
         };
       default:
@@ -254,7 +372,17 @@ function PendingApprovalContent() {
           color: 'text-slate-600 dark:text-slate-400',
           bgGradient: 'from-slate-500/10 via-gray-500/5 to-slate-500/10',
           iconBg: 'bg-slate-500/10 dark:bg-slate-500/20',
+          glowColor: 'rgba(148, 163, 184, 0.3)',
+          borderColor: 'border-slate-500/20',
           points: ['Contact support', 'Verify your account details'],
+          features: [
+            {
+              icon: InfoCircledIcon,
+              title: 'Need Help?',
+              description: 'Contact our support team for assistance',
+              color: 'text-slate-600 dark:text-slate-400',
+            },
+          ],
         };
     }
   };
@@ -274,23 +402,121 @@ function PendingApprovalContent() {
 
   if (loading) {
     return (
-      <div className="relative min-h-screen pt-20 flex items-center justify-center bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 overflow-hidden">
+        <Particles
+          className="absolute inset-0 pointer-events-none"
+          quantity={60}
+          staticity={30}
+          color="#8B1538"
+          ease={50}
+        />
         <AnimatedGridPattern
-          numSquares={30}
-          maxOpacity={0.05}
+          numSquares={40}
+          maxOpacity={0.1}
+          duration={3}
+          repeatDelay={1}
+          className={cn(
+            '[mask-image:radial-gradient(600px_circle_at_center,white,transparent)]',
+            'inset-x-0 inset-y-[-30%] h-[200%] skew-y-12'
+          )}
+        />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="relative z-10 flex flex-col items-center gap-6">
+          <div className="relative">
+            <div className="absolute inset-0 animate-spin rounded-full h-16 w-16 border-4 border-transparent border-t-[#8B1538] dark:border-t-red-400 blur-sm"></div>
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#8B1538]/20 border-t-[#8B1538] dark:border-red-400/20 dark:border-t-red-400"></div>
+          </div>
+          <div className="text-center space-y-2">
+            <p className="text-slate-800 dark:text-slate-100 font-bold text-xl">
+              Checking account status...
+            </p>
+            <p className="text-slate-600 dark:text-slate-400 text-sm">
+              Please wait a moment
+            </p>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Show auth error state with manual back to login button
+  if (authError) {
+    return (
+      <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-rose-50 via-white to-red-50 dark:from-slate-950 dark:via-slate-900 dark:to-rose-950/30 px-4 overflow-hidden">
+        <Particles
+          className="absolute inset-0 pointer-events-none"
+          quantity={40}
+          staticity={40}
+          color="#DC2626"
+          ease={60}
+        />
+        <AnimatedGridPattern
+          numSquares={35}
+          maxOpacity={0.08}
           duration={3}
           repeatDelay={1}
           className={cn(
             '[mask-image:radial-gradient(500px_circle_at_center,white,transparent)]',
-            'inset-x-0 inset-y-[-30%] h-[200%] skew-y-12 opacity-30 dark:opacity-20'
+            'inset-x-0 inset-y-[-30%] h-[200%] skew-y-12'
           )}
         />
-        <div className="relative z-10 flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#8B1538]/30 border-t-[#8B1538] dark:border-red-400/30 dark:border-t-red-400"></div>
-          <p className="text-slate-700 dark:text-slate-200 font-semibold text-lg">
-            Checking account status...
-          </p>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="relative z-10 w-full max-w-md mx-auto">
+          <NeonGradientCard
+            className="relative overflow-hidden bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border-0 shadow-2xl"
+            borderSize={2}
+            borderRadius={16}
+            neonColors={{
+              firstColor: '#DC2626',
+              secondColor: '#EF4444',
+            }}>
+            <Meteors number={15} />
+            <div className="p-8 lg:p-10 space-y-6 text-center relative z-10">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.2 }}
+                className="relative mx-auto w-24 h-24">
+                <div className="absolute inset-0 rounded-full bg-red-500/20 dark:bg-red-500/30 blur-xl"></div>
+                <div className="relative w-24 h-24 rounded-full flex items-center justify-center bg-gradient-to-br from-red-500/10 to-rose-500/20 dark:from-red-500/20 dark:to-rose-500/30 border-2 border-red-500/30 dark:border-red-500/40">
+                  <ExclamationTriangleIcon className="h-12 w-12 text-red-600 dark:text-red-400" />
+                </div>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="space-y-3">
+                <h1 className="text-3xl font-bold text-red-600 dark:text-red-400">
+                  Authentication Required
+                </h1>
+                <p className="text-slate-700 dark:text-slate-200 text-base leading-relaxed">
+                  No active session found. Please log in to continue accessing your account.
+                </p>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}>
+                <ShimmerButton
+                  onClick={() => router.push('/auth/login')}
+                  className="w-full h-12 bg-[#8B1538] hover:bg-[#6B0F2A] dark:bg-[#8B1538] dark:hover:bg-[#B8264D] text-white font-semibold transition-all duration-300 rounded-xl shadow-lg hover:shadow-xl"
+                  shimmerColor="#ffffff"
+                  shimmerSize="0.15em"
+                  shimmerDuration="2s"
+                  background="rgba(139, 21, 56, 1)">
+                  Back to Login
+                </ShimmerButton>
+              </motion.div>
+            </div>
+          </NeonGradientCard>
+        </motion.div>
       </div>
     );
   }
@@ -396,6 +622,34 @@ function PendingApprovalContent() {
                     className="text-sm text-slate-700 dark:text-slate-200 max-w-md mx-auto px-2">
                     {config.description}
                   </motion.p>
+
+                  {/* Admin Approval Required Notice - Prominent */}
+                  {status === 'pending' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.55, type: 'spring' }}
+                      className="mt-4 mx-auto max-w-md">
+                      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 dark:from-amber-500/20 dark:via-orange-500/20 dark:to-amber-500/20 border-2 border-amber-500/30 dark:border-amber-500/40 p-4 shadow-lg">
+                        <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-orange-500/5 dark:from-amber-500/10 dark:to-orange-500/10"></div>
+                        <div className="relative flex items-start gap-3">
+                          <div className="flex-shrink-0 mt-0.5">
+                            <div className="w-8 h-8 rounded-full bg-amber-500/20 dark:bg-amber-500/30 flex items-center justify-center">
+                              <InfoCircledIcon className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                            </div>
+                          </div>
+                          <div className="flex-1 space-y-1">
+                            <p className="text-sm font-bold text-amber-900 dark:text-amber-300">
+                              Admin Approval Required
+                            </p>
+                            <p className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
+                              You cannot log in until an administrator approves your registration. You'll receive an email notification once approved.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
                 </div>
 
                 {/* User Email Badge - More compact */}

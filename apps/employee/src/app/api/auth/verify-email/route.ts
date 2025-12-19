@@ -13,7 +13,7 @@ import {
   createAuditLog,
 } from '@tupsafe/database/server';
 import { eq, and, or } from 'drizzle-orm';
-import { verifyOTP, createServerClient } from '@tupsafe/auth/server';
+import { verifyOTP, createAdminClient } from '@tupsafe/auth/server';
 
 // Verification validation schema
 const verificationSchema = z.object({
@@ -53,19 +53,70 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update profile email verification timestamp
+    // Create or update profile with email verification timestamp
+    // CRITICAL FIX: Profile may not exist yet, so we upsert instead of just update
     try {
-      await db
-        .update(profiles)
-        .set({
+      // Check if profile already exists
+      const existingProfile = await db
+        .select()
+        .from(profiles)
+        .where(eq(profiles.id, userId))
+        .limit(1);
+
+      if (existingProfile.length === 0) {
+        // Profile doesn't exist - create it from auth user metadata
+        const supabase = createAdminClient();
+        const { data: authUser, error: getUserError } =
+          await supabase.auth.admin.getUserById(userId);
+
+        if (getUserError || !authUser.user) {
+          throw new Error('Failed to retrieve user metadata');
+        }
+
+        const metadata = authUser.user.user_metadata;
+
+        // Create profile with data from registration metadata
+        await db.insert(profiles).values({
+          id: userId,
+          firstName: metadata.first_name || 'Unknown',
+          lastName: metadata.last_name || 'Unknown',
+          middleName: metadata.middle_name || null,
+          phoneNumber: metadata.phone_number || null,
+          userType: metadata.user_type || 'employee',
+          employmentCategory: metadata.employment_category || null,
+          dateOfBirth: metadata.date_of_birth || null,
+          role: 'employee',
+          accountStatus: 'pending',
           emailVerifiedAt: new Date(),
+          isActive: true,
+          createdAt: new Date(),
           updatedAt: new Date(),
-        })
-        .where(eq(profiles.id, userId));
+        });
+
+        console.log(
+          `✓ Created profile for user ${userId} during email verification`
+        );
+      } else {
+        // Profile exists - just update email verification timestamp
+        await db
+          .update(profiles)
+          .set({
+            emailVerifiedAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(profiles.id, userId));
+
+        console.log(
+          `✓ Updated email verification for existing profile ${userId}`
+        );
+      }
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error('Error creating/updating profile:', error);
       return NextResponse.json(
-        { error: 'Failed to update verification status' },
+        {
+          error:
+            'Failed to update verification status. Please contact support.',
+        },
         { status: 500 }
       );
     }
@@ -74,7 +125,7 @@ export async function POST(request: NextRequest) {
     // This is required for signInWithPassword() to work
     // Without this, users will get 401 errors when trying to log in
     try {
-      const supabase = await createServerClient('employee');
+      const supabase = createAdminClient();
       const { error: confirmError } = await supabase.auth.admin.updateUserById(
         userId,
         {
@@ -89,6 +140,48 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       console.error('Error updating Supabase email confirmation:', error);
       // Non-critical for user experience, but should be monitored
+    }
+
+    // CRITICAL FIX: Sync user metadata with profile data
+    // This ensures middleware can properly check account status
+    console.log(`[verify-email] Starting user metadata sync for ${userId}...`);
+    try {
+      const supabase = createAdminClient();
+      const { data: authUser, error: getUserError } = await supabase.auth.admin.getUserById(userId);
+
+      if (getUserError) {
+        console.error(`[verify-email] Failed to get user ${userId}:`, getUserError);
+      } else if (authUser?.user) {
+        const existingMetadata = authUser.user.user_metadata || {};
+        console.log(`[verify-email] Existing metadata for ${userId}:`, JSON.stringify(existingMetadata));
+
+        // Merge existing metadata with new account status
+        const updatedMetadata = {
+          ...existingMetadata,
+          account_status: 'pending',
+          email_verified_at: new Date().toISOString(),
+          is_active: true,
+        };
+
+        console.log(`[verify-email] Updating metadata to:`, JSON.stringify(updatedMetadata));
+
+        const { error: metadataError } = await supabase.auth.admin.updateUserById(
+          userId,
+          {
+            user_metadata: updatedMetadata,
+          }
+        );
+
+        if (metadataError) {
+          console.error(`[verify-email] ❌ Failed to sync user metadata for ${userId}:`, metadataError);
+        } else {
+          console.log(`[verify-email] ✅ Synced user metadata: accountStatus=pending for ${userId}`);
+        }
+      } else {
+        console.error(`[verify-email] No user found for ${userId}`);
+      }
+    } catch (error) {
+      console.error(`[verify-email] ❌ Exception syncing user metadata for ${userId}:`, error);
     }
 
     // Create pending registration entry for admin approval

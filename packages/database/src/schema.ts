@@ -142,6 +142,7 @@ export const profiles = pgTable(
     applicantId: text('applicant_id').unique(),
     employeeId: text('employee_id').unique(), // Now nullable for applicants
     hireDate: date('hire_date'),
+    dateOfBirth: date('date_of_birth'), // Required for employee ID generation (TUPM-MMDD-YY-###)
     // Basic info
     firstName: text('first_name').notNull(),
     lastName: text('last_name').notNull(),

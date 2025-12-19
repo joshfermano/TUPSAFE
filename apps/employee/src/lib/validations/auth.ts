@@ -321,6 +321,32 @@ const employeeRegistrationSchema = z.object({
       'Please enter a valid Philippine phone number (e.g., +639123456789 or 09123456789)'
     ),
 
+  dateOfBirth: z
+    .date({
+      required_error: 'Date of birth is required',
+      invalid_type_error: 'Please enter a valid date',
+    })
+    .refine((date) => {
+      const today = new Date();
+      const age = today.getFullYear() - date.getFullYear();
+      const monthDiff = today.getMonth() - date.getMonth();
+      const dayDiff = today.getDate() - date.getDate();
+      const calculatedAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
+      return calculatedAge >= 18;
+    }, {
+      message: 'You must be at least 18 years old',
+    })
+    .refine((date) => {
+      const today = new Date();
+      const age = today.getFullYear() - date.getFullYear();
+      return age <= 100;
+    }, {
+      message: 'Invalid date of birth',
+    })
+    .refine((date) => date <= new Date(), {
+      message: 'Date of birth cannot be in the future',
+    }),
+
   // Employment Details
   hireDate: z
     .date({

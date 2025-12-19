@@ -20,7 +20,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 import { db, profiles, departments, positions } from '@tupsafe/database/server';
-import { and, eq, sql, count, or, ilike, asc, desc } from 'drizzle-orm';
+import { and, eq, ne, sql, count, or, ilike, asc, desc } from 'drizzle-orm';
 import {
   userListQuerySchema,
   type UserListResponse,
@@ -76,6 +76,9 @@ export async function GET(request: NextRequest) {
     // Account status filter
     if (validatedQuery.accountStatus) {
       conditions.push(eq(profiles.accountStatus, validatedQuery.accountStatus));
+    } else {
+      // Default: exclude rejected users from list unless explicitly requested
+      conditions.push(ne(profiles.accountStatus, 'rejected'));
     }
 
     // Active status filter

@@ -21,7 +21,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 import { db, profiles } from '@tupsafe/database/server';
-import { eq, and, gte, sql, count } from 'drizzle-orm';
+import { eq, and, gte, ne, sql, count } from 'drizzle-orm';
 import type { UserStatsResponse } from '@tupsafe/types';
 
 export async function GET(_request: NextRequest) {
@@ -76,15 +76,22 @@ export async function GET(_request: NextRequest) {
       [{ recentSevenDays }],
       [{ recentThirtyDays }],
     ] = await Promise.all([
-      // Total users
-      db.select({ totalUsers: count() }).from(profiles),
+      // Total users (excluding rejected/soft-deleted)
+      db
+        .select({ totalUsers: count() })
+        .from(profiles)
+        .where(ne(profiles.accountStatus, 'rejected')),
 
-      // Active users
+      // Active users (excluding rejected)
       db
         .select({ activeUsers: count() })
         .from(profiles)
         .where(
-          and(eq(profiles.isActive, true), eq(profiles.accountStatus, 'active'))
+          and(
+            eq(profiles.isActive, true),
+            eq(profiles.accountStatus, 'active'),
+            ne(profiles.accountStatus, 'rejected')
+          )
         ),
 
       // Pending approvals
@@ -99,25 +106,36 @@ export async function GET(_request: NextRequest) {
         .from(profiles)
         .where(eq(profiles.accountStatus, 'suspended')),
 
-      // Employees count
+      // Employees count (excluding rejected)
       db
         .select({ employeesCount: count() })
         .from(profiles)
-        .where(eq(profiles.userType, 'employee')),
+        .where(
+          and(
+            eq(profiles.userType, 'employee'),
+            ne(profiles.accountStatus, 'rejected')
+          )
+        ),
 
-      // Applicants count
+      // Applicants count (excluding rejected)
       db
         .select({ applicantsCount: count() })
         .from(profiles)
-        .where(eq(profiles.userType, 'applicant')),
+        .where(
+          and(
+            eq(profiles.userType, 'applicant'),
+            ne(profiles.accountStatus, 'rejected')
+          )
+        ),
 
-      // Role distribution - aggregate counts by role
+      // Role distribution - aggregate counts by role (excluding rejected)
       db
         .select({
           role: profiles.role,
           count: sql<number>`cast(count(*) as int)`,
         })
         .from(profiles)
+        .where(ne(profiles.accountStatus, 'rejected'))
         .groupBy(profiles.role),
 
       // Account status distribution
@@ -129,7 +147,7 @@ export async function GET(_request: NextRequest) {
         .from(profiles)
         .groupBy(profiles.accountStatus),
 
-      // Employment category distribution (employees only)
+      // Employment category distribution (employees only, excluding rejected)
       db
         .select({
           category: profiles.employmentCategory,
@@ -139,22 +157,33 @@ export async function GET(_request: NextRequest) {
         .where(
           and(
             eq(profiles.userType, 'employee'),
+            ne(profiles.accountStatus, 'rejected'),
             sql`${profiles.employmentCategory} != 'not_applicable'`
           )
         )
         .groupBy(profiles.employmentCategory),
 
-      // Recent registrations - last 7 days
+      // Recent registrations - last 7 days (excluding rejected)
       db
         .select({ recentSevenDays: count() })
         .from(profiles)
-        .where(gte(profiles.createdAt, sevenDaysAgo)),
+        .where(
+          and(
+            gte(profiles.createdAt, sevenDaysAgo),
+            ne(profiles.accountStatus, 'rejected')
+          )
+        ),
 
-      // Recent registrations - last 30 days
+      // Recent registrations - last 30 days (excluding rejected)
       db
         .select({ recentThirtyDays: count() })
         .from(profiles)
-        .where(gte(profiles.createdAt, thirtyDaysAgo)),
+        .where(
+          and(
+            gte(profiles.createdAt, thirtyDaysAgo),
+            ne(profiles.accountStatus, 'rejected')
+          )
+        ),
     ]);
     const queryDuration = Date.now() - queryStartTime;
     console.log(`[Stats API] All queries completed in ${queryDuration}ms`);

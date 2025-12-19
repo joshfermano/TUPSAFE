@@ -6,10 +6,10 @@
 --
 -- Employee ID Format: TUPM-MMDD-YY-###
 --   - TUPM: TUP Manila prefix
---   - MMDD: Month and day of hire date (e.g., 0513 for May 13)
---   - YY: Two-digit year (e.g., 25 for 2025)
+--   - MMDD: Month and day from BIRTH DATE (e.g., 0115 for January 15)
+--   - YY: Two-digit year of HIRE (current year, e.g., 25 for 2025)
 --   - ###: Three-digit sequence number (001, 002, etc.)
---   - Example: TUPM-0513-25-001 (first hire on May 13, 2025)
+--   - Example: TUPM-0115-25-001 (born Jan 15, hired in 2025)
 --
 -- Applicant ID Format: APPL-YYYY-XXXX
 --   - APPL: Applicant prefix
@@ -20,11 +20,11 @@
 
 -- =====================================================================
 -- Function: generate_employee_id
--- Purpose: Generate unique employee ID based on hire date
--- Parameters: hire_date DATE - The employee's hire date
+-- Purpose: Generate unique employee ID based on birth date
+-- Parameters: birth_date DATE - The employee's birth date
 -- Returns: TEXT - Generated employee ID in format TUPM-MMDD-YY-###
 -- =====================================================================
-CREATE OR REPLACE FUNCTION generate_employee_id(hire_date DATE)
+CREATE OR REPLACE FUNCTION generate_employee_id(birth_date DATE)
 RETURNS TEXT AS $$
 DECLARE
   date_part TEXT;
@@ -33,17 +33,19 @@ DECLARE
   new_id TEXT;
 BEGIN
   -- Validate input
-  IF hire_date IS NULL THEN
-    RAISE EXCEPTION 'hire_date cannot be NULL';
+  IF birth_date IS NULL THEN
+    RAISE EXCEPTION 'Birth date cannot be NULL for employee ID generation';
   END IF;
 
   -- Extract date components
   -- Format: TUPM-MMDD-YY
-  date_part := TO_CHAR(hire_date, 'MMDD');
-  year_part := TO_CHAR(hire_date, 'YY');
+  -- MMDD from birth date (month and day)
+  date_part := TO_CHAR(birth_date, 'MMDD');
+  -- YY from birth year (e.g., 04 for 2004)
+  year_part := TO_CHAR(birth_date, 'YY');
 
-  -- Find the next sequence number for this hire date
-  -- Count existing employee IDs with the same hire date prefix
+  -- Find the next sequence number for this birth date + hire year combination
+  -- Count existing employee IDs with the same MMDD-YY prefix
   -- Use regex to extract the sequence number from existing IDs
   SELECT COALESCE(MAX(
     CAST(SUBSTRING(employee_id FROM 'TUPM-\d{4}-\d{2}-(\d{3})') AS INTEGER)
@@ -104,8 +106,12 @@ GRANT EXECUTE ON FUNCTION generate_applicant_id() TO authenticated;
 -- =====================================================================
 -- Usage Examples:
 -- =====================================================================
--- Generate employee ID for hire date May 13, 2025:
---   SELECT generate_employee_id('2025-05-13');
+-- Generate employee ID for birth date January 15, 1990 (hired in 2025):
+--   SELECT generate_employee_id('1990-01-15');
+--   Result: TUPM-0115-25-001
+--
+-- Generate employee ID for birth date May 13, 1985 (hired in 2025):
+--   SELECT generate_employee_id('1985-05-13');
 --   Result: TUPM-0513-25-001
 --
 -- Generate applicant ID for current year:

@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, memo } from 'react';
 import {
   type ColumnDef,
   flexRender,
@@ -15,7 +15,13 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { formatDistanceToNow } from 'date-fns';
-import { MoreHorizontal, Eye, CheckCircle, XCircle, FileText } from 'lucide-react';
+import {
+  MoreHorizontal,
+  Eye,
+  CheckCircle,
+  XCircle,
+  FileText,
+} from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -38,6 +44,60 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Registration } from '@/lib/api/registrations';
 import { capitalize } from '@/lib/formatting-helpers';
+
+// Memoized actions cell component to prevent re-renders from closing dropdown
+const ActionsCell = memo(
+  ({
+    registration,
+    onViewDetails,
+    onApprove,
+    onReject,
+  }: {
+    registration: Registration;
+    onViewDetails: (registration: Registration) => void;
+    onApprove: (registration: Registration) => void;
+    onReject: (registration: Registration) => void;
+  }) => {
+    const isPending = registration.status === 'pending';
+
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
+            <MoreHorizontal className="h-4 w-4" />
+            <span className="sr-only">Open menu</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuItem onClick={() => onViewDetails(registration)}>
+            <Eye className="h-4 w-4 mr-2" />
+            View Details
+          </DropdownMenuItem>
+          {isPending && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => onApprove(registration)}
+                className="text-green-600">
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Approve
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => onReject(registration)}
+                className="text-red-600">
+                <XCircle className="h-4 w-4 mr-2" />
+                Reject
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+);
+
+ActionsCell.displayName = 'ActionsCell';
 
 interface RegistrationsDataTableProps {
   registrations: Registration[];
@@ -127,8 +187,7 @@ export function RegistrationsDataTable({
                 userType === 'employee'
                   ? 'bg-blue-100 text-blue-800'
                   : 'bg-orange-100 text-orange-800'
-              }
-            >
+              }>
               {userType === 'employee' ? 'Employee' : 'Applicant'}
             </Badge>
           );
@@ -156,7 +215,11 @@ export function RegistrationsDataTable({
           const dept = row.original.department;
           return (
             <div className="text-sm">
-              {dept ? dept.name : <span className="text-muted-foreground">—</span>}
+              {dept ? (
+                dept.name
+              ) : (
+                <span className="text-muted-foreground">—</span>
+              )}
             </div>
           );
         },
@@ -179,9 +242,18 @@ export function RegistrationsDataTable({
         cell: ({ row }) => {
           const status = row.original.status;
           const variants = {
-            pending: { variant: 'secondary', className: 'bg-blue-100 text-blue-800' },
-            approved: { variant: 'secondary', className: 'bg-green-100 text-green-800' },
-            rejected: { variant: 'secondary', className: 'bg-red-100 text-red-800' },
+            pending: {
+              variant: 'secondary',
+              className: 'bg-blue-100 text-blue-800',
+            },
+            approved: {
+              variant: 'secondary',
+              className: 'bg-green-100 text-green-800',
+            },
+            rejected: {
+              variant: 'secondary',
+              className: 'bg-red-100 text-red-800',
+            },
           } as const;
 
           // Safety check for undefined status
@@ -201,50 +273,24 @@ export function RegistrationsDataTable({
       {
         id: 'actions',
         header: 'Actions',
-        cell: ({ row }) => {
-          const registration = row.original;
-          const isPending = registration.status === 'pending';
-
-          return (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <span className="sr-only">Open menu</span>
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => onViewDetails(registration)}>
-                  <Eye className="h-4 w-4 mr-2" />
-                  View Details
-                </DropdownMenuItem>
-                {isPending && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => onApprove(registration)}
-                      className="text-green-600"
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Approve
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => onReject(registration)}
-                      className="text-red-600"
-                    >
-                      <XCircle className="h-4 w-4 mr-2" />
-                      Reject
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          );
-        },
+        cell: ({ row }) => (
+          <ActionsCell
+            registration={row.original}
+            onViewDetails={onViewDetails}
+            onApprove={onApprove}
+            onReject={onReject}
+          />
+        ),
       },
     ],
-    [registrations, selectedRows, onSelectionChange, onViewDetails, onApprove, onReject]
+    [
+      registrations,
+      selectedRows,
+      onSelectionChange,
+      onViewDetails,
+      onApprove,
+      onReject,
+    ]
   );
 
   const table = useReactTable({
@@ -290,8 +336,8 @@ export function RegistrationsDataTable({
           <FileText className="h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold mb-2">No registrations found</h3>
           <p className="text-sm text-muted-foreground max-w-sm">
-            There are no registration requests matching your current filters. Try adjusting
-            your search criteria.
+            There are no registration requests matching your current filters.
+            Try adjusting your search criteria.
           </p>
         </div>
       </div>
@@ -308,7 +354,10 @@ export function RegistrationsDataTable({
                 <TableHead key={header.id}>
                   {header.isPlaceholder
                     ? null
-                    : flexRender(header.column.columnDef.header, header.getContext())}
+                    : flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
                 </TableHead>
               ))}
             </TableRow>
@@ -319,8 +368,7 @@ export function RegistrationsDataTable({
             <TableRow
               key={row.id}
               data-state={selectedRows.has(row.original.id) && 'selected'}
-              className="hover:bg-muted/50"
-            >
+              className="hover:bg-muted/50">
               {row.getVisibleCells().map((cell) => (
                 <TableCell key={cell.id}>
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}

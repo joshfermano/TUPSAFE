@@ -492,6 +492,110 @@ export function useDeleteOrganization() {
 }
 
 /**
+ * Hook to bulk delete multiple organizational units (soft delete)
+ */
+export function useBulkDeleteOrganization() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      // Process deletes in parallel
+      const results = await Promise.allSettled(
+        ids.map((id) => deleteOrganization(id, false))
+      );
+
+      // Separate successes and failures
+      const successes = results.filter(
+        (result) => result.status === 'fulfilled'
+      );
+      const failures = results.filter(
+        (result) => result.status === 'rejected'
+      );
+
+      // Return detailed results
+      return {
+        successCount: successes.length,
+        failureCount: failures.length,
+        total: ids.length,
+        failures: failures.map((f) => ({
+          error: f.reason instanceof Error ? f.reason.message : String(f.reason),
+        })),
+      };
+    },
+    onMutate: async (ids) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: organizationKeys.lists() });
+
+      // Snapshot previous value
+      const previousData = queryClient.getQueryData<OrganizationListResponse>(
+        organizationKeys.lists()
+      );
+
+      // Optimistically mark items as inactive
+      if (previousData) {
+        queryClient.setQueriesData<OrganizationListResponse>(
+          { queryKey: organizationKeys.lists() },
+          (old) => {
+            if (!old) return old;
+
+            const markInactive = (
+              items: DepartmentWithStats[]
+            ): DepartmentWithStats[] =>
+              items.map((item) =>
+                ids.includes(item.id) ? { ...item, isActive: false } : item
+              );
+
+            return {
+              ...old,
+              colleges: markInactive(old.colleges),
+              departments: markInactive(old.departments),
+              offices: markInactive(old.offices),
+            };
+          }
+        );
+      }
+
+      return { previousData };
+    },
+    onError: (error, _ids, context) => {
+      // Rollback on error
+      if (context?.previousData) {
+        queryClient.setQueriesData<OrganizationListResponse>(
+          { queryKey: organizationKeys.lists() },
+          context.previousData
+        );
+      }
+
+      toast.error('Bulk delete failed', {
+        description: error.message,
+      });
+    },
+    onSuccess: (result) => {
+      // Invalidate all organization queries
+      queryClient.invalidateQueries({ queryKey: organizationKeys.all });
+
+      // Show appropriate message based on results
+      if (result.failureCount === 0) {
+        // All succeeded
+        toast.success(`${result.successCount} organization(s) deleted`, {
+          description: 'The selected units have been deactivated.',
+        });
+      } else if (result.successCount === 0) {
+        // All failed
+        toast.error('Bulk delete failed', {
+          description: `Could not delete any of the ${result.total} selected item(s). Some units may have active employees or positions.`,
+        });
+      } else {
+        // Partial success
+        toast.warning('Partial success', {
+          description: `Deleted ${result.successCount} of ${result.total} unit(s). ${result.failureCount} failed due to active employees or positions.`,
+        });
+      }
+    },
+  });
+}
+
+/**
  * Hook to reactivate a soft-deleted organizational unit
  */
 export function useReactivateOrganization() {

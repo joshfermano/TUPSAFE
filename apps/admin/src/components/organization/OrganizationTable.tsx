@@ -2,14 +2,15 @@
  * Organization Data Table Component
  *
  * TanStack Table implementation for displaying organizational units
- * with sortable columns, row actions, and responsive design.
+ * with sortable columns, row selection, bulk actions, and responsive design.
  */
 
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   type ColumnDef,
+  type RowSelectionState,
   flexRender,
   getCoreRowModel,
   useReactTable,
@@ -18,6 +19,7 @@ import {
 import { MoreHorizontal, Eye, Pencil, Trash2, RefreshCw, ArrowUpDown, Building2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,6 +37,16 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import type { DepartmentWithStats } from '@tupsafe/types';
 
 interface OrganizationTableProps {
@@ -67,6 +79,16 @@ interface OrganizationTableProps {
    * Reactivate action handler
    */
   onReactivate: (id: string) => void;
+
+  /**
+   * Bulk delete action handler
+   */
+  onBulkDelete?: (ids: string[]) => void;
+
+  /**
+   * Whether bulk delete is in progress
+   */
+  isBulkDeleting?: boolean;
 }
 
 /**
@@ -83,7 +105,7 @@ function getUnitType(unit: DepartmentWithStats): 'college' | 'department' | 'off
 }
 
 /**
- * Organization data table with sortable columns and actions
+ * Organization data table with sortable columns, row selection, and actions
  */
 export function OrganizationTable({
   data,
@@ -92,9 +114,38 @@ export function OrganizationTable({
   onEdit,
   onDelete,
   onReactivate,
+  onBulkDelete,
+  isBulkDeleting = false,
 }: OrganizationTableProps) {
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+
   const columns = useMemo<ColumnDef<DepartmentWithStats>[]>(
     () => [
+      {
+        id: 'select',
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && 'indeterminate')
+            }
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            aria-label="Select all"
+            className="translate-y-[2px]"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+            className="translate-y-[2px]"
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+      },
       {
         accessorKey: 'code',
         header: ({ column }) => {
@@ -238,7 +289,25 @@ export function OrganizationTable({
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    onRowSelectionChange: setRowSelection,
+    state: {
+      rowSelection,
+    },
+    getRowId: (row) => row.id,
   });
+
+  // Get selected row IDs
+  const selectedIds = Object.keys(rowSelection).filter((id) => rowSelection[id]);
+  const selectedCount = selectedIds.length;
+
+  // Handle bulk delete
+  const handleBulkDelete = () => {
+    if (onBulkDelete && selectedIds.length > 0) {
+      onBulkDelete(selectedIds);
+      setRowSelection({});
+      setShowBulkDeleteDialog(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -266,33 +335,99 @@ export function OrganizationTable({
   }
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <TableHead key={header.id}>
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(header.column.columnDef.header, header.getContext())}
-                </TableHead>
-              ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows.map((row) => (
-            <TableRow key={row.id}>
-              {row.getVisibleCells().map((cell) => (
-                <TableCell key={cell.id}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </TableCell>
-              ))}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    <div className="space-y-4">
+      {/* Bulk Actions Bar */}
+      {selectedCount > 0 && (
+        <div className="flex items-center justify-between rounded-lg border bg-muted/50 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">
+              {selectedCount} {selectedCount === 1 ? 'item' : 'items'} selected
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setRowSelection({})}
+            >
+              Clear Selection
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setShowBulkDeleteDialog(true)}
+              disabled={isBulkDeleting}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete Selected
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Data Table */}
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(header.column.columnDef.header, header.getContext())}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows.map((row) => (
+              <TableRow
+                key={row.id}
+                data-state={row.getIsSelected() && 'selected'}
+              >
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell key={cell.id}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Footer with selection info */}
+      <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <div>
+          {selectedCount} of {table.getFilteredRowModel().rows.length} row(s) selected.
+        </div>
+      </div>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedCount} Organization(s)?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the selected organizational units?
+              This will deactivate them and hide them from most views.
+              Units with employees or positions cannot be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBulkDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={isBulkDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isBulkDeleting ? 'Deleting...' : 'Delete Selected'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

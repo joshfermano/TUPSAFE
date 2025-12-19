@@ -152,7 +152,20 @@ export function ApplicantRegistrationForm({
         const result = await response.json();
 
         if (!response.ok || !result.success) {
-          throw new Error(result.error || 'Failed to initiate registration');
+          // Enhanced error handling with actionable messages
+          let errorMessage = result.error || 'Failed to initiate registration';
+
+          // Check if error is due to existing email
+          if (response.status === 409 || errorMessage.toLowerCase().includes('already')) {
+            errorMessage = 'This email is already registered. Please sign in to your existing account instead.';
+          }
+
+          // If there are field-specific errors in details
+          if (result.details?.email?.[0]) {
+            errorMessage = result.details.email[0];
+          }
+
+          throw new Error(errorMessage);
         }
 
         // Store userId and email for email verification step
@@ -160,11 +173,13 @@ export function ApplicantRegistrationForm({
         onNextStep();
       } catch (error) {
         console.error('Registration initiation error:', error);
+
+        const errorMessage = error instanceof Error
+          ? error.message
+          : 'Failed to send verification email';
+
         form.setError('email', {
-          message:
-            error instanceof Error
-              ? error.message
-              : 'Failed to send verification email',
+          message: errorMessage,
         });
       } finally {
         setIsInitiating(false);

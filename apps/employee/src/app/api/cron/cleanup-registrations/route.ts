@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@tupsafe/auth/server';
-import { db, otpVerifications, createAuditLog } from '@tupsafe/database/server';
+import {
+  db,
+  otpVerifications,
+  pendingRegistrations,
+  profiles,
+  createAuditLog,
+} from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
 
 interface CleanupResult {
@@ -11,7 +17,7 @@ interface CleanupResult {
   timestamp: string;
 }
 
-const CLEANUP_AGE_MINUTES = 30; // 2x the OTP expiry time
+const CLEANUP_AGE_MINUTES = 15; // Aligned with OTP expiry time
 
 /**
  * Verify cron job authorization
@@ -136,16 +142,28 @@ export async function GET(
       });
     }
 
-    // Process each stuck registration
+    // Process each stuck registration with transactional cleanup
     for (const user of stuckUsers) {
       console.log(`🗑️  Cleaning up user: ${user.email} (${user.id})`);
 
       try {
-        // Delete OTP records
+        // TRANSACTIONAL CLEANUP: Delete in proper order to avoid foreign key violations
+        
+        // 1. Delete OTP records
         const otpCount = await deleteUserOTPs(user.id);
         otpsDeleted += otpCount;
 
-        // Delete auth user
+        // 2. Delete pending registration if exists
+        await db
+          .delete(pendingRegistrations)
+          .where(eq(pendingRegistrations.userId, user.id));
+
+        // 3. Delete profile if exists
+        await db
+          .delete(profiles)
+          .where(eq(profiles.id, user.id));
+
+        // 4. Delete auth user
         const deleted = await deleteAuthUser(user.id);
 
         if (deleted) {
