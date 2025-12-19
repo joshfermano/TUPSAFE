@@ -89,17 +89,48 @@ export default function RegisterPage() {
   };
 
   const onSubmitEmployee = async (data: EmployeeRegistrationFormData) => {
+    if (!registrationUserId) {
+      console.error('Registration user ID not found');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-      console.log('Employee registration attempt:', {
-        ...data,
-        password: '[REDACTED]',
-        confirmPassword: '[REDACTED]',
+      // Call the registration complete API to save employment details
+      const response = await fetch('/api/auth/register/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: registrationUserId,
+          employmentCategory: data.employmentCategory,
+          hireDate: data.hireDate ? data.hireDate.toISOString() : null,
+          // For faculty: collegeOrOffice is the college, department is the department
+          // For administrative: collegeOrOffice is the office
+          departmentId: isFaculty ? data.department : undefined,
+          collegeId: data.collegeOrOffice,
+        }),
       });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to complete registration');
+      }
+
+      console.log('Employee registration completed:', {
+        userId: registrationUserId,
+        departmentId: result.data.departmentId,
+      });
+
       setIsSubmitted(true);
     } catch (error) {
       console.error('Registration failed:', error);
+      // Show error to user - they can try submitting again
+      alert(
+        error instanceof Error
+          ? error.message
+          : 'Registration failed. Please try again.'
+      );
     } finally {
       setIsLoading(false);
     }

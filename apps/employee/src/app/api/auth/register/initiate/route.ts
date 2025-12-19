@@ -17,6 +17,13 @@ import {
   sendOTPEmail,
   createAdminClient,
 } from '@tupsafe/auth/server';
+import {
+  db,
+  profiles,
+  otpVerifications,
+  pendingRegistrations,
+} from '@tupsafe/database/server';
+import { eq } from 'drizzle-orm';
 
 /**
  * Personal information schema for step 1
@@ -27,7 +34,7 @@ const personalInfoSchema = z.object({
   lastName: z.string().min(2, 'Last name must be at least 2 characters'),
   middleName: z.string().optional(),
   email: z.string().email('Invalid email address'),
-  phoneNumber: z.string().regex(/^(\+63|0)[0-9]{10}$/, 'Invalid phone number'),
+  phoneNumber: z.string().regex(/^(\+639|09)\d{9}$/, 'Invalid phone number'),
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters')
@@ -39,6 +46,24 @@ const personalInfoSchema = z.object({
       'Password must contain at least one special character'
     ),
   employmentCategory: z.enum(['faculty', 'administrative']).optional(),
+  dateOfBirth: z
+    .string()
+    .refine(
+      (date) => {
+        const parsed = new Date(date);
+        return !isNaN(parsed.getTime());
+      },
+      'Invalid date format'
+    )
+    .refine(
+      (date) => {
+        const parsed = new Date(date);
+        const today = new Date();
+        const age = today.getFullYear() - parsed.getFullYear();
+        return age >= 18 && age <= 100;
+      },
+      'Birth date must indicate age between 18 and 100 years'
+    ),
 });
 
 type PersonalInfoData = z.infer<typeof personalInfoSchema>;
@@ -107,73 +132,190 @@ export async function POST(
     const data: PersonalInfoData = validationResult.data;
     const supabase = createAdminClient();
 
-    // ENHANCED: Check for incomplete registration before creating user
+    // ENHANCED: Check for incomplete registration before creating user using admin API
     // If a previous registration failed during OTP sending, we can retry
-    const { data: existingUsers } = await supabase
-      .from('auth.users')
-      .select('id, email, created_at, email_confirmed_at')
-      .ilike('email', data.email)
-      .limit(1)
-      .single();
+    let existingUser = null;
 
-    // If user exists with unconfirmed email (incomplete registration)
-    if (existingUsers && !existingUsers.email_confirmed_at) {
-      const createdAt = new Date(existingUsers.created_at);
-      const minutesOld = (Date.now() - createdAt.getTime()) / (1000 * 60);
+    try {
+      // Use admin API to list users by email (more reliable than querying auth.users)
+      const { data: users, error: listError } = await supabase.auth.admin.listUsers();
 
-      console.log(
-        `Found incomplete registration for ${
-          data.email
-        }, age: ${minutesOld.toFixed(1)} minutes`
-      );
+      if (listError) {
+        console.error('Error listing users:', listError);
+      } else if (users && users.users) {
+        // Find user with matching email (case-insensitive)
+        existingUser = users.users.find(
+          (u) => u.email?.toLowerCase() === data.email.toLowerCase()
+        );
 
-      // If older than OTP expiry (15 minutes), delete and allow retry
-      if (minutesOld > 15) {
-        console.log('Cleaning up expired incomplete registration...');
+        if (existingUser) {
+          console.log(
+            `Found existing user: ${existingUser.email}, confirmed: ${!!existingUser.email_confirmed_at}`
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error checking for existing user:', error);
+    }
 
-        try {
-          // Delete the old incomplete user
-          await supabase.auth.admin.deleteUser(existingUsers.id);
-          console.log('✅ Cleanup successful, retrying registration...');
+    // If user exists, check their status
+    if (existingUser) {
+      // User exists with confirmed email - check if they're actually active in database
+      if (existingUser.email_confirmed_at) {
+        console.log('User has confirmed email - checking database status');
 
-          // Continue with normal registration flow below
-        } catch (cleanupError) {
-          console.error('Failed to cleanup old registration:', cleanupError);
+        // Check if user is deleted/rejected in database
+        const [dbUser] = await db
+          .select()
+          .from(profiles)
+          .where(eq(profiles.id, existingUser.id))
+          .limit(1);
 
+        // If user is rejected or inactive, allow re-registration
+        if (dbUser && (dbUser.accountStatus === 'rejected' || !dbUser.isActive)) {
+          console.log('User is deleted/rejected - allowing re-registration by deleting Auth user');
+
+          // Clean up related tables BEFORE deleting auth user
+          try {
+            await db.delete(otpVerifications).where(eq(otpVerifications.userId, existingUser.id));
+            await db.delete(pendingRegistrations).where(eq(pendingRegistrations.userId, existingUser.id));
+            console.log('[Registration] Cleaned up related tables for retry:', existingUser.email);
+          } catch (cleanupError) {
+            console.error('[Registration] Failed to cleanup related tables:', cleanupError);
+            // Continue anyway - auth user deletion is more critical
+          }
+
+          // Delete from Supabase Auth to allow fresh registration
+          try {
+            await supabase.auth.admin.deleteUser(existingUser.id);
+            console.log('Deleted rejected user from Auth successfully');
+            // Continue with registration flow below
+            existingUser = null; // Reset to allow fresh registration
+          } catch (deleteError) {
+            console.error('Error deleting rejected user from Auth:', deleteError);
+            const errorMessage = deleteError instanceof Error ? deleteError.message : 'Unknown error';
+            return NextResponse.json(
+              {
+                success: false,
+                error: 'Account cleanup required',
+                details: {
+                  message: [
+                    'This email was previously registered but the account was deleted.',
+                    'Please contact support to complete the cleanup process.',
+                    `Error: ${errorMessage}`,
+                  ],
+                },
+              },
+              { status: 503 }
+            );
+          }
+        } else if (dbUser) {
+          // User is active - cannot re-register
+          console.log('User has active account - returning error');
           return NextResponse.json(
             {
               success: false,
-              error:
-                'Unable to complete registration. Please contact support or try again later.',
+              error: 'Email address is already registered',
               details: {
                 email: [
-                  'A previous registration attempt needs to be cleared. Please try again in a few minutes.',
+                  'This email is already registered with an active account. Please try logging in.',
                 ],
               },
             },
             { status: 409 }
           );
         }
-      } else {
-        // Still within OTP window - provide helpful message
-        const minutesRemaining = Math.ceil(15 - minutesOld);
+        // If no dbUser found, Auth user exists but no profile - allow registration to continue
+      }
 
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Registration already in progress',
-            details: {
-              email: [
-                `A verification email was recently sent. Please check your email (including spam folder) or try again in ${minutesRemaining} minute${
-                  minutesRemaining !== 1 ? 's' : ''
-                }.`,
-              ],
-            },
-          },
-          { status: 409 }
+      // Check if existingUser was reset (re-registration allowed)
+      if (!existingUser) {
+        // Continue with normal registration flow below
+      } else {
+        // User exists with unconfirmed email (incomplete registration)
+        const createdAt = new Date(existingUser.created_at);
+        const minutesOld = (Date.now() - createdAt.getTime()) / (1000 * 60);
+
+        console.log(
+          `Found incomplete registration for ${
+            data.email
+          }, age: ${minutesOld.toFixed(1)} minutes`
         );
+
+        // If older than OTP expiry (15 minutes), delete and allow retry
+        if (minutesOld > 15) {
+          console.log('Cleaning up expired incomplete registration...');
+
+          try {
+            // TRANSACTIONAL CLEANUP: Delete in proper order to avoid foreign key violations
+            // 1. Delete OTP records
+            await db
+              .delete(otpVerifications)
+              .where(eq(otpVerifications.userId, existingUser.id));
+
+            // 2. Delete pending registration if exists
+            await db
+              .delete(pendingRegistrations)
+              .where(eq(pendingRegistrations.userId, existingUser.id));
+
+            // 3. Delete profile if exists
+            await db
+              .delete(profiles)
+              .where(eq(profiles.id, existingUser.id));
+
+            // 4. Delete auth user
+            const { error: deleteError } =
+              await supabase.auth.admin.deleteUser(existingUser.id);
+
+            if (deleteError) {
+              throw deleteError;
+            }
+
+            console.log(
+              '✅ Cleanup successful (deleted OTPs, pending regs, profile, auth user):',
+              data.email
+            );
+
+            // Continue with normal registration flow below
+          } catch (cleanupError) {
+            console.error('Failed to cleanup old registration:', cleanupError);
+
+            return NextResponse.json(
+              {
+                success: false,
+                error:
+                  'Unable to complete registration cleanup. Please try again in a few moments.',
+                details: {
+                  email: [
+                    'A previous registration attempt is still being processed. Please wait 1-2 minutes and try again.',
+                  ],
+                },
+              },
+              { status: 503 } // Service Unavailable - suggests retry
+            );
+          }
+        } else {
+          // Still within OTP window - provide helpful message
+          const minutesRemaining = Math.ceil(15 - minutesOld);
+
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'Registration already in progress',
+              details: {
+                email: [
+                  `A verification email was recently sent. Please check your email (including spam folder) or try again in ${minutesRemaining} minute${
+                    minutesRemaining !== 1 ? 's' : ''
+                  }.`,
+                ],
+              },
+            },
+            { status: 409 }
+          );
+        }
       }
     }
+    // If queryError (user doesn't exist), continue with normal registration below
 
     // Create Supabase user (no profile yet)
     // Supabase will automatically reject duplicate emails
@@ -189,6 +331,7 @@ export async function POST(
           phone_number: data.phoneNumber,
           user_type: data.userType,
           employment_category: data.employmentCategory || null,
+          date_of_birth: data.dateOfBirth,
           registration_step: 'email_verification_pending',
           ip_address: getClientIp(request),
         },
@@ -250,7 +393,15 @@ export async function POST(
     try {
       const otpResult = await generateOTP(userId, 'email_verification');
       if (otpResult.success && otpResult.code) {
-        await sendOTPEmail(data.email, otpResult.code, 'email_verification');
+        const emailResult = await sendOTPEmail(
+          data.email,
+          otpResult.code,
+          'email_verification'
+        );
+        // CRITICAL FIX: Check if email actually sent successfully
+        if (!emailResult.success) {
+          throw new Error(emailResult.error || 'Failed to send OTP email');
+        }
       } else {
         throw new Error(otpResult.error || 'Failed to generate OTP');
       }

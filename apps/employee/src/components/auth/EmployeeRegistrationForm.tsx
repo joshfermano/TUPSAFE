@@ -76,6 +76,7 @@ export function EmployeeRegistrationForm({
       middleName: '',
       email: '',
       phoneNumber: '',
+      dateOfBirth: undefined,
       hireDate: undefined,
       collegeOrOffice: '',
       department: '',
@@ -101,6 +102,7 @@ export function EmployeeRegistrationForm({
           'middleName',
           'email',
           'phoneNumber',
+          'dateOfBirth',
           'password',
           'confirmPassword',
         ];
@@ -144,24 +146,42 @@ export function EmployeeRegistrationForm({
             email: form.getValues('email'),
             phoneNumber: form.getValues('phoneNumber'),
             password: form.getValues('password'),
+            dateOfBirth: form.getValues('dateOfBirth')
+              ? new Date(form.getValues('dateOfBirth')).toISOString().split('T')[0]
+              : '',
           }),
         });
 
         const result = await response.json();
 
         if (!response.ok || !result.success) {
-          throw new Error(result.error || 'Failed to initiate registration');
+          // Enhanced error handling with actionable messages
+          let errorMessage = result.error || 'Failed to initiate registration';
+
+          // Check if error is due to existing email
+          if (response.status === 409 || errorMessage.toLowerCase().includes('already')) {
+            errorMessage = 'This email is already registered. Please sign in to your existing account instead.';
+          }
+
+          // If there are field-specific errors in details
+          if (result.details?.email?.[0]) {
+            errorMessage = result.details.email[0];
+          }
+
+          throw new Error(errorMessage);
         }
 
         onUserCreated(result.data.userId, result.data.email);
         onNextStep();
       } catch (error) {
         console.error('Registration initiation error:', error);
+
+        const errorMessage = error instanceof Error
+          ? error.message
+          : 'Failed to send verification email';
+
         form.setError('email', {
-          message:
-            error instanceof Error
-              ? error.message
-              : 'Failed to send verification email',
+          message: errorMessage,
         });
       } finally {
         setIsInitiating(false);
@@ -290,6 +310,34 @@ export function EmployeeRegistrationForm({
                       />
                     </div>
                   </FormControl>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="dateOfBirth"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                    Date of Birth *
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="date"
+                      value={field.value ? field.value.toISOString().split('T')[0] : ''}
+                      onChange={(e) => {
+                        const dateValue = e.target.value ? new Date(e.target.value) : undefined;
+                        field.onChange(dateValue);
+                      }}
+                      max={new Date().toISOString().split('T')[0]}
+                      className={inputClasses}
+                    />
+                  </FormControl>
+                  <FormDescription className="text-xs text-slate-500 dark:text-slate-400">
+                    Used for employee ID generation (TUPM-MMDD-YY-###)
+                  </FormDescription>
                   <FormMessage className="text-xs" />
                 </FormItem>
               )}

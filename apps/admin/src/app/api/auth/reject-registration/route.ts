@@ -101,6 +101,9 @@ export async function POST(request: NextRequest) {
 
     const now = new Date();
 
+    // Create Supabase admin client for metadata operations
+    const supabase = await createServerClient('admin');
+
     // Update profile to rejected
     await db
       .update(profiles)
@@ -109,6 +112,26 @@ export async function POST(request: NextRequest) {
         updatedAt: now,
       })
       .where(eq(profiles.id, userId));
+
+    // Sync rejection status to Supabase user metadata
+    // This ensures middleware can also check rejection status
+    try {
+      const { data: userData } = await supabase.auth.admin.getUserById(userId);
+      if (userData?.user) {
+        const existingMetadata = userData.user.user_metadata || {};
+        await supabase.auth.admin.updateUserById(userId, {
+          user_metadata: {
+            ...existingMetadata,
+            account_status: 'rejected',
+            rejected_at: now.toISOString(),
+          },
+        });
+        console.log(`✓ Synced rejection status to user metadata for ${userId}`);
+      }
+    } catch (metadataError) {
+      console.error('Error syncing rejection to user metadata:', metadataError);
+      // Non-critical, continue - database is source of truth
+    }
 
     // Update pending registration
     await db
@@ -122,9 +145,8 @@ export async function POST(request: NextRequest) {
       .where(eq(pendingRegistrations.userId, userId));
 
     // Get user email for notification
-    const supabase = await createServerClient('admin');
-    const { data: userData } = await supabase.auth.admin.getUserById(userId);
-    const userEmail = userData?.user?.email;
+    const { data: userDataForEmail } = await supabase.auth.admin.getUserById(userId);
+    const userEmail = userDataForEmail?.user?.email;
 
     // Send rejection email
     if (userEmail) {

@@ -632,7 +632,9 @@ export async function softDeleteDepartment(id: string): Promise<void> {
       }
 
       if (!existing.isActive) {
-        throw new Error('Department is already inactive');
+        // Department is already inactive - idempotent operation succeeds
+        // Return early without error to support bulk delete operations
+        return;
       }
 
       // Check for active employees

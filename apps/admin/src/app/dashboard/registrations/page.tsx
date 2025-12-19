@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { CheckCircle, UserPlus } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -117,18 +117,18 @@ export default function RegistrationsPage() {
   const registrations = data?.registrations || [];
   const pagination = data?.pagination;
 
-  // Handlers
-  const handleViewDetails = (registration: Registration) => {
+  // Handlers (memoized to prevent unnecessary re-renders of ActionsCell)
+  const handleViewDetails = useCallback((registration: Registration) => {
     setDetailsDialog({ open: true, registration });
-  };
+  }, []);
 
-  const handleApprove = (registration: Registration) => {
+  const handleApprove = useCallback((registration: Registration) => {
     setApproveDialog({ open: true, registration });
-  };
+  }, []);
 
-  const handleReject = (registration: Registration) => {
+  const handleReject = useCallback((registration: Registration) => {
     setRejectDialog({ open: true, registration });
-  };
+  }, []);
 
   const handleBulkApprove = () => {
     if (selectedRows.size === 0) return;

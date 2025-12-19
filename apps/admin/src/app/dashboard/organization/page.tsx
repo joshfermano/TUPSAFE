@@ -11,7 +11,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { Plus, Search, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,7 +33,7 @@ import {
   EditOrganizationDialog,
   DeleteConfirmDialog,
 } from '@/components/organization';
-import { useOrganizations, useReactivateOrganization } from '@/hooks/useOrganization';
+import { useOrganizations, useReactivateOrganization, useBulkDeleteOrganization } from '@/hooks/useOrganization';
 import type { OrganizationQuery } from '@tupsafe/types';
 
 export default function OrganizationPage() {
@@ -46,8 +46,33 @@ export default function OrganizationPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
+  // Local search state (for immediate UI feedback)
+  const [searchValue, setSearchValue] = useState('');
+
   // Mutations
   const reactivateOrg = useReactivateOrganization();
+  const bulkDeleteOrg = useBulkDeleteOrganization();
+
+  // Sync local search state with URL on mount and when URL changes
+  useEffect(() => {
+    const urlSearch = searchParams.get('search') || '';
+    if (searchValue !== urlSearch) {
+      setSearchValue(urlSearch);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  // Debounce search updates to URL
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchValue !== (searchParams.get('search') || '')) {
+        updateParams({ search: searchValue || undefined });
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchValue]);
 
   // Build query params from URL
   const queryParams = useMemo<Partial<OrganizationQuery>>(() => {
@@ -139,6 +164,10 @@ export default function OrganizationPage() {
     reactivateOrg.mutate(id);
   };
 
+  const handleBulkDelete = (ids: string[]) => {
+    bulkDeleteOrg.mutate(ids);
+  };
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -204,8 +233,8 @@ export default function OrganizationPage() {
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by name or code..."
-                value={queryParams.search || ''}
-                onChange={(e) => updateParams({ search: e.target.value })}
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
                 className="pl-8"
               />
             </div>
@@ -261,6 +290,8 @@ export default function OrganizationPage() {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onReactivate={handleReactivate}
+            onBulkDelete={handleBulkDelete}
+            isBulkDeleting={bulkDeleteOrg.isPending}
           />
         </CardContent>
       </Card>

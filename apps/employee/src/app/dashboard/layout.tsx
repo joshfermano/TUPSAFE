@@ -509,6 +509,23 @@ export default function DashboardLayout({
     }
   }, [user, loading, router, mounted]);
 
+  // CRITICAL: Redirect pending users to pending-approval page
+  // This is a client-side check to complement the middleware
+  // (Middleware only runs on server requests, not client-side navigation)
+  useEffect(() => {
+    if (mounted && !loading && user && profile) {
+      const accountStatus = profile.accountStatus;
+
+      // If account is not active, redirect to pending-approval
+      if (accountStatus && accountStatus !== 'active') {
+        console.log(
+          `[Dashboard Layout] ⚠️ Account status is '${accountStatus}', redirecting to pending-approval`
+        );
+        router.replace('/auth/pending-approval');
+      }
+    }
+  }, [mounted, loading, user, profile, router]);
+
   // Determine user type from profile (now fetched from AuthProvider)
   // Profile includes userType field (employee | applicant)
   // This determines which navigation items are shown in the sidebar
@@ -531,6 +548,21 @@ export default function DashboardLayout({
   // Don't render dashboard if user is not authenticated (will redirect)
   if (!user) {
     return null;
+  }
+
+  // CRITICAL: Don't render dashboard if account is not active (will redirect)
+  // This prevents any flash of dashboard content for pending users
+  if (profile && profile.accountStatus && profile.accountStatus !== 'active') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 animate-spin rounded-full border-3 border-slate-200 dark:border-slate-700 border-t-primary"></div>
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+            Checking account status...
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (

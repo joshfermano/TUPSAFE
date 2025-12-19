@@ -92,8 +92,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Note: Allow pending users to log in - middleware will redirect them to pending-approval page
-    // This prevents infinite redirect loops while maintaining proper access control
+    // Block pending users - they must wait for admin approval
+    if (profile.accountStatus === 'pending') {
+      // Sign out to prevent session persistence
+      await supabase.auth.signOut();
+
+      return NextResponse.json(
+        {
+          error: 'Account pending approval',
+          message:
+            'Your registration is pending admin approval. You will be notified once your account is approved.',
+          status: 'pending_approval',
+        },
+        { status: 403 }
+      );
+    }
 
     if (profile.accountStatus === 'suspended') {
       return NextResponse.json(

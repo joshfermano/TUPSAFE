@@ -127,10 +127,10 @@ interface PositionsResponse {
 
 /**
  * Fetch all colleges from the API
+ * Uses public endpoint to allow access during registration (no auth required)
  */
 async function fetchColleges(): Promise<College[]> {
-  const response = await fetch('/api/colleges', {
-    credentials: 'include',
+  const response = await fetch('/api/public/colleges', {
     headers: {
       'Content-Type': 'application/json',
     },
@@ -147,6 +147,7 @@ async function fetchColleges(): Promise<College[]> {
 
 /**
  * Fetch departments by college ID
+ * Uses public endpoint to allow access during registration (no auth required)
  */
 async function fetchDepartmentsByCollege(
   collegeId: string
@@ -155,8 +156,7 @@ async function fetchDepartmentsByCollege(
     collegeId,
   });
 
-  const response = await fetch(`/api/departments?${params.toString()}`, {
-    credentials: 'include',
+  const response = await fetch(`/api/public/departments?${params.toString()}`, {
     headers: {
       'Content-Type': 'application/json',
     },
@@ -193,14 +193,14 @@ async function fetchDepartment(id: string): Promise<Department | Office> {
 
 /**
  * Fetch all administrative offices
+ * Uses public endpoint to allow access during registration (no auth required)
  */
 async function fetchOffices(): Promise<Office[]> {
   const params = new URLSearchParams({
     type: 'administrative',
   });
 
-  const response = await fetch(`/api/departments?${params.toString()}`, {
-    credentials: 'include',
+  const response = await fetch(`/api/public/departments?${params.toString()}`, {
     headers: {
       'Content-Type': 'application/json',
     },

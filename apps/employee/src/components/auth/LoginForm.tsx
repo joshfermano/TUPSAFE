@@ -21,6 +21,7 @@ interface LoginResponse {
   success: boolean;
   requiresOTP?: boolean;
   message?: string;
+  status?: 'pending_approval' | 'email_not_verified' | 'suspended' | 'rejected' | 'inactive';
   session?: {
     access_token: string;
     refresh_token: string;
@@ -90,6 +91,40 @@ export function LoginForm({
       const data: LoginResponse = await response.json();
 
       if (!response.ok) {
+        // Handle specific account status cases
+        if (data.status === 'pending_approval') {
+          toast.info('Account Pending Approval', {
+            description: data.message || 'Your registration is pending admin approval.',
+          });
+          setIsLoading(false);
+          router.push('/auth/pending-approval');
+          return;
+        }
+
+        if (data.status === 'email_not_verified') {
+          toast.warning('Email Not Verified', {
+            description: data.message || 'Please verify your email address first.',
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        if (data.status === 'rejected') {
+          toast.error('Registration Rejected', {
+            description: data.message || 'Your registration was rejected. Please contact support.',
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        if (data.status === 'suspended' || data.status === 'inactive') {
+          toast.error('Account Unavailable', {
+            description: data.message || 'Your account is currently unavailable. Please contact support.',
+          });
+          setIsLoading(false);
+          return;
+        }
+
         throw new Error(data.error || 'Login failed');
       }
 

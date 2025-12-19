@@ -23,6 +23,8 @@ import {
   auditLogs,
   createAuditLogFromRequest,
   generateChanges,
+  otpVerifications,
+  pendingRegistrations,
 } from '@tupsafe/database/server';
 import { eq, desc, and, count } from 'drizzle-orm';
 import {
@@ -492,6 +494,8 @@ export async function DELETE(
     }
 
     // Perform soft delete
+    // Note: Setting accountStatus to 'rejected' and isActive to false
+    // The chk_user_type_id constraint allows NULL employee_id/applicant_id for inactive users
     const [deletedUser] = await db
       .update(profiles)
       .set({
@@ -501,6 +505,27 @@ export async function DELETE(
       })
       .where(eq(profiles.id, userId))
       .returning();
+
+    // Delete from Supabase Auth
+    const { createAdminClient } = await import('@tupsafe/auth/server');
+    const adminClient = await createAdminClient();
+
+    const { error: authDeleteError } = await adminClient.auth.admin.deleteUser(userId);
+
+    if (authDeleteError) {
+      console.error('[Delete User] Failed to delete from Supabase Auth:', authDeleteError);
+      // Don't fail the request - profile is already soft-deleted
+    }
+
+    // Clean up related tables
+    try {
+      await db.delete(otpVerifications).where(eq(otpVerifications.userId, userId));
+      await db.delete(pendingRegistrations).where(eq(pendingRegistrations.userId, userId));
+      console.log('[Delete User] Cleaned up related tables for user:', userId);
+    } catch (cleanupError) {
+      console.error('[Delete User] Failed to cleanup related tables:', cleanupError);
+      // Don't fail the request - continue to audit log
+    }
 
     // Create audit log
     await createAuditLogFromRequest(
@@ -525,6 +550,19 @@ export async function DELETE(
     );
   } catch (error) {
     console.error('Delete user error:', error);
+
+    // Handle constraint violation errors
+    if (error instanceof Error && error.message.includes('chk_user_type_id')) {
+      return NextResponse.json(
+        {
+          error: 'Cannot delete user due to data integrity constraint',
+          details: 'This user account has invalid data. Please contact system administrator.',
+          hint: 'The user may be missing required employee_id or applicant_id fields.',
+        },
+        { status: 409 }
+      );
+    }
+
     return NextResponse.json(
       {
         error: 'Failed to delete user',

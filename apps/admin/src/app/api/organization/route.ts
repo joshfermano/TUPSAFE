@@ -87,12 +87,14 @@ export async function GET(request: NextRequest) {
 
     const baseConditions = conditions.length > 0 ? and(...conditions) : undefined;
 
-    // Determine sort column and order
-    const sortColumn = {
+    // Determine sort column and order (default to name if not specified)
+    const sortByKey = validatedQuery.sortBy || 'name';
+    const sortColumnMap = {
       name: departments.name,
       code: departments.code,
       createdAt: departments.createdAt,
-    }[validatedQuery.sortBy!];
+    };
+    const sortColumn = sortColumnMap[sortByKey as keyof typeof sortColumnMap] || departments.name;
 
     const orderFn = validatedQuery.sortOrder === 'asc' ? asc : desc;
 

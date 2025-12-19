@@ -18,6 +18,7 @@ import {
   ChevronRight,
   UserCheck,
   Briefcase,
+  Building2,
 } from 'lucide-react';
 
 import { useAuth } from '@/context/AuthContext';
@@ -89,6 +90,12 @@ const navItems: NavItem[] = [
     name: 'Jobs',
     href: '/dashboard/jobs',
     icon: Briefcase,
+    section: 'management',
+  },
+  {
+    name: 'Organization',
+    href: '/dashboard/organization',
+    icon: Building2,
     section: 'management',
   },
   // System Section

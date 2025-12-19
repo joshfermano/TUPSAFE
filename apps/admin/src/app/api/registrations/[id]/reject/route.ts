@@ -24,7 +24,6 @@ import {
   checkUserRoleFromSupabase,
   getUserFromSupabase,
   sendEmail,
-  createServerClient,
 } from '@tupsafe/auth/server';
 import {
   rejectRegistrationSchema,
@@ -175,8 +174,9 @@ export async function POST(
       })
       .where(eq(pendingRegistrations.id, pendingReg.id));
 
-    // Get user email for notification
-    const supabase = await createServerClient('admin');
+    // Get user email for notification (requires admin client)
+    const { createAdminClient } = await import('@tupsafe/auth/server');
+    const supabase = await createAdminClient();
     let userEmail: string | null = null;
 
     try {
