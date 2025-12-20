@@ -382,7 +382,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(created, { status: 201 });
+    return NextResponse.json({ success: true, data: created }, { status: 201 });
   } catch (error) {
     console.error('Organization creation error:', error);
 

@@ -23,6 +23,7 @@ import type {
   CreateDepartmentInput,
   CreateOfficeInput,
   UpdateDepartmentInput,
+  DepartmentDependencies,
 } from '@tupsafe/types';
 import {
   fetchOrganizations,
@@ -35,6 +36,8 @@ import {
   updateOrganization,
   deleteOrganization,
   reactivateOrganization,
+  fetchDepartmentDependencies,
+  reassignAndDelete,
 } from '@/lib/api/organization';
 
 /**
@@ -54,6 +57,10 @@ export const organizationKeys = {
       ? ([...organizationKeys.all, 'departments', collegeId] as const)
       : ([...organizationKeys.all, 'departments'] as const),
   offices: () => [...organizationKeys.all, 'offices'] as const,
+  dependencies: (id?: string | null) =>
+    id
+      ? ([...organizationKeys.details(), id, 'dependencies'] as const)
+      : ([...organizationKeys.all, 'dependencies'] as const),
 };
 
 /**
@@ -426,7 +433,7 @@ export function useDeleteOrganization() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, hard = false }: { id: string; hard?: boolean }) =>
+    mutationFn: ({ id, hard = true }: { id: string; hard?: boolean }) =>
       deleteOrganization(id, hard),
     onMutate: async ({ id, hard }) => {
       // Cancel outgoing refetches
@@ -473,9 +480,18 @@ export function useDeleteOrganization() {
         );
       }
 
-      toast.error('Failed to delete organization', {
-        description: error.message,
-      });
+      // Enhanced error handling
+      const errorMessage = error.message;
+      
+      if (errorMessage.includes('already inactive')) {
+        toast.error('Organization is already inactive', {
+          description: 'Click "Delete" again to see the reactivate option.',
+        });
+      } else {
+        toast.error('Failed to delete organization', {
+          description: errorMessage,
+        });
+      }
     },
     onSuccess: (_, { hard }) => {
       // Invalidate all organization queries
@@ -581,14 +597,22 @@ export function useBulkDeleteOrganization() {
           description: 'The selected units have been deactivated.',
         });
       } else if (result.successCount === 0) {
-        // All failed
-        toast.error('Bulk delete failed', {
-          description: `Could not delete any of the ${result.total} selected item(s). Some units may have active employees or positions.`,
-        });
+        // All failed - show specific error for single deletion
+        if (result.total === 1 && result.failures.length > 0) {
+          const specificError = result.failures[0].error;
+          toast.error('Failed to delete organization', {
+            description: specificError || 'An error occurred while deleting the organization.',
+          });
+        } else {
+          toast.error('Bulk delete failed', {
+            description: `Could not delete any of the ${result.total} selected item(s). ${result.failures.length > 0 ? result.failures[0].error : 'Some units may have active employees or positions.'}`,
+          });
+        }
       } else {
-        // Partial success
+        // Partial success - show which failed
+        const failedReasons = result.failures.slice(0, 2).map(f => f.error).join('; ');
         toast.warning('Partial success', {
-          description: `Deleted ${result.successCount} of ${result.total} unit(s). ${result.failureCount} failed due to active employees or positions.`,
+          description: `Deleted ${result.successCount} of ${result.total} unit(s). ${result.failureCount} failed: ${failedReasons}${result.failures.length > 2 ? '...' : ''}`,
         });
       }
     },
@@ -685,5 +709,212 @@ export function useReactivateOrganization() {
         description: `${reactivatedOrg.name} (${reactivatedOrg.code}) is now active.`,
       });
     },
+  });
+}
+
+/**
+ * Hook to fetch dependencies for a department
+ *
+ * Fetches employees, positions, and child departments that are blocking
+ * department deletion. Also provides flags indicating if soft delete
+ * or hard delete are possible.
+ *
+ * @param id - Department ID to fetch dependencies for
+ * @returns Query result with dependency information
+ *
+ * @example
+ * ```tsx
+ * const { data, isLoading } = useDepartmentDependencies(deptId);
+ *
+ * if (data?.canSoftDelete) {
+ *   // Show soft delete option
+ * } else {
+ *   // Show reassignment option
+ *   console.log('Blocking reasons:', data?.blockingReasons);
+ * }
+ * ```
+ */
+export function useDepartmentDependencies(id: string | null) {
+  return useQuery<DepartmentDependencies, Error>({
+    queryKey: organizationKeys.dependencies(id),
+    queryFn: () => fetchDepartmentDependencies(id!),
+    enabled: !!id,
+    staleTime: 1000 * 60, // 1 minute - dependencies change frequently
+  });
+}
+
+/**
+ * Hook to reassign employees and positions to another department, then delete
+ *
+ * This mutation performs a transactional reassignment and deletion operation.
+ * All employees and/or positions are moved to the target department before
+ * the source department is deleted.
+ *
+ * @returns Mutation result with reassignment statistics
+ *
+ * @example
+ * ```tsx
+ * const reassign = useReassignAndDelete();
+ *
+ * await reassign.mutateAsync({
+ *   id: sourceDeptId,
+ *   targetDeptId: targetDeptId,
+ *   options: {
+ *     reassignEmployees: true,
+ *     reassignPositions: true
+ *   }
+ * });
+ * ```
+ */
+export function useReassignAndDelete() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      targetDeptId,
+      options,
+    }: {
+      id: string;
+      targetDeptId: string;
+      options?: {
+        reassignEmployees?: boolean;
+        reassignPositions?: boolean;
+      };
+    }) =>
+      reassignAndDelete(id, {
+        targetDepartmentId: targetDeptId,
+        reassignEmployees: options?.reassignEmployees ?? true,
+        reassignPositions: options?.reassignPositions ?? true,
+      }),
+    onMutate: async ({ id }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: organizationKeys.lists() });
+      await queryClient.cancelQueries({ queryKey: organizationKeys.details() });
+
+      // Snapshot previous values
+      const previousList = queryClient.getQueryData<OrganizationListResponse>(
+        organizationKeys.lists()
+      );
+
+      // Optimistically mark source as inactive
+      if (previousList) {
+        queryClient.setQueriesData<OrganizationListResponse>(
+          { queryKey: organizationKeys.lists() },
+          (old) => {
+            if (!old) return old;
+
+            const markInactive = (
+              items: DepartmentWithStats[]
+            ): DepartmentWithStats[] =>
+              items.map((item) =>
+                item.id === id ? { ...item, isActive: false } : item
+              );
+
+            return {
+              ...old,
+              colleges: markInactive(old.colleges),
+              departments: markInactive(old.departments),
+              offices: markInactive(old.offices),
+            };
+          }
+        );
+      }
+
+      return { previousList };
+    },
+    onError: (error, _variables, context) => {
+      // Rollback on error
+      if (context?.previousList) {
+        queryClient.setQueriesData<OrganizationListResponse>(
+          { queryKey: organizationKeys.lists() },
+          context.previousList
+        );
+      }
+
+      toast.error('Failed to reassign and delete', {
+        description: error.message,
+      });
+    },
+    onSuccess: (result, { id, targetDeptId }) => {
+      // Invalidate all organization queries to refetch with new data
+      queryClient.invalidateQueries({ queryKey: organizationKeys.all });
+
+      // Invalidate target department to refresh employee/position counts
+      queryClient.invalidateQueries({
+        queryKey: organizationKeys.detail(targetDeptId),
+      });
+
+      // Invalidate dependencies for the deleted department
+      queryClient.invalidateQueries({
+        queryKey: organizationKeys.dependencies(id),
+      });
+
+      const { employeesReassigned, positionsReassigned } = result;
+
+      // Build success message
+      const parts: string[] = [];
+      if (employeesReassigned > 0) {
+        parts.push(`${employeesReassigned} employee${employeesReassigned !== 1 ? 's' : ''}`);
+      }
+      if (positionsReassigned > 0) {
+        parts.push(`${positionsReassigned} position${positionsReassigned !== 1 ? 's' : ''}`);
+      }
+
+      const reassignedText =
+        parts.length > 0 ? `Reassigned ${parts.join(' and ')}.` : '';
+
+      toast.success('Department deleted successfully', {
+        description: reassignedText || 'The department has been removed.',
+      });
+    },
+  });
+}
+
+/**
+ * Hook to get eligible target departments for reassignment
+ *
+ * Fetches all active departments excluding the source department.
+ * Used to populate the target department selector when reassigning.
+ *
+ * @param id - Source department ID to exclude from results
+ * @returns Query result with eligible target departments
+ *
+ * @example
+ * ```tsx
+ * const { data: targets } = useReassignmentTargets(sourceDeptId);
+ *
+ * <Select>
+ *   {targets?.map(dept => (
+ *     <SelectItem key={dept.id} value={dept.id}>
+ *       {dept.name} ({dept.code})
+ *     </SelectItem>
+ *   ))}
+ * </Select>
+ * ```
+ */
+export function useReassignmentTargets(id: string | null) {
+  return useQuery<DepartmentWithStats[], Error>({
+    queryKey: organizationKeys.list({
+      type: 'all',
+      includeInactive: false,
+    }),
+    queryFn: async () => {
+      const result = await fetchOrganizations({
+        type: 'all',
+        includeInactive: false,
+      });
+
+      // Flatten all departments and filter out the source department
+      const allDepts = [
+        ...result.colleges,
+        ...result.departments,
+        ...result.offices,
+      ];
+
+      return allDepts.filter((dept) => dept.id !== id);
+    },
+    enabled: !!id,
+    staleTime: 1000 * 60 * 5, // 5 minutes - organizational structure changes slowly
   });
 }

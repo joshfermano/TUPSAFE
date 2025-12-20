@@ -33,6 +33,7 @@ import {
   EditOrganizationDialog,
   DeleteConfirmDialog,
 } from '@/components/organization';
+import { ReassignAndDeleteDialog } from '@/components/organization/ReassignAndDeleteDialog';
 import { useOrganizations, useReactivateOrganization, useBulkDeleteOrganization } from '@/hooks/useOrganization';
 import type { OrganizationQuery } from '@tupsafe/types';
 
@@ -45,6 +46,8 @@ export default function OrganizationPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [reassignId, setReassignId] = useState<string | null>(null);
+  const [reassignOrgName, setReassignOrgName] = useState<string | null>(null);
 
   // Local search state (for immediate UI feedback)
   const [searchValue, setSearchValue] = useState('');
@@ -309,7 +312,31 @@ export default function OrganizationPage() {
         organizationId={deleteId}
         open={!!deleteId}
         onOpenChange={(open) => !open && setDeleteId(null)}
-        allowHardDelete={false} // Set to true for admin users
+        allowHardDelete={true} // Set to true for admin users
+        onReassignClick={(orgId) => {
+          // Find the organization name
+          const org = data ? [
+            ...data.colleges,
+            ...data.departments,
+            ...data.offices
+          ].find(o => o.id === orgId) : null;
+
+          setReassignId(orgId);
+          setReassignOrgName(org?.name || null);
+          setDeleteId(null); // Close delete dialog
+        }}
+      />
+
+      <ReassignAndDeleteDialog
+        organizationId={reassignId}
+        organizationName={reassignOrgName}
+        open={!!reassignId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setReassignId(null);
+            setReassignOrgName(null);
+          }
+        }}
       />
     </div>
   );

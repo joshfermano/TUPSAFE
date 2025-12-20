@@ -185,16 +185,16 @@ export async function PATCH(
       request.headers
     );
 
-    return NextResponse.json(updated, { status: 200 });
+    return NextResponse.json({ data: updated }, { status: 200 });
   } catch (error) {
     console.error('Organization update error:', error);
 
     // Handle validation errors
     if (error instanceof ZodError) {
+      const errorMessage = error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ');
       return NextResponse.json(
         {
-          error: 'Invalid input data',
-          details: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', '),
+          error: `Invalid input data: ${errorMessage}`,
         },
         { status: 400 }
       );
@@ -205,8 +205,7 @@ export async function PATCH(
       if (error.message.includes('already exists')) {
         return NextResponse.json(
           {
-            error: 'Duplicate code',
-            details: error.message,
+            error: error.message,
           },
           { status: 409 }
         );
@@ -215,8 +214,7 @@ export async function PATCH(
       if (error.message.includes('not found')) {
         return NextResponse.json(
           {
-            error: 'Referenced entity not found',
-            details: error.message,
+            error: error.message,
           },
           { status: 404 }
         );
@@ -225,8 +223,7 @@ export async function PATCH(
       if (error.message.includes('circular reference') || error.message.includes('cannot be its own parent')) {
         return NextResponse.json(
           {
-            error: 'Invalid hierarchy',
-            details: error.message,
+            error: error.message,
           },
           { status: 400 }
         );
@@ -235,8 +232,7 @@ export async function PATCH(
       if (error.message.includes('inactive') || error.message.includes('children')) {
         return NextResponse.json(
           {
-            error: 'Update constraint violation',
-            details: error.message,
+            error: error.message,
           },
           { status: 400 }
         );
@@ -245,8 +241,7 @@ export async function PATCH(
 
     return NextResponse.json(
       {
-        error: 'Failed to update organizational unit',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'Failed to update organizational unit',
       },
       { status: 500 }
     );
@@ -356,7 +351,7 @@ export async function DELETE(
       );
     }
 
-    return new NextResponse(null, { status: 204 });
+    return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error('Organization delete error:', error);
 
@@ -370,8 +365,7 @@ export async function DELETE(
       ) {
         return NextResponse.json(
           {
-            error: 'Delete constraint violation',
-            details: error.message,
+            error: error.message,
           },
           { status: 409 }
         );
@@ -380,8 +374,7 @@ export async function DELETE(
       if (error.message.includes('not found')) {
         return NextResponse.json(
           {
-            error: 'Organizational unit not found',
-            details: error.message,
+            error: error.message,
           },
           { status: 404 }
         );
@@ -390,18 +383,18 @@ export async function DELETE(
       if (error.message.includes('already inactive')) {
         return NextResponse.json(
           {
-            error: 'Unit already inactive',
-            details: error.message,
+            error: error.message,
+            code: 'ALREADY_INACTIVE',
+            suggestion: 'Use the reactivate endpoint to restore this organization.'
           },
-          { status: 400 }
+          { status: 409 }  // Changed from 400 to 409 Conflict
         );
       }
     }
 
     return NextResponse.json(
       {
-        error: 'Failed to delete organizational unit',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'Failed to delete organizational unit',
       },
       { status: 500 }
     );

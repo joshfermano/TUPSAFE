@@ -119,7 +119,12 @@ export function CreateOrganizationDialog({
 
   const infoForm = useForm<BasicInfoData>({
     resolver: zodResolver(basicInfoSchema),
-  });
+    defaultValues: {
+      name: '',
+      code: '',
+      parentCollegeId: undefined,
+    },
+  });;
 
   const isCreating =
     createCollege.isPending || createDepartment.isPending || createOffice.isPending;
@@ -405,7 +410,7 @@ export function CreateOrganizationDialog({
                   <div>
                     <h4 className="text-sm font-medium text-muted-foreground">Parent College</h4>
                     <p className="mt-1 font-medium">
-                      {colleges.find((c) => c.id === infoForm.getValues('parentCollegeId'))?.name}
+                      {colleges.find((c) => c.id === infoForm.getValues('parentCollegeId'))?.name || 'Loading...'}
                     </p>
                   </div>
                 )}
