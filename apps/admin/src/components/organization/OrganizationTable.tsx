@@ -386,6 +386,7 @@ export function OrganizationTable({
               <TableRow
                 key={row.id}
                 data-state={row.getIsSelected() && 'selected'}
+                className={!row.original.isActive ? 'opacity-60 bg-muted/30' : ''}
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id}>
@@ -409,11 +410,18 @@ export function OrganizationTable({
       <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {selectedCount} Organization(s)?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete the selected organizational units?
-              This will deactivate them and hide them from most views.
-              Units with employees or positions cannot be permanently deleted.
+            <AlertDialogTitle>Permanently Delete {selectedCount} Organization(s)?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p className="font-semibold text-destructive">
+                This action will permanently delete the selected organizational units from the database.
+              </p>
+              <p>
+                All data associated with these organizations will be removed and cannot be recovered.
+                This action is irreversible.
+              </p>
+              <p className="text-sm">
+                Note: Organizations with dependencies (employees, positions, or sub-units) will be soft-deleted (deactivated) instead to maintain data integrity.
+              </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

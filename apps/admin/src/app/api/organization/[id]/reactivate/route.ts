@@ -107,7 +107,7 @@ export async function POST(
       request.headers
     );
 
-    return NextResponse.json(reactivated, { status: 200 });
+    return NextResponse.json({ data: reactivated }, { status: 200 });
   } catch (error) {
     console.error('Organization reactivation error:', error);
 
@@ -116,8 +116,7 @@ export async function POST(
       if (error.message.includes('not found')) {
         return NextResponse.json(
           {
-            error: 'Organizational unit not found',
-            details: error.message,
+            error: error.message,
           },
           { status: 404 }
         );
@@ -126,8 +125,7 @@ export async function POST(
       if (error.message.includes('already active')) {
         return NextResponse.json(
           {
-            error: 'Unit already active',
-            details: error.message,
+            error: error.message,
           },
           { status: 400 }
         );
@@ -136,8 +134,7 @@ export async function POST(
       if (error.message.includes('parent') && error.message.includes('inactive')) {
         return NextResponse.json(
           {
-            error: 'Parent unit inactive',
-            details: error.message,
+            error: error.message,
           },
           { status: 400 }
         );
@@ -146,8 +143,7 @@ export async function POST(
 
     return NextResponse.json(
       {
-        error: 'Failed to reactivate organizational unit',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'Failed to reactivate organizational unit',
       },
       { status: 500 }
     );

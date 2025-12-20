@@ -2,13 +2,14 @@
  * User Management API - Individual User Operations
  * GET    /api/users/[id] - Get detailed user information
  * PATCH  /api/users/[id] - Update user profile and settings
- * DELETE /api/users/[id] - Soft delete user account
+ * DELETE /api/users/[id] - Hard delete user account (permanent removal)
  *
  * Security:
  * - Requires admin, hr, or supervisor role
  * - Role hierarchy validation (can't modify higher roles)
  * - Comprehensive audit logging
  * - Input validation with Zod
+ * - Dependency checking before deletion
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -25,6 +26,9 @@ import {
   generateChanges,
   otpVerifications,
   pendingRegistrations,
+  trustedDevices,
+  openPositions,
+  jobApplications,
 } from '@tupsafe/database/server';
 import { eq, desc, and, count } from 'drizzle-orm';
 import {
@@ -425,7 +429,7 @@ export async function PATCH(
 
 /**
  * DELETE /api/users/[id]
- * Soft delete user account (set isActive = false, accountStatus = 'rejected')
+ * Hard delete user account (permanent removal from database)
  */
 export async function DELETE(
   request: NextRequest,
@@ -493,18 +497,74 @@ export async function DELETE(
       );
     }
 
-    // Perform soft delete
-    // Note: Setting accountStatus to 'rejected' and isActive to false
-    // The chk_user_type_id constraint allows NULL employee_id/applicant_id for inactive users
-    const [deletedUser] = await db
-      .update(profiles)
-      .set({
-        isActive: false,
-        accountStatus: 'rejected',
-        updatedAt: new Date(),
-      })
-      .where(eq(profiles.id, userId))
-      .returning();
+    // Check for dependencies that would prevent deletion
+    const [
+      [{ pdsCount }],
+      [{ salnCount }],
+      [{ positionsPostedCount }],
+      [{ applicationsCount }],
+    ] = await Promise.all([
+      db
+        .select({ pdsCount: count() })
+        .from(pdsSubmissions)
+        .where(eq(pdsSubmissions.userId, userId)),
+      db
+        .select({ salnCount: count() })
+        .from(salnSubmissions)
+        .where(eq(salnSubmissions.userId, userId)),
+      db
+        .select({ positionsPostedCount: count() })
+        .from(openPositions)
+        .where(eq(openPositions.postedBy, userId)),
+      db
+        .select({ applicationsCount: count() })
+        .from(jobApplications)
+        .where(eq(jobApplications.applicantId, userId)),
+    ]);
+
+    // Build dependency error message if any dependencies exist
+    const dependencies: string[] = [];
+    if (pdsCount > 0) {
+      dependencies.push(`${pdsCount} PDS submission${pdsCount > 1 ? 's' : ''}`);
+    }
+    if (salnCount > 0) {
+      dependencies.push(`${salnCount} SALN submission${salnCount > 1 ? 's' : ''}`);
+    }
+    if (positionsPostedCount > 0) {
+      dependencies.push(`${positionsPostedCount} posted position${positionsPostedCount > 1 ? 's' : ''}`);
+    }
+    if (applicationsCount > 0) {
+      dependencies.push(`${applicationsCount} job application${applicationsCount > 1 ? 's' : ''}`);
+    }
+
+    if (dependencies.length > 0) {
+      return NextResponse.json(
+        {
+          error: 'Cannot delete user with existing data dependencies',
+          details: `This user has ${dependencies.join(', ')}. Please archive or reassign these records before deletion.`,
+          dependencies: {
+            pdsSubmissions: pdsCount,
+            salnSubmissions: salnCount,
+            positionsPosted: positionsPostedCount,
+            jobApplications: applicationsCount,
+          },
+        },
+        { status: 409 }
+      );
+    }
+
+    // Perform hard delete within a transaction
+    await db.transaction(async (tx) => {
+      // Clean up auth-related tables first (these don't have critical data)
+      await tx.delete(otpVerifications).where(eq(otpVerifications.userId, userId));
+      await tx.delete(pendingRegistrations).where(eq(pendingRegistrations.userId, userId));
+      await tx.delete(trustedDevices).where(eq(trustedDevices.userId, userId));
+
+      // userPreferences will cascade automatically due to ON DELETE CASCADE
+
+      // Delete from profiles table (hard delete)
+      await tx.delete(profiles).where(eq(profiles.id, userId));
+    });
 
     // Delete from Supabase Auth
     const { createAdminClient } = await import('@tupsafe/auth/server');
@@ -514,17 +574,7 @@ export async function DELETE(
 
     if (authDeleteError) {
       console.error('[Delete User] Failed to delete from Supabase Auth:', authDeleteError);
-      // Don't fail the request - profile is already soft-deleted
-    }
-
-    // Clean up related tables
-    try {
-      await db.delete(otpVerifications).where(eq(otpVerifications.userId, userId));
-      await db.delete(pendingRegistrations).where(eq(pendingRegistrations.userId, userId));
-      console.log('[Delete User] Cleaned up related tables for user:', userId);
-    } catch (cleanupError) {
-      console.error('[Delete User] Failed to cleanup related tables:', cleanupError);
-      // Don't fail the request - continue to audit log
+      // Don't fail the request - profile is already deleted from database
     }
 
     // Create audit log
@@ -534,8 +584,7 @@ export async function DELETE(
       'profile',
       userId,
       {
-        before: { isActive: currentUser.isActive, accountStatus: currentUser.accountStatus },
-        after: { isActive: false, accountStatus: 'rejected' },
+        before: currentUser,
       },
       request.headers
     );
@@ -543,21 +592,19 @@ export async function DELETE(
     return NextResponse.json(
       {
         success: true,
-        message: 'User deactivated successfully',
-        data: deletedUser,
+        message: 'User permanently deleted successfully',
       },
       { status: 200 }
     );
   } catch (error) {
     console.error('Delete user error:', error);
 
-    // Handle constraint violation errors
-    if (error instanceof Error && error.message.includes('chk_user_type_id')) {
+    // Handle foreign key constraint violations
+    if (error instanceof Error && error.message.includes('foreign key constraint')) {
       return NextResponse.json(
         {
-          error: 'Cannot delete user due to data integrity constraint',
-          details: 'This user account has invalid data. Please contact system administrator.',
-          hint: 'The user may be missing required employee_id or applicant_id fields.',
+          error: 'Cannot delete user due to data dependencies',
+          details: 'This user is referenced by other records in the system. Please remove or reassign those records first.',
         },
         { status: 409 }
       );

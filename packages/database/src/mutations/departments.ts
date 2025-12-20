@@ -475,7 +475,10 @@ export async function updateDepartment(
           visited.add(currentParentId);
 
           const [parent] = await tx
-            .select({ parentId: departments.parentId })
+            .select({
+              parentId: departments.parentId,
+              parentCollegeId: departments.parentCollegeId
+            })
             .from(departments)
             .where(eq(departments.id, currentParentId))
             .limit(1);
@@ -487,6 +490,48 @@ export async function updateDepartment(
         if (depth >= maxDepth) {
           throw new Error(
             'Department hierarchy is too deep. Maximum depth is 10 levels.'
+          );
+        }
+      }
+
+      // Prevent circular references if parentCollegeId is being changed
+      if (data.parentCollegeId !== undefined && data.parentCollegeId !== null) {
+        // Prevent setting self as parent college
+        if (data.parentCollegeId === id) {
+          throw new Error('A department cannot reference itself as parent college');
+        }
+
+        // Check for circular reference via parentCollegeId chain
+        let currentCollegeId: string | null = data.parentCollegeId;
+        const visitedColleges = new Set<string>([id]);
+        let depth = 0;
+        const maxDepth = 10;
+
+        while (currentCollegeId && depth < maxDepth) {
+          if (visitedColleges.has(currentCollegeId)) {
+            throw new Error(
+              'Circular reference detected in college hierarchy. This change would create a loop.'
+            );
+          }
+
+          visitedColleges.add(currentCollegeId);
+
+          const [college] = await tx
+            .select({
+              parentId: departments.parentId,
+              parentCollegeId: departments.parentCollegeId
+            })
+            .from(departments)
+            .where(eq(departments.id, currentCollegeId))
+            .limit(1);
+
+          currentCollegeId = college?.parentCollegeId || null;
+          depth++;
+        }
+
+        if (depth >= maxDepth) {
+          throw new Error(
+            'College hierarchy is too deep. Maximum depth is 10 levels.'
           );
         }
       }
@@ -520,19 +565,23 @@ export async function updateDepartment(
 
       // Validate officeType change
       if (data.officeType && data.officeType !== existing.officeType) {
-        // Check if department has children - changing type could break hierarchy
-        const childrenCount = await tx
+        // Check if department has children in BOTH parentId and parentCollegeId
+        // Children could be in either field depending on office type
+        const childrenByParentId = await tx
           .select({ count: count() })
           .from(departments)
-          .where(
-            existing.officeType === 'academic'
-              ? eq(departments.parentCollegeId, id)
-              : eq(departments.parentId, id)
-          );
+          .where(eq(departments.parentId, id));
 
-        if (childrenCount[0]?.count > 0) {
+        const childrenByCollegeId = await tx
+          .select({ count: count() })
+          .from(departments)
+          .where(eq(departments.parentCollegeId, id));
+
+        const totalChildren = (childrenByParentId[0]?.count || 0) + (childrenByCollegeId[0]?.count || 0);
+
+        if (totalChildren > 0) {
           throw new Error(
-            `Cannot change office type because this department has ${childrenCount[0].count} child department(s). Remove or reassign children first.`
+            `Cannot change office type because this department has ${totalChildren} child department(s). Remove or reassign children first.`
           );
         }
       }
@@ -632,9 +681,9 @@ export async function softDeleteDepartment(id: string): Promise<void> {
       }
 
       if (!existing.isActive) {
-        // Department is already inactive - idempotent operation succeeds
-        // Return early without error to support bulk delete operations
-        return;
+        throw new Error(
+          'Department is already inactive. Use reactivateDepartment to restore it.'
+        );
       }
 
       // Check for active employees
@@ -642,7 +691,11 @@ export async function softDeleteDepartment(id: string): Promise<void> {
         .select({ count: count() })
         .from(profiles)
         .where(
-          and(eq(profiles.departmentId, id), eq(profiles.isActive, true))
+          and(
+            eq(profiles.departmentId, id),
+            eq(profiles.isActive, true),
+            eq(profiles.userType, 'employee')
+          )
         );
 
       if (activeEmployeesCount[0]?.count > 0) {
@@ -828,7 +881,7 @@ export async function reactivateDepartment(id: string): Promise<Department> {
         throw new Error('Department is already active');
       }
 
-      // If department has a parent (via parentId or parentCollegeId), verify parent is active
+      // If department has a parent (via parentId), verify parent exists and is active
       if (existing.parentId) {
         const [parent] = await tx
           .select({ isActive: departments.isActive })
@@ -836,13 +889,20 @@ export async function reactivateDepartment(id: string): Promise<Department> {
           .where(eq(departments.id, existing.parentId))
           .limit(1);
 
-        if (!parent?.isActive) {
+        if (!parent) {
+          throw new Error(
+            `Parent office with ID '${existing.parentId}' not found. Cannot reactivate department with missing parent.`
+          );
+        }
+
+        if (!parent.isActive) {
           throw new Error(
             'Cannot reactivate department. Parent office is inactive. Please reactivate parent first.'
           );
         }
       }
 
+      // If department has a parent college, verify parent college exists and is active
       if (existing.parentCollegeId) {
         const [parentCollege] = await tx
           .select({ isActive: departments.isActive })
@@ -850,7 +910,13 @@ export async function reactivateDepartment(id: string): Promise<Department> {
           .where(eq(departments.id, existing.parentCollegeId))
           .limit(1);
 
-        if (!parentCollege?.isActive) {
+        if (!parentCollege) {
+          throw new Error(
+            `Parent college with ID '${existing.parentCollegeId}' not found. Cannot reactivate department with missing parent college.`
+          );
+        }
+
+        if (!parentCollege.isActive) {
           throw new Error(
             'Cannot reactivate department. Parent college is inactive. Please reactivate college first.'
           );
@@ -936,5 +1002,616 @@ export async function isDepartmentCodeUnique(
     throw new Error(
       `Failed to check department code uniqueness: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
+  }
+}
+
+/**
+ * Reassignment result for audit logging
+ */
+export interface ReassignmentResult {
+  reassignedCount: number;
+  fromDeptId: string;
+  toDeptId: string;
+  fromDeptName?: string;
+  toDeptName?: string;
+}
+
+/**
+ * Combined reassignment and deletion result
+ */
+export interface ReassignAndDeleteResult {
+  employeesReassigned: number;
+  positionsReassigned: number;
+  deleted: true;
+  fromDeptId: string;
+  toDeptId: string;
+}
+
+/**
+ * Options for reassignAndDelete operation
+ */
+export interface ReassignAndDeleteOptions {
+  reassignEmployees?: boolean;
+  reassignPositions?: boolean;
+}
+
+/**
+ * Reassign employees from one department to another
+ *
+ * Moves employee records from source department to target department.
+ * Can reassign all employees or only specific ones.
+ *
+ * Validates that:
+ * - Both departments exist
+ * - Target department is active
+ * - At least one employee to reassign
+ *
+ * This operation is typically used before soft-deleting a department to ensure
+ * no active employees are left without a department assignment.
+ *
+ * @param fromDeptId - Source department UUID
+ * @param toDeptId - Target department UUID
+ * @param employeeIds - Optional array of specific employee UUIDs to reassign (if empty, reassigns all)
+ * @returns Promise<ReassignmentResult> Count and details of reassigned employees
+ * @throws Error if departments don't exist, target is inactive, or database operation fails
+ *
+ * @example
+ * // Reassign all employees
+ * const result = await reassignEmployees(
+ *   'old-dept-id',
+ *   'new-dept-id'
+ * );
+ * console.log(`Reassigned ${result.reassignedCount} employees`);
+ *
+ * @example
+ * // Reassign specific employees
+ * const result = await reassignEmployees(
+ *   'old-dept-id',
+ *   'new-dept-id',
+ *   ['employee-1-id', 'employee-2-id']
+ * );
+ */
+export async function reassignEmployees(
+  fromDeptId: string,
+  toDeptId: string,
+  employeeIds?: string[]
+): Promise<ReassignmentResult> {
+  try {
+    // Validate input
+    if (!fromDeptId || typeof fromDeptId !== 'string') {
+      throw new Error('Valid source department ID is required');
+    }
+
+    if (!toDeptId || typeof toDeptId !== 'string') {
+      throw new Error('Valid target department ID is required');
+    }
+
+    if (fromDeptId === toDeptId) {
+      throw new Error('Source and target departments must be different');
+    }
+
+    // Use transaction for atomic operation
+    const result = await db.transaction(async (tx) => {
+      // Verify source department exists
+      const [fromDept] = await tx
+        .select({ id: departments.id, name: departments.name })
+        .from(departments)
+        .where(eq(departments.id, fromDeptId))
+        .limit(1);
+
+      if (!fromDept) {
+        throw new Error(
+          `Source department with ID '${fromDeptId}' not found`
+        );
+      }
+
+      // Verify target department exists and is active
+      const [toDept] = await tx
+        .select({
+          id: departments.id,
+          name: departments.name,
+          isActive: departments.isActive,
+        })
+        .from(departments)
+        .where(eq(departments.id, toDeptId))
+        .limit(1);
+
+      if (!toDept) {
+        throw new Error(`Target department with ID '${toDeptId}' not found`);
+      }
+
+      if (!toDept.isActive) {
+        throw new Error(
+          'Cannot reassign employees to inactive department. Please reactivate the target department first.'
+        );
+      }
+
+      // Count employees to be reassigned
+      const countWhereClause =
+        employeeIds && employeeIds.length > 0
+          ? and(
+              eq(profiles.departmentId, fromDeptId),
+              eq(profiles.userType, 'employee')
+            )
+          : and(
+              eq(profiles.departmentId, fromDeptId),
+              eq(profiles.userType, 'employee')
+            );
+
+      const employeesCount = await tx
+        .select({ count: count() })
+        .from(profiles)
+        .where(countWhereClause);
+
+      const totalEmployees = employeesCount[0]?.count || 0;
+
+      if (totalEmployees === 0) {
+        throw new Error(
+          `No employees found in source department to reassign`
+        );
+      }
+
+      // If specific employee IDs provided, validate they exist and belong to source department
+      if (employeeIds && employeeIds.length > 0) {
+        const specificEmployees = await tx
+          .select({ id: profiles.id, departmentId: profiles.departmentId })
+          .from(profiles)
+          .where(
+            and(
+              eq(profiles.departmentId, fromDeptId),
+              eq(profiles.userType, 'employee')
+            )
+          );
+
+        const validIds = new Set(specificEmployees.map((e) => e.id));
+        const invalidIds = employeeIds.filter((id) => !validIds.has(id));
+
+        if (invalidIds.length > 0) {
+          throw new Error(
+            `The following employee IDs are not in the source department: ${invalidIds.join(', ')}`
+          );
+        }
+      }
+
+      // Build update where clause
+      const updateWhereClause =
+        employeeIds && employeeIds.length > 0
+          ? and(
+              eq(profiles.departmentId, fromDeptId),
+              eq(profiles.userType, 'employee')
+            )
+          : and(
+              eq(profiles.departmentId, fromDeptId),
+              eq(profiles.userType, 'employee')
+            );
+
+      // Perform reassignment
+      await tx
+        .update(profiles)
+        .set({ departmentId: toDeptId })
+        .where(updateWhereClause);
+
+      // Get actual count of reassigned employees
+      const reassignedCount =
+        employeeIds && employeeIds.length > 0
+          ? employeeIds.length
+          : totalEmployees;
+
+      return {
+        reassignedCount,
+        fromDeptId,
+        toDeptId,
+        fromDeptName: fromDept.name,
+        toDeptName: toDept.name,
+      };
+    });
+
+    return result;
+  } catch (error) {
+    console.error('[reassignEmployees] Database error:', error);
+    throw error instanceof Error
+      ? error
+      : new Error('Failed to reassign employees');
+  }
+}
+
+/**
+ * Reassign positions from one department to another
+ *
+ * Moves position records from source department to target department.
+ * Can reassign all positions or only specific ones.
+ *
+ * Validates that:
+ * - Both departments exist
+ * - Target department is active
+ * - At least one position to reassign
+ *
+ * This operation is typically used before soft-deleting a department to ensure
+ * no active positions are left in the department.
+ *
+ * @param fromDeptId - Source department UUID
+ * @param toDeptId - Target department UUID
+ * @param positionIds - Optional array of specific position UUIDs to reassign (if empty, reassigns all)
+ * @returns Promise<ReassignmentResult> Count and details of reassigned positions
+ * @throws Error if departments don't exist, target is inactive, or database operation fails
+ *
+ * @example
+ * // Reassign all positions
+ * const result = await reassignPositions(
+ *   'old-dept-id',
+ *   'new-dept-id'
+ * );
+ * console.log(`Reassigned ${result.reassignedCount} positions`);
+ *
+ * @example
+ * // Reassign specific positions
+ * const result = await reassignPositions(
+ *   'old-dept-id',
+ *   'new-dept-id',
+ *   ['position-1-id', 'position-2-id']
+ * );
+ */
+export async function reassignPositions(
+  fromDeptId: string,
+  toDeptId: string,
+  positionIds?: string[]
+): Promise<ReassignmentResult> {
+  try {
+    // Validate input
+    if (!fromDeptId || typeof fromDeptId !== 'string') {
+      throw new Error('Valid source department ID is required');
+    }
+
+    if (!toDeptId || typeof toDeptId !== 'string') {
+      throw new Error('Valid target department ID is required');
+    }
+
+    if (fromDeptId === toDeptId) {
+      throw new Error('Source and target departments must be different');
+    }
+
+    // Use transaction for atomic operation
+    const result = await db.transaction(async (tx) => {
+      // Verify source department exists
+      const [fromDept] = await tx
+        .select({ id: departments.id, name: departments.name })
+        .from(departments)
+        .where(eq(departments.id, fromDeptId))
+        .limit(1);
+
+      if (!fromDept) {
+        throw new Error(
+          `Source department with ID '${fromDeptId}' not found`
+        );
+      }
+
+      // Verify target department exists and is active
+      const [toDept] = await tx
+        .select({
+          id: departments.id,
+          name: departments.name,
+          isActive: departments.isActive,
+        })
+        .from(departments)
+        .where(eq(departments.id, toDeptId))
+        .limit(1);
+
+      if (!toDept) {
+        throw new Error(`Target department with ID '${toDeptId}' not found`);
+      }
+
+      if (!toDept.isActive) {
+        throw new Error(
+          'Cannot reassign positions to inactive department. Please reactivate the target department first.'
+        );
+      }
+
+      // Count positions to be reassigned
+      const countWhereClause =
+        positionIds && positionIds.length > 0
+          ? and(
+              eq(positions.departmentId, fromDeptId),
+              eq(positions.isActive, true)
+            )
+          : and(
+              eq(positions.departmentId, fromDeptId),
+              eq(positions.isActive, true)
+            );
+
+      const positionsCount = await tx
+        .select({ count: count() })
+        .from(positions)
+        .where(countWhereClause);
+
+      const totalPositions = positionsCount[0]?.count || 0;
+
+      if (totalPositions === 0) {
+        throw new Error(
+          `No active positions found in source department to reassign`
+        );
+      }
+
+      // If specific position IDs provided, validate they exist and belong to source department
+      if (positionIds && positionIds.length > 0) {
+        const specificPositions = await tx
+          .select({ id: positions.id, departmentId: positions.departmentId })
+          .from(positions)
+          .where(
+            and(
+              eq(positions.departmentId, fromDeptId),
+              eq(positions.isActive, true)
+            )
+          );
+
+        const validIds = new Set(specificPositions.map((p) => p.id));
+        const invalidIds = positionIds.filter((id) => !validIds.has(id));
+
+        if (invalidIds.length > 0) {
+          throw new Error(
+            `The following position IDs are not active in the source department: ${invalidIds.join(', ')}`
+          );
+        }
+      }
+
+      // Build update where clause
+      const updateWhereClause =
+        positionIds && positionIds.length > 0
+          ? and(
+              eq(positions.departmentId, fromDeptId),
+              eq(positions.isActive, true)
+            )
+          : and(
+              eq(positions.departmentId, fromDeptId),
+              eq(positions.isActive, true)
+            );
+
+      // Perform reassignment
+      await tx
+        .update(positions)
+        .set({ departmentId: toDeptId })
+        .where(updateWhereClause);
+
+      // Get actual count of reassigned positions
+      const reassignedCount =
+        positionIds && positionIds.length > 0
+          ? positionIds.length
+          : totalPositions;
+
+      return {
+        reassignedCount,
+        fromDeptId,
+        toDeptId,
+        fromDeptName: fromDept.name,
+        toDeptName: toDept.name,
+      };
+    });
+
+    return result;
+  } catch (error) {
+    console.error('[reassignPositions] Database error:', error);
+    throw error instanceof Error
+      ? error
+      : new Error('Failed to reassign positions');
+  }
+}
+
+/**
+ * Combined atomic operation: reassign employees/positions and soft-delete department
+ *
+ * Performs a complete department closure workflow in a single transaction:
+ * 1. Optionally reassign all employees to target department
+ * 2. Optionally reassign all positions to target department
+ * 3. Soft-delete the source department
+ *
+ * This ensures atomicity - either all operations succeed or all fail, preventing
+ * partial states where a department is deleted but employees/positions remain.
+ *
+ * Validates that:
+ * - Both departments exist
+ * - Target department is active
+ * - Source department can be soft-deleted after reassignments
+ *
+ * @param deptId - Department UUID to close (soft delete)
+ * @param targetDeptId - Target department UUID for reassignments
+ * @param options - Reassignment options (defaults: both true)
+ * @returns Promise<ReassignAndDeleteResult> Summary of reassignments and deletion
+ * @throws Error if any operation fails (transaction rolls back)
+ *
+ * @example
+ * // Reassign everything and delete
+ * const result = await reassignAndDelete(
+ *   'dept-to-close-id',
+ *   'target-dept-id'
+ * );
+ * console.log(`Reassigned ${result.employeesReassigned} employees, ${result.positionsReassigned} positions`);
+ *
+ * @example
+ * // Only reassign employees before deletion
+ * const result = await reassignAndDelete(
+ *   'dept-to-close-id',
+ *   'target-dept-id',
+ *   { reassignEmployees: true, reassignPositions: false }
+ * );
+ */
+export async function reassignAndDelete(
+  deptId: string,
+  targetDeptId: string,
+  options: ReassignAndDeleteOptions = {
+    reassignEmployees: true,
+    reassignPositions: true,
+  }
+): Promise<ReassignAndDeleteResult> {
+  try {
+    // Validate input
+    if (!deptId || typeof deptId !== 'string') {
+      throw new Error('Valid department ID is required');
+    }
+
+    if (!targetDeptId || typeof targetDeptId !== 'string') {
+      throw new Error('Valid target department ID is required');
+    }
+
+    if (deptId === targetDeptId) {
+      throw new Error('Source and target departments must be different');
+    }
+
+    // Use transaction for atomic operation
+    const result = await db.transaction(async (tx) => {
+      // Verify both departments exist
+      const [sourceDept] = await tx
+        .select({ id: departments.id, name: departments.name })
+        .from(departments)
+        .where(eq(departments.id, deptId))
+        .limit(1);
+
+      if (!sourceDept) {
+        throw new Error(`Department with ID '${deptId}' not found`);
+      }
+
+      const [targetDept] = await tx
+        .select({
+          id: departments.id,
+          name: departments.name,
+          isActive: departments.isActive,
+        })
+        .from(departments)
+        .where(eq(departments.id, targetDeptId))
+        .limit(1);
+
+      if (!targetDept) {
+        throw new Error(
+          `Target department with ID '${targetDeptId}' not found`
+        );
+      }
+
+      if (!targetDept.isActive) {
+        throw new Error(
+          'Cannot reassign to inactive department. Please reactivate the target department first.'
+        );
+      }
+
+      let employeesReassigned = 0;
+      let positionsReassigned = 0;
+
+      // Reassign employees if requested
+      if (options.reassignEmployees) {
+        // Count employees in source department
+        const employeesCount = await tx
+          .select({ count: count() })
+          .from(profiles)
+          .where(
+            and(
+              eq(profiles.departmentId, deptId),
+              eq(profiles.userType, 'employee')
+            )
+          );
+
+        const totalEmployees = employeesCount[0]?.count || 0;
+
+        if (totalEmployees > 0) {
+          // Reassign all employees
+          await tx
+            .update(profiles)
+            .set({ departmentId: targetDeptId })
+            .where(
+              and(
+                eq(profiles.departmentId, deptId),
+                eq(profiles.userType, 'employee')
+              )
+            );
+
+          employeesReassigned = totalEmployees;
+        }
+      }
+
+      // Reassign positions if requested
+      if (options.reassignPositions) {
+        // Count active positions in source department
+        const positionsCount = await tx
+          .select({ count: count() })
+          .from(positions)
+          .where(
+            and(
+              eq(positions.departmentId, deptId),
+              eq(positions.isActive, true)
+            )
+          );
+
+        const totalPositions = positionsCount[0]?.count || 0;
+
+        if (totalPositions > 0) {
+          // Reassign all active positions
+          await tx
+            .update(positions)
+            .set({ departmentId: targetDeptId })
+            .where(
+              and(
+                eq(positions.departmentId, deptId),
+                eq(positions.isActive, true)
+              )
+            );
+
+          positionsReassigned = totalPositions;
+        }
+      }
+
+      // Verify no active employees or positions remain (if reassignment options were false)
+      if (!options.reassignEmployees) {
+        const remainingEmployees = await tx
+          .select({ count: count() })
+          .from(profiles)
+          .where(
+            and(
+              eq(profiles.departmentId, deptId),
+              eq(profiles.isActive, true)
+            )
+          );
+
+        if (remainingEmployees[0]?.count > 0) {
+          throw new Error(
+            `Cannot delete department. There are ${remainingEmployees[0].count} active employee(s) remaining. Set reassignEmployees: true to reassign them.`
+          );
+        }
+      }
+
+      if (!options.reassignPositions) {
+        const remainingPositions = await tx
+          .select({ count: count() })
+          .from(positions)
+          .where(
+            and(
+              eq(positions.departmentId, deptId),
+              eq(positions.isActive, true)
+            )
+          );
+
+        if (remainingPositions[0]?.count > 0) {
+          throw new Error(
+            `Cannot delete department. There are ${remainingPositions[0].count} active position(s) remaining. Set reassignPositions: true to reassign them.`
+          );
+        }
+      }
+
+      // Soft delete the department
+      await tx
+        .update(departments)
+        .set({ isActive: false })
+        .where(eq(departments.id, deptId));
+
+      return {
+        employeesReassigned,
+        positionsReassigned,
+        deleted: true as const,
+        fromDeptId: deptId,
+        toDeptId: targetDeptId,
+      };
+    });
+
+    return result;
+  } catch (error) {
+    console.error('[reassignAndDelete] Database error:', error);
+    throw error instanceof Error
+      ? error
+      : new Error('Failed to reassign and delete department');
   }
 }

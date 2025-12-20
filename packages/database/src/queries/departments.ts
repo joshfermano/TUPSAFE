@@ -1005,3 +1005,358 @@ export async function getCollegeWithDepartments(
     );
   }
 }
+
+/**
+ * Employee data for dependency analysis
+ */
+export interface DependencyEmployee {
+  id: string;
+  fullName: string;
+  positionTitle: string | null;
+}
+
+/**
+ * Position data for dependency analysis
+ */
+export interface DependencyPosition {
+  id: string;
+  title: string;
+  gradeLevel: number | null;
+  isActive: boolean;
+}
+
+/**
+ * Child department data for dependency analysis
+ */
+export interface DependencyChildDepartment {
+  id: string;
+  name: string;
+  code: string;
+  officeType: 'academic' | 'administrative';
+}
+
+/**
+ * Complete dependency information for a department
+ */
+export interface DepartmentDependencies {
+  employees: DependencyEmployee[];
+  positions: DependencyPosition[];
+  childDepartments: DependencyChildDepartment[];
+  canSoftDelete: boolean;
+  canHardDelete: boolean;
+  blockingReasons: string[];
+}
+
+/**
+ * Get detailed dependencies for a department
+ *
+ * Retrieves all entities that depend on or are related to a department, including:
+ * - Active employees in the department
+ * - Active and inactive positions in the department
+ * - Child departments (for colleges)
+ * - Deletion safety flags and blocking reasons
+ *
+ * This function is essential for:
+ * - Department deletion workflows (determining if soft/hard delete is safe)
+ * - Dependency visualization before department operations
+ * - Reassignment planning (understanding what needs to be moved)
+ *
+ * Deletion Rules:
+ * - Soft delete allowed: No active employees AND no active positions
+ * - Hard delete allowed: No employees at all AND no positions at all AND no child departments
+ *
+ * Uses optimized parallel queries to gather all dependency information efficiently.
+ * All queries use proper indexes for optimal performance.
+ *
+ * @param deptId - Department UUID to check dependencies for
+ * @returns Promise<DepartmentDependencies | null> Dependency information or null if department not found
+ * @throws Error if deptId is invalid or database query fails
+ *
+ * @example
+ * const deps = await getDepartmentDependencies('550e8400-e29b-41d4-a716-446655440000');
+ * if (deps) {
+ *   console.log(`Department has ${deps.employees.length} employees`);
+ *   console.log(`Department has ${deps.positions.length} positions`);
+ *   console.log(`Department has ${deps.childDepartments.length} child departments`);
+ *   console.log(`Can soft delete: ${deps.canSoftDelete}`);
+ *   console.log(`Can hard delete: ${deps.canHardDelete}`);
+ *   if (deps.blockingReasons.length > 0) {
+ *     console.log('Blocking reasons:', deps.blockingReasons);
+ *   }
+ * }
+ *
+ * @example
+ * // Check if safe to delete before attempting
+ * const deps = await getDepartmentDependencies(deptId);
+ * if (!deps?.canSoftDelete) {
+ *   throw new Error(`Cannot delete: ${deps?.blockingReasons.join(', ')}`);
+ * }
+ */
+export async function getDepartmentDependencies(
+  deptId: string
+): Promise<DepartmentDependencies | null> {
+  try {
+    if (!deptId || typeof deptId !== 'string') {
+      throw new Error('Valid department ID is required');
+    }
+
+    // First verify the department exists (uses primary key index)
+    const [department] = await db
+      .select()
+      .from(departments)
+      .where(eq(departments.id, deptId))
+      .limit(1);
+
+    if (!department) {
+      return null;
+    }
+
+    // Fetch all dependencies in parallel for optimal performance
+    const [employeeResults, positionResults, childDepartmentResults] =
+      await Promise.all([
+        // Get all employees (active and inactive) with position info
+        // Uses: profiles_department_id_idx
+        db
+          .select({
+            id: profiles.id,
+            firstName: profiles.firstName,
+            lastName: profiles.lastName,
+            middleName: profiles.middleName,
+            isActive: profiles.isActive,
+            positionTitle: positions.title,
+          })
+          .from(profiles)
+          .leftJoin(positions, eq(profiles.positionId, positions.id))
+          .where(
+            and(
+              eq(profiles.departmentId, deptId),
+              eq(profiles.userType, 'employee')
+            )
+          )
+          .orderBy(profiles.lastName, profiles.firstName),
+
+        // Get all positions (active and inactive)
+        // Uses: positions_department_id_idx
+        db
+          .select({
+            id: positions.id,
+            title: positions.title,
+            gradeLevel: positions.gradeLevel,
+            isActive: positions.isActive,
+          })
+          .from(positions)
+          .where(eq(positions.departmentId, deptId))
+          .orderBy(positions.title),
+
+        // Get child departments if this is a college
+        // Uses: departments_parent_college_id_idx
+        db
+          .select({
+            id: departments.id,
+            name: departments.name,
+            code: departments.code,
+            officeType: departments.officeType,
+          })
+          .from(departments)
+          .where(eq(departments.parentCollegeId, deptId))
+          .orderBy(departments.name),
+      ]);
+
+    // Transform employees to include full name
+    const employeesList: DependencyEmployee[] = employeeResults.map((emp) => ({
+      id: emp.id,
+      fullName: [emp.firstName, emp.middleName, emp.lastName]
+        .filter(Boolean)
+        .join(' '),
+      positionTitle: emp.positionTitle,
+    }));
+
+    // Map positions directly
+    const positionsList: DependencyPosition[] = positionResults.map((pos) => ({
+      id: pos.id,
+      title: pos.title,
+      gradeLevel: pos.gradeLevel,
+      isActive: pos.isActive,
+    }));
+
+    // Map child departments with proper type casting
+    const childDepartmentsList: DependencyChildDepartment[] =
+      childDepartmentResults.map((dept) => ({
+        id: dept.id,
+        name: dept.name,
+        code: dept.code,
+        officeType: dept.officeType as 'academic' | 'administrative',
+      }));
+
+    // Calculate deletion safety flags
+    const activeEmployees = employeeResults.filter((emp) => emp.isActive);
+    const activePositions = positionResults.filter((pos) => pos.isActive);
+
+    const canSoftDelete =
+      activeEmployees.length === 0 && activePositions.length === 0;
+    const canHardDelete =
+      employeeResults.length === 0 &&
+      positionResults.length === 0 &&
+      childDepartmentsList.length === 0;
+
+    // Build blocking reasons array
+    const blockingReasons: string[] = [];
+
+    if (activeEmployees.length > 0) {
+      blockingReasons.push(
+        `${activeEmployees.length} active employee${activeEmployees.length !== 1 ? 's' : ''}`
+      );
+    }
+
+    if (activePositions.length > 0) {
+      blockingReasons.push(
+        `${activePositions.length} active position${activePositions.length !== 1 ? 's' : ''}`
+      );
+    }
+
+    if (!canSoftDelete && employeeResults.length > 0) {
+      const inactiveEmployees = employeeResults.filter(
+        (emp) => !emp.isActive
+      );
+      if (inactiveEmployees.length > 0) {
+        blockingReasons.push(
+          `${inactiveEmployees.length} inactive employee${inactiveEmployees.length !== 1 ? 's' : ''}`
+        );
+      }
+    }
+
+    if (!canSoftDelete && positionResults.length > 0) {
+      const inactivePositions = positionResults.filter((pos) => !pos.isActive);
+      if (inactivePositions.length > 0) {
+        blockingReasons.push(
+          `${inactivePositions.length} inactive position${inactivePositions.length !== 1 ? 's' : ''}`
+        );
+      }
+    }
+
+    if (childDepartmentsList.length > 0) {
+      blockingReasons.push(
+        `${childDepartmentsList.length} child department${childDepartmentsList.length !== 1 ? 's' : ''}`
+      );
+    }
+
+    return {
+      employees: employeesList,
+      positions: positionsList,
+      childDepartments: childDepartmentsList,
+      canSoftDelete,
+      canHardDelete,
+      blockingReasons,
+    };
+  } catch (error) {
+    console.error('[getDepartmentDependencies] Database error:', error);
+    throw new Error(
+      `Failed to fetch dependencies for department ${deptId}: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
+}
+
+/**
+ * Get eligible departments for reassignment
+ *
+ * Retrieves all active departments that can be used as reassignment targets
+ * when moving employees or positions from a department being deleted or reorganized.
+ *
+ * This function returns departments with statistics to help administrators make
+ * informed decisions about where to reassign employees/positions:
+ * - Current employee count (capacity planning)
+ * - Current position count (organizational context)
+ * - Department type and hierarchy information
+ *
+ * Results exclude:
+ * - The source department itself (can't reassign to same department)
+ * - Inactive departments (can't reassign to inactive units)
+ *
+ * Ordered by department name for easy browsing in UI dropdowns/lists.
+ * Uses optimized parallel queries with proper indexing for performance.
+ *
+ * @param deptId - Source department ID to exclude from results
+ * @returns Promise<DepartmentWithStats[]> Array of eligible departments with statistics
+ * @throws Error if deptId is invalid or database query fails
+ *
+ * @example
+ * const targets = await getReassignmentTargets('550e8400-e29b-41d4-a716-446655440000');
+ * console.log(`Found ${targets.length} eligible departments for reassignment`);
+ * targets.forEach(dept => {
+ *   console.log(`${dept.name} (${dept.code}): ${dept.employeeCount} employees, ${dept.positionCount} positions`);
+ * });
+ *
+ * @example
+ * // Use in reassignment workflow
+ * const deps = await getDepartmentDependencies(sourceDeptId);
+ * const targets = await getReassignmentTargets(sourceDeptId);
+ * if (deps && deps.employees.length > 0) {
+ *   console.log(`Need to reassign ${deps.employees.length} employees to one of:`);
+ *   targets.forEach(t => console.log(`  - ${t.name}`));
+ * }
+ */
+export async function getReassignmentTargets(
+  deptId: string
+): Promise<DepartmentWithStats[]> {
+  try {
+    if (!deptId || typeof deptId !== 'string') {
+      throw new Error('Valid department ID is required');
+    }
+
+    // Fetch all active departments except the source department
+    // Uses: departments_is_active_idx
+    const eligibleDepartments = await db
+      .select()
+      .from(departments)
+      .where(and(eq(departments.isActive, true), sql`${departments.id} != ${deptId}`))
+      .orderBy(departments.name);
+
+    // Fetch stats for each department in parallel
+    const departmentsWithStats = await Promise.all(
+      eligibleDepartments.map(async (dept) => {
+        // Count active employees
+        // Uses: profiles_department_id_idx and profiles_is_active_idx
+        const [employeesResult] = await db
+          .select({ count: sql<number>`cast(count(*) as integer)` })
+          .from(profiles)
+          .where(
+            and(eq(profiles.departmentId, dept.id), eq(profiles.isActive, true))
+          );
+
+        // Count active positions
+        // Uses: positions_department_id_idx and positions_is_active_idx
+        const [positionsResult] = await db
+          .select({ count: sql<number>`cast(count(*) as integer)` })
+          .from(positions)
+          .where(
+            and(eq(positions.departmentId, dept.id), eq(positions.isActive, true))
+          );
+
+        // Fetch parent college if exists
+        let parentCollege: Department | null | undefined = undefined;
+        if (dept.parentCollegeId) {
+          const [college] = await db
+            .select()
+            .from(departments)
+            .where(eq(departments.id, dept.parentCollegeId))
+            .limit(1);
+          parentCollege = college || null;
+        }
+
+        return {
+          ...dept,
+          employeeCount: employeesResult?.count ?? 0,
+          positionCount: positionsResult?.count ?? 0,
+          parentCollege,
+        };
+      })
+    );
+
+    return departmentsWithStats;
+  } catch (error) {
+    console.error('[getReassignmentTargets] Database error:', error);
+    throw new Error(
+      `Failed to fetch reassignment targets for department ${deptId}: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
+}

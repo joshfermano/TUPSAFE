@@ -55,6 +55,10 @@ export type {
   HierarchyValidation,
   PaginationOptions,
   InactiveDepartmentOptions,
+  DependencyEmployee,
+  DependencyPosition,
+  DependencyChildDepartment,
+  DepartmentDependencies,
 } from './departments';
 export type {
   NotificationSettings,

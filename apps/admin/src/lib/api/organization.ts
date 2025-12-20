@@ -14,8 +14,11 @@ import type {
   CreateDepartmentInput,
   CreateOfficeInput,
   UpdateDepartmentInput,
+  DepartmentDependencies,
+  ReassignAndDeleteResponse,
   ApiError,
 } from '@tupsafe/types';
+import type { ReassignAndDeleteInput } from '@tupsafe/types';
 
 const API_BASE = '/api/organization';
 
@@ -224,7 +227,7 @@ export async function updateOrganization(
  */
 export async function deleteOrganization(
   id: string,
-  hard = false
+  hard = true
 ): Promise<{ success: true }> {
   const response = await fetch(`${API_BASE}/${id}${hard ? '?hard=true' : ''}`, {
     method: 'DELETE',
@@ -258,6 +261,54 @@ export async function reactivateOrganization(
   if (!response.ok) {
     const error: ApiError = await response.json();
     throw new Error(error.error || 'Failed to reactivate organization');
+  }
+
+  const result = await response.json();
+  return result.data;
+}
+
+/**
+ * Fetch dependency information for a department
+ * Shows employees, positions, and child departments blocking deletion
+ */
+export async function fetchDepartmentDependencies(
+  id: string
+): Promise<DepartmentDependencies> {
+  const response = await fetch(`${API_BASE}/${id}/dependencies`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    const error: ApiError = await response.json();
+    throw new Error(error.error || 'Failed to fetch department dependencies');
+  }
+
+  const result = await response.json();
+  return result.data;
+}
+
+/**
+ * Reassign employees and positions to another department, then delete the source
+ */
+export async function reassignAndDelete(
+  id: string,
+  data: ReassignAndDeleteInput
+): Promise<ReassignAndDeleteResponse> {
+  const response = await fetch(`${API_BASE}/${id}/reassign-and-delete`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error: ApiError = await response.json();
+    throw new Error(error.error || 'Failed to reassign and delete');
   }
 
   const result = await response.json();

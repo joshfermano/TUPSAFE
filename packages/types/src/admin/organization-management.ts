@@ -752,3 +752,212 @@ export interface PositionDetailResponse {
    */
   department: DepartmentWithStats | null;
 }
+
+// ============================================================================
+// DEPENDENCY MANAGEMENT TYPES
+// ============================================================================
+
+/**
+ * Employee dependency information
+ * Used to display which employees are blocking department deletion
+ */
+export interface DependencyEmployee {
+  /**
+   * Employee profile UUID
+   */
+  id: string;
+
+  /**
+   * Full name (computed from firstName, middleName, lastName)
+   */
+  fullName: string;
+
+  /**
+   * Position title (if assigned to a position)
+   */
+  positionTitle: string | null;
+}
+
+/**
+ * Position dependency information
+ * Used to display which positions are blocking department deletion
+ */
+export interface DependencyPosition {
+  /**
+   * Position UUID
+   */
+  id: string;
+
+  /**
+   * Position title
+   */
+  title: string;
+
+  /**
+   * Philippine salary grade level (1-33)
+   */
+  gradeLevel: number | null;
+
+  /**
+   * Whether the position is currently active
+   */
+  isActive: boolean;
+}
+
+/**
+ * Child department dependency information
+ * Used to display which child departments are blocking college deletion
+ */
+export interface DependencyChildDepartment {
+  /**
+   * Department UUID
+   */
+  id: string;
+
+  /**
+   * Department name
+   */
+  name: string;
+
+  /**
+   * Department code
+   */
+  code: string;
+
+  /**
+   * Office type (academic or administrative)
+   */
+  officeType: 'academic' | 'administrative';
+}
+
+/**
+ * Complete dependency information for a department
+ * Used to determine if department can be safely deleted
+ *
+ * @example
+ * ```typescript
+ * {
+ *   employees: [{ id: '...', fullName: 'John Doe', positionTitle: 'Professor' }],
+ *   positions: [{ id: '...', title: 'Assistant Professor', gradeLevel: 12, isActive: true }],
+ *   childDepartments: [],
+ *   canSoftDelete: false,
+ *   canHardDelete: false,
+ *   blockingReasons: ['3 active employees', '2 active positions']
+ * }
+ * ```
+ */
+export interface DepartmentDependencies {
+  /**
+   * All employees in this department
+   * Empty array if no employees
+   */
+  employees: DependencyEmployee[];
+
+  /**
+   * All positions in this department
+   * Empty array if no positions
+   */
+  positions: DependencyPosition[];
+
+  /**
+   * Child departments (for colleges only)
+   * Empty array for departments and offices
+   */
+  childDepartments: DependencyChildDepartment[];
+
+  /**
+   * Whether department can be soft deleted (deactivated)
+   * True if no active employees and no active positions
+   */
+  canSoftDelete: boolean;
+
+  /**
+   * Whether department can be hard deleted (permanently removed)
+   * True if no employees, no positions, and no child departments
+   */
+  canHardDelete: boolean;
+
+  /**
+   * Human-readable list of reasons preventing deletion
+   * @example ['3 active employees', '2 inactive positions', '1 child department']
+   */
+  blockingReasons: string[];
+}
+
+// ============================================================================
+// REASSIGNMENT TYPES
+// ============================================================================
+
+/**
+ * Validation schema for reassign-and-delete request
+ *
+ * @example
+ * ```typescript
+ * const request = {
+ *   targetDepartmentId: 'uuid-of-target-dept',
+ *   reassignEmployees: true,
+ *   reassignPositions: true
+ * };
+ * const validated = reassignAndDeleteSchema.parse(request);
+ * ```
+ */
+export const reassignAndDeleteSchema = z.object({
+  /**
+   * UUID of the target department to reassign employees/positions to
+   */
+  targetDepartmentId: z
+    .string({ required_error: 'Target department ID is required' })
+    .uuid('Target department ID must be a valid UUID'),
+
+  /**
+   * Whether to reassign employees to target department
+   * Defaults to true
+   */
+  reassignEmployees: z.boolean().optional().default(true),
+
+  /**
+   * Whether to reassign positions to target department
+   * Defaults to true
+   */
+  reassignPositions: z.boolean().optional().default(true),
+});
+
+/**
+ * Input type for reassign-and-delete operation
+ */
+export type ReassignAndDeleteInput = z.infer<typeof reassignAndDeleteSchema>;
+
+/**
+ * Response type for reassign-and-delete operation
+ *
+ * @example
+ * ```typescript
+ * {
+ *   success: true,
+ *   employeesReassigned: 5,
+ *   positionsReassigned: 3,
+ *   deleted: true
+ * }
+ * ```
+ */
+export interface ReassignAndDeleteResponse {
+  /**
+   * Whether the operation completed successfully
+   */
+  success: true;
+
+  /**
+   * Number of employees reassigned to target department
+   */
+  employeesReassigned: number;
+
+  /**
+   * Number of positions reassigned to target department
+   */
+  positionsReassigned: number;
+
+  /**
+   * Whether the source department was successfully deleted
+   */
+  deleted: true;
+}
