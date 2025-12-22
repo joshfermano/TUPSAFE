@@ -79,13 +79,13 @@ export async function POST(request: NextRequest) {
     // Create Supabase client
     const supabase = await createServerClient('employee');
 
-    // Verify user session (password reset link sets up a session)
+    // Verify authenticated user (password reset link sets up authentication)
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-    if (sessionError || !session) {
+    if (authError || !user) {
       return NextResponse.json(
         {
           error: 'Invalid or expired reset token',
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
 
     // Update password
     const { error: updateError } = await supabase.auth.updateUser({

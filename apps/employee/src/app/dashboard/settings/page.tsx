@@ -2,13 +2,20 @@
 
 import { useState, useCallback, memo } from 'react';
 import { motion } from 'framer-motion';
+import { formatDistanceToNow } from 'date-fns';
 import { Button } from '../../../components/ui/button';
 import { Badge } from '../../../components/ui/badge';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { ShimmerButton } from '../../../components/ui/shimmer-button';
+import { Skeleton } from '../../../components/ui/skeleton';
 import { useTheme } from '../../../context/ThemeContext';
 import { cn } from '../../../lib/utils';
+import { useUserSettings, useUpdateSettings } from '../../../hooks/useSettings';
+import { useProfile } from '../../../hooks/useProfile';
+import { useCurrentSession, useTerminateAllSessions } from '../../../hooks/useSession';
+import { useChangePassword } from '../../../hooks/useSecurity';
+import { useRealtimeProfile } from '@tupsafe/database/client';
 import {
   Lock,
   Bell,
@@ -28,6 +35,7 @@ import {
   Sun,
   Moon,
   Monitor,
+  AlertCircle,
 } from 'lucide-react';
 
 // Memoized Helper Components with proper types
@@ -267,27 +275,27 @@ const ITEM_VARIANTS = {
 };
 
 export default function SettingsPage() {
-  // Security Settings State
+  // React Query Hooks
+  const { data: settings, isLoading: settingsLoading, error: settingsError } = useUserSettings();
+  const { data: profile, isLoading: profileLoading } = useProfile();
+  const { data: session, isLoading: sessionLoading } = useCurrentSession();
+  const updateSettings = useUpdateSettings();
+  const changePassword = useChangePassword();
+  const terminateAllSessions = useTerminateAllSessions();
+
+  // Enable real-time profile updates
+  useRealtimeProfile(profile?.id || '');
+
+  // Local UI State (not stored in database)
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
 
-  // Notification Settings State
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [pushNotifications, setPushNotifications] = useState(true);
-  const [smsNotifications, setSmsNotifications] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-
-  // Privacy Settings State
-  const [profileVisibility, setProfileVisibility] = useState<
-    'public' | 'private' | 'colleagues'
-  >('colleagues');
-  const [dataSharing, setDataSharing] = useState(false);
-  const [activityTracking, setActivityTracking] = useState(true);
-
-  // Memoized callbacks to prevent recreation on every render
+  // Password visibility toggles (local UI state)
   const toggleCurrentPassword = useCallback(
     () => setShowCurrentPassword((prev) => !prev),
     []
@@ -304,49 +312,154 @@ export default function SettingsPage() {
     () => setTwoFactorEnabled((prev) => !prev),
     []
   );
-  const toggleNotifications = useCallback(
-    () => setNotificationsEnabled((prev) => !prev),
-    []
-  );
+
+  // Settings mutation callbacks (API updates)
   const toggleEmailNotifications = useCallback(
-    () => setEmailNotifications((prev) => !prev),
-    []
+    () => {
+      if (settings) {
+        updateSettings.mutate({
+          emailNotificationsEnabled: !settings.emailNotificationsEnabled,
+        });
+      }
+    },
+    [settings, updateSettings]
   );
+
   const togglePushNotifications = useCallback(
-    () => setPushNotifications((prev) => !prev),
-    []
+    () => {
+      if (settings) {
+        updateSettings.mutate({
+          pushNotificationsEnabled: !settings.pushNotificationsEnabled,
+        });
+      }
+    },
+    [settings, updateSettings]
   );
+
   const toggleSmsNotifications = useCallback(
-    () => setSmsNotifications((prev) => !prev),
-    []
+    () => {
+      if (settings) {
+        updateSettings.mutate({
+          smsNotificationsEnabled: !settings.smsNotificationsEnabled,
+        });
+      }
+    },
+    [settings, updateSettings]
   );
-  const toggleSound = useCallback(() => setSoundEnabled((prev) => !prev), []);
+
+  const toggleSound = useCallback(
+    () => {
+      if (settings) {
+        updateSettings.mutate({
+          soundEnabled: !settings.soundEnabled,
+        });
+      }
+    },
+    [settings, updateSettings]
+  );
+
   const toggleDataSharing = useCallback(
-    () => setDataSharing((prev) => !prev),
-    []
+    () => {
+      if (settings) {
+        updateSettings.mutate({
+          dataSharingEnabled: !settings.dataSharingEnabled,
+        });
+      }
+    },
+    [settings, updateSettings]
   );
+
   const toggleActivityTracking = useCallback(
-    () => setActivityTracking((prev) => !prev),
-    []
+    () => {
+      if (settings) {
+        updateSettings.mutate({
+          activityTrackingEnabled: !settings.activityTrackingEnabled,
+        });
+      }
+    },
+    [settings, updateSettings]
   );
 
   const setPublicVisibility = useCallback(
-    () => setProfileVisibility('public'),
-    []
+    () => {
+      updateSettings.mutate({ profileVisibility: 'public' });
+    },
+    [updateSettings]
   );
+
   const setColleaguesVisibility = useCallback(
-    () => setProfileVisibility('colleagues'),
-    []
+    () => {
+      updateSettings.mutate({ profileVisibility: 'colleagues' });
+    },
+    [updateSettings]
   );
+
   const setPrivateVisibility = useCallback(
-    () => setProfileVisibility('private'),
-    []
+    () => {
+      updateSettings.mutate({ profileVisibility: 'private' });
+    },
+    [updateSettings]
   );
+
+  // Password change handler
+  const handlePasswordChange = useCallback(() => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return;
+    }
+    changePassword.mutate(
+      {
+        currentPassword,
+        newPassword,
+        confirmPassword,
+      },
+      {
+        onSuccess: () => {
+          // Clear password fields on success
+          setCurrentPassword('');
+          setNewPassword('');
+          setConfirmPassword('');
+        },
+      }
+    );
+  }, [currentPassword, newPassword, confirmPassword, changePassword]);
+
+  // Session termination handler
+  const handleTerminateAllSessions = useCallback(() => {
+    terminateAllSessions.mutate();
+  }, [terminateAllSessions]);
+
+  // Loading state
+  const isLoading = settingsLoading || profileLoading || sessionLoading;
+
+  // Check if all notifications are enabled
+  const allNotificationsEnabled =
+    settings?.emailNotificationsEnabled ||
+    settings?.pushNotificationsEnabled ||
+    settings?.smsNotificationsEnabled;
 
   return (
     <div className="min-h-screen relative">
       {/* Centered Container */}
       <div className="max-w-5xl mx-auto space-y-8 pb-8">
+        {/* Error State */}
+        {settingsError && (
+          <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 p-6">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+              <div>
+                <h3 className="text-sm font-semibold text-red-900 dark:text-red-100">
+                  Failed to load settings
+                </h3>
+                <p className="text-xs text-red-700 dark:text-red-300 mt-1">
+                  {settingsError instanceof Error
+                    ? settingsError.message
+                    : 'An error occurred while loading your settings.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <motion.div
           initial="hidden"
           animate="visible"
@@ -411,6 +524,9 @@ export default function SettingsPage() {
                             id="currentPassword"
                             type={showCurrentPassword ? 'text' : 'password'}
                             placeholder="Enter current password"
+                            value={currentPassword}
+                            onChange={(e) => setCurrentPassword(e.target.value)}
+                            disabled={changePassword.isPending}
                             className="h-11 pr-10 bg-white dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
                           />
                           <button
@@ -439,6 +555,9 @@ export default function SettingsPage() {
                               id="newPassword"
                               type={showNewPassword ? 'text' : 'password'}
                               placeholder="Enter new password"
+                              value={newPassword}
+                              onChange={(e) => setNewPassword(e.target.value)}
+                              disabled={changePassword.isPending}
                               className="h-11 pr-10 bg-white dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
                             />
                             <button
@@ -465,6 +584,9 @@ export default function SettingsPage() {
                               id="confirmPassword"
                               type={showConfirmPassword ? 'text' : 'password'}
                               placeholder="Confirm new password"
+                              value={confirmPassword}
+                              onChange={(e) => setConfirmPassword(e.target.value)}
+                              disabled={changePassword.isPending}
                               className="h-11 pr-10 bg-white dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
                             />
                             <button
@@ -510,14 +632,27 @@ export default function SettingsPage() {
                   <div className="flex justify-end gap-3 pt-4">
                     <Button
                       variant="outline"
+                      onClick={() => {
+                        setCurrentPassword('');
+                        setNewPassword('');
+                        setConfirmPassword('');
+                      }}
+                      disabled={changePassword.isPending}
                       className="h-11 px-6 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 transition-all duration-300">
                       Cancel
                     </Button>
                     <ShimmerButton
+                      onClick={handlePasswordChange}
+                      disabled={
+                        !currentPassword ||
+                        !newPassword ||
+                        !confirmPassword ||
+                        changePassword.isPending
+                      }
                       className="h-11 px-6 text-sm font-medium text-white dark:text-white"
                       background="linear-gradient(135deg, oklch(0.55 0.22 15) 0%, oklch(0.40 0.18 15) 100%)"
                       shimmerColor="#ffffff">
-                      Update Password
+                      {changePassword.isPending ? 'Updating...' : 'Update Password'}
                     </ShimmerButton>
                   </div>
                 </div>
@@ -547,50 +682,70 @@ export default function SettingsPage() {
 
                 <div className="space-y-5">
                   {/* Profile Visibility */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Globe className="h-4 w-4 text-primary" />
-                      <Label className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                        Profile Visibility
-                      </Label>
+                  {isLoading ? (
+                    <div className="space-y-3">
+                      <Skeleton className="h-6 w-40" />
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <Skeleton className="h-20" />
+                        <Skeleton className="h-20" />
+                        <Skeleton className="h-20" />
+                      </div>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <VisibilityOption
-                        label="Public"
-                        description="Everyone can see"
-                        active={profileVisibility === 'public'}
-                        onClick={setPublicVisibility}
-                      />
-                      <VisibilityOption
-                        label="Colleagues"
-                        description="Only colleagues"
-                        active={profileVisibility === 'colleagues'}
-                        onClick={setColleaguesVisibility}
-                      />
-                      <VisibilityOption
-                        label="Private"
-                        description="Only you"
-                        active={profileVisibility === 'private'}
-                        onClick={setPrivateVisibility}
-                      />
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Globe className="h-4 w-4 text-primary" />
+                        <Label className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                          Profile Visibility
+                        </Label>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <VisibilityOption
+                          label="Public"
+                          description="Everyone can see"
+                          active={settings?.profileVisibility === 'public'}
+                          onClick={setPublicVisibility}
+                        />
+                        <VisibilityOption
+                          label="Colleagues"
+                          description="Only colleagues"
+                          active={settings?.profileVisibility === 'colleagues'}
+                          onClick={setColleaguesVisibility}
+                        />
+                        <VisibilityOption
+                          label="Private"
+                          description="Only you"
+                          active={settings?.profileVisibility === 'private'}
+                          onClick={setPrivateVisibility}
+                        />
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <div className="pt-4 space-y-3 border-t border-slate-200 dark:border-slate-700">
-                    <ToggleItem
-                      icon={<Database className="h-5 w-5" />}
-                      title="Data Sharing"
-                      description="Allow aggregated data usage for analytics"
-                      checked={dataSharing}
-                      onChange={toggleDataSharing}
-                    />
-                    <ToggleItem
-                      icon={<Activity className="h-5 w-5" />}
-                      title="Activity Tracking"
-                      description="Track your activity for better recommendations"
-                      checked={activityTracking}
-                      onChange={toggleActivityTracking}
-                    />
+                    {isLoading ? (
+                      <>
+                        <Skeleton className="h-20" />
+                        <Skeleton className="h-20" />
+                      </>
+                    ) : (
+                      <>
+                        <ToggleItem
+                          icon={<Database className="h-5 w-5" />}
+                          title="Data Sharing"
+                          description="Allow aggregated data usage for analytics"
+                          checked={settings?.dataSharingEnabled ?? false}
+                          onChange={toggleDataSharing}
+                        />
+                        <ToggleItem
+                          icon={<Activity className="h-5 w-5" />}
+                          title="Activity Tracking"
+                          description="Track your activity for better recommendations"
+                          checked={settings?.activityTrackingEnabled ?? false}
+                          onChange={toggleActivityTracking}
+                        />
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -618,53 +773,58 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="space-y-3">
-                  <ToggleItem
-                    icon={<Bell className="h-5 w-5" />}
-                    title="All Notifications"
-                    description="Master control for all notification types"
-                    checked={notificationsEnabled}
-                    onChange={toggleNotifications}
-                  />
+                  {isLoading ? (
+                    <>
+                      <Skeleton className="h-20" />
+                      <div className="ml-8 space-y-3 pl-5 border-l-2 border-slate-200 dark:border-slate-700">
+                        <Skeleton className="h-20" />
+                        <Skeleton className="h-20" />
+                        <Skeleton className="h-20" />
+                      </div>
+                      <Skeleton className="h-20 mt-4" />
+                    </>
+                  ) : (
+                    <>
+                      <ToggleItem
+                        icon={<Bell className="h-5 w-5" />}
+                        title="Email Notifications"
+                        description="Master control for email notifications"
+                        checked={settings?.emailNotificationsEnabled ?? false}
+                        onChange={toggleEmailNotifications}
+                      />
 
-                  <div className="ml-8 space-y-3 pl-5 border-l-2 border-slate-200 dark:border-slate-700">
-                    <ToggleItem
-                      icon={<Mail className="h-5 w-5" />}
-                      title="Email Notifications"
-                      description="Receive updates via email"
-                      checked={emailNotifications}
-                      onChange={toggleEmailNotifications}
-                      disabled={!notificationsEnabled}
-                    />
+                      <div className="ml-8 space-y-3 pl-5 border-l-2 border-slate-200 dark:border-slate-700">
+                        <ToggleItem
+                          icon={<Bell className="h-5 w-5" />}
+                          title="Push Notifications"
+                          description="Browser push notifications"
+                          checked={settings?.pushNotificationsEnabled ?? false}
+                          onChange={togglePushNotifications}
+                          disabled={!allNotificationsEnabled}
+                        />
 
-                    <ToggleItem
-                      icon={<Bell className="h-5 w-5" />}
-                      title="Push Notifications"
-                      description="Browser push notifications"
-                      checked={pushNotifications}
-                      onChange={togglePushNotifications}
-                      disabled={!notificationsEnabled}
-                    />
+                        <ToggleItem
+                          icon={<Smartphone className="h-5 w-5" />}
+                          title="SMS Notifications"
+                          description="Receive urgent alerts via text message"
+                          checked={settings?.smsNotificationsEnabled ?? false}
+                          onChange={toggleSmsNotifications}
+                          disabled={!allNotificationsEnabled}
+                        />
+                      </div>
 
-                    <ToggleItem
-                      icon={<Smartphone className="h-5 w-5" />}
-                      title="SMS Notifications"
-                      description="Receive urgent alerts via text message"
-                      checked={smsNotifications}
-                      onChange={toggleSmsNotifications}
-                      disabled={!notificationsEnabled}
-                    />
-                  </div>
-
-                  <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
-                    <ToggleItem
-                      icon={<Bell className="h-5 w-5" />}
-                      title="Sound Effects"
-                      description="Play sound for notifications"
-                      checked={soundEnabled}
-                      onChange={toggleSound}
-                      disabled={!notificationsEnabled}
-                    />
-                  </div>
+                      <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                        <ToggleItem
+                          icon={<Bell className="h-5 w-5" />}
+                          title="Sound Effects"
+                          description="Play sound for notifications"
+                          checked={settings?.soundEnabled ?? false}
+                          onChange={toggleSound}
+                          disabled={!allNotificationsEnabled}
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -690,35 +850,64 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                  <SessionItem
-                    icon={<Clock className="h-4 w-4" />}
-                    label="Last Login"
-                    value="Today at 9:45 AM"
-                    badge={
-                      <Badge className="bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400 border-0">
-                        <CheckCircle2 className="h-3 w-3 mr-1" />
-                        Active
-                      </Badge>
-                    }
-                  />
-                  <SessionItem
-                    icon={<Globe className="h-4 w-4" />}
-                    label="IP Address"
-                    value="192.168.1.1"
-                  />
-                  <SessionItem
-                    icon={<FileText className="h-4 w-4" />}
-                    label="Device"
-                    value="Chrome on Windows"
-                  />
-                </div>
+                {sessionLoading ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-6 w-32" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-6 w-32" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-6 w-32" />
+                    </div>
+                  </div>
+                ) : session ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <SessionItem
+                      icon={<Clock className="h-4 w-4" />}
+                      label="Last Login"
+                      value={formatDistanceToNow(new Date(session.loginAt), {
+                        addSuffix: true,
+                      })}
+                      badge={
+                        session.isActive ? (
+                          <Badge className="bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400 border-0">
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            Active
+                          </Badge>
+                        ) : undefined
+                      }
+                    />
+                    <SessionItem
+                      icon={<Globe className="h-4 w-4" />}
+                      label="IP Address"
+                      value={session.ipAddress || 'Unknown'}
+                    />
+                    <SessionItem
+                      icon={<FileText className="h-4 w-4" />}
+                      label="Device"
+                      value={session.deviceDescription || 'Unknown device'}
+                    />
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    No session information available
+                  </p>
+                )}
 
                 <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
                   <Button
+                    onClick={handleTerminateAllSessions}
+                    disabled={terminateAllSessions.isPending}
                     variant="outline"
                     className="w-full sm:w-auto h-11 px-6 border-red-200 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:border-red-300 dark:hover:border-red-600 transition-all duration-300">
-                    End All Sessions
+                    {terminateAllSessions.isPending
+                      ? 'Ending Sessions...'
+                      : 'End All Sessions'}
                   </Button>
                 </div>
               </div>

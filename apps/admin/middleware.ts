@@ -46,6 +46,12 @@ function isPublicRoute(pathname: string): boolean {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Skip auth routes to prevent redirect loops
+  const isAuthRoute = pathname.startsWith('/auth');
+  if (isAuthRoute) {
+    return NextResponse.next();
+  }
+
   // Fast path: Allow public routes
   const isPublic = isPublicRoute(pathname);
 
@@ -110,21 +116,21 @@ export async function middleware(request: NextRequest) {
       },
     });
 
-    // Check authentication - this is edge-compatible
+    // Check authentication with fresh user data - this is edge-compatible
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-    // If no session and accessing protected route, redirect to login
-    if (!session || sessionError) {
+    // If no user and accessing protected route, redirect to login
+    if (!user || authError) {
       const redirectUrl = new URL('/auth/login', request.url);
       redirectUrl.searchParams.set('redirect', pathname);
       redirectUrl.searchParams.set('error', 'authentication_required');
       return NextResponse.redirect(redirectUrl);
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
 
     /**
      * Role and Permission Verification:
@@ -140,12 +146,12 @@ export async function middleware(request: NextRequest) {
 
     // Add minimal user context headers to response
     response.headers.set('x-user-id', userId);
-    response.headers.set('x-user-email', session.user.email || '');
+    response.headers.set('x-user-email', user.email || '');
     response.headers.set('x-portal', 'admin');
 
     // Extract role from user metadata if available (optional, for optimization)
     // Role verification still happens in API routes as the source of truth
-    const userRole = session.user.user_metadata?.role;
+    const userRole = user.user_metadata?.role;
     if (userRole) {
       response.headers.set('x-user-role', userRole);
     }

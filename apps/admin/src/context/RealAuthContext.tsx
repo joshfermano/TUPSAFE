@@ -180,6 +180,31 @@ export function RealAuthProvider({ children }: { children: React.ReactNode }) {
   }, [fetchProfile]);
 
   /**
+   * Auto-refresh session every 5 minutes
+   * Prevents unexpected session expiration during active use
+   */
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (session && !error) {
+          // Session is still valid, refresh it
+          const { data: { session: newSession }, error: refreshError } =
+            await supabase.auth.refreshSession();
+
+          if (!refreshError && newSession) {
+            console.log('[RealAuthContext] Session refreshed successfully');
+          }
+        }
+      } catch (error) {
+        console.error('[RealAuthContext] Session refresh failed:', error);
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearInterval(interval);
+  }, []);
+
+  /**
    * Sign in with email and password
    * Handles device trust and OTP challenges
    */

@@ -15,13 +15,20 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db, profiles, createAuditLog } from '@tupsafe/database/server';
+import {
+  db,
+  profiles,
+  createAuditLog,
+  createSessionLog,
+  updateLastLogin,
+} from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
 import {
   createServerClient,
   generateDeviceFingerprint,
   createSession,
 } from '@tupsafe/auth/server';
+import { parseUserAgent, formatUserAgent } from '@/lib/user-agent-parser';
 
 // Login validation schema
 const loginSchema = z.object({
@@ -233,6 +240,34 @@ export async function POST(request: NextRequest) {
       lastActivity: Date.now(),
       deviceFingerprint,
     });
+
+    // Create database session log
+    try {
+      // Parse user agent to extract device information
+      const parsedUserAgent = parseUserAgent(userAgent);
+
+      // Create session log in database
+      await createSessionLog({
+        userId,
+        ipAddress,
+        userAgent,
+        parsed: parsedUserAgent,
+        deviceFingerprint,
+      });
+
+      // Update profile's last login information
+      const deviceDescription = formatUserAgent(parsedUserAgent);
+      await updateLastLogin({
+        userId,
+        ipAddress,
+        device: deviceDescription,
+      });
+
+      console.log(`[Admin Login] Session log created for user: ${userId}`);
+    } catch (error) {
+      // Non-critical operation - log error but don't fail login
+      console.error('[Admin Login] Error creating session log:', error);
+    }
 
     // Log successful admin login
     try {

@@ -9,6 +9,7 @@
 
 export * from './departments';
 export * from './settings';
+export * from './sessions';
 
 // Export SALN queries with specific named exports to avoid conflicts
 export {

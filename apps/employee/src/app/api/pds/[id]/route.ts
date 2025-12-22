@@ -37,11 +37,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
     // Authenticate user
     const supabase = await createServerClient('employee');
     const {
-      data: { session },
+      data: { user },
       error: authError,
-    } = await supabase.auth.getSession();
+    } = await supabase.auth.getUser();
 
-    if (authError || !session) {
+    if (authError || !user) {
       console.error('[GET /api/pds/[id]] Authentication failed:', authError);
       return NextResponse.json(
         { success: false, error: 'Unauthorized. Please log in.' },
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     // Fetch complete PDS with ownership validation
-    const pds = await getPDSSubmissionById(id, session.user.id);
+    const pds = await getPDSSubmissionById(id, user.id);
 
     if (!pds) {
       return NextResponse.json(
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     console.log(
-      `[GET /api/pds/[id]] Retrieved PDS ${id} for user ${session.user.id}`
+      `[GET /api/pds/[id]] Retrieved PDS ${id} for user ${user.id}`
     );
 
     return NextResponse.json({
@@ -125,11 +125,11 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     // Authenticate user
     const supabase = await createServerClient('employee');
     const {
-      data: { session },
+      data: { user },
       error: authError,
-    } = await supabase.auth.getSession();
+    } = await supabase.auth.getUser();
 
-    if (authError || !session) {
+    if (authError || !user) {
       console.error('[PATCH /api/pds/[id]] Authentication failed:', authError);
       return NextResponse.json(
         { success: false, error: 'Unauthorized. Please log in.' },
@@ -184,7 +184,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     // Check if PDS exists and get current status
-    const existingPDS = await getPDSSubmissionById(id, session.user.id);
+    const existingPDS = await getPDSSubmissionById(id, user.id);
 
     if (!existingPDS) {
       return NextResponse.json(
@@ -209,10 +209,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     // Update PDS submission
-    await updatePDSSubmission(id, session.user.id, body);
+    await updatePDSSubmission(id, user.id, body);
 
     console.log(
-      `[PATCH /api/pds/[id]] Updated PDS ${id} for user ${session.user.id}`
+      `[PATCH /api/pds/[id]] Updated PDS ${id} for user ${user.id}`
     );
 
     return NextResponse.json({
@@ -256,11 +256,11 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     // Authenticate user
     const supabase = await createServerClient('employee');
     const {
-      data: { session },
+      data: { user },
       error: authError,
-    } = await supabase.auth.getSession();
+    } = await supabase.auth.getUser();
 
-    if (authError || !session) {
+    if (authError || !user) {
       console.error('[DELETE /api/pds/[id]] Authentication failed:', authError);
       return NextResponse.json(
         { success: false, error: 'Unauthorized. Please log in.' },
@@ -279,7 +279,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     }
 
     // Check if PDS exists and get current status
-    const existingPDS = await getPDSSubmissionById(id, session.user.id);
+    const existingPDS = await getPDSSubmissionById(id, user.id);
 
     if (!existingPDS) {
       return NextResponse.json(
@@ -304,11 +304,11 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     }
 
     // Delete PDS submission
-    await deletePDSSubmission(id, session.user.id);
+    await deletePDSSubmission(id, user.id);
 
     // Create audit log for the deletion
     await createAuditLog({
-      userId: session.user.id,
+      userId: user.id,
       action: 'DELETE',
       entityType: 'pds_submission',
       entityId: id,
@@ -324,7 +324,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     });
 
     console.log(
-      `[DELETE /api/pds/[id]] Deleted ${existingPDS.submission.status} PDS ${id} for user ${session.user.id}`
+      `[DELETE /api/pds/[id]] Deleted ${existingPDS.submission.status} PDS ${id} for user ${user.id}`
     );
 
     return NextResponse.json({

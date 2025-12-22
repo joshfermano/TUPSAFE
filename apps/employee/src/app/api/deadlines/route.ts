@@ -106,11 +106,10 @@ export async function GET(request: NextRequest) {
     // Verify authentication
     const supabase = await createServerClient('employee');
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user }, error: authError,
+    } = await supabase.auth.getUser();
 
-    if (sessionError || !session) {
+    if (authError || !user) {
       return NextResponse.json(
         { error: 'Not authenticated' },
         { status: 401 }

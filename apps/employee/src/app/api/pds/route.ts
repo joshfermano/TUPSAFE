@@ -36,11 +36,11 @@ export async function GET(request: NextRequest) {
     // Authenticate user
     const supabase = await createServerClient('employee');
     const {
-      data: { session },
+      data: { user },
       error: authError,
-    } = await supabase.auth.getSession();
+    } = await supabase.auth.getUser();
 
-    if (authError || !session) {
+    if (authError || !user) {
       console.error('[GET /api/pds] Authentication failed:', authError);
       return NextResponse.json(
         { success: false, error: 'Unauthorized. Please log in.' },
@@ -105,10 +105,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch PDS submissions
-    const submissions = await getPDSSubmissions(session.user.id, filters);
+    const submissions = await getPDSSubmissions(user.id, filters);
 
     console.log(
-      `[GET /api/pds] Retrieved ${submissions.length} PDS submissions for user ${session.user.id}`
+      `[GET /api/pds] Retrieved ${submissions.length} PDS submissions for user ${user.id}`
     );
 
     return NextResponse.json({
@@ -165,11 +165,11 @@ export async function POST(request: NextRequest) {
     // Authenticate user
     const supabase = await createServerClient('employee');
     const {
-      data: { session },
+      data: { user },
       error: authError,
-    } = await supabase.auth.getSession();
+    } = await supabase.auth.getUser();
 
-    if (authError || !session) {
+    if (authError || !user) {
       console.error('[POST /api/pds] Authentication failed:', authError);
       return NextResponse.json(
         { success: false, error: 'Unauthorized. Please log in.' },
@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for existing draft within 24 hours (deduplication)
-    const existingDraftId = await getActivePDSDraft(session.user.id);
+    const existingDraftId = await getActivePDSDraft(user.id);
 
     if (existingDraftId) {
       // Update existing draft instead of creating new one
@@ -223,7 +223,7 @@ export async function POST(request: NextRequest) {
         `[POST /api/pds] Found existing draft ${existingDraftId}, updating instead of creating new`
       );
 
-      await updatePDSSubmission(existingDraftId, session.user.id, body);
+      await updatePDSSubmission(existingDraftId, user.id, body);
 
       return NextResponse.json(
         {
@@ -236,10 +236,10 @@ export async function POST(request: NextRequest) {
     }
 
     // No recent draft exists - create new one
-    const pdsId = await createPDSSubmission(session.user.id, body);
+    const pdsId = await createPDSSubmission(user.id, body);
 
     console.log(
-      `[POST /api/pds] Created new PDS submission ${pdsId} for user ${session.user.id}`
+      `[POST /api/pds] Created new PDS submission ${pdsId} for user ${user.id}`
     );
 
     return NextResponse.json(

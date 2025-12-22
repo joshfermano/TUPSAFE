@@ -14,21 +14,21 @@ import { eq } from 'drizzle-orm';
 
 export async function GET(_request: NextRequest) {
   try {
-    // Get Supabase session directly
+    // Get Supabase user directly
     const supabase = await createServerClient('admin');
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-    if (sessionError || !session) {
+    if (authError || !user) {
       return NextResponse.json(
         { error: 'Not authenticated' },
         { status: 401 }
       );
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
 
     // Fetch full profile from database
     const [profile] = await db
@@ -48,7 +48,7 @@ export async function GET(_request: NextRequest) {
       success: true,
       profile: {
         id: profile.id,
-        email: session.user.email,
+        email: user.email,
         firstName: profile.firstName,
         lastName: profile.lastName,
         middleName: profile.middleName,

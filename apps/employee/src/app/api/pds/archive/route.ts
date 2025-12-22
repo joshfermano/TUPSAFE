@@ -34,11 +34,11 @@ export async function GET(request: NextRequest) {
     // Authenticate user
     const supabase = await createServerClient('employee');
     const {
-      data: { session },
+      data: { user },
       error: authError,
-    } = await supabase.auth.getSession();
+    } = await supabase.auth.getUser();
 
-    if (authError || !session) {
+    if (authError || !user) {
       console.error('[GET /api/pds/archive] Authentication failed:', authError);
       return NextResponse.json(
         { success: false, error: 'Unauthorized. Please log in.' },
@@ -72,10 +72,10 @@ export async function GET(request: NextRequest) {
     };
 
     // Fetch archived PDS submissions
-    const archivedSubmissions = await getArchivedPDS(session.user.id, options);
+    const archivedSubmissions = await getArchivedPDS(user.id, options);
 
     console.log(
-      `[GET /api/pds/archive] Retrieved ${archivedSubmissions.length} archived PDS submissions for user ${session.user.id}`
+      `[GET /api/pds/archive] Retrieved ${archivedSubmissions.length} archived PDS submissions for user ${user.id}`
     );
 
     return NextResponse.json({

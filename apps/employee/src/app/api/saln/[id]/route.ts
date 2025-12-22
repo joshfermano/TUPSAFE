@@ -427,19 +427,17 @@ export async function DELETE(
     // ========================================================================
     const supabase = await createServerClient('employee');
     const {
-      data: { session },
+      data: { user },
       error: authError,
-    } = await supabase.auth.getSession();
+    } = await supabase.auth.getUser();
 
-    if (authError || !session) {
+    if (authError || !user) {
       console.error('[DELETE /api/saln/[id]] Authentication failed:', authError);
       return NextResponse.json(
         { success: false, error: 'Unauthorized. Please log in.' },
         { status: 401 }
       );
     }
-
-    const user = session.user;
 
     // ========================================================================
     // STEP 2: RBAC CHECK - EMPLOYEE ONLY

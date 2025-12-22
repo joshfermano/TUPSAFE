@@ -19,21 +19,20 @@ import { eq, and, sql } from 'drizzle-orm';
  */
 export async function POST(_request: NextRequest) {
   try {
-    // Get Supabase session
+    // Get authenticated user
     const supabase = await createServerClient('employee');
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user }, error: authError,
+    } = await supabase.auth.getUser();
 
-    if (sessionError || !session) {
+    if (authError || !user) {
       return NextResponse.json(
         { error: 'Not authenticated' },
         { status: 401 }
       );
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
     const now = new Date();
 
     // Update all unread notifications

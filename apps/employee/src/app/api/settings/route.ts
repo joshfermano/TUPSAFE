@@ -54,21 +54,21 @@ import {
  */
 export async function GET() {
   try {
-    // Get Supabase session
+    // Get authenticated user
     const supabase = await createServerClient('employee');
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-    if (sessionError || !session) {
+    if (authError || !user) {
       return NextResponse.json(
         { error: 'Not authenticated' },
         { status: 401 }
       );
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
 
     // Get preferences (auto-creates if missing)
     const preferences = await getUserPreferences(userId);
@@ -135,21 +135,21 @@ export async function GET() {
  */
 export async function PATCH(request: NextRequest) {
   try {
-    // Get Supabase session
+    // Get authenticated user
     const supabase = await createServerClient('employee');
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-    if (sessionError || !session) {
+    if (authError || !user) {
       return NextResponse.json(
         { error: 'Not authenticated' },
         { status: 401 }
       );
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
 
     // Parse request body
     let body: PreferencesUpdate;
@@ -184,6 +184,12 @@ export async function PATCH(request: NextRequest) {
       'dashboardLayout',
       'language',
       'timezone',
+      'profileVisibility',
+      'dataSharingEnabled',
+      'activityTrackingEnabled',
+      'pushNotificationsEnabled',
+      'smsNotificationsEnabled',
+      'soundEnabled',
     ];
 
     const providedFields = Object.keys(body).filter((key) =>

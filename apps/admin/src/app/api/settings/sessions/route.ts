@@ -124,20 +124,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get Supabase client and current session
+    // Get Supabase client and current user
     const supabase = await createServerClient('admin');
     const {
-      data: { session: currentSession },
-    } = await supabase.auth.getSession();
+      data: { user: currentUser },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-    if (!currentSession?.user) {
+    if (authError || !currentUser) {
       return NextResponse.json(
-        { error: 'Session expired' },
+        { error: 'Not authenticated' },
         { status: 401 }
       );
     }
 
-    const userId = currentSession.user.id;
+    const userId = currentUser.id;
     console.log(`[Sessions API] Fetching sessions for user: ${userId}`);
 
     // Get all sessions for the user from Supabase Admin API
@@ -147,7 +148,7 @@ export async function GET(request: NextRequest) {
     // 1. Use Supabase Admin API to list sessions
     // 2. Or maintain a sessions table in your database
 
-    const currentSessionId = currentSession.access_token;
+    const currentSessionId = userId; // Use userId as session identifier
     const userAgent = request.headers.get('user-agent') || 'Unknown';
     const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
 
@@ -165,7 +166,7 @@ export async function GET(request: NextRequest) {
         location: 'Unknown', // Would need IP geolocation service
         ipAddress: maskIpAddress(ip),
         lastActive: new Date(),
-        createdAt: new Date(currentSession.expires_at || Date.now()),
+        createdAt: new Date(currentUser.created_at || Date.now()),
         isCurrent: true,
       },
     ];
@@ -230,14 +231,15 @@ export async function DELETE(request: NextRequest) {
     // Get Supabase client for user details
     const supabase = await createServerClient('admin');
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Session expired' }, { status: 401 });
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
     console.log(`[Sessions API] Revoking session(s) for user: ${userId}`);
 
     // Parse request body

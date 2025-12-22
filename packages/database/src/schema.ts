@@ -97,6 +97,11 @@ export const dashboardLayoutEnum = pgEnum('dashboard_layout', [
   'detailed',
 ]);
 export const languageEnum = pgEnum('language', ['en', 'fil']);
+export const profileVisibilityEnum = pgEnum('profile_visibility', [
+  'public',
+  'private',
+  'colleagues',
+]);
 
 // Multi-user type system enums
 export const userTypeEnum = pgEnum('user_type', ['employee', 'applicant']);
@@ -165,6 +170,13 @@ export const profiles = pgTable(
     approvedAt: timestamp('approved_at'),
     temporaryPassword: boolean('temporary_password').default(false).notNull(),
     isActive: boolean('is_active').default(true).notNull(),
+    // Security tracking fields
+    twoFactorEnabled: boolean('two_factor_enabled').default(false).notNull(),
+    twoFactorSecret: text('two_factor_secret'),
+    lastLoginAt: timestamp('last_login_at'),
+    lastLoginIp: inet('last_login_ip'),
+    lastLoginDevice: text('last_login_device'),
+    // Timestamps
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
@@ -1199,12 +1211,63 @@ export const userPreferences = pgTable(
     language: languageEnum('language').default('en').notNull(),
     timezone: text('timezone').default('Asia/Manila').notNull(),
 
+    // Privacy preferences
+    profileVisibility: profileVisibilityEnum('profile_visibility')
+      .default('colleagues')
+      .notNull(),
+    dataSharingEnabled: boolean('data_sharing_enabled').default(false),
+    activityTrackingEnabled: boolean('activity_tracking_enabled').default(
+      true
+    ),
+
+    // Additional notification preferences
+    pushNotificationsEnabled: boolean('push_notifications_enabled').default(
+      true
+    ),
+    smsNotificationsEnabled: boolean('sms_notifications_enabled').default(
+      false
+    ),
+    soundEnabled: boolean('sound_enabled').default(true),
+
     // Timestamps
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => ({
     userIdIdx: index('user_preferences_user_id_idx').on(table.userId),
+  })
+);
+
+// Session Logs table - tracks user session activity
+export const sessionLogs = pgTable(
+  'session_logs',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .$defaultFn(() => v7()),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => profiles.id, { onDelete: 'cascade' }),
+    loginAt: timestamp('login_at').defaultNow().notNull(),
+    logoutAt: timestamp('logout_at'),
+    ipAddress: inet('ip_address'),
+    userAgent: text('user_agent'),
+    deviceFingerprint: text('device_fingerprint'),
+    browser: text('browser'),
+    os: text('os'),
+    deviceType: text('device_type'),
+    isActive: boolean('is_active').default(true).notNull(),
+    lastActivity: timestamp('last_activity').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index('session_logs_user_id_idx').on(table.userId),
+    isActiveIdx: index('session_logs_is_active_idx').on(table.isActive),
+    loginAtIdx: index('session_logs_login_at_idx').on(table.loginAt),
+    userActiveIdx: index('session_logs_user_active_idx').on(
+      table.userId,
+      table.isActive
+    ),
   })
 );
 
@@ -1236,6 +1299,8 @@ export const profilesRelations = relations(profiles, ({ one, many }) => ({
     fields: [profiles.id],
     references: [userPreferences.userId],
   }),
+  // Session logs
+  sessionLogs: many(sessionLogs),
 }));
 
 export const userPreferencesRelations = relations(
@@ -1247,6 +1312,13 @@ export const userPreferencesRelations = relations(
     }),
   })
 );
+
+export const sessionLogsRelations = relations(sessionLogs, ({ one }) => ({
+  user: one(profiles, {
+    fields: [sessionLogs.userId],
+    references: [profiles.id],
+  }),
+}));
 
 export const departmentsRelations = relations(departments, ({ one, many }) => ({
   parent: one(departments, {

@@ -5,6 +5,9 @@
 
 import { cookies } from 'next/headers';
 import type { Portal } from '../supabase/cookie-config';
+import { createClient } from '../supabase/server';
+import { db, profiles } from '@tupsafe/database/server';
+import { eq } from 'drizzle-orm';
 
 /**
  * Session configuration constants
@@ -245,11 +248,6 @@ export async function checkUserRoleFromSupabase(
   portal?: Portal
 ): Promise<boolean> {
   try {
-    // Use static imports for better performance and reliability
-    const { createClient } = require('../supabase/server');
-    const { db, profiles } = require('@tupsafe/database/server');
-    const { eq } = require('drizzle-orm');
-
     const supabase = await createClient(portal);
     const {
       data: { user },
@@ -294,10 +292,12 @@ export async function checkUserRoleFromSupabase(
 
     return hasRole;
   } catch (error) {
-    console.error(
-      '[checkUserRoleFromSupabase] Error checking user role:',
-      error
-    );
+    console.error('[checkUserRoleFromSupabase] Error details:', {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+      portal,
+      allowedRoles,
+    });
     return false;
   }
 }
@@ -321,11 +321,6 @@ export async function getUserFromSupabase(portal?: Portal): Promise<{
   isActive?: boolean;
 } | null> {
   try {
-    // Use static imports for better performance and reliability
-    const { createClient } = require('../supabase/server');
-    const { db, profiles } = require('@tupsafe/database/server');
-    const { eq } = require('drizzle-orm');
-
     const supabase = await createClient(portal);
     const {
       data: { user },
@@ -365,7 +360,11 @@ export async function getUserFromSupabase(portal?: Portal): Promise<{
       isActive: profile.isActive || undefined,
     };
   } catch (error) {
-    console.error('[getUserFromSupabase] Error getting user:', error);
+    console.error('[getUserFromSupabase] Error details:', {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+      portal,
+    });
     return null;
   }
 }

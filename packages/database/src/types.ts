@@ -116,6 +116,8 @@ export type NewEmployeeIdRegistry = InferInsertModel<
 >;
 export type UserPreference = InferSelectModel<typeof schema.userPreferences>;
 export type NewUserPreference = InferInsertModel<typeof schema.userPreferences>;
+export type SessionLog = InferSelectModel<typeof schema.sessionLogs>;
+export type NewSessionLog = InferInsertModel<typeof schema.sessionLogs>;
 
 // Enum Types
 export type Role = 'employee' | 'hr' | 'admin' | 'supervisor' | 'auditor';
