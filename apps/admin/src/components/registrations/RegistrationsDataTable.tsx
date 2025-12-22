@@ -1,10 +1,3 @@
-/**
- * Registrations Data Table
- *
- * Advanced data table with TanStack Table for registration management.
- * Features: row selection, sorting, pagination, actions menu, and status badges.
- */
-
 'use client';
 
 import { useMemo, memo } from 'react';

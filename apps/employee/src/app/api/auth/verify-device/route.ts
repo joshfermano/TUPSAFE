@@ -9,9 +9,12 @@ import {
   db,
   profiles,
   createAuditLog,
+  createSessionLog,
+  updateLastLogin,
 } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
 import { verifyOTP, createSession, trustDevice, createAdminClient, createServerClient } from '@tupsafe/auth/server';
+import { parseUserAgent, formatUserAgent } from '@/lib/user-agent-parser';
 
 // Device verification validation schema
 const deviceVerificationSchema = z.object({
@@ -161,6 +164,34 @@ export async function POST(request: NextRequest) {
       lastActivity: Date.now(),
       deviceFingerprint,
     });
+
+    // Create database session log
+    try {
+      // Parse user agent to extract device information
+      const parsedUserAgent = parseUserAgent(userAgent);
+
+      // Create session log in database
+      await createSessionLog({
+        userId,
+        ipAddress,
+        userAgent,
+        parsed: parsedUserAgent,
+        deviceFingerprint,
+      });
+
+      // Update profile's last login information
+      const deviceDescription = formatUserAgent(parsedUserAgent);
+      await updateLastLogin({
+        userId,
+        ipAddress,
+        device: deviceDescription,
+      });
+
+      console.log(`[Device Verification] Session log created for user: ${userId}`);
+    } catch (error) {
+      // Non-critical operation - log error but don't fail device verification
+      console.error('[Device Verification] Error creating session log:', error);
+    }
 
     // Log audit event
     try {

@@ -56,14 +56,15 @@ export async function GET() {
     // Get Supabase client for email and user details
     const supabase = await createServerClient('admin');
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Session expired' }, { status: 401 });
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
     console.log(`[Profile Settings API] Fetching profile for user: ${userId}`);
 
     // Fetch profile with joined department and position
@@ -108,7 +109,7 @@ export async function GET() {
       firstName: data.firstName,
       lastName: data.lastName,
       middleName: data.middleName,
-      email: session.user.email || '',
+      email: user.email || '',
       employeeId: data.employeeId,
       departmentId: data.departmentId,
       positionId: data.positionId,
@@ -191,14 +192,15 @@ export async function PUT(request: NextRequest) {
     // Get Supabase client for user details
     const supabase = await createServerClient('admin');
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Session expired' }, { status: 401 });
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
     console.log(`[Profile Settings API] Updating profile for user: ${userId}`);
 
     // Parse and validate request body
@@ -302,7 +304,7 @@ export async function PUT(request: NextRequest) {
       firstName: data.firstName,
       lastName: data.lastName,
       middleName: data.middleName,
-      email: session?.user.email || '',
+      email: user.email || '',
       employeeId: data.employeeId,
       departmentId: data.departmentId,
       positionId: data.positionId,

@@ -66,14 +66,15 @@ export async function GET() {
     // Get Supabase client for user details
     const supabase = await createServerClient('admin');
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Session expired' }, { status: 401 });
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
     console.log(`[Preferences Settings API] Fetching preferences for user: ${userId}`);
 
     // Fetch existing preferences
@@ -190,14 +191,15 @@ export async function PUT(request: NextRequest) {
     // Get Supabase client for user details
     const supabase = await createServerClient('admin');
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Session expired' }, { status: 401 });
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
     console.log(`[Preferences Settings API] Updating preferences for user: ${userId}`);
 
     // Parse and validate request body

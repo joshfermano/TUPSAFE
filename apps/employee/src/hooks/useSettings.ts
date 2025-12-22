@@ -23,22 +23,34 @@ export interface UserPreferences {
   id: string;
   userId: string;
   emailNotificationsEnabled: boolean;
+  pushNotificationsEnabled: boolean;
+  smsNotificationsEnabled: boolean;
+  soundEnabled: boolean;
   emailDigestFrequency: EmailDigestFrequency;
   theme: Theme;
   dashboardLayout: DashboardLayout;
   language: Language;
   timezone: string;
+  profileVisibility: 'public' | 'private' | 'colleagues';
+  dataSharingEnabled: boolean;
+  activityTrackingEnabled: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface PreferencesUpdate {
   emailNotificationsEnabled?: boolean;
+  pushNotificationsEnabled?: boolean;
+  smsNotificationsEnabled?: boolean;
+  soundEnabled?: boolean;
   emailDigestFrequency?: EmailDigestFrequency;
   theme?: Theme;
   dashboardLayout?: DashboardLayout;
   language?: Language;
   timezone?: string;
+  profileVisibility?: 'public' | 'private' | 'colleagues';
+  dataSharingEnabled?: boolean;
+  activityTrackingEnabled?: boolean;
 }
 
 // ============================================================================
@@ -359,5 +371,143 @@ export function useUpdateEmailDigest() {
     ...updateSettings,
     mutate: (frequency: EmailDigestFrequency) =>
       updateSettings.mutate({ emailDigestFrequency: frequency }),
+  };
+}
+
+/**
+ * Hook to toggle push notifications
+ *
+ * Convenience hook for toggling push notifications on/off.
+ *
+ * @returns Mutation function and state
+ *
+ * @example
+ * ```tsx
+ * const { mutate: togglePushNotifications } = useTogglePushNotifications();
+ * togglePushNotifications(true);
+ * ```
+ */
+export function useTogglePushNotifications() {
+  const updateSettings = useUpdateSettings();
+
+  return {
+    ...updateSettings,
+    mutate: (enabled: boolean) =>
+      updateSettings.mutate({ pushNotificationsEnabled: enabled }),
+  };
+}
+
+/**
+ * Hook to toggle SMS notifications
+ *
+ * Convenience hook for toggling SMS notifications on/off.
+ *
+ * @returns Mutation function and state
+ *
+ * @example
+ * ```tsx
+ * const { mutate: toggleSmsNotifications } = useToggleSmsNotifications();
+ * toggleSmsNotifications(true);
+ * ```
+ */
+export function useToggleSmsNotifications() {
+  const updateSettings = useUpdateSettings();
+
+  return {
+    ...updateSettings,
+    mutate: (enabled: boolean) =>
+      updateSettings.mutate({ smsNotificationsEnabled: enabled }),
+  };
+}
+
+/**
+ * Hook to toggle sound effects
+ *
+ * Convenience hook for toggling notification sound on/off.
+ *
+ * @returns Mutation function and state
+ *
+ * @example
+ * ```tsx
+ * const { mutate: toggleSound } = useToggleSound();
+ * toggleSound(true);
+ * ```
+ */
+export function useToggleSound() {
+  const updateSettings = useUpdateSettings();
+
+  return {
+    ...updateSettings,
+    mutate: (enabled: boolean) =>
+      updateSettings.mutate({ soundEnabled: enabled }),
+  };
+}
+
+/**
+ * Hook to update profile visibility
+ *
+ * Convenience hook for updating profile visibility setting.
+ *
+ * @returns Mutation function and state
+ *
+ * @example
+ * ```tsx
+ * const { mutate: setProfileVisibility } = useUpdateProfileVisibility();
+ * setProfileVisibility('colleagues');
+ * ```
+ */
+export function useUpdateProfileVisibility() {
+  const updateSettings = useUpdateSettings();
+
+  return {
+    ...updateSettings,
+    mutate: (visibility: 'public' | 'private' | 'colleagues') =>
+      updateSettings.mutate({ profileVisibility: visibility }),
+  };
+}
+
+/**
+ * Hook to toggle data sharing
+ *
+ * Convenience hook for toggling data sharing on/off.
+ *
+ * @returns Mutation function and state
+ *
+ * @example
+ * ```tsx
+ * const { mutate: toggleDataSharing } = useToggleDataSharing();
+ * toggleDataSharing(true);
+ * ```
+ */
+export function useToggleDataSharing() {
+  const updateSettings = useUpdateSettings();
+
+  return {
+    ...updateSettings,
+    mutate: (enabled: boolean) =>
+      updateSettings.mutate({ dataSharingEnabled: enabled }),
+  };
+}
+
+/**
+ * Hook to toggle activity tracking
+ *
+ * Convenience hook for toggling activity tracking on/off.
+ *
+ * @returns Mutation function and state
+ *
+ * @example
+ * ```tsx
+ * const { mutate: toggleActivityTracking } = useToggleActivityTracking();
+ * toggleActivityTracking(true);
+ * ```
+ */
+export function useToggleActivityTracking() {
+  const updateSettings = useUpdateSettings();
+
+  return {
+    ...updateSettings,
+    mutate: (enabled: boolean) =>
+      updateSettings.mutate({ activityTrackingEnabled: enabled }),
   };
 }

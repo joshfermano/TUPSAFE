@@ -21,6 +21,8 @@ export type AuditAction =
   | 'REJECT_REGISTRATION'
   | 'REQUEST_INFO_REGISTRATION'
   | 'SEND_CREDENTIALS'
+  | 'PASSWORD_CHANGED'
+  | 'SESSIONS_TERMINATED'
   | 'approve_pds_submission'
   | 'reject_pds_submission'
   | 'view_pds_submission'
@@ -44,7 +46,9 @@ export type AuditEntityType =
   | 'registration'
   | 'application'
   | 'open_position'
-  | 'user_credentials';
+  | 'user_credentials'
+  | 'USER'
+  | 'SESSION';
 
 export interface AuditLogData {
   userId: string;

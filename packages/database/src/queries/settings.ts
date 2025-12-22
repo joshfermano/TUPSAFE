@@ -23,6 +23,12 @@ const DEFAULT_PREFERENCES = {
   dashboardLayout: 'default' as const,
   language: 'en' as const,
   timezone: 'Asia/Manila',
+  profileVisibility: 'colleagues' as const,
+  dataSharingEnabled: false,
+  activityTrackingEnabled: true,
+  pushNotificationsEnabled: true,
+  smsNotificationsEnabled: false,
+  soundEnabled: true,
 } satisfies Partial<NewUserPreference>;
 
 /**
@@ -152,6 +158,18 @@ function validatePreferences(preferences: PreferencesUpdate): void {
       `Invalid email digest frequency: ${
         preferences.emailDigestFrequency
       }. Must be one of: ${validDigestFrequencies.join(', ')}`
+    );
+  }
+
+  const validProfileVisibility = ['public', 'private', 'colleagues'] as const;
+  if (
+    preferences.profileVisibility &&
+    !validProfileVisibility.includes(preferences.profileVisibility)
+  ) {
+    throw new Error(
+      `Invalid profile visibility: ${
+        preferences.profileVisibility
+      }. Must be one of: ${validProfileVisibility.join(', ')}`
     );
   }
 }

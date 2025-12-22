@@ -37,11 +37,11 @@ export async function POST(request: NextRequest, context: RouteContext) {
     // Authenticate user
     const supabase = await createServerClient('employee');
     const {
-      data: { session },
+      data: { user },
       error: authError,
-    } = await supabase.auth.getSession();
+    } = await supabase.auth.getUser();
 
-    if (authError || !session) {
+    if (authError || !user) {
       console.error(
         '[POST /api/pds/[id]/submit] Authentication failed:',
         authError
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     // Validate PDS exists and belongs to user
-    const pds = await getPDSSubmissionById(id, session.user.id);
+    const pds = await getPDSSubmissionById(id, user.id);
 
     if (!pds) {
       return NextResponse.json(
@@ -129,10 +129,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     // Submit PDS for approval
-    await submitPDSForApproval(id, session.user.id);
+    await submitPDSForApproval(id, user.id);
 
     console.log(
-      `[POST /api/pds/[id]/submit] Submitted PDS ${id} for approval by user ${session.user.id}`
+      `[POST /api/pds/[id]/submit] Submitted PDS ${id} for approval by user ${user.id}`
     );
 
     return NextResponse.json({
