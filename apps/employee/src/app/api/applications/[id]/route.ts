@@ -8,7 +8,7 @@ import {
   applicationStatusHistory,
   profiles,
 } from '@tupsafe/database/server';
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, sql } from 'drizzle-orm';
 
 /**
  * GET /api/applications/[id]
@@ -177,6 +177,134 @@ export async function GET(
     console.error('Error fetching application details:', error);
     return NextResponse.json(
       { error: 'Failed to fetch application details' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * PATCH /api/applications/[id]
+ * Withdraw an application
+ * 
+ * Only allowed when:
+ * - Application belongs to the current user
+ * - Current status is 'pending' (application hasn't been reviewed yet)
+ */
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const supabase = await createServerClient('employee');
+
+    // Get authenticated user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Verify user is an applicant
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_type, applicant_id')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile || profile.user_type !== 'applicant') {
+      return NextResponse.json(
+        { error: 'Access denied. Applicants only.' },
+        { status: 403 }
+      );
+    }
+
+    const { id: applicationId } = await params;
+    const body = await request.json();
+    const { action, reason } = body;
+
+    // Only allow withdraw action
+    if (action !== 'withdraw') {
+      return NextResponse.json(
+        { error: 'Invalid action. Only "withdraw" is supported.' },
+        { status: 400 }
+      );
+    }
+
+    // Fetch the application to verify ownership and current status
+    const [application] = await db
+      .select({
+        id: jobApplications.id,
+        status: jobApplications.status,
+        applicantId: jobApplications.applicantId,
+      })
+      .from(jobApplications)
+      .where(eq(jobApplications.id, applicationId))
+      .limit(1);
+
+    if (!application) {
+      return NextResponse.json(
+        { error: 'Application not found' },
+        { status: 404 }
+      );
+    }
+
+    // Verify ownership
+    if (application.applicantId !== user.id) {
+      return NextResponse.json(
+        { error: 'You can only withdraw your own applications.' },
+        { status: 403 }
+      );
+    }
+
+    // Check if application can be withdrawn
+    // Only 'pending' applications can be withdrawn by the applicant
+    if (application.status !== 'pending') {
+      return NextResponse.json(
+        { 
+          error: 'Cannot withdraw application.',
+          message: `Applications with status "${application.status}" cannot be withdrawn. Only pending applications can be withdrawn.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Update application status to withdrawn
+    const [updatedApplication] = await db
+      .update(jobApplications)
+      .set({
+        status: 'withdrawn',
+        updatedAt: sql`now()`,
+      })
+      .where(eq(jobApplications.id, applicationId))
+      .returning();
+
+    // Insert status history record
+    await db.insert(applicationStatusHistory).values({
+      id: sql`gen_random_uuid()`,
+      applicationId: applicationId,
+      previousStatus: application.status,
+      newStatus: 'withdrawn',
+      changedAt: sql`now()`,
+      changedBy: user.id,
+      notes: reason || 'Application withdrawn by applicant',
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Application withdrawn successfully',
+      data: {
+        id: updatedApplication.id,
+        status: updatedApplication.status,
+        updatedAt: updatedApplication.updatedAt,
+      },
+    });
+  } catch (error) {
+    console.error('Error withdrawing application:', error);
+    return NextResponse.json(
+      { error: 'Failed to withdraw application' },
       { status: 500 }
     );
   }

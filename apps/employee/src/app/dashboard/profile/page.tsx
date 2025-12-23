@@ -147,7 +147,9 @@ export default function ProfilePage() {
               </AnimatedGradientText>
             </h1>
             <p className="text-slate-700 dark:text-slate-400 mt-2">
-              View and manage your employee information
+              {profile.userType === 'applicant'
+                ? 'View and manage your applicant profile'
+                : 'View and manage your employee information'}
             </p>
           </div>
           <Link href={`/dashboard/profile/edit/${user?.id}`}>

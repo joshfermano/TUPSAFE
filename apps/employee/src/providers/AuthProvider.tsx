@@ -38,8 +38,10 @@ interface AuthContextType {
   session: Session | null;
   profile: UserProfile | null;
   loading: boolean;
+  profileLoading: boolean;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -49,6 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
 
   // Create Supabase client with portal-aware cookie configuration
@@ -66,6 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    */
   const fetchProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
     try {
+      setProfileLoading(true);
       const response = await fetch('/api/auth/profile');
       if (!response.ok) {
         console.warn('[AuthProvider] Profile fetch returned', response.status);
@@ -76,8 +80,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('[AuthProvider] Error fetching profile:', error);
       return null;
+    } finally {
+      setProfileLoading(false);
     }
   }, []);
+
+  /**
+   * Refresh profile - can be called externally to force a profile refresh
+   */
+  const refreshProfile = useCallback(async () => {
+    if (!user?.id) {
+      console.warn('[AuthProvider] Cannot refresh profile: no user');
+      return;
+    }
+    const userProfile = await fetchProfile(user.id);
+    if (userProfile) {
+      setProfile(userProfile);
+      console.log('[AuthProvider] ✅ Profile refreshed:', userProfile.userType);
+    } else {
+      console.warn('[AuthProvider] ⚠️ Profile refresh returned null');
+    }
+  }, [user?.id, fetchProfile]);
 
   // Refresh session
   const refreshSession = useCallback(async () => {
@@ -117,8 +140,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Sign out from Supabase
       await supabase.auth.signOut();
 
+      // Clear all auth state
       setUser(null);
       setSession(null);
+      setProfile(null);
+      setProfileLoading(false);
 
       // Redirect to login
       window.location.href = '/auth/login';
@@ -186,8 +212,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       console.log('[AuthProvider] Auth state changed:', event, newSession ? 'Session exists' : 'No session');
+      
       setSession(newSession);
       setUser(newSession?.user ?? null);
+
+      // CRITICAL: Fetch/clear profile based on auth state
+      if (newSession?.user) {
+        // User logged in or session refreshed - fetch profile
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+          console.log('[AuthProvider] Fetching profile after auth event:', event);
+          const userProfile = await fetchProfile(newSession.user.id);
+          if (userProfile) {
+            setProfile(userProfile);
+            console.log('[AuthProvider] ✅ Profile set after', event, ':', userProfile.userType);
+          } else {
+            console.warn('[AuthProvider] ⚠️ Profile fetch returned null after', event);
+            setProfile(null);
+          }
+        }
+      } else {
+        // User logged out or session cleared - clear profile
+        console.log('[AuthProvider] Clearing profile (no session)');
+        setProfile(null);
+        setProfileLoading(false);
+      }
+      
       setLoading(false);
     });
 
@@ -195,7 +244,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('[AuthProvider] Cleaning up auth state listener');
       subscription.unsubscribe();
     };
-  }, [mounted, supabase.auth]);
+  }, [mounted, supabase.auth, fetchProfile]);
 
   // Auto-refresh session every 5 minutes
   useEffect(() => {
@@ -213,8 +262,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     session,
     profile,
     loading,
+    profileLoading,
     signOut,
     refreshSession,
+    refreshProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

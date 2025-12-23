@@ -391,6 +391,8 @@ const employeeRegistrationSchema = z.object({
 });
 
 // Applicant Registration Schema (Job Applicants)
+// Note: Applicants do NOT select a position during registration.
+// They register first, then browse and apply to open positions later.
 const applicantRegistrationSchema = z.object({
   // User type identification
   userType: z.literal('applicant'),
@@ -434,9 +436,6 @@ const applicantRegistrationSchema = z.object({
       /^(\+639|09)\d{9}$/,
       'Please enter a valid Philippine phone number (e.g., +639123456789 or 09123456789)'
     ),
-
-  // Application Details
-  positionAppliedFor: z.string().uuid('Please select a position to apply for'),
 
   // Security Setup
   password: passwordSchema,

@@ -1,25 +1,39 @@
 /**
  * Registration Completion API Route
  *
- * Step 4 of the registration process:
+ * Step 4 of the registration process for both employees and applicants:
+ * 
+ * For EMPLOYEES:
  * - Updates profile with employment details (department, hire date)
+ * - Account remains pending until HR approval
  * - Called after user accepts terms and conditions
- * - Profile must already exist (created during email verification)
+ * 
+ * For APPLICANTS:
+ * - Auto-activates the account (no HR approval needed)
+ * - Generates applicant ID
+ * - Sets accountStatus to 'active' immediately
+ * - Applicant can then browse and apply to positions
  *
  * @module api/auth/register/complete
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db, profiles, generateAndRegisterEmployeeIdFromDOB } from '@tupsafe/database/server';
+import { 
+  db, 
+  profiles, 
+  generateAndRegisterEmployeeIdFromDOB, 
+  generateApplicantId 
+} from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
 import { createAdminClient } from '@tupsafe/auth/server';
 
 /**
- * Registration completion schema
+ * Registration completion schema - Discriminated union for employee vs applicant
  */
-const completionSchema = z.object({
+const employeeCompletionSchema = z.object({
   userId: z.string().uuid('Invalid user ID'),
+  userType: z.literal('employee').optional(), // Default for backward compatibility
   employmentCategory: z.enum(['faculty', 'administrative']),
   hireDate: z.string().optional(), // ISO date string
   // For faculty: departmentId (department within college)
@@ -29,7 +43,15 @@ const completionSchema = z.object({
   collegeId: z.string().uuid('Invalid college ID').optional(),
 });
 
-type CompletionData = z.infer<typeof completionSchema>;
+const applicantCompletionSchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
+  userType: z.literal('applicant'),
+});
+
+const completionSchema = z.discriminatedUnion('userType', [
+  employeeCompletionSchema.extend({ userType: z.literal('employee') }),
+  applicantCompletionSchema,
+]).or(employeeCompletionSchema); // Also allow without userType for backward compatibility
 
 /**
  * Success response structure
@@ -39,8 +61,11 @@ interface CompleteSuccessResponse {
   message: string;
   data: {
     userId: string;
-    employeeId: string | null;
-    departmentId: string | null;
+    employeeId?: string | null;
+    applicantId?: string | null;
+    departmentId?: string | null;
+    userType: 'employee' | 'applicant';
+    accountStatus: 'pending' | 'active';
   };
 }
 
@@ -59,7 +84,8 @@ interface CompleteErrorResponse {
  * Completes the registration process by:
  * 1. Validating the provided data
  * 2. Verifying the user exists and has a pending profile
- * 3. Updating the profile with employment details
+ * 3. For employees: updating profile with employment details (pending approval)
+ * 4. For applicants: auto-activating account with applicant ID
  */
 export async function POST(
   request: NextRequest
@@ -80,8 +106,10 @@ export async function POST(
       );
     }
 
-    const data: CompletionData = validationResult.data;
-    const { userId, employmentCategory, hireDate, departmentId, collegeId } = data;
+    const data = validationResult.data;
+    const { userId } = data;
+    const userType = 'userType' in data ? data.userType : 'employee';
+    const isApplicant = userType === 'applicant';
 
     // Verify user exists in auth
     const supabase = createAdminClient();
@@ -117,12 +145,102 @@ export async function POST(
       );
     }
 
+    // =========================================================================
+    // APPLICANT COMPLETION: Auto-activate account
+    // =========================================================================
+    if (isApplicant) {
+      console.log('[Registration Complete] Processing APPLICANT:', userId);
+
+      // Generate applicant ID
+      let generatedApplicantId: string;
+      try {
+        generatedApplicantId = await generateApplicantId();
+        console.log(`✓ Generated applicant ID for user ${userId}: ${generatedApplicantId}`);
+      } catch (idGenError) {
+        console.error('Error generating applicant ID:', idGenError);
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Failed to generate applicant ID. Please try again.',
+          },
+          { status: 500 }
+        );
+      }
+
+      // Update profile with applicant details and activate account
+      try {
+        await db
+          .update(profiles)
+          .set({
+            userType: 'applicant',
+            applicantId: generatedApplicantId,
+            accountStatus: 'active', // Auto-activate applicants
+            emailVerifiedAt: existingProfile.emailVerifiedAt || new Date(),
+            isActive: true,
+            employmentCategory: 'not_applicable',
+            updatedAt: new Date(),
+          })
+          .where(eq(profiles.id, userId));
+
+        console.log(`✓ Applicant profile activated for user ${userId}:`, {
+          applicantId: generatedApplicantId,
+          accountStatus: 'active',
+        });
+      } catch (updateError) {
+        console.error('Error updating applicant profile:', updateError);
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Failed to activate applicant account.',
+          },
+          { status: 500 }
+        );
+      }
+
+      // Update user metadata
+      try {
+        const existingMetadata = authUser.user.user_metadata || {};
+        await supabase.auth.admin.updateUserById(userId, {
+          user_metadata: {
+            ...existingMetadata,
+            user_type: 'applicant',
+            applicant_id: generatedApplicantId,
+            account_status: 'active',
+            registration_completed: true,
+          },
+        });
+        console.log(`✓ Updated user metadata for applicant ${userId}`);
+      } catch (metadataError) {
+        console.error('Error updating user metadata:', metadataError);
+        // Non-critical, continue
+      }
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: 'Registration completed successfully. Your account is now active!',
+          data: {
+            userId,
+            applicantId: generatedApplicantId,
+            userType: 'applicant',
+            accountStatus: 'active',
+          },
+        },
+        { status: 200 }
+      );
+    }
+
+    // =========================================================================
+    // EMPLOYEE COMPLETION: Pending approval flow
+    // =========================================================================
+    const { employmentCategory, hireDate, departmentId, collegeId } = data as z.infer<typeof employeeCompletionSchema>;
+
     // Determine the department ID to save
     // For faculty: use departmentId (department within college)
     // For administrative: use collegeId as the office ID
     let finalDepartmentId: string | null = null;
 
-    console.log('[Registration Complete] Processing:', {
+    console.log('[Registration Complete] Processing EMPLOYEE:', {
       userId,
       employmentCategory,
       departmentId,
@@ -159,7 +277,6 @@ export async function POST(
       finalDepartmentId = collegeId; // Office ID
       console.log('[Registration Complete] Administrative - using collegeId as office:', finalDepartmentId);
     }
-    // Note: For applicants (if they reach this endpoint), no department is required
 
     // Generate employee ID from date of birth
     let generatedEmployeeId: string | null = null;
@@ -188,21 +305,24 @@ export async function POST(
       await db
         .update(profiles)
         .set({
+          userType: 'employee',
           employeeId: generatedEmployeeId,
           departmentId: finalDepartmentId,
           hireDate: hireDateForDb,
           employmentCategory: employmentCategory,
+          accountStatus: 'pending', // Employees need HR approval
           updatedAt: new Date(),
         })
         .where(eq(profiles.id, userId));
 
       console.log(
-        `✓ Updated profile for user ${userId} with employment details:`,
+        `✓ Updated profile for employee ${userId} with employment details:`,
         {
           employeeId: generatedEmployeeId,
           departmentId: finalDepartmentId,
           hireDate,
           employmentCategory,
+          accountStatus: 'pending',
         }
       );
     } catch (updateError) {
@@ -222,10 +342,12 @@ export async function POST(
       await supabase.auth.admin.updateUserById(userId, {
         user_metadata: {
           ...existingMetadata,
+          user_type: 'employee',
           employee_id: generatedEmployeeId,
           department_id: finalDepartmentId,
           employment_category: employmentCategory,
           hire_date: hireDate || null,
+          account_status: 'pending',
           registration_completed: true,
         },
       });
@@ -243,6 +365,8 @@ export async function POST(
           userId,
           employeeId: generatedEmployeeId,
           departmentId: finalDepartmentId,
+          userType: 'employee',
+          accountStatus: 'pending',
         },
       },
       { status: 200 }

@@ -74,19 +74,22 @@ export async function POST(request: NextRequest) {
         }
 
         const metadata = authUser.user.user_metadata;
+        const userType = metadata.user_type || 'employee';
 
         // Create profile with data from registration metadata
+        // Applicants get 'active' status immediately, employees get 'pending' (awaiting HR approval)
+        // Note: role field uses 'employee' for both employees and applicants (userType distinguishes them)
         await db.insert(profiles).values({
           id: userId,
           firstName: metadata.first_name || 'Unknown',
           lastName: metadata.last_name || 'Unknown',
           middleName: metadata.middle_name || null,
           phoneNumber: metadata.phone_number || null,
-          userType: metadata.user_type || 'employee',
-          employmentCategory: metadata.employment_category || null,
+          userType: userType,
+          employmentCategory: metadata.employment_category || (userType === 'applicant' ? 'not_applicable' : null),
           dateOfBirth: metadata.date_of_birth || null,
-          role: 'employee',
-          accountStatus: 'pending',
+          role: 'employee', // Default role for both employees and applicants
+          accountStatus: userType === 'applicant' ? 'active' : 'pending',
           emailVerifiedAt: new Date(),
           isActive: true,
           createdAt: new Date(),
@@ -94,7 +97,7 @@ export async function POST(request: NextRequest) {
         });
 
         console.log(
-          `✓ Created profile for user ${userId} during email verification`
+          `✓ Created profile for user ${userId} during email verification (${userType}, status: ${userType === 'applicant' ? 'active' : 'pending'})`
         );
       } else {
         // Profile exists - just update email verification timestamp

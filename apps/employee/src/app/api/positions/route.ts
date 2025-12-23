@@ -11,8 +11,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@tupsafe/auth/server';
 import { db } from '@tupsafe/database/server';
-import { openPositions, departments, jobApplications } from '@tupsafe/database/server';
-import { eq, and, desc, asc, sql } from 'drizzle-orm';
+import { openPositions, departments, jobApplications, profiles } from '@tupsafe/database/server';
+import { eq, and, desc, asc, inArray } from 'drizzle-orm';
 
 /**
  * GET /api/positions
@@ -57,14 +57,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 2. Verify user has valid profile
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('user_type, is_active')
-      .eq('id', user.id)
-      .single();
+    // 2. Verify user has valid profile using Drizzle (source of truth)
+    // Avoids PostgREST/RLS edge cases that can return 0 rows even when profile exists
+    const [profile] = await db
+      .select({
+        userType: profiles.userType,
+        isActive: profiles.isActive,
+        accountStatus: profiles.accountStatus,
+      })
+      .from(profiles)
+      .where(eq(profiles.id, user.id))
+      .limit(1);
 
-    if (profileError || !profile) {
+    if (!profile) {
+      console.error('[Positions API] Profile not found for user:', user.id);
       return NextResponse.json(
         {
           success: false,
@@ -75,12 +81,24 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (!profile.is_active) {
+    console.log('[Positions API] User profile:', {
+      userId: user.id,
+      userType: profile.userType,
+      isActive: profile.isActive,
+      accountStatus: profile.accountStatus,
+    });
+
+    // Check if account is active (account_status should be 'active' for applicants and employees)
+    if (profile.accountStatus !== 'active') {
       return NextResponse.json(
         {
           success: false,
           error: 'Forbidden',
-          message: 'Account is not active. Please contact support.',
+          message: `Account status is ${profile.accountStatus}. ${
+            profile.accountStatus === 'pending'
+              ? 'Your account is pending approval.'
+              : 'Please contact support.'
+          }`,
         },
         { status: 403 }
       );
@@ -152,36 +170,47 @@ export async function GET(request: NextRequest) {
       .where(and(...conditions))
       .orderBy(orderByClause);
 
-    // 7. Check application status for each position (if applicant)
-    const positionsWithStatus = await Promise.all(
-      positionsQuery.map(async (position) => {
-        // Check if user has applied
-        const applicationQuery = await db
-          .select({
-            id: jobApplications.id,
-            status: jobApplications.status,
-          })
-          .from(jobApplications)
-          .where(
-            and(
-              eq(jobApplications.applicantId, user.id),
-              eq(jobApplications.positionId, position.id)
-            )
+    // 7. Optimized: Fetch all user's applications for these positions in ONE query (no N+1)
+    const positionIds = positionsQuery.map((p) => p.id);
+    
+    // Create a map of positionId -> application status
+    const applicationStatusMap = new Map<string, { id: string; status: string | null }>();
+    
+    if (positionIds.length > 0) {
+      const userApplications = await db
+        .select({
+          id: jobApplications.id,
+          positionId: jobApplications.positionId,
+          status: jobApplications.status,
+        })
+        .from(jobApplications)
+        .where(
+          and(
+            eq(jobApplications.applicantId, user.id),
+            inArray(jobApplications.positionId, positionIds)
           )
-          .limit(1);
+        );
+      
+      // Map applications by position ID
+      for (const app of userApplications) {
+        applicationStatusMap.set(app.positionId, {
+          id: app.id,
+          status: app.status,
+        });
+      }
+    }
 
-        const hasApplied = applicationQuery.length > 0;
-        const applicationStatus = hasApplied ? applicationQuery[0].status : null;
+    // 8. Merge positions with application status (in-memory, no additional queries)
+    const positionsWithStatus = positionsQuery.map((position) => {
+      const application = applicationStatusMap.get(position.id);
+      return {
+        ...position,
+        hasApplied: !!application,
+        applicationStatus: application?.status || null,
+      };
+    });
 
-        return {
-          ...position,
-          hasApplied,
-          applicationStatus,
-        };
-      })
-    );
-
-    // 8. Return successful response
+    // 9. Return successful response
     return NextResponse.json(
       {
         success: true,

@@ -42,6 +42,7 @@ export * from './utils/storage';
 export * from './utils/audit-log';
 export * from './utils/admin-employee-id';
 export * from './utils/employee-id-dob';
+export * from './utils/applicant-id';
 
 // ============================================================================
 // TYPES (Re-exported for convenience)

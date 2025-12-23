@@ -400,6 +400,10 @@ export interface JobApplicationListItem {
   } | null;
   reviewedAt: Date | null;
   interviewDate: Date | null;
+  /** PDS submission ID linked to this application */
+  pdsSubmissionId: string | null;
+  /** Whether the application has a linked PDS */
+  hasPds: boolean;
 }
 
 /**

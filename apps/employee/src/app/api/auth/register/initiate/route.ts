@@ -26,45 +26,110 @@ import {
 import { eq } from 'drizzle-orm';
 
 /**
- * Personal information schema for step 1
+ * TUP Manila institutional email domains for employee validation
  */
-const personalInfoSchema = z.object({
-  userType: z.enum(['employee', 'applicant']),
-  firstName: z.string().min(2, 'First name must be at least 2 characters'),
-  lastName: z.string().min(2, 'Last name must be at least 2 characters'),
-  middleName: z.string().optional(),
-  email: z.string().email('Invalid email address'),
-  phoneNumber: z.string().regex(/^(\+639|09)\d{9}$/, 'Invalid phone number'),
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number')
-    .regex(
-      /[^A-Za-z0-9]/,
-      'Password must contain at least one special character'
-    ),
-  employmentCategory: z.enum(['faculty', 'administrative']).optional(),
-  dateOfBirth: z
-    .string()
-    .refine(
-      (date) => {
-        const parsed = new Date(date);
-        return !isNaN(parsed.getTime());
-      },
-      'Invalid date format'
-    )
-    .refine(
-      (date) => {
-        const parsed = new Date(date);
-        const today = new Date();
-        const age = today.getFullYear() - parsed.getFullYear();
-        return age >= 18 && age <= 100;
-      },
-      'Birth date must indicate age between 18 and 100 years'
-    ),
-});
+const INSTITUTIONAL_EMAIL_DOMAINS = [
+  'tup.edu.ph',
+  'gsb.tup.edu.ph',
+  'manila.tup.edu.ph',
+  'gov.ph',
+  'deped.gov.ph',
+  'ched.gov.ph',
+  'dost.gov.ph',
+];
+
+/**
+ * Personal information schema for step 1
+ * - Employees: require institutional email and date of birth
+ * - Applicants: accept any valid email, no date of birth required
+ */
+const personalInfoSchema = z
+  .object({
+    userType: z.enum(['employee', 'applicant']),
+    firstName: z.string().min(2, 'First name must be at least 2 characters'),
+    lastName: z.string().min(2, 'Last name must be at least 2 characters'),
+    middleName: z.string().optional(),
+    email: z.string().email('Invalid email address'),
+    phoneNumber: z.string().regex(/^(\+639|09)\d{9}$/, 'Invalid phone number'),
+    password: z
+      .string()
+      .min(8, 'Password must be at least 8 characters')
+      .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+      .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+      .regex(/[0-9]/, 'Password must contain at least one number')
+      .regex(
+        /[^A-Za-z0-9]/,
+        'Password must contain at least one special character'
+      ),
+    employmentCategory: z.enum(['faculty', 'administrative']).optional(),
+    // Date of birth is required for employees (for ID generation), optional for applicants
+    dateOfBirth: z
+      .string()
+      .refine(
+        (date) => {
+          if (!date) return true; // Allow empty for applicants
+          const parsed = new Date(date);
+          return !isNaN(parsed.getTime());
+        },
+        'Invalid date format'
+      )
+      .refine(
+        (date) => {
+          if (!date) return true; // Allow empty for applicants
+          const parsed = new Date(date);
+          const today = new Date();
+          const age = today.getFullYear() - parsed.getFullYear();
+          return age >= 18 && age <= 100;
+        },
+        'Birth date must indicate age between 18 and 100 years'
+      )
+      .optional(),
+  })
+  .refine(
+    (data) => {
+      // Employees must use institutional email
+      if (data.userType === 'employee') {
+        const domain = data.email.split('@')[1]?.toLowerCase();
+        return INSTITUTIONAL_EMAIL_DOMAINS.some((instDomain) =>
+          domain?.endsWith(instDomain)
+        );
+      }
+      // Applicants can use any valid email
+      return true;
+    },
+    {
+      message:
+        'Employees must use a TUP Manila institutional email (e.g., @tup.edu.ph)',
+      path: ['email'],
+    }
+  )
+  .refine(
+    (data) => {
+      // Employees require date of birth for ID generation
+      if (data.userType === 'employee') {
+        return !!data.dateOfBirth;
+      }
+      // Applicants don't need date of birth during registration
+      return true;
+    },
+    {
+      message: 'Date of birth is required for employees',
+      path: ['dateOfBirth'],
+    }
+  )
+  .refine(
+    (data) => {
+      // Employees require employment category
+      if (data.userType === 'employee') {
+        return !!data.employmentCategory;
+      }
+      return true;
+    },
+    {
+      message: 'Please select your employment category (faculty or administrative)',
+      path: ['employmentCategory'],
+    }
+  );
 
 type PersonalInfoData = z.infer<typeof personalInfoSchema>;
 
@@ -315,7 +380,7 @@ export async function POST(
                   phone_number: data.phoneNumber,
                   user_type: data.userType,
                   employment_category: data.employmentCategory || null,
-                  date_of_birth: data.dateOfBirth,
+                  date_of_birth: data.dateOfBirth || null,
                   registration_step: 'email_verification_pending',
                   ip_address: getClientIp(request),
                   updated_at: new Date().toISOString(),
@@ -371,7 +436,7 @@ export async function POST(
           phone_number: data.phoneNumber,
           user_type: data.userType,
           employment_category: data.employmentCategory || null,
-          date_of_birth: data.dateOfBirth,
+          date_of_birth: data.dateOfBirth || null,
           registration_step: 'email_verification_pending',
           ip_address: getClientIp(request),
         },

@@ -401,14 +401,20 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    console.log('[DELETE /api/jobs/[id]] Request received');
+    
     // Get current user from Supabase session (portal-specific)
     const sessionUser = await getUserFromSupabase('admin');
     if (!sessionUser) {
+      console.error('[DELETE /api/jobs/[id]] Not authenticated');
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
+    console.log('[DELETE /api/jobs/[id]] User authenticated:', sessionUser.userId, 'Role:', sessionUser.role);
+
     // Verify permissions - admin only
     if (sessionUser.role !== 'admin') {
+      console.error('[DELETE /api/jobs/[id]] Unauthorized - role is', sessionUser.role);
       return NextResponse.json(
         { error: 'Unauthorized. Admin role required.' },
         { status: 403 }
@@ -416,16 +422,20 @@ export async function DELETE(
     }
 
     const { id: positionId } = await params;
+    console.log('[DELETE /api/jobs/[id]] Position ID:', positionId);
 
     // Validate UUID format
     const uuidRegex =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(positionId)) {
+      console.error('[DELETE /api/jobs/[id]] Invalid UUID format:', positionId);
       return NextResponse.json(
         { error: 'Invalid position ID format' },
         { status: 400 }
       );
     }
+
+    console.log('[DELETE /api/jobs/[id]] UUID validation passed');
 
     // Fetch current position data
     const [currentPosition] = await db
@@ -441,13 +451,20 @@ export async function DELETE(
       );
     }
 
-    // Check if position already cancelled
+    // Check if position already cancelled - return success (idempotent)
     if (currentPosition.status === 'cancelled') {
+      console.log(`[DELETE /api/jobs/${positionId}] Position is already cancelled - returning success (idempotent)`);
       return NextResponse.json(
-        { error: 'Position is already cancelled' },
-        { status: 400 }
+        {
+          success: true,
+          message: 'Position is already cancelled',
+          data: currentPosition,
+        },
+        { status: 200 }
       );
     }
+
+    console.log(`[DELETE /api/jobs/${positionId}] Current position status:`, currentPosition.status);
 
     // Check for active applications (not rejected or withdrawn)
     const activeStatuses: ApplicationStatus[] = [
@@ -461,6 +478,7 @@ export async function DELETE(
       APPLICATION_STATUS.HIRED,
     ];
 
+    // Query for active applications - handling null status by excluding it
     const [activeApplicationsCount] = await db
       .select({
         count: sql<number>`cast(count(*) as integer)`,
@@ -469,14 +487,20 @@ export async function DELETE(
       .where(
         and(
           eq(jobApplications.positionId, positionId),
+          sql`${jobApplications.status} IS NOT NULL`,
           inArray(jobApplications.status, activeStatuses)
         )
       );
 
-    if (activeApplicationsCount && activeApplicationsCount.count > 0) {
+    const activeCount = activeApplicationsCount?.count || 0;
+    console.log(`[DELETE /api/jobs/${positionId}] Active applications count:`, activeCount);
+
+    if (activeCount > 0) {
+      const errorMsg = `Cannot delete position with ${activeCount} active application(s). Please reject or process all applications first.`;
+      console.error(`[DELETE /api/jobs/${positionId}] ${errorMsg}`);
       return NextResponse.json(
         {
-          error: `Cannot delete position with ${activeApplicationsCount.count} active application(s). Please reject or process all applications first.`,
+          error: errorMsg,
         },
         { status: 400 }
       );
