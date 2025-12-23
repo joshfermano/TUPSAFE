@@ -14,7 +14,7 @@ import React, { useMemo, useState, useEffect, useCallback, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../../providers/AuthProvider';
-import { useSALNSubmission, useUpdateSALN, useSubmitSALN } from '../../../../../hooks/useSaln';
+import { useSALNSubmission, useUpdateSALN, useSubmitSALN } from '../../../../../hooks/useSALN';
 import { toast } from 'sonner';
 import { EmployeeOnlyGuard } from '../../../../../components/guards/EmployeeOnlyGuard';
 import {
