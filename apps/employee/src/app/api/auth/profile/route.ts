@@ -60,6 +60,7 @@ export async function GET(_request: NextRequest) {
         positionId: profile.positionId,
         accountStatus: profile.accountStatus,
         isActive: profile.isActive,
+        temporaryPassword: profile.temporaryPassword,
         createdAt: profile.createdAt,
         updatedAt: profile.updatedAt,
       },

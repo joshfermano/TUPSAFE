@@ -4,6 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type {
   UserListResponse,
   UpdateUserData,
+  CreateUserRequest,
+  CreateUserResponse,
 } from '@tupsafe/types';
 
 /**
@@ -35,22 +37,9 @@ export interface UsersFilters {
 
 /**
  * Create user data for POST /api/auth/create-user
+ * Re-exported from @tupsafe/types for convenience
  */
-export interface CreateUserData {
-  email: string;
-  firstName: string;
-  lastName: string;
-  middleName?: string;
-  phoneNumber?: string;
-  role: 'employee' | 'hr' | 'admin' | 'supervisor' | 'auditor';
-  departmentId?: string;
-  positionId?: string;
-  academicRank?: string;
-  tenureStatus?: string;
-  employmentType?: string;
-  campusAssignment?: string;
-  sendCredentials?: boolean;
-}
+export type { CreateUserRequest as CreateUserData } from '@tupsafe/types';
 
 /**
  * Password reset data for POST /api/users/[id]/reset-password
@@ -163,7 +152,7 @@ export function useUsersQuery(filters: UsersFilters = {}) {
    * Mutation to create a new user via POST /api/auth/create-user
    */
   const createUserMutation = useMutation({
-    mutationFn: async (userData: CreateUserData) => {
+    mutationFn: async (userData: CreateUserRequest): Promise<CreateUserResponse['data']> => {
       const response = await fetch('/api/auth/create-user', {
         method: 'POST',
         headers: {
@@ -179,7 +168,7 @@ export function useUsersQuery(filters: UsersFilters = {}) {
         );
       }
 
-      const result = await response.json();
+      const result: CreateUserResponse = await response.json();
       return result.data;
     },
     onSuccess: () => {

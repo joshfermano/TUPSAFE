@@ -440,14 +440,14 @@ export const positionQuerySchema = z.object({
    * Page number for pagination (1-indexed)
    * @default 1
    */
-  page: z.coerce.number().int().min(1).default(1).optional(),
+  page: z.coerce.number().int().min(1).optional().default(1),
 
   /**
    * Number of results per page
    * @default 20
    * @max 100
    */
-  limit: z.coerce.number().int().min(1).max(100).default(20).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional().default(20),
 
   /**
    * Filter positions by department UUID
@@ -458,7 +458,7 @@ export const positionQuerySchema = z.object({
    * Whether to include inactive positions in results
    * @default false
    */
-  includeInactive: z.coerce.boolean().default(false).optional(),
+  includeInactive: z.coerce.boolean().optional().default(false),
 
   /**
    * Search term to filter by position title
@@ -472,14 +472,14 @@ export const positionQuerySchema = z.object({
    */
   sortBy: z
     .enum(['title', 'gradeLevel', 'createdAt'])
-    .default('title')
-    .optional(),
+    .optional()
+    .default('title'),
 
   /**
    * Sort direction
    * @default 'asc'
    */
-  sortOrder: z.enum(['asc', 'desc']).default('asc').optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional().default('asc'),
 });
 
 /**

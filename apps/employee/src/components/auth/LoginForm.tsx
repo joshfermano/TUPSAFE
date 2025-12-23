@@ -366,11 +366,18 @@ export function LoginForm({
       </div>
 
       <div className="space-y-1.5">
-        <Label
-          htmlFor="password"
-          className="text-xs font-medium text-slate-600 dark:text-slate-400">
-          Password
-        </Label>
+        <div className="flex items-center justify-between">
+          <Label
+            htmlFor="password"
+            className="text-xs font-medium text-slate-600 dark:text-slate-400">
+            Password
+          </Label>
+          <a
+            href="/auth/forgot-password"
+            className="text-xs text-[#8B1538] dark:text-red-400 hover:text-[#6B0F2A] dark:hover:text-red-300 font-medium transition-colors">
+            Forgot password?
+          </a>
+        </div>
         <div className="relative">
           <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
           <Input

@@ -41,6 +41,7 @@ export * from './mutations';
 export * from './utils/storage';
 export * from './utils/audit-log';
 export * from './utils/admin-employee-id';
+export * from './utils/employee-id-dob';
 
 // ============================================================================
 // TYPES (Re-exported for convenience)

@@ -8,6 +8,7 @@ import { Button } from '../../components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '../../components/ui/sheet';
 import { cn } from '../../lib/utils';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import {
   LayoutDashboard,
   FileText,
@@ -19,6 +20,8 @@ import {
   Briefcase,
   Building2,
   ChevronDown,
+  AlertTriangle,
+  X,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -487,6 +490,44 @@ const DashboardSidebar = memo(function DashboardSidebar({
   );
 });
 
+/**
+ * Temporary Password Reminder Banner
+ * Shows when profile.temporaryPassword is true (admin-created accounts)
+ */
+const TemporaryPasswordBanner = memo(function TemporaryPasswordBanner({
+  onDismiss,
+}: {
+  onDismiss: () => void;
+}) {
+  return (
+    <div className="bg-amber-50 dark:bg-amber-950/30 border-l-4 border-amber-400 dark:border-amber-600 px-4 py-3 mb-6">
+      <div className="flex items-start gap-3">
+        <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+            Your account is using a temporary password
+          </p>
+          <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+            For your security, please{' '}
+            <Link
+              href="/dashboard/settings"
+              className="font-semibold underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-100 transition-colors">
+              change your password
+            </Link>{' '}
+            as soon as possible.
+          </p>
+        </div>
+        <button
+          onClick={onDismiss}
+          className="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 transition-colors p-1 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/30"
+          aria-label="Dismiss reminder">
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+});
+
 export default function DashboardLayout({
   children,
 }: {
@@ -495,6 +536,7 @@ export default function DashboardLayout({
   const router = useRouter();
   const { user, profile, loading } = useAuth();
   const [mounted, setMounted] = useState(false);
+  const [showPasswordBanner, setShowPasswordBanner] = useState(true);
 
   useEffect(() => {
     setMounted(true);
@@ -592,6 +634,12 @@ export default function DashboardLayout({
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
         <div className="container mx-auto px-4 py-6 lg:px-8 lg:py-8">
+          {/* Temporary Password Reminder Banner */}
+          {profile?.temporaryPassword && showPasswordBanner && (
+            <TemporaryPasswordBanner
+              onDismiss={() => setShowPasswordBanner(false)}
+            />
+          )}
           {children}
         </div>
       </main>

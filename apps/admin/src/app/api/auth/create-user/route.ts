@@ -1,50 +1,39 @@
 /**
  * Create User API Route (Admin)
- * Allows HR/Admin to manually create employee accounts
+ *
+ * Allows HR/Admin to manually create employee accounts with:
+ * - Auto-generated DOB-based employee ID (TUPM-MMDD-YY-###)
+ * - Server-generated temporary password
+ * - Email notification with credentials
+ * - RBAC enforcement (only admins can create admin accounts)
+ *
+ * @module api/auth/create-user
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
 import {
   db,
   profiles,
   notifications,
   createAuditLog,
-  employeeIdRegistry,
+  generateAndRegisterEmployeeIdFromDOB,
 } from '@tupsafe/database/server';
-import { eq } from 'drizzle-orm';
 import {
   checkUserRoleFromSupabase,
   getSessionUser,
-  generateAndRegisterEmployeeId,
   generatePassword,
-  sendEmail,
+  sendCredentialsEmail,
   createServerClient,
 } from '@tupsafe/auth/server';
-
-// User creation validation schema
-const createUserSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
-  middleName: z.string().optional(),
-  phoneNumber: z.string().optional(),
-  role: z.enum(['employee', 'hr', 'admin', 'supervisor', 'auditor']),
-  departmentId: z.string().uuid().optional(),
-  positionId: z.string().uuid().optional(),
-  academicRank: z.string().optional(),
-  tenureStatus: z.string().optional(),
-  employmentType: z.string().optional(),
-  campusAssignment: z.string().optional(),
-  sendCredentials: z.boolean().default(true),
-});
-
-type CreateUserData = z.infer<typeof createUserSchema>;
+import { createUserSchema, type CreateUserResponse } from '@tupsafe/types';
 
 export async function POST(request: NextRequest) {
   try {
     // Check if user has HR or admin role
-    const hasPermission = await checkUserRoleFromSupabase(['hr', 'admin'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(
+      ['hr', 'admin'],
+      'admin'
+    );
 
     if (!hasPermission) {
       return NextResponse.json(
@@ -53,7 +42,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get current admin user
+    // Get current admin user and their role
     const adminUser = await getSessionUser();
 
     if (!adminUser) {
@@ -77,50 +66,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const data: CreateUserData = validationResult.data;
+    const data = validationResult.data;
+
+    // RBAC: Only admins can create admin accounts
+    if (data.role === 'admin') {
+      const creatorProfile = await db.query.profiles.findFirst({
+        where: (profiles, { eq }) => eq(profiles.id, adminUser.userId),
+        columns: { role: true },
+      });
+
+      if (creatorProfile?.role !== 'admin') {
+        return NextResponse.json(
+          {
+            error:
+              'Unauthorized. Only administrators can create admin accounts.',
+          },
+          { status: 403 }
+        );
+      }
+    }
 
     // Initialize Supabase client
     const supabase = await createServerClient('admin');
 
-    // Check if email already exists
-    const { data: existingUser, error: checkError } =
-      await supabase.auth.admin.listUsers();
-
-    if (checkError) {
-      console.error('Error checking existing users:', checkError);
-      return NextResponse.json(
-        { error: 'Failed to verify email availability' },
-        { status: 500 }
-      );
-    }
-
-    const emailExists = existingUser.users.some(
-      (user: { email?: string }) => user.email === data.email
-    );
-
-    if (emailExists) {
-      return NextResponse.json(
-        { error: 'Email address is already registered' },
-        { status: 409 }
-      );
-    }
-
-    // Generate temporary password
+    // Generate temporary password server-side (single source of truth)
     const temporaryPassword = generatePassword();
 
-    // Generate unique employee ID
-    let employeeId: string;
-    try {
-      employeeId = await generateAndRegisterEmployeeId('temp-id');
-    } catch (error) {
-      console.error('Error generating employee ID:', error);
-      return NextResponse.json(
-        { error: 'Failed to generate employee ID. Please try again.' },
-        { status: 500 }
-      );
-    }
-
-    // Create Supabase user
+    // Create Supabase Auth user first (this validates email uniqueness)
     const { data: newUser, error: createError } =
       await supabase.auth.admin.createUser({
         email: data.email,
@@ -133,28 +105,51 @@ export async function POST(request: NextRequest) {
         },
       });
 
-    if (createError || !newUser.user) {
-      console.error('Error creating user:', createError);
+    if (createError) {
+      console.error('Error creating Supabase user:', createError);
+
+      // Handle email already exists error
+      if (
+        createError.message.includes('already registered') ||
+        createError.message.includes('already been registered')
+      ) {
+        return NextResponse.json(
+          { error: 'Email address is already registered' },
+          { status: 409 }
+        );
+      }
+
       return NextResponse.json(
-        { error: 'Failed to create user account' },
+        {
+          error: 'Failed to create user account',
+          details: createError.message,
+        },
+        { status: 500 }
+      );
+    }
+
+    if (!newUser.user) {
+      return NextResponse.json(
+        { error: 'Failed to create user account - no user returned' },
         { status: 500 }
       );
     }
 
     const userId = newUser.user.id;
 
-    // Update employee ID registry with actual user ID
+    // Generate and register DOB-based employee ID
+    let employeeId: string;
     try {
-      await db
-        .update(employeeIdRegistry)
-        .set({ userId })
-        .where(eq(employeeIdRegistry.employeeId, employeeId));
+      employeeId = await generateAndRegisterEmployeeIdFromDOB(
+        userId,
+        data.dateOfBirth
+      );
     } catch (error) {
-      console.error('Error updating employee ID registry:', error);
-      // Clean up: delete created user
+      console.error('Error generating employee ID:', error);
+      // Clean up: delete created Supabase user
       await supabase.auth.admin.deleteUser(userId);
       return NextResponse.json(
-        { error: 'Failed to complete user creation. Please try again.' },
+        { error: 'Failed to generate employee ID. Please try again.' },
         { status: 500 }
       );
     }
@@ -166,6 +161,9 @@ export async function POST(request: NextRequest) {
       await db.insert(profiles).values({
         id: userId,
         employeeId,
+        userType: 'employee',
+        employmentCategory: data.employmentCategory,
+        dateOfBirth: data.dateOfBirth,
         firstName: data.firstName,
         lastName: data.lastName,
         middleName: data.middleName || null,
@@ -186,7 +184,7 @@ export async function POST(request: NextRequest) {
       });
     } catch (error) {
       console.error('Error creating profile:', error);
-      // Clean up: delete created user
+      // Clean up: delete created Supabase user
       await supabase.auth.admin.deleteUser(userId);
       return NextResponse.json(
         { error: 'Failed to create user profile. Please try again.' },
@@ -195,28 +193,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Send credentials email if requested
+    let emailSent = false;
     if (data.sendCredentials) {
       try {
-        await sendEmail(
+        const emailResult = await sendCredentialsEmail(
           data.email,
-          'Your TUPSAFE Account Credentials',
-          `
-            <h2>Welcome to TUPSAFE!</h2>
-            <p>Dear ${data.firstName} ${data.lastName},</p>
-            <p>An account has been created for you on TUPSAFE.</p>
-            <p><strong>Your Login Credentials:</strong></p>
-            <ul>
-              <li><strong>Employee ID:</strong> ${employeeId}</li>
-              <li><strong>Email:</strong> ${data.email}</li>
-              <li><strong>Temporary Password:</strong> ${temporaryPassword}</li>
-            </ul>
-            <p><strong>Important:</strong> You will be required to change your password upon first login.</p>
-            <p>Please keep your credentials secure and do not share them with anyone.</p>
-            <br>
-            <p>Best regards,</p>
-            <p>TUPSAFE Team</p>
-          `
+          employeeId,
+          temporaryPassword,
+          data.firstName
         );
+        emailSent = emailResult.success;
+
+        if (!emailSent) {
+          console.warn(
+            'Credentials email not sent:',
+            emailResult.error || 'Unknown error'
+          );
+        }
       } catch (error) {
         console.error('Error sending credentials email:', error);
         // Non-critical, continue
@@ -229,7 +222,9 @@ export async function POST(request: NextRequest) {
         userId,
         type: 'system_update',
         title: 'Welcome to TUPSAFE',
-        message: `Your account has been created. Please check your email for login credentials.`,
+        message: data.sendCredentials
+          ? 'Your account has been created. Please check your email for login credentials.'
+          : 'Your account has been created. Please contact your administrator for login credentials.',
         isRead: false,
         createdAt: now,
       });
@@ -251,6 +246,7 @@ export async function POST(request: NextRequest) {
             employeeId,
             email: data.email,
             role: data.role,
+            employmentCategory: data.employmentCategory,
             createdBy: adminUser.userId,
           },
         },
@@ -265,20 +261,23 @@ export async function POST(request: NextRequest) {
       // Non-critical, continue
     }
 
-    return NextResponse.json(
-      {
-        success: true,
-        message: 'User created successfully',
-        data: {
-          userId,
-          employeeId,
-          email: data.email,
-          temporaryPassword: data.sendCredentials ? temporaryPassword : undefined,
-          role: data.role,
-        },
+    const response: CreateUserResponse = {
+      success: true,
+      message: emailSent
+        ? 'User created successfully. Credentials have been sent to their email.'
+        : 'User created successfully. Credentials email could not be sent.',
+      data: {
+        userId,
+        employeeId,
+        email: data.email,
+        role: data.role,
+        // Always return temporaryPassword to the admin UI so they can copy it
+        temporaryPassword,
+        emailSent,
       },
-      { status: 201 }
-    );
+    };
+
+    return NextResponse.json(response, { status: 201 });
   } catch (error) {
     console.error('Error creating user:', error);
     return NextResponse.json(
