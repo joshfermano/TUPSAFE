@@ -13,7 +13,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkUserRoleFromSupabase, getSessionUser } from '@tupsafe/auth/server';
+import { getUserFromSupabase } from '@tupsafe/auth/server';
 import {
   db,
   openPositions,
@@ -41,9 +41,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Get current user from Supabase session (portal-specific)
+    const sessionUser = await getUserFromSupabase('admin');
+    if (!sessionUser) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
     // Verify permissions
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr', 'supervisor'], 'admin');
-    if (!hasPermission) {
+    const allowedRoles = ['admin', 'hr', 'supervisor'];
+    if (!allowedRoles.includes(sessionUser.role)) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin, HR, or Supervisor role required.' },
         { status: 403 }
@@ -253,14 +259,15 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Verify permissions
-    const sessionUser = await getSessionUser();
+    // Get current user from Supabase session (portal-specific)
+    const sessionUser = await getUserFromSupabase('admin');
     if (!sessionUser) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
-    if (!hasPermission) {
+    // Verify permissions
+    const allowedRoles = ['admin', 'hr'];
+    if (!allowedRoles.includes(sessionUser.role)) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin or HR role required.' },
         { status: 403 }
@@ -394,14 +401,14 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Verify permissions - admin only
-    const sessionUser = await getSessionUser();
+    // Get current user from Supabase session (portal-specific)
+    const sessionUser = await getUserFromSupabase('admin');
     if (!sessionUser) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const hasPermission = await checkUserRoleFromSupabase(['admin'], 'admin');
-    if (!hasPermission) {
+    // Verify permissions - admin only
+    if (sessionUser.role !== 'admin') {
       return NextResponse.json(
         { error: 'Unauthorized. Admin role required.' },
         { status: 403 }

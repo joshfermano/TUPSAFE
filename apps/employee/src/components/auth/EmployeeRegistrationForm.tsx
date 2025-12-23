@@ -48,6 +48,7 @@ interface EmployeeRegistrationFormProps {
   registrationUserId: string | null;
   registrationEmail: string | null;
   onUserCreated: (userId: string, email: string) => void;
+  onVerificationComplete?: () => void;
 }
 
 export function EmployeeRegistrationForm({
@@ -61,6 +62,7 @@ export function EmployeeRegistrationForm({
   registrationUserId,
   registrationEmail,
   onUserCreated,
+  onVerificationComplete,
 }: EmployeeRegistrationFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -158,9 +160,9 @@ export function EmployeeRegistrationForm({
           // Enhanced error handling with actionable messages
           let errorMessage = result.error || 'Failed to initiate registration';
 
-          // Check if error is due to existing email
-          if (response.status === 409 || errorMessage.toLowerCase().includes('already')) {
-            errorMessage = 'This email is already registered. Please sign in to your existing account instead.';
+          // Check if error is due to existing email (409 is now only for truly registered accounts)
+          if (response.status === 409) {
+            errorMessage = 'This email is already registered with an active account. Please sign in instead.';
           }
 
           // If there are field-specific errors in details
@@ -171,7 +173,14 @@ export function EmployeeRegistrationForm({
           throw new Error(errorMessage);
         }
 
+        // Handle both new and resumed registrations
         onUserCreated(result.data.userId, result.data.email);
+        
+        // Show a toast or log if this is a resumed registration
+        if (result.data.isResume) {
+          console.log('Resuming existing registration for:', result.data.email);
+        }
+        
         onNextStep();
       } catch (error) {
         console.error('Registration initiation error:', error);
@@ -193,6 +202,31 @@ export function EmployeeRegistrationForm({
     if (isValid && currentStep < totalSteps) {
       onNextStep();
     }
+  };
+
+  // Handle final submission (step 4 - Terms)
+  const handleFinalSubmit = async () => {
+    // Validate step 4 fields
+    const isValid = await form.trigger([
+      'termsAccepted',
+      'privacyAccepted',
+      'dataProcessingConsent',
+    ]);
+    
+    if (!isValid) {
+      console.log('[EmployeeRegistrationForm] Step 4 validation failed:', form.formState.errors);
+      return;
+    }
+
+    // All step validations passed - call onSubmit with form values
+    const formData = form.getValues();
+    console.log('[EmployeeRegistrationForm] Submitting form data:', {
+      ...formData,
+      password: '[REDACTED]',
+      confirmPassword: '[REDACTED]',
+    });
+    
+    await onSubmit(formData as EmployeeRegistrationFormData);
   };
 
   // Input styling matching login page
@@ -424,7 +458,10 @@ export function EmployeeRegistrationForm({
           <EmailVerificationStep
             email={registrationEmail}
             userId={registrationUserId}
-            onVerified={onNextStep}
+            onVerified={() => {
+              onVerificationComplete?.();
+              onNextStep();
+            }}
             onBack={onPrevStep}
           />
         )}
@@ -485,16 +522,19 @@ export function EmployeeRegistrationForm({
                         className="data-[state=checked]:bg-[#8B1538] data-[state=checked]:border-[#8B1538] border-[#E5E5E5] dark:border-[#2A2A2A] rounded-md mt-0.5"
                       />
                     </FormControl>
-                    <FormLabel className="text-sm text-slate-700 dark:text-slate-300 cursor-pointer leading-relaxed">
-                      I accept the{' '}
-                      <a
-                        href="/terms"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[#8B1538] dark:text-[#8B1538]/90 hover:underline focus:underline focus:outline-none hover:text-[#8B1538]/80 dark:hover:text-[#8B1538]/70">
-                        Terms and Conditions
-                      </a>
-                    </FormLabel>
+                    <div className="space-y-1 flex-1">
+                      <FormLabel className="text-sm text-slate-700 dark:text-slate-300 cursor-pointer leading-relaxed">
+                        I accept the{' '}
+                        <a
+                          href="/terms"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[#8B1538] dark:text-[#8B1538]/90 hover:underline focus:underline focus:outline-none hover:text-[#8B1538]/80 dark:hover:text-[#8B1538]/70">
+                          Terms and Conditions
+                        </a>
+                      </FormLabel>
+                      <FormMessage className="text-xs" />
+                    </div>
                   </FormItem>
                 )}
               />
@@ -511,16 +551,19 @@ export function EmployeeRegistrationForm({
                         className="data-[state=checked]:bg-[#8B1538] data-[state=checked]:border-[#8B1538] border-[#E5E5E5] dark:border-[#2A2A2A] rounded-md mt-0.5"
                       />
                     </FormControl>
-                    <FormLabel className="text-sm text-slate-700 dark:text-slate-300 cursor-pointer leading-relaxed">
-                      I accept the{' '}
-                      <a
-                        href="/privacy"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[#8B1538] dark:text-[#8B1538]/90 hover:underline focus:underline focus:outline-none hover:text-[#8B1538]/80 dark:hover:text-[#8B1538]/70">
-                        Privacy Policy
-                      </a>
-                    </FormLabel>
+                    <div className="space-y-1 flex-1">
+                      <FormLabel className="text-sm text-slate-700 dark:text-slate-300 cursor-pointer leading-relaxed">
+                        I accept the{' '}
+                        <a
+                          href="/privacy"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[#8B1538] dark:text-[#8B1538]/90 hover:underline focus:underline focus:outline-none hover:text-[#8B1538]/80 dark:hover:text-[#8B1538]/70">
+                          Privacy Policy
+                        </a>
+                      </FormLabel>
+                      <FormMessage className="text-xs" />
+                    </div>
                   </FormItem>
                 )}
               />
@@ -537,10 +580,13 @@ export function EmployeeRegistrationForm({
                         className="data-[state=checked]:bg-[#8B1538] data-[state=checked]:border-[#8B1538] border-[#E5E5E5] dark:border-[#2A2A2A] rounded-md mt-0.5"
                       />
                     </FormControl>
-                    <FormLabel className="text-sm text-slate-700 dark:text-slate-300 cursor-pointer leading-relaxed">
-                      I consent to the processing of my personal data for
-                      university compliance purposes
-                    </FormLabel>
+                    <div className="space-y-1 flex-1">
+                      <FormLabel className="text-sm text-slate-700 dark:text-slate-300 cursor-pointer leading-relaxed">
+                        I consent to the processing of my personal data for
+                        university compliance purposes
+                      </FormLabel>
+                      <FormMessage className="text-xs" />
+                    </div>
                   </FormItem>
                 )}
               />
@@ -589,7 +635,8 @@ export function EmployeeRegistrationForm({
               </Button>
             ) : (
               <Button
-                type="submit"
+                type="button"
+                onClick={handleFinalSubmit}
                 disabled={isLoading}
                 className="flex-1 h-11 bg-gradient-to-r from-[#8B1538] to-[#B8264D] hover:from-[#6B1028] hover:to-[#9A1E3D] text-white font-medium rounded-lg shadow-lg shadow-[#8B1538]/25 hover:shadow-[#8B1538]/40 transition-all duration-200 disabled:opacity-40">
                 {isLoading ? (

@@ -11,7 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   destroySession,
-  getSessionUser,
+  getUserFromSupabase,
   createServerClient,
 } from '@tupsafe/auth/server';
 import { createAuditLog } from '@tupsafe/database/server';
@@ -19,7 +19,7 @@ import { createAuditLog } from '@tupsafe/database/server';
 export async function POST(request: NextRequest) {
   try {
     // Get current session user for audit logging
-    const sessionUser = await getSessionUser();
+    const sessionUser = await getUserFromSupabase('admin');
 
     if (sessionUser) {
       // Log audit event for admin logout

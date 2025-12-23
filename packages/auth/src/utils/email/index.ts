@@ -71,6 +71,16 @@ export async function sendEmail(
 }
 
 /**
+ * Check if we're in development mode and should use mock emails
+ */
+function shouldUseMockEmails(): boolean {
+  return (
+    process.env.NODE_ENV === 'development' &&
+    process.env.USE_MOCK_EMAILS === 'true'
+  );
+}
+
+/**
  * Send OTP email via Supabase Edge Function
  * @param to - Recipient email address
  * @param code - 6-digit OTP code
@@ -82,6 +92,21 @@ export async function sendOTPEmail(
   type: 'email_verification' | 'login_challenge' | 'password_reset'
 ): Promise<EmailResult> {
   try {
+    // Development mode: Mock email sending
+    if (shouldUseMockEmails()) {
+      console.log('\n========================================');
+      console.log('📧 MOCK EMAIL (Development Mode)');
+      console.log('========================================');
+      console.log(`To: ${to}`);
+      console.log(`Type: ${type}`);
+      console.log(`OTP Code: ${code}`);
+      console.log('========================================\n');
+      return {
+        success: true,
+        messageId: 'mock-' + Date.now(),
+      };
+    }
+
     const edgeFunctionUrl = getEdgeFunctionUrl();
     const serviceKey = getServiceRoleKey();
 
@@ -132,6 +157,22 @@ export async function sendWelcomeEmail(
   firstName: string
 ): Promise<EmailResult> {
   try {
+    // Development mode: Mock email sending
+    if (shouldUseMockEmails()) {
+      console.log('\n========================================');
+      console.log('📧 MOCK EMAIL (Development Mode)');
+      console.log('========================================');
+      console.log(`To: ${to}`);
+      console.log(`Type: Welcome Email`);
+      console.log(`First Name: ${firstName}`);
+      console.log(`Employee ID: ${employeeId}`);
+      console.log('========================================\n');
+      return {
+        success: true,
+        messageId: 'mock-' + Date.now(),
+      };
+    }
+
     const edgeFunctionUrl = getEdgeFunctionUrl();
     const serviceKey = getServiceRoleKey();
 
@@ -182,6 +223,22 @@ export async function sendRejectionEmail(
   reason?: string
 ): Promise<EmailResult> {
   try {
+    // Development mode: Mock email sending
+    if (shouldUseMockEmails()) {
+      console.log('\n========================================');
+      console.log('📧 MOCK EMAIL (Development Mode)');
+      console.log('========================================');
+      console.log(`To: ${to}`);
+      console.log(`Type: Rejection Email`);
+      console.log(`First Name: ${firstName}`);
+      console.log(`Reason: ${reason || 'Not specified'}`);
+      console.log('========================================\n');
+      return {
+        success: true,
+        messageId: 'mock-' + Date.now(),
+      };
+    }
+
     const edgeFunctionUrl = getEdgeFunctionUrl();
     const serviceKey = getServiceRoleKey();
 
@@ -234,6 +291,23 @@ export async function sendCredentialsEmail(
   firstName: string
 ): Promise<EmailResult> {
   try {
+    // Development mode: Mock email sending
+    if (shouldUseMockEmails()) {
+      console.log('\n========================================');
+      console.log('📧 MOCK EMAIL (Development Mode)');
+      console.log('========================================');
+      console.log(`To: ${to}`);
+      console.log(`Type: Credentials Email`);
+      console.log(`First Name: ${firstName}`);
+      console.log(`Employee ID: ${employeeId}`);
+      console.log(`Temporary Password: ${temporaryPassword}`);
+      console.log('========================================\n');
+      return {
+        success: true,
+        messageId: 'mock-' + Date.now(),
+      };
+    }
+
     const edgeFunctionUrl = getEdgeFunctionUrl();
     const serviceKey = getServiceRoleKey();
 

@@ -15,8 +15,7 @@ import {
 } from '@tupsafe/database/server';
 import { eq, sql } from 'drizzle-orm';
 import {
-  checkUserRoleFromSupabase,
-  getSessionUser,
+  getUserFromSupabase,
   sendEmail,
   createServerClient,
 } from '@tupsafe/auth/server';
@@ -29,23 +28,22 @@ const approvalSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    // Check if user has HR or admin role
-    const hasPermission = await checkUserRoleFromSupabase(['hr', 'admin'], 'admin');
-
-    if (!hasPermission) {
-      return NextResponse.json(
-        { error: 'Unauthorized. HR or Admin role required.' },
-        { status: 403 }
-      );
-    }
-
-    // Get current admin user
-    const adminUser = await getSessionUser();
+    // Get current admin user from Supabase session (portal-specific)
+    const adminUser = await getUserFromSupabase('admin');
 
     if (!adminUser) {
       return NextResponse.json(
         { error: 'Session expired. Please login again.' },
         { status: 401 }
+      );
+    }
+
+    // Verify user has HR or admin role
+    const allowedRoles = ['hr', 'admin'];
+    if (!allowedRoles.includes(adminUser.role)) {
+      return NextResponse.json(
+        { error: 'Unauthorized. HR or Admin role required.' },
+        { status: 403 }
       );
     }
 

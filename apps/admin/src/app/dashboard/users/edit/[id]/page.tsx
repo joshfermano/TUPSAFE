@@ -210,16 +210,16 @@ export default function EditUserPage() {
   useEffect(() => {
     if (user && emailData) {
       reset({
-        firstName: user.profile.firstName,
-        lastName: user.profile.lastName,
-        middleName: user.profile.middleName || '',
+        firstName: user.firstName,
+        lastName: user.lastName,
+        middleName: user.middleName || '',
         suffix: 'none', // Not stored in database, default to none
-        employeeId: user.profile.employeeId ?? '',
+        employeeId: user.employeeId ?? '',
         email: emailData.email || '',
-        role: user.profile.role,
-        departmentId: user.profile.departmentId || 'none',
-        positionId: user.profile.positionId || 'none',
-        isActive: user.profile.isActive,
+        role: user.role,
+        departmentId: user.departmentId || 'none',
+        positionId: user.positionId || 'none',
+        isActive: user.isActive,
       });
     }
   }, [user, emailData, reset]);
@@ -296,7 +296,7 @@ export default function EditUserPage() {
     );
   }
 
-  const fullName = `${user.profile.firstName} ${user.profile.middleName || ''} ${user.profile.lastName}`.trim();
+  const fullName = `${user.firstName} ${user.middleName || ''} ${user.lastName}`.trim();
 
   return (
     <PageTransition className="space-y-6">

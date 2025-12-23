@@ -21,7 +21,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkUserRoleFromSupabase, getSessionUser } from '@tupsafe/auth/server';
+import { getUserFromSupabase } from '@tupsafe/auth/server';
 import {
   db,
   profiles,
@@ -39,20 +39,19 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify admin/HR permissions
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
+    // Get current user from Supabase session (portal-specific)
+    const sessionUser = await getUserFromSupabase('admin');
+    if (!sessionUser) {
+      return NextResponse.json({ error: 'Session expired' }, { status: 401 });
+    }
 
-    if (!hasPermission) {
+    // Verify admin/HR permissions
+    const allowedRoles = ['admin', 'hr'];
+    if (!allowedRoles.includes(sessionUser.role)) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin or HR role required.' },
         { status: 403 }
       );
-    }
-
-    // Get current user for audit logging
-    const sessionUser = await getSessionUser();
-    if (!sessionUser) {
-      return NextResponse.json({ error: 'Session expired' }, { status: 401 });
     }
 
     // Parse and validate query parameters

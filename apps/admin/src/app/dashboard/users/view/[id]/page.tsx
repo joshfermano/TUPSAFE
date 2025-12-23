@@ -237,7 +237,7 @@ export default function UserViewPage() {
       onSuccess: () => {
         toast.success(
           `User ${
-            user.profile.isActive ? 'deactivated' : 'activated'
+            user.isActive ? 'deactivated' : 'activated'
           } successfully`
         );
         setShowDeactivateDialog(false);
@@ -303,9 +303,9 @@ export default function UserViewPage() {
     );
   }
 
-  const fullName = `${user.profile.firstName} ${
-    user.profile.middleName || ''
-  } ${user.profile.lastName}`.trim();
+  const fullName = `${user.firstName} ${
+    user.middleName || ''
+  } ${user.lastName}`.trim();
 
   return (
     <PageTransition className="space-y-6">
@@ -343,12 +343,12 @@ export default function UserViewPage() {
             <div className="flex items-center gap-2">
               <h1 className="text-3xl font-bold tracking-tight">{fullName}</h1>
               <StatusBadge
-                status={user.profile.isActive ? 'active' : 'inactive'}
+                status={user.isActive ? 'active' : 'inactive'}
               />
             </div>
             <p className="text-muted-foreground">
-              {user.profile.employeeId} &bull;{' '}
-              {user.profile.role.replace('_', ' ')}
+              {user.employeeId} &bull;{' '}
+              {user.role.replace('_', ' ')}
             </p>
           </div>
         </div>
@@ -374,7 +374,7 @@ export default function UserViewPage() {
                 Reset Password
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowDeactivateDialog(true)}>
-                {user.profile.isActive ? (
+                {user.isActive ? (
                   <>
                     <UserX className="mr-2 h-4 w-4" />
                     Deactivate Account
@@ -411,8 +411,8 @@ export default function UserViewPage() {
             <div className="-mt-12">
               <UserAvatar
                 user={{
-                  firstName: user.profile.firstName,
-                  lastName: user.profile.lastName,
+                  firstName: user.firstName,
+                  lastName: user.lastName,
                   avatarUrl: null,
                 }}
                 size="lg"
@@ -426,7 +426,7 @@ export default function UserViewPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Email</p>
                   <p className="font-medium">
-                    {user.profile.employeeId}@tup.edu.ph
+                    {user.email || `${user.employeeId}@tup.edu.ph`}
                   </p>
                 </div>
                 <div>
@@ -444,19 +444,19 @@ export default function UserViewPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Role</p>
                   <Badge variant="outline" className="capitalize">
-                    {user.profile.role.replace('_', ' ')}
+                    {user.role.replace('_', ' ')}
                   </Badge>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Created</p>
                   <p className="font-medium">
-                    {format(user.profile.createdAt, 'MMM d, yyyy')}
+                    {format(user.createdAt, 'MMM d, yyyy')}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Last Updated</p>
                   <p className="font-medium">
-                    {format(user.profile.updatedAt, 'MMM d, yyyy')}
+                    {format(user.updatedAt, 'MMM d, yyyy')}
                   </p>
                 </div>
               </div>
@@ -553,26 +553,26 @@ export default function UserViewPage() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">First Name</p>
-                  <p className="font-medium">{user.profile.firstName}</p>
+                  <p className="font-medium">{user.firstName}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Last Name</p>
-                  <p className="font-medium">{user.profile.lastName}</p>
+                  <p className="font-medium">{user.lastName}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Middle Name</p>
                   <p className="font-medium">
-                    {user.profile.middleName || 'N/A'}
+                    {user.middleName || 'N/A'}
                   </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Employee ID</p>
-                  <p className="font-medium">{user.profile.employeeId}</p>
+                  <p className="font-medium">{user.employeeId}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Email</p>
                   <p className="font-medium">
-                    {user.profile.employeeId}@tup.edu.ph
+                    {user.email || `${user.employeeId}@tup.edu.ph`}
                   </p>
                 </div>
               </div>
@@ -589,7 +589,7 @@ export default function UserViewPage() {
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Role</p>
                   <Badge variant="outline" className="capitalize">
-                    {user.profile.role.replace('_', ' ')}
+                    {user.role.replace('_', ' ')}
                   </Badge>
                 </div>
                 <div className="space-y-1">
@@ -607,7 +607,7 @@ export default function UserViewPage() {
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Status</p>
                   <StatusBadge
-                    status={user.profile.isActive ? 'active' : 'inactive'}
+                    status={user.isActive ? 'active' : 'inactive'}
                   />
                 </div>
               </div>
@@ -624,13 +624,13 @@ export default function UserViewPage() {
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Created</p>
                   <p className="font-medium">
-                    {format(user.profile.createdAt, 'MMMM d, yyyy h:mm a')}
+                    {format(user.createdAt, 'MMMM d, yyyy h:mm a')}
                   </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Last Updated</p>
                   <p className="font-medium">
-                    {format(user.profile.updatedAt, 'MMMM d, yyyy h:mm a')}
+                    {format(user.updatedAt, 'MMMM d, yyyy h:mm a')}
                   </p>
                 </div>
               </div>
@@ -875,15 +875,15 @@ export default function UserViewPage() {
       <ConfirmationDialog
         open={showDeactivateDialog}
         onOpenChange={setShowDeactivateDialog}
-        title={user.profile.isActive ? 'Deactivate User' : 'Activate User'}
+        title={user.isActive ? 'Deactivate User' : 'Activate User'}
         description={
-          user.profile.isActive
+          user.isActive
             ? `Are you sure you want to deactivate ${fullName}? They will no longer be able to access the system.`
             : `Are you sure you want to activate ${fullName}? They will be able to access the system.`
         }
-        confirmText={user.profile.isActive ? 'DEACTIVATE' : 'ACTIVATE'}
+        confirmText={user.isActive ? 'DEACTIVATE' : 'ACTIVATE'}
         onConfirm={handleToggleStatus}
-        destructive={user.profile.isActive}
+        destructive={user.isActive}
       />
 
       <ConfirmationDialog
