@@ -89,12 +89,13 @@ const EMPLOYEE_STEPS = [
   { id: 4, title: 'Terms' },
 ];
 
+// Applicant steps: No position selection during registration
+// Applicants will browse and apply to positions after account creation
 const APPLICANT_STEPS = [
   { id: 0, title: 'User Type' },
   { id: 1, title: 'Personal Info' },
   { id: 2, title: 'Email Verify' },
-  { id: 3, title: 'Position' },
-  { id: 4, title: 'Terms' },
+  { id: 3, title: 'Terms' },
 ];
 
 type UserTypeSelection =
@@ -310,17 +311,52 @@ export default function RegisterPage() {
   };
 
   const onSubmitApplicant = async (data: ApplicantRegistrationFormData) => {
+    console.log('[onSubmitApplicant] Called with data:', {
+      ...data,
+      password: '[REDACTED]',
+      confirmPassword: '[REDACTED]',
+    });
+    
+    if (!registrationUserId) {
+      console.error('Registration user ID not found');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-      console.log('Applicant registration attempt:', {
-        ...data,
-        password: '[REDACTED]',
-        confirmPassword: '[REDACTED]',
+      // Call the registration complete API with userType='applicant'
+      // Applicants are auto-activated (no HR approval needed)
+      const response = await fetch('/api/auth/register/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: registrationUserId,
+          userType: 'applicant', // This signals applicant completion
+        }),
       });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to complete registration');
+      }
+
+      console.log('Applicant registration completed:', {
+        userId: registrationUserId,
+        applicantId: result.data.applicantId,
+      });
+
+      // Clear draft on successful completion
+      clearDraft();
       setIsSubmitted(true);
     } catch (error) {
       console.error('Registration failed:', error);
+      // Show error to user - they can try submitting again
+      alert(
+        error instanceof Error
+          ? error.message
+          : 'Registration failed. Please try again.'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -636,7 +672,7 @@ export default function RegisterPage() {
                       onPrevStep={prevStep}
                       onSubmit={onSubmitApplicant}
                       isLoading={isLoading}
-                      totalSteps={4}
+                      totalSteps={3}
                       registrationUserId={registrationUserId}
                       registrationEmail={registrationEmail}
                       onUserCreated={handleUserCreated}

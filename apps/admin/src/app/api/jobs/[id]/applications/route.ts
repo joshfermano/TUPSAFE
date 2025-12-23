@@ -155,6 +155,7 @@ export async function GET(
         applicationDate: jobApplications.applicationDate,
         reviewedAt: jobApplications.reviewedAt,
         interviewDate: jobApplications.interviewDate,
+        pdsSubmissionId: jobApplications.pdsSubmissionId,
 
         // Applicant fields
         applicantId: profiles.id,
@@ -235,6 +236,9 @@ export async function GET(
         : null,
       reviewedAt: item.reviewedAt,
       interviewDate: item.interviewDate,
+      // PDS indicator for quick scanning
+      hasPds: !!item.pdsSubmissionId,
+      pdsSubmissionId: item.pdsSubmissionId,
     }));
 
     // Build status count object

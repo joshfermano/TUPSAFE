@@ -60,7 +60,7 @@ interface UserInfoProps {
 
 interface DashboardSidebarProps {
   className?: string;
-  userType?: 'employee' | 'applicant';
+  userType?: 'employee' | 'applicant' | undefined;
 }
 
 // ============================================================================
@@ -262,8 +262,11 @@ NavItem.displayName = 'NavItem';
 
 const DashboardSidebar = memo(function DashboardSidebar({
   className,
-  userType = 'employee',
+  userType,
 }: DashboardSidebarProps) {
+  // CRITICAL: Default to 'applicant' (safer - more restricted) when userType is undefined
+  // This prevents showing SALN to users whose profile hasn't loaded yet
+  const effectiveUserType = userType ?? 'applicant';
   const pathname = usePathname();
   const router = useRouter();
   const { user, signOut } = useAuth();
@@ -272,7 +275,7 @@ const DashboardSidebar = memo(function DashboardSidebar({
 
   // Memoize navigation items array based on user type
   const navigationItems = useMemo<NavigationItem[]>(() => {
-    if (userType === 'applicant') {
+    if (effectiveUserType === 'applicant') {
       return [
         {
           name: 'Profile',
@@ -346,7 +349,7 @@ const DashboardSidebar = memo(function DashboardSidebar({
         icon: Settings,
       },
     ];
-  }, [userType]);
+  }, [effectiveUserType]);
 
   // Memoize sign out handler to prevent recreation on every render
   const handleSignOut = useCallback(async () => {
@@ -528,13 +531,34 @@ const TemporaryPasswordBanner = memo(function TemporaryPasswordBanner({
   );
 });
 
+// ============================================================================
+// APPLICANT ROUTE ALLOWLIST - Routes applicants can access
+// ============================================================================
+const APPLICANT_ALLOWED_ROUTES = [
+  '/dashboard/profile',
+  '/dashboard/pds',
+  '/dashboard/applications',
+  '/dashboard/positions',
+  '/dashboard/settings',
+] as const;
+
+/**
+ * Check if a pathname is allowed for applicants
+ */
+function isApplicantAllowedRoute(pathname: string): boolean {
+  return APPLICANT_ALLOWED_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(route + '/')
+  );
+}
+
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { user, profile, loading } = useAuth();
+  const pathname = usePathname();
+  const { user, profile, loading, profileLoading } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [showPasswordBanner, setShowPasswordBanner] = useState(true);
 
@@ -568,13 +592,44 @@ export default function DashboardLayout({
     }
   }, [mounted, loading, user, profile, router]);
 
+  // ============================================================================
+  // APPLICANT ROUTE PROTECTION - Block applicants from employee-only routes
+  // ============================================================================
+  useEffect(() => {
+    // Wait for profile to load
+    if (!mounted || loading || profileLoading || !profile || !pathname) {
+      return;
+    }
+
+    // Only enforce for applicants
+    if (profile.userType === 'applicant') {
+      // Check if current route is allowed
+      if (!isApplicantAllowedRoute(pathname)) {
+        console.log(
+          `[Dashboard Layout] 🚫 Applicant blocked from: ${pathname}, redirecting to /dashboard/profile`
+        );
+        router.replace('/dashboard/profile');
+      }
+
+      // Redirect /dashboard base route to /dashboard/profile for applicants
+      if (pathname === '/dashboard') {
+        console.log(
+          '[Dashboard Layout] Redirecting applicant from /dashboard to /dashboard/profile'
+        );
+        router.replace('/dashboard/profile');
+      }
+    }
+  }, [mounted, loading, profileLoading, profile, pathname, router]);
+
   // Determine user type from profile (now fetched from AuthProvider)
   // Profile includes userType field (employee | applicant)
   // This determines which navigation items are shown in the sidebar
-  const userType: 'employee' | 'applicant' = profile?.userType || 'employee';
+  // CRITICAL: Do NOT default to 'employee' - wait for profile to load
+  const userType: 'employee' | 'applicant' | undefined = profile?.userType;
 
-  // Show loading state while checking authentication
-  if (!mounted || loading) {
+  // Show loading state while checking authentication or profile
+  // CRITICAL: Wait for profile to load before rendering sidebar (to get correct userType)
+  if (!mounted || loading || profileLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-900">
         <div className="flex flex-col items-center gap-4">

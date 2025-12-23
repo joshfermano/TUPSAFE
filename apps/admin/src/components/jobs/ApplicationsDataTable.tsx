@@ -31,7 +31,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MoreVertical, Eye, Edit, FileText, Calendar, UserCheck } from 'lucide-react';
+import { MoreVertical, Eye, Edit, FileText, Calendar, UserCheck, CheckCircle2, XCircle } from 'lucide-react';
 import type { JobApplicationListItem } from '@tupsafe/types';
 import { formatDistanceToNow, format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -155,6 +155,28 @@ export function ApplicationsDataTable({
             <Badge variant="outline" className={cn('font-medium', config?.className)}>
               {config?.label || status}
             </Badge>
+          );
+        },
+      },
+      {
+        accessorKey: 'hasPds',
+        header: 'PDS',
+        cell: ({ row }) => {
+          const hasPds = row.original.hasPds;
+          return (
+            <div className="flex items-center justify-center">
+              {hasPds ? (
+                <div className="flex items-center gap-1.5" title="PDS submitted">
+                  <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  <span className="text-xs text-muted-foreground sr-only sm:not-sr-only">Yes</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5" title="No PDS">
+                  <XCircle className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                  <span className="text-xs text-muted-foreground sr-only sm:not-sr-only">No</span>
+                </div>
+              )}
+            </div>
           );
         },
       },

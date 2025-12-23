@@ -111,7 +111,7 @@ export const ProfileHero = memo(function ProfileHero({
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3, duration: 0.4 }}>
                   <Briefcase className="h-5 w-5" />
-                  {position?.title || 'Government Employee'}
+                  {position?.title || (profile.userType === 'applicant' ? 'Job Applicant' : 'Government Employee')}
                 </motion.p>
               </div>
             </BlurFade>
@@ -128,10 +128,12 @@ export const ProfileHero = memo(function ProfileHero({
                   <Badge
                     className={cn(
                       'px-3 py-1 font-semibold border-white/20 backdrop-blur-sm shadow-sm',
-                      getRoleBadgeColor(profile.role)
+                      profile.userType === 'applicant'
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400'
+                        : getRoleBadgeColor(profile.role)
                     )}>
                     <Shield className="h-3 w-3 mr-1" />
-                    {profile.role.toUpperCase()}
+                    {profile.userType === 'applicant' ? 'APPLICANT' : profile.role.toUpperCase()}
                   </Badge>
                 </motion.div>
                 <motion.div

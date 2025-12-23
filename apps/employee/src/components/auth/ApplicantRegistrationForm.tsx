@@ -16,16 +16,8 @@ import {
 } from 'lucide-react';
 
 import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';
 import { Checkbox } from '../ui/checkbox';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../ui/select';
 import {
   Form,
   FormControl,
@@ -36,7 +28,6 @@ import {
   FormDescription,
 } from '../ui/form';
 
-import { useOpenPositions, type OpenPosition } from '../../hooks';
 import { EmailVerificationStep } from './EmailVerificationStep';
 
 import {
@@ -82,7 +73,6 @@ export function ApplicantRegistrationForm({
       middleName: '',
       email: '',
       phoneNumber: '',
-      positionAppliedFor: '',
       password: '',
       confirmPassword: '',
       termsAccepted: false,
@@ -91,10 +81,6 @@ export function ApplicantRegistrationForm({
     },
     mode: 'onChange',
   });
-
-  // Fetch open positions for applicants
-  const { data: openPositions, isLoading: isLoadingOpenPositions } =
-    useOpenPositions();
 
   const validateCurrentStep = async () => {
     let fieldsToValidate: (keyof ApplicantRegistrationFormData)[] = [];
@@ -115,9 +101,7 @@ export function ApplicantRegistrationForm({
         // Email verification step - no form validation needed
         return true;
       case 3:
-        fieldsToValidate = ['positionAppliedFor'];
-        break;
-      case 4:
+        // Terms step
         fieldsToValidate = [
           'termsAccepted',
           'privacyAccepted',
@@ -201,9 +185,9 @@ export function ApplicantRegistrationForm({
     }
   };
 
-  // Handle final submission (step 4 - Terms)
+  // Handle final submission (step 3 - Terms)
   const handleFinalSubmit = async () => {
-    // Validate step 4 fields
+    // Validate step 3 fields
     const isValid = await form.trigger([
       'termsAccepted',
       'privacyAccepted',
@@ -211,7 +195,7 @@ export function ApplicantRegistrationForm({
     ]);
     
     if (!isValid) {
-      console.log('[ApplicantRegistrationForm] Step 4 validation failed:', form.formState.errors);
+      console.log('[ApplicantRegistrationForm] Step 3 validation failed:', form.formState.errors);
       return;
     }
 
@@ -438,77 +422,15 @@ export function ApplicantRegistrationForm({
           />
         )}
 
-        {/* Step 3: Position Selection */}
+        {/* Step 3: Terms and Privacy */}
         {currentStep === 3 && (
           <div className="space-y-6">
-            <FormField
-              control={form.control}
-              name="positionAppliedFor"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Position to Apply For *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-[#8B1538] focus:ring-[#8B1538] text-slate-900 dark:text-slate-100 transition-all duration-300 hover:bg-white hover:border-[#8B1538]/40 dark:hover:bg-slate-700/80 dark:hover:border-[#8B1538]/50">
-                        <SelectValue placeholder="Select position" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {isLoadingOpenPositions ? (
-                        <div className="p-2 text-sm text-slate-500">
-                          Loading open positions...
-                        </div>
-                      ) : openPositions &&
-                        openPositions.positions &&
-                        openPositions.positions.length > 0 ? (
-                        openPositions.positions.map((position) => (
-                          <SelectItem key={position.id} value={position.id}>
-                            <div className="flex flex-col py-1">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium">
-                                  {position.positionTitle}
-                                </span>
-                                {position.isFeatured && (
-                                  <Badge className="text-xs">Featured</Badge>
-                                )}
-                              </div>
-                              <span className="text-xs text-slate-500">
-                                {position.positionCode}
-                              </span>
-                              <div className="flex items-center gap-2 mt-1">
-                                {position.salaryGrade && (
-                                  <span className="text-xs text-slate-600">
-                                    {position.salaryGrade}
-                                  </span>
-                                )}
-                                <span className="text-xs text-slate-500">
-                                  {position.numberOfOpenings} opening
-                                  {position.numberOfOpenings > 1 ? 's' : ''}
-                                </span>
-                              </div>
-                            </div>
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <div className="p-2 text-sm text-slate-500">
-                          No open positions available at the moment
-                        </div>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Browse and select from available open positions
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        )}
-
-        {/* Step 4: Terms and Verification */}
-        {currentStep === 4 && (
-          <div className="space-y-6">
+            <div className="text-center space-y-2 mb-6">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Almost done! Please review and accept the terms below to complete your registration.
+              </p>
+            </div>
+            
             <div className="space-y-4">
               <FormField
                 control={form.control}
@@ -534,6 +456,7 @@ export function ApplicantRegistrationForm({
                         </a>{' '}
                         *
                       </FormLabel>
+                      <FormMessage className="text-xs" />
                     </div>
                   </FormItem>
                 )}
@@ -563,6 +486,7 @@ export function ApplicantRegistrationForm({
                         </a>{' '}
                         *
                       </FormLabel>
+                      <FormMessage className="text-xs" />
                     </div>
                   </FormItem>
                 )}
@@ -586,6 +510,7 @@ export function ApplicantRegistrationForm({
                         application purposes as required by the Data Privacy Act
                         of 2012 *
                       </FormLabel>
+                      <FormMessage className="text-xs" />
                     </div>
                   </FormItem>
                 )}
@@ -634,12 +559,12 @@ export function ApplicantRegistrationForm({
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Submitting...
+                    Creating Account...
                   </>
                 ) : (
                   <>
                     <Check className="h-4 w-4 mr-2" />
-                    Submit Application
+                    Complete Registration
                   </>
                 )}
               </Button>

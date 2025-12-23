@@ -62,7 +62,12 @@ export async function GET(request: NextRequest) {
     const conditions = [];
 
     // Status filter
-    if (validatedQuery.status !== 'all') {
+    // When 'all' is selected, exclude cancelled positions by default
+    // Cancelled positions should only appear when explicitly filtered
+    if (validatedQuery.status === 'all') {
+      // Exclude cancelled positions from "All Status" view
+      conditions.push(sql`${openPositions.status} != 'cancelled'`);
+    } else {
       conditions.push(eq(openPositions.status, validatedQuery.status));
     }
 

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import {
@@ -192,11 +191,11 @@ function EmptyState() {
  * Shows all job applications submitted by the applicant
  */
 export default function ApplicationsPage() {
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data, isLoading, error } = useApplicationsQuery(
-    statusFilter ? { status: statusFilter } : undefined
+    statusFilter && statusFilter !== 'all' ? { status: statusFilter } : undefined
   );
 
   // Filter applications by search query (client-side)
@@ -252,15 +251,17 @@ export default function ApplicationsPage() {
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Statuses</SelectItem>
+                  <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="under_review">Under Review</SelectItem>
                   <SelectItem value="shortlisted">Shortlisted</SelectItem>
                   <SelectItem value="for_interview">For Interview</SelectItem>
                   <SelectItem value="interviewed">Interviewed</SelectItem>
+                  <SelectItem value="for_final_review">For Final Review</SelectItem>
                   <SelectItem value="accepted">Accepted</SelectItem>
                   <SelectItem value="rejected">Rejected</SelectItem>
                   <SelectItem value="withdrawn">Withdrawn</SelectItem>
+                  <SelectItem value="hired">Hired</SelectItem>
                 </SelectContent>
               </Select>
             </div>

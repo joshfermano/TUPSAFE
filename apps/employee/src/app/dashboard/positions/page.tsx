@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 import {
   Briefcase,
   Building2,
@@ -183,7 +182,7 @@ function PositionCard({ position }: { position: OpenPosition }) {
                 borderRadius="0.5rem"
                 background="linear-gradient(to right, #8B1538, #B8264D)">
                 <Link
-                  href={`/dashboard/positions/${position.id}/apply`}
+                  href={`/dashboard/positions/${position.id}`}
                   className="flex items-center justify-center gap-2 w-full h-full">
                   Apply Now
                   <ChevronRight className="h-4 w-4" />
@@ -237,14 +236,14 @@ function EmptyState() {
  */
 export default function OpenPositionsPage() {
   const [employmentCategoryFilter, setEmploymentCategoryFilter] =
-    useState<string>('');
+    useState<string>('all');
   const [sortBy, setSortBy] = useState<'deadline' | 'salary' | 'posted'>(
     'deadline'
   );
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data, isLoading, error } = useOpenPositionsQuery({
-    employmentCategory: employmentCategoryFilter || undefined,
+    employmentCategory: employmentCategoryFilter !== 'all' ? employmentCategoryFilter : undefined,
     sort: sortBy,
   });
 
@@ -305,7 +304,7 @@ export default function OpenPositionsPage() {
                     <SelectValue placeholder="All Categories" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Categories</SelectItem>
+                    <SelectItem value="all">All Categories</SelectItem>
                     <SelectItem value="faculty">Faculty</SelectItem>
                     <SelectItem value="administrative">
                       Administrative

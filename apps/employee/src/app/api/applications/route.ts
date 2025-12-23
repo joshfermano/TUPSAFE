@@ -1,12 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@tupsafe/auth/server';
 import { db } from '@tupsafe/database/server';
-import { jobApplications, openPositions, departments } from '@tupsafe/database/server';
-import { eq, desc } from 'drizzle-orm';
+import { jobApplications, openPositions, departments, profiles } from '@tupsafe/database/server';
+import { eq, desc, and } from 'drizzle-orm';
+
+// Valid application statuses that can be filtered
+const VALID_STATUSES = [
+  'pending',
+  'under_review',
+  'shortlisted',
+  'for_interview',
+  'interviewed',
+  'for_final_review',
+  'accepted',
+  'rejected',
+  'withdrawn',
+  'hired',
+] as const;
+
+type ApplicationStatus = typeof VALID_STATUSES[number];
 
 /**
  * GET /api/applications
  * Fetch all applications for the current applicant
+ * 
+ * Query params:
+ * - status: Filter by application status (optional)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -22,26 +41,67 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verify user is an applicant
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('user_type, applicant_id')
-      .eq('id', user.id)
-      .single();
+    // Verify user is an applicant using Drizzle (source of truth)
+    // Avoids PostgREST/RLS edge cases that can return 0 rows even when profile exists
+    const [profile] = await db
+      .select({
+        userType: profiles.userType,
+        applicantId: profiles.applicantId,
+        accountStatus: profiles.accountStatus,
+      })
+      .from(profiles)
+      .where(eq(profiles.id, user.id))
+      .limit(1);
 
-    if (!profile || profile.user_type !== 'applicant') {
+    if (!profile) {
+      console.error('[Applications API] Profile not found for user:', user.id);
+      return NextResponse.json(
+        { error: 'User profile not found or invalid.' },
+        { status: 403 }
+      );
+    }
+
+    console.log('[Applications API] User profile:', {
+      userId: user.id,
+      userType: profile.userType,
+      applicantId: profile.applicantId,
+      accountStatus: profile.accountStatus,
+    });
+
+    if (profile.userType !== 'applicant') {
       return NextResponse.json(
         { error: 'Access denied. Applicants only.' },
         { status: 403 }
       );
     }
 
+    if (profile.accountStatus !== 'active') {
+      return NextResponse.json(
+        {
+          error: `Account status is ${profile.accountStatus}. ${
+            profile.accountStatus === 'pending'
+              ? 'Your account is pending approval.'
+              : 'Please contact support.'
+          }`,
+        },
+        { status: 403 }
+      );
+    }
+
     // Get filter params
     const searchParams = request.nextUrl.searchParams;
-    const _statusFilter = searchParams.get('status');
+    const statusFilter = searchParams.get('status') as ApplicationStatus | null;
+
+    // Build where conditions
+    const whereConditions = [eq(jobApplications.applicantId, user.id)];
+
+    // Add status filter if provided and valid
+    if (statusFilter && VALID_STATUSES.includes(statusFilter)) {
+      whereConditions.push(eq(jobApplications.status, statusFilter));
+    }
 
     // Fetch applications with position and department details
-    const applicationsQuery = db
+    const applications = await db
       .select({
         // Application fields
         id: jobApplications.id,
@@ -71,11 +131,8 @@ export async function GET(request: NextRequest) {
       .from(jobApplications)
       .leftJoin(openPositions, eq(jobApplications.positionId, openPositions.id))
       .leftJoin(departments, eq(openPositions.departmentId, departments.id))
-      .where(eq(jobApplications.applicantId, user.id))
+      .where(and(...whereConditions))
       .orderBy(desc(jobApplications.applicationDate));
-
-    // Execute query
-    const applications = await applicationsQuery;
 
     // Transform to cleaner structure
     const formattedApplications = applications.map((app) => ({
@@ -109,6 +166,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       applications: formattedApplications,
       total: formattedApplications.length,
+      filter: statusFilter || 'all',
     });
   } catch (error) {
     console.error('Error fetching applications:', error);

@@ -4,8 +4,8 @@
  *
  * Handles job application submissions including:
  * - Application validation (deadline, duplicate check)
+ * - PDS ownership validation (REQUIRED)
  * - Application number generation
- * - PDS linking
  * - Resume/document upload handling
  * - Status history tracking
  */
@@ -18,6 +18,7 @@ import {
   jobApplications,
   applicationStatusHistory,
   auditLogs,
+  pdsSubmissions,
 } from '@tupsafe/database/server';
 import { eq, and, sql } from 'drizzle-orm';
 
@@ -40,6 +41,8 @@ function generateApplicationNumber(): string {
 /**
  * POST /api/positions/[id]/apply
  * Submit a job application for a specific position
+ * 
+ * REQUIREMENT: pdsSubmissionId is mandatory
  */
 export async function POST(
   request: NextRequest,
@@ -110,7 +113,57 @@ export async function POST(
     const body = await request.json();
     const { coverLetter, resumeUrl, pdsSubmissionId, additionalDocuments } = body;
 
-    // Basic validation
+    // 4. VALIDATE: pdsSubmissionId is REQUIRED
+    if (!pdsSubmissionId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Validation Error',
+          message: 'A Personal Data Sheet (PDS) is required to apply. Please complete your PDS first.',
+          code: 'PDS_REQUIRED',
+        },
+        { status: 400 }
+      );
+    }
+
+    // 5. Validate PDS ownership
+    const pdsQuery = await db
+      .select({
+        id: pdsSubmissions.id,
+        userId: pdsSubmissions.userId,
+        status: pdsSubmissions.status,
+      })
+      .from(pdsSubmissions)
+      .where(eq(pdsSubmissions.id, pdsSubmissionId))
+      .limit(1);
+
+    if (pdsQuery.length === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Validation Error',
+          message: 'PDS submission not found.',
+          code: 'PDS_NOT_FOUND',
+        },
+        { status: 400 }
+      );
+    }
+
+    const pds = pdsQuery[0];
+
+    if (pds.userId !== user.id) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Forbidden',
+          message: 'You can only use your own PDS submission.',
+          code: 'PDS_OWNERSHIP_ERROR',
+        },
+        { status: 403 }
+      );
+    }
+
+    // 6. Basic validation for cover letter
     if (!coverLetter || coverLetter.trim().length < 50) {
       return NextResponse.json(
         {
@@ -122,7 +175,7 @@ export async function POST(
       );
     }
 
-    // 4. Verify position exists and is open
+    // 7. Verify position exists and is open
     const positionQuery = await db
       .select({
         id: openPositions.id,
@@ -172,7 +225,7 @@ export async function POST(
       );
     }
 
-    // 5. Check for duplicate application
+    // 8. Check for duplicate application
     const existingApplication = await db
       .select({ id: jobApplications.id })
       .from(jobApplications)
@@ -195,10 +248,10 @@ export async function POST(
       );
     }
 
-    // 6. Generate application number
+    // 9. Generate application number
     const applicationNumber = generateApplicationNumber();
 
-    // 7. Create application record
+    // 10. Create application record with required PDS
     const [newApplication] = await db
       .insert(jobApplications)
       .values({
@@ -208,7 +261,7 @@ export async function POST(
         positionId,
         coverLetter: coverLetter.trim(),
         resumeUrl: resumeUrl || null,
-        pdsSubmissionId: pdsSubmissionId || null,
+        pdsSubmissionId: pdsSubmissionId, // Required!
         additionalDocuments: additionalDocuments || null,
         status: 'pending',
         applicationDate: sql`now()`,
@@ -217,7 +270,7 @@ export async function POST(
       })
       .returning();
 
-    // 8. Create initial status history record
+    // 11. Create initial status history record
     await db.insert(applicationStatusHistory).values({
       id: sql`gen_random_uuid()`,
       applicationId: newApplication.id,
@@ -228,7 +281,7 @@ export async function POST(
       notes: 'Application submitted',
     });
 
-    // 9. Update position applications count
+    // 12. Update position applications count
     await db
       .update(openPositions)
       .set({
@@ -237,7 +290,7 @@ export async function POST(
       })
       .where(eq(openPositions.id, positionId));
 
-    // 10. Create audit log
+    // 13. Create audit log
     await db.insert(auditLogs).values({
       id: sql`gen_random_uuid()`,
       userId: user.id,
@@ -248,6 +301,7 @@ export async function POST(
         positionId,
         positionTitle: position.positionTitle,
         applicationNumber,
+        pdsSubmissionId,
         status: 'pending',
       },
       ipAddress: request.headers.get('x-forwarded-for') ||
@@ -257,7 +311,7 @@ export async function POST(
       createdAt: sql`now()`,
     });
 
-    // 11. Return success response
+    // 14. Return success response
     return NextResponse.json(
       {
         success: true,
@@ -267,6 +321,7 @@ export async function POST(
           applicationNumber: newApplication.applicationNumber,
           status: newApplication.status,
           applicationDate: newApplication.applicationDate,
+          pdsSubmissionId: newApplication.pdsSubmissionId,
         },
       },
       { status: 201 }

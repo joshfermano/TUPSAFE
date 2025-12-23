@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -21,6 +21,7 @@ import {
   GraduationCap,
   Award,
   Target,
+  FileWarning,
 } from 'lucide-react';
 import { Badge } from '../../../../components/ui/badge';
 import { Button } from '../../../../components/ui/button';
@@ -42,13 +43,54 @@ import {
 import { toast } from 'sonner';
 
 /**
- * Application form component
+ * Hook to fetch latest PDS submission
+ */
+function useLatestPDS() {
+  const [latestPDS, setLatestPDS] = useState<{
+    id: string;
+    status: string;
+    year: number;
+  } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchLatestPDS() {
+      try {
+        const response = await fetch('/api/pds/latest');
+        if (!response.ok) {
+          if (response.status === 401) {
+            setLatestPDS(null);
+            return;
+          }
+          throw new Error('Failed to fetch PDS');
+        }
+        const result = await response.json();
+        setLatestPDS(result.data);
+      } catch (err) {
+        console.error('Error fetching latest PDS:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch PDS');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchLatestPDS();
+  }, []);
+
+  return { latestPDS, isLoading, error };
+}
+
+/**
+ * Application form component with PDS requirement
  */
 function ApplicationForm({
   positionId,
+  pdsSubmissionId,
   onSuccess,
 }: {
   positionId: string;
+  pdsSubmissionId: string;
   onSuccess: () => void;
 }) {
   const [coverLetter, setCoverLetter] = useState('');
@@ -68,6 +110,7 @@ function ApplicationForm({
         positionId,
         coverLetter: coverLetter.trim(),
         resumeUrl: resumeUrl.trim() || undefined,
+        pdsSubmissionId, // Always included
       });
       toast.success('Application submitted successfully!');
       onSuccess();
@@ -80,6 +123,13 @@ function ApplicationForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+        <div className="flex items-center gap-2 text-green-800 dark:text-green-200">
+          <CheckCircle className="h-4 w-4" />
+          <span className="text-sm font-medium">PDS will be attached to your application</span>
+        </div>
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="coverLetter">
           Cover Letter <span className="text-red-500">*</span>
@@ -149,6 +199,12 @@ export default function PositionDetailsPage({
     error,
     refetch,
   } = usePositionQuery(resolvedParams.id);
+
+  const { latestPDS, isLoading: pdsLoading } = useLatestPDS();
+
+  // Check if user has a valid PDS to apply
+  const hasPDS = !!latestPDS;
+  const pdsStatus = latestPDS?.status;
 
   if (isLoading) {
     return (
@@ -464,8 +520,8 @@ export default function PositionDetailsPage({
             </ShineBorder>
           </BlurFade>
 
-          {/* Application Form */}
-          {showApplicationForm && !position.hasApplied && (
+          {/* Application Form - Only show if user has PDS */}
+          {showApplicationForm && !position.hasApplied && hasPDS && latestPDS && (
             <BlurFade delay={0.2} inView>
               <Card>
                 <div className="p-6 space-y-4">
@@ -474,6 +530,7 @@ export default function PositionDetailsPage({
                   </h2>
                   <ApplicationForm
                     positionId={resolvedParams.id}
+                    pdsSubmissionId={latestPDS.id}
                     onSuccess={() => {
                       refetch();
                       setShowApplicationForm(false);
@@ -517,26 +574,69 @@ export default function PositionDetailsPage({
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
-                      Ready to take the next step in your career?
-                    </p>
-                    {showApplicationForm ? (
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => setShowApplicationForm(false)}>
-                        Cancel
-                      </Button>
+                    {/* PDS Requirement Check */}
+                    {pdsLoading ? (
+                      <div className="flex items-center gap-2 text-sm text-slate-500">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Checking PDS status...
+                      </div>
+                    ) : !hasPDS ? (
+                      // No PDS - Show CTA to create one
+                      <div className="space-y-3">
+                        <div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                          <FileWarning className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="font-medium text-amber-900 dark:text-amber-100">
+                              PDS Required
+                            </p>
+                            <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                              You need to complete your Personal Data Sheet (PDS) before applying to this position.
+                            </p>
+                          </div>
+                        </div>
+                        <Button asChild className="w-full bg-[#8B1538] hover:bg-[#6B0F2A]">
+                          <Link href="/dashboard/pds/create">
+                            <FileText className="h-4 w-4 mr-2" />
+                            Create Your PDS
+                          </Link>
+                        </Button>
+                      </div>
                     ) : (
-                      <ShimmerButton
-                        className="w-full"
-                        onClick={() => setShowApplicationForm(true)}
-                        shimmerColor="#8B1538"
-                        shimmerSize="0.1em"
-                        borderRadius="0.5rem"
-                        background="linear-gradient(to right, #8B1538, #B8264D)">
-                        Apply Now
-                      </ShimmerButton>
+                      // Has PDS - Show apply button
+                      <div className="space-y-3">
+                        <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="font-medium text-blue-900 dark:text-blue-100">
+                              PDS Ready
+                            </p>
+                            <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                              Your PDS ({latestPDS?.year}) will be attached to your application.
+                            </p>
+                          </div>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                          Ready to take the next step in your career?
+                        </p>
+                        {showApplicationForm ? (
+                          <Button
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => setShowApplicationForm(false)}>
+                            Cancel
+                          </Button>
+                        ) : (
+                          <ShimmerButton
+                            className="w-full"
+                            onClick={() => setShowApplicationForm(true)}
+                            shimmerColor="#8B1538"
+                            shimmerSize="0.1em"
+                            borderRadius="0.5rem"
+                            background="linear-gradient(to right, #8B1538, #B8264D)">
+                            Apply Now
+                          </ShimmerButton>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}
