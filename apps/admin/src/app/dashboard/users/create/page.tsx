@@ -11,12 +11,15 @@ import {
   Check,
   Copy,
   Mail,
-  RefreshCw,
   X,
   User,
   Briefcase,
   Key,
   Eye,
+  Calendar,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -58,25 +61,26 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-// Form validation schema
+// Form validation schema - Employee ID is now auto-generated from DOB
 const userFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(50, 'Too long'),
   lastName: z.string().min(1, 'Last name is required').max(50, 'Too long'),
   middleName: z.string().max(50, 'Too long').optional(),
   suffix: z.string().optional(),
-  employeeId: z
-    .string()
-    .min(1, 'Employee ID is required')
-    .regex(/^[A-Z0-9-]+$/, 'Invalid format (use A-Z, 0-9, and hyphen only)'),
+  dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date of birth is required (YYYY-MM-DD)'),
   email: z.string().email('Invalid email address'),
   role: z.enum(['employee', 'hr', 'admin', 'supervisor', 'auditor'], {
     required_error: 'Role is required',
   }),
+  employmentCategory: z.enum(['faculty', 'administrative', 'contractual'], {
+    required_error: 'Employment category is required',
+  }),
   departmentId: z.string().optional(),
   positionId: z.string().optional(),
   isActive: z.boolean(),
-  sendEmail: z.boolean(),
+  sendCredentials: z.boolean(),
 });
 
 type UserFormValues = z.infer<typeof userFormSchema>;
@@ -90,7 +94,12 @@ const ROLES = [
   { value: 'auditor', label: 'Auditor' },
 ];
 
-// Note: DEPARTMENTS and POSITIONS are now fetched from the API via hooks
+// Employment categories
+const EMPLOYMENT_CATEGORIES = [
+  { value: 'faculty', label: 'Faculty' },
+  { value: 'administrative', label: 'Administrative' },
+  { value: 'contractual', label: 'Contractual' },
+];
 
 // Suffix options
 const SUFFIXES = [
@@ -102,56 +111,13 @@ const SUFFIXES = [
   { value: 'IV', label: 'IV' },
 ];
 
-// Utility functions
-function generateUsername(firstName: string, lastName: string): string {
-  return `${firstName.toLowerCase()}.${lastName.toLowerCase()}`.replace(/\s+/g, '');
-}
-
-function generatePassword(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*';
-  let password = '';
-  for (let i = 0; i < 12; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return password;
-}
-
-async function sendCredentialsEmail(
-  email: string,
-  employeeId: string,
-  password: string,
-  firstName: string
-) {
-  try {
-    const res = await fetch('/api/auth/send-credentials', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email,
-        employeeId,
-        temporaryPassword: password,
-        firstName,
-      }),
-    });
-
-    if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.error || 'Failed to send email');
-    }
-
-    const data = await res.json();
-
-    toast.success('Credentials sent successfully', {
-      description: `Login credentials have been sent to ${email}`,
-    });
-
-    return data;
-  } catch (error) {
-    toast.error('Failed to send credentials', {
-      description: error instanceof Error ? error.message : 'Unknown error',
-    });
-    throw error; // Re-throw to handle in calling code
-  }
+// Response data from API after user creation
+interface CreatedUserData {
+  userId: string;
+  employeeId: string;
+  email: string;
+  temporaryPassword?: string;
+  emailSent: boolean;
 }
 
 export default function CreateUserPage() {
@@ -173,9 +139,10 @@ export default function CreateUserPage() {
 
   const [currentStep, setCurrentStep] = useState(1);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [generatedUsername, setGeneratedUsername] = useState('');
-  const [generatedPassword, setGeneratedPassword] = useState('');
-  const [customUsername, setCustomUsername] = useState(false);
+  
+  // Store created user data from API response
+  const [createdUser, setCreatedUser] = useState<CreatedUserData | null>(null);
+  const [isUserCreated, setIsUserCreated] = useState(false);
 
   const totalSteps = 4;
 
@@ -186,43 +153,35 @@ export default function CreateUserPage() {
       lastName: '',
       middleName: '',
       suffix: 'none',
-      employeeId: '',
+      dateOfBirth: '',
       email: '',
       role: undefined,
+      employmentCategory: undefined,
       departmentId: 'none',
       positionId: 'none',
       isActive: true,
-      sendEmail: true,
+      sendCredentials: true,
     },
   });
 
   const { watch, formState, trigger } = form;
   const { dirtyFields } = formState;
-  const hasUnsavedChanges = Object.keys(dirtyFields).length > 0;
+  const hasUnsavedChanges = Object.keys(dirtyFields).length > 0 && !isUserCreated;
 
-  const watchFirstName = watch('firstName');
-  const watchLastName = watch('lastName');
   const watchRole = watch('role');
+  const watchDateOfBirth = watch('dateOfBirth');
 
-  // Auto-generate username when first/last name changes
-  React.useEffect(() => {
-    if (watchFirstName && watchLastName && !customUsername) {
-      const username = generateUsername(watchFirstName, watchLastName);
-      setGeneratedUsername(username);
+  // Preview employee ID format based on DOB
+  const previewEmployeeId = useMemo(() => {
+    if (!watchDateOfBirth || !/^\d{4}-\d{2}-\d{2}$/.test(watchDateOfBirth)) {
+      return 'TUPM-MMDD-YY-###';
     }
-  }, [watchFirstName, watchLastName, customUsername]);
-
-  // Generate initial password on mount
-  React.useEffect(() => {
-    setGeneratedPassword(generatePassword());
-  }, []);
-
-  const handleRegeneratePassword = useCallback(() => {
-    setGeneratedPassword(generatePassword());
-    toast.success('Password regenerated', {
-      description: 'A new temporary password has been generated.',
-    });
-  }, []);
+    const date = new Date(watchDateOfBirth);
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const year = date.getFullYear().toString().slice(-2);
+    return `TUPM-${month}${day}-${year}-###`;
+  }, [watchDateOfBirth]);
 
   const handleCopyToClipboard = useCallback((text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -242,12 +201,12 @@ export default function CreateUserPage() {
             'lastName',
             'middleName',
             'suffix',
-            'employeeId',
+            'dateOfBirth',
             'email',
           ];
           break;
         case 2:
-          fieldsToValidate = ['role', 'departmentId', 'positionId'];
+          fieldsToValidate = ['role', 'employmentCategory', 'departmentId', 'positionId'];
           break;
         case 3:
           // Credentials step - no validation needed
@@ -286,39 +245,50 @@ export default function CreateUserPage() {
   const onSubmit = useCallback(
     async (values: UserFormValues) => {
       try {
-        // Extract sendEmail before sending to backend
-        const { sendEmail, ...userData } = values;
+        // Prepare data for API - transform 'none' values to undefined
+        const userData = {
+          email: values.email,
+          firstName: values.firstName,
+          lastName: values.lastName,
+          middleName: values.middleName || undefined,
+          dateOfBirth: values.dateOfBirth,
+          role: values.role,
+          employmentCategory: values.employmentCategory,
+          departmentId: values.departmentId === 'none' ? undefined : values.departmentId,
+          positionId: values.positionId === 'none' ? undefined : values.positionId,
+          sendCredentials: values.sendCredentials,
+        };
 
-        await createUserAsync(userData);
+        // Call API - it handles password generation and email sending
+        const result = await createUserAsync(userData);
+
+        // Store the result for display
+        setCreatedUser(result);
+        setIsUserCreated(true);
 
         toast.success('User created successfully', {
           description: `${values.firstName} ${values.lastName} has been added to the system.`,
         });
 
-        // Send credentials email if requested (don't block user creation on email failure)
-        if (sendEmail) {
-          try {
-            await sendCredentialsEmail(
-              values.email,
-              values.employeeId,
-              generatedPassword,
-              values.firstName
-            );
-          } catch (emailError) {
-            // Email error already toasted in sendCredentialsEmail
-            console.error('Email sending failed:', emailError);
-            // User can still proceed to users list even if email fails
+        // Show email status
+        if (values.sendCredentials) {
+          if (result.emailSent) {
+            toast.success('Credentials email sent', {
+              description: `Login credentials have been sent to ${values.email}`,
+            });
+          } else {
+            toast.warning('Email not sent', {
+              description: 'User was created but the credentials email could not be sent. Please share the credentials manually.',
+            });
           }
         }
-
-        router.push('/dashboard/users');
       } catch (error) {
         toast.error('Failed to create user', {
           description: error instanceof Error ? error.message : 'An unexpected error occurred.',
         });
       }
     },
-    [createUserAsync, generatedPassword, router]
+    [createUserAsync]
   );
 
   const roleRequiresDepartment = useMemo(() => {
@@ -385,7 +355,7 @@ export default function CreateUserPage() {
             <CardTitle className="text-base">
               Step {currentStep} of {totalSteps}
             </CardTitle>
-            <span className="text-sm text-muted-foreground">{progressPercentage}% Complete</span>
+            <span className="text-sm text-muted-foreground">{Math.round(progressPercentage)}% Complete</span>
           </div>
         </CardHeader>
         <CardContent>
@@ -415,59 +385,208 @@ export default function CreateUserPage() {
         </CardContent>
       </Card>
 
-      {/* Form */}
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Step 1: Personal Information */}
-          {currentStep === 1 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Personal Information</CardTitle>
-                <CardDescription>
-                  Enter the user&apos;s basic personal and contact information
+      {/* Success State - Show after user is created */}
+      {isUserCreated && createdUser && (
+        <Card className="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/20">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="h-6 w-6 text-green-600" />
+              <div>
+                <CardTitle className="text-green-900 dark:text-green-100">User Created Successfully</CardTitle>
+                <CardDescription className="text-green-700 dark:text-green-300">
+                  Copy the credentials below or share them with the new user
                 </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="firstName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>First Name *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Juan" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Employee ID */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-green-900 dark:text-green-100">Employee ID</label>
+              <div className="flex gap-2">
+                <Input
+                  value={createdUser.employeeId}
+                  readOnly
+                  className="bg-white dark:bg-green-950 font-mono"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleCopyToClipboard(createdUser.employeeId, 'Employee ID')}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
 
-                  <FormField
-                    control={form.control}
-                    name="lastName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Last Name *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Dela Cruz" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+            {/* Temporary Password */}
+            {createdUser.temporaryPassword && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-green-900 dark:text-green-100">Temporary Password</label>
+                <div className="flex gap-2">
+                  <Input
+                    value={createdUser.temporaryPassword}
+                    readOnly
+                    className="bg-white dark:bg-green-950 font-mono"
                   />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleCopyToClipboard(createdUser.temporaryPassword!, 'Password')}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
                 </div>
+              </div>
+            )}
 
-                <div className="grid gap-4 md:grid-cols-2">
+            {/* Email Status */}
+            <div className="flex items-center gap-2 text-sm">
+              {createdUser.emailSent ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <span className="text-green-700 dark:text-green-300">
+                    Credentials email sent to {createdUser.email}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-4 w-4 text-amber-600" />
+                  <span className="text-amber-700 dark:text-amber-300">
+                    Email not sent - please share credentials manually
+                  </span>
+                </>
+              )}
+            </div>
+
+            <Separator />
+
+            <div className="flex gap-3">
+              <Button onClick={() => router.push('/dashboard/users')}>
+                Go to Users List
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsUserCreated(false);
+                  setCreatedUser(null);
+                  form.reset();
+                  setCurrentStep(1);
+                }}
+              >
+                Create Another User
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Form - Hide after user is created */}
+      {!isUserCreated && (
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Step 1: Personal Information */}
+            {currentStep === 1 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Personal Information</CardTitle>
+                  <CardDescription>
+                    Enter the user&apos;s basic personal and contact information
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="firstName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>First Name *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Juan" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="lastName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Last Name *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Dela Cruz" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="middleName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Middle Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Santos" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="suffix"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Suffix</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select suffix" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {SUFFIXES.map((suffix) => (
+                                <SelectItem key={suffix.value} value={suffix.value}>
+                                  {suffix.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
                   <FormField
                     control={form.control}
-                    name="middleName"
+                    name="dateOfBirth"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Middle Name</FormLabel>
+                        <FormLabel>Date of Birth *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Santos" {...field} />
+                          <div className="relative">
+                            <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input 
+                              type="date" 
+                              className="pl-10"
+                              {...field} 
+                            />
+                          </div>
                         </FormControl>
+                        <FormDescription>
+                          Employee ID will be auto-generated: <span className="font-mono text-primary">{previewEmployeeId}</span>
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -475,467 +594,401 @@ export default function CreateUserPage() {
 
                   <FormField
                     control={form.control}
-                    name="suffix"
+                    name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Suffix</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <FormLabel>Email Address *</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="juan.delacruz@tup.edu.ph" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Step 2: Role & Assignment */}
+            {currentStep === 2 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Role & Assignment</CardTitle>
+                  <CardDescription>
+                    Assign a role, employment category, department, and position
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="role"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Role *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select role" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {ROLES.map((role) => (
+                                <SelectItem key={role.value} value={role.value}>
+                                  {role.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>This determines the user&apos;s permissions</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="employmentCategory"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Employment Category *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select category" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {EMPLOYMENT_CATEGORIES.map((cat) => (
+                                <SelectItem key={cat.value} value={cat.value}>
+                                  {cat.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="departmentId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Department {roleRequiresDepartment && '*'}
+                        </FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          disabled={isDepartmentsLoading}
+                        >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select suffix" />
+                              <SelectValue
+                                placeholder={
+                                  isDepartmentsLoading
+                                    ? 'Loading departments...'
+                                    : 'Select department'
+                                }
+                              />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {SUFFIXES.map((suffix) => (
-                              <SelectItem key={suffix.value} value={suffix.value}>
-                                {suffix.label}
+                            {departmentOptions.map((dept) => (
+                              <SelectItem key={dept.value} value={dept.value}>
+                                {dept.label}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
+                        {isDepartmentsLoading && (
+                          <FormDescription>Loading departments...</FormDescription>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                </div>
 
-                <FormField
-                  control={form.control}
-                  name="employeeId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Employee ID *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="EMP-2024-001" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Format: Letters, numbers, and hyphens only (e.g., EMP-2024-001)
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="positionId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Position</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          disabled={isPositionsLoading}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue
+                                placeholder={
+                                  isPositionsLoading ? 'Loading positions...' : 'Select position'
+                                }
+                              />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {positionOptions.map((position) => (
+                              <SelectItem key={position.value} value={position.value}>
+                                {position.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {isPositionsLoading && (
+                          <FormDescription>Loading positions...</FormDescription>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email Address *</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="juan.delacruz@tup.edu.ph" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Step 2: Role & Assignment */}
-          {currentStep === 2 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Role & Assignment</CardTitle>
-                <CardDescription>
-                  Assign a role, department, and position to the user
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Role *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                  <FormField
+                    control={form.control}
+                    name="isActive"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Account Status</FormLabel>
+                          <FormDescription>
+                            Active users can log in and access the system
+                          </FormDescription>
+                        </div>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select role" />
-                          </SelectTrigger>
+                          <Switch checked={field.value} onCheckedChange={field.onChange} />
                         </FormControl>
-                        <SelectContent>
-                          {ROLES.map((role) => (
-                            <SelectItem key={role.value} value={role.value}>
-                              {role.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>This determines the user&apos;s permissions</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+            )}
 
-                <FormField
-                  control={form.control}
-                  name="departmentId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        Department {roleRequiresDepartment && '*'}
-                      </FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        disabled={isDepartmentsLoading}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue
-                              placeholder={
-                                isDepartmentsLoading
-                                  ? 'Loading departments...'
-                                  : 'Select department'
-                              }
-                            />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {departmentOptions.map((dept) => (
-                            <SelectItem key={dept.value} value={dept.value}>
-                              {dept.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {isDepartmentsLoading && (
-                        <FormDescription>Loading departments...</FormDescription>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            {/* Step 3: Account Credentials */}
+            {currentStep === 3 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Account Credentials</CardTitle>
+                  <CardDescription>
+                    Credentials will be auto-generated when you create the user
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <Alert>
+                    <Key className="h-4 w-4" />
+                    <AlertTitle>Auto-Generated Credentials</AlertTitle>
+                    <AlertDescription>
+                      When you submit this form, the system will automatically generate:
+                      <ul className="mt-2 list-disc list-inside space-y-1">
+                        <li>
+                          <strong>Employee ID:</strong> Based on date of birth ({previewEmployeeId})
+                        </li>
+                        <li>
+                          <strong>Temporary Password:</strong> A secure 12-character password
+                        </li>
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
 
-                <FormField
-                  control={form.control}
-                  name="positionId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Position</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        disabled={isPositionsLoading}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue
-                              placeholder={
-                                isPositionsLoading ? 'Loading positions...' : 'Select position'
-                              }
-                            />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {positionOptions.map((position) => (
-                            <SelectItem key={position.value} value={position.value}>
-                              {position.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {isPositionsLoading && (
-                        <FormDescription>Loading positions...</FormDescription>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="isActive"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">Account Status</FormLabel>
-                        <FormDescription>
-                          Active users can log in and access the system
-                        </FormDescription>
+                  <div className="rounded-lg border bg-blue-50 dark:bg-blue-950/20 p-4">
+                    <div className="flex gap-3">
+                      <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                      <div className="flex-1 space-y-2">
+                        <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                          Email Delivery
+                        </p>
+                        <FormField
+                          control={form.control}
+                          name="sendCredentials"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center gap-2 space-y-0">
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                              <FormLabel className="text-sm font-normal text-blue-800 dark:text-blue-200">
+                                Send credentials via email to {watch('email') || 'user'}
+                              </FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                        <p className="text-xs text-blue-700 dark:text-blue-300">
+                          If disabled, you&apos;ll need to share the credentials manually after creation
+                        </p>
                       </div>
-                      <FormControl>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
-          )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-          {/* Step 3: Account Credentials */}
-          {currentStep === 3 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Account Credentials</CardTitle>
-                <CardDescription>
-                  Auto-generated credentials for the user&apos;s account
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  {/* Username */}
-                  <div className="space-y-2">
+            {/* Step 4: Review & Confirm */}
+            {currentStep === 4 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Review & Confirm</CardTitle>
+                  <CardDescription>
+                    Review all information before creating the user
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Personal Information */}
+                  <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium">Username</label>
+                      <h3 className="text-sm font-semibold">Personal Information</h3>
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => setCustomUsername(!customUsername)}
+                        onClick={() => setCurrentStep(1)}
                       >
-                        {customUsername ? 'Use Auto-generated' : 'Customize'}
+                        Edit
                       </Button>
                     </div>
-                    <div className="flex gap-2">
-                      <Input
-                        value={generatedUsername}
-                        onChange={(e) => setGeneratedUsername(e.target.value)}
-                        disabled={!customUsername}
-                        className={!customUsername ? 'bg-muted' : ''}
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() =>
-                          handleCopyToClipboard(generatedUsername, 'Username')
-                        }
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
+                    <div className="grid gap-2 rounded-lg border p-4">
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <span className="text-muted-foreground">Full Name:</span>
+                        <span className="font-medium">
+                          {watch('firstName')} {watch('middleName')} {watch('lastName')}{' '}
+                          {watch('suffix') !== 'none' && watch('suffix')}
+                        </span>
+                        <span className="text-muted-foreground">Date of Birth:</span>
+                        <span className="font-medium">{watch('dateOfBirth')}</span>
+                        <span className="text-muted-foreground">Employee ID (Preview):</span>
+                        <span className="font-medium font-mono">{previewEmployeeId}</span>
+                        <span className="text-muted-foreground">Email:</span>
+                        <span className="font-medium">{watch('email')}</span>
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Auto-generated from first and last name
-                    </p>
                   </div>
 
                   <Separator />
 
-                  {/* Temporary Password */}
-                  <div className="space-y-2">
+                  {/* Role & Assignment */}
+                  <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium">Temporary Password</label>
+                      <h3 className="text-sm font-semibold">Role & Assignment</h3>
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={handleRegeneratePassword}
+                        onClick={() => setCurrentStep(2)}
                       >
-                        <RefreshCw className="mr-2 h-4 w-4" />
-                        Regenerate
+                        Edit
                       </Button>
                     </div>
-                    <div className="flex gap-2">
-                      <Input
-                        value={generatedPassword}
-                        readOnly
-                        className="bg-muted font-mono"
-                      />
+                    <div className="grid gap-2 rounded-lg border p-4">
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <span className="text-muted-foreground">Role:</span>
+                        <Badge variant="outline" className="w-fit capitalize">
+                          {watch('role')?.replace('_', ' ')}
+                        </Badge>
+                        <span className="text-muted-foreground">Employment Category:</span>
+                        <Badge variant="secondary" className="w-fit capitalize">
+                          {watch('employmentCategory')}
+                        </Badge>
+                        <span className="text-muted-foreground">Department:</span>
+                        <span className="font-medium">
+                          {departmentOptions.find((d) => d.value === watch('departmentId'))
+                            ?.label || 'Not assigned'}
+                        </span>
+                        <span className="text-muted-foreground">Position:</span>
+                        <span className="font-medium">
+                          {positionOptions.find((p) => p.value === watch('positionId'))?.label ||
+                            'Not assigned'}
+                        </span>
+                        <span className="text-muted-foreground">Status:</span>
+                        <Badge variant={watch('isActive') ? 'default' : 'secondary'}>
+                          {watch('isActive') ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Credentials */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-semibold">Account Credentials</h3>
                       <Button
                         type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() =>
-                          handleCopyToClipboard(generatedPassword, 'Password')
-                        }
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setCurrentStep(3)}
                       >
-                        <Copy className="h-4 w-4" />
+                        Edit
                       </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      12 characters with uppercase, lowercase, numbers, and symbols
-                    </p>
-                  </div>
-                </div>
-
-                <div className="rounded-lg border bg-blue-50 dark:bg-blue-950/20 p-4">
-                  <div className="flex gap-3">
-                    <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-                    <div className="flex-1 space-y-2">
-                      <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                        Email Delivery
-                      </p>
-                      <FormField
-                        control={form.control}
-                        name="sendEmail"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center gap-2 space-y-0">
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <FormLabel className="text-sm font-normal text-blue-800 dark:text-blue-200">
-                              Send credentials via email to {watch('email') || 'user'}
-                            </FormLabel>
-                          </FormItem>
-                        )}
-                      />
+                    <div className="grid gap-2 rounded-lg border p-4">
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <span className="text-muted-foreground">Employee ID:</span>
+                        <span className="font-medium font-mono">{previewEmployeeId}</span>
+                        <span className="text-muted-foreground">Password:</span>
+                        <span className="font-medium font-mono text-muted-foreground">
+                          (will be auto-generated)
+                        </span>
+                        <span className="text-muted-foreground">Send Email:</span>
+                        <Badge variant={watch('sendCredentials') ? 'default' : 'secondary'}>
+                          {watch('sendCredentials') ? 'Yes' : 'No'}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                </CardContent>
+              </Card>
+            )}
 
-          {/* Step 4: Review & Confirm */}
-          {currentStep === 4 && (
+            {/* Navigation */}
             <Card>
-              <CardHeader>
-                <CardTitle>Review & Confirm</CardTitle>
-                <CardDescription>
-                  Review all information before creating the user
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Personal Information */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold">Personal Information</h3>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setCurrentStep(1)}
-                    >
-                      Edit
+              <CardContent className="pt-6">
+                <div className="flex justify-between gap-4">
+                  <div className="flex gap-2">
+                    <Button type="button" variant="outline" onClick={handleCancel}>
+                      <X className="mr-2 h-4 w-4" />
+                      Cancel
                     </Button>
+                    {currentStep > 1 && (
+                      <Button type="button" variant="outline" onClick={handleBack}>
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back
+                      </Button>
+                    )}
                   </div>
-                  <div className="grid gap-2 rounded-lg border p-4">
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <span className="text-muted-foreground">Full Name:</span>
-                      <span className="font-medium">
-                        {watch('firstName')} {watch('middleName')} {watch('lastName')}{' '}
-                        {watch('suffix')}
-                      </span>
-                      <span className="text-muted-foreground">Employee ID:</span>
-                      <span className="font-medium">{watch('employeeId')}</span>
-                      <span className="text-muted-foreground">Email:</span>
-                      <span className="font-medium">{watch('email')}</span>
-                    </div>
-                  </div>
-                </div>
 
-                <Separator />
-
-                {/* Role & Assignment */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold">Role & Assignment</h3>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setCurrentStep(2)}
-                    >
-                      Edit
+                  {currentStep < totalSteps ? (
+                    <Button type="button" onClick={handleNext}>
+                      Next
+                      <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
-                  </div>
-                  <div className="grid gap-2 rounded-lg border p-4">
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <span className="text-muted-foreground">Role:</span>
-                      <Badge variant="outline" className="w-fit capitalize">
-                        {watch('role')?.replace('_', ' ')}
-                      </Badge>
-                      <span className="text-muted-foreground">Department:</span>
-                      <span className="font-medium">
-                        {departmentOptions.find((d) => d.value === watch('departmentId'))
-                          ?.label || 'Not assigned'}
-                      </span>
-                      <span className="text-muted-foreground">Position:</span>
-                      <span className="font-medium">
-                        {positionOptions.find((p) => p.value === watch('positionId'))?.label ||
-                          'Not assigned'}
-                      </span>
-                      <span className="text-muted-foreground">Status:</span>
-                      <Badge variant={watch('isActive') ? 'default' : 'secondary'}>
-                        {watch('isActive') ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Credentials */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold">Account Credentials</h3>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setCurrentStep(3)}
-                    >
-                      Edit
-                    </Button>
-                  </div>
-                  <div className="grid gap-2 rounded-lg border p-4">
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <span className="text-muted-foreground">Username:</span>
-                      <span className="font-medium font-mono">{generatedUsername}</span>
-                      <span className="text-muted-foreground">Password:</span>
-                      <span className="font-medium font-mono">
-                        {generatedPassword.slice(0, 4)}****{generatedPassword.slice(-2)}
-                      </span>
-                      <span className="text-muted-foreground">Send Email:</span>
-                      <Badge variant={watch('sendEmail') ? 'default' : 'secondary'}>
-                        {watch('sendEmail') ? 'Yes' : 'No'}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Navigation */}
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex justify-between gap-4">
-                <div className="flex gap-2">
-                  <Button type="button" variant="outline" onClick={handleCancel}>
-                    <X className="mr-2 h-4 w-4" />
-                    Cancel
-                  </Button>
-                  {currentStep > 1 && (
-                    <Button type="button" variant="outline" onClick={handleBack}>
-                      <ArrowLeft className="mr-2 h-4 w-4" />
-                      Back
+                  ) : (
+                    <Button type="submit" disabled={isCreating}>
+                      {isCreating ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Creating...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="mr-2 h-4 w-4" />
+                          Create User
+                        </>
+                      )}
                     </Button>
                   )}
                 </div>
-
-                {currentStep < totalSteps ? (
-                  <Button type="button" onClick={handleNext}>
-                    Next
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button type="submit" disabled={isCreating}>
-                    {isCreating ? (
-                      <>
-                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <Check className="mr-2 h-4 w-4" />
-                        Create User
-                      </>
-                    )}
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </form>
-      </Form>
+              </CardContent>
+            </Card>
+          </form>
+        </Form>
+      )}
 
       {/* Cancel Confirmation Dialog */}
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>

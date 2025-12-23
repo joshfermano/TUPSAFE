@@ -1,61 +1,67 @@
 /**
- * Reset Password API
- * Completes password reset flow with new password
+ * Reset Password API (OTP-based)
+ * Completes password reset flow with OTP verification and new password
  *
  * Security:
- * - Verifies reset token from Supabase
+ * - Verifies OTP code
  * - Strong password validation
  * - Invalidates all sessions after reset
  * - Creates audit log
+ * - Uses admin client for password update (no session required)
  *
  * Features:
+ * - OTP verification
  * - Password strength requirements
- * - Token verification
  * - Session invalidation
  * - Audit logging
+ * - Clears temporaryPassword flag
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@tupsafe/auth/server';
-import { db } from '@tupsafe/database/server';
-import { auditLogs } from '@tupsafe/database/schema';
-import { z } from 'zod';
-
-/**
- * Strong password validation schema
- * Requirements:
- * - At least 8 characters
- * - At least one uppercase letter
- * - At least one lowercase letter
- * - At least one number
- * - At least one special character
- */
-const resetPasswordSchema = z.object({
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number')
-    .regex(
-      /[^A-Za-z0-9]/,
-      'Password must contain at least one special character'
-    ),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Passwords do not match',
-  path: ['confirmPassword'],
-});
+import {
+  createAdminClient,
+  verifyOTP,
+} from '@tupsafe/auth/server';
+import { db, profiles, createAuditLog, sessionLogs } from '@tupsafe/database/server';
+import { eq } from 'drizzle-orm';
+import { employeeResetPasswordSchema } from '@tupsafe/types';
+import { resolveAndValidateForPasswordReset } from '@/lib/auth/resolve-user-identifier';
 
 /**
  * POST /api/auth/reset-password
- * Complete password reset with new password
+ * Complete OTP-based password reset with new password
+ *
+ * Request Body:
+ * {
+ *   identifier: string,      // Email or Employee ID
+ *   code: string,           // 6-digit OTP code
+ *   password: string,       // New password
+ *   confirmPassword: string // Password confirmation
+ * }
+ *
+ * Response (success):
+ * {
+ *   success: true,
+ *   message: 'Password reset successfully. Please log in with your new password.'
+ * }
+ *
+ * Response (error):
+ * {
+ *   error: string,
+ *   details?: string | object
+ * }
  */
 export async function POST(request: NextRequest) {
+  const ipAddress =
+    request.headers.get('x-forwarded-for')?.split(',')[0] ||
+    request.headers.get('x-real-ip') ||
+    null;
+  const userAgent = request.headers.get('user-agent') || null;
+
   try {
     // Parse and validate request body
     const body = await request.json();
-    const validationResult = resetPasswordSchema.safeParse(body);
+    const validationResult = employeeResetPasswordSchema.safeParse(body);
 
     if (!validationResult.success) {
       return NextResponse.json(
@@ -67,40 +73,63 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { password } = validationResult.data;
+    const { identifier, code, password } = validationResult.data;
 
-    // Get IP address for audit log
-    const ipAddress =
-      request.headers.get('x-forwarded-for') ||
-      request.headers.get('x-real-ip') ||
-      null;
-    const userAgent = request.headers.get('user-agent') || null;
+    // Resolve identifier to user
+    const resolvedUser = await resolveAndValidateForPasswordReset(identifier);
 
-    // Create Supabase client
-    const supabase = await createServerClient('employee');
-
-    // Verify authenticated user (password reset link sets up authentication)
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
+    if (!resolvedUser) {
       return NextResponse.json(
         {
-          error: 'Invalid or expired reset token',
-          details: 'Please request a new password reset link',
+          error: 'Invalid identifier',
+          details: 'No account found with this email or employee ID.',
+        },
+        { status: 404 }
+      );
+    }
+
+    const { userId, email } = resolvedUser;
+
+    // Verify OTP code
+    const otpVerification = await verifyOTP(userId, code, 'password_reset');
+
+    if (!otpVerification.success) {
+      console.warn(`[Reset Password] OTP verification failed for user ${userId}`);
+
+      // Audit log for failed OTP
+      try {
+        await createAuditLog({
+          userId,
+          action: 'PASSWORD_RESET_OTP_FAILED',
+          entityType: 'auth',
+          entityId: userId,
+          changes: {
+            identifier,
+            error: otpVerification.error,
+            timestamp: new Date().toISOString(),
+          },
+          ipAddress: ipAddress || undefined,
+          userAgent: userAgent || undefined,
+        });
+      } catch (auditError) {
+        console.error('[Reset Password] Audit log error:', auditError);
+      }
+
+      return NextResponse.json(
+        {
+          error: 'Invalid or expired verification code',
+          details: 'Please check your code or request a new one.',
         },
         { status: 401 }
       );
     }
 
-    const userId = user.id;
-
-    // Update password
-    const { error: updateError } = await supabase.auth.updateUser({
-      password,
-    });
+    // Update password via Supabase admin client (no session needed)
+    const supabase = createAdminClient();
+    const { error: updateError } = await supabase.auth.admin.updateUserById(
+      userId,
+      { password }
+    );
 
     if (updateError) {
       console.error('[Reset Password] Update error:', updateError);
@@ -113,22 +142,60 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create audit log
-    await db.insert(auditLogs).values({
-      userId,
-      action: 'auth.password_reset_completed',
-      entityType: 'user',
-      entityId: userId,
-      changes: {
-        timestamp: new Date().toISOString(),
-        method: 'password_reset_link',
-      },
-      ipAddress,
-      userAgent,
-    });
+    // Update profile: clear temporaryPassword flag
+    try {
+      await db
+        .update(profiles)
+        .set({
+          temporaryPassword: false,
+          updatedAt: new Date(),
+        })
+        .where(eq(profiles.id, userId));
 
-    // Sign out all other sessions (security best practice)
-    await supabase.auth.signOut({ scope: 'others' });
+      console.log(`[Reset Password] Cleared temporaryPassword for user ${userId}`);
+    } catch (profileError) {
+      console.error('[Reset Password] Failed to update profile:', profileError);
+      // Continue - password was already updated
+    }
+
+    // Terminate all active sessions for this user (force fresh login)
+    try {
+      const now = new Date();
+      await db
+        .update(sessionLogs)
+        .set({
+          isActive: false,
+          logoutAt: now,
+        })
+        .where(eq(sessionLogs.userId, userId));
+
+      console.log(`[Reset Password] Terminated all sessions for user ${userId}`);
+    } catch (sessionError) {
+      console.error('[Reset Password] Failed to terminate sessions:', sessionError);
+      // Continue - password was already updated
+    }
+
+    // Create audit log
+    try {
+      await createAuditLog({
+        userId,
+        action: 'PASSWORD_RESET_COMPLETED',
+        entityType: 'auth',
+        entityId: userId,
+        changes: {
+          method: 'otp_verification',
+          sessionsTerminated: true,
+          temporaryPasswordCleared: true,
+          timestamp: new Date().toISOString(),
+        },
+        ipAddress: ipAddress || undefined,
+        userAgent: userAgent || undefined,
+      });
+    } catch (auditError) {
+      console.error('[Reset Password] Audit log error:', auditError);
+    }
+
+    console.log(`[Reset Password] Password reset completed for user ${userId}`);
 
     return NextResponse.json({
       success: true,

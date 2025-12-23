@@ -28,6 +28,7 @@ export interface UserProfile {
   positionId?: string;
   accountStatus: string;
   isActive: boolean;
+  temporaryPassword: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

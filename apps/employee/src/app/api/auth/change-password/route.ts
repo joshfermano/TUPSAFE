@@ -8,6 +8,7 @@
  * - Updates password via Supabase Auth
  * - Creates audit log entry for security tracking
  * - Enforces strong password requirements
+ * - Sets temporaryPassword flag to false (for admin-created accounts)
  *
  * Routes:
  * - POST /api/auth/change-password - Change user password
@@ -15,32 +16,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@tupsafe/auth/server';
-import { createAuditLog } from '@tupsafe/database/server';
-import { z } from 'zod';
-
-/**
- * Password change validation schema
- * Enforces strong password requirements:
- * - Minimum 8 characters
- * - At least one uppercase letter
- * - At least one lowercase letter
- * - At least one number
- * - At least one special character
- */
-const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1, 'Current password is required'),
-  newPassword: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number')
-    .regex(
-      /[^A-Za-z0-9]/,
-      'Password must contain at least one special character'
-    ),
-  confirmPassword: z.string().min(1, 'Password confirmation is required'),
-});
+import { db, profiles, createAuditLog } from '@tupsafe/database/server';
+import { eq } from 'drizzle-orm';
+import { employeeChangePasswordSchema } from '@tupsafe/types';
 
 /**
  * POST /api/auth/change-password
@@ -64,6 +42,10 @@ const changePasswordSchema = z.object({
  * - New password must meet strength requirements
  * - New password and confirmation must match
  * - New password must be different from current password
+ *
+ * Side effects:
+ * - Sets profiles.temporaryPassword to false
+ * - Creates audit log entry
  *
  * Errors:
  * - 400: Invalid request body, validation error, or passwords don't match
@@ -110,8 +92,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate with Zod schema
-    const validation = changePasswordSchema.safeParse(body);
+    // Validate with shared Zod schema from @tupsafe/types
+    const validation = employeeChangePasswordSchema.safeParse(body);
     if (!validation.success) {
       const errors = validation.error.errors.map((err) => ({
         field: err.path.join('.'),
@@ -127,29 +109,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { currentPassword, newPassword, confirmPassword } = validation.data;
-
-    // Check that new password and confirmation match
-    if (newPassword !== confirmPassword) {
-      return NextResponse.json(
-        {
-          error: 'Passwords do not match',
-          details: 'New password and confirmation must match',
-        },
-        { status: 400 }
-      );
-    }
-
-    // Check that new password is different from current
-    if (currentPassword === newPassword) {
-      return NextResponse.json(
-        {
-          error: 'Invalid new password',
-          details: 'New password must be different from current password',
-        },
-        { status: 400 }
-      );
-    }
+    const { currentPassword, newPassword } = validation.data;
 
     // Verify current password by attempting to sign in
     const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -184,6 +144,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Update profiles.temporaryPassword to false
+    // This handles admin-created accounts that need to change their initial password
+    try {
+      await db
+        .update(profiles)
+        .set({
+          temporaryPassword: false,
+          updatedAt: new Date(),
+        })
+        .where(eq(profiles.id, userId));
+
+      console.log(`[Change Password] Set temporaryPassword=false for user: ${userId}`);
+    } catch (profileError) {
+      console.error('[Change Password] Failed to update profile temporaryPassword:', profileError);
+      // Don't fail the request - password was successfully changed
+    }
+
     // Create audit log entry
     try {
       await createAuditLog({
@@ -193,9 +170,13 @@ export async function POST(request: NextRequest) {
         entityId: userId,
         changes: {
           action: 'password_change',
+          temporaryPasswordCleared: true,
           timestamp: new Date().toISOString(),
         },
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+        ipAddress:
+          request.headers.get('x-forwarded-for') ||
+          request.headers.get('x-real-ip') ||
+          undefined,
         userAgent: request.headers.get('user-agent') || undefined,
       });
     } catch (auditError) {

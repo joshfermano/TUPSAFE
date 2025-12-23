@@ -78,6 +78,60 @@ export const passwordResetSchema = z.object({
 export type PasswordResetData = z.infer<typeof passwordResetSchema>;
 
 /**
+ * Create user validation schema
+ * Used by admin/HR to create new employee accounts
+ *
+ * Employee ID is auto-generated from dateOfBirth in format TUPM-MMDD-YY-###
+ */
+export const createUserSchema = z.object({
+  // Required fields
+  email: z.string().email('Invalid email address'),
+  firstName: z.string().min(1, 'First name is required').max(100),
+  lastName: z.string().min(1, 'Last name is required').max(100),
+  dateOfBirth: z.string().regex(
+    /^\d{4}-\d{2}-\d{2}$/,
+    'Date of birth must be in YYYY-MM-DD format'
+  ),
+  role: z.enum(['employee', 'hr', 'admin', 'supervisor', 'auditor']),
+  employmentCategory: z.enum(['faculty', 'administrative', 'contractual']),
+
+  // Optional fields
+  middleName: z.string().max(100).optional(),
+  phoneNumber: z
+    .string()
+    .regex(/^[0-9+\-\s()]*$/)
+    .max(20)
+    .optional(),
+  departmentId: z.string().uuid('Invalid department ID').optional(),
+  positionId: z.string().uuid('Invalid position ID').optional(),
+  academicRank: z.string().max(100).optional(),
+  tenureStatus: z.string().max(50).optional(),
+  employmentType: z.string().max(50).optional(),
+  campusAssignment: z.string().max(100).optional(),
+
+  // Email credentials option (defaults to true)
+  sendCredentials: z.boolean().optional().default(true),
+});
+
+export type CreateUserRequest = z.infer<typeof createUserSchema>;
+
+/**
+ * Response from creating a user
+ */
+export interface CreateUserResponse {
+  success: boolean;
+  message: string;
+  data: {
+    userId: string;
+    employeeId: string;
+    email: string;
+    role: string;
+    temporaryPassword?: string; // Only included if sendCredentials is true
+    emailSent: boolean;
+  };
+}
+
+/**
  * User response types
  */
 export interface UserListItem {

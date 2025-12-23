@@ -1,40 +1,55 @@
 /**
- * Forgot Password API
- * Initiates password reset flow via Supabase
+ * Forgot Password API (OTP-based)
+ * Initiates password reset flow by sending an OTP email
  *
  * Security:
- * - Rate limiting recommended
- * - Does not reveal if email exists (security best practice)
+ * - Rate limiting via resendOTP (max 5 per hour)
+ * - Does not reveal if email/employeeId exists (security best practice)
  * - Creates audit log
+ * - Supports email OR employee ID as identifier
  *
  * Features:
- * - Email validation
- * - Supabase password reset email
+ * - Email or Employee ID resolution
+ * - OTP generation and email delivery
  * - Audit logging
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@tupsafe/auth/server';
-import { db } from '@tupsafe/database/server';
+import { db, createAuditLog } from '@tupsafe/database/server';
 import { auditLogs } from '@tupsafe/database/schema';
-import { z } from 'zod';
-
-/**
- * Request validation schema
- */
-const forgotPasswordSchema = z.object({
-  email: z.string().email('Invalid email address'),
-});
+import { resendOTP, sendOTPEmail } from '@tupsafe/auth/server';
+import { employeeForgotPasswordSchema } from '@tupsafe/types';
+import { resolveAndValidateForPasswordReset } from '@/lib/auth/resolve-user-identifier';
 
 /**
  * POST /api/auth/forgot-password
- * Initiate password reset flow
+ * Initiate OTP-based password reset flow
+ *
+ * Request Body:
+ * {
+ *   identifier: string  // Email address OR Employee ID
+ * }
+ *
+ * Response:
+ * {
+ *   success: true,
+ *   message: 'If an account exists with this identifier, you will receive a verification code.'
+ * }
+ *
+ * Note: Always returns success to prevent user enumeration
  */
 export async function POST(request: NextRequest) {
+  // Get IP address and user agent for audit log
+  const ipAddress =
+    request.headers.get('x-forwarded-for')?.split(',')[0] ||
+    request.headers.get('x-real-ip') ||
+    null;
+  const userAgent = request.headers.get('user-agent') || null;
+
   try {
     // Parse and validate request body
     const body = await request.json();
-    const validationResult = forgotPasswordSchema.safeParse(body);
+    const validationResult = employeeForgotPasswordSchema.safeParse(body);
 
     if (!validationResult.success) {
       return NextResponse.json(
@@ -46,57 +61,106 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { email } = validationResult.data;
+    const { identifier } = validationResult.data;
 
-    // Get IP address for audit log
-    const ipAddress =
-      request.headers.get('x-forwarded-for') ||
-      request.headers.get('x-real-ip') ||
-      null;
-    const userAgent = request.headers.get('user-agent') || null;
+    // Resolve identifier (email or employee ID) to user
+    const resolvedUser = await resolveAndValidateForPasswordReset(identifier);
 
-    // Create Supabase client
-    const supabase = await createServerClient('employee');
+    if (resolvedUser) {
+      const { userId, email } = resolvedUser;
 
-    // Send password reset email via Supabase
-    // This will work even if email doesn't exist (Supabase handles this securely)
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-      email,
-      {
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password`,
+      // Generate OTP with rate limiting (max 5 per hour)
+      const otpResult = await resendOTP(userId, 'password_reset');
+
+      if (otpResult.success && otpResult.code) {
+        // Send OTP email
+        try {
+          await sendOTPEmail(email, otpResult.code, 'password_reset');
+          console.log(
+            `[Forgot Password] OTP sent to ${email} for user ${userId}`
+          );
+        } catch (emailError) {
+          console.error('[Forgot Password] Failed to send OTP email:', emailError);
+          // Continue - don't reveal error to client
+        }
+
+        // Create audit log for successful OTP request
+        try {
+          await createAuditLog({
+            userId,
+            action: 'PASSWORD_RESET_REQUESTED',
+            entityType: 'auth',
+            entityId: userId,
+            changes: {
+              identifier,
+              otpSent: true,
+              remaining: otpResult.remaining,
+              timestamp: new Date().toISOString(),
+            },
+            ipAddress: ipAddress || undefined,
+            userAgent: userAgent || undefined,
+          });
+        } catch (auditError) {
+          console.error('[Forgot Password] Audit log error:', auditError);
+          // Continue - don't fail the request
+        }
+      } else if (!otpResult.success) {
+        // Rate limited - log but don't reveal to client
+        console.warn(
+          `[Forgot Password] Rate limited for user ${userId}: ${otpResult.error}`
+        );
+
+        // Still create audit log for rate-limited attempt
+        try {
+          await createAuditLog({
+            userId,
+            action: 'PASSWORD_RESET_RATE_LIMITED',
+            entityType: 'auth',
+            entityId: userId,
+            changes: {
+              identifier,
+              rateLimited: true,
+              error: otpResult.error,
+              timestamp: new Date().toISOString(),
+            },
+            ipAddress: ipAddress || undefined,
+            userAgent: userAgent || undefined,
+          });
+        } catch (auditError) {
+          console.error('[Forgot Password] Audit log error:', auditError);
+        }
       }
-    );
+    } else {
+      // User not found or not eligible - log for monitoring
+      console.log(
+        `[Forgot Password] No eligible user found for identifier: ${identifier.substring(0, 5)}...`
+      );
 
-    // Create audit log (even for failed attempts)
-    try {
-      await db.insert(auditLogs).values({
-        userId: '00000000-0000-0000-0000-000000000000', // System user for anonymous actions
-        action: 'auth.forgot_password_requested',
-        entityType: 'user',
-        entityId: null,
-        changes: {
-          email,
-          success: !resetError,
-          timestamp: new Date().toISOString(),
-        },
-        ipAddress,
-        userAgent,
-      });
-    } catch (auditError) {
-      console.error('[Forgot Password] Audit log error:', auditError);
-      // Continue - don't fail the request if audit logging fails
+      // Create audit log for failed lookup (anonymous)
+      try {
+        await db.insert(auditLogs).values({
+          userId: '00000000-0000-0000-0000-000000000000', // System user
+          action: 'PASSWORD_RESET_REQUESTED',
+          entityType: 'auth',
+          entityId: null,
+          changes: {
+            identifierPrefix: identifier.substring(0, 5),
+            userFound: false,
+            timestamp: new Date().toISOString(),
+          },
+          ipAddress,
+          userAgent,
+        });
+      } catch (auditError) {
+        console.error('[Forgot Password] Audit log error:', auditError);
+      }
     }
 
-    if (resetError) {
-      console.error('[Forgot Password] Supabase error:', resetError);
-      // Don't reveal error to client for security
-    }
-
-    // Always return success (security best practice - don't reveal if email exists)
+    // Always return success to prevent user enumeration
     return NextResponse.json({
       success: true,
       message:
-        'If an account exists with this email, you will receive password reset instructions.',
+        'If an account exists with this identifier, you will receive a verification code via email.',
     });
   } catch (error) {
     console.error('[Forgot Password API] Error:', error);
@@ -105,7 +169,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message:
-        'If an account exists with this email, you will receive password reset instructions.',
+        'If an account exists with this identifier, you will receive a verification code via email.',
     });
   }
 }

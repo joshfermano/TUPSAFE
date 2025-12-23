@@ -88,14 +88,20 @@ export async function GET(request: NextRequest) {
       .from(positions)
       .where(whereClause);
 
-    // Determine sort column and order
-    const sortColumn = {
+    // Determine sort column and order with defensive fallbacks
+    const sortBy = query.sortBy ?? 'title';
+    const sortOrder = query.sortOrder ?? 'asc';
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+
+    const sortColumnMap = {
       title: positions.title,
       gradeLevel: positions.gradeLevel,
       createdAt: positions.createdAt,
-    }[query.sortBy!];
+    } as const;
 
-    const orderFn = query.sortOrder === 'asc' ? asc : desc;
+    const sortColumn = sortColumnMap[sortBy] ?? positions.title;
+    const orderFn = sortOrder === 'asc' ? asc : desc;
 
     // Fetch positions with department information
     const results = await db
@@ -113,8 +119,8 @@ export async function GET(request: NextRequest) {
       .leftJoin(departments, eq(positions.departmentId, departments.id))
       .where(whereClause)
       .orderBy(orderFn(sortColumn))
-      .limit(query.limit!)
-      .offset((query.page! - 1) * query.limit!);
+      .limit(limit)
+      .offset((page - 1) * limit);
 
     // Transform to PositionWithDepartment format
     const positionsWithDepartment: PositionWithDepartment[] = results.map((row) => ({
@@ -137,9 +143,9 @@ export async function GET(request: NextRequest) {
       positions: positionsWithDepartment,
       pagination: {
         total: total || 0,
-        page: query.page!,
-        pageSize: query.limit!,
-        totalPages: Math.ceil((total || 0) / query.limit!),
+        page,
+        pageSize: limit,
+        totalPages: Math.ceil((total || 0) / limit),
       },
     };
 

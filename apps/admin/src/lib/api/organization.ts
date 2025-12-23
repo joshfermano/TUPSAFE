@@ -288,7 +288,8 @@ export async function fetchDepartmentDependencies(
   }
 
   const result = await response.json();
-  return result.data;
+  // API returns dependencies directly, not wrapped in { data: ... }
+  return result;
 }
 
 /**
