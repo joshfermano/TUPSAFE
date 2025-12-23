@@ -19,36 +19,31 @@ import {
   generateAndRegisterEmployeeIdFromDOB,
 } from '@tupsafe/database/server';
 import {
-  checkUserRoleFromSupabase,
-  getSessionUser,
+  getUserFromSupabase,
   generatePassword,
   sendCredentialsEmail,
-  createServerClient,
+  createAdminClient,
 } from '@tupsafe/auth/server';
 import { createUserSchema, type CreateUserResponse } from '@tupsafe/types';
 
 export async function POST(request: NextRequest) {
   try {
-    // Check if user has HR or admin role
-    const hasPermission = await checkUserRoleFromSupabase(
-      ['hr', 'admin'],
-      'admin'
-    );
-
-    if (!hasPermission) {
-      return NextResponse.json(
-        { error: 'Unauthorized. HR or Admin role required.' },
-        { status: 403 }
-      );
-    }
-
-    // Get current admin user and their role
-    const adminUser = await getSessionUser();
+    // Get current admin user from Supabase session (portal-specific)
+    const adminUser = await getUserFromSupabase('admin');
 
     if (!adminUser) {
       return NextResponse.json(
         { error: 'Session expired. Please login again.' },
         { status: 401 }
+      );
+    }
+
+    // Verify user has HR or admin role
+    const allowedRoles = ['hr', 'admin'];
+    if (!allowedRoles.includes(adminUser.role)) {
+      return NextResponse.json(
+        { error: 'Unauthorized. HR or Admin role required.' },
+        { status: 403 }
       );
     }
 
@@ -86,8 +81,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Initialize Supabase client
-    const supabase = await createServerClient('admin');
+    // Initialize Supabase admin client (service role - required for admin.createUser)
+    const supabase = createAdminClient();
 
     // Generate temporary password server-side (single source of truth)
     const temporaryPassword = generatePassword();
@@ -190,6 +185,32 @@ export async function POST(request: NextRequest) {
         { error: 'Failed to create user profile. Please try again.' },
         { status: 500 }
       );
+    }
+
+    // Update user metadata with complete account details (ensures consistency with database)
+    try {
+      await supabase.auth.admin.updateUserById(userId, {
+        user_metadata: {
+          first_name: data.firstName,
+          last_name: data.lastName,
+          middle_name: data.middleName || null,
+          user_type: 'employee',
+          role: data.role,
+          employee_id: employeeId,
+          employment_category: data.employmentCategory,
+          department_id: data.departmentId || null,
+          date_of_birth: data.dateOfBirth,
+          account_status: 'active',
+          registration_completed: true,
+          created_by_admin: true,
+          approved_at: now.toISOString(),
+          approved_by: adminUser.userId,
+        },
+      });
+      console.log(`✓ Updated user metadata for admin-created user ${userId}`);
+    } catch (metadataError) {
+      console.error('Error updating user metadata:', metadataError);
+      // Non-critical - database is source of truth, continue
     }
 
     // Send credentials email if requested

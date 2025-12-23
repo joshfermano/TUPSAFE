@@ -11,7 +11,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { UserPlus, AlertCircle, Users, UserCheck, UserX, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,7 +21,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import {
   UserFilters,
   UsersDataTable,
-  UserDetailsDialog,
   EditUserDialog,
   ResetPasswordDialog,
   SyncMetadataDialog,
@@ -32,10 +31,10 @@ import type { UserListQuery } from '@tupsafe/types';
 import Link from 'next/link';
 
 export default function UsersPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
 
   // Dialog states
-  const [detailsUserId, setDetailsUserId] = useState<string | null>(null);
   const [editUserId, setEditUserId] = useState<string | null>(null);
   const [resetPasswordUserId, setResetPasswordUserId] = useState<string | null>(null);
   const [syncMetadataUserId, setSyncMetadataUserId] = useState<string | null>(null);
@@ -90,7 +89,7 @@ export default function UsersPage() {
 
   // Handle actions
   const handleViewDetails = (userId: string) => {
-    setDetailsUserId(userId);
+    router.push(`/dashboard/users/view/${userId}`);
   };
 
   const handleEdit = (userId: string) => {
@@ -306,12 +305,6 @@ export default function UsersPage() {
       </Card>
 
       {/* Dialogs */}
-      <UserDetailsDialog
-        userId={detailsUserId}
-        open={!!detailsUserId}
-        onOpenChange={(open) => !open && setDetailsUserId(null)}
-      />
-
       <EditUserDialog
         userId={editUserId}
         open={!!editUserId}

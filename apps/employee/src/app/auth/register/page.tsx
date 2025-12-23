@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   CheckCircle2,
@@ -8,10 +8,14 @@ import {
   Shield,
   FileText,
   Building2,
+  Mail,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react';
 
 import { Button } from '../../../components/ui/button';
 import { Badge } from '../../../components/ui/badge';
+import { Input } from '../../../components/ui/input';
 import { UserTypeSelection } from '../../../components/auth/UserTypeSelection';
 import { EmployeeRegistrationForm } from '../../../components/auth/EmployeeRegistrationForm';
 import { ApplicantRegistrationForm } from '../../../components/auth/ApplicantRegistrationForm';
@@ -25,6 +29,56 @@ import {
   type ApplicantRegistrationFormData,
 } from '../../../lib/validations/auth';
 import { cn } from '../../../lib/utils';
+
+// Local storage key for draft persistence
+const REGISTRATION_DRAFT_KEY = 'tupsafe_registration_draft';
+
+// Draft data structure
+interface RegistrationDraft {
+  userId: string;
+  email: string;
+  userTypeSelection: UserTypeSelection;
+  expiresAt: number; // Unix timestamp
+}
+
+// Helper to save draft to localStorage
+function saveDraft(draft: RegistrationDraft): void {
+  try {
+    localStorage.setItem(REGISTRATION_DRAFT_KEY, JSON.stringify(draft));
+  } catch (error) {
+    console.error('Failed to save registration draft:', error);
+  }
+}
+
+// Helper to load draft from localStorage
+function loadDraft(): RegistrationDraft | null {
+  try {
+    const raw = localStorage.getItem(REGISTRATION_DRAFT_KEY);
+    if (!raw) return null;
+
+    const draft: RegistrationDraft = JSON.parse(raw);
+    
+    // Check if draft is expired
+    if (Date.now() > draft.expiresAt) {
+      clearDraft();
+      return null;
+    }
+
+    return draft;
+  } catch (error) {
+    console.error('Failed to load registration draft:', error);
+    return null;
+  }
+}
+
+// Helper to clear draft from localStorage
+function clearDraft(): void {
+  try {
+    localStorage.removeItem(REGISTRATION_DRAFT_KEY);
+  } catch (error) {
+    console.error('Failed to clear registration draft:', error);
+  }
+}
 
 // Minimalist step definitions
 const EMPLOYEE_STEPS = [
@@ -61,15 +115,126 @@ export default function RegisterPage() {
   const [registrationEmail, setRegistrationEmail] = useState<string | null>(
     null
   );
+  
+  // Continue registration state
+  const [showContinueForm, setShowContinueForm] = useState(false);
+  const [continueEmail, setContinueEmail] = useState('');
+  const [continueError, setContinueError] = useState<string | null>(null);
+  const [isResuming, setIsResuming] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
 
   const isEmployee = userTypeSelection?.startsWith('employee');
   const isApplicant = userTypeSelection === 'applicant';
   const isFaculty = userTypeSelection === 'employee-faculty';
   const steps = isEmployee ? EMPLOYEE_STEPS : APPLICANT_STEPS;
 
+  // Restore draft from localStorage on mount
+  useEffect(() => {
+    const draft = loadDraft();
+    if (draft && !draftRestored) {
+      console.log('Restoring registration draft:', draft.email);
+      setRegistrationUserId(draft.userId);
+      setRegistrationEmail(draft.email);
+      setUserTypeSelection(draft.userTypeSelection);
+      setCurrentStep(2); // Jump to OTP step
+      setDraftRestored(true);
+    }
+  }, [draftRestored]);
+
+  // Save draft when user is created (after initiate succeeds)
+  const handleUserCreated = useCallback((userId: string, email: string) => {
+    setRegistrationUserId(userId);
+    setRegistrationEmail(email);
+    
+    // Save draft with 15-minute expiry (aligned with OTP expiry)
+    const expiresAt = Date.now() + 15 * 60 * 1000;
+    saveDraft({
+      userId,
+      email,
+      userTypeSelection: userTypeSelection!,
+      expiresAt,
+    });
+  }, [userTypeSelection]);
+
+  // Clear draft on successful verification or completion
+  const handleVerificationComplete = useCallback(() => {
+    clearDraft();
+  }, []);
+
   const handleUserTypeSelection = (type: UserTypeSelection) => {
     setUserTypeSelection(type);
     setCurrentStep(1);
+    setShowContinueForm(false);
+  };
+
+  // Handle continue registration form submission
+  const handleContinueRegistration = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!continueEmail.trim()) {
+      setContinueError('Please enter your email address');
+      return;
+    }
+
+    setIsResuming(true);
+    setContinueError(null);
+
+    try {
+      const response = await fetch('/api/auth/register/resume', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: continueEmail.trim() }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        // Handle specific error codes
+        if (result.code === 'NOT_FOUND') {
+          setContinueError('No registration found for this email. Please start a new registration.');
+        } else if (result.code === 'ALREADY_REGISTERED') {
+          setContinueError('This email is already registered. Please sign in instead.');
+        } else if (result.code === 'EXPIRED') {
+          setContinueError('Your registration has expired. Please start a new registration.');
+        } else {
+          setContinueError(result.error || 'Failed to resume registration');
+        }
+        return;
+      }
+
+      // Success - restore state and jump to OTP
+      const { userId, email, userType, employmentCategory } = result.data;
+      
+      // Map API response to userTypeSelection
+      let mappedUserType: UserTypeSelection;
+      if (userType === 'applicant') {
+        mappedUserType = 'applicant';
+      } else if (employmentCategory === 'faculty') {
+        mappedUserType = 'employee-faculty';
+      } else {
+        mappedUserType = 'employee-staff';
+      }
+
+      setRegistrationUserId(userId);
+      setRegistrationEmail(email);
+      setUserTypeSelection(mappedUserType);
+      setCurrentStep(2); // Jump to OTP step
+      setShowContinueForm(false);
+
+      // Save draft for future refreshes
+      const expiresAt = Date.now() + 15 * 60 * 1000;
+      saveDraft({
+        userId,
+        email,
+        userTypeSelection: mappedUserType,
+        expiresAt,
+      });
+    } catch (error) {
+      console.error('Continue registration error:', error);
+      setContinueError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsResuming(false);
+    }
   };
 
   const nextStep = () => {
@@ -89,6 +254,12 @@ export default function RegisterPage() {
   };
 
   const onSubmitEmployee = async (data: EmployeeRegistrationFormData) => {
+    console.log('[onSubmitEmployee] Called with data:', {
+      ...data,
+      password: '[REDACTED]',
+      confirmPassword: '[REDACTED]',
+    });
+    
     if (!registrationUserId) {
       console.error('Registration user ID not found');
       return;
@@ -122,6 +293,8 @@ export default function RegisterPage() {
         departmentId: result.data.departmentId,
       });
 
+      // Clear draft on successful completion
+      clearDraft();
       setIsSubmitted(true);
     } catch (error) {
       console.error('Registration failed:', error);
@@ -331,28 +504,109 @@ export default function RegisterPage() {
                 {/* Form Header */}
                 <div className="text-center space-y-1.5">
                   <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                    {steps[currentStep].title}
+                    {showContinueForm ? 'Continue Registration' : steps[currentStep].title}
                   </h3>
                   <p className="text-sm text-slate-500 dark:text-slate-400">
-                    {currentStep === 0
-                      ? 'Select your user type to begin registration'
-                      : `Step ${currentStep} of ${steps.length - 1}`}
+                    {showContinueForm
+                      ? 'Resume your incomplete registration'
+                      : currentStep === 0
+                        ? 'Select your user type to begin registration'
+                        : `Step ${currentStep} of ${steps.length - 1}`}
                   </p>
                 </div>
 
                 {/* Form Content */}
                 <div>
-                  {/* Step 0: User Type Selection */}
-                  {currentStep === 0 && (
-                    <UserTypeSelection
-                      value={userTypeSelection || undefined}
-                      onChange={handleUserTypeSelection}
-                      error={
-                        !userTypeSelection && currentStep > 0
-                          ? 'Please select your user type'
-                          : undefined
-                      }
-                    />
+                  {/* Step 0: User Type Selection or Continue Registration */}
+                  {currentStep === 0 && !showContinueForm && (
+                    <>
+                      <UserTypeSelection
+                        value={userTypeSelection || undefined}
+                        onChange={handleUserTypeSelection}
+                        error={
+                          !userTypeSelection && currentStep > 0
+                            ? 'Please select your user type'
+                            : undefined
+                        }
+                      />
+                      
+                      {/* Continue Registration Link */}
+                      <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/60">
+                        <button
+                          type="button"
+                          onClick={() => setShowContinueForm(true)}
+                          className="w-full flex items-center justify-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-[#8B1538] dark:hover:text-red-400 transition-colors"
+                        >
+                          <RefreshCw className="w-4 h-4" />
+                          Continue a previous registration
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Continue Registration Form */}
+                  {currentStep === 0 && showContinueForm && (
+                    <div className="space-y-4">
+                      <div className="text-center space-y-2">
+                        <div className="w-12 h-12 mx-auto rounded-full bg-[#8B1538]/10 dark:bg-[#8B1538]/20 flex items-center justify-center">
+                          <Mail className="w-6 h-6 text-[#8B1538] dark:text-red-400" />
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                          Enter the email you used to start registration
+                        </p>
+                      </div>
+
+                      <form onSubmit={handleContinueRegistration} className="space-y-4">
+                        <div className="space-y-2">
+                          <Input
+                            type="email"
+                            placeholder="Enter your email"
+                            value={continueEmail}
+                            onChange={(e) => {
+                              setContinueEmail(e.target.value);
+                              setContinueError(null);
+                            }}
+                            className={cn(
+                              "h-11",
+                              continueError && "border-red-500 focus-visible:ring-red-500"
+                            )}
+                            disabled={isResuming}
+                          />
+                          {continueError && (
+                            <p className="text-sm text-red-500 dark:text-red-400">
+                              {continueError}
+                            </p>
+                          )}
+                        </div>
+
+                        <Button
+                          type="submit"
+                          disabled={isResuming}
+                          className="w-full h-11 bg-[#8B1538] hover:bg-[#6B0F2A] dark:bg-[#8B1538] dark:hover:bg-[#B8264D] text-white font-medium"
+                        >
+                          {isResuming ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Looking up registration...
+                            </>
+                          ) : (
+                            'Continue Registration'
+                          )}
+                        </Button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowContinueForm(false);
+                            setContinueEmail('');
+                            setContinueError(null);
+                          }}
+                          className="w-full text-sm text-slate-600 dark:text-slate-400 hover:text-[#8B1538] dark:hover:text-red-400 transition-colors"
+                        >
+                          ← Back to registration options
+                        </button>
+                      </form>
+                    </div>
                   )}
 
                   {/* Employee Registration Form */}
@@ -369,10 +623,8 @@ export default function RegisterPage() {
                       totalSteps={4}
                       registrationUserId={registrationUserId}
                       registrationEmail={registrationEmail}
-                      onUserCreated={(userId, email) => {
-                        setRegistrationUserId(userId);
-                        setRegistrationEmail(email);
-                      }}
+                      onUserCreated={handleUserCreated}
+                      onVerificationComplete={handleVerificationComplete}
                     />
                   )}
 
@@ -387,10 +639,8 @@ export default function RegisterPage() {
                       totalSteps={4}
                       registrationUserId={registrationUserId}
                       registrationEmail={registrationEmail}
-                      onUserCreated={(userId, email) => {
-                        setRegistrationUserId(userId);
-                        setRegistrationEmail(email);
-                      }}
+                      onUserCreated={handleUserCreated}
+                      onVerificationComplete={handleVerificationComplete}
                     />
                   )}
                 </div>

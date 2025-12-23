@@ -7,7 +7,6 @@
 export { UserStatsCards, DetailedUserStats } from './UserStatsCards';
 export { UserFilters } from './UserFilters';
 export { UsersDataTable } from './UsersDataTable';
-export { UserDetailsDialog } from './UserDetailsDialog';
 export { EditUserDialog } from './EditUserDialog';
 export { ResetPasswordDialog } from './ResetPasswordDialog';
 export { SyncMetadataDialog } from './SyncMetadataDialog';

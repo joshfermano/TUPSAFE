@@ -78,6 +78,8 @@ interface InitiateSuccessResponse {
     userId: string;
     email: string;
     userType: 'employee' | 'applicant';
+    employmentCategory?: 'faculty' | 'administrative' | null;
+    isResume?: boolean; // True if resuming an existing incomplete registration
   };
 }
 
@@ -295,22 +297,60 @@ export async function POST(
             );
           }
         } else {
-          // Still within OTP window - provide helpful message
-          const minutesRemaining = Math.ceil(15 - minutesOld);
+          // Still within OTP window - RESUME the registration instead of blocking
+          // Update user_metadata with latest personal info (but NOT password for security)
+          console.log(
+            `Resuming incomplete registration for ${data.email}, user can use existing OTP or resend`
+          );
 
+          try {
+            // Update metadata with latest personal info
+            const { error: updateError } = await supabase.auth.admin.updateUserById(
+              existingUser.id,
+              {
+                user_metadata: {
+                  first_name: data.firstName,
+                  last_name: data.lastName,
+                  middle_name: data.middleName || null,
+                  phone_number: data.phoneNumber,
+                  user_type: data.userType,
+                  employment_category: data.employmentCategory || null,
+                  date_of_birth: data.dateOfBirth,
+                  registration_step: 'email_verification_pending',
+                  ip_address: getClientIp(request),
+                  updated_at: new Date().toISOString(),
+                },
+              }
+            );
+
+            if (updateError) {
+              console.error('Failed to update user metadata on resume:', updateError);
+              // Non-critical - continue with the flow
+            }
+          } catch (updateError) {
+            console.error('Error updating user metadata:', updateError);
+            // Non-critical - continue with the flow
+          }
+
+          // Get user type and employment category from existing metadata or new data
+          const metadata = existingUser.user_metadata || {};
+          const userType = (data.userType || metadata.user_type || 'employee') as 'employee' | 'applicant';
+          const employmentCategory = (data.employmentCategory || metadata.employment_category || null) as 'faculty' | 'administrative' | null;
+
+          // Return success with existing userId so UI can proceed to OTP step
           return NextResponse.json(
             {
-              success: false,
-              error: 'Registration already in progress',
-              details: {
-                email: [
-                  `A verification email was recently sent. Please check your email (including spam folder) or try again in ${minutesRemaining} minute${
-                    minutesRemaining !== 1 ? 's' : ''
-                  }.`,
-                ],
+              success: true,
+              message: 'Registration resumed. Please check your email for the verification code or tap "Resend Code".',
+              data: {
+                userId: existingUser.id,
+                email: existingUser.email || data.email,
+                userType,
+                employmentCategory,
+                isResume: true,
               },
             },
-            { status: 409 }
+            { status: 200 }
           );
         }
       }
@@ -436,6 +476,8 @@ export async function POST(
           userId,
           email: data.email,
           userType: data.userType,
+          employmentCategory: data.employmentCategory || null,
+          isResume: false,
         },
       },
       { status: 200 }

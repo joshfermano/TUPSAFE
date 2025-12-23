@@ -11,7 +11,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db, profiles } from '@tupsafe/database/server';
+import { db, profiles, generateAndRegisterEmployeeIdFromDOB } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
 import { createAdminClient } from '@tupsafe/auth/server';
 
@@ -39,6 +39,7 @@ interface CompleteSuccessResponse {
   message: string;
   data: {
     userId: string;
+    employeeId: string | null;
     departmentId: string | null;
   };
 }
@@ -160,7 +161,24 @@ export async function POST(
     }
     // Note: For applicants (if they reach this endpoint), no department is required
 
-    // Update profile with employment details
+    // Generate employee ID from date of birth
+    let generatedEmployeeId: string | null = null;
+    const dateOfBirth = authUser.user.user_metadata?.date_of_birth;
+    
+    if (dateOfBirth) {
+      try {
+        generatedEmployeeId = await generateAndRegisterEmployeeIdFromDOB(userId, dateOfBirth);
+        console.log(`✓ Generated employee ID for user ${userId}: ${generatedEmployeeId}`);
+      } catch (idGenError) {
+        console.error('Error generating employee ID:', idGenError);
+        // Non-critical - we can continue without employee ID
+        // Admin can assign manually later
+      }
+    } else {
+      console.warn(`[Registration Complete] No date of birth found for user ${userId}, skipping employee ID generation`);
+    }
+
+    // Update profile with employment details and employee ID
     try {
       // Drizzle's date() type expects a string in 'YYYY-MM-DD' format
       const hireDateForDb = hireDate
@@ -170,6 +188,7 @@ export async function POST(
       await db
         .update(profiles)
         .set({
+          employeeId: generatedEmployeeId,
           departmentId: finalDepartmentId,
           hireDate: hireDateForDb,
           employmentCategory: employmentCategory,
@@ -180,6 +199,7 @@ export async function POST(
       console.log(
         `✓ Updated profile for user ${userId} with employment details:`,
         {
+          employeeId: generatedEmployeeId,
           departmentId: finalDepartmentId,
           hireDate,
           employmentCategory,
@@ -196,19 +216,20 @@ export async function POST(
       );
     }
 
-    // Also update user metadata with department info for quick access
+    // Also update user metadata with department info and employee ID for quick access
     try {
       const existingMetadata = authUser.user.user_metadata || {};
       await supabase.auth.admin.updateUserById(userId, {
         user_metadata: {
           ...existingMetadata,
+          employee_id: generatedEmployeeId,
           department_id: finalDepartmentId,
           employment_category: employmentCategory,
           hire_date: hireDate || null,
           registration_completed: true,
         },
       });
-      console.log(`✓ Updated user metadata with department info for ${userId}`);
+      console.log(`✓ Updated user metadata with department info and employee ID for ${userId}`);
     } catch (metadataError) {
       console.error('Error updating user metadata:', metadataError);
       // Non-critical, continue
@@ -220,6 +241,7 @@ export async function POST(
         message: 'Registration completed successfully. Awaiting admin approval.',
         data: {
           userId,
+          employeeId: generatedEmployeeId,
           departmentId: finalDepartmentId,
         },
       },

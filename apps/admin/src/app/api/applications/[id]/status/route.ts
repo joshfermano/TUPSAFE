@@ -24,8 +24,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  checkUserRoleFromSupabase,
-  getSessionUser,
+  getUserFromSupabase,
   generateAndRegisterEmployeeId,
 } from '@tupsafe/auth/server';
 import {
@@ -49,23 +48,22 @@ export async function POST(
   try {
     console.log('[Application Status API] POST request received');
 
-    // Verify admin/HR permissions
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
-
-    if (!hasPermission) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Admin or HR role required.' },
-        { status: 403 }
-      );
-    }
-
-    // Get current user
-    const currentUser = await getSessionUser();
+    // Get current user from Supabase session (portal-specific)
+    const currentUser = await getUserFromSupabase('admin');
 
     if (!currentUser) {
       return NextResponse.json(
         { error: 'Session expired. Please login again.' },
         { status: 401 }
+      );
+    }
+
+    // Verify admin/HR permissions
+    const allowedRoles = ['admin', 'hr'];
+    if (!allowedRoles.includes(currentUser.role)) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Admin or HR role required.' },
+        { status: 403 }
       );
     }
 
