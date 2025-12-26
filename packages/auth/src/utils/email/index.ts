@@ -1,74 +1,49 @@
 /**
  * Email Service
- * Handles all authentication-related emails via Supabase Edge Functions + Resend
+ * Handles all application emails via SendGrid Web API or mock provider
+ *
+ * This module is server-only and should be imported from @tupsafe/auth/server
+ *
+ * Provider Selection:
+ * - Development mode (USE_MOCK_EMAILS=true): Logs emails to console
+ * - Production mode: Sends emails via SendGrid Web API v3
  */
 
-export type EmailType =
-  | 'otp'
-  | 'welcome'
-  | 'rejection'
-  | 'credentials'
-  | 'password_reset';
+import { sendWithMock } from './providers/mock';
+import { sendWithSendGrid } from './providers/sendgrid';
+import {
+  otpTemplate,
+  welcomeTemplate,
+  rejectionTemplate,
+  credentialsTemplate,
+  applicationStatusTemplate,
+  pdsStatusTemplate,
+  salnStatusTemplate,
+  bulkApprovalTemplate,
+} from './templates';
 
-interface EmailResult {
-  success: boolean;
-  messageId?: string;
-  error?: string;
-}
+// Re-export types for consumers
+export type {
+  EmailResult,
+  EmailType,
+  OTPType,
+  SubmissionStatus,
+  ApplicationStatusEmailPayload,
+  PDSStatusEmailPayload,
+  SALNStatusEmailPayload,
+  BulkApprovalEmailPayload,
+  SendEmailPayload,
+} from './types';
 
-/**
- * Get Supabase Edge Function URL for sending emails
- */
-function getEdgeFunctionUrl(): string {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!supabaseUrl) {
-    throw new Error('NEXT_PUBLIC_SUPABASE_URL not configured');
-  }
-  return `${supabaseUrl}/functions/v1/send-email`;
-}
-
-/**
- * Get Supabase service role key for authenticated Edge Function calls
- */
-function getServiceRoleKey(): string {
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceKey) {
-    throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
-  }
-  return serviceKey;
-}
-
-/**
- * Generic send email function (deprecated - use specific email type functions)
- * @param to - Recipient email address
- * @param subject - Email subject
- * @param html - HTML email body
- * @deprecated Use specific email functions (sendOTPEmail, sendWelcomeEmail, etc.)
- */
-export async function sendEmail(
-  to: string,
-  subject: string,
-  _html: string
-): Promise<EmailResult> {
-  try {
-    console.log(
-      'sendEmail called (deprecated) - use specific email functions instead'
-    );
-    console.log('To:', to);
-    console.log('Subject:', subject);
-
-    return {
-      success: true,
-      messageId: 'deprecated-function',
-    };
-  } catch (error) {
-    console.error('Error sending email:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to send email',
-    };
-  }
-}
+import type {
+  EmailResult,
+  SendEmailPayload,
+  ApplicationStatusEmailPayload,
+  PDSStatusEmailPayload,
+  SALNStatusEmailPayload,
+  BulkApprovalEmailPayload,
+  OTPType,
+} from './types';
 
 /**
  * Check if we're in development mode and should use mock emails
@@ -81,7 +56,40 @@ function shouldUseMockEmails(): boolean {
 }
 
 /**
- * Send OTP email via Supabase Edge Function
+ * Send email via the appropriate provider (mock or SendGrid)
+ */
+async function sendWithProvider(
+  payload: SendEmailPayload
+): Promise<EmailResult> {
+  if (shouldUseMockEmails()) {
+    return sendWithMock(payload);
+  }
+  return sendWithSendGrid(payload);
+}
+
+/**
+ * Generic send email function (deprecated - use specific email type functions)
+ * @deprecated Use specific email functions (sendOTPEmail, sendWelcomeEmail, etc.)
+ */
+export async function sendEmail(
+  to: string,
+  subject: string,
+  _html: string
+): Promise<EmailResult> {
+  console.log(
+    'sendEmail called (deprecated) - use specific email functions instead'
+  );
+  console.log('To:', to);
+  console.log('Subject:', subject);
+
+  return {
+    success: true,
+    messageId: 'deprecated-function',
+  };
+}
+
+/**
+ * Send OTP email
  * @param to - Recipient email address
  * @param code - 6-digit OTP code
  * @param type - Type of OTP (for email copy)
@@ -89,53 +97,22 @@ function shouldUseMockEmails(): boolean {
 export async function sendOTPEmail(
   to: string,
   code: string,
-  type: 'email_verification' | 'login_challenge' | 'password_reset'
+  type: OTPType
 ): Promise<EmailResult> {
   try {
-    // Development mode: Mock email sending
-    if (shouldUseMockEmails()) {
-      console.log('\n========================================');
-      console.log('📧 MOCK EMAIL (Development Mode)');
-      console.log('========================================');
-      console.log(`To: ${to}`);
-      console.log(`Type: ${type}`);
-      console.log(`OTP Code: ${code}`);
-      console.log('========================================\n');
-      return {
-        success: true,
-        messageId: 'mock-' + Date.now(),
-      };
-    }
+    const { subject, html } = otpTemplate(code, type);
 
-    const edgeFunctionUrl = getEdgeFunctionUrl();
-    const serviceKey = getServiceRoleKey();
-
-    const response = await fetch(edgeFunctionUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${serviceKey}`,
-      },
-      body: JSON.stringify({
-        type: 'otp',
-        to,
-        code,
-        otpType: type,
-      }),
+    const result = await sendWithProvider({
+      to,
+      subject,
+      html,
     });
 
-    const data = await response.json();
-
-    if (!response.ok || !data.success) {
-      console.error('Edge Function error:', data);
-      throw new Error(data.error || 'Failed to send OTP email');
+    if (result.success) {
+      console.log(`✓ OTP email sent successfully to ${to} (type: ${type})`);
     }
 
-    console.log(`✓ OTP email sent successfully to ${to} (type: ${type})`);
-    return {
-      success: true,
-      messageId: data.messageId,
-    };
+    return result;
   } catch (error) {
     console.error('Error sending OTP email:', error);
     return {
@@ -146,7 +123,7 @@ export async function sendOTPEmail(
 }
 
 /**
- * Send welcome email after account approval via Supabase Edge Function
+ * Send welcome email after account approval
  * @param to - Recipient email address
  * @param employeeId - Assigned employee ID
  * @param firstName - User's first name
@@ -157,51 +134,20 @@ export async function sendWelcomeEmail(
   firstName: string
 ): Promise<EmailResult> {
   try {
-    // Development mode: Mock email sending
-    if (shouldUseMockEmails()) {
-      console.log('\n========================================');
-      console.log('📧 MOCK EMAIL (Development Mode)');
-      console.log('========================================');
-      console.log(`To: ${to}`);
-      console.log(`Type: Welcome Email`);
-      console.log(`First Name: ${firstName}`);
-      console.log(`Employee ID: ${employeeId}`);
-      console.log('========================================\n');
-      return {
-        success: true,
-        messageId: 'mock-' + Date.now(),
-      };
-    }
+    const { subject, html } = welcomeTemplate(firstName, employeeId);
 
-    const edgeFunctionUrl = getEdgeFunctionUrl();
-    const serviceKey = getServiceRoleKey();
-
-    const response = await fetch(edgeFunctionUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${serviceKey}`,
-      },
-      body: JSON.stringify({
-        type: 'welcome',
-        to,
-        firstName,
-        employeeId,
-      }),
+    const result = await sendWithProvider({
+      to,
+      toName: firstName,
+      subject,
+      html,
     });
 
-    const data = await response.json();
-
-    if (!response.ok || !data.success) {
-      console.error('Edge Function error:', data);
-      throw new Error(data.error || 'Failed to send welcome email');
+    if (result.success) {
+      console.log(`✓ Welcome email sent successfully to ${to}`);
     }
 
-    console.log(`✓ Welcome email sent successfully to ${to}`);
-    return {
-      success: true,
-      messageId: data.messageId,
-    };
+    return result;
   } catch (error) {
     console.error('Error sending welcome email:', error);
     return {
@@ -212,7 +158,7 @@ export async function sendWelcomeEmail(
 }
 
 /**
- * Send rejection email via Supabase Edge Function
+ * Send rejection email
  * @param to - Recipient email address
  * @param firstName - User's first name
  * @param reason - Rejection reason (optional)
@@ -223,51 +169,20 @@ export async function sendRejectionEmail(
   reason?: string
 ): Promise<EmailResult> {
   try {
-    // Development mode: Mock email sending
-    if (shouldUseMockEmails()) {
-      console.log('\n========================================');
-      console.log('📧 MOCK EMAIL (Development Mode)');
-      console.log('========================================');
-      console.log(`To: ${to}`);
-      console.log(`Type: Rejection Email`);
-      console.log(`First Name: ${firstName}`);
-      console.log(`Reason: ${reason || 'Not specified'}`);
-      console.log('========================================\n');
-      return {
-        success: true,
-        messageId: 'mock-' + Date.now(),
-      };
-    }
+    const { subject, html } = rejectionTemplate(firstName, reason);
 
-    const edgeFunctionUrl = getEdgeFunctionUrl();
-    const serviceKey = getServiceRoleKey();
-
-    const response = await fetch(edgeFunctionUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${serviceKey}`,
-      },
-      body: JSON.stringify({
-        type: 'rejection',
-        to,
-        firstName,
-        reason,
-      }),
+    const result = await sendWithProvider({
+      to,
+      toName: firstName,
+      subject,
+      html,
     });
 
-    const data = await response.json();
-
-    if (!response.ok || !data.success) {
-      console.error('Edge Function error:', data);
-      throw new Error(data.error || 'Failed to send rejection email');
+    if (result.success) {
+      console.log(`✓ Rejection email sent successfully to ${to}`);
     }
 
-    console.log(`✓ Rejection email sent successfully to ${to}`);
-    return {
-      success: true,
-      messageId: data.messageId,
-    };
+    return result;
   } catch (error) {
     console.error('Error sending rejection email:', error);
     return {
@@ -278,7 +193,7 @@ export async function sendRejectionEmail(
 }
 
 /**
- * Send credentials email for admin-created accounts via Supabase Edge Function
+ * Send credentials email for admin-created accounts
  * @param to - Recipient email address
  * @param employeeId - Employee ID
  * @param temporaryPassword - Temporary password
@@ -291,55 +206,162 @@ export async function sendCredentialsEmail(
   firstName: string
 ): Promise<EmailResult> {
   try {
-    // Development mode: Mock email sending
-    if (shouldUseMockEmails()) {
-      console.log('\n========================================');
-      console.log('📧 MOCK EMAIL (Development Mode)');
-      console.log('========================================');
-      console.log(`To: ${to}`);
-      console.log(`Type: Credentials Email`);
-      console.log(`First Name: ${firstName}`);
-      console.log(`Employee ID: ${employeeId}`);
-      console.log(`Temporary Password: ${temporaryPassword}`);
-      console.log('========================================\n');
-      return {
-        success: true,
-        messageId: 'mock-' + Date.now(),
-      };
-    }
+    const { subject, html } = credentialsTemplate(
+      firstName,
+      employeeId,
+      temporaryPassword
+    );
 
-    const edgeFunctionUrl = getEdgeFunctionUrl();
-    const serviceKey = getServiceRoleKey();
-
-    const response = await fetch(edgeFunctionUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${serviceKey}`,
-      },
-      body: JSON.stringify({
-        type: 'credentials',
-        to,
-        firstName,
-        employeeId,
-        temporaryPassword,
-      }),
+    const result = await sendWithProvider({
+      to,
+      toName: firstName,
+      subject,
+      html,
     });
 
-    const data = await response.json();
-
-    if (!response.ok || !data.success) {
-      console.error('Edge Function error:', data);
-      throw new Error(data.error || 'Failed to send credentials email');
+    if (result.success) {
+      console.log(`✓ Credentials email sent successfully to ${to}`);
     }
 
-    console.log(`✓ Credentials email sent successfully to ${to}`);
-    return {
-      success: true,
-      messageId: data.messageId,
-    };
+    return result;
   } catch (error) {
     console.error('Error sending credentials email:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to send email',
+    };
+  }
+}
+
+/**
+ * Send application status update email
+ * Used to notify applicants of job application status changes
+ * @param payload - Application status email payload
+ */
+export async function sendApplicationStatusEmail(
+  payload: ApplicationStatusEmailPayload
+): Promise<EmailResult> {
+  try {
+    const { subject, html } = applicationStatusTemplate(payload);
+
+    const result = await sendWithProvider({
+      to: payload.to,
+      toName: payload.applicantName,
+      subject,
+      html,
+    });
+
+    if (result.success) {
+      console.log(
+        `✓ Application status email sent successfully to ${payload.to} (status: ${payload.status})`
+      );
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Error sending application status email:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to send email',
+    };
+  }
+}
+
+/**
+ * Send PDS status update email
+ * Used to notify employees of PDS submission status changes
+ * @param payload - PDS status email payload
+ */
+export async function sendPDSStatusEmail(
+  payload: PDSStatusEmailPayload
+): Promise<EmailResult> {
+  try {
+    const { subject, html } = pdsStatusTemplate(payload);
+
+    const result = await sendWithProvider({
+      to: payload.to,
+      toName: payload.employeeName,
+      subject,
+      html,
+    });
+
+    if (result.success) {
+      console.log(
+        `✓ PDS status email sent successfully to ${payload.to} (status: ${payload.status})`
+      );
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Error sending PDS status email:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to send email',
+    };
+  }
+}
+
+/**
+ * Send SALN status update email
+ * Used to notify employees of SALN submission status changes
+ * @param payload - SALN status email payload
+ */
+export async function sendSALNStatusEmail(
+  payload: SALNStatusEmailPayload
+): Promise<EmailResult> {
+  try {
+    const { subject, html } = salnStatusTemplate(payload);
+
+    const result = await sendWithProvider({
+      to: payload.to,
+      toName: payload.employeeName,
+      subject,
+      html,
+    });
+
+    if (result.success) {
+      console.log(
+        `✓ SALN status email sent successfully to ${payload.to} (status: ${payload.status})`
+      );
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Error sending SALN status email:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to send email',
+    };
+  }
+}
+
+/**
+ * Send bulk approval summary email
+ * Used to notify employees when multiple submissions are approved at once
+ * @param payload - Bulk approval email payload
+ */
+export async function sendBulkApprovalEmail(
+  payload: BulkApprovalEmailPayload
+): Promise<EmailResult> {
+  try {
+    const { subject, html } = bulkApprovalTemplate(payload);
+
+    const result = await sendWithProvider({
+      to: payload.to,
+      toName: payload.employeeName,
+      subject,
+      html,
+    });
+
+    if (result.success) {
+      console.log(
+        `✓ Bulk approval email sent successfully to ${payload.to} (${payload.approvals.length} submissions)`
+      );
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Error sending bulk approval email:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to send email',

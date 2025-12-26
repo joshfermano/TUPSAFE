@@ -8,6 +8,30 @@
 import { z } from 'zod';
 
 /**
+ * TUP Manila institutional email domains for employee validation
+ * Employee accounts created by admin/HR must use these domains
+ */
+export const INSTITUTIONAL_EMAIL_DOMAINS = [
+  'tup.edu.ph',
+  'gsb.tup.edu.ph',
+  'manila.tup.edu.ph',
+  'gov.ph',
+  'deped.gov.ph',
+  'ched.gov.ph',
+  'dost.gov.ph',
+] as const;
+
+/**
+ * Check if an email belongs to an institutional domain
+ */
+export function isInstitutionalEmail(email: string): boolean {
+  const domain = email.split('@')[1]?.toLowerCase();
+  return INSTITUTIONAL_EMAIL_DOMAINS.some((instDomain) =>
+    domain?.endsWith(instDomain)
+  );
+}
+
+/**
  * Role hierarchy for permission validation
  */
 export const ROLE_HIERARCHY = {
@@ -78,12 +102,17 @@ export const passwordResetSchema = z.object({
 export type PasswordResetData = z.infer<typeof passwordResetSchema>;
 
 /**
- * Create user validation schema
+ * Base create user schema fields
  * Used by admin/HR to create new employee accounts
  *
  * Employee ID is auto-generated from dateOfBirth in format TUPM-MMDD-YY-###
+ * 
+ * When linking to a hired application:
+ * - Provide `hiredApplicationNumber` (e.g., "APP-20251226-0001")
+ * - The application's conversion fields will be updated
+ * - Credentials will be sent to both the employee email and applicant's personal email
  */
-export const createUserSchema = z.object({
+const createUserBaseSchema = z.object({
   // Required fields
   email: z.string().email('Invalid email address'),
   firstName: z.string().min(1, 'First name is required').max(100),
@@ -111,7 +140,33 @@ export const createUserSchema = z.object({
 
   // Email credentials option (defaults to true)
   sendCredentials: z.boolean().optional().default(true),
+
+  // Hired application linking (optional)
+  // When provided, links this employee account to a hired job application
+  hiredApplicationNumber: z
+    .string()
+    .regex(/^APP-\d{8}-\d{4}$/, 'Application number must be in format APP-YYYYMMDD-XXXX')
+    .optional(),
+  
+  // Whether to also send credentials to the applicant's personal email (defaults to true)
+  // Only used when hiredApplicationNumber is provided
+  notifyApplicantPersonalEmail: z.boolean().optional().default(true),
 });
+
+/**
+ * Create user validation schema with institutional email enforcement
+ * 
+ * SECURITY: Employee accounts must use TUP institutional email domains
+ * (e.g., @tup.edu.ph, @gov.ph) to ensure proper identity verification
+ * and prevent applicants from being created with personal emails.
+ */
+export const createUserSchema = createUserBaseSchema.refine(
+  (data) => isInstitutionalEmail(data.email),
+  {
+    message: 'Employee accounts must use a TUP Manila institutional email (e.g., @tup.edu.ph, @manila.tup.edu.ph, @gov.ph)',
+    path: ['email'],
+  }
+);
 
 export type CreateUserRequest = z.infer<typeof createUserSchema>;
 
@@ -128,6 +183,14 @@ export interface CreateUserResponse {
     role: string;
     temporaryPassword?: string; // Only included if sendCredentials is true
     emailSent: boolean;
+    // When linked to a hired application:
+    linkedApplication?: {
+      applicationNumber: string;
+      applicationId: string;
+      applicantId: string;
+      applicantPersonalEmail?: string;
+      applicantEmailSent: boolean;
+    };
   };
 }
 

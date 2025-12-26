@@ -102,8 +102,8 @@ export default function ApplicationReviewPage({ params }: ApplicationReviewPageP
   // Fetch application details
   const { data: applicationData, isLoading, isError, error } = useApplicationDetails(appId);
 
-  // Get mutation functions
-  const { updateApplicationStatus, isUpdatingStatus } = useJobApplications();
+  // Get mutation functions (only need the mutation, not the query)
+  const { updateApplicationStatus, isUpdatingStatus } = useJobApplications({ enableQuery: false });
 
   // Handle status update
   const handleUpdateStatus = (data: UpdateApplicationStatusData) => {

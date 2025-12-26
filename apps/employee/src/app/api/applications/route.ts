@@ -68,9 +68,12 @@ export async function GET(request: NextRequest) {
       accountStatus: profile.accountStatus,
     });
 
-    if (profile.userType !== 'applicant') {
+    // Allow both 'applicant' and 'employee' userTypes to view applications
+    // Employees may have been hired from applicant status and should still see their application history
+    const allowedUserTypes = ['applicant', 'employee'];
+    if (!allowedUserTypes.includes(profile.userType ?? '')) {
       return NextResponse.json(
-        { error: 'Access denied. Applicants only.' },
+        { error: 'Access denied.' },
         { status: 403 }
       );
     }

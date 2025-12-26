@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -20,6 +20,7 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
+  LinkIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -81,6 +82,9 @@ const userFormSchema = z.object({
   positionId: z.string().optional(),
   isActive: z.boolean(),
   sendCredentials: z.boolean(),
+  // Optional link to hired application
+  hiredApplicationNumber: z.string().regex(/^APP-\d{8}-\d{4}$/, 'Application number must be in format APP-YYYYMMDD-XXXX').optional().or(z.literal('')),
+  notifyApplicantPersonalEmail: z.boolean(),
 });
 
 type UserFormValues = z.infer<typeof userFormSchema>;
@@ -118,11 +122,23 @@ interface CreatedUserData {
   email: string;
   temporaryPassword?: string;
   emailSent: boolean;
+  linkedApplication?: {
+    applicationNumber: string;
+    applicationId: string;
+    applicantId: string;
+    applicantPersonalEmail?: string;
+    applicantEmailSent: boolean;
+  };
 }
 
 export default function CreateUserPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { createUserAsync, isCreating } = useUsersQuery();
+
+  // Get application number from query param (if any)
+  const applicationNumberParam = searchParams.get('applicationNumber');
+  const applicantNameParam = searchParams.get('applicantName');
 
   // Fetch departments and positions from API
   const {
@@ -161,8 +177,17 @@ export default function CreateUserPage() {
       positionId: 'none',
       isActive: true,
       sendCredentials: true,
+      hiredApplicationNumber: applicationNumberParam || '',
+      notifyApplicantPersonalEmail: true,
     },
   });
+
+  // Update application number when query param changes
+  useEffect(() => {
+    if (applicationNumberParam) {
+      form.setValue('hiredApplicationNumber', applicationNumberParam);
+    }
+  }, [applicationNumberParam, form]);
 
   const { watch, formState, trigger } = form;
   const { dirtyFields } = formState;
@@ -257,6 +282,9 @@ export default function CreateUserPage() {
           departmentId: values.departmentId === 'none' ? undefined : values.departmentId,
           positionId: values.positionId === 'none' ? undefined : values.positionId,
           sendCredentials: values.sendCredentials,
+          // Link to hired application if provided
+          hiredApplicationNumber: values.hiredApplicationNumber || undefined,
+          notifyApplicantPersonalEmail: values.notifyApplicantPersonalEmail,
         };
 
         // Call API - it handles password generation and email sending
@@ -281,6 +309,17 @@ export default function CreateUserPage() {
               description: 'User was created but the credentials email could not be sent. Please share the credentials manually.',
             });
           }
+        }
+
+        // Show linked application status
+        if (result.linkedApplication) {
+          toast.success('Application linked', {
+            description: `Linked to application ${result.linkedApplication.applicationNumber}${
+              result.linkedApplication.applicantEmailSent
+                ? '. Credentials also sent to applicant.'
+                : '.'
+            }`,
+          });
         }
       } catch (error) {
         toast.error('Failed to create user', {
@@ -460,6 +499,37 @@ export default function CreateUserPage() {
                 </>
               )}
             </div>
+
+            {/* Linked Application Status */}
+            {createdUser.linkedApplication && (
+              <div className="space-y-2 rounded-lg bg-white dark:bg-green-950 p-3">
+                <div className="flex items-center gap-2 text-sm">
+                  <LinkIcon className="h-4 w-4 text-green-600" />
+                  <span className="text-green-700 dark:text-green-300 font-medium">
+                    Linked to application: {createdUser.linkedApplication.applicationNumber}
+                  </span>
+                </div>
+                {createdUser.linkedApplication.applicantPersonalEmail && (
+                  <div className="flex items-center gap-2 text-sm pl-6">
+                    {createdUser.linkedApplication.applicantEmailSent ? (
+                      <>
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        <span className="text-green-700 dark:text-green-300">
+                          Credentials also sent to: {createdUser.linkedApplication.applicantPersonalEmail}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="h-4 w-4 text-amber-600" />
+                        <span className="text-amber-700 dark:text-amber-300">
+                          Could not send to applicant email
+                        </span>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             <Separator />
 
@@ -825,6 +895,61 @@ export default function CreateUserPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Link to Hired Application */}
+                  <div className="rounded-lg border bg-amber-50 dark:bg-amber-950/20 p-4">
+                    <div className="flex gap-3">
+                      <LinkIcon className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                      <div className="flex-1 space-y-3">
+                        <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                          Link to Hired Application (Optional)
+                        </p>
+                        <p className="text-xs text-amber-700 dark:text-amber-300">
+                          If this employee was hired from a job application, enter the application number to link them and notify the applicant.
+                        </p>
+                        <FormField
+                          control={form.control}
+                          name="hiredApplicationNumber"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Input
+                                  placeholder="APP-YYYYMMDD-XXXX"
+                                  {...field}
+                                  className="font-mono bg-white dark:bg-amber-950"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        {watch('hiredApplicationNumber') && (
+                          <FormField
+                            control={form.control}
+                            name="notifyApplicantPersonalEmail"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center gap-2 space-y-0">
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                                <FormLabel className="text-sm font-normal text-amber-800 dark:text-amber-200">
+                                  Also send credentials to applicant&apos;s personal email
+                                </FormLabel>
+                              </FormItem>
+                            )}
+                          />
+                        )}
+                        {applicantNameParam && watch('hiredApplicationNumber') && (
+                          <p className="text-xs text-amber-600 dark:text-amber-400">
+                            Linking to: <strong>{applicantNameParam}</strong>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -939,6 +1064,18 @@ export default function CreateUserPage() {
                         <Badge variant={watch('sendCredentials') ? 'default' : 'secondary'}>
                           {watch('sendCredentials') ? 'Yes' : 'No'}
                         </Badge>
+                        {watch('hiredApplicationNumber') && (
+                          <>
+                            <span className="text-muted-foreground">Linked Application:</span>
+                            <span className="font-medium font-mono text-amber-600 dark:text-amber-400">
+                              {watch('hiredApplicationNumber')}
+                            </span>
+                            <span className="text-muted-foreground">Notify Applicant:</span>
+                            <Badge variant={watch('notifyApplicantPersonalEmail') ? 'default' : 'secondary'}>
+                              {watch('notifyApplicantPersonalEmail') ? 'Yes' : 'No'}
+                            </Badge>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>

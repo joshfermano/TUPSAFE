@@ -19,6 +19,7 @@ import {
   type CompletePdsData,
   type Child,
 } from '../../../../../lib/validations/pds-schema';
+import { formatDateForInput, parseDateFromInput } from '../../../../../lib/utils/date-utils';
 
 /**
  * Step 4: Family Background
@@ -285,7 +286,7 @@ export const Family = memo(function Family() {
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => append({ fullName: '', dateOfBirth: new Date() })}
+              onClick={() => append({ fullName: '', dateOfBirth: null })}
               disabled={fields.length >= 12}>
               <Plus className="h-4 w-4 mr-2" />
               Add Child
@@ -334,13 +335,9 @@ export const Family = memo(function Family() {
                             <Input
                               type="date"
                               {...field}
-                              value={
-                                field.value instanceof Date
-                                  ? field.value.toISOString().split('T')[0]
-                                  : ''
-                              }
+                              value={formatDateForInput(field.value as Date | null)}
                               onChange={(e) => {
-                                field.onChange(e.target.value ? new Date(e.target.value) : null);
+                                field.onChange(parseDateFromInput(e.target.value));
                               }}
                               className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                             />

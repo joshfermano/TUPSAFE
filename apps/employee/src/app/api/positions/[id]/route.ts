@@ -12,7 +12,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@tupsafe/auth/server';
 import { db } from '@tupsafe/database/server';
-import { openPositions, departments, jobApplications } from '@tupsafe/database/server';
+import { openPositions, departments, jobApplications, profiles } from '@tupsafe/database/server';
 import { eq, and } from 'drizzle-orm';
 
 /**
@@ -44,14 +44,20 @@ export async function GET(
       );
     }
 
-    // 2. Verify user has valid profile
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('user_type, is_active')
-      .eq('id', user.id)
-      .single();
+    // 2. Verify user has valid profile using Drizzle (source of truth)
+    // Avoids PostgREST/RLS edge cases that can return 0 rows even when profile exists
+    const [profile] = await db
+      .select({
+        userType: profiles.userType,
+        isActive: profiles.isActive,
+        accountStatus: profiles.accountStatus,
+      })
+      .from(profiles)
+      .where(eq(profiles.id, user.id))
+      .limit(1);
 
-    if (profileError || !profile) {
+    if (!profile) {
+      console.error('[Positions API] Profile not found for user:', user.id);
       return NextResponse.json(
         {
           success: false,
@@ -62,12 +68,24 @@ export async function GET(
       );
     }
 
-    if (!profile.is_active) {
+    console.log('[Positions API] User profile:', {
+      userId: user.id,
+      userType: profile.userType,
+      isActive: profile.isActive,
+      accountStatus: profile.accountStatus,
+    });
+
+    // Check if account is active (account_status should be 'active' for applicants and employees)
+    if (profile.accountStatus !== 'active') {
       return NextResponse.json(
         {
           success: false,
           error: 'Forbidden',
-          message: 'Account is not active. Please contact support.',
+          message: `Account status is ${profile.accountStatus}. ${
+            profile.accountStatus === 'pending'
+              ? 'Your account is pending approval.'
+              : 'Please contact support.'
+          }`,
         },
         { status: 403 }
       );

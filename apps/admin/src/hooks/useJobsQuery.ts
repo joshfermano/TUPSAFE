@@ -355,8 +355,9 @@ export function useOpenPositionDetails(id: string | null) {
         );
       }
 
-      const data: OpenPositionDetail = await response.json();
-      return data;
+      // API returns { success: true, data: OpenPositionDetail }
+      const json = await response.json();
+      return json.data as OpenPositionDetail;
     },
     enabled: !!id,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -457,21 +458,38 @@ export function useApplicationDetails(id: string | null) {
 }
 
 /**
+ * Options for useJobApplications hook
+ */
+export interface UseJobApplicationsOptions {
+  filters?: ApplicationsFilters;
+  /**
+   * Whether to enable the applications query.
+   * Set to false if you only need the mutations (e.g., updateApplicationStatus).
+   * @default true
+   */
+  enableQuery?: boolean;
+}
+
+/**
  * React Query hook for managing job applications
  *
  * Provides listing and status update operations for applications.
  *
- * @param filters - Optional filters for the applications query
+ * @param options - Optional options including filters and enableQuery
  * @returns Query result with applications and mutation methods
  *
  * @example
  * ```tsx
+ * // With query enabled (default)
  * const {
  *   applications,
  *   pagination,
  *   isLoading,
  *   updateApplicationStatus,
- * } = useJobApplications({ status: 'pending' });
+ * } = useJobApplications({ filters: { status: 'pending' } });
+ *
+ * // Mutation only (no query)
+ * const { updateApplicationStatus } = useJobApplications({ enableQuery: false });
  *
  * // Update application status
  * await updateApplicationStatus({
@@ -481,7 +499,8 @@ export function useApplicationDetails(id: string | null) {
  * });
  * ```
  */
-export function useJobApplications(filters: ApplicationsFilters = {}) {
+export function useJobApplications(options: UseJobApplicationsOptions = {}) {
+  const { filters = {}, enableQuery = true } = options;
   const queryClient = useQueryClient();
 
   // Main query for applications list
@@ -518,6 +537,7 @@ export function useJobApplications(filters: ApplicationsFilters = {}) {
       const data: JobApplicationListResponse = await response.json();
       return data;
     },
+    enabled: enableQuery, // Only run query if enabled
     staleTime: 3 * 60 * 1000, // 3 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes garbage collection
     retry: 2,
@@ -601,8 +621,15 @@ export function useJobApplications(filters: ApplicationsFilters = {}) {
       queryClient.invalidateQueries({
         queryKey: jobsKeys.applicationDetail(variables.applicationId)
       });
-      // Also invalidate position details to update application stats
+      // Also invalidate position details and position applications to update application stats
       queryClient.invalidateQueries({ queryKey: jobsKeys.positions() });
+      // Invalidate all position applications (without knowing specific positionId)
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey as string[];
+          return key[0] === 'jobs' && key[1] === 'positions' && key[3] === 'applications';
+        }
+      });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });

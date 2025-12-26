@@ -45,28 +45,38 @@ import { BlurFade } from '../../../../components/ui/blur-fade';
 import { ShineBorder } from '../../../../components/ui/shine-border';
 import AnimatedGradientText from '../../../../components/ui/animated-gradient-text';
 import { toast } from 'sonner';
+import {
+  APPLICATION_STATUS_LABELS,
+  type ApplicationStatus,
+} from '@tupsafe/types';
 
 /**
- * Status badge color mapping
+ * Status badge color mapping (consistent with @tupsafe/types)
  */
 const statusColors: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  under_review: 'bg-blue-100 text-blue-800 border-blue-200',
-  shortlisted: 'bg-purple-100 text-purple-800 border-purple-200',
-  for_interview: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-  interviewed: 'bg-cyan-100 text-cyan-800 border-cyan-200',
-  for_final_review: 'bg-violet-100 text-violet-800 border-violet-200',
-  accepted: 'bg-green-100 text-green-800 border-green-200',
-  rejected: 'bg-red-100 text-red-800 border-red-200',
-  withdrawn: 'bg-gray-100 text-gray-800 border-gray-200',
-  hired: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  pending: 'bg-gray-100 text-gray-700 border-gray-200',
+  under_review: 'bg-blue-100 text-blue-700 border-blue-200',
+  shortlisted: 'bg-purple-100 text-purple-700 border-purple-200',
+  for_interview: 'bg-amber-100 text-amber-700 border-amber-200',
+  interviewed: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+  for_final_review: 'bg-cyan-100 text-cyan-700 border-cyan-200',
+  accepted: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  rejected: 'bg-red-100 text-red-700 border-red-200',
+  withdrawn: 'bg-slate-100 text-slate-700 border-slate-200',
+  hired: 'bg-green-100 text-green-700 border-green-200',
 };
 
-const formatStatus = (status: string): string => {
-  return status
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+/**
+ * Get status label from shared types
+ */
+const getStatusLabel = (status: string): string => {
+  return (
+    APPLICATION_STATUS_LABELS[status as ApplicationStatus] ||
+    status
+      .split('_')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+  );
 };
 
 /**
@@ -114,7 +124,7 @@ function StatusTimeline({
             <div className="flex-1 space-y-1 pb-8">
               <div className="flex items-center justify-between gap-2">
                 <p className="font-semibold text-slate-900 dark:text-slate-100">
-                  {formatStatus(item.newStatus)}
+                  {getStatusLabel(item.newStatus)}
                 </p>
                 <span className="text-xs text-slate-500 dark:text-slate-400">
                   {format(new Date(item.changedAt), 'MMM dd, yyyy h:mm a')}
@@ -229,7 +239,7 @@ export default function ApplicationDetailsPage({
                   'bg-gray-100 text-gray-800 border-gray-200'
               )}
               variant="outline">
-              {formatStatus(application.status)}
+              {getStatusLabel(application.status)}
             </Badge>
             {canWithdraw && (
               <AlertDialog

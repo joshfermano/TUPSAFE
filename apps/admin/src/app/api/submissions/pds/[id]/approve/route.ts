@@ -27,8 +27,18 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkUserRoleFromSupabase, getUserFromSupabase } from '@tupsafe/auth/server';
-import { db, pdsSubmissions, notifications } from '@tupsafe/database/server';
+import {
+  checkUserRoleFromSupabase,
+  getUserFromSupabase,
+  createAdminClient,
+  sendPDSStatusEmail,
+} from '@tupsafe/auth/server';
+import {
+  db,
+  pdsSubmissions,
+  notifications,
+  profiles,
+} from '@tupsafe/database/server';
 import { eq, and, or } from 'drizzle-orm';
 import { createAuditLog } from '@tupsafe/database/utils/audit-log';
 import { approveSubmissionSchema, type ApiSuccess } from '@tupsafe/types';
@@ -42,7 +52,10 @@ export async function POST(
     const { id } = await params;
 
     // Verify admin/HR permissions
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(
+      ['admin', 'hr'],
+      'admin'
+    );
 
     if (!hasPermission) {
       return NextResponse.json(
@@ -61,27 +74,36 @@ export async function POST(
     const uuidRegex =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(id)) {
-      return NextResponse.json({ error: 'Invalid submission ID' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid submission ID' },
+        { status: 400 }
+      );
     }
 
     // Parse and validate request body
     const body = await request.json();
     const validatedData = approveSubmissionSchema.parse(body);
 
-    // Fetch submission and verify it exists
+    // Fetch submission with employee info
     const [submission] = await db
       .select({
         id: pdsSubmissions.id,
         userId: pdsSubmissions.userId,
         status: pdsSubmissions.status,
         version: pdsSubmissions.version,
+        employeeFirstName: profiles.firstName,
+        employeeLastName: profiles.lastName,
       })
       .from(pdsSubmissions)
+      .innerJoin(profiles, eq(pdsSubmissions.userId, profiles.id))
       .where(eq(pdsSubmissions.id, id))
       .limit(1);
 
     if (!submission) {
-      return NextResponse.json({ error: 'PDS submission not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'PDS submission not found' },
+        { status: 404 }
+      );
     }
 
     // Prevent self-review
@@ -93,11 +115,15 @@ export async function POST(
     }
 
     // Verify submission is in reviewable status
-    if (submission.status !== 'submitted' && submission.status !== 'reviewing') {
+    if (
+      submission.status !== 'submitted' &&
+      submission.status !== 'reviewing'
+    ) {
       return NextResponse.json(
         {
           error: `Cannot approve submission with status '${submission.status}'`,
-          details: 'Only submissions with status "submitted" or "reviewing" can be approved',
+          details:
+            'Only submissions with status "submitted" or "reviewing" can be approved',
         },
         { status: 409 }
       );
@@ -168,6 +194,28 @@ export async function POST(
       isRead: false,
       createdAt: now,
     });
+
+    // Send email notification (best-effort - don't fail if email fails)
+    try {
+      const adminClient = createAdminClient();
+      const { data: userData } = await adminClient.auth.admin.getUserById(
+        submission.userId
+      );
+
+      if (userData?.user?.email) {
+        const employeeName = `${submission.employeeFirstName} ${submission.employeeLastName}`;
+        await sendPDSStatusEmail({
+          to: userData.user.email,
+          employeeName,
+          status: 'approved',
+          version: submission.version,
+          notes: validatedData.notes,
+        });
+      }
+    } catch (emailError) {
+      // Log but don't fail the request
+      console.error('Failed to send PDS approval email:', emailError);
+    }
 
     const response: ApiSuccess<typeof updatedSubmission> = {
       success: true,

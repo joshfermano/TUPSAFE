@@ -11,6 +11,7 @@ import {
   profiles,
   notifications,
   createAuditLog,
+  generateApplicantId,
 } from '@tupsafe/database/server';
 import { eq, and, or } from 'drizzle-orm';
 import { verifyOTP, createAdminClient } from '@tupsafe/auth/server';
@@ -76,6 +77,18 @@ export async function POST(request: NextRequest) {
         const metadata = authUser.user.user_metadata;
         const userType = metadata.user_type || 'employee';
 
+        // For applicants, generate applicant_id (required by chk_user_type_id constraint for active applicants)
+        let applicantId: string | null = null;
+        if (userType === 'applicant') {
+          try {
+            applicantId = await generateApplicantId();
+            console.log(`✓ Generated applicant ID: ${applicantId}`);
+          } catch (idError) {
+            console.error('Failed to generate applicant ID:', idError);
+            throw new Error('Failed to generate applicant ID');
+          }
+        }
+
         // Create profile with data from registration metadata
         // Applicants get 'active' status immediately, employees get 'pending' (awaiting HR approval)
         // Note: role field uses 'employee' for both employees and applicants (userType distinguishes them)
@@ -86,10 +99,13 @@ export async function POST(request: NextRequest) {
           middleName: metadata.middle_name || null,
           phoneNumber: metadata.phone_number || null,
           userType: userType,
-          employmentCategory: metadata.employment_category || (userType === 'applicant' ? 'not_applicable' : null),
+          employmentCategory:
+            metadata.employment_category ||
+            (userType === 'applicant' ? 'not_applicable' : null),
           dateOfBirth: metadata.date_of_birth || null,
           role: 'employee', // Default role for both employees and applicants
           accountStatus: userType === 'applicant' ? 'active' : 'pending',
+          applicantId: applicantId, // Required for active applicants (chk_user_type_id constraint)
           emailVerifiedAt: new Date(),
           isActive: true,
           createdAt: new Date(),
@@ -97,7 +113,9 @@ export async function POST(request: NextRequest) {
         });
 
         console.log(
-          `✓ Created profile for user ${userId} during email verification (${userType}, status: ${userType === 'applicant' ? 'active' : 'pending'})`
+          `✓ Created profile for user ${userId} during email verification (${userType}, status: ${
+            userType === 'applicant' ? 'active' : 'pending'
+          })`
         );
       } else {
         // Profile exists - just update email verification timestamp
@@ -148,91 +166,131 @@ export async function POST(request: NextRequest) {
     // CRITICAL FIX: Sync user metadata with profile data
     // This ensures middleware can properly check account status
     console.log(`[verify-email] Starting user metadata sync for ${userId}...`);
+
+    // Get user type to determine approval flow
+    let userType: 'employee' | 'applicant' = 'employee';
+
     try {
       const supabase = createAdminClient();
-      const { data: authUser, error: getUserError } = await supabase.auth.admin.getUserById(userId);
+      const { data: authUser, error: getUserError } =
+        await supabase.auth.admin.getUserById(userId);
 
       if (getUserError) {
-        console.error(`[verify-email] Failed to get user ${userId}:`, getUserError);
+        console.error(
+          `[verify-email] Failed to get user ${userId}:`,
+          getUserError
+        );
       } else if (authUser?.user) {
         const existingMetadata = authUser.user.user_metadata || {};
-        console.log(`[verify-email] Existing metadata for ${userId}:`, JSON.stringify(existingMetadata));
+        console.log(
+          `[verify-email] Existing metadata for ${userId}:`,
+          JSON.stringify(existingMetadata)
+        );
+
+        // Determine user type from metadata
+        userType =
+          (existingMetadata.user_type as 'employee' | 'applicant') ||
+          'employee';
+
+        // Applicants get 'active' status immediately, employees need HR approval
+        const accountStatus = userType === 'applicant' ? 'active' : 'pending';
 
         // Merge existing metadata with new account status
         const updatedMetadata = {
           ...existingMetadata,
-          account_status: 'pending',
+          account_status: accountStatus,
           email_verified_at: new Date().toISOString(),
           is_active: true,
         };
 
-        console.log(`[verify-email] Updating metadata to:`, JSON.stringify(updatedMetadata));
-
-        const { error: metadataError } = await supabase.auth.admin.updateUserById(
-          userId,
-          {
-            user_metadata: updatedMetadata,
-          }
+        console.log(
+          `[verify-email] Updating metadata to:`,
+          JSON.stringify(updatedMetadata)
         );
 
+        const { error: metadataError } =
+          await supabase.auth.admin.updateUserById(userId, {
+            user_metadata: updatedMetadata,
+          });
+
         if (metadataError) {
-          console.error(`[verify-email] ❌ Failed to sync user metadata for ${userId}:`, metadataError);
+          console.error(
+            `[verify-email] ❌ Failed to sync user metadata for ${userId}:`,
+            metadataError
+          );
         } else {
-          console.log(`[verify-email] ✅ Synced user metadata: accountStatus=pending for ${userId}`);
+          console.log(
+            `[verify-email] ✅ Synced user metadata: accountStatus=${accountStatus} for ${userId} (userType: ${userType})`
+          );
         }
       } else {
         console.error(`[verify-email] No user found for ${userId}`);
       }
     } catch (error) {
-      console.error(`[verify-email] ❌ Exception syncing user metadata for ${userId}:`, error);
-    }
-
-    // Create pending registration entry for admin approval
-    try {
-      await db.insert(pendingRegistrations).values({
-        userId,
-        status: 'pending',
-        createdAt: new Date(),
-      });
-    } catch (error) {
-      console.error('Error creating pending registration:', error);
-      return NextResponse.json(
-        { error: 'Failed to create approval request' },
-        { status: 500 }
+      console.error(
+        `[verify-email] ❌ Exception syncing user metadata for ${userId}:`,
+        error
       );
     }
 
-    // Get all HR and admin users for notification
-    const hrAndAdmins = await db
-      .select({ id: profiles.id })
-      .from(profiles)
-      .where(
-        and(
-          eq(profiles.isActive, true),
-          eq(profiles.accountStatus, 'active'),
-          or(eq(profiles.role, 'hr'), eq(profiles.role, 'admin'))
-        )
-      );
-
-    // Create notifications for HR/admins
-    if (hrAndAdmins.length > 0) {
+    // =========================================================================
+    // EMPLOYEE-ONLY: Create pending registration entry for admin approval
+    // Applicants do NOT need HR approval - they are auto-activated
+    // =========================================================================
+    if (userType === 'employee') {
       try {
-        const notificationPromises = hrAndAdmins.map((admin) =>
-          db.insert(notifications).values({
-            userId: admin.id,
-            type: 'approval_required',
-            title: 'New Employee Registration',
-            message: `A new employee registration requires your approval. Employee ID: ${userId}`,
-            isRead: false,
-            createdAt: new Date(),
-          })
+        await db.insert(pendingRegistrations).values({
+          userId,
+          status: 'pending',
+          createdAt: new Date(),
+        });
+        console.log(
+          `[verify-email] Created pending registration for employee ${userId}`
+        );
+      } catch (error) {
+        console.error('Error creating pending registration:', error);
+        return NextResponse.json(
+          { error: 'Failed to create approval request' },
+          { status: 500 }
+        );
+      }
+
+      // Get all HR and admin users for notification (employees only)
+      const hrAndAdmins = await db
+        .select({ id: profiles.id })
+        .from(profiles)
+        .where(
+          and(
+            eq(profiles.isActive, true),
+            eq(profiles.accountStatus, 'active'),
+            or(eq(profiles.role, 'hr'), eq(profiles.role, 'admin'))
+          )
         );
 
-        await Promise.all(notificationPromises);
-      } catch (error) {
-        console.error('Error creating notifications:', error);
-        // Non-critical, continue
+      // Create notifications for HR/admins
+      if (hrAndAdmins.length > 0) {
+        try {
+          const notificationPromises = hrAndAdmins.map((admin) =>
+            db.insert(notifications).values({
+              userId: admin.id,
+              type: 'approval_required',
+              title: 'New Employee Registration',
+              message: `A new employee registration requires your approval. Employee ID: ${userId}`,
+              isRead: false,
+              createdAt: new Date(),
+            })
+          );
+
+          await Promise.all(notificationPromises);
+        } catch (error) {
+          console.error('Error creating notifications:', error);
+          // Non-critical, continue
+        }
       }
+    } else {
+      console.log(
+        `[verify-email] Skipping pending registration for applicant ${userId} (auto-activated)`
+      );
     }
 
     // Log audit event
@@ -256,13 +314,22 @@ export async function POST(request: NextRequest) {
       // Non-critical, continue
     }
 
+    // Return appropriate message based on user type
+    const responseMessage =
+      userType === 'applicant'
+        ? 'Email verified successfully! Your account is now active. You can start browsing job openings.'
+        : 'Email verified successfully! Your account is now pending admin approval.';
+
+    const responseStatus =
+      userType === 'applicant' ? 'active' : 'pending_approval';
+
     return NextResponse.json({
       success: true,
-      message:
-        'Email verified successfully! Your account is now pending admin approval.',
+      message: responseMessage,
       data: {
         userId,
-        status: 'pending_approval',
+        status: responseStatus,
+        userType,
       },
     });
   } catch (error) {

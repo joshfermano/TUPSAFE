@@ -4,17 +4,15 @@
  * Updates application status with comprehensive workflow management:
  * - Status validation and transitions
  * - Status history tracking
- * - Applicant-to-employee conversion when status = 'hired'
  * - Notification to applicant
  * - Audit logging
  *
- * Applicant-to-Employee Conversion:
- * When status is set to 'hired', automatically:
- * - Update profile userType from 'applicant' to 'employee'
- * - Generate new employeeId (TUP-YYYYMMDD-XXXX format)
- * - Set hireDate
- * - Update application with conversion tracking
- * - Send notification
+ * Hired Status:
+ * When status is set to 'hired':
+ * - Records the hire date on the application
+ * - Notifies the applicant to wait for employee account creation
+ * - Does NOT convert the applicant profile (HR creates a separate employee account later)
+ * - Employee account is linked to the application via Users → Create User
  *
  * Security:
  * - Requires admin or hr role
@@ -25,7 +23,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   getUserFromSupabase,
-  generateAndRegisterEmployeeId,
+  createAdminClient,
+  sendApplicationStatusEmail,
 } from '@tupsafe/auth/server';
 import {
   db,
@@ -34,11 +33,13 @@ import {
   profiles,
   notifications,
   createAuditLog,
+  openPositions,
 } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
 import {
   updateApplicationStatusSchema,
   type UpdateApplicationStatusData,
+  EMAIL_TRIGGER_STATUSES,
 } from '@tupsafe/types';
 
 export async function POST(
@@ -93,7 +94,7 @@ export async function POST(
 
     const data: UpdateApplicationStatusData = validationResult.data;
 
-    // Fetch existing application with applicant details
+    // Fetch existing application with applicant and position details
     const existingApplicationData = await db
       .select({
         id: jobApplications.id,
@@ -105,9 +106,11 @@ export async function POST(
         applicantLastName: profiles.lastName,
         applicantUserType: profiles.userType,
         applicantApplicantId: profiles.applicantId,
+        positionTitle: openPositions.positionTitle,
       })
       .from(jobApplications)
       .innerJoin(profiles, eq(jobApplications.applicantId, profiles.id))
+      .leftJoin(openPositions, eq(jobApplications.positionId, openPositions.id))
       .where(eq(jobApplications.id, applicationId))
       .limit(1);
 
@@ -119,6 +122,21 @@ export async function POST(
     }
 
     const existingApplication = existingApplicationData[0];
+
+    // Fetch applicant email from auth.users using admin client
+    let applicantEmail: string | null = null;
+    try {
+      const adminClient = createAdminClient();
+      const { data: userData, error: userError } =
+        await adminClient.auth.admin.getUserById(existingApplication.applicantId);
+
+      if (!userError && userData?.user?.email) {
+        applicantEmail = userData.user.email;
+      }
+    } catch (emailFetchError) {
+      console.error('Error fetching applicant email:', emailFetchError);
+      // Non-critical, continue without email
+    }
     const previousStatus = existingApplication.status;
     const newStatus = data.status;
 
@@ -134,83 +152,50 @@ export async function POST(
     }
 
     const now = new Date();
-    let conversionData: {
-      convertedToEmployeeId?: string;
+    
+    // For hired status, we record the hire date but do NOT convert the applicant profile.
+    // HR will create a separate employee account later via Users → Create User.
+    let hireData: {
       convertedHireDate?: string;
-      conversionDate?: Date;
     } = {};
 
-    // Handle applicant-to-employee conversion if status = 'hired'
+    // Handle hired status - record hire date and notify applicant to wait
     if (newStatus === 'hired') {
-      console.log('[Application Status API] Processing applicant-to-employee conversion');
+      console.log('[Application Status API] Processing hired status (no in-place conversion)');
 
       // Validate applicant is not already an employee
       if (existingApplication.applicantUserType !== 'applicant') {
         return NextResponse.json(
           {
-            error: 'User is not an applicant. Only applicants can be converted to employees.',
+            error: 'User is not an applicant. Only applicants can be hired.',
           },
           { status: 400 }
         );
       }
 
+      // Record the hire date on the application
+      const hireDateString = now.toISOString().split('T')[0]; // Convert to YYYY-MM-DD
+      hireData = {
+        convertedHireDate: hireDateString,
+      };
+
+      console.log(
+        `[Application Status API] Applicant ${existingApplication.applicantApplicantId} marked as hired. Awaiting employee account creation.`
+      );
+
+      // Create notification for hired applicant - tell them to wait for account creation
       try {
-        // Generate new employee ID
-        const employeeId = await generateAndRegisterEmployeeId(
-          existingApplication.applicantId
-        );
-
-        console.log(
-          `[Application Status API] Generated employee ID: ${employeeId}`
-        );
-
-        // Update profile: convert applicant to employee
-        const hireDateString = now.toISOString().split('T')[0]; // Convert to YYYY-MM-DD
-        await db
-          .update(profiles)
-          .set({
-            userType: 'employee',
-            employeeId,
-            hireDate: hireDateString,
-            updatedAt: now,
-          })
-          .where(eq(profiles.id, existingApplication.applicantId));
-
-        console.log(
-          `[Application Status API] Converted applicant ${existingApplication.applicantApplicantId} to employee ${employeeId}`
-        );
-
-        // Set conversion data for application update
-        const hireDate = now.toISOString().split('T')[0]; // Convert to YYYY-MM-DD string
-        conversionData = {
-          convertedToEmployeeId: employeeId,
-          convertedHireDate: hireDate,
-          conversionDate: now,
-        };
-
-        // Create notification for new employee
-        try {
-          await db.insert(notifications).values({
-            userId: existingApplication.applicantId,
-            type: 'system_update',
-            title: 'Congratulations! You have been hired',
-            message: `Your application for ${existingApplication.applicationNumber} has been accepted and you have been successfully converted to an employee. Your employee ID is ${employeeId}. Welcome to the team!`,
-            isRead: false,
-            createdAt: now,
-          });
-        } catch (error) {
-          console.error('Error creating hire notification:', error);
-          // Non-critical, continue
-        }
+        await db.insert(notifications).values({
+          userId: existingApplication.applicantId,
+          type: 'system_update',
+          title: 'Congratulations! You have been hired',
+          message: `Your application ${existingApplication.applicationNumber} for ${existingApplication.positionTitle || 'the position'} has been accepted! Please wait while HR creates your official employee portal account. You will receive your login credentials via email shortly.`,
+          isRead: false,
+          createdAt: now,
+        });
       } catch (error) {
-        console.error('Error during applicant-to-employee conversion:', error);
-        return NextResponse.json(
-          {
-            error: 'Failed to convert applicant to employee',
-            details: error instanceof Error ? error.message : 'Unknown error',
-          },
-          { status: 500 }
-        );
+        console.error('Error creating hire notification:', error);
+        // Non-critical, continue
       }
     }
 
@@ -218,7 +203,7 @@ export async function POST(
     const updateData: Partial<typeof jobApplications.$inferInsert> = {
       status: newStatus,
       updatedAt: now,
-      ...conversionData,
+      ...hireData,
     };
 
     // Set review fields if notes are provided
@@ -344,7 +329,7 @@ export async function POST(
           before: { status: previousStatus },
           after: {
             status: newStatus,
-            ...conversionData,
+            ...hireData,
             notes: data.notes,
           },
         },
@@ -354,35 +339,74 @@ export async function POST(
           undefined,
         userAgent: request.headers.get('user-agent') || undefined,
       });
-
-      // Additional audit log for conversion
-      if (newStatus === 'hired' && conversionData.convertedToEmployeeId) {
-        await createAuditLog({
-          userId: currentUser.userId,
-          action: 'UPDATE',
-          entityType: 'profile',
-          entityId: existingApplication.applicantId,
-          changes: {
-            before: {
-              userType: 'applicant',
-              applicantId: existingApplication.applicantApplicantId,
-            },
-            after: {
-              userType: 'employee',
-              employeeId: conversionData.convertedToEmployeeId,
-              hireDate: conversionData.convertedHireDate,
-            },
-          },
-          ipAddress:
-            request.headers.get('x-forwarded-for')?.split(',')[0] ||
-            request.headers.get('x-real-ip') ||
-            undefined,
-          userAgent: request.headers.get('user-agent') || undefined,
-        });
-      }
     } catch (error) {
       console.error('Error logging audit event:', error);
       // Non-critical, continue
+    }
+
+    // Send email notification for major status changes
+    let emailResult: { sent: boolean; error?: string } = { sent: false };
+
+    if (
+      applicantEmail &&
+      EMAIL_TRIGGER_STATUSES.includes(
+        newStatus as (typeof EMAIL_TRIGGER_STATUSES)[number]
+      )
+    ) {
+      try {
+        console.log(
+          `[Application Status API] Sending email notification to ${applicantEmail} for status: ${newStatus}`
+        );
+
+        const emailResponse = await sendApplicationStatusEmail({
+          to: applicantEmail,
+          applicantName: `${existingApplication.applicantFirstName} ${existingApplication.applicantLastName}`,
+          applicationNumber: existingApplication.applicationNumber,
+          positionTitle: existingApplication.positionTitle || 'Position',
+          status: newStatus as (typeof EMAIL_TRIGGER_STATUSES)[number],
+          // Interview details
+          interviewDate: data.interviewDate,
+          interviewLocation: data.interviewLocation,
+          interviewNotes: data.interviewNotes,
+          // Rejection reason
+          rejectionReason: data.rejectionReason,
+          // Hired details - employeeId will be sent later when HR creates the employee account
+          // For now, 'hired' status email just notifies applicant to wait
+          employeeId: undefined,
+          hireDate: hireData.convertedHireDate,
+          // Notes
+          notes: data.notes,
+        });
+
+        emailResult = {
+          sent: emailResponse.success,
+          error: emailResponse.error,
+        };
+
+        if (emailResponse.success) {
+          console.log(
+            `[Application Status API] Email sent successfully to ${applicantEmail}`
+          );
+        } else {
+          console.warn(
+            `[Application Status API] Email failed: ${emailResponse.error}`
+          );
+        }
+      } catch (emailError) {
+        console.error('Error sending status email:', emailError);
+        emailResult = {
+          sent: false,
+          error:
+            emailError instanceof Error
+              ? emailError.message
+              : 'Failed to send email',
+        };
+        // Non-critical, continue
+      }
+    } else if (!applicantEmail) {
+      console.warn(
+        '[Application Status API] Skipping email: no applicant email found'
+      );
     }
 
     // Construct response
@@ -394,14 +418,16 @@ export async function POST(
         previousStatus: string | null;
         newStatus: string;
         updatedAt: Date;
+        hireDate?: string;
       };
-      conversion?: {
-        success: boolean;
-        employeeId: string;
-        hireDate: string | undefined;
+      hired?: {
+        applicationNumber: string;
         applicantId: string;
         applicantName: string;
+        hireDate: string | undefined;
+        pendingAccountCreation: boolean;
       };
+      email: { sent: boolean; error?: string };
     } = {
       success: true,
       message: 'Application status updated successfully',
@@ -411,27 +437,29 @@ export async function POST(
         newStatus,
         updatedAt: now,
       },
+      email: emailResult,
     };
 
-    // Include conversion data in response if conversion occurred
-    if (newStatus === 'hired' && conversionData.convertedToEmployeeId) {
-      response.conversion = {
-        success: true,
-        employeeId: conversionData.convertedToEmployeeId,
-        hireDate: conversionData.convertedHireDate,
+    // Include hire data in response if hired
+    if (newStatus === 'hired') {
+      response.data.hireDate = hireData.convertedHireDate;
+      response.hired = {
+        applicationNumber: existingApplication.applicationNumber,
         applicantId: existingApplication.applicantId,
         applicantName: `${existingApplication.applicantFirstName} ${existingApplication.applicantLastName}`,
+        hireDate: hireData.convertedHireDate,
+        pendingAccountCreation: true, // HR needs to create employee account separately
       };
       response.message =
-        'Application status updated and applicant successfully converted to employee';
+        'Applicant has been marked as hired. Please create their employee account via Users → Create User to complete the onboarding process.';
     }
 
     console.log(
       `[Application Status API] Status updated: ${previousStatus} -> ${newStatus}`
     );
-    if (conversionData.convertedToEmployeeId) {
+    if (newStatus === 'hired') {
       console.log(
-        `[Application Status API] Conversion completed: ${conversionData.convertedToEmployeeId}`
+        `[Application Status API] Hired applicant awaiting employee account creation: ${existingApplication.applicationNumber}`
       );
     }
 

@@ -19,7 +19,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkUserRoleFromSupabase, getUserFromSupabase } from '@tupsafe/auth/server';
+import {
+  checkUserRoleFromSupabase,
+  getUserFromSupabase,
+  createAdminClient,
+  sendSALNStatusEmail,
+} from '@tupsafe/auth/server';
 import { db, salnSubmissions, profiles, notifications } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
 import { salnRequestChangesSchema } from '@tupsafe/types';
@@ -154,6 +159,28 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     });
 
     console.log('[SALN Request Changes API] Notification sent to employee');
+
+    // Send email notification (best-effort - don't fail if email fails)
+    try {
+      const adminClient = createAdminClient();
+      const { data: userData } = await adminClient.auth.admin.getUserById(
+        submission.userId
+      );
+
+      if (userData?.user?.email) {
+        const employeeName = `${submission.employeeFirstName} ${submission.employeeLastName}`;
+        await sendSALNStatusEmail({
+          to: userData.user.email,
+          employeeName,
+          status: 'changes_requested',
+          year: submission.year,
+          notes: validatedData.notes,
+        });
+      }
+    } catch (emailError) {
+      // Log but don't fail the request
+      console.error('Failed to send SALN request-changes email:', emailError);
+    }
 
     const totalDuration = Date.now() - startTime;
     console.log(

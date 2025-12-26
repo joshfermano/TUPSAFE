@@ -27,8 +27,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkUserRoleFromSupabase, getUserFromSupabase } from '@tupsafe/auth/server';
-import { db, salnSubmissions, notifications } from '@tupsafe/database/server';
+import {
+  checkUserRoleFromSupabase,
+  getUserFromSupabase,
+  createAdminClient,
+  sendSALNStatusEmail,
+} from '@tupsafe/auth/server';
+import { db, salnSubmissions, notifications, profiles } from '@tupsafe/database/server';
 import { eq, and, or } from 'drizzle-orm';
 import { createAuditLog } from '@tupsafe/database/utils/audit-log';
 import { approveSubmissionSchema, type ApiSuccess } from '@tupsafe/types';
@@ -68,15 +73,18 @@ export async function POST(
     const body = await request.json();
     const validatedData = approveSubmissionSchema.parse(body);
 
-    // Fetch submission and verify it exists
+    // Fetch submission with employee info
     const [submission] = await db
       .select({
         id: salnSubmissions.id,
         userId: salnSubmissions.userId,
         status: salnSubmissions.status,
         year: salnSubmissions.year,
+        employeeFirstName: profiles.firstName,
+        employeeLastName: profiles.lastName,
       })
       .from(salnSubmissions)
+      .innerJoin(profiles, eq(salnSubmissions.userId, profiles.id))
       .where(eq(salnSubmissions.id, id))
       .limit(1);
 
@@ -164,6 +172,28 @@ export async function POST(
       isRead: false,
       createdAt: now,
     });
+
+    // Send email notification (best-effort - don't fail if email fails)
+    try {
+      const adminClient = createAdminClient();
+      const { data: userData } = await adminClient.auth.admin.getUserById(
+        submission.userId
+      );
+
+      if (userData?.user?.email) {
+        const employeeName = `${submission.employeeFirstName} ${submission.employeeLastName}`;
+        await sendSALNStatusEmail({
+          to: userData.user.email,
+          employeeName,
+          status: 'approved',
+          year: submission.year,
+          notes: validatedData.notes,
+        });
+      }
+    } catch (emailError) {
+      // Log but don't fail the request
+      console.error('Failed to send SALN approval email:', emailError);
+    }
 
     const response: ApiSuccess<typeof updatedSubmission> = {
       success: true,

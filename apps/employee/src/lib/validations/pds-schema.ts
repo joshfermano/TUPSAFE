@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { philippineAddressSchema } from './address';
+import { getEndOfToday } from '../utils/date-utils';
 
 /**
  * Comprehensive Zod Validation Schemas for Personal Data Sheet (PDS)
@@ -33,16 +34,17 @@ const pagibigRegex = /^\d{4}-\d{4}-\d{4}$/; // Format: 1234-5678-9012
 const philsysRegex = /^\d{2}-\d{9}-\d{1}$/; // Format: 12-345678901-2 (PhilSys Number - PSN)
 
 // Date validation helpers
-// Use refine() instead of max() to evaluate current date at validation time, not module load time
+// Use end-of-today comparison to allow "today" as a valid past date
+// This fixes timezone issues where selecting today could appear as "future" due to time-of-day
 const pastDateSchema = z.date().refine(
-  (date) => date <= new Date(),
+  (date) => date <= getEndOfToday(),
   { message: 'Date cannot be in the future' }
 );
 
 const optionalPastDateSchema = z
   .date()
   .refine(
-    (date) => date <= new Date(),
+    (date) => date <= getEndOfToday(),
     { message: 'Date cannot be in the future' }
   )
   .nullable();
@@ -386,14 +388,53 @@ const parentSchema = z.object({
 /**
  * Child Information
  * Maximum of 12 children as per CSC form
+ *
+ * Validation logic:
+ * - If ANY field is filled, enforce required fields (fullName, dateOfBirth)
+ * - If ALL fields are empty/null, row is considered optional and passes validation
  */
-export const childSchema = z.object({
+const childBaseSchema = z.object({
   fullName: z
     .string()
-    .min(1, 'Full name is required')
-    .max(100, 'Full name must not exceed 100 characters'),
+    .max(100, 'Full name must not exceed 100 characters')
+    .default(''),
 
-  dateOfBirth: pastDateSchema,
+  dateOfBirth: z.date().nullable().optional(),
+});
+
+export const childSchema = childBaseSchema.superRefine((data, ctx) => {
+  // Check if any field has meaningful content
+  const hasFullName = data.fullName && data.fullName.trim() !== '';
+  const hasDateOfBirth = data.dateOfBirth !== null && data.dateOfBirth !== undefined;
+
+  const hasAnyField = hasFullName || hasDateOfBirth;
+
+  // If any field is filled, enforce required fields
+  if (hasAnyField) {
+    if (!hasFullName) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Full name is required',
+        path: ['fullName'],
+      });
+    }
+    if (!hasDateOfBirth) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Date of birth is required',
+        path: ['dateOfBirth'],
+      });
+    }
+    // Date validation: dateOfBirth must not be in the future
+    if (hasDateOfBirth && data.dateOfBirth! > getEndOfToday()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Date cannot be in the future',
+        path: ['dateOfBirth'],
+      });
+    }
+  }
+  // If no fields are filled, row passes (will be filtered out during submission)
 });
 
 /**
@@ -581,56 +622,101 @@ export const civilServiceSchema = z.object({
 /**
  * Work Experience Entry Schema
  * Includes both government and private sector positions
+ *
+ * Validation logic:
+ * - If ANY field is filled (except isGovernment default), enforce required fields
+ * - If ALL fields are empty/null, row is considered optional and passes validation
  */
-export const workExperienceSchema = z
-  .object({
-    positionTitle: z
-      .string()
-      .min(1, 'Position title is required')
-      .max(150, 'Position title must not exceed 150 characters'),
+const workExperienceBaseSchema = z.object({
+  positionTitle: z
+    .string()
+    .max(150, 'Position title must not exceed 150 characters')
+    .default(''),
 
-    departmentAgency: z
-      .string()
-      .min(1, 'Department/Agency/Office/Company is required')
-      .max(200, 'Department/Agency name must not exceed 200 characters'),
+  departmentAgency: z
+    .string()
+    .max(200, 'Department/Agency name must not exceed 200 characters')
+    .default(''),
 
-    monthlySalary: z
-      .number()
-      .min(0, 'Monthly salary must be a positive number')
-      .nullable()
-      .optional(),
+  monthlySalary: z
+    .number()
+    .min(0, 'Monthly salary must be a positive number')
+    .nullable()
+    .optional(),
 
-    salaryGrade: z
-      .string()
-      .max(50, 'Salary grade must not exceed 50 characters')
-      .nullable()
-      .optional(),
+  salaryGrade: z
+    .string()
+    .max(50, 'Salary grade must not exceed 50 characters')
+    .nullable()
+    .optional(),
 
-    statusOfAppointment: z
-      .string()
-      .max(100, 'Status of appointment must not exceed 100 characters')
-      .nullable()
-      .optional(),
+  statusOfAppointment: z
+    .string()
+    .max(100, 'Status of appointment must not exceed 100 characters')
+    .nullable()
+    .optional(),
 
-    isGovernment: z.boolean().default(false),
+  isGovernment: z.boolean().default(false),
 
-    dateFrom: pastDateSchema,
+  dateFrom: z.date().nullable().optional(),
 
-    dateTo: z.date().nullable().optional(),
-  })
-  .refine(
-    (data) => {
-      // If dateTo is provided, it should be after dateFrom
-      if (data.dateTo) {
-        return data.dateTo >= data.dateFrom;
-      }
-      return true;
-    },
-    {
-      message: 'End date must be after start date',
-      path: ['dateTo'],
+  dateTo: z.date().nullable().optional(),
+});
+
+export const workExperienceSchema = workExperienceBaseSchema.superRefine((data, ctx) => {
+  // Check if any field has meaningful content (excluding isGovernment since it has a default)
+  const hasPosition = data.positionTitle && data.positionTitle.trim() !== '';
+  const hasDepartment = data.departmentAgency && data.departmentAgency.trim() !== '';
+  const hasSalary = data.monthlySalary !== null && data.monthlySalary !== undefined;
+  const hasSalaryGrade = data.salaryGrade && data.salaryGrade.trim() !== '';
+  const hasStatus = data.statusOfAppointment && data.statusOfAppointment.trim() !== '';
+  const hasDateFrom = data.dateFrom !== null && data.dateFrom !== undefined;
+  const hasDateTo = data.dateTo !== null && data.dateTo !== undefined;
+
+  const hasAnyField = hasPosition || hasDepartment || hasSalary || hasSalaryGrade || hasStatus || hasDateFrom || hasDateTo;
+
+  // If any field is filled, enforce required fields
+  if (hasAnyField) {
+    if (!hasPosition) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Position title is required',
+        path: ['positionTitle'],
+      });
     }
-  );
+    if (!hasDepartment) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Department/Agency/Office/Company is required',
+        path: ['departmentAgency'],
+      });
+    }
+    if (!hasDateFrom) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Start date is required',
+        path: ['dateFrom'],
+      });
+    }
+    // Date validation: dateFrom must not be in the future
+    if (hasDateFrom && data.dateFrom! > getEndOfToday()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Date cannot be in the future',
+        path: ['dateFrom'],
+      });
+    }
+    // If dateTo is provided, it should be after dateFrom
+    if (hasDateFrom && hasDateTo && data.dateTo! < data.dateFrom!) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'End date must be after start date',
+        path: ['dateTo'],
+      });
+    }
+  }
+  // If no fields are filled, row passes (will be filtered out during submission)
+});
 
 // ============================================================================
 // SECTION VI: VOLUNTARY WORK
@@ -638,50 +724,87 @@ export const workExperienceSchema = z
 
 /**
  * Voluntary Work Entry Schema
+ *
+ * Validation logic:
+ * - If ANY field is filled, enforce required fields (organizationName, dateFrom)
+ * - If ALL fields are empty/null, row is considered optional and passes validation
  */
-export const voluntaryWorkSchema = z
-  .object({
-    organizationName: z
-      .string()
-      .min(1, 'Organization name is required')
-      .max(200, 'Organization name must not exceed 200 characters'),
+const voluntaryWorkBaseSchema = z.object({
+  organizationName: z
+    .string()
+    .max(200, 'Organization name must not exceed 200 characters')
+    .default(''),
 
-    organizationAddress: z
-      .string()
-      .max(250, 'Organization address must not exceed 250 characters')
-      .nullable()
-      .optional(),
+  organizationAddress: z
+    .string()
+    .max(250, 'Organization address must not exceed 250 characters')
+    .nullable()
+    .optional(),
 
-    dateFrom: pastDateSchema,
+  dateFrom: z.date().nullable().optional(),
 
-    dateTo: z.date().nullable().optional(),
+  dateTo: z.date().nullable().optional(),
 
-    numberOfHours: z
-      .number()
-      .int('Number of hours must be a whole number')
-      .min(0, 'Number of hours must be a positive number')
-      .nullable()
-      .optional(),
+  numberOfHours: z
+    .number()
+    .int('Number of hours must be a whole number')
+    .min(0, 'Number of hours must be a positive number')
+    .nullable()
+    .optional(),
 
-    positionNature: z
-      .string()
-      .max(150, 'Position/Nature of work must not exceed 150 characters')
-      .nullable()
-      .optional(),
-  })
-  .refine(
-    (data) => {
-      // If dateTo is provided, it should be after dateFrom
-      if (data.dateTo) {
-        return data.dateTo >= data.dateFrom;
-      }
-      return true;
-    },
-    {
-      message: 'End date must be after start date',
-      path: ['dateTo'],
+  positionNature: z
+    .string()
+    .max(150, 'Position/Nature of work must not exceed 150 characters')
+    .nullable()
+    .optional(),
+});
+
+export const voluntaryWorkSchema = voluntaryWorkBaseSchema.superRefine((data, ctx) => {
+  // Check if any field has meaningful content
+  const hasOrgName = data.organizationName && data.organizationName.trim() !== '';
+  const hasOrgAddress = data.organizationAddress && data.organizationAddress.trim() !== '';
+  const hasDateFrom = data.dateFrom !== null && data.dateFrom !== undefined;
+  const hasDateTo = data.dateTo !== null && data.dateTo !== undefined;
+  const hasHours = data.numberOfHours !== null && data.numberOfHours !== undefined;
+  const hasPosition = data.positionNature && data.positionNature.trim() !== '';
+
+  const hasAnyField = hasOrgName || hasOrgAddress || hasDateFrom || hasDateTo || hasHours || hasPosition;
+
+  // If any field is filled, enforce required fields
+  if (hasAnyField) {
+    if (!hasOrgName) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Organization name is required',
+        path: ['organizationName'],
+      });
     }
-  );
+    if (!hasDateFrom) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Start date is required',
+        path: ['dateFrom'],
+      });
+    }
+    // Date validation: dateFrom must not be in the future
+    if (hasDateFrom && data.dateFrom! > getEndOfToday()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Date cannot be in the future',
+        path: ['dateFrom'],
+      });
+    }
+    // If dateTo is provided, it should be after dateFrom
+    if (hasDateFrom && hasDateTo && data.dateTo! < data.dateFrom!) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'End date must be after start date',
+        path: ['dateTo'],
+      });
+    }
+  }
+  // If no fields are filled, row passes (will be filtered out during submission)
+});
 
 // ============================================================================
 // SECTION VII: LEARNING AND DEVELOPMENT INTERVENTIONS
@@ -690,41 +813,102 @@ export const voluntaryWorkSchema = z
 /**
  * Training/Seminar Entry Schema
  * Learning and Development (L&D) Interventions
+ *
+ * Validation logic:
+ * - If ANY field is filled, enforce required fields (title, dateFrom, dateTo)
+ * - If ALL fields are empty/null, row is considered optional and passes validation
  */
-export const trainingSchema = z
-  .object({
-    title: z
-      .string()
-      .min(1, 'Training title is required')
-      .max(250, 'Training title must not exceed 250 characters'),
+const trainingBaseSchema = z.object({
+  title: z
+    .string()
+    .max(250, 'Training title must not exceed 250 characters')
+    .default(''),
 
-    dateFrom: pastDateSchema,
+  dateFrom: z.date().nullable().optional(),
 
-    dateTo: pastDateSchema,
+  dateTo: z.date().nullable().optional(),
 
-    hours: z
-      .number()
-      .int('Number of hours must be a whole number')
-      .min(0, 'Number of hours must be a positive number')
-      .nullable()
-      .optional(),
+  hours: z
+    .number()
+    .int('Number of hours must be a whole number')
+    .min(0, 'Number of hours must be a positive number')
+    .nullable()
+    .optional(),
 
-    typeOfLd: z
-      .string()
-      .max(100, 'Type of L&D must not exceed 100 characters')
-      .nullable()
-      .optional(),
+  typeOfLd: z
+    .string()
+    .max(100, 'Type of L&D must not exceed 100 characters')
+    .nullable()
+    .optional(),
 
-    conductedBy: z
-      .string()
-      .max(200, 'Conducted/Sponsored by must not exceed 200 characters')
-      .nullable()
-      .optional(),
-  })
-  .refine((data) => data.dateTo >= data.dateFrom, {
-    message: 'End date must be after or equal to start date',
-    path: ['dateTo'],
-  });
+  conductedBy: z
+    .string()
+    .max(200, 'Conducted/Sponsored by must not exceed 200 characters')
+    .nullable()
+    .optional(),
+});
+
+export const trainingSchema = trainingBaseSchema.superRefine((data, ctx) => {
+  // Check if any field has meaningful content
+  const hasTitle = data.title && data.title.trim() !== '';
+  const hasDateFrom = data.dateFrom !== null && data.dateFrom !== undefined;
+  const hasDateTo = data.dateTo !== null && data.dateTo !== undefined;
+  const hasHours = data.hours !== null && data.hours !== undefined;
+  const hasTypeOfLd = data.typeOfLd && data.typeOfLd.trim() !== '';
+  const hasConductedBy = data.conductedBy && data.conductedBy.trim() !== '';
+
+  const hasAnyField = hasTitle || hasDateFrom || hasDateTo || hasHours || hasTypeOfLd || hasConductedBy;
+
+  // If any field is filled, enforce required fields
+  if (hasAnyField) {
+    if (!hasTitle) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Training title is required',
+        path: ['title'],
+      });
+    }
+    if (!hasDateFrom) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Start date is required',
+        path: ['dateFrom'],
+      });
+    }
+    if (!hasDateTo) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'End date is required',
+        path: ['dateTo'],
+      });
+    }
+    // Date validation: dateFrom must not be in the future
+    if (hasDateFrom && data.dateFrom! > getEndOfToday()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Date cannot be in the future',
+        path: ['dateFrom'],
+      });
+    }
+    // Date validation: dateTo must not be in the future
+    if (hasDateTo && data.dateTo! > getEndOfToday()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Date cannot be in the future',
+        path: ['dateTo'],
+      });
+    }
+    // If both dates provided, dateTo must be after or equal to dateFrom
+    if (hasDateFrom && hasDateTo && data.dateTo! < data.dateFrom!) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'End date must be after or equal to start date',
+        path: ['dateTo'],
+      });
+    }
+  }
+  // If no fields are filled, row passes (will be filtered out during submission)
+});
 
 // ============================================================================
 // SECTION VIII: OTHER INFORMATION
@@ -787,12 +971,13 @@ const associationSchema = z.object({
 
 /**
  * Character References
- * Minimum of 3 references required
+ * Minimum of 3 references required per CSC Form 212 (Revised 2025) Page 4
  *
  * Validation logic:
  * - Frontend filters out incomplete references before validation
  * - A reference is considered "complete" only if it has ALL required fields: name, address, AND telephone
  * - After filtering, at least 3 complete references must remain
+ * - Telephone is REQUIRED per CSC standards
  */
 const referenceSchema = z.object({
   name: z
@@ -806,12 +991,9 @@ const referenceSchema = z.object({
     .max(250, 'Address must not exceed 250 characters'),
 
   telephoneNo: z
-    .union([
-      z.literal(''),
-      z.string().regex(phoneRegex, 'Invalid telephone number format'),
-    ])
-    .optional()
-    .nullable(),
+    .string()
+    .min(1, 'Telephone number is required')
+    .regex(phoneRegex, 'Invalid telephone number format (e.g., +63-2-8123-4567 or 09171234567)'),
 });
 
 /**
@@ -1084,7 +1266,10 @@ export const step1RequiredSchema = z.object({
 
   dateOfBirth: z
     .date({ required_error: 'Date of birth is required' })
-    .max(new Date(), 'Date cannot be in the future')
+    .refine(
+      (date) => date <= getEndOfToday(),
+      { message: 'Date cannot be in the future' }
+    )
     .refine(
       (date) => {
         const age = new Date().getFullYear() - date.getFullYear();
@@ -1376,6 +1561,7 @@ export function createEmptyPds(): Partial<CompletePdsData> {
         Q41_disabled: false,
         Q42_solo_parent: false,
       },
+      // At least 3 complete references required per CSC Form 212
       references: [
         { name: '', address: '', telephoneNo: '' },
         { name: '', address: '', telephoneNo: '' },
