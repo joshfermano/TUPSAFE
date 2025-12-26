@@ -29,8 +29,18 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkUserRoleFromSupabase, getUserFromSupabase } from '@tupsafe/auth/server';
-import { db, pdsSubmissions, notifications } from '@tupsafe/database/server';
+import {
+  checkUserRoleFromSupabase,
+  getUserFromSupabase,
+  createAdminClient,
+  sendPDSStatusEmail,
+} from '@tupsafe/auth/server';
+import {
+  db,
+  pdsSubmissions,
+  notifications,
+  profiles,
+} from '@tupsafe/database/server';
 import { eq, and, or } from 'drizzle-orm';
 import { createAuditLog } from '@tupsafe/database/utils/audit-log';
 import { rejectSubmissionSchema, type ApiSuccess } from '@tupsafe/types';
@@ -44,7 +54,10 @@ export async function POST(
     const { id } = await params;
 
     // Verify admin/HR permissions
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(
+      ['admin', 'hr'],
+      'admin'
+    );
 
     if (!hasPermission) {
       return NextResponse.json(
@@ -63,27 +76,36 @@ export async function POST(
     const uuidRegex =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(id)) {
-      return NextResponse.json({ error: 'Invalid submission ID' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid submission ID' },
+        { status: 400 }
+      );
     }
 
     // Parse and validate request body (includes rejection reason validation)
     const body = await request.json();
     const validatedData = rejectSubmissionSchema.parse(body);
 
-    // Fetch submission and verify it exists
+    // Fetch submission with employee info
     const [submission] = await db
       .select({
         id: pdsSubmissions.id,
         userId: pdsSubmissions.userId,
         status: pdsSubmissions.status,
         version: pdsSubmissions.version,
+        employeeFirstName: profiles.firstName,
+        employeeLastName: profiles.lastName,
       })
       .from(pdsSubmissions)
+      .innerJoin(profiles, eq(pdsSubmissions.userId, profiles.id))
       .where(eq(pdsSubmissions.id, id))
       .limit(1);
 
     if (!submission) {
-      return NextResponse.json({ error: 'PDS submission not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'PDS submission not found' },
+        { status: 404 }
+      );
     }
 
     // Prevent self-review
@@ -100,7 +122,8 @@ export async function POST(
       return NextResponse.json(
         {
           error: `Cannot reject submission with status 'approved'`,
-          details: 'Already approved submissions cannot be rejected. Contact system administrator if needed.',
+          details:
+            'Already approved submissions cannot be rejected. Contact system administrator if needed.',
         },
         { status: 409 }
       );
@@ -174,9 +197,10 @@ export async function POST(
     });
 
     // Send rejection notification to employee with reason
-    const notificationMessage = submission.status === 'draft'
-      ? `Your PDS draft (Version ${submission.version}) has been rejected by the administrator.\n\nReason: ${validatedData.reason}\n\nYou can now create a new PDS submission with the necessary corrections.`
-      : `Your PDS submission (Version ${submission.version}) has been rejected.\n\nReason: ${validatedData.reason}\n\nPlease review the feedback and create a new submission with the necessary corrections.`;
+    const notificationMessage =
+      submission.status === 'draft'
+        ? `Your PDS draft (Version ${submission.version}) has been rejected by the administrator.\n\nReason: ${validatedData.reason}\n\nYou can now create a new PDS submission with the necessary corrections.`
+        : `Your PDS submission (Version ${submission.version}) has been rejected.\n\nReason: ${validatedData.reason}\n\nPlease review the feedback and create a new submission with the necessary corrections.`;
 
     await db.insert(notifications).values({
       id: uuidv7(),
@@ -187,6 +211,28 @@ export async function POST(
       isRead: false,
       createdAt: now,
     });
+
+    // Send email notification (best-effort - don't fail if email fails)
+    try {
+      const adminClient = createAdminClient();
+      const { data: userData } = await adminClient.auth.admin.getUserById(
+        submission.userId
+      );
+
+      if (userData?.user?.email) {
+        const employeeName = `${submission.employeeFirstName} ${submission.employeeLastName}`;
+        await sendPDSStatusEmail({
+          to: userData.user.email,
+          employeeName,
+          status: 'rejected',
+          version: submission.version,
+          notes: validatedData.reason,
+        });
+      }
+    } catch (emailError) {
+      // Log but don't fail the request
+      console.error('Failed to send PDS rejection email:', emailError);
+    }
 
     const response: ApiSuccess<typeof updatedSubmission> = {
       success: true,

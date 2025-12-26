@@ -34,8 +34,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserFromSupabase } from '@tupsafe/auth/server';
-import { db, pdsSubmissions, salnSubmissions, notifications } from '@tupsafe/database/server';
+import {
+  getUserFromSupabase,
+  createAdminClient,
+  sendBulkApprovalEmail,
+} from '@tupsafe/auth/server';
+import { db, pdsSubmissions, salnSubmissions, notifications, profiles } from '@tupsafe/database/server';
 import { eq, and, or, inArray } from 'drizzle-orm';
 import { createAuditLog } from '@tupsafe/database/utils/audit-log';
 import {
@@ -74,7 +78,7 @@ export async function POST(request: NextRequest) {
       .filter((s: any) => s.type === 'saln')
       .map((s: any) => s.id);
 
-    // Fetch all PDS submissions
+    // Fetch all PDS submissions with employee info
     const pdsSubmissionsToApprove = pdsIds.length
       ? await db
           .select({
@@ -82,12 +86,15 @@ export async function POST(request: NextRequest) {
             userId: pdsSubmissions.userId,
             status: pdsSubmissions.status,
             version: pdsSubmissions.version,
+            employeeFirstName: profiles.firstName,
+            employeeLastName: profiles.lastName,
           })
           .from(pdsSubmissions)
+          .innerJoin(profiles, eq(pdsSubmissions.userId, profiles.id))
           .where(inArray(pdsSubmissions.id, pdsIds))
       : [];
 
-    // Fetch all SALN submissions
+    // Fetch all SALN submissions with employee info
     const salnSubmissionsToApprove = salnIds.length
       ? await db
           .select({
@@ -95,8 +102,11 @@ export async function POST(request: NextRequest) {
             userId: salnSubmissions.userId,
             status: salnSubmissions.status,
             year: salnSubmissions.year,
+            employeeFirstName: profiles.firstName,
+            employeeLastName: profiles.lastName,
           })
           .from(salnSubmissions)
+          .innerJoin(profiles, eq(salnSubmissions.userId, profiles.id))
           .where(inArray(salnSubmissions.id, salnIds))
       : [];
 
@@ -107,6 +117,15 @@ export async function POST(request: NextRequest) {
       title: string;
       message: string;
     }> = [];
+    
+    // Track approvals per user for email aggregation
+    const approvalsPerUser: Map<
+      string,
+      {
+        employeeName: string;
+        approvals: Array<{ type: 'pds' | 'saln'; identifier: string }>;
+      }
+    > = new Map();
 
     // Process each PDS submission
     for (const submission of pdsSubmissionsToApprove) {
@@ -189,6 +208,20 @@ export async function POST(request: NextRequest) {
           title: 'PDS Submission Approved',
           message: `Your PDS submission (Version ${submission.version}) has been approved.${validatedData.notes ? ` Notes: ${validatedData.notes}` : ''}`,
         });
+
+        // Track for email aggregation
+        const existingUserApprovals = approvalsPerUser.get(submission.userId);
+        if (existingUserApprovals) {
+          existingUserApprovals.approvals.push({
+            type: 'pds',
+            identifier: String(submission.version),
+          });
+        } else {
+          approvalsPerUser.set(submission.userId, {
+            employeeName: `${submission.employeeFirstName} ${submission.employeeLastName}`,
+            approvals: [{ type: 'pds', identifier: String(submission.version) }],
+          });
+        }
 
         results.push({
           id: submission.id,
@@ -288,6 +321,20 @@ export async function POST(request: NextRequest) {
           message: `Your SALN submission for fiscal year ${submission.year} has been approved.${validatedData.notes ? ` Notes: ${validatedData.notes}` : ''}`,
         });
 
+        // Track for email aggregation
+        const existingSalnUserApprovals = approvalsPerUser.get(submission.userId);
+        if (existingSalnUserApprovals) {
+          existingSalnUserApprovals.approvals.push({
+            type: 'saln',
+            identifier: String(submission.year),
+          });
+        } else {
+          approvalsPerUser.set(submission.userId, {
+            employeeName: `${submission.employeeFirstName} ${submission.employeeLastName}`,
+            approvals: [{ type: 'saln', identifier: String(submission.year) }],
+          });
+        }
+
         results.push({
           id: submission.id,
           type: 'saln',
@@ -317,6 +364,29 @@ export async function POST(request: NextRequest) {
           createdAt: now,
         }))
       );
+    }
+
+    // Send aggregated email notifications per user (best-effort)
+    if (approvalsPerUser.size > 0) {
+      const adminClient = createAdminClient();
+
+      for (const [userId, userApprovals] of approvalsPerUser) {
+        try {
+          const { data: userData } = await adminClient.auth.admin.getUserById(userId);
+
+          if (userData?.user?.email) {
+            await sendBulkApprovalEmail({
+              to: userData.user.email,
+              employeeName: userApprovals.employeeName,
+              approvals: userApprovals.approvals,
+              notes: validatedData.notes,
+            });
+          }
+        } catch (emailError) {
+          // Log but don't fail the request
+          console.error(`Failed to send bulk approval email to user ${userId}:`, emailError);
+        }
+      }
     }
 
     // Calculate summary

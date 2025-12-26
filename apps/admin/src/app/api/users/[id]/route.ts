@@ -430,6 +430,9 @@ export async function PATCH(
 /**
  * DELETE /api/users/[id]
  * Hard delete user account (permanent removal from database)
+ * 
+ * Query Parameters:
+ * - forceDelete: If 'true', will cascade delete job applications and related data
  */
 export async function DELETE(
   request: NextRequest,
@@ -451,6 +454,10 @@ export async function DELETE(
     }
 
     const { id: userId } = await params;
+    
+    // Check for forceDelete query parameter
+    const searchParams = request.nextUrl.searchParams;
+    const forceDelete = searchParams.get('forceDelete') === 'true';
 
     // Validate UUID format
     const uuidRegex =
@@ -537,17 +544,50 @@ export async function DELETE(
       dependencies.push(`${applicationsCount} job application${applicationsCount > 1 ? 's' : ''}`);
     }
 
-    if (dependencies.length > 0) {
+    // Check if forceDelete is needed but not provided
+    // Posted positions cannot be force-deleted (must be reassigned)
+    // PDS/SALN submissions and job applications CAN be force-deleted with warning
+    
+    // If user has posted positions, always block (cannot cascade delete positions)
+    if (positionsPostedCount > 0) {
       return NextResponse.json(
         {
-          error: 'Cannot delete user with existing data dependencies',
-          details: `This user has ${dependencies.join(', ')}. Please archive or reassign these records before deletion.`,
+          error: 'Cannot delete user with posted positions',
+          details: `This user has ${positionsPostedCount} posted position${positionsPostedCount > 1 ? 's' : ''}. Please reassign these positions to another user before deletion.`,
           dependencies: {
             pdsSubmissions: pdsCount,
             salnSubmissions: salnCount,
             positionsPosted: positionsPostedCount,
             jobApplications: applicationsCount,
           },
+          canForceDelete: false,
+        },
+        { status: 409 }
+      );
+    }
+
+    // If there are any forceable dependencies and forceDelete is not set, return conflict with option
+    const totalForceableDeps = pdsCount + salnCount + applicationsCount;
+    if (totalForceableDeps > 0 && !forceDelete) {
+      const depList: string[] = [];
+      if (pdsCount > 0) depList.push(`${pdsCount} PDS submission${pdsCount > 1 ? 's' : ''}`);
+      if (salnCount > 0) depList.push(`${salnCount} SALN submission${salnCount > 1 ? 's' : ''}`);
+      if (applicationsCount > 0) depList.push(`${applicationsCount} job application${applicationsCount > 1 ? 's' : ''}`);
+      
+      const hasComplianceRecords = pdsCount > 0 || salnCount > 0;
+      
+      return NextResponse.json(
+        {
+          error: 'Cannot delete user with existing data dependencies',
+          details: `This user has ${depList.join(', ')}. ${hasComplianceRecords ? '⚠️ WARNING: This includes compliance records (PDS/SALN) that will be permanently deleted. ' : ''}Use forceDelete=true to permanently delete all associated data.`,
+          dependencies: {
+            pdsSubmissions: pdsCount,
+            salnSubmissions: salnCount,
+            positionsPosted: positionsPostedCount,
+            jobApplications: applicationsCount,
+          },
+          canForceDelete: true,
+          hasComplianceRecords,
         },
         { status: 409 }
       );
@@ -555,7 +595,107 @@ export async function DELETE(
 
     // Perform hard delete within a transaction
     await db.transaction(async (tx) => {
-      // Clean up auth-related tables first (these don't have critical data)
+      // If forceDelete, delete all user data
+      if (forceDelete) {
+        // Delete job applications (cascade to applicationStatusHistory)
+        if (applicationsCount > 0) {
+          console.log(`[Delete User] Force deleting ${applicationsCount} job applications for user ${userId}`);
+          
+          // First delete application status history records
+          const userApplications = await tx
+            .select({ id: jobApplications.id })
+            .from(jobApplications)
+            .where(eq(jobApplications.applicantId, userId));
+          
+          const applicationIds = userApplications.map(app => app.id);
+          
+          if (applicationIds.length > 0) {
+            const { applicationStatusHistory } = await import('@tupsafe/database/server');
+            
+            // Delete status history for all applications
+            for (const appId of applicationIds) {
+              await tx.delete(applicationStatusHistory).where(eq(applicationStatusHistory.applicationId, appId));
+            }
+          }
+          
+          // Then delete the applications themselves
+          await tx.delete(jobApplications).where(eq(jobApplications.applicantId, userId));
+        }
+        
+        // Delete PDS submissions and related data
+        if (pdsCount > 0) {
+          console.log(`[Delete User] Force deleting ${pdsCount} PDS submissions for user ${userId}`);
+          
+          // Import the related PDS tables
+          const { 
+            pdsPersonalInfo,
+            pdsFamilyBackground,
+            pdsChildren,
+            pdsEducation,
+            pdsCivilService,
+            pdsWorkExperience,
+            pdsVoluntaryWork,
+            pdsTraining,
+            pdsOtherInfo,
+          } = await import('@tupsafe/database/server');
+          
+          // Get all PDS submission IDs for this user
+          const userPdsSubmissions = await tx
+            .select({ id: pdsSubmissions.id })
+            .from(pdsSubmissions)
+            .where(eq(pdsSubmissions.userId, userId));
+          
+          for (const pds of userPdsSubmissions) {
+            // Delete related records in reverse dependency order
+            await tx.delete(pdsOtherInfo).where(eq(pdsOtherInfo.pdsSubmissionId, pds.id));
+            await tx.delete(pdsTraining).where(eq(pdsTraining.pdsSubmissionId, pds.id));
+            await tx.delete(pdsVoluntaryWork).where(eq(pdsVoluntaryWork.pdsSubmissionId, pds.id));
+            await tx.delete(pdsWorkExperience).where(eq(pdsWorkExperience.pdsSubmissionId, pds.id));
+            await tx.delete(pdsCivilService).where(eq(pdsCivilService.pdsSubmissionId, pds.id));
+            await tx.delete(pdsEducation).where(eq(pdsEducation.pdsSubmissionId, pds.id));
+            await tx.delete(pdsChildren).where(eq(pdsChildren.pdsSubmissionId, pds.id));
+            await tx.delete(pdsFamilyBackground).where(eq(pdsFamilyBackground.pdsSubmissionId, pds.id));
+            await tx.delete(pdsPersonalInfo).where(eq(pdsPersonalInfo.pdsSubmissionId, pds.id));
+          }
+          
+          // Delete PDS submissions
+          await tx.delete(pdsSubmissions).where(eq(pdsSubmissions.userId, userId));
+        }
+        
+        // Delete SALN submissions and related data
+        if (salnCount > 0) {
+          console.log(`[Delete User] Force deleting ${salnCount} SALN submissions for user ${userId}`);
+          
+          // Import related SALN tables
+          const {
+            salnRealProperties,
+            salnPersonalProperties,
+            salnLiabilities: salnLiabilitiesTable,
+            salnBusinessInterests,
+            salnRelativesInGov,
+          } = await import('@tupsafe/database/server');
+          
+          // Get all SALN submission IDs for this user
+          const userSalnSubmissions = await tx
+            .select({ id: salnSubmissions.id })
+            .from(salnSubmissions)
+            .where(eq(salnSubmissions.userId, userId));
+          
+          for (const saln of userSalnSubmissions) {
+            // Delete related records
+            await tx.delete(salnRelativesInGov).where(eq(salnRelativesInGov.salnSubmissionId, saln.id));
+            await tx.delete(salnBusinessInterests).where(eq(salnBusinessInterests.salnSubmissionId, saln.id));
+            await tx.delete(salnLiabilitiesTable).where(eq(salnLiabilitiesTable.salnSubmissionId, saln.id));
+            await tx.delete(salnPersonalProperties).where(eq(salnPersonalProperties.salnSubmissionId, saln.id));
+            await tx.delete(salnRealProperties).where(eq(salnRealProperties.salnSubmissionId, saln.id));
+          }
+          
+          // Delete SALN submissions
+          await tx.delete(salnSubmissions).where(eq(salnSubmissions.userId, userId));
+        }
+      }
+      
+      // Clean up auth-related tables (these don't have critical data)
       await tx.delete(otpVerifications).where(eq(otpVerifications.userId, userId));
       await tx.delete(pendingRegistrations).where(eq(pendingRegistrations.userId, userId));
       await tx.delete(trustedDevices).where(eq(trustedDevices.userId, userId));
@@ -584,15 +724,40 @@ export async function DELETE(
       'profile',
       userId,
       {
-        before: currentUser,
+        before: {
+          ...currentUser,
+          _deletedData: forceDelete ? {
+            applications: applicationsCount,
+            pdsSubmissions: pdsCount,
+            salnSubmissions: salnCount,
+          } : null,
+        },
       },
       request.headers
     );
 
+    // Build success message
+    let successMessage = 'User permanently deleted successfully';
+    if (forceDelete) {
+      const deletedItems: string[] = [];
+      if (applicationsCount > 0) deletedItems.push(`${applicationsCount} job application${applicationsCount > 1 ? 's' : ''}`);
+      if (pdsCount > 0) deletedItems.push(`${pdsCount} PDS submission${pdsCount > 1 ? 's' : ''}`);
+      if (salnCount > 0) deletedItems.push(`${salnCount} SALN submission${salnCount > 1 ? 's' : ''}`);
+      
+      if (deletedItems.length > 0) {
+        successMessage = `User and ${deletedItems.join(', ')} permanently deleted successfully`;
+      }
+    }
+
     return NextResponse.json(
       {
         success: true,
-        message: 'User permanently deleted successfully',
+        message: successMessage,
+        deletedData: forceDelete ? {
+          applications: applicationsCount,
+          pdsSubmissions: pdsCount,
+          salnSubmissions: salnCount,
+        } : null,
       },
       { status: 200 }
     );

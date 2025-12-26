@@ -39,10 +39,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, AlertCircle } from 'lucide-react';
+import { CalendarIcon, AlertCircle, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { updateApplicationStatusSchema, type UpdateApplicationStatusData, type ApplicationStatus } from '@tupsafe/types';
+import {
+  updateApplicationStatusSchema,
+  type UpdateApplicationStatusData,
+  type ApplicationStatus,
+  APPLICATION_STATUS,
+  APPLICATION_STATUS_LABELS,
+} from '@tupsafe/types';
 
 interface UpdateStatusDialogProps {
   open: boolean;
@@ -96,8 +102,15 @@ export function UpdateStatusDialog({
   }, [application, open, form]);
 
   const handleSubmit = (data: UpdateApplicationStatusData) => {
+    console.log('[UpdateStatusDialog] Form submitted with data:', data);
     onSubmit(data);
   };
+
+  // Log form errors for debugging
+  const formErrors = form.formState.errors;
+  if (Object.keys(formErrors).length > 0) {
+    console.log('[UpdateStatusDialog] Form validation errors:', formErrors);
+  }
 
   if (!application) return null;
 
@@ -137,23 +150,18 @@ export function UpdateStatusDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>New Status *</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="under_review">Under Review</SelectItem>
-                      <SelectItem value="shortlisted">Shortlisted</SelectItem>
-                      <SelectItem value="for_interview">For Interview</SelectItem>
-                      <SelectItem value="interviewed">Interviewed</SelectItem>
-                      <SelectItem value="for_final_review">For Final Review</SelectItem>
-                      <SelectItem value="accepted">Accepted</SelectItem>
-                      <SelectItem value="rejected">Rejected</SelectItem>
-                      <SelectItem value="withdrawn">Withdrawn</SelectItem>
-                      <SelectItem value="hired">Hired</SelectItem>
+                      {Object.entries(APPLICATION_STATUS).map(([key, value]) => (
+                        <SelectItem key={key} value={value}>
+                          {APPLICATION_STATUS_LABELS[value]}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -346,17 +354,53 @@ export function UpdateStatusDialog({
               </>
             )}
 
-            <DialogFooter>
+            {/* Show any top-level form errors */}
+            {Object.keys(form.formState.errors).length > 0 && (
+              <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
+                  <div className="text-sm text-red-800 dark:text-red-300">
+                    <p className="font-medium">Please fix the following errors:</p>
+                    <ul className="list-disc list-inside mt-1 space-y-1">
+                      {Object.entries(form.formState.errors).map(([field, error]) => (
+                        <li key={field}>
+                          {field}: {error?.message as string}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter className="gap-2 sm:gap-2">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={isLoading}
+                className="border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500 active:scale-[0.98] transition-all duration-150"
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? 'Updating...' : 'Update Status'}
+              <Button 
+                type="submit" 
+                disabled={isLoading}
+                onClick={() => {
+                  console.log('[UpdateStatusDialog] Update Status button clicked');
+                  console.log('[UpdateStatusDialog] Form state:', form.getValues());
+                  console.log('[UpdateStatusDialog] Form valid:', form.formState.isValid);
+                }}
+                className="border-2 border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:border-primary/80 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 min-w-[140px]"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  'Update Status'
+                )}
               </Button>
             </DialogFooter>
           </form>

@@ -46,6 +46,7 @@ import {
 import { Separator } from '../../../../../components/ui/separator';
 import { AddressInput } from '../../../../../components/forms/shared/AddressInput';
 import { type CompletePdsData } from '../../../../../lib/validations/pds-schema';
+import { formatDateForInput, parseDateFromInput } from '../../../../../lib/utils/date-utils';
 
 export const SectionI = memo(function SectionI() {
   const form = useFormContext<CompletePdsData>();
@@ -195,16 +196,11 @@ export const SectionI = memo(function SectionI() {
                     <FormControl>
                       <Input
                         type="date"
-                        max={new Date().toISOString().split('T')[0]}
+                        max={formatDateForInput(new Date())}
                         {...field}
-                        value={
-                          field.value instanceof Date
-                            ? field.value.toISOString().split('T')[0]
-                            : field.value || ''
-                        }
+                        value={formatDateForInput(field.value as Date | null)}
                         onChange={(e) => {
-                          const newDate = e.target.value ? new Date(e.target.value) : null;
-                          field.onChange(newDate);
+                          field.onChange(parseDateFromInput(e.target.value));
                         }}
                         className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
                       />

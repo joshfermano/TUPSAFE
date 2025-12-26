@@ -116,24 +116,60 @@ export async function updateUser(
 }
 
 /**
- * Soft delete a user
+ * Delete error type with dependency information
  */
-export async function deleteUser(userId: string): Promise<{ success: true }> {
-  const response = await fetch(`${API_BASE}/${userId}`, {
+export interface DeleteUserError extends Error {
+  dependencies?: {
+    pdsSubmissions: number;
+    salnSubmissions: number;
+    positionsPosted: number;
+    jobApplications: number;
+  };
+  canForceDelete?: boolean;
+  details?: string;
+}
+
+/**
+ * Delete user response
+ */
+export interface DeleteUserResponse {
+  success: boolean;
+  message: string;
+  deletedApplications?: number;
+}
+
+/**
+ * Hard delete a user
+ * @param userId - User ID to delete
+ * @param forceDelete - If true, cascade delete job applications
+ */
+export async function deleteUser(
+  userId: string, 
+  forceDelete: boolean = false
+): Promise<DeleteUserResponse> {
+  const params = new URLSearchParams();
+  if (forceDelete) params.append('forceDelete', 'true');
+  
+  const url = `${API_BASE}/${userId}${params.toString() ? '?' + params.toString() : ''}`;
+  const response = await fetch(url, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
     },
   });
 
+  const result = await response.json();
+
   if (!response.ok) {
-    const error: ApiError = await response.json();
-    throw new Error(error.error || 'Failed to delete user');
+    // Create an error with additional properties
+    const error = new Error(result.error || 'Failed to delete user') as DeleteUserError;
+    error.dependencies = result.dependencies;
+    error.canForceDelete = result.canForceDelete;
+    error.details = result.details;
+    throw error;
   }
 
-  // API returns { success: true, message: '...', data: deletedUser }
-  const result = await response.json();
-  return { success: result.success };
+  return result;
 }
 
 /**

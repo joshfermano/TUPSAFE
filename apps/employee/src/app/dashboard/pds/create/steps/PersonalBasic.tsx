@@ -27,6 +27,7 @@ import {
 import { Separator } from '../../../../../components/ui/separator';
 import { FormSection } from '../../../../../components/forms/shared/FormSection';
 import { type CompletePdsData } from '../../../../../lib/validations/pds-schema';
+import { formatDateForInput, parseDateFromInput } from '../../../../../lib/utils/date-utils';
 
 /**
  * Step 1: Personal Information - Basic Details
@@ -166,13 +167,9 @@ export const PersonalBasic = memo(function PersonalBasic() {
                     <Input
                       type="date"
                       {...field}
-                      value={
-                        field.value instanceof Date
-                          ? field.value.toISOString().split('T')[0]
-                          : ''
-                      }
+                      value={formatDateForInput(field.value as Date | null)}
                       onChange={(e) => {
-                        field.onChange(e.target.value ? new Date(e.target.value) : null);
+                        field.onChange(parseDateFromInput(e.target.value));
                       }}
                       className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                     />

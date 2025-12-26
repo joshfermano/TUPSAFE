@@ -1,12 +1,12 @@
 /**
  * Send Credentials API - POST /api/auth/send-credentials
  *
- * Sends user credentials via email using Supabase Edge Function + Resend.
+ * Sends user credentials via email using Supabase Edge Function + SendGrid SMTP.
  * Used when HR/Admin creates a new user account.
  *
  * Features:
  * - Sends welcome email with employee ID and temporary password
- * - Uses existing Resend integration via Supabase Edge Functions
+ * - Uses SendGrid SMTP via Supabase Edge Functions
  * - Professional email template with login instructions
  * - Audit logging for security compliance
  *
@@ -19,7 +19,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { checkUserRoleFromSupabase, getUserFromSupabase } from '@tupsafe/auth/server';
+import {
+  checkUserRoleFromSupabase,
+  getUserFromSupabase,
+} from '@tupsafe/auth/server';
 import { sendCredentialsEmail } from '@tupsafe/auth/server';
 import { createAuditLogFromRequest } from '@tupsafe/database/server';
 
@@ -27,7 +30,9 @@ import { createAuditLogFromRequest } from '@tupsafe/database/server';
 const sendCredentialsSchema = z.object({
   email: z.string().email('Invalid email address'),
   employeeId: z.string().min(1, 'Employee ID is required'),
-  temporaryPassword: z.string().min(8, 'Password must be at least 8 characters'),
+  temporaryPassword: z
+    .string()
+    .min(8, 'Password must be at least 8 characters'),
   firstName: z.string().min(1, 'First name is required'),
 });
 
@@ -40,7 +45,10 @@ type SendCredentialsData = z.infer<typeof sendCredentialsSchema>;
 export async function POST(request: NextRequest) {
   try {
     // Verify admin/HR permissions
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(
+      ['admin', 'hr'],
+      'admin'
+    );
     if (!hasPermission) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin or HR role required.' },
@@ -73,7 +81,7 @@ export async function POST(request: NextRequest) {
 
     const data: SendCredentialsData = validationResult.data;
 
-    // Send credentials email via Supabase Edge Function + Resend
+    // Send credentials email via Supabase Edge Function + SendGrid SMTP
     const emailResult = await sendCredentialsEmail(
       data.email,
       data.employeeId,

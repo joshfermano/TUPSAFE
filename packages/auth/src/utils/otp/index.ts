@@ -74,6 +74,28 @@ export async function verifyOTP(
   type: OTPType
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    console.log(`[verifyOTP] Attempting verification:`, {
+      userId,
+      code,
+      type,
+      now: new Date().toISOString(),
+    });
+
+    // First, let's see what OTPs exist for this user
+    const existingOtps = await db
+      .select()
+      .from(otpVerifications)
+      .where(eq(otpVerifications.userId, userId));
+
+    console.log(`[verifyOTP] Existing OTPs for user ${userId}:`, existingOtps.map(o => ({
+      id: o.id,
+      code: o.code,
+      type: o.type,
+      expiresAt: o.expiresAt,
+      verifiedAt: o.verifiedAt,
+      createdAt: o.createdAt,
+    })));
+
     // Find valid OTP (not expired, not verified)
     const [otp] = await db
       .select()
@@ -90,11 +112,14 @@ export async function verifyOTP(
       .limit(1);
 
     if (!otp) {
+      console.log(`[verifyOTP] No valid OTP found for userId=${userId}, code=${code}, type=${type}`);
       return {
         success: false,
         error: 'Invalid or expired OTP code',
       };
     }
+
+    console.log(`[verifyOTP] Found valid OTP:`, otp.id);
 
     // Mark as verified
     await db

@@ -2,31 +2,57 @@
  * Registration Completion API Route
  *
  * Step 4 of the registration process for both employees and applicants:
- * 
+ *
  * For EMPLOYEES:
  * - Updates profile with employment details (department, hire date)
  * - Account remains pending until HR approval
  * - Called after user accepts terms and conditions
- * 
+ * - SECURITY: Only users who initiated as employees can complete as employees
+ *
  * For APPLICANTS:
  * - Auto-activates the account (no HR approval needed)
  * - Generates applicant ID
  * - Sets accountStatus to 'active' immediately
  * - Applicant can then browse and apply to positions
+ * - SECURITY: Applicants CANNOT be upgraded to employee via this endpoint
  *
  * @module api/auth/register/complete
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { 
-  db, 
-  profiles, 
-  generateAndRegisterEmployeeIdFromDOB, 
-  generateApplicantId 
+import {
+  db,
+  profiles,
+  generateAndRegisterEmployeeIdFromDOB,
+  generateApplicantId,
 } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
 import { createAdminClient } from '@tupsafe/auth/server';
+
+/**
+ * TUP Manila institutional email domains for employee validation
+ * Employee registrations must use these domains
+ */
+const INSTITUTIONAL_EMAIL_DOMAINS = [
+  'tup.edu.ph',
+  'gsb.tup.edu.ph',
+  'manila.tup.edu.ph',
+  'gov.ph',
+  'deped.gov.ph',
+  'ched.gov.ph',
+  'dost.gov.ph',
+];
+
+/**
+ * Check if an email belongs to an institutional domain
+ */
+function isInstitutionalEmail(email: string): boolean {
+  const domain = email.split('@')[1]?.toLowerCase();
+  return INSTITUTIONAL_EMAIL_DOMAINS.some((instDomain) =>
+    domain?.endsWith(instDomain)
+  );
+}
 
 /**
  * Registration completion schema - Discriminated union for employee vs applicant
@@ -48,10 +74,12 @@ const applicantCompletionSchema = z.object({
   userType: z.literal('applicant'),
 });
 
-const completionSchema = z.discriminatedUnion('userType', [
-  employeeCompletionSchema.extend({ userType: z.literal('employee') }),
-  applicantCompletionSchema,
-]).or(employeeCompletionSchema); // Also allow without userType for backward compatibility
+const completionSchema = z
+  .discriminatedUnion('userType', [
+    employeeCompletionSchema.extend({ userType: z.literal('employee') }),
+    applicantCompletionSchema,
+  ])
+  .or(employeeCompletionSchema); // Also allow without userType for backward compatibility
 
 /**
  * Success response structure
@@ -146,6 +174,76 @@ export async function POST(
     }
 
     // =========================================================================
+    // SECURITY: Determine actual userType from trusted sources
+    // Priority: 1) Existing DB profile, 2) Auth metadata, 3) Request body
+    // This prevents applicants from upgrading themselves to employees
+    // =========================================================================
+    const existingUserType = existingProfile.userType;
+    const metadataUserType = authUser.user.user_metadata?.user_type as
+      | 'employee'
+      | 'applicant'
+      | undefined;
+    const requestedUserType = userType;
+
+    console.log('[Registration Complete] UserType check:', {
+      existingUserType,
+      metadataUserType,
+      requestedUserType,
+      userId,
+    });
+
+    // SECURITY CHECK 1: If profile is already marked as applicant, REJECT employee completion
+    if (existingUserType === 'applicant' && requestedUserType === 'employee') {
+      console.error(
+        `[Registration Complete] SECURITY: Blocked applicant→employee upgrade attempt for user ${userId}`
+      );
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Cannot complete as employee. This account was registered as an applicant. If you are a TUP employee, please register with your institutional email.',
+        },
+        { status: 403 }
+      );
+    }
+
+    // SECURITY CHECK 2: If metadata says applicant, REJECT employee completion
+    if (metadataUserType === 'applicant' && requestedUserType === 'employee') {
+      console.error(
+        `[Registration Complete] SECURITY: Blocked applicant→employee upgrade (metadata) for user ${userId}`
+      );
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Cannot complete as employee. This account was initiated as an applicant.',
+        },
+        { status: 403 }
+      );
+    }
+
+    // SECURITY CHECK 3: For employee completions, verify institutional email
+    if (
+      requestedUserType === 'employee' ||
+      (!isApplicant && existingUserType !== 'applicant')
+    ) {
+      const userEmail = authUser.user.email;
+      if (userEmail && !isInstitutionalEmail(userEmail)) {
+        console.error(
+          `[Registration Complete] SECURITY: Non-institutional email attempting employee completion: ${userEmail}`
+        );
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              'Employee registration requires a TUP Manila institutional email (e.g., @tup.edu.ph). If you are an applicant, please select "Applicant" during registration.',
+          },
+          { status: 403 }
+        );
+      }
+    }
+
+    // =========================================================================
     // APPLICANT COMPLETION: Auto-activate account
     // =========================================================================
     if (isApplicant) {
@@ -155,7 +253,9 @@ export async function POST(
       let generatedApplicantId: string;
       try {
         generatedApplicantId = await generateApplicantId();
-        console.log(`✓ Generated applicant ID for user ${userId}: ${generatedApplicantId}`);
+        console.log(
+          `✓ Generated applicant ID for user ${userId}: ${generatedApplicantId}`
+        );
       } catch (idGenError) {
         console.error('Error generating applicant ID:', idGenError);
         return NextResponse.json(
@@ -218,7 +318,8 @@ export async function POST(
       return NextResponse.json(
         {
           success: true,
-          message: 'Registration completed successfully. Your account is now active!',
+          message:
+            'Registration completed successfully. Your account is now active!',
           data: {
             userId,
             applicantId: generatedApplicantId,
@@ -233,7 +334,8 @@ export async function POST(
     // =========================================================================
     // EMPLOYEE COMPLETION: Pending approval flow
     // =========================================================================
-    const { employmentCategory, hireDate, departmentId, collegeId } = data as z.infer<typeof employeeCompletionSchema>;
+    const { employmentCategory, hireDate, departmentId, collegeId } =
+      data as z.infer<typeof employeeCompletionSchema>;
 
     // Determine the department ID to save
     // For faculty: use departmentId (department within college)
@@ -261,11 +363,16 @@ export async function POST(
         );
       }
       finalDepartmentId = departmentId;
-      console.log('[Registration Complete] Faculty - using departmentId:', finalDepartmentId);
+      console.log(
+        '[Registration Complete] Faculty - using departmentId:',
+        finalDepartmentId
+      );
     } else if (employmentCategory === 'administrative') {
       // Administrative: must have office selected (passed as collegeId from form)
       if (!collegeId) {
-        console.error('[Registration Complete] Admin staff missing collegeId (office)');
+        console.error(
+          '[Registration Complete] Admin staff missing collegeId (office)'
+        );
         return NextResponse.json(
           {
             success: false,
@@ -275,24 +382,34 @@ export async function POST(
         );
       }
       finalDepartmentId = collegeId; // Office ID
-      console.log('[Registration Complete] Administrative - using collegeId as office:', finalDepartmentId);
+      console.log(
+        '[Registration Complete] Administrative - using collegeId as office:',
+        finalDepartmentId
+      );
     }
 
     // Generate employee ID from date of birth
     let generatedEmployeeId: string | null = null;
     const dateOfBirth = authUser.user.user_metadata?.date_of_birth;
-    
+
     if (dateOfBirth) {
       try {
-        generatedEmployeeId = await generateAndRegisterEmployeeIdFromDOB(userId, dateOfBirth);
-        console.log(`✓ Generated employee ID for user ${userId}: ${generatedEmployeeId}`);
+        generatedEmployeeId = await generateAndRegisterEmployeeIdFromDOB(
+          userId,
+          dateOfBirth
+        );
+        console.log(
+          `✓ Generated employee ID for user ${userId}: ${generatedEmployeeId}`
+        );
       } catch (idGenError) {
         console.error('Error generating employee ID:', idGenError);
         // Non-critical - we can continue without employee ID
         // Admin can assign manually later
       }
     } else {
-      console.warn(`[Registration Complete] No date of birth found for user ${userId}, skipping employee ID generation`);
+      console.warn(
+        `[Registration Complete] No date of birth found for user ${userId}, skipping employee ID generation`
+      );
     }
 
     // Update profile with employment details and employee ID
@@ -351,7 +468,9 @@ export async function POST(
           registration_completed: true,
         },
       });
-      console.log(`✓ Updated user metadata with department info and employee ID for ${userId}`);
+      console.log(
+        `✓ Updated user metadata with department info and employee ID for ${userId}`
+      );
     } catch (metadataError) {
       console.error('Error updating user metadata:', metadataError);
       // Non-critical, continue
@@ -360,7 +479,8 @@ export async function POST(
     return NextResponse.json(
       {
         success: true,
-        message: 'Registration completed successfully. Awaiting admin approval.',
+        message:
+          'Registration completed successfully. Awaiting admin approval.',
         data: {
           userId,
           employeeId: generatedEmployeeId,

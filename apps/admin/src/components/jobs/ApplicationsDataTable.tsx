@@ -31,7 +31,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MoreVertical, Eye, Edit, FileText, Calendar, UserCheck, CheckCircle2, XCircle } from 'lucide-react';
+import { MoreVertical, Eye, Edit, FileText, Calendar, UserCheck, CheckCircle2, XCircle, UserPlus } from 'lucide-react';
 import type { JobApplicationListItem } from '@tupsafe/types';
 import { formatDistanceToNow, format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -42,6 +42,7 @@ interface ApplicationsDataTableProps {
   onViewDetails: (id: string) => void;
   onUpdateStatus?: (id: string) => void;
   onConvertToEmployee?: (id: string) => void;
+  onCreateEmployeeAccount?: (application: JobApplicationListItem) => void;
 }
 
 /**
@@ -96,6 +97,7 @@ export function ApplicationsDataTable({
   onViewDetails,
   onUpdateStatus,
   onConvertToEmployee,
+  onCreateEmployeeAccount,
 }: ApplicationsDataTableProps) {
   const columns: ColumnDef<JobApplicationListItem>[] = useMemo(
     () => [
@@ -219,6 +221,8 @@ export function ApplicationsDataTable({
         cell: ({ row }) => {
           const application = row.original;
           const canConvert = application.status === 'accepted' && onConvertToEmployee;
+          // Show "Create Employee Account" for hired applicants without an employee account
+          const needsEmployeeAccount = application.status === 'hired' && !application.convertedToEmployeeId && onCreateEmployeeAccount;
 
           return (
             <DropdownMenu>
@@ -265,13 +269,25 @@ export function ApplicationsDataTable({
                     </DropdownMenuItem>
                   </>
                 )}
+                {needsEmployeeAccount && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => onCreateEmployeeAccount(application)}
+                      className="gap-2 text-emerald-600 focus:text-emerald-600"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      Create Employee Account
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           );
         },
       },
     ],
-    [onViewDetails, onUpdateStatus, onConvertToEmployee]
+    [onViewDetails, onUpdateStatus, onConvertToEmployee, onCreateEmployeeAccount]
   );
 
   const table = useReactTable({

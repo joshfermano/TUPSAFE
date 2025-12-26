@@ -31,16 +31,31 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verify user is an applicant
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('user_type, applicant_id')
-      .eq('id', user.id)
-      .single();
+    // Verify user exists and get their profile (using Drizzle to bypass RLS)
+    // Allow both applicants AND employees (who were hired from applicant status)
+    // to view their past applications
+    const profileQuery = await db
+      .select({
+        userType: profiles.userType,
+        applicantId: profiles.applicantId,
+      })
+      .from(profiles)
+      .where(eq(profiles.id, user.id))
+      .limit(1);
 
-    if (!profile || profile.user_type !== 'applicant') {
+    if (profileQuery.length === 0) {
       return NextResponse.json(
-        { error: 'Access denied. Applicants only.' },
+        { error: 'Access denied. Profile not found.' },
+        { status: 403 }
+      );
+    }
+
+    // Allow both 'applicant' and 'employee' userTypes to view applications
+    // Employees may have been hired from applicant status and should still see their application history
+    const allowedUserTypes = ['applicant', 'employee'];
+    if (!allowedUserTypes.includes(profileQuery[0].userType ?? '')) {
+      return NextResponse.json(
+        { error: 'Access denied.' },
         { status: 403 }
       );
     }
@@ -207,16 +222,30 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verify user is an applicant
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('user_type, applicant_id')
-      .eq('id', user.id)
-      .single();
+    // Verify user exists (using Drizzle to bypass RLS)
+    // Allow both applicants AND employees to withdraw applications
+    // (employee may want to withdraw a pending application for another position)
+    const profileQuery = await db
+      .select({
+        userType: profiles.userType,
+        applicantId: profiles.applicantId,
+      })
+      .from(profiles)
+      .where(eq(profiles.id, user.id))
+      .limit(1);
 
-    if (!profile || profile.user_type !== 'applicant') {
+    if (profileQuery.length === 0) {
       return NextResponse.json(
-        { error: 'Access denied. Applicants only.' },
+        { error: 'Access denied. Profile not found.' },
+        { status: 403 }
+      );
+    }
+
+    // Allow both 'applicant' and 'employee' userTypes
+    const allowedUserTypes = ['applicant', 'employee'];
+    if (!allowedUserTypes.includes(profileQuery[0].userType ?? '')) {
+      return NextResponse.json(
+        { error: 'Access denied.' },
         { status: 403 }
       );
     }

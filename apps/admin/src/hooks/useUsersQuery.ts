@@ -244,26 +244,37 @@ export function useUsersQuery(filters: UsersFilters = {}) {
   });
 
   /**
-   * Mutation to soft delete a user via DELETE /api/users/[id]
-   * Sets isActive=false and accountStatus='rejected'
+   * Mutation to hard delete a user via DELETE /api/users/[id]
+   * Supports forceDelete option to cascade delete job applications
    */
   const deleteUserMutation = useMutation({
-    mutationFn: async (userId: string) => {
-      const response = await fetch(`/api/users/${userId}`, {
+    mutationFn: async ({ userId, forceDelete = false }: { userId: string; forceDelete?: boolean }) => {
+      const params = new URLSearchParams();
+      if (forceDelete) params.append('forceDelete', 'true');
+      
+      const url = `/api/users/${userId}${params.toString() ? '?' + params.toString() : ''}`;
+      const response = await fetch(url, {
         method: 'DELETE',
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(
-          errorData?.error || `Failed to delete user: ${response.statusText}`
-        );
+        // Attach additional info about dependencies and canForceDelete
+        const error = new Error(result?.error || `Failed to delete user: ${response.statusText}`) as Error & {
+          dependencies?: Record<string, number>;
+          canForceDelete?: boolean;
+          details?: string;
+        };
+        error.dependencies = result?.dependencies;
+        error.canForceDelete = result?.canForceDelete;
+        error.details = result?.details;
+        throw error;
       }
 
-      const result = await response.json();
-      return result.data;
+      return result;
     },
-    onMutate: async (userId) => {
+    onMutate: async ({ userId }) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: usersKeys.all });
 
@@ -272,18 +283,14 @@ export function useUsersQuery(filters: UsersFilters = {}) {
         usersKeys.list(filters)
       );
 
-      // Optimistically remove from cache (or mark as inactive)
+      // Optimistically remove from cache (hard delete removes the user)
       queryClient.setQueryData<UserListResponse>(
         usersKeys.list(filters),
         (old) => {
           if (!old) return old;
           return {
             ...old,
-            users: old.users.map((user) =>
-              user.id === userId
-                ? { ...user, isActive: false, accountStatus: 'rejected' as const }
-                : user
-            ),
+            users: old.users.filter((user) => user.id !== userId),
             pagination: {
               ...old.pagination,
               total: old.pagination.total - 1,
@@ -374,6 +381,39 @@ export function useUsersQuery(filters: UsersFilters = {}) {
     },
   });
 
+  /**
+   * Mutation to revert an employee back to applicant via POST /api/users/[id]/revert-to-applicant
+   * Used to fix mistakenly converted accounts
+   */
+  const revertToApplicantMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await fetch(`/api/users/${userId}/revert-to-applicant`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result?.error || `Failed to revert to applicant: ${response.statusText}`
+        );
+      }
+
+      return result;
+    },
+    onSuccess: () => {
+      // Invalidate all user queries to refetch with updated data
+      queryClient.invalidateQueries({ queryKey: usersKeys.all });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+    onError: (error) => {
+      console.error('Revert to applicant error:', error);
+    },
+  });
+
   return {
     ...query,
     users: query.data?.users ?? [],
@@ -388,10 +428,10 @@ export function useUsersQuery(filters: UsersFilters = {}) {
     updateUserAsync: updateUserMutation.mutateAsync,
     isUpdating: updateUserMutation.isPending,
     updateError: updateUserMutation.error,
-    deleteUser: deleteUserMutation.mutate,
-    deleteUserAsync: deleteUserMutation.mutateAsync,
+    deleteUser: (userId: string, forceDelete?: boolean) => deleteUserMutation.mutate({ userId, forceDelete }),
+    deleteUserAsync: (userId: string, forceDelete?: boolean) => deleteUserMutation.mutateAsync({ userId, forceDelete }),
     isDeleting: deleteUserMutation.isPending,
-    deleteError: deleteUserMutation.error,
+    deleteError: deleteUserMutation.error as (Error & { dependencies?: Record<string, number>; canForceDelete?: boolean; details?: string }) | null,
     toggleUserStatus: toggleUserStatusMutation.mutate,
     toggleUserStatusAsync: toggleUserStatusMutation.mutateAsync,
     isTogglingStatus: toggleUserStatusMutation.isPending,
@@ -400,6 +440,10 @@ export function useUsersQuery(filters: UsersFilters = {}) {
     resetPasswordAsync: resetPasswordMutation.mutateAsync,
     isResettingPassword: resetPasswordMutation.isPending,
     resetPasswordError: resetPasswordMutation.error,
+    revertToApplicant: revertToApplicantMutation.mutate,
+    revertToApplicantAsync: revertToApplicantMutation.mutateAsync,
+    isRevertingToApplicant: revertToApplicantMutation.isPending,
+    revertToApplicantError: revertToApplicantMutation.error,
   };
 }
 

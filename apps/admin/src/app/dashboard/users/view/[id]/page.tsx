@@ -19,6 +19,8 @@ import {
   Eye,
   LogIn,
   LogOut,
+  RotateCcw,
+  AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -173,7 +175,13 @@ export default function UserViewPage() {
   const router = useRouter();
   const userId = params?.id as string;
 
-  const { useUserDetail, deleteUser, toggleUserStatus } = useUsersQuery();
+  const { 
+    useUserDetail, 
+    deleteUserAsync, 
+    toggleUserStatusAsync,
+    revertToApplicantAsync,
+    isRevertingToApplicant,
+  } = useUsersQuery();
   const { data: user, isLoading, isError, error } = useUserDetail(userId);
 
   // Mock submissions data (in production, filter by userId on the backend)
@@ -194,6 +202,7 @@ export default function UserViewPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
   const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
+  const [showRevertToApplicantDialog, setShowRevertToApplicantDialog] = useState(false);
 
   // Fetch real activity log from API
   const { data: activities = [], isLoading: isActivitiesLoading } = useUserActivities(userId);
@@ -230,35 +239,29 @@ export default function UserViewPage() {
     };
   }, [pdsSubmissions, salnSubmissions, activityLog]);
 
-  const handleToggleStatus = useCallback(() => {
+  const handleToggleStatus = useCallback(async () => {
     if (!user) return;
 
-    toggleUserStatus(userId, {
-      onSuccess: () => {
-        toast.success(
-          `User ${
-            user.isActive ? 'deactivated' : 'activated'
-          } successfully`
-        );
-        setShowDeactivateDialog(false);
-      },
-      onError: () => {
-        toast.error('Failed to update user status');
-      },
-    });
-  }, [user, userId, toggleUserStatus]);
+    try {
+      await toggleUserStatusAsync(userId);
+      toast.success(
+        `User ${user.isActive ? 'deactivated' : 'activated'} successfully`
+      );
+      setShowDeactivateDialog(false);
+    } catch {
+      toast.error('Failed to update user status');
+    }
+  }, [user, userId, toggleUserStatusAsync]);
 
-  const handleDelete = useCallback(() => {
-    deleteUser(userId, {
-      onSuccess: () => {
-        toast.success('User deleted successfully');
-        router.push('/dashboard/users');
-      },
-      onError: () => {
-        toast.error('Failed to delete user');
-      },
-    });
-  }, [userId, deleteUser, router]);
+  const handleDelete = useCallback(async () => {
+    try {
+      await deleteUserAsync(userId, false);
+      toast.success('User deleted successfully');
+      router.push('/dashboard/users');
+    } catch {
+      toast.error('Failed to delete user');
+    }
+  }, [userId, deleteUserAsync, router]);
 
   const handleResetPassword = useCallback(() => {
     // Mock password reset
@@ -268,6 +271,27 @@ export default function UserViewPage() {
     });
     setShowResetPasswordDialog(false);
   }, []);
+
+  const handleRevertToApplicant = useCallback(async () => {
+    try {
+      await revertToApplicantAsync(userId);
+      toast.success('Account reverted to applicant', {
+        description: 'The user can now be properly hired through the correct workflow.',
+      });
+      setShowRevertToApplicantDialog(false);
+    } catch (err) {
+      toast.error('Failed to revert account', {
+        description: err instanceof Error ? err.message : 'Unknown error occurred',
+      });
+    }
+  }, [userId, revertToApplicantAsync]);
+
+  // Check if user can be reverted to applicant
+  // Conditions: userType='employee' AND applicantId is present
+  const canRevertToApplicant = useMemo(() => {
+    if (!user) return false;
+    return user.userType === 'employee' && !!user.applicantId;
+  }, [user]);
 
   const handleDownloadPdf = useCallback((type: 'pds' | 'saln', id: string) => {
     toast.info(`Downloading ${type.toUpperCase()} PDF...`);
@@ -390,6 +414,17 @@ export default function UserViewPage() {
                 <Mail className="mr-2 h-4 w-4" />
                 Send Email
               </DropdownMenuItem>
+              {canRevertToApplicant && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setShowRevertToApplicantDialog(true)}
+                    className="text-amber-600 focus:text-amber-600">
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Revert to Applicant
+                  </DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => setShowDeleteDialog(true)}
@@ -401,6 +436,40 @@ export default function UserViewPage() {
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Alert: Account may need reversion */}
+      {canRevertToApplicant && (
+        <Card className="border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-4">
+              <div className="rounded-full bg-amber-100 p-2 dark:bg-amber-900">
+                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-amber-900 dark:text-amber-100">
+                  Possible Incorrect Account Conversion
+                </h3>
+                <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">
+                  This account is marked as an &quot;employee&quot; but still has an applicant ID ({user.applicantId}).
+                  This may indicate the account was mistakenly upgraded from applicant to employee.
+                  If this is incorrect, you can revert it back to applicant status.
+                </p>
+                <div className="mt-4 flex gap-3">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-amber-400 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-900"
+                    onClick={() => setShowRevertToApplicantDialog(true)}
+                    disabled={isRevertingToApplicant}>
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    {isRevertingToApplicant ? 'Reverting...' : 'Revert to Applicant'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Profile Overview Card */}
       <Card className="overflow-hidden">
@@ -893,6 +962,22 @@ export default function UserViewPage() {
         description={`Send a password reset email to ${fullName}? They will receive instructions to create a new password.`}
         confirmText="SEND EMAIL"
         onConfirm={handleResetPassword}
+      />
+
+      <ConfirmationDialog
+        open={showRevertToApplicantDialog}
+        onOpenChange={setShowRevertToApplicantDialog}
+        title="Revert to Applicant"
+        description={
+          `Are you sure you want to revert ${fullName} back to applicant status? This will:\n\n` +
+          `• Set user type back to "applicant"\n` +
+          `• Clear employee ID, department, and position\n` +
+          `• Keep their applicant ID (${user?.applicantId || 'N/A'})\n` +
+          `• Preserve all PDS submissions and job applications\n\n` +
+          `After reverting, you can properly create their employee account using "Users → Create User" with a TUP email.`
+        }
+        confirmText="REVERT TO APPLICANT"
+        onConfirm={handleRevertToApplicant}
       />
     </PageTransition>
   );

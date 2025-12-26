@@ -129,25 +129,64 @@ export function useUpdateUser() {
 }
 
 /**
- * Hook to delete a user (soft delete)
+ * Options for deleting a user
+ */
+export interface DeleteUserOptions {
+  userId: string;
+  forceDelete?: boolean;
+}
+
+/**
+ * Delete user error with additional context
+ */
+export interface DeleteUserError extends Error {
+  dependencies?: {
+    pdsSubmissions: number;
+    salnSubmissions: number;
+    positionsPosted: number;
+    jobApplications: number;
+  };
+  canForceDelete?: boolean;
+  details?: string;
+}
+
+/**
+ * Hook to delete a user (hard delete)
+ * Supports forceDelete option for cascading job application deletion
  */
 export function useDeleteUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: deleteUser,
-    onSuccess: (_, _userId) => {
+    mutationFn: ({ userId, forceDelete = false }: DeleteUserOptions) => 
+      deleteUser(userId, forceDelete),
+    onSuccess: (result) => {
       // Invalidate all user queries
       queryClient.invalidateQueries({ queryKey: userKeys.all });
 
       toast.success('User deleted successfully', {
-        description: 'The user account has been deactivated.',
+        description: result.deletedApplications 
+          ? `User and ${result.deletedApplications} job application(s) removed.`
+          : 'The user account has been permanently deleted.',
       });
     },
-    onError: (error) => {
-      toast.error('Failed to delete user', {
-        description: error.message,
-      });
+    onError: (error: DeleteUserError) => {
+      // Check if this error has dependency info and can be force-deleted
+      if (error.canForceDelete && error.dependencies?.jobApplications) {
+        toast.error('User has job applications', {
+          description: error.details || `This user has ${error.dependencies.jobApplications} job application(s). Confirm force delete to remove all applications.`,
+          duration: 8000,
+        });
+      } else if (error.dependencies) {
+        toast.error('Cannot delete user', {
+          description: error.details || 'User has data that must be archived or reassigned first.',
+          duration: 8000,
+        });
+      } else {
+        toast.error('Failed to delete user', {
+          description: error.message,
+        });
+      }
     },
   });
 }

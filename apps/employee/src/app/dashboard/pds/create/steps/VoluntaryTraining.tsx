@@ -24,6 +24,7 @@ import {
 import { FormSection } from '../../../../../components/forms/shared/FormSection';
 import { type CompletePdsData } from '../../../../../lib/validations/pds-schema';
 import { autoSortWithNotification } from '../../../../../lib/utils/pds-sort';
+import { formatDateForInput, parseDateFromInput } from '../../../../../lib/utils/date-utils';
 
 /**
  * Step 7: Voluntary Work & Learning Development
@@ -81,12 +82,13 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
 
   /**
    * Handle adding new voluntary work with auto-sort
+   * Note: Dates start as null - user must explicitly fill them
    */
   const handleAddVoluntaryWork = useCallback(() => {
     appendVoluntary({
       organizationName: '',
       organizationAddress: '',
-      dateFrom: new Date(),
+      dateFrom: null,
       dateTo: null,
       numberOfHours: null,
       positionNature: '',
@@ -97,12 +99,13 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
 
   /**
    * Handle adding new training with auto-sort
+   * Note: Dates start as null - user must explicitly fill them
    */
   const handleAddTraining = useCallback(() => {
     appendTraining({
       title: '',
-      dateFrom: new Date(),
-      dateTo: new Date(),
+      dateFrom: null,
+      dateTo: null,
       hours: null,
       typeOfLd: '',
       conductedBy: '',
@@ -224,13 +227,9 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
                             <Input
                               type="date"
                               {...field}
-                              value={
-                                field.value instanceof Date
-                                  ? field.value.toISOString().split('T')[0]
-                                  : ''
-                              }
+                              value={formatDateForInput(field.value as Date | null)}
                               onChange={(e) => {
-                                field.onChange(e.target.value ? new Date(e.target.value) : null);
+                                field.onChange(parseDateFromInput(e.target.value));
                               }}
                               onBlur={handleVoluntaryDateBlur}
                               className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
@@ -251,13 +250,9 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
                             <Input
                               type="date"
                               {...field}
-                              value={
-                                field.value instanceof Date
-                                  ? field.value.toISOString().split('T')[0]
-                                  : ''
-                              }
+                              value={formatDateForInput(field.value as Date | null)}
                               onChange={(e) => {
-                                field.onChange(e.target.value ? new Date(e.target.value) : null);
+                                field.onChange(parseDateFromInput(e.target.value));
                               }}
                               onBlur={handleVoluntaryDateBlur}
                               className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
@@ -393,13 +388,9 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
                             <Input
                               type="date"
                               {...field}
-                              value={
-                                field.value instanceof Date
-                                  ? field.value.toISOString().split('T')[0]
-                                  : ''
-                              }
+                              value={formatDateForInput(field.value as Date | null)}
                               onChange={(e) => {
-                                field.onChange(e.target.value ? new Date(e.target.value) : null);
+                                field.onChange(parseDateFromInput(e.target.value));
                               }}
                               onBlur={handleTrainingDateBlur}
                               className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
@@ -422,13 +413,9 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
                             <Input
                               type="date"
                               {...field}
-                              value={
-                                field.value instanceof Date
-                                  ? field.value.toISOString().split('T')[0]
-                                  : ''
-                              }
+                              value={formatDateForInput(field.value as Date | null)}
                               onChange={(e) => {
-                                field.onChange(e.target.value ? new Date(e.target.value) : null);
+                                field.onChange(parseDateFromInput(e.target.value));
                               }}
                               onBlur={handleTrainingDateBlur}
                               className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"

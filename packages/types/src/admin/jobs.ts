@@ -40,6 +40,57 @@ export type ApplicationStatus =
   (typeof APPLICATION_STATUS)[keyof typeof APPLICATION_STATUS];
 
 /**
+ * Human-readable labels for application statuses
+ * Use this map in both Admin and Employee UIs to ensure consistent display
+ */
+export const APPLICATION_STATUS_LABELS: Record<ApplicationStatus, string> = {
+  pending: 'Pending',
+  under_review: 'Under Review',
+  shortlisted: 'Shortlisted',
+  for_interview: 'Invited for Interview',
+  interviewed: 'Interviewed',
+  for_final_review: 'For Final Review',
+  accepted: 'Accepted',
+  rejected: 'Rejected',
+  withdrawn: 'Withdrawn',
+  hired: 'Hired',
+};
+
+/**
+ * Status colors for badges (tailwind class suffixes)
+ */
+export const APPLICATION_STATUS_COLORS: Record<
+  ApplicationStatus,
+  { bg: string; text: string; border?: string }
+> = {
+  pending: { bg: 'bg-gray-100', text: 'text-gray-700' },
+  under_review: { bg: 'bg-blue-100', text: 'text-blue-700' },
+  shortlisted: { bg: 'bg-purple-100', text: 'text-purple-700' },
+  for_interview: { bg: 'bg-amber-100', text: 'text-amber-700' },
+  interviewed: { bg: 'bg-indigo-100', text: 'text-indigo-700' },
+  for_final_review: { bg: 'bg-cyan-100', text: 'text-cyan-700' },
+  accepted: { bg: 'bg-emerald-100', text: 'text-emerald-700' },
+  rejected: { bg: 'bg-red-100', text: 'text-red-700' },
+  withdrawn: { bg: 'bg-slate-100', text: 'text-slate-700' },
+  hired: { bg: 'bg-green-100', text: 'text-green-700' },
+};
+
+/**
+ * Statuses that trigger email notifications to applicants
+ */
+export const EMAIL_TRIGGER_STATUSES: ApplicationStatus[] = [
+  'under_review',
+  'shortlisted',
+  'for_interview',
+  'interviewed',
+  'for_final_review',
+  'accepted',
+  'rejected',
+  'withdrawn',
+  'hired',
+];
+
+/**
  * Employment category values from database schema
  */
 export const EMPLOYMENT_CATEGORY = {
@@ -149,9 +200,10 @@ export const updateOpenPositionSchema = z.object({
 export type UpdateOpenPositionData = z.infer<typeof updateOpenPositionSchema>;
 
 /**
- * Update Application Status Schema
+ * Base schema for application status update fields
+ * Note: All optional fields accept empty strings which are treated as "not provided"
  */
-export const updateApplicationStatusSchema = z.object({
+const baseApplicationStatusFields = {
   status: z.enum([
     'pending',
     'under_review',
@@ -171,16 +223,58 @@ export const updateApplicationStatusSchema = z.object({
   interviewLocation: z.string().max(500).optional(),
   interviewNotes: z.string().max(1000).optional(),
 
-  // Rejection-specific fields
-  rejectionReason: z
-    .string()
-    .min(20, 'Rejection reason must be at least 20 characters')
-    .max(1000)
-    .optional(),
+  // Rejection-specific fields - empty strings are allowed and treated as "not provided"
+  // Min length validation is done conditionally in superRefine
+  rejectionReason: z.string().max(1000).optional(),
 
   // Final decision fields
   finalDecision: z.string().max(500).optional(),
-});
+};
+
+/**
+ * Update Application Status Schema
+ * Includes conditional validation:
+ * - for_interview: requires interviewDate and interviewLocation
+ * - rejected: requires rejectionReason
+ */
+export const updateApplicationStatusSchema = z
+  .object(baseApplicationStatusFields)
+  .superRefine((data, ctx) => {
+    // Require interview details when status is for_interview
+    if (data.status === 'for_interview') {
+      if (!data.interviewDate) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Interview date is required when inviting for interview',
+          path: ['interviewDate'],
+        });
+      }
+      if (!data.interviewLocation || data.interviewLocation.trim() === '') {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Interview location is required when inviting for interview',
+          path: ['interviewLocation'],
+        });
+      }
+    }
+
+    // Require rejection reason when status is rejected
+    if (data.status === 'rejected') {
+      if (!data.rejectionReason || data.rejectionReason.trim() === '') {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Rejection reason is required when rejecting an application',
+          path: ['rejectionReason'],
+        });
+      } else if (data.rejectionReason.trim().length < 20) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Rejection reason must be at least 20 characters',
+          path: ['rejectionReason'],
+        });
+      }
+    }
+  });
 
 export type UpdateApplicationStatusData = z.infer<
   typeof updateApplicationStatusSchema
@@ -404,6 +498,8 @@ export interface JobApplicationListItem {
   pdsSubmissionId: string | null;
   /** Whether the application has a linked PDS */
   hasPds: boolean;
+  /** Employee ID if the applicant was converted (null until employee account is created) */
+  convertedToEmployeeId: string | null;
 }
 
 /**

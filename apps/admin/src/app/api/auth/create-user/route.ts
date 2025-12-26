@@ -6,6 +6,12 @@
  * - Server-generated temporary password
  * - Email notification with credentials
  * - RBAC enforcement (only admins can create admin accounts)
+ * - Optional linking to a hired job application (updates conversion fields, notifies applicant)
+ *
+ * When linking to a hired application:
+ * - Credentials are sent to both the employee email and the applicant's personal email
+ * - The application's conversion fields are updated (convertedToEmployeeId, conversionDate)
+ * - An in-app notification is sent to the applicant
  *
  * @module api/auth/create-user
  */
@@ -17,7 +23,9 @@ import {
   notifications,
   createAuditLog,
   generateAndRegisterEmployeeIdFromDOB,
+  jobApplications,
 } from '@tupsafe/database/server';
+import { eq, and } from 'drizzle-orm';
 import {
   getUserFromSupabase,
   generatePassword,
@@ -254,6 +262,147 @@ export async function POST(request: NextRequest) {
       // Non-critical, continue
     }
 
+    // Handle linking to a hired job application
+    let linkedApplication:
+      | {
+          applicationNumber: string;
+          applicationId: string;
+          applicantId: string;
+          applicantPersonalEmail?: string;
+          applicantEmailSent: boolean;
+        }
+      | undefined;
+
+    if (data.hiredApplicationNumber) {
+      console.log(
+        `[Create User] Linking employee to hired application: ${data.hiredApplicationNumber}`
+      );
+
+      try {
+        // Find the hired application
+        const [application] = await db
+          .select({
+            id: jobApplications.id,
+            applicationNumber: jobApplications.applicationNumber,
+            applicantId: jobApplications.applicantId,
+            status: jobApplications.status,
+            convertedToEmployeeId: jobApplications.convertedToEmployeeId,
+          })
+          .from(jobApplications)
+          .where(
+            and(
+              eq(
+                jobApplications.applicationNumber,
+                data.hiredApplicationNumber
+              ),
+              eq(jobApplications.status, 'hired')
+            )
+          )
+          .limit(1);
+
+        if (!application) {
+          console.warn(
+            `[Create User] Application not found or not in 'hired' status: ${data.hiredApplicationNumber}`
+          );
+        } else if (application.convertedToEmployeeId) {
+          console.warn(
+            `[Create User] Application already linked to employee: ${application.convertedToEmployeeId}`
+          );
+        } else {
+          // Update the application with conversion data
+          await db
+            .update(jobApplications)
+            .set({
+              convertedToEmployeeId: employeeId,
+              conversionDate: now,
+              updatedAt: now,
+            })
+            .where(eq(jobApplications.id, application.id));
+
+          console.log(
+            `[Create User] Updated application ${application.applicationNumber} with employee ID: ${employeeId}`
+          );
+
+          // Fetch applicant's personal email from auth
+          let applicantPersonalEmail: string | undefined;
+          try {
+            const { data: applicantUser } =
+              await supabase.auth.admin.getUserById(application.applicantId);
+            applicantPersonalEmail = applicantUser?.user?.email || undefined;
+          } catch (emailFetchError) {
+            console.error(
+              '[Create User] Error fetching applicant email:',
+              emailFetchError
+            );
+          }
+
+          // Send credentials to applicant's personal email as well
+          let applicantEmailSent = false;
+          if (
+            applicantPersonalEmail &&
+            data.notifyApplicantPersonalEmail !== false &&
+            data.sendCredentials
+          ) {
+            try {
+              const applicantEmailResult = await sendCredentialsEmail(
+                applicantPersonalEmail,
+                employeeId,
+                temporaryPassword,
+                data.firstName
+              );
+              applicantEmailSent = applicantEmailResult.success;
+
+              if (applicantEmailSent) {
+                console.log(
+                  `[Create User] Credentials also sent to applicant's personal email: ${applicantPersonalEmail}`
+                );
+              } else {
+                console.warn(
+                  `[Create User] Failed to send credentials to applicant email: ${applicantEmailResult.error}`
+                );
+              }
+            } catch (applicantEmailError) {
+              console.error(
+                '[Create User] Error sending credentials to applicant:',
+                applicantEmailError
+              );
+            }
+          }
+
+          // Create notification for the applicant about their account being ready
+          try {
+            await db.insert(notifications).values({
+              userId: application.applicantId,
+              type: 'system_update',
+              title: 'Your employee account is ready!',
+              message: `Your employee account has been created. Your employee ID is ${employeeId}. Please check your email for login credentials. Welcome to the team!`,
+              isRead: false,
+              createdAt: now,
+            });
+          } catch (notificationError) {
+            console.error(
+              '[Create User] Error creating applicant notification:',
+              notificationError
+            );
+          }
+
+          linkedApplication = {
+            applicationNumber: application.applicationNumber,
+            applicationId: application.id,
+            applicantId: application.applicantId,
+            applicantPersonalEmail,
+            applicantEmailSent,
+          };
+        }
+      } catch (linkError) {
+        console.error(
+          '[Create User] Error linking to hired application:',
+          linkError
+        );
+        // Non-critical - employee is already created, just log the error
+      }
+    }
+
     // Log audit event
     try {
       await createAuditLog({
@@ -269,6 +418,13 @@ export async function POST(request: NextRequest) {
             role: data.role,
             employmentCategory: data.employmentCategory,
             createdBy: adminUser.userId,
+            linkedApplication: linkedApplication
+              ? {
+                  applicationNumber: linkedApplication.applicationNumber,
+                  applicationId: linkedApplication.applicationId,
+                  applicantId: linkedApplication.applicantId,
+                }
+              : undefined,
           },
         },
         ipAddress:
@@ -282,11 +438,25 @@ export async function POST(request: NextRequest) {
       // Non-critical, continue
     }
 
+    // Build appropriate message based on what happened
+    let message: string;
+    if (linkedApplication) {
+      if (emailSent && linkedApplication.applicantEmailSent) {
+        message = `Employee created and linked to application ${linkedApplication.applicationNumber}. Credentials sent to both employee email and applicant's personal email.`;
+      } else if (emailSent) {
+        message = `Employee created and linked to application ${linkedApplication.applicationNumber}. Credentials sent to employee email.`;
+      } else {
+        message = `Employee created and linked to application ${linkedApplication.applicationNumber}. Credentials email could not be sent.`;
+      }
+    } else {
+      message = emailSent
+        ? 'User created successfully. Credentials have been sent to their email.'
+        : 'User created successfully. Credentials email could not be sent.';
+    }
+
     const response: CreateUserResponse = {
       success: true,
-      message: emailSent
-        ? 'User created successfully. Credentials have been sent to their email.'
-        : 'User created successfully. Credentials email could not be sent.',
+      message,
       data: {
         userId,
         employeeId,
@@ -295,6 +465,7 @@ export async function POST(request: NextRequest) {
         // Always return temporaryPassword to the admin UI so they can copy it
         temporaryPassword,
         emailSent,
+        linkedApplication,
       },
     };
 

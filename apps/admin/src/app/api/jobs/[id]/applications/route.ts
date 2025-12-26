@@ -156,6 +156,7 @@ export async function GET(
         reviewedAt: jobApplications.reviewedAt,
         interviewDate: jobApplications.interviewDate,
         pdsSubmissionId: jobApplications.pdsSubmissionId,
+        convertedToEmployeeId: jobApplications.convertedToEmployeeId,
 
         // Applicant fields
         applicantId: profiles.id,
@@ -239,6 +240,8 @@ export async function GET(
       // PDS indicator for quick scanning
       hasPds: !!item.pdsSubmissionId,
       pdsSubmissionId: item.pdsSubmissionId,
+      // Conversion tracking for hired applicants
+      convertedToEmployeeId: item.convertedToEmployeeId,
     }));
 
     // Build status count object

@@ -269,11 +269,13 @@ export default function RegisterPage() {
     setIsLoading(true);
     try {
       // Call the registration complete API to save employment details
+      // IMPORTANT: Always send explicit userType to prevent ambiguity
       const response = await fetch('/api/auth/register/complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: registrationUserId,
+          userType: 'employee', // Explicit userType for security
           employmentCategory: data.employmentCategory,
           hireDate: data.hireDate ? data.hireDate.toISOString() : null,
           // For faculty: collegeOrOffice is the college, department is the department

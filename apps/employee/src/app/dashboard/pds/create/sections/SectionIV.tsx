@@ -27,6 +27,7 @@ import { Button } from '../../../../../components/ui/button';
 import { WorkExperienceItem } from '../../../../../components/pds/array-items';
 import { type CompletePdsData } from '../../../../../lib/validations/pds-schema';
 import { autoSortWithNotification } from '../../../../../lib/utils/pds-sort';
+import { formatDateForInput, parseDateFromInput } from '../../../../../lib/utils/date-utils';
 
 export const SectionIV = memo(function SectionIV() {
   const form = useFormContext<CompletePdsData>();
@@ -82,6 +83,7 @@ export const SectionIV = memo(function SectionIV() {
 
   /**
    * Handle adding a new work experience entry
+   * Note: Dates start as null - user must explicitly fill them
    */
   const handleAddWorkExperience = useCallback(() => {
     appendWork({
@@ -91,7 +93,7 @@ export const SectionIV = memo(function SectionIV() {
       salaryGrade: '',
       statusOfAppointment: '',
       isGovernment: false,
-      dateFrom: new Date(),
+      dateFrom: null,
       dateTo: null,
     });
     startTransition(() => {
@@ -255,17 +257,9 @@ export const SectionIV = memo(function SectionIV() {
                             <Input
                               type="date"
                               {...field}
-                              value={
-                                field.value instanceof Date
-                                  ? field.value.toISOString().split('T')[0]
-                                  : ''
-                              }
+                              value={formatDateForInput(field.value as Date | null)}
                               onChange={(e) => {
-                                field.onChange(
-                                  e.target.value
-                                    ? new Date(e.target.value)
-                                    : null
-                                );
+                                field.onChange(parseDateFromInput(e.target.value));
                               }}
                               className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
                             />
@@ -323,17 +317,9 @@ export const SectionIV = memo(function SectionIV() {
                             <Input
                               type="date"
                               {...field}
-                              value={
-                                field.value instanceof Date
-                                  ? field.value.toISOString().split('T')[0]
-                                  : ''
-                              }
+                              value={formatDateForInput(field.value as Date | null)}
                               onChange={(e) => {
-                                field.onChange(
-                                  e.target.value
-                                    ? new Date(e.target.value)
-                                    : null
-                                );
+                                field.onChange(parseDateFromInput(e.target.value));
                               }}
                               className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
                             />

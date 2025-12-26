@@ -292,78 +292,8 @@ export default function PDSCreatePage() {
     [completedSections, currentSection, form]
   );
 
-  // Save draft to database (create or update)
-  // Uses ref for synchronous draft ID access to prevent race conditions
-  const saveDraftToDatabase = useCallback(
-    async (
-      data: PdsDraftData
-    ): Promise<{ success: boolean; draftId?: string }> => {
-      try {
-        // Transform form data for backend
-        const transformedData = transformPdsForSubmission(data.formData);
-
-        // Read from ref (synchronous) instead of state (asynchronous)
-        const currentDraftId = draftIdRef.current;
-
-        if (currentDraftId) {
-          // Update existing draft
-          console.log('[PDS Create] Updating draft:', currentDraftId);
-          const response = await fetch(`/api/pds/${currentDraftId}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(transformedData),
-          });
-
-          if (!response.ok) {
-            const errorData = await response
-              .json()
-              .catch(() => ({ error: 'Unknown error' }));
-            throw new Error(errorData.error || 'Failed to update draft');
-          }
-
-          console.log(
-            '[PDS Create] Draft updated successfully:',
-            currentDraftId
-          );
-          return { success: true, draftId: currentDraftId };
-        } else {
-          // Create new draft
-          console.log('[PDS Create] Creating new draft submission');
-          const response = await fetch('/api/pds', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(transformedData),
-          });
-
-          if (!response.ok) {
-            const errorData = await response
-              .json()
-              .catch(() => ({ error: 'Unknown error' }));
-            throw new Error(errorData.error || 'Failed to create draft');
-          }
-
-          const result = await response.json();
-          if (result.data?.id) {
-            // Update both ref and state together
-            updateDraftId(result.data.id);
-            console.log(
-              '[PDS Create] Draft created successfully:',
-              result.data.id
-            );
-            return { success: true, draftId: result.data.id };
-          } else {
-            throw new Error('No draft ID returned from server');
-          }
-        }
-      } catch (error) {
-        console.error('[PDS Create] Error saving draft to database:', error);
-        throw error;
-      }
-    },
-    [updateDraftId] // Stable dependency
-  );
-
-  // Auto-save setup with database persistence (60-second intervals)
+  // Auto-save setup - localStorage ONLY (no DB sync on auto-save)
+  // DB sync only happens on manual "Save Draft" button click with validation
   const { saveStatus, lastSaved, saveNow, clearSaved } =
     useAutoSave<PdsDraftData>({
       key: `pds-draft-${userId}`,
@@ -372,12 +302,10 @@ export default function PDSCreatePage() {
       autoSaveIntervalMs: 60000,
       enabled: !isSubmitting,
       showToast: false,
-      onSave: async (data: PdsDraftData) => {
-        await saveDraftToDatabase(data);
-        // Return void - wrapper function that discards the return value
-      },
+      // NOTE: No onSave callback - auto-save is localStorage-only
+      // DB draft sync happens via manual save (handleSaveAndNavigate)
       onError: (error) => {
-        console.error('Draft save error:', error);
+        console.error('Draft auto-save error:', error);
       },
     });
 
@@ -482,21 +410,67 @@ export default function PDSCreatePage() {
   }, [clearSaved]);
 
   // Manual save and navigate handler
+  // Uses the same transformation pipeline as submit, but without full validation
   const handleSaveAndNavigate = useCallback(async (): Promise<void> => {
-    // Since saveNow() doesn't throw errors (they're caught in performSave),
-    // we need to manually call saveDraftToDatabase with proper error handling
     try {
-      const draftData = getDraftData();
+      const formData = form.getValues();
 
-      // Save to database directly with error propagation
-      await saveDraftToDatabase(draftData);
-
-      // Also save to localStorage via saveNow (for offline backup)
+      // STEP 1: Always save to localStorage first (offline backup, no validation)
       await saveNow();
 
-      // If we get here, save was successful
+      // STEP 2: Transform data using the same pipeline as submit
+      // This ensures consistency between draft saves and final submission
+      const transformedData = transformPdsForSubmission(formData);
+
+      // STEP 3: Save to database
+      const currentDraftId = draftIdRef.current;
+
+      if (currentDraftId) {
+        // Update existing draft
+        console.log('[PDS Create] Updating draft via manual save:', currentDraftId);
+        const response = await fetch(`/api/pds/${currentDraftId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(transformedData),
+        });
+
+        if (!response.ok) {
+          const errorData = await response
+            .json()
+            .catch(() => ({ error: 'Unknown error' }));
+          throw new Error(errorData.error || 'Failed to update draft');
+        }
+
+        console.log('[PDS Create] Draft updated successfully:', currentDraftId);
+      } else {
+        // Create new draft
+        console.log('[PDS Create] Creating new draft via manual save');
+        const response = await fetch('/api/pds', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(transformedData),
+        });
+
+        if (!response.ok) {
+          const errorData = await response
+            .json()
+            .catch(() => ({ error: 'Unknown error' }));
+          throw new Error(errorData.error || 'Failed to create draft');
+        }
+
+        const result = await response.json();
+        if (result.data?.id) {
+          // Update both ref and state together
+          updateDraftId(result.data.id);
+          console.log('[PDS Create] Draft created successfully:', result.data.id);
+        } else {
+          throw new Error('No draft ID returned from server');
+        }
+      }
+
+      // Success toast
       toast.success('Draft Saved', {
-        description: draftId
+        description: currentDraftId
           ? 'Your draft has been updated.'
           : 'Your draft has been saved successfully.',
       });
@@ -516,7 +490,7 @@ export default function PDSCreatePage() {
 
       // Don't navigate on error
     }
-  }, [getDraftData, saveDraftToDatabase, saveNow, draftId, router]);
+  }, [form, saveNow, updateDraftId, router]);
 
   // Navigation handlers
   const handleNext = useCallback(async () => {

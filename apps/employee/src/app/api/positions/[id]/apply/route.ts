@@ -19,6 +19,7 @@ import {
   applicationStatusHistory,
   auditLogs,
   pdsSubmissions,
+  profiles,
 } from '@tupsafe/database/server';
 import { eq, and, sql } from 'drizzle-orm';
 
@@ -69,14 +70,19 @@ export async function POST(
       );
     }
 
-    // 2. Verify user is an applicant
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('user_type, applicant_id, is_active')
-      .eq('id', user.id)
-      .single();
+    // 2. Verify user is an applicant (using Drizzle to bypass RLS)
+    const profileQuery = await db
+      .select({
+        userType: profiles.userType,
+        applicantId: profiles.applicantId,
+        isActive: profiles.isActive,
+        accountStatus: profiles.accountStatus,
+      })
+      .from(profiles)
+      .where(eq(profiles.id, user.id))
+      .limit(1);
 
-    if (profileError || !profile) {
+    if (profileQuery.length === 0) {
       return NextResponse.json(
         {
           success: false,
@@ -87,7 +93,9 @@ export async function POST(
       );
     }
 
-    if (profile.user_type !== 'applicant') {
+    const profile = profileQuery[0];
+
+    if (profile.userType !== 'applicant') {
       return NextResponse.json(
         {
           success: false,
@@ -98,7 +106,8 @@ export async function POST(
       );
     }
 
-    if (!profile.is_active) {
+    // Check account is active (both isActive flag and accountStatus)
+    if (!profile.isActive || profile.accountStatus !== 'active') {
       return NextResponse.json(
         {
           success: false,

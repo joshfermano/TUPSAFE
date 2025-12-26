@@ -62,12 +62,13 @@ export const ReferenceItem = memo(({ index, onRemove, canRemove }: ReferenceItem
           name={`otherInfo.references.${index}.telephoneNo`}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Telephone No.</FormLabel>
+              <FormLabel>
+                Telephone No. <span className="text-destructive">*</span>
+              </FormLabel>
               <FormControl>
                 <Input
-                  placeholder="+63-2-8123-4567"
+                  placeholder="+63-2-8123-4567 or 09171234567"
                   {...field}
-                  value={field.value || ''}
                   className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
                 />
               </FormControl>

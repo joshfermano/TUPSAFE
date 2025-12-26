@@ -27,7 +27,13 @@ import {
   Star,
   AlertCircle,
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -36,13 +42,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ApplicationsDataTable,
   EditJobDialog,
+  UpdateStatusDialog,
 } from '@/components/jobs';
 import {
   useOpenPositionDetails,
   usePositionApplications,
   useOpenPositions,
+  useJobApplications,
 } from '@/hooks/useJobsQuery';
-import type { UpdateOpenPositionData } from '@tupsafe/types';
+import type {
+  UpdateOpenPositionData,
+  UpdateApplicationStatusData,
+  ApplicationStatus,
+  JobApplicationListItem,
+} from '@tupsafe/types';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -54,19 +67,23 @@ interface JobDetailsPageProps {
 const statusConfig = {
   open: {
     label: 'Open',
-    className: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-200',
+    className:
+      'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-200',
   },
   closed: {
     label: 'Closed',
-    className: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200 border-gray-200',
+    className:
+      'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200 border-gray-200',
   },
   filled: {
     label: 'Filled',
-    className: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 border-blue-200',
+    className:
+      'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 border-blue-200',
   },
   cancelled: {
     label: 'Cancelled',
-    className: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 border-red-200',
+    className:
+      'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 border-red-200',
   },
 };
 
@@ -76,6 +93,14 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
 
   // State
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState<{
+    id: string;
+    applicationNumber: string;
+    applicantName: string;
+    positionTitle: string;
+    currentStatus: ApplicationStatus;
+  } | null>(null);
   const [applicationsFilters, setApplicationsFilters] = useState({
     page: 1,
     limit: 10,
@@ -83,7 +108,12 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
   });
 
   // Fetch position details
-  const { data: position, isLoading, isError, error } = useOpenPositionDetails(id);
+  const {
+    data: position,
+    isLoading,
+    isError,
+    error,
+  } = useOpenPositionDetails(id);
 
   // Fetch applications for this position
   const {
@@ -94,6 +124,10 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
 
   // Get mutation functions
   const { updatePosition, isUpdating } = useOpenPositions();
+  // Only need the mutation, not the query (we use usePositionApplications for fetching)
+  const { updateApplicationStatus, isUpdatingStatus } = useJobApplications({
+    enableQuery: false,
+  });
 
   // Handle actions
   const handleEdit = () => {
@@ -101,7 +135,11 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
   };
 
   const handleClosePosition = () => {
-    if (!confirm('Are you sure you want to close this position? Applications will no longer be accepted.')) {
+    if (
+      !confirm(
+        'Are you sure you want to close this position? Applications will no longer be accepted.'
+      )
+    ) {
       return;
     }
 
@@ -144,6 +182,78 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
     router.push(`/dashboard/jobs/${id}/applications/${applicationId}`);
   };
 
+  const handleCreateEmployeeAccount = (application: JobApplicationListItem) => {
+    // Navigate to create user page with application number prefilled
+    const params = new URLSearchParams({
+      applicationNumber: application.applicationNumber,
+      applicantName: `${application.applicant.firstName} ${application.applicant.lastName}`,
+    });
+    router.push(`/dashboard/users/create?${params.toString()}`);
+  };
+
+  const handleUpdateStatus = (applicationId: string) => {
+    // Find the application from the data
+    const application = applicationsData?.applications.find(
+      (app: JobApplicationListItem) => app.id === applicationId
+    );
+
+    if (application) {
+      setSelectedApplication({
+        id: application.id,
+        applicationNumber: application.applicationNumber,
+        applicantName: `${application.applicant.firstName} ${application.applicant.lastName}`,
+        positionTitle: application.position.positionTitle,
+        currentStatus: application.status,
+      });
+      setStatusDialogOpen(true);
+    }
+  };
+
+  const handleSubmitStatusUpdate = (data: UpdateApplicationStatusData) => {
+    if (!selectedApplication) {
+      console.log('[JobDetailsPage] No selected application');
+      return;
+    }
+
+    console.log('[JobDetailsPage] Submitting status update:', {
+      applicationId: selectedApplication.id,
+      data,
+    });
+
+    updateApplicationStatus(
+      {
+        applicationId: selectedApplication.id,
+        data,
+      },
+      {
+        onSuccess: (result) => {
+          toast.success('Status updated successfully', {
+            description: `Application status changed to ${data.status}`,
+          });
+
+          // Show email notification result if available
+          if (result?.email?.sent) {
+            toast.info('Email notification sent', {
+              description: 'The applicant has been notified via email.',
+            });
+          } else if (result?.email?.error) {
+            toast.warning('Email notification failed', {
+              description: result.email.error,
+            });
+          }
+
+          setStatusDialogOpen(false);
+          setSelectedApplication(null);
+        },
+        onError: (error) => {
+          toast.error('Failed to update status', {
+            description: error.message,
+          });
+        },
+      }
+    );
+  };
+
   // Loading state
   if (isLoading) {
     return (
@@ -176,10 +286,17 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
   }
 
   const statusInfo = statusConfig[position.status as keyof typeof statusConfig];
-  const deadlineDate = position.applicationDeadline ? new Date(position.applicationDeadline) : null;
-  const deadline = deadlineDate && !isNaN(deadlineDate.getTime()) ? deadlineDate : null;
+  const deadlineDate = position.applicationDeadline
+    ? new Date(position.applicationDeadline)
+    : null;
+  const deadline =
+    deadlineDate && !isNaN(deadlineDate.getTime()) ? deadlineDate : null;
   const isOverdue = deadline ? deadline < new Date() : false;
-  const daysUntil = deadline ? Math.ceil((deadline.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 0;
+  const daysUntil = deadline
+    ? Math.ceil(
+        (deadline.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+      )
+    : 0;
 
   return (
     <div className="space-y-6">
@@ -197,13 +314,17 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <CardTitle className="text-2xl">{position.positionTitle}</CardTitle>
+                <CardTitle className="text-2xl">
+                  {position.positionTitle}
+                </CardTitle>
                 {position.isFeatured && (
                   <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
                 )}
               </div>
               <div className="flex flex-wrap gap-2">
-                <Badge variant="outline" className={cn('font-medium', statusInfo?.className)}>
+                <Badge
+                  variant="outline"
+                  className={cn('font-medium', statusInfo?.className)}>
                   {statusInfo?.label || position.status}
                 </Badge>
                 <Badge variant="outline" className="font-mono text-xs">
@@ -238,8 +359,12 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
                 <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <div className="text-sm font-medium">{position.applicationsReceived}</div>
-                <div className="text-xs text-muted-foreground">Applications</div>
+                <div className="text-sm font-medium">
+                  {position.applicationsReceived}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Applications
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -247,7 +372,9 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
                 <Briefcase className="h-4 w-4 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <div className="text-sm font-medium">{position.numberOfOpenings}</div>
+                <div className="text-sm font-medium">
+                  {position.numberOfOpenings}
+                </div>
                 <div className="text-xs text-muted-foreground">Openings</div>
               </div>
             </div>
@@ -259,18 +386,26 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
                 <div className="text-sm font-medium">
                   {deadline ? format(deadline, 'MMM dd, yyyy') : 'No deadline'}
                 </div>
-                <div className={cn(
-                  'text-xs',
-                  !deadline ? 'text-muted-foreground' :
-                  isOverdue ? 'text-red-600 dark:text-red-400' :
-                  daysUntil <= 7 ? 'text-orange-600 dark:text-orange-400' :
-                  'text-muted-foreground'
-                )}>
-                  {!deadline ? 'Not set' :
-                   isOverdue ? 'Overdue' :
-                   daysUntil === 0 ? 'Today' :
-                   daysUntil === 1 ? 'Tomorrow' :
-                   `${daysUntil} days left`}
+                <div
+                  className={cn(
+                    'text-xs',
+                    !deadline
+                      ? 'text-muted-foreground'
+                      : isOverdue
+                      ? 'text-red-600 dark:text-red-400'
+                      : daysUntil <= 7
+                      ? 'text-orange-600 dark:text-orange-400'
+                      : 'text-muted-foreground'
+                  )}>
+                  {!deadline
+                    ? 'Not set'
+                    : isOverdue
+                    ? 'Overdue'
+                    : daysUntil === 0
+                    ? 'Today'
+                    : daysUntil === 1
+                    ? 'Tomorrow'
+                    : `${daysUntil} days left`}
                 </div>
               </div>
             </div>
@@ -279,7 +414,9 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
                 <MapPin className="h-4 w-4 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <div className="text-sm font-medium">{position.department?.name || 'N/A'}</div>
+                <div className="text-sm font-medium">
+                  {position.department?.name || 'N/A'}
+                </div>
                 <div className="text-xs text-muted-foreground">Department</div>
               </div>
             </div>
@@ -303,73 +440,86 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
                 </p>
               </div>
 
-              {position.qualifications && position.qualifications.length > 0 && (
-                <div>
-                  <h3 className="font-semibold mb-2">Qualifications</h3>
-                  <ul className="list-disc list-inside space-y-1">
-                    {position.qualifications.map((qual, index) => (
-                      <li key={index} className="text-sm text-muted-foreground">
-                        {qual}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              {position.qualifications &&
+                position.qualifications.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold mb-2">Qualifications</h3>
+                    <ul className="list-disc list-inside space-y-1">
+                      {position.qualifications.map((qual, index) => (
+                        <li
+                          key={index}
+                          className="text-sm text-muted-foreground">
+                          {qual}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
-              {position.responsibilities && position.responsibilities.length > 0 && (
-                <div>
-                  <h3 className="font-semibold mb-2">Responsibilities</h3>
-                  <ul className="list-disc list-inside space-y-1">
-                    {position.responsibilities.map((resp, index) => (
-                      <li key={index} className="text-sm text-muted-foreground">
-                        {resp}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              {position.responsibilities &&
+                position.responsibilities.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold mb-2">Responsibilities</h3>
+                    <ul className="list-disc list-inside space-y-1">
+                      {position.responsibilities.map((resp, index) => (
+                        <li
+                          key={index}
+                          className="text-sm text-muted-foreground">
+                          {resp}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
             </TabsContent>
 
             <TabsContent value="requirements" className="space-y-4 mt-4">
               <div className="grid gap-4">
-                {position.requirements?.education && position.requirements.education.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold mb-2">Education</h3>
-                    <ul className="list-disc list-inside space-y-1">
-                      {position.requirements.education.map((edu, index) => (
-                        <li key={index} className="text-sm text-muted-foreground">
-                          {edu}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {position.requirements?.experience && position.requirements.experience.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold mb-2">Experience</h3>
-                    <ul className="list-disc list-inside space-y-1">
-                      {position.requirements.experience.map((exp, index) => (
-                        <li key={index} className="text-sm text-muted-foreground">
-                          {exp}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {position.requirements?.skills && position.requirements.skills.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold mb-2">Skills</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {position.requirements.skills.map((skill, index) => (
-                        <Badge key={index} variant="secondary">
-                          {skill}
-                        </Badge>
-                      ))}
+                {position.requirements?.education &&
+                  position.requirements.education.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold mb-2">Education</h3>
+                      <ul className="list-disc list-inside space-y-1">
+                        {position.requirements.education.map((edu, index) => (
+                          <li
+                            key={index}
+                            className="text-sm text-muted-foreground">
+                            {edu}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                  </div>
-                )}
+                  )}
+
+                {position.requirements?.experience &&
+                  position.requirements.experience.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold mb-2">Experience</h3>
+                      <ul className="list-disc list-inside space-y-1">
+                        {position.requirements.experience.map((exp, index) => (
+                          <li
+                            key={index}
+                            className="text-sm text-muted-foreground">
+                            {exp}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                {position.requirements?.skills &&
+                  position.requirements.skills.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold mb-2">Skills</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {position.requirements.skills.map((skill, index) => (
+                          <Badge key={index} variant="secondary">
+                            {skill}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
               </div>
             </TabsContent>
 
@@ -378,7 +528,9 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
                 {position.salaryGrade && (
                   <div>
                     <div className="text-sm font-medium">Salary Grade</div>
-                    <div className="text-sm text-muted-foreground">{position.salaryGrade}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {position.salaryGrade}
+                    </div>
                   </div>
                 )}
 
@@ -389,9 +541,13 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
                       Salary Range
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {position.salaryRangeMin && `₱${position.salaryRangeMin.toLocaleString()}`}
-                      {position.salaryRangeMin && position.salaryRangeMax && ' - '}
-                      {position.salaryRangeMax && `₱${position.salaryRangeMax.toLocaleString()}`}
+                      {position.salaryRangeMin &&
+                        `₱${position.salaryRangeMin.toLocaleString()}`}
+                      {position.salaryRangeMin &&
+                        position.salaryRangeMax &&
+                        ' - '}
+                      {position.salaryRangeMax &&
+                        `₱${position.salaryRangeMax.toLocaleString()}`}
                     </div>
                   </div>
                 )}
@@ -399,7 +555,9 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
                 {position.employmentType && (
                   <div>
                     <div className="text-sm font-medium">Employment Type</div>
-                    <div className="text-sm text-muted-foreground">{position.employmentType}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {position.employmentType}
+                    </div>
                   </div>
                 )}
 
@@ -436,7 +594,8 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
                 Applications
               </CardTitle>
               <CardDescription>
-                {applicationsData?.pagination.total || 0} application(s) received
+                {applicationsData?.pagination.total || 0} application(s)
+                received
               </CardDescription>
             </div>
             <div className="flex gap-2">
@@ -449,8 +608,7 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
                     status: e.target.value as any,
                     page: 1,
                   }))
-                }
-              >
+                }>
                 <option value="all">All Status</option>
                 <option value="pending">Pending</option>
                 <option value="under_review">Under Review</option>
@@ -479,6 +637,8 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
               data={applicationsData?.applications || []}
               isLoading={applicationsLoading}
               onViewDetails={handleViewApplication}
+              onUpdateStatus={handleUpdateStatus}
+              onCreateEmployeeAccount={handleCreateEmployeeAccount}
             />
           )}
 
@@ -486,7 +646,8 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
           {applicationsData && applicationsData.pagination.totalPages > 1 && (
             <div className="flex items-center justify-between mt-4">
               <div className="text-sm text-muted-foreground">
-                Page {applicationsData.pagination.page} of {applicationsData.pagination.totalPages}
+                Page {applicationsData.pagination.page} of{' '}
+                {applicationsData.pagination.totalPages}
               </div>
               <div className="flex gap-2">
                 <Button
@@ -498,23 +659,22 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
                       ...prev,
                       page: prev.page - 1,
                     }))
-                  }
-                >
+                  }>
                   Previous
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   disabled={
-                    applicationsData.pagination.page >= applicationsData.pagination.totalPages
+                    applicationsData.pagination.page >=
+                    applicationsData.pagination.totalPages
                   }
                   onClick={() =>
                     setApplicationsFilters((prev) => ({
                       ...prev,
                       page: prev.page + 1,
                     }))
-                  }
-                >
+                  }>
                   Next
                 </Button>
               </div>
@@ -530,6 +690,17 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
         onOpenChange={setEditDialogOpen}
         onSubmit={handleUpdatePosition}
         isLoading={isUpdating}
+      />
+
+      <UpdateStatusDialog
+        open={statusDialogOpen}
+        onOpenChange={(open) => {
+          setStatusDialogOpen(open);
+          if (!open) setSelectedApplication(null);
+        }}
+        application={selectedApplication}
+        onSubmit={handleSubmitStatusUpdate}
+        isLoading={isUpdatingStatus}
       />
     </div>
   );

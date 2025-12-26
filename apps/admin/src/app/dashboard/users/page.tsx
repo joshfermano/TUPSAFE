@@ -10,14 +10,24 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { UserPlus, AlertCircle, Users, UserCheck, UserX, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { UserPlus, AlertCircle, Users, UserCheck, UserX, Clock, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   UserFilters,
   UsersDataTable,
@@ -26,7 +36,7 @@ import {
   SyncMetadataDialog,
   UsersPagination,
 } from '@/components/users';
-import { useUsers, useUserStats, useToggleUserStatus, useDeleteUser } from '@/hooks/useUsers';
+import { useUsers, useUserStats, useToggleUserStatus, useDeleteUser, type DeleteUserError } from '@/hooks/useUsers';
 import type { UserListQuery } from '@tupsafe/types';
 import Link from 'next/link';
 
@@ -39,6 +49,16 @@ export default function UsersPage() {
   const [resetPasswordUserId, setResetPasswordUserId] = useState<string | null>(null);
   const [syncMetadataUserId, setSyncMetadataUserId] = useState<string | null>(null);
   const [showDetailedStats, setShowDetailedStats] = useState(false);
+  
+  // Delete confirmation dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pendingDeleteUserId, setPendingDeleteUserId] = useState<string | null>(null);
+  const [deleteDependencies, setDeleteDependencies] = useState<{
+    pdsSubmissions: number;
+    salnSubmissions: number;
+    jobApplications: number;
+    hasComplianceRecords: boolean;
+  } | null>(null);
 
   // Mutations
   const toggleStatus = useToggleUserStatus();
@@ -108,11 +128,41 @@ export default function UsersPage() {
     setSyncMetadataUserId(userId);
   };
 
-  const handleDelete = (userId: string) => {
-    if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-      deleteUser.mutate(userId);
+  const handleDelete = useCallback((userId: string) => {
+    setPendingDeleteUserId(userId);
+    setDeleteDependencies(null);
+    setDeleteDialogOpen(true);
+  }, []);
+
+  const handleConfirmDelete = useCallback(async (forceDelete: boolean = false) => {
+    if (!pendingDeleteUserId) return;
+    
+    try {
+      await deleteUser.mutateAsync({ userId: pendingDeleteUserId, forceDelete });
+      setDeleteDialogOpen(false);
+      setPendingDeleteUserId(null);
+      setDeleteDependencies(null);
+    } catch (error) {
+      const deleteError = error as DeleteUserError & { hasComplianceRecords?: boolean };
+      // If can be force deleted, show the force delete option with dependencies
+      if (deleteError.canForceDelete && deleteError.dependencies) {
+        setDeleteDependencies({
+          pdsSubmissions: deleteError.dependencies.pdsSubmissions || 0,
+          salnSubmissions: deleteError.dependencies.salnSubmissions || 0,
+          jobApplications: deleteError.dependencies.jobApplications || 0,
+          hasComplianceRecords: deleteError.hasComplianceRecords || 
+            (deleteError.dependencies.pdsSubmissions || 0) > 0 || 
+            (deleteError.dependencies.salnSubmissions || 0) > 0,
+        });
+        // Keep dialog open to show force delete option
+      } else {
+        // Other errors close the dialog (toast is shown by the hook)
+        setDeleteDialogOpen(false);
+        setPendingDeleteUserId(null);
+        setDeleteDependencies(null);
+      }
     }
-  };
+  }, [pendingDeleteUserId, deleteUser]);
 
   return (
     <div className="space-y-4">
@@ -322,6 +372,91 @@ export default function UsersPage() {
         open={!!syncMetadataUserId}
         onOpenChange={(open) => !open && setSyncMetadataUserId(null)}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              {deleteDependencies ? (
+                <>
+                  <AlertTriangle className="h-5 w-5 text-amber-500" />
+                  User Has Associated Data
+                </>
+              ) : (
+                'Delete User Account'
+              )}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                {deleteDependencies ? (
+                  <>
+                    <p>This user has the following data that would be permanently deleted:</p>
+                    <ul className="list-disc list-inside space-y-1 text-sm">
+                      {deleteDependencies.pdsSubmissions > 0 && (
+                        <li><strong>{deleteDependencies.pdsSubmissions}</strong> PDS submission(s)</li>
+                      )}
+                      {deleteDependencies.salnSubmissions > 0 && (
+                        <li><strong>{deleteDependencies.salnSubmissions}</strong> SALN submission(s)</li>
+                      )}
+                      {deleteDependencies.jobApplications > 0 && (
+                        <li><strong>{deleteDependencies.jobApplications}</strong> job application(s)</li>
+                      )}
+                    </ul>
+                    {deleteDependencies.hasComplianceRecords && (
+                      <Alert variant="destructive" className="text-sm">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertTitle>⚠️ Compliance Records Warning</AlertTitle>
+                        <AlertDescription>
+                          This includes PDS/SALN compliance records. These are official government documents 
+                          and deleting them may have legal implications. Only proceed if you are certain 
+                          this data should be permanently removed.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    <p className="text-sm text-muted-foreground">
+                      This action cannot be undone. All associated data will be permanently deleted.
+                    </p>
+                  </>
+                ) : (
+                  <p>
+                    Are you sure you want to delete this user? This action cannot be undone. 
+                    The user account will be permanently removed from the system.
+                  </p>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                setPendingDeleteUserId(null);
+                setDeleteDependencies(null);
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            {deleteDependencies ? (
+              <AlertDialogAction
+                onClick={() => handleConfirmDelete(true)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={deleteUser.isPending}
+              >
+                {deleteUser.isPending ? 'Deleting...' : 'Force Delete All Data'}
+              </AlertDialogAction>
+            ) : (
+              <AlertDialogAction
+                onClick={() => handleConfirmDelete(false)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={deleteUser.isPending}
+              >
+                {deleteUser.isPending ? 'Deleting...' : 'Delete User'}
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
