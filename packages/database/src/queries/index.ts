@@ -81,4 +81,6 @@ export type {
   UpdatePDSData,
   PDSFilterOptions,
   PDSStatistics,
+  PdsAttachmentData,
+  PdsAttachmentsMap,
 } from './pds';
