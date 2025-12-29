@@ -21,7 +21,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkUserRoleFromSupabase, getUserFromSupabase, createAdminClient } from '@tupsafe/auth/server';
+import { checkUserRoleFromSupabase, getUserFromSupabase, createAdminClient, getProfilePicturePublicUrl } from '@tupsafe/auth/server';
 import {
   db,
   profiles,
@@ -95,6 +95,7 @@ export async function GET(
         departmentCode: departments.code,
         positionId: profiles.positionId,
         positionTitle: positions.title,
+        avatarPath: profiles.avatarPath,
         reviewerFirstName: profiles.firstName,
         reviewerLastName: profiles.lastName,
       })
@@ -347,6 +348,9 @@ export async function GET(
         firstName: submission.firstName,
         lastName: submission.lastName,
         email: employeeEmail,
+        avatarUrl: submission.avatarPath
+          ? getProfilePicturePublicUrl(supabaseUrl, submission.avatarPath)
+          : null,
         department: submission.departmentId
           ? {
               id: submission.departmentId,

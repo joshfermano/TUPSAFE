@@ -31,7 +31,6 @@ import {
 import {
   UserFilters,
   UsersDataTable,
-  EditUserDialog,
   ResetPasswordDialog,
   SyncMetadataDialog,
   UsersPagination,
@@ -45,7 +44,6 @@ export default function UsersPage() {
   const searchParams = useSearchParams();
 
   // Dialog states
-  const [editUserId, setEditUserId] = useState<string | null>(null);
   const [resetPasswordUserId, setResetPasswordUserId] = useState<string | null>(null);
   const [syncMetadataUserId, setSyncMetadataUserId] = useState<string | null>(null);
   const [showDetailedStats, setShowDetailedStats] = useState(false);
@@ -113,7 +111,7 @@ export default function UsersPage() {
   };
 
   const handleEdit = (userId: string) => {
-    setEditUserId(userId);
+    router.push(`/dashboard/users/edit/${userId}`);
   };
 
   const handleToggleStatus = (userId: string, isActive: boolean) => {
@@ -355,12 +353,6 @@ export default function UsersPage() {
       </Card>
 
       {/* Dialogs */}
-      <EditUserDialog
-        userId={editUserId}
-        open={!!editUserId}
-        onOpenChange={(open) => !open && setEditUserId(null)}
-      />
-
       <ResetPasswordDialog
         userId={resetPasswordUserId}
         open={!!resetPasswordUserId}
