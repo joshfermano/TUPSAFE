@@ -201,10 +201,14 @@ export async function GET(request: NextRequest) {
     }
 
     // 8. Merge positions with application status (in-memory, no additional queries)
+    // Also parse decimal fields to numbers for consistent frontend handling
     const positionsWithStatus = positionsQuery.map((position) => {
       const application = applicationStatusMap.get(position.id);
       return {
         ...position,
+        // Parse decimal strings to numbers for consistent frontend handling
+        salaryRangeMin: position.salaryRangeMin ? parseFloat(position.salaryRangeMin) : null,
+        salaryRangeMax: position.salaryRangeMax ? parseFloat(position.salaryRangeMax) : null,
         hasApplied: !!application,
         applicationStatus: application?.status || null,
       };

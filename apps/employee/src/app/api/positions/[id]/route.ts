@@ -162,11 +162,14 @@ export async function GET(
     );
 
     // 6. Return position details with application status
+    // Parse decimal fields to numbers for consistent frontend handling
     return NextResponse.json(
       {
         success: true,
         data: {
           ...position,
+          salaryRangeMin: position.salaryRangeMin ? parseFloat(position.salaryRangeMin) : null,
+          salaryRangeMax: position.salaryRangeMax ? parseFloat(position.salaryRangeMax) : null,
           hasApplied,
           applicationStatus,
           daysUntilDeadline,

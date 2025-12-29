@@ -13,6 +13,7 @@
 
 import { useState, use } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import {
   ArrowLeft,
@@ -26,6 +27,8 @@ import {
   Download,
   ExternalLink,
   AlertCircle,
+  Trash2,
+  Loader2,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,6 +36,17 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import {
   ApplicationTimeline,
   UpdateStatusDialog,
@@ -95,15 +109,17 @@ const statusConfig: Record<ApplicationStatus, {
 
 export default function ApplicationReviewPage({ params }: ApplicationReviewPageProps) {
   const { id: positionId, appId } = use(params);
+  const router = useRouter();
 
   // State
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Fetch application details
   const { data: applicationData, isLoading, isError, error } = useApplicationDetails(appId);
 
   // Get mutation functions (only need the mutation, not the query)
-  const { updateApplicationStatus, isUpdatingStatus } = useJobApplications({ enableQuery: false });
+  const { updateApplicationStatus, isUpdatingStatus, deleteApplication, isDeletingApplication } = useJobApplications({ enableQuery: false });
 
   // Handle status update
   const handleUpdateStatus = (data: UpdateApplicationStatusData) => {
@@ -121,6 +137,23 @@ export default function ApplicationReviewPage({ params }: ApplicationReviewPageP
         },
       }
     );
+  };
+
+  // Handle delete application
+  const handleDeleteApplication = () => {
+    deleteApplication(appId, {
+      onSuccess: () => {
+        toast.success('Application deleted successfully');
+        setDeleteDialogOpen(false);
+        // Navigate back to the position page
+        router.push(`/dashboard/jobs/${positionId}`);
+      },
+      onError: (error) => {
+        toast.error('Failed to delete application', {
+          description: error.message,
+        });
+      },
+    });
   };
 
   // Loading state
@@ -181,9 +214,52 @@ export default function ApplicationReviewPage({ params }: ApplicationReviewPageP
             {applicant.firstName} {applicant.lastName}
           </p>
         </div>
-        <Button onClick={() => setStatusDialogOpen(true)}>
-          Update Status
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setStatusDialogOpen(true)}>
+            Update Status
+          </Button>
+          {/* Delete button - only shows for withdrawn applications */}
+          {appDetails.status === 'withdrawn' && (
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Application
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Application?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete the application for{' '}
+                    <strong>{applicant.firstName} {applicant.lastName}</strong>{' '}
+                    (#{appDetails.applicationNumber}). This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={isDeletingApplication}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteApplication}
+                    disabled={isDeletingApplication}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {isDeletingApplication ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </>
+                    )}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
       </div>
 
       {/* Application Summary Card */}

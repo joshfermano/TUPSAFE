@@ -546,6 +546,77 @@ export function useJobApplications(options: UseJobApplicationsOptions = {}) {
   });
 
   /**
+   * Mutation to delete a withdrawn application
+   */
+  const deleteApplicationMutation = useMutation({
+    mutationFn: async (applicationId: string) => {
+      const response = await fetch(`/api/applications/${applicationId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.error || errorData?.message || `Failed to delete application: ${response.statusText}`
+        );
+      }
+
+      const result = await response.json();
+      return result;
+    },
+    onMutate: async (applicationId) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: jobsKeys.applications() });
+
+      // Snapshot previous value
+      const previousApplications = queryClient.getQueryData<JobApplicationListResponse>(
+        jobsKeys.applicationsList(filters)
+      );
+
+      // Optimistically remove from list
+      queryClient.setQueryData<JobApplicationListResponse>(
+        jobsKeys.applicationsList(filters),
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            applications: old.applications.filter((app) => app.id !== applicationId),
+            pagination: {
+              ...old.pagination,
+              total: old.pagination.total - 1,
+            },
+          };
+        }
+      );
+
+      return { previousApplications };
+    },
+    onError: (_err, _variables, context) => {
+      // Rollback on error
+      if (context?.previousApplications) {
+        queryClient.setQueryData(
+          jobsKeys.applicationsList(filters),
+          context.previousApplications
+        );
+      }
+    },
+    onSettled: () => {
+      // Refetch to ensure consistency
+      queryClient.invalidateQueries({ queryKey: jobsKeys.applications() });
+      // Also invalidate position details and position applications to update application stats
+      queryClient.invalidateQueries({ queryKey: jobsKeys.positions() });
+      // Invalidate all position applications
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey as string[];
+          return key[0] === 'jobs' && key[1] === 'positions' && key[3] === 'applications';
+        }
+      });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+  });
+
+  /**
    * Mutation to update application status
    */
   const updateApplicationStatusMutation = useMutation({
@@ -642,6 +713,10 @@ export function useJobApplications(options: UseJobApplicationsOptions = {}) {
     updateApplicationStatusAsync: updateApplicationStatusMutation.mutateAsync,
     isUpdatingStatus: updateApplicationStatusMutation.isPending,
     updateStatusError: updateApplicationStatusMutation.error,
+    deleteApplication: deleteApplicationMutation.mutate,
+    deleteApplicationAsync: deleteApplicationMutation.mutateAsync,
+    isDeletingApplication: deleteApplicationMutation.isPending,
+    deleteApplicationError: deleteApplicationMutation.error,
   };
 }
 
