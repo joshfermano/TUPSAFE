@@ -22,7 +22,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkUserRoleFromSupabase, getUserFromSupabase, createAdminClient } from '@tupsafe/auth/server';
+import { checkUserRoleFromSupabase, getUserFromSupabase, createAdminClient, getProfilePicturePublicUrl } from '@tupsafe/auth/server';
 import {
   db,
   profiles,
@@ -99,6 +99,7 @@ export async function GET(
         departmentCode: departments.code,
         positionId: profiles.positionId,
         positionTitle: positions.title,
+        avatarPath: profiles.avatarPath,
       })
       .from(salnSubmissions)
       .innerJoin(profiles, eq(salnSubmissions.userId, profiles.id))
@@ -249,6 +250,9 @@ export async function GET(
       userAgent: request.headers.get('user-agent') || undefined,
     });
 
+    // Get Supabase URL for profile picture URL
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+
     // Transform to response format
     const response: SALNSubmissionDetail = {
       submission: {
@@ -274,6 +278,9 @@ export async function GET(
         lastName: submission.lastName,
         middleName: submission.middleName,
         email: employeeEmail,
+        avatarUrl: submission.avatarPath
+          ? getProfilePicturePublicUrl(supabaseUrl, submission.avatarPath)
+          : null,
         officeAddress: submission.officeAddress,
         department: submission.departmentId
           ? {

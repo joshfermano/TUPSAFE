@@ -130,7 +130,8 @@ export async function GET(request: NextRequest) {
       .where(
         and(
           eq(submissionDeadlines.formType, formType),
-          eq(submissionDeadlines.year, year)
+          eq(submissionDeadlines.year, year),
+          eq(submissionDeadlines.isActive, true) // Only return active deadlines
         )
       )
       .limit(1);
