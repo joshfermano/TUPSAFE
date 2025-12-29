@@ -12,8 +12,40 @@ import {
   getActivePDSDraft,
   type PDSFilterOptions,
   type CreatePDSData,
+  type UpdatePDSData,
 } from '@tupsafe/database/server';
 import { createServerClient } from '@tupsafe/auth/server';
+
+/**
+ * Convert CreatePDSData to UpdatePDSData for draft updates
+ *
+ * When updating a draft, we don't need to preserve entry IDs since drafts
+ * can be completely rewritten. This function ensures type compatibility by
+ * explicitly casting arrays that have different type signatures.
+ *
+ * The key difference is that UpdatePDSData expects civilService and training
+ * entries to have an optional 'id' field (for preserving attachment links),
+ * while CreatePDSData omits the 'id' field entirely. Since 'id' is optional
+ * in UpdatePDSData, entries without 'id' are valid and will cause the
+ * updatePDSSubmission function to delete and recreate these entries.
+ */
+function convertCreateToUpdateData(data: CreatePDSData): UpdatePDSData {
+  return {
+    year: data.year,
+    version: data.version,
+    personalInfo: data.personalInfo,
+    familyBackground: data.familyBackground,
+    children: data.children,
+    education: data.education,
+    // Cast civilService entries - entries without 'id' will be treated as new entries
+    civilService: data.civilService as UpdatePDSData['civilService'],
+    workExperience: data.workExperience,
+    voluntaryWork: data.voluntaryWork,
+    // Cast training entries - entries without 'id' will be treated as new entries
+    training: data.training as UpdatePDSData['training'],
+    otherInfo: data.otherInfo,
+  };
+}
 
 /**
  * GET /api/pds
@@ -223,7 +255,10 @@ export async function POST(request: NextRequest) {
         `[POST /api/pds] Found existing draft ${existingDraftId}, updating instead of creating new`
       );
 
-      await updatePDSSubmission(existingDraftId, user.id, body);
+      // Convert CreatePDSData to UpdatePDSData for type compatibility
+      // Draft updates don't need to preserve entry IDs
+      const updateData = convertCreateToUpdateData(body);
+      await updatePDSSubmission(existingDraftId, user.id, updateData);
 
       return NextResponse.json(
         {

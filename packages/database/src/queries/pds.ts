@@ -55,6 +55,30 @@ export interface PDSFilterOptions extends PaginationOptions {
 }
 
 /**
+ * PDS Attachment data structure for UI display
+ * (simplified version of PdsAttachment from database schema)
+ */
+export interface PdsAttachmentData {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  filePath: string;
+  fileUrl: string | null;
+  trainingId?: string | null;
+  civilServiceId?: string | null;
+  createdAt: Date | string;
+}
+
+/**
+ * Grouped attachments by entry type
+ */
+export interface PdsAttachmentsMap {
+  byTraining: Record<string, PdsAttachmentData[]>;
+  byCivilService: Record<string, PdsAttachmentData[]>;
+}
+
+/**
  * Complete PDS submission with all related sections
  */
 export interface CompletePDSSubmission {
@@ -68,6 +92,7 @@ export interface CompletePDSSubmission {
   voluntaryWork: PdsVoluntaryWork[];
   training: PdsTraining[];
   otherInfo: PdsOtherInfo | null;
+  attachments?: PdsAttachmentsMap;
 }
 
 /**
