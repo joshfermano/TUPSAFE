@@ -424,8 +424,8 @@ export interface OpenPositionDetail {
   requirements: PositionRequirements;
 
   salaryGrade: string | null;
-  salaryRangeMin: string | null;
-  salaryRangeMax: string | null;
+  salaryRangeMin: number | null;
+  salaryRangeMax: number | null;
   employmentType: string | null;
 
   status: PositionStatus;

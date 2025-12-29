@@ -201,8 +201,9 @@ export async function GET(
         skills: string[];
       },
       salaryGrade: positionData.salaryGrade,
-      salaryRangeMin: positionData.salaryRangeMin,
-      salaryRangeMax: positionData.salaryRangeMax,
+      // Parse decimal strings to numbers for consistent frontend handling
+      salaryRangeMin: positionData.salaryRangeMin ? parseFloat(positionData.salaryRangeMin) : null,
+      salaryRangeMax: positionData.salaryRangeMax ? parseFloat(positionData.salaryRangeMax) : null,
       employmentType: positionData.employmentType,
       status: positionData.status || 'open',
       applicationDeadline: positionData.applicationDeadline,

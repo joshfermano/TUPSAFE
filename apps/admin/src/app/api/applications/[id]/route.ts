@@ -567,3 +567,141 @@ export async function PATCH(
     );
   }
 }
+
+/**
+ * DELETE /api/applications/[id]
+ *
+ * Permanently deletes a withdrawn application.
+ * Only applications with status 'withdrawn' can be deleted.
+ *
+ * Security:
+ * - Requires admin or hr role
+ * - Only withdrawn applications can be deleted
+ * - Audit logging for deletion
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    console.log('[Application Detail API] DELETE request received');
+
+    // Get current user from Supabase session (portal-specific)
+    const currentUser = await getUserFromSupabase('admin');
+
+    if (!currentUser) {
+      return NextResponse.json(
+        { error: 'Session expired. Please login again.' },
+        { status: 401 }
+      );
+    }
+
+    // Verify admin/HR permissions
+    const allowedRoles = ['admin', 'hr'];
+    if (!allowedRoles.includes(currentUser.role)) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Admin or HR role required.' },
+        { status: 403 }
+      );
+    }
+
+    // Get application ID from params
+    const { id: applicationId } = await params;
+
+    if (!applicationId) {
+      return NextResponse.json(
+        { error: 'Application ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Check if application exists and get its status
+    const existingApplication = await db
+      .select({
+        id: jobApplications.id,
+        status: jobApplications.status,
+        applicationNumber: jobApplications.applicationNumber,
+        applicantId: jobApplications.applicantId,
+        positionId: jobApplications.positionId,
+      })
+      .from(jobApplications)
+      .where(eq(jobApplications.id, applicationId))
+      .limit(1);
+
+    if (!existingApplication.length) {
+      return NextResponse.json(
+        { error: 'Application not found' },
+        { status: 404 }
+      );
+    }
+
+    const application = existingApplication[0];
+
+    // Only allow deletion of withdrawn applications
+    if (application.status !== 'withdrawn') {
+      return NextResponse.json(
+        {
+          error: 'Cannot delete application',
+          message: 'Only withdrawn applications can be deleted. Current status: ' + application.status,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Delete status history first (foreign key constraint)
+    await db
+      .delete(applicationStatusHistory)
+      .where(eq(applicationStatusHistory.applicationId, applicationId));
+
+    // Delete the application
+    await db
+      .delete(jobApplications)
+      .where(eq(jobApplications.id, applicationId));
+
+    // Log audit event
+    try {
+      await createAuditLog({
+        userId: currentUser.userId,
+        action: 'DELETE',
+        entityType: 'application',
+        entityId: applicationId,
+        changes: {
+          deletedApplication: {
+            id: application.id,
+            applicationNumber: application.applicationNumber,
+            status: application.status,
+            applicantId: application.applicantId,
+            positionId: application.positionId,
+          },
+        },
+        ipAddress:
+          request.headers.get('x-forwarded-for')?.split(',')[0] ||
+          request.headers.get('x-real-ip') ||
+          undefined,
+        userAgent: request.headers.get('user-agent') || undefined,
+      });
+    } catch (error) {
+      console.error('Error logging audit event:', error);
+      // Non-critical, continue
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: 'Application deleted successfully',
+        deletedApplicationNumber: application.applicationNumber,
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('[Application Detail API] DELETE Error:', error);
+
+    return NextResponse.json(
+      {
+        error: 'Failed to delete application',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
+  }
+}

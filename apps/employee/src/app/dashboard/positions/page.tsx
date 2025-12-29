@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import {
   Briefcase,
@@ -44,6 +45,7 @@ import { BorderBeam } from '../../../components/ui/border-beam';
  * Position card component
  */
 function PositionCard({ position }: { position: OpenPosition }) {
+  const router = useRouter();
   const daysUntilDeadline = Math.ceil(
     (new Date(position.applicationDeadline).getTime() - new Date().getTime()) /
       (1000 * 60 * 60 * 24)
@@ -180,13 +182,12 @@ function PositionCard({ position }: { position: OpenPosition }) {
                 shimmerColor="#8B1538"
                 shimmerSize="0.1em"
                 borderRadius="0.5rem"
-                background="linear-gradient(to right, #8B1538, #B8264D)">
-                <Link
-                  href={`/dashboard/positions/${position.id}`}
-                  className="flex items-center justify-center gap-2 w-full h-full">
+                background="linear-gradient(to right, #8B1538, #B8264D)"
+                onClick={() => router.push(`/dashboard/positions/${position.id}`)}>
+                <span className="flex items-center justify-center gap-2">
                   Apply Now
                   <ChevronRight className="h-4 w-4" />
-                </Link>
+                </span>
               </ShimmerButton>
             )}
             {position.hasApplied && (

@@ -256,7 +256,7 @@ export function useWithdrawApplicationMutation() {
       const response = await fetch(`/api/applications/${applicationId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'withdrawn' }),
+        body: JSON.stringify({ action: 'withdraw' }),
       });
 
       if (!response.ok) {
