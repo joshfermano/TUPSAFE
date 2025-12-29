@@ -1589,16 +1589,11 @@ export default function PdsSubmissionViewPage() {
                 <div className="flex flex-col items-center text-center space-y-3">
                   {submissionUser && (
                     <UserAvatar
-                      user={
-                        {
-                          ...submissionUser,
-                          email: submissionUser.email || '',
-                        } as {
-                          firstName: string;
-                          lastName: string;
-                          email: string;
-                        }
-                      }
+                      user={{
+                        firstName: submissionUser.firstName,
+                        lastName: submissionUser.lastName,
+                        avatarUrl: submissionUser.avatarUrl,
+                      }}
                       size="lg"
                       className="h-20 w-20"
                     />

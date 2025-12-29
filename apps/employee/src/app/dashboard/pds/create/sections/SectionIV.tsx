@@ -10,11 +10,12 @@
  * - Professional color scheme (TUP Blue primary)
  */
 
-import { memo, useCallback, startTransition, useRef } from 'react';
-import { Briefcase, Plus, X, Award } from 'lucide-react';
+import { memo, useCallback, startTransition, useRef, useMemo } from 'react';
+import { Briefcase, Plus, X, Award, Paperclip } from 'lucide-react';
 import { useFormContext, useFieldArray } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { v4 as uuidv4 } from 'uuid';
 import {
   FormField,
   FormItem,
@@ -28,9 +29,12 @@ import { WorkExperienceItem } from '../../../../../components/pds/array-items';
 import { type CompletePdsData } from '../../../../../lib/validations/pds-schema';
 import { autoSortWithNotification } from '../../../../../lib/utils/pds-sort';
 import { formatDateForInput, parseDateFromInput } from '../../../../../lib/utils/date-utils';
+import { usePdsContextSafe } from '../../../../../context/PdsContext';
+import { EntryAttachments } from '../../../../../components/pds/EntryAttachments';
 
 export const SectionIV = memo(function SectionIV() {
   const form = useFormContext<CompletePdsData>();
+  const pdsContext = usePdsContextSafe();
 
   // Refs for virtualization
   const workParentRef = useRef<HTMLDivElement>(null);
@@ -43,6 +47,19 @@ export const SectionIV = memo(function SectionIV() {
     control: form.control,
     name: 'eligibility',
   });
+
+  // Generate stable IDs for new eligibility entries
+  const handleAddEligibility = useCallback(() => {
+    appendEligibility({
+      id: uuidv4(), // Generate stable ID for attachments linking
+      eligibilityName: '',
+      rating: null,
+      dateOfExam: null,
+      placeOfExam: '',
+      licenseNo: '',
+      licenseValidityDate: null,
+    });
+  }, [appendEligibility]);
 
   const {
     fields: workFields,
@@ -144,16 +161,7 @@ export const SectionIV = memo(function SectionIV() {
               type="button"
               variant="outline"
               size="sm"
-              onClick={() =>
-                appendEligibility({
-                  eligibilityName: '',
-                  rating: null,
-                  dateOfExam: null,
-                  placeOfExam: '',
-                  licenseNo: '',
-                  licenseValidityDate: null,
-                })
-              }
+              onClick={handleAddEligibility}
               className="border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900">
               <Plus className="h-4 w-4 mr-2" />
               Add Eligibility
@@ -329,6 +337,36 @@ export const SectionIV = memo(function SectionIV() {
                       )}
                     />
                   </div>
+
+                  {/* Attachments Section */}
+                  {pdsContext && (
+                    <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Paperclip className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium text-muted-foreground">
+                          Attachments
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          (certificates, licenses, etc.)
+                        </span>
+                      </div>
+                      <EntryAttachments
+                        pdsSubmissionId={pdsContext.pdsSubmissionId}
+                        entryId={form.getValues(`eligibility.${index}.id`) || null}
+                        entryType="civil_service"
+                        attachments={pdsContext.getCivilServiceAttachments(
+                          form.getValues(`eligibility.${index}.id`)
+                        )}
+                        canEdit={pdsContext.canEdit}
+                        onAttachmentsChange={(attachments) => {
+                          const entryId = form.getValues(`eligibility.${index}.id`);
+                          if (entryId) {
+                            pdsContext.updateCivilServiceAttachments(entryId, attachments);
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

@@ -25,6 +25,8 @@ export interface UserProfile {
   departmentId: string | null;
   positionId: string | null;
   phoneNumber: string | null;
+  avatarPath: string | null; // Supabase Storage path
+  avatarUrl: string | null; // Public URL for the avatar
   role: 'employee' | 'hr' | 'admin' | 'supervisor' | 'auditor';
   accountStatus: 'pending' | 'active' | 'suspended' | 'rejected';
   createdAt: Date;

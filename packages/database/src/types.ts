@@ -44,6 +44,8 @@ export type PdsTraining = InferSelectModel<typeof schema.pdsTraining>;
 export type NewPdsTraining = InferInsertModel<typeof schema.pdsTraining>;
 export type PdsOtherInfo = InferSelectModel<typeof schema.pdsOtherInfo>;
 export type NewPdsOtherInfo = InferInsertModel<typeof schema.pdsOtherInfo>;
+export type PdsAttachment = InferSelectModel<typeof schema.pdsAttachments>;
+export type NewPdsAttachment = InferInsertModel<typeof schema.pdsAttachments>;
 
 // SALN Types
 export type SalnSubmission = InferSelectModel<typeof schema.salnSubmissions>;

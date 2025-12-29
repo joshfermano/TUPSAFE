@@ -67,6 +67,9 @@ import {
 } from '../../../../lib/validations/pds-schema';
 import { z } from 'zod';
 
+// PDS Context for attachments
+import { PdsProvider, type PdsAttachmentsMap } from '../../../../context/PdsContext';
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -251,6 +254,10 @@ export default function PDSCreatePage() {
   const [_hasSavedDraft, setHasSavedDraft] = useState(false);
   const [createdPdsId, setCreatedPdsId] = useState<string | null>(null);
   const [draftId, setDraftId] = useState<string | null>(null); // Track draft ID for updates
+  const [attachments, setAttachments] = useState<PdsAttachmentsMap>({
+    byTraining: {},
+    byCivilService: {},
+  }); // Track attachments for PDS entries
   const [hasSeenAutoSaveInfo, setHasSeenAutoSaveInfo] = useState(() => {
     if (typeof window === 'undefined') return true;
     return localStorage.getItem(`pds-autosave-info-seen-${userId}`) === 'true';
@@ -332,6 +339,14 @@ export default function PDSCreatePage() {
 
             // Reset form with transformed data
             form.reset(formData);
+
+            // Load attachments if available
+            if (pdsData.attachments) {
+              setAttachments({
+                byTraining: pdsData.attachments.byTraining || {},
+                byCivilService: pdsData.attachments.byCivilService || {},
+              });
+            }
 
             toast.success('Draft Loaded', {
               description: 'Your saved draft has been loaded.',
@@ -1084,11 +1099,16 @@ export default function PDSCreatePage() {
 
         {/* Form */}
         <FormProvider {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)}>
-            {/* Section content - No key prop to prevent remounting */}
-            <Suspense fallback={<FormStepSkeleton fieldCount={10} />}>
-              <div className="mb-10">{renderSection}</div>
-            </Suspense>
+          <PdsProvider
+            pdsSubmissionId={draftId}
+            canEdit={true}
+            initialAttachments={attachments}
+          >
+            <form onSubmit={form.handleSubmit(handleSubmit)}>
+              {/* Section content - No key prop to prevent remounting */}
+              <Suspense fallback={<FormStepSkeleton fieldCount={10} />}>
+                <div className="mb-10">{renderSection}</div>
+              </Suspense>
 
             {/* Navigation buttons */}
             <div className="flex items-center justify-between gap-4 pt-10 border-t border-slate-200 dark:border-slate-800">
@@ -1140,8 +1160,9 @@ export default function PDSCreatePage() {
                   </ShimmerButton>
                 )}
               </div>
-            </div>
-          </form>
+              </div>
+            </form>
+          </PdsProvider>
         </FormProvider>
       </div>
 

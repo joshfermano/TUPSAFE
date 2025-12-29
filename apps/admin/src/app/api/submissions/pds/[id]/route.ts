@@ -37,10 +37,12 @@ import {
   pdsVoluntaryWork,
   pdsTraining,
   pdsOtherInfo,
+  pdsAttachments,
   auditLogs,
 } from '@tupsafe/database/server';
 import { and, eq, desc } from 'drizzle-orm';
 import { createAuditLog } from '@tupsafe/database/utils/audit-log';
+import { getAttachmentPublicUrl } from '@tupsafe/auth/server';
 import type { PDSSubmissionDetail } from '@tupsafe/types';
 
 export async function GET(
@@ -151,6 +153,7 @@ export async function GET(
       voluntaryWork,
       training,
       otherInfo,
+      attachmentsList,
       previousVersions,
       auditTrail,
     ] = await Promise.all([
@@ -205,6 +208,12 @@ export async function GET(
         .limit(1)
         .then((r) => r[0] || null),
 
+      // Attachments
+      db
+        .select()
+        .from(pdsAttachments)
+        .where(eq(pdsAttachments.pdsSubmissionId, id)),
+
       // Previous versions
       db
         .select({
@@ -244,6 +253,39 @@ export async function GET(
         .orderBy(desc(auditLogs.createdAt))
         .limit(20),
     ]);
+
+    // Get Supabase URL for public URLs
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+
+    // Group attachments by training ID and civil service ID
+    const attachmentsByTraining: Record<string, typeof processedAttachments> = {};
+    const attachmentsByCivilService: Record<string, typeof processedAttachments> = {};
+    const processedAttachments = attachmentsList.map((att) => ({
+      id: att.id,
+      fileName: att.fileName,
+      mimeType: att.mimeType,
+      sizeBytes: att.sizeBytes,
+      filePath: att.filePath,
+      fileUrl: getAttachmentPublicUrl(supabaseUrl, att.filePath),
+      trainingId: att.trainingId,
+      civilServiceId: att.civilServiceId,
+      createdAt: att.createdAt,
+    }));
+
+    processedAttachments.forEach((att) => {
+      if (att.trainingId) {
+        if (!attachmentsByTraining[att.trainingId]) {
+          attachmentsByTraining[att.trainingId] = [];
+        }
+        attachmentsByTraining[att.trainingId].push(att);
+      }
+      if (att.civilServiceId) {
+        if (!attachmentsByCivilService[att.civilServiceId]) {
+          attachmentsByCivilService[att.civilServiceId] = [];
+        }
+        attachmentsByCivilService[att.civilServiceId].push(att);
+      }
+    });
 
     // Validate critical data exists before returning
     if (!personalInfo) {
@@ -403,12 +445,14 @@ export async function GET(
           honorsReceived: edu.honorsReceived ?? undefined,
         })),
         civilService: civilService.map((cs) => ({
+          id: cs.id,
           careerService: cs.eligibilityName ?? undefined,
           rating: cs.rating ? parseFloat(cs.rating) : undefined,
           dateOfExamination: cs.dateOfExam ?? undefined,
           placeOfExamination: cs.placeOfExam ?? undefined,
           licenseNumber: cs.licenseNo ?? undefined,
           validity: cs.licenseValidityDate ?? undefined,
+          attachments: attachmentsByCivilService[cs.id] || [],
         })),
         workExperience: workExperience.map((we) => ({
           positionTitle: we.positionTitle ?? undefined,
@@ -429,12 +473,14 @@ export async function GET(
           organizationAddress: vw.organizationAddress ?? undefined,
         })),
         training: training.map((t) => ({
+          id: t.id,
           title: t.title ?? undefined,
           dateFrom: t.dateFrom ?? undefined,
           dateTo: t.dateTo ?? undefined,
           hours: t.hours ?? undefined,
           typeOfLd: t.typeOfLd ?? undefined,
           conductedBy: t.conductedBy ?? undefined,
+          attachments: attachmentsByTraining[t.id] || [],
         })),
         otherInfo: otherInfo
           ? {

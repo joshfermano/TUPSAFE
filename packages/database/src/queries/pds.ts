@@ -24,7 +24,7 @@ import {
   pdsOtherInfo,
   archives,
 } from '../schema';
-import { eq, and, desc, gte } from 'drizzle-orm';
+import { eq, and, desc, gte, inArray, notInArray } from 'drizzle-orm';
 import type {
   PdsSubmission,
   PdsPersonalInfo,
@@ -89,8 +89,23 @@ export interface CreatePDSData {
 
 /**
  * Data structure for updating an existing PDS submission
+ * Civil service and training entries can include optional `id` for stable references (attachments linking)
  */
-export type UpdatePDSData = Partial<CreatePDSData>;
+export interface UpdatePDSData {
+  year?: number;
+  version?: number;
+  personalInfo?: Omit<PdsPersonalInfo, 'id' | 'pdsSubmissionId'>;
+  familyBackground?: Omit<PdsFamilyBackground, 'id' | 'pdsSubmissionId'>;
+  children?: Omit<PdsChild, 'id' | 'pdsSubmissionId'>[];
+  education?: Omit<PdsEducation, 'id' | 'pdsSubmissionId'>[];
+  // Civil service entries can include `id` to preserve attachment links during updates
+  civilService?: (Omit<PdsCivilService, 'pdsSubmissionId'> & { id?: string })[];
+  workExperience?: Omit<PdsWorkExperience, 'id' | 'pdsSubmissionId'>[];
+  voluntaryWork?: Omit<PdsVoluntaryWork, 'id' | 'pdsSubmissionId'>[];
+  // Training entries can include `id` to preserve attachment links during updates
+  training?: (Omit<PdsTraining, 'pdsSubmissionId'> & { id?: string })[];
+  otherInfo?: Omit<PdsOtherInfo, 'id' | 'pdsSubmissionId'>;
+}
 
 /**
  * Statistics for PDS submissions
@@ -717,17 +732,48 @@ export async function updatePDSSubmission(
         );
       }
 
-      // Update civil service if provided (delete and recreate)
-      if (data.civilService !== undefined && data.civilService.length > 0) {
+      // Update civil service if provided (upsert-by-id to preserve attachment links)
+      if (data.civilService !== undefined) {
+        // Separate entries with IDs (existing) from entries without IDs (new)
+        const existingEntries = data.civilService.filter((cs) => cs.id);
+        const newEntries = data.civilService.filter((cs) => !cs.id);
+        const existingIds = existingEntries.map((cs) => cs.id as string);
+
+        // Delete entries that are no longer in the payload
+        if (existingIds.length > 0) {
+          await tx
+            .delete(pdsCivilService)
+            .where(
+              and(
+                eq(pdsCivilService.pdsSubmissionId, id),
+                notInArray(pdsCivilService.id, existingIds)
+              )
+            );
+        } else {
+          // If no entries have IDs, delete all existing entries
         await tx
           .delete(pdsCivilService)
           .where(eq(pdsCivilService.pdsSubmissionId, id));
+        }
+
+        // Update existing entries
+        for (const cs of existingEntries) {
+          const { id: csId, ...updateData } = cs;
+          await tx
+            .update(pdsCivilService)
+            .set(updateData)
+            .where(eq(pdsCivilService.id, csId as string));
+        }
+
+        // Insert new entries
+        if (newEntries.length > 0) {
         await tx.insert(pdsCivilService).values(
-          data.civilService.map((cs) => ({
+            newEntries.map((cs) => ({
             ...cs,
             pdsSubmissionId: id,
           })) as (typeof pdsCivilService.$inferInsert)[]
         );
+        }
       }
 
       // Update work experience if provided (delete and recreate)
@@ -756,15 +802,48 @@ export async function updatePDSSubmission(
         );
       }
 
-      // Update training if provided (delete and recreate)
-      if (data.training !== undefined && data.training.length > 0) {
-        await tx.delete(pdsTraining).where(eq(pdsTraining.pdsSubmissionId, id));
+      // Update training if provided (upsert-by-id to preserve attachment links)
+      if (data.training !== undefined) {
+        // Separate entries with IDs (existing) from entries without IDs (new)
+        const existingEntries = data.training.filter((tr) => tr.id);
+        const newEntries = data.training.filter((tr) => !tr.id);
+        const existingIds = existingEntries.map((tr) => tr.id as string);
+
+        // Delete entries that are no longer in the payload
+        if (existingIds.length > 0) {
+          await tx
+            .delete(pdsTraining)
+            .where(
+              and(
+                eq(pdsTraining.pdsSubmissionId, id),
+                notInArray(pdsTraining.id, existingIds)
+              )
+            );
+        } else {
+          // If no entries have IDs, delete all existing entries
+          await tx
+            .delete(pdsTraining)
+            .where(eq(pdsTraining.pdsSubmissionId, id));
+        }
+
+        // Update existing entries
+        for (const tr of existingEntries) {
+          const { id: trId, ...updateData } = tr;
+          await tx
+            .update(pdsTraining)
+            .set(updateData)
+            .where(eq(pdsTraining.id, trId as string));
+        }
+
+        // Insert new entries
+        if (newEntries.length > 0) {
         await tx.insert(pdsTraining).values(
-          data.training.map((tr) => ({
+            newEntries.map((tr) => ({
             ...tr,
             pdsSubmissionId: id,
           })) as (typeof pdsTraining.$inferInsert)[]
         );
+        }
       }
 
       // Update other info if provided

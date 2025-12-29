@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useCallback, useMemo } from 'react';
+import React, { useEffect, useCallback, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,16 +12,19 @@ import {
   AlertCircle,
   Loader2,
   Save,
+  Shield,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
 import { useUsersQuery } from '@/hooks/useUsersQuery';
-import { useDepartmentsQuery } from '@/hooks/useDepartmentsQuery';
+import { useOrganizations } from '@/hooks/useOrganization';
 import { usePositionsQuery } from '@/hooks/usePositionsQuery';
 import { PageTransition } from '@/components/PageTransition';
 import { SectionCard } from '@/components/admin/SectionCard';
+import { PasswordResetDialog } from '@/components/users/PasswordResetDialog';
 import { useQuery } from '@tanstack/react-query';
+import { getSalaryGradeOptions } from '@tupsafe/types';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -87,7 +90,10 @@ const editUserSchema = z
       required_error: 'Role is required',
     }),
     departmentId: z.string().optional(),
+    collegeId: z.string().optional(), // For UI filtering only, not sent to API
     positionId: z.string().optional(),
+    salaryGrade: z.coerce.number().int().min(1).max(33).optional().nullable(),
+    positionTitle: z.string().max(200).optional().nullable(),
     isActive: z.boolean(),
   })
   .refine(
@@ -162,12 +168,17 @@ export default function EditUserPage() {
   const { useUserDetail, updateUserAsync, isUpdating } = useUsersQuery();
   const { data: user, isLoading, isError, error } = useUserDetail(userId);
 
-  // Fetch departments, positions, and user email
-  const { data: departments = [], isLoading: isDepartmentsLoading } = useDepartmentsQuery();
+  // Fetch organizations (colleges and departments), positions, and user email
+  const { data: organizationsData, isLoading: isOrganizationsLoading } = useOrganizations({
+    type: 'all',
+    includeInactive: false,
+  });
   const { data: positions = [], isLoading: isPositionsLoading } = usePositionsQuery();
   const { data: emailData } = useUserEmail(userId);
 
-  const [showCancelDialog, setShowCancelDialog] = React.useState(false);
+  // State for dialogs
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
 
   const form = useForm<EditUserFormValues>({
     resolver: zodResolver(editUserSchema),
@@ -179,8 +190,11 @@ export default function EditUserPage() {
       employeeId: '',
       email: '',
       role: undefined,
+      collegeId: 'none',
       departmentId: 'none',
       positionId: 'none',
+      salaryGrade: undefined,
+      positionTitle: '',
       isActive: true,
     },
   });
@@ -188,15 +202,49 @@ export default function EditUserPage() {
   const { watch, formState, reset } = form;
   const { dirtyFields, isDirty } = formState;
   const watchRole = watch('role');
+  const watchCollegeId = watch('collegeId');
 
-  // Transform API data into dropdown options
-  const departmentOptions = useMemo(() => [
-    { value: 'none', label: 'None' },
-    ...departments.map((dept) => ({
-      value: dept.id,
-      label: `${dept.name} (${dept.code})`,
-    })),
-  ], [departments]);
+  // Get salary grade options
+  const salaryGradeOptions = useMemo(() => getSalaryGradeOptions(), []);
+
+  // Transform organizations into college and department options
+  const collegeOptions = useMemo(() => {
+    if (!organizationsData) return [{ value: 'none', label: 'None' }];
+
+    // Colleges are organizations without parentCollegeId
+    const colleges = [
+      ...organizationsData.colleges,
+      ...organizationsData.offices,
+    ];
+
+    return [
+      { value: 'none', label: 'None' },
+      ...colleges.map((college) => ({
+        value: college.id,
+        label: `${college.name} (${college.code})`,
+      })),
+    ];
+  }, [organizationsData]);
+
+  // Filter departments based on selected college
+  const departmentOptions = useMemo(() => {
+    if (!organizationsData) return [{ value: 'none', label: 'None' }];
+
+    const allDepartments = organizationsData.departments;
+
+    // If a college is selected, filter departments by that college
+    const filteredDepartments = watchCollegeId && watchCollegeId !== 'none'
+      ? allDepartments.filter((dept) => dept.parentCollegeId === watchCollegeId)
+      : allDepartments;
+
+    return [
+      { value: 'none', label: 'None' },
+      ...filteredDepartments.map((dept) => ({
+        value: dept.id,
+        label: `${dept.name} (${dept.code})`,
+      })),
+    ];
+  }, [organizationsData, watchCollegeId]);
 
   const positionOptions = useMemo(() => [
     { value: 'none', label: 'None' },
@@ -208,7 +256,19 @@ export default function EditUserPage() {
 
   // Pre-populate form when user data and email are loaded
   useEffect(() => {
-    if (user && emailData) {
+    if (user && emailData && organizationsData) {
+      // Determine college ID from department
+      let collegeId = 'none';
+      if (user.departmentId) {
+        // Find the department in the organizations data
+        const department = organizationsData.departments.find(
+          (dept) => dept.id === user.departmentId
+        );
+        if (department && department.parentCollegeId) {
+          collegeId = department.parentCollegeId;
+        }
+      }
+
       reset({
         firstName: user.firstName,
         lastName: user.lastName,
@@ -217,16 +277,30 @@ export default function EditUserPage() {
         employeeId: user.employeeId ?? '',
         email: emailData.email || '',
         role: user.role,
+        collegeId: collegeId,
         departmentId: user.departmentId || 'none',
         positionId: user.positionId || 'none',
+        salaryGrade: user.salaryGrade || undefined,
+        positionTitle: user.positionTitle || '',
         isActive: user.isActive,
       });
     }
-  }, [user, emailData, reset]);
+  }, [user, emailData, organizationsData, reset]);
 
   const roleRequiresDepartment = useMemo(() => {
     return ['employee', 'supervisor'].includes(watchRole || '');
   }, [watchRole]);
+
+  // Reset department when college changes
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === 'collegeId') {
+        // Reset department selection when college changes
+        form.setValue('departmentId', 'none');
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   const handleCancel = useCallback(() => {
     if (isDirty) {
@@ -239,7 +313,7 @@ export default function EditUserPage() {
   const onSubmit = useCallback(
     async (values: EditUserFormValues) => {
       try {
-        // Filter out non-updatable fields (email, employeeId, suffix)
+        // Filter out non-updatable fields (email, employeeId, suffix, collegeId)
         // and convert 'none' values to undefined (API expects string | undefined, not null)
         const dataToSubmit = {
           firstName: values.firstName,
@@ -248,6 +322,8 @@ export default function EditUserPage() {
           role: values.role,
           departmentId: values.departmentId === 'none' ? undefined : values.departmentId,
           positionId: values.positionId === 'none' ? undefined : values.positionId,
+          salaryGrade: values.salaryGrade || null,
+          positionTitle: values.positionTitle || null,
           isActive: values.isActive,
         };
 
@@ -495,6 +571,44 @@ export default function EditUserPage() {
 
               <FormField
                 control={form.control}
+                name="collegeId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>College / Office</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={isOrganizationsLoading}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={
+                              isOrganizationsLoading
+                                ? 'Loading colleges...'
+                                : 'Select college or office'
+                            }
+                          />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {collegeOptions.map((college) => (
+                          <SelectItem key={college.value} value={college.value}>
+                            {college.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Select a college or office to filter departments
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="departmentId"
                 render={({ field }) => (
                   <FormItem>
@@ -502,13 +616,13 @@ export default function EditUserPage() {
                     <Select
                       onValueChange={field.onChange}
                       value={field.value}
-                      disabled={isDepartmentsLoading}
+                      disabled={isOrganizationsLoading}
                     >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue
                             placeholder={
-                              isDepartmentsLoading
+                              isOrganizationsLoading
                                 ? 'Loading departments...'
                                 : 'Select department'
                             }
@@ -523,8 +637,10 @@ export default function EditUserPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    {isDepartmentsLoading && (
-                      <FormDescription>Loading departments...</FormDescription>
+                    {watchCollegeId && watchCollegeId !== 'none' && (
+                      <FormDescription>
+                        Showing departments for selected college
+                      </FormDescription>
                     )}
                     <FormMessage />
                   </FormItem>
@@ -568,6 +684,64 @@ export default function EditUserPage() {
                   </FormItem>
                 )}
               />
+
+              <Separator className="my-4" />
+
+              <FormField
+                control={form.control}
+                name="salaryGrade"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Salary Grade</FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        // Convert to number, or undefined if 'none'
+                        field.onChange(value === 'none' ? undefined : parseInt(value, 10));
+                      }}
+                      value={field.value ? field.value.toString() : 'none'}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select salary grade" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {salaryGradeOptions.map((grade: { value: number; label: string }) => (
+                          <SelectItem key={grade.value} value={grade.value.toString()}>
+                            {grade.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Philippine Salary Standardization Law V (SSL V)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="positionTitle"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Position Title</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g., Associate Professor III"
+                        {...field}
+                        value={field.value || ''}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Custom position title for manual entry
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
           </SectionCard>
 
@@ -595,6 +769,43 @@ export default function EditUserPage() {
                   </FormItem>
                 )}
               />
+            </CardContent>
+          </Card>
+
+          {/* Security Section */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                <div>
+                  <CardTitle>Security</CardTitle>
+                  <CardDescription>Manage user authentication and credentials</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-lg border p-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <div className="font-medium">Password Reset</div>
+                    <p className="text-sm text-muted-foreground">
+                      Generate a new temporary password for {user?.firstName} {user?.lastName}
+                    </p>
+                    {emailData?.email && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Email: {emailData.email}
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowPasswordDialog(true)}
+                  >
+                    Reset Password
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -653,6 +864,17 @@ export default function EditUserPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Password Reset Dialog */}
+      {user && emailData && (
+        <PasswordResetDialog
+          open={showPasswordDialog}
+          onOpenChange={setShowPasswordDialog}
+          userId={userId}
+          userName={`${user.firstName} ${user.lastName}`}
+          userEmail={emailData.email}
+        />
+      )}
     </PageTransition>
   );
 }

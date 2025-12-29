@@ -22,5 +22,8 @@ export * from './utils/password';
 export * from './utils/session';
 export * from './utils/rate-limit';
 
+// Storage utilities (profile pictures, etc.)
+export * from './utils/storage';
+
 // Re-export validation schemas for convenience
 export * from './auth';

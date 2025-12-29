@@ -58,6 +58,7 @@ export interface PdsSubmissionListItem {
     firstName: string;
     lastName: string;
     middleName: string | null;
+    avatarUrl?: string | null;
     department: {
       id: string;
       name: string;

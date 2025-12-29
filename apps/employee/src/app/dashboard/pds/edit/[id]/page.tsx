@@ -68,6 +68,9 @@ import {
 } from '../../../../../lib/validations/pds-schema';
 import { z } from 'zod';
 
+// PDS Context for attachments
+import { PdsProvider, type PdsAttachmentsMap } from '../../../../../context/PdsContext';
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -353,6 +356,17 @@ export default function PDSEditPage({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDraftDialog, setShowDraftDialog] = useState(false);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+
+  // Extract attachments from rawPdsData
+  const attachments = useMemo<PdsAttachmentsMap>(() => {
+    if (!rawPdsData?.attachments) {
+      return { byTraining: {}, byCivilService: {} };
+    }
+    return {
+      byTraining: rawPdsData.attachments.byTraining || {},
+      byCivilService: rawPdsData.attachments.byCivilService || {},
+    };
+  }, [rawPdsData?.attachments]);
 
   // Initialize mutations
   const updateMutation = useUpdatePDS(pdsId);
@@ -1008,11 +1022,16 @@ export default function PDSEditPage({
 
         {/* Form */}
         <FormProvider {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)}>
-            {/* Section content - No key prop to prevent remounting */}
-            <Suspense fallback={<FormStepSkeleton fieldCount={10} />}>
-              <div className="mb-10">{renderSection}</div>
-            </Suspense>
+          <PdsProvider
+            pdsSubmissionId={pdsId}
+            canEdit={canEdit}
+            initialAttachments={attachments}
+          >
+            <form onSubmit={form.handleSubmit(handleSubmit)}>
+              {/* Section content - No key prop to prevent remounting */}
+              <Suspense fallback={<FormStepSkeleton fieldCount={10} />}>
+                <div className="mb-10">{renderSection}</div>
+              </Suspense>
 
             {/* Navigation buttons */}
             <div className="flex items-center justify-between gap-4 pt-10 border-t border-slate-200 dark:border-slate-800">
@@ -1063,9 +1082,10 @@ export default function PDSEditPage({
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </ShimmerButton>
                 )}
+                </div>
               </div>
-            </div>
-          </form>
+            </form>
+          </PdsProvider>
         </FormProvider>
       </div>
 

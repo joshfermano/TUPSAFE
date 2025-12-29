@@ -153,9 +153,12 @@ export const profiles = pgTable(
     lastName: text('last_name').notNull(),
     middleName: text('middle_name'),
     phoneNumber: text('phone_number'),
+    avatarPath: text('avatar_path'), // Supabase Storage path for profile picture
     role: roleEnum('role').default('employee').notNull(),
     departmentId: uuid('department_id').references(() => departments.id),
     positionId: uuid('position_id').references(() => positions.id),
+    salaryGrade: integer('salary_grade'), // Philippine Salary Standardization Law V (SSL V) - Grade 1-33
+    positionTitle: text('position_title'), // Custom position title for manual entry
     // TUP Manila-specific fields
     academicRank: text('academic_rank'), // Professor, Associate Professor, Assistant Professor, Instructor
     tenureStatus: text('tenure_status'), // Tenured, tenure-track, non-tenure track, contractual
@@ -189,6 +192,7 @@ export const profiles = pgTable(
     ),
     roleIdx: index('profiles_role_idx').on(table.role),
     departmentIdIdx: index('profiles_department_id_idx').on(table.departmentId),
+    salaryGradeIdx: index('profiles_salary_grade_idx').on(table.salaryGrade),
     isActiveIdx: index('profiles_is_active_idx').on(table.isActive),
     accountStatusIdx: index('profiles_account_status_idx').on(
       table.accountStatus
@@ -746,6 +750,50 @@ export const pdsOtherInfo = pgTable(
     pdsSubmissionIdIdx: index('pds_other_info_submission_id_idx').on(
       table.pdsSubmissionId
     ),
+  })
+);
+
+// PDS Attachments Table - for training/civil service certificates and documents
+export const pdsAttachments = pgTable(
+  'pds_attachments',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .$defaultFn(() => v7()),
+    userId: uuid('user_id').notNull(), // References Supabase auth.users.id
+    pdsSubmissionId: uuid('pds_submission_id').notNull(), // References pds_submissions.id (CASCADE DELETE)
+    year: integer('year').notNull(), // Denormalized from pds_submissions.year for fast grouping
+    trainingId: uuid('training_id'), // Nullable FK to pds_training.id
+    civilServiceId: uuid('civil_service_id'), // Nullable FK to pds_civil_service.id
+    filePath: text('file_path').notNull(), // Storage path in pds-attachments bucket
+    fileName: text('file_name').notNull(), // Original file name
+    mimeType: text('mime_type').notNull(), // MIME type (e.g., image/jpeg, application/pdf)
+    sizeBytes: integer('size_bytes').notNull(), // File size in bytes
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index('pds_attachments_user_id_idx').on(table.userId),
+    pdsSubmissionIdIdx: index('pds_attachments_submission_id_idx').on(
+      table.pdsSubmissionId
+    ),
+    yearIdx: index('pds_attachments_year_idx').on(table.year),
+    trainingIdIdx: index('pds_attachments_training_id_idx').on(table.trainingId),
+    civilServiceIdIdx: index('pds_attachments_civil_service_id_idx').on(
+      table.civilServiceId
+    ),
+    // Composite indexes for common queries
+    userYearIdx: index('pds_attachments_user_year_idx').on(
+      table.userId,
+      table.year
+    ),
+    submissionTrainingIdx: index('pds_attachments_submission_training_idx').on(
+      table.pdsSubmissionId,
+      table.trainingId
+    ),
+    submissionCivilServiceIdx: index(
+      'pds_attachments_submission_civil_service_idx'
+    ).on(table.pdsSubmissionId, table.civilServiceId),
   })
 );
 

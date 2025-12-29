@@ -60,6 +60,9 @@ export const updateUserSchema = z.object({
   tenureStatus: z.string().max(50).optional().nullable(),
   employmentType: z.string().max(50).optional().nullable(),
   campusAssignment: z.string().max(100).optional().nullable(),
+  // New fields for salary grade and position title
+  salaryGrade: z.number().int().min(1).max(33).optional().nullable(), // Philippine SSL V (1-33)
+  positionTitle: z.string().max(200).optional().nullable(), // Custom position title
 });
 
 export type UpdateUserData = z.infer<typeof updateUserSchema>;
@@ -210,6 +213,8 @@ export interface UserListItem {
   employmentCategory: 'faculty' | 'administrative' | 'contractual' | 'not_applicable' | null;
   accountStatus: string;
   isActive: boolean;
+  avatarPath?: string | null;
+  avatarUrl?: string | null;
   department?: {
     id: string;
     name: string;
@@ -234,6 +239,9 @@ export interface UserDetail extends UserListItem {
   approvedBy: string | null;
   approvedAt: Date | null;
   temporaryPassword: boolean;
+  salaryGrade: number | null; // Philippine SSL V (1-33)
+  positionTitle: string | null; // Custom position title
+  collegeId?: string | null; // Parent college ID for UI navigation
   pdsSubmissionsCount?: number;
   salnSubmissionsCount?: number;
   lastPdsSubmission?: {

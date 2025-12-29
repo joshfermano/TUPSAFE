@@ -16,6 +16,8 @@ interface ProfileData {
   lastName: string;
   middleName: string | null;
   phoneNumber: string | null;
+  avatarPath: string | null;
+  avatarUrl: string | null;
   role: string;
   academicRank: string | null;
   tenureStatus: string | null;
@@ -27,6 +29,8 @@ interface ProfileData {
   createdAt: string;
   updatedAt: string;
   tenureYears: number | null;
+  salaryGrade: number | null;
+  positionTitle: string | null;
   department: {
     id: string;
     name: string;
@@ -75,6 +79,8 @@ interface ProfileUpdateData {
   phoneNumber?: string | null;
   middleName?: string | null;
   departmentId?: string | null;
+  positionTitle?: string | null;
+  // NOTE: salaryGrade is NOT included - employees cannot update it
 }
 
 interface ProfileUpdateResponse {
@@ -85,8 +91,23 @@ interface ProfileUpdateResponse {
     phoneNumber: string | null;
     middleName: string | null;
     departmentId: string | null;
+    positionTitle: string | null;
     updatedAt: string;
   };
+}
+
+interface AvatarUploadResponse {
+  success: boolean;
+  message: string;
+  avatarPath: string;
+  avatarUrl: string;
+}
+
+interface AvatarDeleteResponse {
+  success: boolean;
+  message: string;
+  avatarPath: null;
+  avatarUrl: null;
 }
 
 /**
@@ -187,6 +208,112 @@ export function useUpdateProfile() {
 
       toast.success('Profile updated successfully', {
         description: 'Your profile information has been updated.',
+      });
+    },
+  });
+}
+
+/**
+ * Upload avatar
+ */
+async function uploadAvatar(file: File): Promise<AvatarUploadResponse> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch('/api/profile/avatar', {
+    method: 'POST',
+    credentials: 'include',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to upload avatar');
+  }
+
+  return response.json();
+}
+
+/**
+ * Delete avatar
+ */
+async function deleteAvatar(): Promise<AvatarDeleteResponse> {
+  const response = await fetch('/api/profile/avatar', {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to delete avatar');
+  }
+
+  return response.json();
+}
+
+/**
+ * Hook to upload avatar
+ */
+export function useUploadAvatar() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: uploadAvatar,
+    onSuccess: (data) => {
+      // Update profile cache with new avatar
+      const previousProfile = queryClient.getQueryData<ProfileData>(['profile']);
+      if (previousProfile) {
+        queryClient.setQueryData<ProfileData>(['profile'], {
+          ...previousProfile,
+          avatarPath: data.avatarPath,
+          avatarUrl: data.avatarUrl,
+        });
+      }
+
+      // Also invalidate to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+
+      toast.success('Profile picture uploaded', {
+        description: 'Your profile picture has been updated.',
+      });
+    },
+    onError: (error) => {
+      toast.error('Failed to upload profile picture', {
+        description: error instanceof Error ? error.message : 'An error occurred',
+      });
+    },
+  });
+}
+
+/**
+ * Hook to delete avatar
+ */
+export function useDeleteAvatar() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteAvatar,
+    onSuccess: () => {
+      // Update profile cache to remove avatar
+      const previousProfile = queryClient.getQueryData<ProfileData>(['profile']);
+      if (previousProfile) {
+        queryClient.setQueryData<ProfileData>(['profile'], {
+          ...previousProfile,
+          avatarPath: null,
+          avatarUrl: null,
+        });
+      }
+
+      // Also invalidate to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+
+      toast.success('Profile picture removed', {
+        description: 'Your profile picture has been removed.',
+      });
+    },
+    onError: (error) => {
+      toast.error('Failed to remove profile picture', {
+        description: error instanceof Error ? error.message : 'An error occurred',
       });
     },
   });

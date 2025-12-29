@@ -26,6 +26,8 @@ export interface UserProfile {
   applicantId?: string;
   departmentId?: string;
   positionId?: string;
+  avatarPath?: string | null;
+  avatarUrl?: string | null;
   accountStatus: string;
   isActive: boolean;
   temporaryPassword: boolean;

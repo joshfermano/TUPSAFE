@@ -1093,6 +1093,7 @@ export default function SalnSubmissionViewPage() {
                       user={{
                         firstName: employee.firstName,
                         lastName: employee.lastName,
+                        avatarUrl: employee.avatarUrl,
                       }}
                       size="lg"
                       className="h-20 w-20"

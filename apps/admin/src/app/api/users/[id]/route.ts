@@ -13,7 +13,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkUserRoleFromSupabase, getUserFromSupabase } from '@tupsafe/auth/server';
+import { checkUserRoleFromSupabase, getUserFromSupabase, getProfilePicturePublicUrl } from '@tupsafe/auth/server';
 import {
   db,
   profiles,
@@ -92,6 +92,9 @@ export async function GET(
         tenureStatus: profiles.tenureStatus,
         employmentType: profiles.employmentType,
         campusAssignment: profiles.campusAssignment,
+        salaryGrade: profiles.salaryGrade,
+        positionTitle: profiles.positionTitle,
+        avatarPath: profiles.avatarPath,
         createdAt: profiles.createdAt,
         updatedAt: profiles.updatedAt,
         // Department details
@@ -100,7 +103,7 @@ export async function GET(
         departmentCode: departments.code,
         // Position details
         positionId: profiles.positionId,
-        positionTitle: positions.title,
+        positionTitleFromPosition: positions.title,
       })
       .from(profiles)
       .leftJoin(departments, eq(profiles.departmentId, departments.id))
@@ -182,6 +185,12 @@ export async function GET(
         .limit(10),
     ]);
 
+    // Build avatar URL from path
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const avatarUrl = userProfile.avatarPath
+      ? getProfilePicturePublicUrl(supabaseUrl, userProfile.avatarPath)
+      : null;
+
     // Construct detailed user response
     const userDetail: UserDetail = {
       id: userProfile.id,
@@ -197,6 +206,8 @@ export async function GET(
       employmentCategory: userProfile.employmentCategory,
       accountStatus: userProfile.accountStatus,
       isActive: userProfile.isActive,
+      avatarPath: userProfile.avatarPath,
+      avatarUrl,
       emailVerifiedAt: userProfile.emailVerifiedAt,
       approvedBy: userProfile.approvedBy,
       approvedAt: userProfile.approvedAt,
@@ -206,6 +217,8 @@ export async function GET(
       tenureStatus: userProfile.tenureStatus,
       employmentType: userProfile.employmentType,
       campusAssignment: userProfile.campusAssignment,
+      salaryGrade: userProfile.salaryGrade,
+      positionTitle: userProfile.positionTitle,
       department: userProfile.departmentId
         ? {
             id: userProfile.departmentId,
@@ -216,7 +229,7 @@ export async function GET(
       position: userProfile.positionId
         ? {
             id: userProfile.positionId,
-            title: userProfile.positionTitle || '',
+            title: userProfile.positionTitleFromPosition || '',
           }
         : null,
       createdAt: userProfile.createdAt,
@@ -284,6 +297,16 @@ export async function PATCH(
     // Parse and validate request body
     const body = await request.json();
     const validatedData = updateUserSchema.parse(body);
+
+    // Additional validation for salary grade
+    if (validatedData.salaryGrade !== undefined && validatedData.salaryGrade !== null) {
+      if (validatedData.salaryGrade < 1 || validatedData.salaryGrade > 33) {
+        return NextResponse.json(
+          { error: 'Salary grade must be between 1 and 33 (Philippine SSL V)' },
+          { status: 400 }
+        );
+      }
+    }
 
     // Fetch current user data for audit trail
     const [currentUser] = await db

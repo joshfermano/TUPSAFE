@@ -50,7 +50,7 @@ async function setupStorageBuckets() {
       },
       {
         name: 'profile-pictures',
-        public: false,
+        public: true, // Public bucket for public URL access
         fileSizeLimit: 5242880, // 5MB
         allowedMimeTypes: [
           'image/jpeg',

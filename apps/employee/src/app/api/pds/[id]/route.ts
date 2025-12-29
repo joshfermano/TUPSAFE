@@ -11,9 +11,13 @@ import {
   updatePDSSubmission,
   deletePDSSubmission,
   type UpdatePDSData,
+  db,
+  pdsAttachments,
 } from '@tupsafe/database/server';
 import { createServerClient } from '@tupsafe/auth/server';
 import { createAuditLog } from '@tupsafe/database/server';
+import { getAttachmentPublicUrl } from '@tupsafe/auth/server';
+import { eq } from 'drizzle-orm';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -72,13 +76,61 @@ export async function GET(request: NextRequest, context: RouteContext) {
       );
     }
 
+    // Fetch attachments for this submission
+    const attachmentsList = await db
+      .select()
+      .from(pdsAttachments)
+      .where(eq(pdsAttachments.pdsSubmissionId, id));
+
+    // Get Supabase URL for public URLs
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+
+    // Transform attachments with public URLs and group by entry ID
+    const attachmentsWithUrls = attachmentsList.map((att) => ({
+      id: att.id,
+      fileName: att.fileName,
+      mimeType: att.mimeType,
+      sizeBytes: att.sizeBytes,
+      filePath: att.filePath,
+      fileUrl: getAttachmentPublicUrl(supabaseUrl, att.filePath),
+      trainingId: att.trainingId,
+      civilServiceId: att.civilServiceId,
+      createdAt: att.createdAt,
+    }));
+
+    // Group attachments by trainingId and civilServiceId for easy frontend access
+    const attachmentsByTraining: Record<string, typeof attachmentsWithUrls> = {};
+    const attachmentsByCivilService: Record<string, typeof attachmentsWithUrls> = {};
+
+    attachmentsWithUrls.forEach((att) => {
+      if (att.trainingId) {
+        if (!attachmentsByTraining[att.trainingId]) {
+          attachmentsByTraining[att.trainingId] = [];
+        }
+        attachmentsByTraining[att.trainingId].push(att);
+      }
+      if (att.civilServiceId) {
+        if (!attachmentsByCivilService[att.civilServiceId]) {
+          attachmentsByCivilService[att.civilServiceId] = [];
+        }
+        attachmentsByCivilService[att.civilServiceId].push(att);
+      }
+    });
+
     console.log(
-      `[GET /api/pds/[id]] Retrieved PDS ${id} for user ${user.id}`
+      `[GET /api/pds/[id]] Retrieved PDS ${id} for user ${user.id} with ${attachmentsList.length} attachments`
     );
 
     return NextResponse.json({
       success: true,
-      data: pds,
+      data: {
+        ...pds,
+        attachments: {
+          all: attachmentsWithUrls,
+          byTraining: attachmentsByTraining,
+          byCivilService: attachmentsByCivilService,
+        },
+      },
     });
   } catch (error) {
     console.error('[GET /api/pds/[id]] Error fetching PDS:', error);

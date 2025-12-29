@@ -15,7 +15,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@tupsafe/auth/server';
+import { createServerClient, getProfilePicturePublicUrl } from '@tupsafe/auth/server';
 import { db } from '@tupsafe/database/server';
 import {
   profiles,
@@ -31,11 +31,13 @@ import { z } from 'zod';
 /**
  * Profile update schema
  * Only allow updates to specific fields
+ * NOTE: salaryGrade is NOT included - only admins can update it
  */
 const profileUpdateSchema = z.object({
   phoneNumber: z.string().optional().nullable(),
   middleName: z.string().optional().nullable(),
   departmentId: z.string().uuid().optional().nullable(),
+  positionTitle: z.string().max(200).optional().nullable(),
 });
 
 /**
@@ -73,9 +75,12 @@ export async function GET(_request: NextRequest) {
         lastName: profiles.lastName,
         middleName: profiles.middleName,
         phoneNumber: profiles.phoneNumber,
+        avatarPath: profiles.avatarPath,
         role: profiles.role,
         departmentId: profiles.departmentId,
         positionId: profiles.positionId,
+        salaryGrade: profiles.salaryGrade,
+        profilePositionTitle: profiles.positionTitle, // Custom position title from profiles table
         academicRank: profiles.academicRank,
         tenureStatus: profiles.tenureStatus,
         employmentType: profiles.employmentType,
@@ -90,7 +95,7 @@ export async function GET(_request: NextRequest) {
         departmentCode: departments.code,
         departmentOfficeType: departments.officeType,
         parentCollegeId: departments.parentCollegeId,
-        // Position fields
+        // Position fields (from positions table)
         positionTitle: positions.title,
         positionGradeLevel: positions.gradeLevel,
       })
@@ -181,6 +186,10 @@ export async function GET(_request: NextRequest) {
       .orderBy(desc(salnSubmissions.createdAt))
       .limit(1);
 
+    // Build avatar URL
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const avatarUrl = getProfilePicturePublicUrl(supabaseUrl, profileData.avatarPath);
+
     // Construct response
     return NextResponse.json({
       success: true,
@@ -196,7 +205,11 @@ export async function GET(_request: NextRequest) {
         lastName: profileData.lastName,
         middleName: profileData.middleName,
         phoneNumber: profileData.phoneNumber,
+        avatarPath: profileData.avatarPath,
+        avatarUrl,
         role: profileData.role,
+        salaryGrade: profileData.salaryGrade,
+        positionTitle: profileData.profilePositionTitle,
         academicRank: profileData.academicRank,
         tenureStatus: profileData.tenureStatus,
         employmentType: profileData.employmentType,
@@ -365,6 +378,7 @@ export async function PATCH(request: NextRequest) {
           phoneNumber: currentProfile.phoneNumber,
           middleName: currentProfile.middleName,
           departmentId: currentProfile.departmentId,
+          positionTitle: currentProfile.positionTitle,
         },
         after: updates,
       },
@@ -380,6 +394,7 @@ export async function PATCH(request: NextRequest) {
         phoneNumber: updatedProfile.phoneNumber,
         middleName: updatedProfile.middleName,
         departmentId: updatedProfile.departmentId,
+        positionTitle: updatedProfile.positionTitle,
         updatedAt: updatedProfile.updatedAt,
       },
     });

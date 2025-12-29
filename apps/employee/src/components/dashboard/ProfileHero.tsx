@@ -2,7 +2,7 @@
 
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { Avatar, AvatarFallback } from '../ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Badge } from '../ui/badge';
 import { ShineBorder } from '../ui/shine-border';
 import { BlurFade } from '../ui/blur-fade';
@@ -80,6 +80,7 @@ export const ProfileHero = memo(function ProfileHero({
               transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
               <div className="relative">
                 <Avatar className="h-24 w-24 sm:h-28 sm:w-28 border-4 border-white/20 shadow-xl ring-4 ring-white/10">
+                  <AvatarImage src={profile.avatarUrl || undefined} alt={fullName} />
                   <AvatarFallback className="bg-white/10 backdrop-blur-md text-white text-3xl sm:text-4xl font-bold">
                     {getInitials()}
                   </AvatarFallback>
