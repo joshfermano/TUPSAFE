@@ -136,7 +136,7 @@ const PdsSubmissionRow = memo(
                 user={{
                   firstName: submission.employee.firstName,
                   lastName: submission.employee.lastName,
-                  avatarUrl: null,
+                  avatarUrl: submission.employee.avatarUrl,
                 }}
                 size="sm"
               />

@@ -239,7 +239,7 @@ const SidebarNav = memo(
           {/* User Info Card */}
           <div className="mb-3 flex items-center gap-3 rounded-lg border bg-card p-3 shadow-sm transition-shadow hover:shadow-md">
             <Avatar className="h-10 w-10 ring-2 ring-background">
-              <AvatarImage src={undefined} alt={displayName} />
+              <AvatarImage src={profile?.avatarUrl || undefined} alt={displayName} />
               <AvatarFallback className="bg-[#8B1538] text-white text-xs font-semibold">
                 {getUserInitials(displayName)}
               </AvatarFallback>

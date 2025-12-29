@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useCallback, memo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '../../providers/AuthProvider';
-import { Avatar, AvatarFallback } from '../../components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { Button } from '../../components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '../../components/ui/sheet';
 import { cn } from '../../lib/utils';
@@ -55,6 +55,7 @@ interface NavItemProps {
 interface UserInfoProps {
   email?: string;
   initials: string;
+  avatarUrl?: string | null;
   prefersReducedMotion: boolean;
 }
 
@@ -113,7 +114,7 @@ function getAnimationProps(
  * Simple hover effect with subtle scale
  */
 const UserInfo = memo<UserInfoProps>(
-  ({ email, initials, prefersReducedMotion }) => {
+  ({ email, initials, avatarUrl, prefersReducedMotion }) => {
     return (
       <motion.div
         className="group cursor-pointer"
@@ -129,6 +130,7 @@ const UserInfo = memo<UserInfoProps>(
               transition: { duration: 0.2 },
             })}>
             <Avatar className="h-10 w-10 ring-2 ring-slate-200 dark:ring-slate-700 transition-all duration-300 group-hover:ring-primary/30">
+              <AvatarImage src={avatarUrl || undefined} alt={email?.split('@')[0] || 'User'} />
               <AvatarFallback className="bg-primary text-white font-semibold text-sm">
                 {initials}
               </AvatarFallback>
@@ -269,7 +271,7 @@ const DashboardSidebar = memo(function DashboardSidebar({
   const effectiveUserType = userType ?? 'applicant';
   const pathname = usePathname();
   const router = useRouter();
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const prefersReducedMotion = useReducedMotion();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
@@ -432,6 +434,7 @@ const DashboardSidebar = memo(function DashboardSidebar({
           <UserInfo
             email={user?.email}
             initials={userInitials}
+            avatarUrl={profile?.avatarUrl}
             prefersReducedMotion={prefersReducedMotion}
           />
         </div>

@@ -586,6 +586,9 @@ export const educationalBackgroundSchema = z.object({
  * Covers Career Service, RA 1080, Driver's License, PRC License, BAR/Board, etc.
  */
 export const civilServiceSchema = z.object({
+  // Optional ID for stable references (used for attachments linking)
+  id: z.string().uuid().optional(),
+
   eligibilityName: z
     .string()
     .min(1, 'Eligibility name is required')
@@ -819,6 +822,9 @@ export const voluntaryWorkSchema = voluntaryWorkBaseSchema.superRefine((data, ct
  * - If ALL fields are empty/null, row is considered optional and passes validation
  */
 const trainingBaseSchema = z.object({
+  // Optional ID for stable references (used for attachments linking)
+  id: z.string().uuid().optional(),
+
   title: z
     .string()
     .max(250, 'Training title must not exceed 250 characters')

@@ -36,13 +36,21 @@ TO authenticated
 USING (bucket_id = 'profile-pictures');
 
 -- ============================================================================
+-- POLICY 3b: All authenticated users can view PDS attachments (public bucket)
+-- ============================================================================
+CREATE POLICY "View all PDS attachments"
+ON storage.objects FOR SELECT
+TO authenticated
+USING (bucket_id = 'pds-attachments');
+
+-- ============================================================================
 -- POLICY 4: Users can upload their own documents
 -- ============================================================================
 CREATE POLICY "Users can upload own documents"
 ON storage.objects FOR INSERT
 TO authenticated
 WITH CHECK (
-  bucket_id IN ('pds-submissions', 'saln-submissions', 'user-documents', 'profile-pictures') AND
+  bucket_id IN ('pds-submissions', 'saln-submissions', 'user-documents', 'profile-pictures', 'pds-attachments') AND
   (storage.foldername(name))[1] = auth.uid()::text
 );
 
@@ -53,7 +61,7 @@ CREATE POLICY "Users can update own files"
 ON storage.objects FOR UPDATE
 TO authenticated
 USING (
-  bucket_id IN ('pds-submissions', 'saln-submissions', 'user-documents', 'profile-pictures') AND
+  bucket_id IN ('pds-submissions', 'saln-submissions', 'user-documents', 'profile-pictures', 'pds-attachments') AND
   (storage.foldername(name))[1] = auth.uid()::text
 );
 
@@ -64,7 +72,7 @@ CREATE POLICY "Users can delete own files"
 ON storage.objects FOR DELETE
 TO authenticated
 USING (
-  bucket_id IN ('pds-submissions', 'saln-submissions', 'user-documents', 'profile-pictures') AND
+  bucket_id IN ('pds-submissions', 'saln-submissions', 'user-documents', 'profile-pictures', 'pds-attachments') AND
   (storage.foldername(name))[1] = auth.uid()::text
 );
 
@@ -157,18 +165,23 @@ File Path Structure:
 - profile-pictures:   {userId}/avatar.{ext}
 - user-documents:     {userId}/{category}/{filename}
                       Categories: certifications, seminars, trainings, licenses, awards
+- pds-attachments:    {userId}/{year}/{pdsSubmissionId}/{kind}/{itemId}/{uuid}.{ext}
+                      kind = training | civil_service
+                      itemId = trainingId or civilServiceId
 
 Access Patterns:
 1. Users can upload/view/delete their own files
 2. All users can view profile pictures (for collaboration/identification)
-3. Admins/HR can access all files across all buckets
-4. Supervisors can view user documents for verification
-5. Archives are restricted to admin/HR only
+3. All users can view PDS attachments (public bucket for certificates/seminar docs)
+4. Admins/HR can access all files across all buckets
+5. Supervisors can view user documents for verification
+6. Archives are restricted to admin/HR only
 
 Security:
-- All buckets are PRIVATE (not publicly accessible)
+- Most buckets are PRIVATE (not publicly accessible)
+- profile-pictures and pds-attachments are PUBLIC (for public URL access)
 - Access requires authentication
-- RLS policies enforce user-level isolation
+- RLS policies enforce user-level isolation for write operations
 - File paths include user ID for easy policy enforcement
 */
 

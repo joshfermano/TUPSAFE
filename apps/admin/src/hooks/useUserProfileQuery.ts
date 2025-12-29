@@ -160,6 +160,102 @@ export function useUserProfileQuery() {
     },
   });
 
+  /**
+   * Mutation to upload avatar
+   */
+  const uploadAvatarMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/settings/profile/avatar', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.error || `Failed to upload avatar: ${response.statusText}`
+        );
+      }
+
+      return response.json();
+    },
+    onSuccess: (data) => {
+      // Update profile cache with new avatar
+      const previousProfile = queryClient.getQueryData<UserProfile>(
+        userProfileKeys.detail()
+      );
+      if (previousProfile) {
+        queryClient.setQueryData<UserProfile>(userProfileKeys.detail(), {
+          ...previousProfile,
+          avatarPath: data.avatarPath,
+          avatarUrl: data.avatarUrl,
+        });
+      }
+
+      // Invalidate to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: userProfileKeys.all });
+
+      toast.success('Profile picture uploaded', {
+        description: 'Your profile picture has been updated.',
+      });
+    },
+    onError: (error) => {
+      toast.error('Failed to upload profile picture', {
+        description:
+          error instanceof Error ? error.message : 'An unexpected error occurred',
+      });
+    },
+  });
+
+  /**
+   * Mutation to delete avatar
+   */
+  const deleteAvatarMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/settings/profile/avatar', {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.error || `Failed to delete avatar: ${response.statusText}`
+        );
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      // Update profile cache to remove avatar
+      const previousProfile = queryClient.getQueryData<UserProfile>(
+        userProfileKeys.detail()
+      );
+      if (previousProfile) {
+        queryClient.setQueryData<UserProfile>(userProfileKeys.detail(), {
+          ...previousProfile,
+          avatarPath: null,
+          avatarUrl: null,
+        });
+      }
+
+      // Invalidate to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: userProfileKeys.all });
+
+      toast.success('Profile picture removed', {
+        description: 'Your profile picture has been removed.',
+      });
+    },
+    onError: (error) => {
+      toast.error('Failed to remove profile picture', {
+        description:
+          error instanceof Error ? error.message : 'An unexpected error occurred',
+      });
+    },
+  });
+
   return {
     ...query,
     profile: query.data,
@@ -167,6 +263,13 @@ export function useUserProfileQuery() {
     updateProfileAsync: updateProfileMutation.mutateAsync,
     isUpdating: updateProfileMutation.isPending,
     updateError: updateProfileMutation.error,
+    // Avatar methods
+    uploadAvatar: uploadAvatarMutation.mutate,
+    uploadAvatarAsync: uploadAvatarMutation.mutateAsync,
+    deleteAvatar: deleteAvatarMutation.mutate,
+    deleteAvatarAsync: deleteAvatarMutation.mutateAsync,
+    isUploadingAvatar: uploadAvatarMutation.isPending,
+    isDeletingAvatar: deleteAvatarMutation.isPending,
   };
 }
 

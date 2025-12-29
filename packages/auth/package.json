@@ -36,11 +36,13 @@
     "@tupsafe/types": "*",
     "lucide-react": "^0.544.0",
     "react-hook-form": "^7.63.0",
+    "uuid": "^11.1.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/uuid": "^10.0.0",
     "eslint": "^9",
     "turbo": "^2.5.8",
     "typescript": "^5"

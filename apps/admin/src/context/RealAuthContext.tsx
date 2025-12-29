@@ -47,6 +47,8 @@ export interface AdminProfile {
   employeeId?: string;
   departmentId?: string;
   positionId?: string;
+  avatarPath?: string | null;
+  avatarUrl?: string | null;
   accountStatus: string;
   isActive: boolean;
   createdAt: Date;

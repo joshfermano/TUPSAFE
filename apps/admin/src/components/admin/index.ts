@@ -28,3 +28,6 @@ export {
 
 // Timeline Component
 export { Timeline, type TimelineEvent } from './Timeline';
+
+// PDS Attachments Viewer
+export { PdsAttachmentsViewer } from './PdsAttachmentsViewer';

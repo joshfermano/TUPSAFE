@@ -18,7 +18,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkUserRoleFromSupabase, createServerClient } from '@tupsafe/auth/server';
+import {
+  checkUserRoleFromSupabase,
+  createServerClient,
+  getProfilePicturePublicUrl,
+} from '@tupsafe/auth/server';
 import {
   db,
   profiles,
@@ -79,6 +83,7 @@ export async function GET() {
         departmentId: profiles.departmentId,
         positionId: profiles.positionId,
         phoneNumber: profiles.phoneNumber,
+        avatarPath: profiles.avatarPath,
         role: profiles.role,
         accountStatus: profiles.accountStatus,
         createdAt: profiles.createdAt,
@@ -103,6 +108,10 @@ export async function GET() {
 
     const data = profileData[0];
 
+    // Build avatar URL
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const avatarUrl = getProfilePicturePublicUrl(supabaseUrl, data.avatarPath);
+
     // Transform to UserProfile type
     const profile: UserProfile = {
       id: data.id,
@@ -114,6 +123,8 @@ export async function GET() {
       departmentId: data.departmentId,
       positionId: data.positionId,
       phoneNumber: data.phoneNumber,
+      avatarPath: data.avatarPath,
+      avatarUrl,
       role: data.role,
       accountStatus: data.accountStatus,
       createdAt: data.createdAt,
@@ -273,7 +284,7 @@ export async function PUT(request: NextRequest) {
     });
 
     // Fetch updated profile with department and position
-    const profileData = await db
+    const updatedProfileData = await db
       .select({
         id: profiles.id,
         firstName: profiles.firstName,
@@ -283,6 +294,7 @@ export async function PUT(request: NextRequest) {
         departmentId: profiles.departmentId,
         positionId: profiles.positionId,
         phoneNumber: profiles.phoneNumber,
+        avatarPath: profiles.avatarPath,
         role: profiles.role,
         accountStatus: profiles.accountStatus,
         createdAt: profiles.createdAt,
@@ -297,33 +309,39 @@ export async function PUT(request: NextRequest) {
       .where(eq(profiles.id, userId))
       .limit(1);
 
-    const data = profileData[0];
+    const updatedData = updatedProfileData[0];
+
+    // Build avatar URL
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const updatedAvatarUrl = getProfilePicturePublicUrl(supabaseUrl, updatedData.avatarPath);
 
     const profile: UserProfile = {
-      id: data.id,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      middleName: data.middleName,
+      id: updatedData.id,
+      firstName: updatedData.firstName,
+      lastName: updatedData.lastName,
+      middleName: updatedData.middleName,
       email: user.email || '',
-      employeeId: data.employeeId,
-      departmentId: data.departmentId,
-      positionId: data.positionId,
-      phoneNumber: data.phoneNumber,
-      role: data.role,
-      accountStatus: data.accountStatus,
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt,
-      department: data.departmentId
+      employeeId: updatedData.employeeId,
+      departmentId: updatedData.departmentId,
+      positionId: updatedData.positionId,
+      phoneNumber: updatedData.phoneNumber,
+      avatarPath: updatedData.avatarPath,
+      avatarUrl: updatedAvatarUrl,
+      role: updatedData.role,
+      accountStatus: updatedData.accountStatus,
+      createdAt: updatedData.createdAt,
+      updatedAt: updatedData.updatedAt,
+      department: updatedData.departmentId
         ? {
-            id: data.departmentId,
-            name: data.departmentName || '',
-            code: data.departmentCode || '',
+            id: updatedData.departmentId,
+            name: updatedData.departmentName || '',
+            code: updatedData.departmentCode || '',
           }
         : null,
-      position: data.positionId
+      position: updatedData.positionId
         ? {
-            id: data.positionId,
-            title: data.positionTitle || '',
+            id: updatedData.positionId,
+            title: updatedData.positionTitle || '',
           }
         : null,
     };

@@ -1,28 +1,43 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
-import { Camera, Upload, X } from 'lucide-react';
+import { Camera, Upload, X, Loader2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface AvatarUploadProps {
-  currentAvatar?: string;
+  currentAvatar?: string | null;
   userName?: string;
+  /** Called when user selects a file for upload */
+  onUpload?: (file: File) => void | Promise<void>;
+  /** Called when user wants to remove their avatar */
+  onRemove?: () => void | Promise<void>;
+  /** Legacy callback for file change (file or null) */
   onAvatarChange?: (file: File | null) => void;
+  /** Show loading state during upload/remove */
+  isLoading?: boolean;
   className?: string;
 }
 
 export function AvatarUpload({
   currentAvatar,
   userName = 'User',
+  onUpload,
+  onRemove,
   onAvatarChange,
+  isLoading = false,
   className,
 }: AvatarUploadProps) {
   const [preview, setPreview] = useState<string | null>(currentAvatar || null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Update preview when currentAvatar changes (e.g., after successful upload)
+  useEffect(() => {
+    setPreview(currentAvatar || null);
+  }, [currentAvatar]);
 
   // Get user initials for fallback
   const getInitials = (name: string) => {
@@ -34,7 +49,7 @@ export function AvatarUpload({
   };
 
   const handleFileChange = useCallback(
-    (file: File | null) => {
+    async (file: File | null) => {
       if (file) {
         // Validate file type
         if (!file.type.startsWith('image/')) {
@@ -48,30 +63,48 @@ export function AvatarUpload({
           return;
         }
 
-        // Create preview
+        // Create preview immediately for UX
         const reader = new FileReader();
         reader.onloadend = () => {
           setPreview(reader.result as string);
         };
         reader.readAsDataURL(file);
 
-        // Notify parent component
+        // Call the new upload callback if provided
+        if (onUpload) {
+          await onUpload(file);
+        }
+
+        // Legacy callback support
         onAvatarChange?.(file);
       }
     },
-    [onAvatarChange]
+    [onUpload, onAvatarChange]
   );
 
   const handleClick = () => {
+    if (!isLoading) {
     fileInputRef.current?.click();
+    }
   };
 
-  const handleRemove = (e: React.MouseEvent) => {
+  const handleRemove = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    if (isLoading) return;
+
+    // Call the remove callback if provided
+    if (onRemove) {
+      await onRemove();
+    }
+
+    // Clear preview and input
     setPreview(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+
+    // Legacy callback support
     onAvatarChange?.(null);
   };
 
@@ -113,26 +146,34 @@ export function AvatarUpload({
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}>
           <Avatar className="h-32 w-32">
-            <AvatarImage src={preview || currentAvatar} alt={userName} />
+            <AvatarImage src={preview || currentAvatar || undefined} alt={userName} />
             <AvatarFallback className="text-2xl font-semibold bg-gradient-to-br from-red-700 to-red-800 text-white">
               {getInitials(userName)}
             </AvatarFallback>
           </Avatar>
 
-          {/* Overlay on hover */}
+          {/* Overlay on hover / loading */}
           <motion.div
-            className="absolute inset-0 bg-black/60 flex items-center justify-center cursor-pointer"
-            initial={{ opacity: 0 }}
+            className={cn(
+              "absolute inset-0 bg-black/60 flex items-center justify-center",
+              isLoading ? "opacity-100" : "cursor-pointer"
+            )}
+            initial={{ opacity: isLoading ? 1 : 0 }}
             whileHover={{ opacity: 1 }}
+            animate={{ opacity: isLoading ? 1 : undefined }}
             transition={{ duration: 0.2 }}
             onClick={handleClick}>
+            {isLoading ? (
+              <Loader2 className="h-8 w-8 text-white animate-spin" />
+            ) : (
             <Camera className="h-8 w-8 text-white" />
+            )}
           </motion.div>
         </div>
 
         {/* Remove button */}
         <AnimatePresence>
-          {preview && (
+          {preview && !isLoading && (
             <motion.button
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -154,9 +195,14 @@ export function AvatarUpload({
           variant="outline"
           size="sm"
           onClick={handleClick}
-          className="border-red-700 text-red-500 hover:bg-red-500/5 dark:border-red-600 dark:text-red-600 dark:hover:bg-red-600/10">
+          disabled={isLoading}
+          className="border-red-700 text-red-500 hover:bg-red-500/5 dark:border-red-600 dark:text-red-600 dark:hover:bg-red-600/10 disabled:opacity-50">
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
           <Upload className="h-4 w-4 mr-2" />
-          Upload Photo
+          )}
+          {isLoading ? 'Uploading...' : 'Upload Photo'}
         </Button>
         <p className="text-xs text-slate-500 dark:text-slate-400 text-center">
           JPG, PNG or GIF. Max size 5MB.

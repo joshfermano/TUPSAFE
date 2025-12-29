@@ -93,13 +93,30 @@ export interface PDSEducation {
   honorsReceived?: string;
 }
 
+/**
+ * PDS Attachment for training or civil service entries
+ */
+export interface PdsAttachment {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  filePath: string;
+  fileUrl: string | null;
+  trainingId?: string | null;
+  civilServiceId?: string | null;
+  createdAt: Date | string;
+}
+
 export interface PDSCivilService {
+  id?: string;
   careerService?: string;
   rating?: number;
   dateOfExamination?: string;
   placeOfExamination?: string;
   licenseNumber?: string;
   validity?: string;
+  attachments?: PdsAttachment[];
 }
 
 export interface PDSWorkExperience {
@@ -123,12 +140,14 @@ export interface PDSVoluntaryWork {
 }
 
 export interface PDSTraining {
+  id?: string;
   title?: string;
   dateFrom?: string;
   dateTo?: string;
   hours?: number;
   typeOfLd?: string;
   conductedBy?: string;
+  attachments?: PdsAttachment[];
 }
 
 export interface PDSOtherInfo {
@@ -368,6 +387,7 @@ export interface PDSSubmissionDetail {
     firstName: string;
     lastName: string;
     email: string | null;
+    avatarUrl?: string | null;
     department: {
       id: string;
       name: string;

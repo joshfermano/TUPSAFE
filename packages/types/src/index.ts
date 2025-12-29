@@ -237,3 +237,6 @@ export * from './admin/deadlines';
 
 // Employee-specific types
 export * from './employee';
+
+// Constants
+export * from './constants/salary-grades';

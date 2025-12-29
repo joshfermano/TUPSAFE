@@ -18,7 +18,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
+import { checkUserRoleFromSupabase, getProfilePicturePublicUrl } from '@tupsafe/auth/server';
 import { db, profiles, departments, positions } from '@tupsafe/database/server';
 import { and, eq, ne, sql, count, or, ilike, asc, desc } from 'drizzle-orm';
 import {
@@ -141,6 +141,7 @@ export async function GET(request: NextRequest) {
         departmentCode: departments.code,
         positionId: profiles.positionId,
         positionTitle: positions.title,
+        avatarPath: profiles.avatarPath,
       })
       .from(profiles)
       .leftJoin(departments, eq(profiles.departmentId, departments.id))
@@ -187,6 +188,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform to response format
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const userList: UserListItem[] = users.map((user) => ({
       id: user.id,
       email: emailMap.get(user.id) || null,
@@ -216,6 +218,10 @@ export async function GET(request: NextRequest) {
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
       emailVerifiedAt: user.emailVerifiedAt,
+      avatarPath: user.avatarPath,
+      avatarUrl: user.avatarPath
+        ? getProfilePicturePublicUrl(supabaseUrl, user.avatarPath)
+        : null,
     }));
 
     // Get aggregate counts for filters (optimized queries)

@@ -11,7 +11,7 @@ import { UserPlus, CheckCircle, FileCheck, XCircle, Activity } from 'lucide-reac
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import type { DashboardOverviewResponse } from '@tupsafe/types';
@@ -119,6 +119,7 @@ export function RecentActivityFeed({ activities }: RecentActivityFeedProps) {
                     {activity.user && (
                       <div className="flex items-center gap-2">
                         <Avatar className="h-5 w-5">
+                          <AvatarImage src={activity.user.avatarUrl || undefined} alt={activity.user.name} />
                           <AvatarFallback className="text-[10px]">
                             {getInitials(activity.user.name)}
                           </AvatarFallback>

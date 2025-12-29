@@ -21,6 +21,7 @@ import {
 } from '@radix-ui/react-icons';
 
 import { PageTransition } from '@/components/PageTransition';
+import { AvatarUpload } from '@/components/settings/AvatarUpload';
 import {
   Card,
   CardContent,
@@ -479,7 +480,26 @@ const ActiveSessions = () => {
  * Profile Section Component
  */
 const ProfileSection = () => {
-  const { profile, isLoading, updateProfile, isUpdating } = useUserProfileQuery();
+  const { 
+    profile, 
+    isLoading, 
+    updateProfile, 
+    isUpdating,
+    uploadAvatar,
+    deleteAvatar,
+    isUploadingAvatar,
+    isDeletingAvatar,
+  } = useUserProfileQuery();
+
+  const isAvatarLoading = isUploadingAvatar || isDeletingAvatar;
+
+  const handleAvatarUpload = async (file: File) => {
+    uploadAvatar(file);
+  };
+
+  const handleAvatarRemove = async () => {
+    deleteAvatar();
+  };
 
   const form = useForm<UpdateProfileRequest>({
     resolver: zodResolver(updateProfileRequestSchema),
@@ -531,8 +551,27 @@ const ProfileSection = () => {
     );
   }
 
+  const fullName = profile ? `${profile.firstName} ${profile.middleName ? profile.middleName + ' ' : ''}${profile.lastName}` : 'User';
+
   return (
-    <Accordion type="multiple" className="w-full" defaultValue={['profile-info']}>
+    <Accordion type="multiple" className="w-full" defaultValue={['profile-picture', 'profile-info']}>
+      <AccordionItem value="profile-picture">
+        <AccordionTrigger className="text-base font-medium">
+          Profile Picture
+        </AccordionTrigger>
+        <AccordionContent>
+          <div className="flex justify-center py-4">
+            <AvatarUpload
+              currentAvatar={profile?.avatarUrl}
+              userName={fullName}
+              onUpload={handleAvatarUpload}
+              onRemove={handleAvatarRemove}
+              isLoading={isAvatarLoading}
+            />
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+
       <AccordionItem value="profile-info">
         <AccordionTrigger className="text-base font-medium">
           Profile Information

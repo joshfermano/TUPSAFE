@@ -39,6 +39,7 @@ import {
   EmptyState,
   LoadingCard,
   ErrorAlert,
+  PdsAttachmentsViewer,
 } from '@/components/admin';
 
 import {
@@ -482,7 +483,7 @@ export default function UserViewPage() {
                 user={{
                   firstName: user.firstName,
                   lastName: user.lastName,
-                  avatarUrl: null,
+                  avatarUrl: user.avatarUrl,
                 }}
                 size="lg"
                 className="h-24 w-24 border-4 border-background"
@@ -800,6 +801,19 @@ export default function UserViewPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* PDS Attachments Viewer */}
+          {pdsSubmissions && pdsSubmissions.length > 0 && (
+            <PdsAttachmentsViewer
+              userId={userId}
+              submissions={pdsSubmissions.map((s) => ({
+                id: s.id,
+                status: s.status,
+                year: s.year,
+                submittedAt: s.submittedAt,
+              }))}
+            />
+          )}
         </TabsContent>
 
         {/* SALN Tab */}

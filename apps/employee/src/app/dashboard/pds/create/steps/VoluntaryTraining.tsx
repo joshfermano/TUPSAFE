@@ -1,9 +1,10 @@
 'use client';
 
 import { memo, useCallback } from 'react';
-import { Heart, BookOpen, Plus, X } from 'lucide-react';
+import { Heart, BookOpen, Plus, X, Paperclip } from 'lucide-react';
 import { useFormContext, useFieldArray } from 'react-hook-form';
 import { toast } from 'sonner';
+import { v4 as uuidv4 } from 'uuid';
 import {
   FormField,
   FormItem,
@@ -25,12 +26,15 @@ import { FormSection } from '../../../../../components/forms/shared/FormSection'
 import { type CompletePdsData } from '../../../../../lib/validations/pds-schema';
 import { autoSortWithNotification } from '../../../../../lib/utils/pds-sort';
 import { formatDateForInput, parseDateFromInput } from '../../../../../lib/utils/date-utils';
+import { usePdsContextSafe } from '../../../../../context/PdsContext';
+import { EntryAttachments } from '../../../../../components/pds/EntryAttachments';
 
 /**
  * Step 7: Voluntary Work & Learning Development
  */
 export const VoluntaryTraining = memo(function VoluntaryTraining() {
   const form = useFormContext<CompletePdsData>();
+  const pdsContext = usePdsContextSafe();
 
   const {
     fields: voluntaryFields,
@@ -103,6 +107,7 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
    */
   const handleAddTraining = useCallback(() => {
     appendTraining({
+      id: uuidv4(), // Generate stable ID for attachments linking
       title: '',
       dateFrom: null,
       dateTo: null,
@@ -498,6 +503,36 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
                       )}
                     />
                   </div>
+
+                  {/* Attachments Section */}
+                  {pdsContext && (
+                    <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Paperclip className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium text-muted-foreground">
+                          Attachments
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          (certificates, seminar proofs, etc.)
+                        </span>
+                      </div>
+                      <EntryAttachments
+                        pdsSubmissionId={pdsContext.pdsSubmissionId}
+                        entryId={form.getValues(`learningDevelopment.${index}.id`) || null}
+                        entryType="training"
+                        attachments={pdsContext.getTrainingAttachments(
+                          form.getValues(`learningDevelopment.${index}.id`)
+                        )}
+                        canEdit={pdsContext.canEdit}
+                        onAttachmentsChange={(attachments) => {
+                          const entryId = form.getValues(`learningDevelopment.${index}.id`);
+                          if (entryId) {
+                            pdsContext.updateTrainingAttachments(entryId, attachments);
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

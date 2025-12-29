@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, use } from 'react';
+import { useEffect, useCallback, useMemo, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -45,7 +45,6 @@ import {
 
 // MagicUI Components
 import { MagicCard } from '../../../../../components/ui/magic-card';
-import { ShimmerButton } from '../../../../../components/ui/shimmer-button';
 import { ShineBorder } from '../../../../../components/ui/shine-border';
 import { AnimatedGradientText } from '../../../../../components/ui/animated-gradient-text';
 import { Particles } from '../../../../../components/ui/particles';
@@ -61,13 +60,16 @@ import {
   editProfileSchema,
   type EditProfileFormData,
 } from '../../../../../lib/validations/profile';
+import { formatSalaryGrade } from '@tupsafe/types';
+import { cn } from '../../../../../lib/utils';
 
 // Auth and API hooks
 import { useAuth } from '../../../../../providers/AuthProvider';
-import { useProfile, useUpdateProfile } from '../../../../../hooks/useProfile';
+import { useProfile, useUpdateProfile, useUploadAvatar, useDeleteAvatar } from '../../../../../hooks/useProfile';
 import {
   useColleges,
   useOffices,
+  useDepartmentsByCollege,
 } from '../../../../../hooks/useOrganizationData';
 
 // Animation variants - extracted to prevent recreation on each render
@@ -97,22 +99,25 @@ export default function EditProfilePage({ params }: EditProfilePageProps) {
     error: profileError,
   } = useProfile();
   const updateProfileMutation = useUpdateProfile();
+  const uploadAvatarMutation = useUploadAvatar();
+  const deleteAvatarMutation = useDeleteAvatar();
 
   // Organization data hooks
   const { data: colleges = [], isLoading: collegesLoading } = useColleges();
   const { data: offices = [], isLoading: officesLoading } = useOffices();
 
-  // Combine colleges and offices for department dropdown
-  const allDepartments = useMemo(() => {
+  // Combine colleges and offices for the College/Office dropdown
+  const allCollegesAndOffices = useMemo(() => {
     const combined = [
-      ...colleges.map((c) => ({ id: c.id, name: c.name, code: c.code })),
-      ...offices.map((o) => ({ id: o.id, name: o.name, code: o.code })),
+      ...colleges.map((c) => ({ id: c.id, name: c.name, code: c.code, type: 'college' as const })),
+      ...offices.map((o) => ({ id: o.id, name: o.name, code: o.code, type: 'office' as const })),
     ];
     // Sort alphabetically by name
     return combined.sort((a, b) => a.name.localeCompare(b.name));
   }, [colleges, offices]);
 
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  // Check if avatar operations are in progress
+  const isAvatarLoading = uploadAvatarMutation.isPending || deleteAvatarMutation.isPending;
 
   // Initialize form with react-hook-form and zod validation
   const form = useForm<EditProfileFormData>({
@@ -122,42 +127,101 @@ export default function EditProfilePage({ params }: EditProfilePageProps) {
       middleName: '',
       lastName: '',
       phoneNumber: '',
+      collegeId: '',
       departmentId: '',
       positionId: '',
+      positionTitle: '',
       avatarUrl: '',
     },
   });
 
+  // Watch selected college to fetch departments
+  const selectedCollegeId = form.watch('collegeId');
+
+  // Fetch departments for the selected college
+  const { data: departmentsForCollege = [], isLoading: departmentsLoading } = useDepartmentsByCollege(
+    selectedCollegeId || undefined
+  );
+
+  // Check if selected college has departments
+  const selectedCollegeHasDepartments = useMemo(() => {
+    if (!selectedCollegeId) return false;
+    const selectedItem = allCollegesAndOffices.find((item) => item.id === selectedCollegeId);
+    // Only colleges (not offices) can have departments
+    return selectedItem?.type === 'college';
+  }, [selectedCollegeId, allCollegesAndOffices]);
+
   // Load profile data when available
   useEffect(() => {
     if (profile) {
+      // Determine collegeId and departmentId from profile
+      // If profile has a college, that's the collegeId
+      // If profile has a department with a parentCollegeId, the college is the parent
+      let collegeId = '';
+      const departmentId = '';
+
+      if (profile.college) {
+        // User is assigned to a college directly (no department)
+        collegeId = profile.college.id;
+      } else if (profile.department) {
+        // Check if the department has a parent college (it's a sub-department)
+        // The API returns department info - we need to check the structure
+        // For now, we'll set departmentId as the college if it's a top-level unit
+        // This will be refined based on actual data structure
+        collegeId = profile.department.id;
+      }
+
       form.reset({
         firstName: profile.firstName || '',
         middleName: profile.middleName || '',
         lastName: profile.lastName || '',
         phoneNumber: profile.phoneNumber || '',
-        departmentId: profile.department?.id || profile.college?.id || '',
+        collegeId,
+        departmentId,
         positionId: profile.position?.id || '',
+        positionTitle: profile.positionTitle || '',
         avatarUrl: '',
       });
     }
   }, [profile, form]);
 
+  // Handle avatar upload
+  const handleAvatarUpload = useCallback(
+    async (file: File) => {
+      await uploadAvatarMutation.mutateAsync(file);
+    },
+    [uploadAvatarMutation]
+  );
+
+  // Handle avatar removal
+  const handleAvatarRemove = useCallback(async () => {
+    await deleteAvatarMutation.mutateAsync();
+  }, [deleteAvatarMutation]);
+
   // Handle form submission - memoized with useCallback
   const onSubmit = useCallback(
     async (data: EditProfileFormData) => {
+      console.log('[EditProfile] Form submitted with data:', data);
       try {
-        // Handle avatar upload if present
-        if (avatarFile) {
-          // TODO: Upload avatar to storage service
-          console.log('Uploading avatar:', avatarFile);
-        }
+        // Determine the final departmentId to save
+        // If a specific department is selected (under a college), use that
+        // Otherwise, use the college/office ID itself
+        const finalDepartmentId = data.departmentId || data.collegeId || null;
+
+        console.log('[EditProfile] Submitting to API:', {
+          phoneNumber: data.phoneNumber || null,
+          middleName: data.middleName || null,
+          departmentId: finalDepartmentId,
+          positionTitle: data.positionTitle || null,
+        });
 
         // Only submit editable fields via the mutation
+        // Avatar is handled separately via AvatarUpload component
         await updateProfileMutation.mutateAsync({
           phoneNumber: data.phoneNumber || null,
           middleName: data.middleName || null,
-          departmentId: data.departmentId || null,
+          departmentId: finalDepartmentId,
+          positionTitle: data.positionTitle || null,
         });
 
         // Trigger confetti celebration animation
@@ -217,7 +281,7 @@ export default function EditProfilePage({ params }: EditProfilePageProps) {
         // Error toast is handled by useUpdateProfile hook
       }
     },
-    [avatarFile, router, updateProfileMutation]
+    [router, updateProfileMutation]
   );
 
   const handleCancel = useCallback(() => {
@@ -394,9 +458,11 @@ export default function EditProfilePage({ params }: EditProfilePageProps) {
                   className="p-8">
                   <div className="flex flex-col items-center">
                     <AvatarUpload
-                      currentAvatar={undefined}
+                      currentAvatar={profile?.avatarUrl}
                       userName={fullName}
-                      onAvatarChange={setAvatarFile}
+                      onUpload={handleAvatarUpload}
+                      onRemove={handleAvatarRemove}
+                      isLoading={isAvatarLoading}
                     />
                   </div>
                 </NeonGradientCard>
@@ -604,7 +670,7 @@ export default function EditProfilePage({ params }: EditProfilePageProps) {
                       </div>
 
                       {/* Form Fields Grid with BlurFade */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <BlurFade delay={0.35} duration={0.4}>
                           <FormItem>
                             <FormLabel>Employee ID</FormLabel>
@@ -629,37 +695,135 @@ export default function EditProfilePage({ params }: EditProfilePageProps) {
                         <BlurFade delay={0.4} duration={0.4}>
                           <FormField
                             control={form.control}
-                            name="departmentId"
+                            name="collegeId"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Department / College</FormLabel>
+                                <FormLabel>College / Office</FormLabel>
                                 <Select
-                                  onValueChange={field.onChange}
+                                  onValueChange={(value) => {
+                                    field.onChange(value);
+                                    // Reset department when college changes
+                                    form.setValue('departmentId', '');
+                                  }}
                                   value={field.value}
                                   disabled={collegesLoading || officesLoading}>
                                   <FormControl>
                                     <SelectTrigger className="focus:ring-primary/20 focus:border-primary">
-                                      <SelectValue placeholder="Select department" />
+                                      <SelectValue placeholder="Select college or office" />
                                     </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>
-                                    {allDepartments.map((dept) => (
-                                      <SelectItem key={dept.id} value={dept.id}>
+                                    {allCollegesAndOffices.map((item) => (
+                                      <SelectItem key={item.id} value={item.id}>
                                         <div className="flex items-center gap-2">
                                           <Building2 className="h-4 w-4 text-slate-500" />
-                                          {dept.name}
+                                          {item.name}
                                         </div>
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
                                 </Select>
+                                <FormDescription>
+                                  Select your college or administrative office
+                                </FormDescription>
                                 <FormMessage />
                               </FormItem>
                             )}
                           />
                         </BlurFade>
 
+                        {/* Department dropdown - only shown when a college with departments is selected */}
+                        {selectedCollegeHasDepartments && (
+                          <BlurFade delay={0.42} duration={0.4}>
+                            <FormField
+                              control={form.control}
+                              name="departmentId"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Department (Optional)</FormLabel>
+                                  <Select
+                                    onValueChange={field.onChange}
+                                    value={field.value}
+                                    disabled={departmentsLoading}>
+                                    <FormControl>
+                                      <SelectTrigger className="focus:ring-primary/20 focus:border-primary">
+                                        <SelectValue placeholder="Select department (optional)" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      {departmentsForCollege.map((dept) => (
+                                        <SelectItem key={dept.id} value={dept.id}>
+                                          <div className="flex items-center gap-2">
+                                            <Building2 className="h-4 w-4 text-slate-500" />
+                                            {dept.name}
+                                          </div>
+                                        </SelectItem>
+                                      ))}
+                                      {departmentsForCollege.length === 0 && !departmentsLoading && (
+                                        <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                                          No departments found for this college
+                                        </div>
+                                      )}
+                                    </SelectContent>
+                                  </Select>
+                                  <FormDescription>
+                                    Optionally select a specific department within your college
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </BlurFade>
+                        )}
+
                         <BlurFade delay={0.45} duration={0.4}>
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-2">
+                              Salary Grade
+                              <Lock className="h-3 w-3 text-slate-400" />
+                            </FormLabel>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                value={
+                                  profile.salaryGrade
+                                    ? formatSalaryGrade(profile.salaryGrade)
+                                    : 'Not assigned'
+                                }
+                                disabled
+                                className="bg-slate-50 dark:bg-slate-800/50 cursor-not-allowed text-slate-600 dark:text-slate-400"
+                              />
+                              <Lock className="h-5 w-5 text-slate-400" />
+                            </div>
+                            <FormDescription>
+                              Contact HR to change your salary grade
+                            </FormDescription>
+                          </FormItem>
+                        </BlurFade>
+
+                        <BlurFade delay={0.47} duration={0.4}>
+                          <FormField
+                            control={form.control}
+                            name="positionTitle"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Position Title</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder="e.g., Associate Professor III"
+                                    {...field}
+                                    className="focus-visible:ring-primary/20 focus-visible:border-primary"
+                                  />
+                                </FormControl>
+                                <FormDescription>
+                                  Your current position or job title
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </BlurFade>
+
+                        <BlurFade delay={0.5} duration={0.4}>
                           <FormItem>
                             <FormLabel className="flex items-center gap-2">
                               Position
@@ -677,7 +841,7 @@ export default function EditProfilePage({ params }: EditProfilePageProps) {
                                     : 'Not assigned'
                                 }
                                 disabled
-                                className="bg-slate-50 dark:bg-slate-800/50"
+                                className="bg-slate-50 dark:bg-slate-800/50 cursor-not-allowed"
                               />
                               <Award className="h-5 w-5 text-slate-400" />
                             </div>
@@ -704,7 +868,7 @@ export default function EditProfilePage({ params }: EditProfilePageProps) {
                   variant="outline"
                   onClick={handleCancel}
                   disabled={updateProfileMutation.isPending}
-                  className="w-full sm:w-auto order-2 sm:order-1 relative overflow-hidden group">
+                  className="w-full sm:w-auto order-2 sm:order-1 relative overflow-hidden group border-2 border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-[0.98] transition-all duration-200">
                   <span>Cancel</span>
                   <span className="ml-2 text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hidden sm:inline">
                     (Esc)
@@ -716,12 +880,43 @@ export default function EditProfilePage({ params }: EditProfilePageProps) {
                   />
                 </Button>
 
-                <ShimmerButton
+                <Button
                   type="submit"
                   disabled={updateProfileMutation.isPending}
-                  className="w-full sm:w-auto order-1 sm:order-2 min-w-[180px] group"
-                  shimmerColor="#B8264D"
-                  background="linear-gradient(135deg, oklch(0.55 0.22 15) 0%, oklch(0.40 0.18 15) 100%)">
+                  onClick={() => {
+                    // Log form state for debugging
+                    console.log('[EditProfile] Save button clicked');
+                    console.log('[EditProfile] Form values:', form.getValues());
+                    console.log('[EditProfile] Form errors:', form.formState.errors);
+
+                    // If there are validation errors, show a toast
+                    const errors = form.formState.errors;
+                    if (Object.keys(errors).length > 0) {
+                      const errorMessages = Object.entries(errors)
+                        .map(([field, error]) => `${field}: ${error?.message}`)
+                        .join(', ');
+                      toast.error('Please fix the form errors', {
+                        description: errorMessages,
+                      });
+                    }
+                  }}
+                  className={cn(
+                    "w-full sm:w-auto order-1 sm:order-2 min-w-[180px] relative overflow-hidden group",
+                    // Base styles
+                    "bg-gradient-to-r from-[#8B1538] to-[#B8264D] text-white font-medium",
+                    // Border
+                    "border-2 border-[#8B1538]/50 dark:border-[#B8264D]/50",
+                    // Hover states
+                    "hover:from-[#9B2548] hover:to-[#C8365D] hover:border-[#B8264D]/70 hover:shadow-lg hover:shadow-[#8B1538]/25",
+                    // Active/pressed state
+                    "active:scale-[0.98] active:from-[#7B0528] active:to-[#A8163D]",
+                    // Focus state
+                    "focus:outline-none focus:ring-2 focus:ring-[#B8264D]/50 focus:ring-offset-2 dark:focus:ring-offset-slate-900",
+                    // Disabled state
+                    "disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:active:scale-100",
+                    // Transition
+                    "transition-all duration-200 ease-out"
+                  )}>
                   {updateProfileMutation.isPending ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -736,7 +931,7 @@ export default function EditProfilePage({ params }: EditProfilePageProps) {
                       </span>
                     </>
                   )}
-                </ShimmerButton>
+                </Button>
               </motion.div>
             </form>
           </Form>

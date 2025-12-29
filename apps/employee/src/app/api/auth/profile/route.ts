@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@tupsafe/auth/server';
+import { createServerClient, getProfilePicturePublicUrl } from '@tupsafe/auth/server';
 import { db, profiles } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
 
@@ -44,6 +44,10 @@ export async function GET(_request: NextRequest) {
       );
     }
 
+    // Build avatar URL
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const avatarUrl = getProfilePicturePublicUrl(supabaseUrl, profile.avatarPath);
+
     return NextResponse.json({
       success: true,
       profile: {
@@ -61,6 +65,8 @@ export async function GET(_request: NextRequest) {
         accountStatus: profile.accountStatus,
         isActive: profile.isActive,
         temporaryPassword: profile.temporaryPassword,
+        avatarPath: profile.avatarPath,
+        avatarUrl,
         createdAt: profile.createdAt,
         updatedAt: profile.updatedAt,
       },
