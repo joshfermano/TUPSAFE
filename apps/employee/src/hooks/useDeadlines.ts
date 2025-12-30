@@ -127,7 +127,7 @@ export function useUpcomingDeadlines(formType?: 'pds' | 'saln') {
     queryFn: () => fetchDeadlines(formType),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes garbage collection
-    refetchOnWindowFocus: true, // Auto-refetch when user returns to tab
+    refetchOnWindowFocus: false, // DISABLED: Prevents app "restart" on tab switch
     refetchInterval: false, // Don't auto-refetch on interval (deadlines don't change frequently)
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),

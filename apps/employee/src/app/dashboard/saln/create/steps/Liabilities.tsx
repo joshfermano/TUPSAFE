@@ -60,16 +60,14 @@ export const Liabilities = memo(function Liabilities() {
   const liabilities = watch('liabilities') || [];
 
   const totalLiabilities = useMemo(() => {
-    console.log('[Liabilities Step] Current liabilities:', liabilities);
-    const total = liabilities.reduce(
+    return liabilities.reduce(
       (sum: number, liability: LiabilityItem) => {
-        console.log('[Liabilities Step] Processing liability:', liability, 'Outstanding balance:', liability.outstandingBalance);
-        return sum + (liability.outstandingBalance || 0);
+        const balance = liability.outstandingBalance;
+        const numBalance = typeof balance === 'string' ? parseFloat(balance) : (balance || 0);
+        return sum + (isNaN(numBalance) ? 0 : numBalance);
       },
       0
     );
-    console.log('[Liabilities Step] Total liabilities:', total);
-    return total;
   }, [liabilities]);
 
   const addLiability = () => {

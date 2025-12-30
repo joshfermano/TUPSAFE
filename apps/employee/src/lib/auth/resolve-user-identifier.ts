@@ -73,45 +73,56 @@ async function resolveByEmail(
 ): Promise<ResolvedUserIdentifier | null> {
   try {
     const supabase = createAdminClient();
+    const normalizedEmail = email.toLowerCase().trim();
 
-    // Query auth.users to find user by email
-    // Note: Supabase doesn't have a direct "get user by email" admin method,
-    // so we use listUsers with a filter or check if the user exists
-    const { data: users, error } = await supabase.auth.admin.listUsers({
-      perPage: 1,
-    });
+    // Paginate through auth.users to find the matching email
+    // Supabase admin API doesn't have a direct getUserByEmail method,
+    // so we need to paginate through users
+    let page = 1;
+    const perPage = 100; // Fetch 100 users per page for efficiency
 
-    if (error) {
-      console.error('[resolveByEmail] Supabase error:', error);
-      return null;
-    }
+    while (true) {
+      const { data: users, error } = await supabase.auth.admin.listUsers({
+        page,
+        perPage,
+      });
 
-    // Search for the user with matching email (case-insensitive)
-    const user = users.users.find(
-      (u) => u.email?.toLowerCase() === email.toLowerCase()
-    );
-
-    if (!user || !user.email) {
-      // User not found - also check if they have a profile
-      // This handles the case where the user might exist in profiles but with different case
-      const [profile] = await db
-        .select({ id: profiles.id })
-        .from(profiles)
-        .limit(1);
-
-      if (!profile) {
+      if (error) {
+        console.error('[resolveByEmail] Supabase error:', error);
         return null;
       }
 
-      // If we found a profile but no auth user, the data is inconsistent
-      // Return null to be safe
-      return null;
+      // Search for the user with matching email (case-insensitive)
+      const user = users.users.find(
+        (u) => u.email?.toLowerCase() === normalizedEmail
+      );
+
+      if (user && user.email) {
+        return {
+          userId: user.id,
+          email: user.email,
+        };
+      }
+
+      // If we got fewer users than requested, we've reached the end
+      if (users.users.length < perPage) {
+        break;
+      }
+
+      page++;
+
+      // Safety limit to prevent infinite loops (max 10,000 users)
+      if (page > 100) {
+        console.warn('[resolveByEmail] Exceeded pagination limit');
+        break;
+      }
     }
 
-    return {
-      userId: user.id,
-      email: user.email,
-    };
+    // User not found in auth.users
+    console.log(
+      `[resolveByEmail] No auth user found for email: ${email.substring(0, 5)}...`
+    );
+    return null;
   } catch (error) {
     console.error('[resolveByEmail] Error:', error);
     return null;

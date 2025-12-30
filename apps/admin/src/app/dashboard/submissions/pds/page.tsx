@@ -10,7 +10,9 @@ import {
   MoreVertical,
   Search,
   TrendingUp,
+  Loader2,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { formatDistanceToNow, format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { Bar, BarChart, Legend, XAxis, YAxis } from 'recharts';
@@ -19,6 +21,7 @@ import {
   usePdsSubmissionsQuery,
   type PdsSubmissionsFilters,
 } from '@/hooks/usePdsSubmissionsQuery';
+import { usePDSPdf, transformPdsForPdf } from '@/hooks/usePDSPdf';
 import { ReviewDialog } from '@/components/admin/ReviewDialog';
 import { useDepartmentsQuery } from '@/hooks/useDepartmentsQuery';
 import { usePdsStatsQuery } from '@/hooks/usePdsStatsQuery';
@@ -86,8 +89,11 @@ interface PdsSubmissionRowProps {
   index: number;
   onApprove: (submissionId: string, notes?: string) => Promise<void>;
   onReject: (submissionId: string, notes: string) => Promise<void>;
+  onDownload: (submissionId: string) => Promise<void>;
   isApproving: boolean;
   isRejecting: boolean;
+  isDownloading: boolean;
+  downloadingId: string | null;
 }
 
 // PDS Submission Row Component (memoized)
@@ -97,12 +103,16 @@ const PdsSubmissionRow = memo(
     index,
     onApprove,
     onReject,
+    onDownload,
     isApproving,
     isRejecting,
+    isDownloading,
+    downloadingId,
   }: PdsSubmissionRowProps) => {
     const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
 
     const isSubmitting = isApproving || isRejecting;
+    const isThisRowDownloading = isDownloading && downloadingId === submission.id;
 
     const handleApprove = useCallback(
       async (notes?: string) => {
@@ -118,12 +128,9 @@ const PdsSubmissionRow = memo(
       [submission.id, onReject]
     );
 
-    const handleAction = useCallback((action: string) => {
-      if (action === 'download') {
-        console.log(`Download PDF for submission:`, submission.id);
-        // TODO: Implement download functionality
-      }
-    }, [submission.id]);
+    const handleDownload = useCallback(() => {
+      onDownload(submission.id);
+    }, [submission.id, onDownload]);
 
     const employeeName = `${submission.employee.firstName} ${submission.employee.lastName}`;
 
@@ -152,7 +159,7 @@ const PdsSubmissionRow = memo(
             {submission.employee.department?.name || 'N/A'}
           </EnhancedTableCell>
           <EnhancedTableCell className="hidden sm:table-cell">
-            {submission.year ? `CY ${submission.year}` : 'N/A'}
+            {submission.year ?? 'N/A'}
           </EnhancedTableCell>
           <EnhancedTableCell>
             <StatusBadge status={submission.status} />
@@ -190,9 +197,13 @@ const PdsSubmissionRow = memo(
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => handleAction('download')}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download PDF
+                <DropdownMenuItem onClick={handleDownload} disabled={isThisRowDownloading}>
+                  {isThisRowDownloading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="mr-2 h-4 w-4" />
+                  )}
+                  {isThisRowDownloading ? 'Downloading...' : 'Download PDF'}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -242,6 +253,7 @@ export default function PdsSubmissionsPage() {
   const [yearFilter, setYearFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   // Build filters object
   const filters = useMemo<PdsSubmissionsFilters>(
@@ -266,6 +278,9 @@ export default function PdsSubmissionsPage() {
     isRejecting,
   } = usePdsSubmissionsQuery(filters);
 
+  // PDF generation hook
+  const { downloadPDF, isGenerating } = usePDSPdf();
+
   // Handlers for submission actions
   const handleApprove = useCallback(
     async (submissionId: string, notes?: string) => {
@@ -287,6 +302,75 @@ export default function PdsSubmissionsPage() {
       });
     },
     [rejectSubmissionAsync]
+  );
+
+  const handleDownload = useCallback(
+    async (submissionId: string) => {
+      try {
+        setDownloadingId(submissionId);
+        toast.loading('Preparing PDF download...', { id: `pdf-download-${submissionId}` });
+
+        // Fetch complete PDS data directly via API
+        const response = await fetch(`/api/submissions/pds/${submissionId}`);
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          throw new Error(
+            errorData?.error || `Failed to fetch PDS data: ${response.statusText}`
+          );
+        }
+
+        const completeSubmission = await response.json();
+
+        if (!completeSubmission) {
+          toast.error('Failed to fetch PDS data', { id: `pdf-download-${submissionId}` });
+          return;
+        }
+
+        // Transform data for PDF
+        const pdfReadyData = transformPdsForPdf({
+          ...completeSubmission.pdsData,
+          id: completeSubmission.submission.id,
+          submittedAt: completeSubmission.submission.submittedAt,
+          version: completeSubmission.submission.version,
+        });
+
+        // Validate before generating
+        const { validatePDSForPDF } = await import(
+          '@/../../employee/src/lib/utils/pds-validation'
+        );
+        const validation = validatePDSForPDF(pdfReadyData);
+
+        if (!validation.isValid) {
+          const errorList = validation.errors
+            .map((e) => `• ${e.message}`)
+            .join('\n');
+          toast.error('Cannot generate PDF', {
+            description: errorList,
+            id: `pdf-download-${submissionId}`,
+          });
+          return;
+        }
+
+        // Show warnings if any
+        if (validation.warnings.length > 0) {
+          console.warn('PDF Generation Warnings:', validation.warnings);
+        }
+
+        // Generate and download PDF
+        await downloadPDF(pdfReadyData);
+        toast.success('PDF downloaded successfully', { id: `pdf-download-${submissionId}` });
+      } catch (error) {
+        console.error('PDF download error:', error);
+        toast.error('Failed to download PDF', {
+          description: error instanceof Error ? error.message : 'Unknown error occurred',
+          id: `pdf-download-${submissionId}`,
+        });
+      } finally {
+        setDownloadingId(null);
+      }
+    },
+    [downloadPDF]
   );
 
   // Fetch departments for filter dropdown
@@ -496,7 +580,7 @@ export default function PdsSubmissionsPage() {
                   <SelectItem value="all">All Years</SelectItem>
                   {fiscalYears.map((year) => (
                     <SelectItem key={year} value={year.toString()}>
-                      CY {year}
+                      {year}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -602,8 +686,11 @@ export default function PdsSubmissionsPage() {
                       index={index}
                       onApprove={handleApprove}
                       onReject={handleReject}
+                      onDownload={handleDownload}
                       isApproving={isApproving}
                       isRejecting={isRejecting}
+                      isDownloading={isGenerating || downloadingId !== null}
+                      downloadingId={downloadingId}
                     />
                   ))}
                 </EnhancedTableBody>

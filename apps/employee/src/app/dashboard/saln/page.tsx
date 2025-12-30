@@ -17,10 +17,13 @@
  * - Real API data via React Query hooks
  */
 
-import { useMemo, memo, useCallback } from 'react';
+import { useMemo, memo, useCallback, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../../providers/AuthProvider';
 import { useSALNSubmissions } from '../../../hooks/useSALN';
+import { useSALNPdf } from '../../../hooks/useSALNPdf';
+import type { SALNData } from '../../../components/saln/pdf';
+import { toast } from 'sonner';
 import { DeadlineSection } from '../../../components/dashboard/DeadlineSection';
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
@@ -55,6 +58,7 @@ import {
   FileEdit,
   FileText,
   Sparkles,
+  Loader2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -188,10 +192,16 @@ const EmptyState = memo(function EmptyState() {
 
 export default function SalnPage() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   // Use real hooks for SALN data (matching PDS pattern)
   const { data: submissionsResponse, isLoading, error: submissionsError } = useSALNSubmissions();
+
+  // PDF generation hook
+  const { downloadPDF, openPDFInNewTab, isGenerating } = useSALNPdf();
+
+  // State for tracking download
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   // Extract submissions from response (like PDS does)
   const submissions = useMemo(() => {
@@ -424,6 +434,110 @@ export default function SalnPage() {
     return { change, percentChange, isPositive: change >= 0 };
   }, [submissions]);
 
+  // Transform submission data to SALNData format for PDF
+  const transformSALNToData = useCallback(
+    (submission: any): SALNData => {
+      return {
+        id: submission.id,
+        year: submission.year,
+        filingType: submission.filingType || 'not_applicable',
+        declarantInfo: {
+          surname: profile?.lastName || '',
+          firstName: profile?.firstName || '',
+          middleInitial: profile?.middleName || null,
+          position: submission.position || '',
+          agency:
+            submission.agency ||
+            'Technological University of the Philippines - Manila',
+          officeAddress: submission.officeAddress || '',
+        },
+        spouseInfo:
+          submission.filingType === 'joint' && submission.spouseName
+            ? {
+                surname: submission.spouseName?.split(' ').pop() || '',
+                firstName: submission.spouseName?.split(' ')[0] || '',
+                middleInitial: submission.spouseName?.split(' ')[1]?.charAt(0) || null,
+                position: '',
+                agency: '',
+                officeAddress: '',
+              }
+            : undefined,
+        children: [],
+        realProperties: submission.realProperties || [],
+        personalProperties: submission.personalProperties || [],
+        liabilities: submission.liabilities || [],
+        businessInterests:
+          submission.businessInterests?.map((bi: any) => ({
+            entityName: bi.businessName || bi.entityName || '',
+            businessAddress: bi.businessAddress || '',
+            natureOfBusiness: bi.nature || bi.natureOfBusiness || '',
+            dateOfAcquisition: bi.dateAcquired || bi.dateOfAcquisition || '',
+          })) || [],
+        relativesInGov:
+          submission.relativesInGov?.map((rel: any) => ({
+            name: rel.name || '',
+            relationship: rel.relationship || '',
+            position: rel.position || '',
+            agencyAddress: rel.agency || rel.agencyAddress || '',
+          })) || [],
+        totalAssets: parseFloat(submission.totalAssets || '0'),
+        totalLiabilities: parseFloat(submission.totalLiabilities || '0'),
+        netWorth: parseFloat(submission.netWorth || '0'),
+      };
+    },
+    [profile]
+  );
+
+  // Handle download
+  const handleDownload = useCallback(
+    async (id: string) => {
+      if (isGenerating || downloadingId) return;
+
+      try {
+        setDownloadingId(id);
+        const submission = submissions.find((s: any) => s.id === id);
+        if (!submission) {
+          toast.error('Submission not found');
+          return;
+        }
+        const salnPdfData = transformSALNToData(submission);
+        await downloadPDF(salnPdfData);
+        toast.success('SALN PDF downloaded successfully');
+      } catch (error) {
+        toast.error('Failed to generate PDF');
+        console.error('PDF generation error:', error);
+      } finally {
+        setDownloadingId(null);
+      }
+    },
+    [submissions, transformSALNToData, downloadPDF, isGenerating, downloadingId]
+  );
+
+  // Handle print
+  const handlePrint = useCallback(
+    async (id: string) => {
+      if (isGenerating || downloadingId) return;
+
+      try {
+        setDownloadingId(id);
+        const submission = submissions.find((s: any) => s.id === id);
+        if (!submission) {
+          toast.error('Submission not found');
+          return;
+        }
+        const salnPdfData = transformSALNToData(submission);
+        await openPDFInNewTab(salnPdfData);
+        toast.success('Opening PDF for printing...');
+      } catch (error) {
+        toast.error('Failed to open PDF');
+        console.error('PDF preview error:', error);
+      } finally {
+        setDownloadingId(null);
+      }
+    },
+    [submissions, transformSALNToData, openPDFInNewTab, isGenerating, downloadingId]
+  );
+
   // Loading state
   if (loading) {
     return (
@@ -580,8 +694,14 @@ export default function SalnPage() {
               </Link>
               <Button
                 variant="outline"
-                className="w-full h-10 text-sm gap-2 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800">
-                <Download className="h-4 w-4" />
+                onClick={() => latest && handleDownload(latest.id)}
+                disabled={!latest || isGenerating}
+                className="w-full h-10 text-sm gap-2 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed">
+                {isGenerating && downloadingId === latest?.id ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
                 Download
               </Button>
             </div>
@@ -643,13 +763,34 @@ export default function SalnPage() {
                           </Button>
                         </Link>
                         {latest.status === 'approved' && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 w-8 p-0 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800"
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
+                          <>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDownload(latest.id)}
+                              disabled={isGenerating && downloadingId === latest.id}
+                              className="h-8 w-8 p-0 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {isGenerating && downloadingId === latest.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Download className="h-4 w-4" />
+                              )}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handlePrint(latest.id)}
+                              disabled={isGenerating && downloadingId === latest.id}
+                              className="h-8 w-8 p-0 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {isGenerating && downloadingId === latest.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Printer className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>

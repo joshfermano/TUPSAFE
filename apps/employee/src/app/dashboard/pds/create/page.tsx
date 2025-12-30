@@ -68,7 +68,10 @@ import {
 import { z } from 'zod';
 
 // PDS Context for attachments
-import { PdsProvider, type PdsAttachmentsMap } from '../../../../context/PdsContext';
+import {
+  PdsProvider,
+  type PdsAttachmentsMap,
+} from '../../../../context/PdsContext';
 
 // ============================================================================
 // TYPES
@@ -442,7 +445,10 @@ export default function PDSCreatePage() {
 
       if (currentDraftId) {
         // Update existing draft
-        console.log('[PDS Create] Updating draft via manual save:', currentDraftId);
+        console.log(
+          '[PDS Create] Updating draft via manual save:',
+          currentDraftId
+        );
         const response = await fetch(`/api/pds/${currentDraftId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -477,7 +483,10 @@ export default function PDSCreatePage() {
         if (result.data?.id) {
           // Update both ref and state together
           updateDraftId(result.data.id);
-          console.log('[PDS Create] Draft created successfully:', result.data.id);
+          console.log(
+            '[PDS Create] Draft created successfully:',
+            result.data.id
+          );
         } else {
           throw new Error('No draft ID returned from server');
         }
@@ -832,7 +841,10 @@ export default function PDSCreatePage() {
           // Log formatted errors to console for debugging
           const formattedErrors = formatValidationErrors(error);
           console.error('Validation errors (formatted):\n', formattedErrors);
-          console.error('Validation errors (raw - for debugging):', error.errors);
+          console.error(
+            'Validation errors (raw - for debugging):',
+            error.errors
+          );
 
           const firstError = error.errors[0];
           const errorPath = firstError.path.join('.');
@@ -848,7 +860,8 @@ export default function PDSCreatePage() {
               'You must provide at least 3 complete character references. Each reference must include name, address, and telephone number.';
           } else if (errorPath.includes('dateOfBirth')) {
             errorTitle = 'Date of Birth Required';
-            errorMessage = 'Please provide a valid date of birth in Personal Information.';
+            errorMessage =
+              'Please provide a valid date of birth in Personal Information.';
           } else if (
             errorPath.includes('heightM') ||
             errorPath.includes('weightKg')
@@ -1102,64 +1115,63 @@ export default function PDSCreatePage() {
           <PdsProvider
             pdsSubmissionId={draftId}
             canEdit={true}
-            initialAttachments={attachments}
-          >
+            initialAttachments={attachments}>
             <form onSubmit={form.handleSubmit(handleSubmit)}>
               {/* Section content - No key prop to prevent remounting */}
               <Suspense fallback={<FormStepSkeleton fieldCount={10} />}>
                 <div className="mb-10">{renderSection}</div>
               </Suspense>
 
-            {/* Navigation buttons */}
-            <div className="flex items-center justify-between gap-4 pt-10 border-t border-slate-200 dark:border-slate-800">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handlePrevious}
-                disabled={currentSection === 0 || isSubmitting}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Previous
-              </Button>
-
-              <div className="flex items-center gap-3">
+              {/* Navigation buttons */}
+              <div className="flex items-center justify-between gap-4 pt-10 border-t border-slate-200 dark:border-slate-800">
                 <Button
                   type="button"
-                  variant="secondary"
-                  onClick={handleSaveAndNavigate}
-                  disabled={isSubmitting}>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Draft
+                  variant="outline"
+                  onClick={handlePrevious}
+                  disabled={currentSection === 0 || isSubmitting}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Previous
                 </Button>
 
-                {isLastSection ? (
+                <div className="flex items-center gap-3">
                   <Button
                     type="button"
-                    onClick={() => setShowSubmitDialog(true)}
-                    disabled={isSubmitting}
-                    size="lg"
-                    className="min-w-[180px] bg-amber-600 hover:bg-amber-700 text-white font-semibold border-2 border-amber-400 animate-pulse-border dark:bg-amber-500 dark:hover:bg-amber-600 dark:border-amber-300">
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Submitting...
-                      </>
-                    ) : (
-                      <>
-                        <FileCheck className="h-4 w-4 mr-2" />
-                        Submit for Review
-                      </>
-                    )}
-                  </Button>
-                ) : (
-                  <ShimmerButton
-                    type="button"
-                    onClick={handleNext}
+                    variant="secondary"
+                    onClick={handleSaveAndNavigate}
                     disabled={isSubmitting}>
-                    Next Section
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </ShimmerButton>
-                )}
-              </div>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Draft
+                  </Button>
+
+                  {isLastSection ? (
+                    <Button
+                      type="button"
+                      onClick={() => setShowSubmitDialog(true)}
+                      disabled={isSubmitting}
+                      size="lg"
+                      className="min-w-[180px] bg-amber-600 hover:bg-amber-700 text-white font-semibold border-2 border-amber-400 animate-pulse-border dark:bg-amber-500 dark:hover:bg-amber-600 dark:border-amber-300">
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Submitting...
+                        </>
+                      ) : (
+                        <>
+                          <FileCheck className="h-4 w-4 mr-2" />
+                          Submit for Review
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    <ShimmerButton
+                      type="button"
+                      onClick={handleNext}
+                      disabled={isSubmitting}>
+                      Next Section
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </ShimmerButton>
+                  )}
+                </div>
               </div>
             </form>
           </PdsProvider>

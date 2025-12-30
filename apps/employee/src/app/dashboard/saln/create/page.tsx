@@ -18,8 +18,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm, FormProvider, useWatch } from 'react-hook-form';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
@@ -265,8 +264,25 @@ export default function SALNCreatePage() {
     mode: 'onBlur',
   });
 
-  // Extract watch from form methods
-  const { watch } = form;
+  // Use useWatch for reactive updates to nested field arrays
+  // This properly tracks changes to individual fields within arrays
+  const watchedRealProperties = useWatch({
+    control: form.control,
+    name: 'realProperties',
+    defaultValue: [],
+  });
+
+  const watchedPersonalProperties = useWatch({
+    control: form.control,
+    name: 'personalProperties',
+    defaultValue: [],
+  });
+
+  const watchedLiabilities = useWatch({
+    control: form.control,
+    name: 'liabilities',
+    defaultValue: [],
+  });
 
   // Callback-based approach for getting draft data
   const getDraftData = useCallback(
@@ -333,34 +349,24 @@ export default function SALNCreatePage() {
     },
   });
 
-  // Watch the actual field arrays that matter for calculations
-  const realProperties = watch('realProperties') || [];
-  const personalProperties = watch('personalProperties') || [];
-  const liabilities = watch('liabilities') || [];
-
   // Real-time financial calculations based on watched arrays
+  // Using useWatch ensures proper reactivity to nested field changes
   const financialSummary = useMemo(() => {
-    console.log('[SALN Create] Calculating financial summary:', {
-      realProperties,
-      personalProperties,
-      liabilities,
+    return calculateSalnSummary({
+      realProperties: watchedRealProperties || [],
+      personalProperties: watchedPersonalProperties || [],
+      liabilities: watchedLiabilities || [],
     });
+  }, [watchedRealProperties, watchedPersonalProperties, watchedLiabilities]);
 
-    const summary = calculateSalnSummary({
-      realProperties,
-      personalProperties,
-      liabilities,
-    });
-
-    console.log('[SALN Create] Calculated summary:', summary);
-    return summary;
-  }, [realProperties, personalProperties, liabilities]);
-
-  // Calculate real-time progress based on form data
+  // Calculate real-time progress based on watched data
+  // Note: form.getValues() is called inside to get fresh data
+  // Watched properties trigger re-calculation when form data changes
   const formProgress = useMemo(() => {
     const formData = form.getValues();
     return getOverallSalnProgress(formData);
-  }, [form, realProperties, personalProperties, liabilities]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchedRealProperties, watchedPersonalProperties, watchedLiabilities]);
 
   // Update form calculations in real-time
   useEffect(() => {

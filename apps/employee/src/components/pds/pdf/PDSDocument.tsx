@@ -29,6 +29,63 @@ interface PDSDocumentProps {
  * - Page 4: Questions (34-42), References, Government ID & Declaration
  */
 export function PDSDocument({ data }: PDSDocumentProps) {
+  // CRITICAL VALIDATIONS - These should never fail if usePDSPdf validated properly
+  if (!data) {
+    throw new Error('PDSDocument: data prop is required');
+  }
+
+  if (!data.personalInfo) {
+    throw new Error('PDSDocument: data.personalInfo is required');
+  }
+
+  if (!data.personalInfo.surname || !data.personalInfo.firstName) {
+    throw new Error(
+      'PDSDocument: data.personalInfo must include surname and firstName'
+    );
+  }
+
+  // Defensive checks for nested structures
+  if (!data.familyBackground) {
+    console.warn('PDSDocument: familyBackground is missing, using defaults');
+    data.familyBackground = { children: [] };
+  }
+
+  if (!data.education) {
+    console.warn('PDSDocument: education is missing, using defaults');
+    data.education = {
+      elementary: null,
+      secondary: null,
+      vocational: null,
+      college: null,
+      graduate: null,
+    };
+  }
+
+  if (!data.questions) {
+    console.warn('PDSDocument: questions are missing, using defaults');
+    data.questions = {
+      Q34_criminal_charged: false,
+      Q35_criminal_convicted: false,
+      Q36_separated_from_service: false,
+      Q37_candidate_for_election: false,
+      Q38_resigned_from_government: false,
+      Q39_immigrant_or_acquired_residence: false,
+      Q40_indigenous_group: false,
+      Q41_disabled: false,
+      Q42_solo_parent: false,
+    };
+  }
+
+  // Ensure arrays exist
+  data.civilServiceEligibilities = data.civilServiceEligibilities || [];
+  data.workExperiences = data.workExperiences || [];
+  data.voluntaryWorks = data.voluntaryWorks || [];
+  data.trainings = data.trainings || [];
+  data.skills = data.skills || [];
+  data.recognitions = data.recognitions || [];
+  data.associations = data.associations || [];
+  data.references = data.references || [];
+
   return (
     <Document
       title={`PDS - ${data.personalInfo.surname}, ${data.personalInfo.firstName}`}

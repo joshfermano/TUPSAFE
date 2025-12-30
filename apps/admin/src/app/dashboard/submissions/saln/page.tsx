@@ -13,9 +13,11 @@ import {
   XCircle,
   TrendingUp,
   TrendingDown,
+  Loader2,
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 import { Area, AreaChart, XAxis, YAxis } from 'recharts';
 
 import {
@@ -25,6 +27,8 @@ import {
 import { useSalnStatsQuery } from '@/hooks/useSalnStatsQuery';
 import { useDepartmentsQuery } from '@/hooks/useDepartmentsQuery';
 import { useAuth } from '@/context/AuthContext';
+import { useSALNPdf } from '@/hooks/useSALNPdf';
+import type { SALNData } from '@/components/saln/pdf/types';
 import { DeadlineManagementCard } from '@/components/deadlines';
 import { ReviewDialog } from '@/components/admin/ReviewDialog';
 import type { SalnSubmissionListItem } from '@tupsafe/types';
@@ -145,15 +149,20 @@ interface SalnSubmissionRowProps {
   onApprove: (id: string, notes?: string) => Promise<void>;
   onReject: (id: string, notes: string) => Promise<void>;
   isSubmitting: boolean;
+  onDownload: (submissionId: string) => Promise<void>;
+  isDownloading: boolean;
+  downloadingId: string | null;
 }
 
 const SalnSubmissionRow = memo(
-  ({ submission, index, onApprove, onReject, isSubmitting }: SalnSubmissionRowProps) => {
+  ({ submission, index, onApprove, onReject, isSubmitting, onDownload, isDownloading, downloadingId }: SalnSubmissionRowProps) => {
     const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
     const [approveRejectDialogOpen, setApproveRejectDialogOpen] = useState(false);
     const [reviewAction, setReviewAction] = useState<'approve' | 'reject'>('approve');
 
-    const handleAction = useCallback((action: string) => {
+    const isThisRowDownloading = isDownloading && downloadingId === submission.id;
+
+    const handleAction = useCallback(async (action: string) => {
       if (action === 'approve') {
         setReviewAction('approve');
         setApproveRejectDialogOpen(true);
@@ -161,10 +170,9 @@ const SalnSubmissionRow = memo(
         setReviewAction('reject');
         setApproveRejectDialogOpen(true);
       } else if (action === 'download') {
-        console.log('Download PDF:', submission.id);
-        // TODO: Implement PDF download
+        await onDownload(submission.id);
       }
-    }, [submission.id]);
+    }, [submission.id, onDownload]);
 
     const employeeName = `${submission.employee.firstName} ${submission.employee.lastName}`;
 
@@ -229,9 +237,16 @@ const SalnSubmissionRow = memo(
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => handleAction('download')}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download PDF
+                <DropdownMenuItem
+                  onClick={() => handleAction('download')}
+                  disabled={isThisRowDownloading}
+                >
+                  {isThisRowDownloading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="mr-2 h-4 w-4" />
+                  )}
+                  {isThisRowDownloading ? 'Downloading...' : 'Download PDF'}
                 </DropdownMenuItem>
                 {submission.status === 'submitted' && (
                   <>
@@ -364,9 +379,13 @@ export default function SalnSubmissionsPage() {
   const [departmentFilter, setDepartmentFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   // Get authenticated user
   const { user } = useAuth();
+
+  // PDF hook
+  const { downloadPDF, isGenerating } = useSALNPdf();
 
   // Build filters object
   const filters = useMemo<SalnSubmissionsFilters>(
@@ -389,6 +408,7 @@ export default function SalnSubmissionsPage() {
     rejectSubmissionAsync,
     isApproving,
     isRejecting,
+    useCompleteSubmission,
   } = useSalnSubmissionsQuery(filters);
 
   const isSubmitting = isApproving || isRejecting;
@@ -417,6 +437,147 @@ export default function SalnSubmissionsPage() {
       });
     },
     [user?.id, rejectSubmissionAsync]
+  );
+
+  // Download handler
+  const handleDownload = useCallback(
+    async (submissionId: string) => {
+      setDownloadingId(submissionId);
+      const loadingToast = toast.loading('Preparing PDF download...');
+
+      try {
+        // Fetch complete submission data
+        const response = await fetch(`/api/submissions/saln/${submissionId}`);
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch submission data');
+        }
+
+        const completeSubmission = await response.json();
+
+        // Extract data from the API response structure
+        const submission = completeSubmission?.submission;
+        const employee = completeSubmission?.employee;
+        const salnData = completeSubmission?.salnData;
+
+        if (!submission || !employee || !salnData) {
+          throw new Error('Incomplete submission data');
+        }
+
+        // Calculate totals
+        const totalRealProperties = (salnData.realProperties || []).reduce(
+          (sum: number, prop: { acquisitionCost: string | null }) =>
+            sum + (prop.acquisitionCost ? parseFloat(prop.acquisitionCost) : 0),
+          0
+        );
+
+        const totalPersonalProperties = (salnData.personalProperties || []).reduce(
+          (sum: number, prop: { acquisitionCost: string | null }) =>
+            sum + (prop.acquisitionCost ? parseFloat(prop.acquisitionCost) : 0),
+          0
+        );
+
+        const totalAssets = salnData.totalAssets
+          ? parseFloat(salnData.totalAssets)
+          : totalRealProperties + totalPersonalProperties;
+
+        const totalLiabilities = salnData.totalLiabilities
+          ? parseFloat(salnData.totalLiabilities)
+          : (salnData.liabilities || []).reduce(
+              (sum: number, liability: { outstandingBalance: string | null }) =>
+                sum +
+                (liability.outstandingBalance
+                  ? parseFloat(liability.outstandingBalance)
+                  : 0),
+              0
+            );
+
+        const netWorth = salnData.netWorth
+          ? parseFloat(salnData.netWorth)
+          : totalAssets - totalLiabilities;
+
+        // Parse spouse info if filing type is joint
+        let spouseInfo = undefined;
+        if (submission.filingType === 'joint' && salnData?.spouseName) {
+          const nameParts = salnData.spouseName.split(' ');
+          spouseInfo = {
+            surname: nameParts[nameParts.length - 1] || '',
+            firstName: nameParts[0] || '',
+            middleInitial: nameParts.length > 2 ? nameParts[1]?.charAt(0) : null,
+            position: submission.position || '',
+            agency: submission.agency || 'Technological University of the Philippines - Manila',
+            officeAddress: submission.officeAddress || employee.officeAddress || '',
+          };
+        }
+
+        // Transform to SALNData format
+        const pdfData: SALNData = {
+          id: submission.id,
+          year: submission.fiscalYear,
+          filingType: (submission.filingType || 'separate') as 'joint' | 'separate' | 'not_applicable',
+          declarantInfo: {
+            surname: employee.lastName,
+            firstName: employee.firstName,
+            middleInitial: employee.middleName?.charAt(0) || null,
+            position: submission.position || employee.position?.title || '',
+            agency: submission.agency || 'Technological University of the Philippines - Manila',
+            officeAddress: submission.officeAddress || employee.officeAddress || '',
+          },
+          spouseInfo,
+          children: [],
+          realProperties: (salnData?.realProperties || []).map((prop: any) => ({
+            description: prop.description || '',
+            kind: prop.kind || 'residential',
+            exactLocation: prop.exactLocation || '',
+            assessedValue: parseFloat(prop.assessedValue || '0'),
+            currentFairMarketValue: parseFloat(prop.currentFairMarketValue || '0'),
+            acquisitionYear: prop.acquisitionYear || new Date().getFullYear(),
+            acquisitionMode: prop.acquisitionMode || 'Purchase',
+            acquisitionCost: parseFloat(prop.acquisitionCost || '0'),
+          })),
+          personalProperties: (salnData?.personalProperties || []).map((prop: any) => ({
+            description: prop.description || '',
+            yearAcquired: prop.yearAcquired || new Date().getFullYear(),
+            acquisitionCost: parseFloat(prop.acquisitionCost || '0'),
+          })),
+          liabilities: (salnData?.liabilities || []).map((liability: any) => ({
+            nature: liability.nature || '',
+            creditorName: liability.creditorName || '',
+            outstandingBalance: parseFloat(liability.outstandingBalance || '0'),
+          })),
+          businessInterests: (salnData?.businessInterests || []).map((business: any) => ({
+            entityName: business.entityName || '',
+            businessAddress: business.businessAddress || '',
+            natureOfBusiness: business.natureOfBusiness || '',
+            dateOfAcquisition: business.dateOfAcquisition || new Date().toISOString(),
+          })),
+          relativesInGov: (salnData?.relativesInGov || []).map((relative: any) => ({
+            name: relative.name || '',
+            relationship: relative.relationship || '',
+            position: relative.position || '',
+            agencyAddress: relative.agencyAddress || '',
+          })),
+          totalAssets,
+          totalLiabilities,
+          netWorth,
+          submittedAt: submission.submittedAt,
+        };
+
+        // Download PDF
+        await downloadPDF(pdfData);
+
+        toast.success('PDF downloaded successfully', { id: loadingToast });
+      } catch (error) {
+        console.error('PDF download error:', error);
+        toast.error('Failed to download PDF', {
+          id: loadingToast,
+          description: error instanceof Error ? error.message : 'An unexpected error occurred',
+        });
+      } finally {
+        setDownloadingId(null);
+      }
+    },
+    [downloadPDF]
   );
 
   // Fetch SALN statistics for analytics
@@ -741,6 +902,9 @@ export default function SalnSubmissionsPage() {
                         onApprove={handleApprove}
                         onReject={handleReject}
                         isSubmitting={isSubmitting}
+                        onDownload={handleDownload}
+                        isDownloading={!!downloadingId}
+                        downloadingId={downloadingId}
                       />
                     ))}
                   </EnhancedTableBody>

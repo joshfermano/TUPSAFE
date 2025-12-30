@@ -236,7 +236,7 @@ const ArchivedPDSCard = memo(
             <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
               <span className="flex items-center gap-1">
                 <FileText className="h-3 w-3" />
-                CY {submission.year}
+                PDS {submission.year}
               </span>
               <span className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />

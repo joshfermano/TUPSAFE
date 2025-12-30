@@ -15,7 +15,7 @@
  * - React.memo for performance
  */
 
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { PersonIcon } from '@radix-ui/react-icons';
 import { Label } from '../../../../../components/ui/label';
@@ -50,11 +50,11 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
   const filingType = watch('submission.filingType');
   const isJointFiling = filingType === 'joint';
 
-  // Generate year options
-  const yearOptions = Array.from(
-    { length: 5 },
-    (_, i) => new Date().getFullYear() - i
-  );
+  // Memoize year options to prevent recreation on every render
+  const yearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return Array.from({ length: 5 }, (_, i) => currentYear - i);
+  }, []);
 
   return (
     <div className="space-y-8">

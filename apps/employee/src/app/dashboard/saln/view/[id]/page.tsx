@@ -9,7 +9,7 @@
  * Theme: TUP red accent - oklch(0.55_0.22_15)
  */
 
-import React, { useMemo, use } from 'react';
+import React, { use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../../providers/AuthProvider';
@@ -47,7 +47,6 @@ import {
 } from '../../../../../components/ui/collapsible';
 import { cn } from '../../../../../lib/utils';
 import { formatCurrency } from '../../../../../lib/utils/currency';
-import type { CompleteSalnData } from '../../../../../lib/validations/saln-schema';
 
 // ============================================================================
 // STATUS CONFIGURATION
@@ -194,7 +193,7 @@ export default function SALNViewDetailPage({
 }) {
   const { id: salnId } = use(params);
   const router = useRouter();
-  const { user, profile } = useAuth();
+  const { profile } = useAuth();
 
   // Use new React Query hook
   const { data: salnData, isLoading } = useSALNSubmission(salnId);
@@ -207,14 +206,55 @@ export default function SALNViewDetailPage({
   const canEdit =
     submission?.status === 'draft' || submission?.status === 'rejected';
 
+  // Parse spouse name safely
+  const parseSpouseName = (spouseName: string | null | undefined) => {
+    if (!spouseName || typeof spouseName !== 'string') {
+      return { surname: '', firstName: '', middleInitial: null };
+    }
+
+    const nameParts = spouseName.trim().split(/\s+/);
+
+    if (nameParts.length === 0) {
+      return { surname: '', firstName: '', middleInitial: null };
+    } else if (nameParts.length === 1) {
+      // Only one name part - use as surname
+      return { surname: nameParts[0], firstName: '', middleInitial: null };
+    } else if (nameParts.length === 2) {
+      // Two parts: firstName lastName
+      return {
+        surname: nameParts[1],
+        firstName: nameParts[0],
+        middleInitial: null
+      };
+    } else {
+      // Three or more parts: firstName middleName(s) lastName
+      return {
+        surname: nameParts[nameParts.length - 1],
+        firstName: nameParts[0],
+        middleInitial: nameParts[1].charAt(0) || null,
+      };
+    }
+  };
+
   // Transform submission data to SALNData format for PDF
   const transformSALNToData = (
     submission: any,
     profile: any
   ): SALNData => {
+    // Validate required fields exist
+    if (!submission) {
+      throw new Error('Submission data is missing');
+    }
+
+    if (!profile) {
+      throw new Error('Profile data is missing');
+    }
+
+    const spouseParsedName = parseSpouseName(submission.spouseName);
+
     return {
-      id: submission.id,
-      year: submission.year,
+      id: submission.id || '',
+      year: submission.year || new Date().getFullYear(),
       filingType: submission.filingType || 'not_applicable',
       declarantInfo: {
         surname: profile?.lastName || '',
@@ -229,9 +269,9 @@ export default function SALNViewDetailPage({
       spouseInfo:
         submission.filingType === 'joint' && submission.spouseName
           ? {
-              surname: submission.spouseName?.split(' ').pop() || '',
-              firstName: submission.spouseName?.split(' ')[0] || '',
-              middleInitial: submission.spouseName?.split(' ')[1]?.charAt(0) || null,
+              surname: spouseParsedName.surname,
+              firstName: spouseParsedName.firstName,
+              middleInitial: spouseParsedName.middleInitial,
               position: '',
               agency: '',
               officeAddress: '',
@@ -273,22 +313,80 @@ export default function SALNViewDetailPage({
 
   const handleDownload = async () => {
     try {
+      // Validate data exists before transformation
+      if (!submission) {
+        toast.error('SALN submission data is not available');
+        return;
+      }
+
+      if (!profile) {
+        toast.error('Profile information is not available');
+        return;
+      }
+
+      // Validate required fields for declarant
+      if (!profile.lastName || !profile.firstName) {
+        toast.error('Profile name information is incomplete. Please update your profile.');
+        return;
+      }
+
+      // Transform data with error handling
       const salnPdfData = transformSALNToData(submission, profile);
+
+      // Download PDF (validation happens in useSALNPdf hook)
       await downloadPDF(salnPdfData);
       toast.success('SALN PDF downloaded successfully');
     } catch (error) {
-      toast.error('Failed to generate PDF');
       console.error('PDF generation error:', error);
+
+      // User-friendly error messages
+      const errorMessage = error instanceof Error
+        ? error.message
+        : 'Failed to generate PDF';
+
+      toast.error(errorMessage, {
+        description: 'Please check that all required information is complete and try again.',
+        duration: 5000,
+      });
     }
   };
 
   const handlePrint = async () => {
     try {
+      // Validate data exists before transformation
+      if (!submission) {
+        toast.error('SALN submission data is not available');
+        return;
+      }
+
+      if (!profile) {
+        toast.error('Profile information is not available');
+        return;
+      }
+
+      // Validate required fields for declarant
+      if (!profile.lastName || !profile.firstName) {
+        toast.error('Profile name information is incomplete. Please update your profile.');
+        return;
+      }
+
+      // Transform data with error handling
       const salnPdfData = transformSALNToData(submission, profile);
+
+      // Open PDF in new tab (validation happens in useSALNPdf hook)
       await openPDFInNewTab(salnPdfData);
     } catch (error) {
-      toast.error('Failed to open PDF');
       console.error('PDF preview error:', error);
+
+      // User-friendly error messages
+      const errorMessage = error instanceof Error
+        ? error.message
+        : 'Failed to open PDF preview';
+
+      toast.error(errorMessage, {
+        description: 'Please check that all required information is complete and try again.',
+        duration: 5000,
+      });
     }
   };
 
