@@ -18,6 +18,7 @@ import { z } from 'zod';
 import {
   db,
   profiles,
+  departments,
   createAuditLog,
   createSessionLog,
   updateLastLogin,
@@ -29,6 +30,7 @@ import {
   createSession,
 } from '@tupsafe/auth/server';
 import { parseUserAgent, formatUserAgent } from '@/lib/user-agent-parser';
+import { isHRDepartment } from '@tupsafe/types';
 
 // Login validation schema
 const loginSchema = z.object({
@@ -36,8 +38,8 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
-// Allowed admin roles
-const ADMIN_ROLES = ['admin', 'super_admin', 'hr'] as const;
+// Allowed admin roles (includes co_admin)
+const ADMIN_ROLES = ['admin', 'co_admin', 'super_admin', 'hr'] as const;
 
 export async function POST(request: NextRequest) {
   try {
@@ -92,7 +94,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ADMIN PORTAL SECURITY: Verify user has admin privileges
-    if (!ADMIN_ROLES.includes(profile.role as 'admin' | 'hr' | 'super_admin')) {
+    if (!ADMIN_ROLES.includes(profile.role as 'admin' | 'co_admin' | 'hr' | 'super_admin')) {
       // Log unauthorized access attempt
       try {
         await createAuditLog({
@@ -118,7 +120,56 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: 'Access denied',
-          message: 'Admin or HR privileges required to access this portal.',
+          message: 'Admin, Co-Admin, or HR privileges required to access this portal.',
+        },
+        { status: 403 }
+      );
+    }
+
+    // ADMIN PORTAL SECURITY: Verify user is from an HR office
+    // All Admin Portal users (admin, co_admin, hr) must belong to an HR department
+    let departmentCode: string | null = null;
+    if (profile.departmentId) {
+      const [dept] = await db
+        .select({ code: departments.code, name: departments.name })
+        .from(departments)
+        .where(eq(departments.id, profile.departmentId))
+        .limit(1);
+      
+      if (dept) {
+        departmentCode = dept.code;
+      }
+    }
+
+    if (!isHRDepartment(departmentCode)) {
+      // Log HR office violation attempt
+      try {
+        await createAuditLog({
+          userId,
+          action: 'LOGIN_ATTEMPT',
+          entityType: 'auth',
+          entityId: userId,
+          metadata: {
+            success: false,
+            reason: 'not_hr_department',
+            role: profile.role,
+            departmentId: profile.departmentId,
+            departmentCode,
+          },
+          ipAddress:
+            request.headers.get('x-forwarded-for')?.split(',')[0] ||
+            request.headers.get('x-real-ip') ||
+            undefined,
+          userAgent: request.headers.get('user-agent') || undefined,
+        });
+      } catch (error) {
+        console.error('Error logging HR office violation:', error);
+      }
+
+      return NextResponse.json(
+        {
+          error: 'Access denied',
+          message: 'Admin Portal access is restricted to HR office personnel. Please contact your administrator to update your department assignment.',
         },
         { status: 403 }
       );

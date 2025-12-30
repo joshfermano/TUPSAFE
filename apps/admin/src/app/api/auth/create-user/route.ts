@@ -20,6 +20,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   db,
   profiles,
+  departments,
   notifications,
   createAuditLog,
   generateAndRegisterEmployeeIdFromDOB,
@@ -32,7 +33,7 @@ import {
   sendCredentialsEmail,
   createAdminClient,
 } from '@tupsafe/auth/server';
-import { createUserSchema, type CreateUserResponse } from '@tupsafe/types';
+import { createUserSchema, type CreateUserResponse, isAdminPortalRole, isHRDepartment } from '@tupsafe/types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,11 +47,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify user has HR or admin role
-    const allowedRoles = ['hr', 'admin'];
+    // Verify user has HR, admin, or co_admin role
+    const allowedRoles = ['hr', 'admin', 'co_admin'];
     if (!allowedRoles.includes(adminUser.role)) {
       return NextResponse.json(
-        { error: 'Unauthorized. HR or Admin role required.' },
+        { error: 'Unauthorized. HR, Admin, or Co-Admin role required.' },
         { status: 403 }
       );
     }
@@ -71,20 +72,55 @@ export async function POST(request: NextRequest) {
 
     const data = validationResult.data;
 
-    // RBAC: Only admins can create admin accounts
-    if (data.role === 'admin') {
+    // RBAC: Only admins/co-admins can create admin or co_admin accounts
+    if (data.role === 'admin' || data.role === 'co_admin') {
       const creatorProfile = await db.query.profiles.findFirst({
         where: (profiles, { eq }) => eq(profiles.id, adminUser.userId),
         columns: { role: true },
       });
 
-      if (creatorProfile?.role !== 'admin') {
+      if (!creatorProfile || !['admin', 'co_admin'].includes(creatorProfile.role)) {
         return NextResponse.json(
           {
             error:
-              'Unauthorized. Only administrators can create admin accounts.',
+              'Unauthorized. Only administrators can create admin or co-admin accounts.',
           },
           { status: 403 }
+        );
+      }
+    }
+
+    // Enforce HR* department requirement for Admin Portal roles
+    if (isAdminPortalRole(data.role)) {
+      if (!data.departmentId) {
+        return NextResponse.json(
+          {
+            error: `Department is required for ${data.role} role. Admin Portal users must be assigned to an HR office.`,
+          },
+          { status: 400 }
+        );
+      }
+
+      // Validate department exists and is an HR office
+      const [dept] = await db
+        .select({ code: departments.code, name: departments.name })
+        .from(departments)
+        .where(eq(departments.id, data.departmentId))
+        .limit(1);
+
+      if (!dept) {
+        return NextResponse.json(
+          { error: 'Department not found.' },
+          { status: 400 }
+        );
+      }
+
+      if (!isHRDepartment(dept.code)) {
+        return NextResponse.json(
+          {
+            error: `Admin Portal users (admin, co-admin, HR) must be assigned to an HR office. "${dept.name}" (${dept.code}) is not an HR department. HR departments have codes starting with "HR".`,
+          },
+          { status: 400 }
         );
       }
     }

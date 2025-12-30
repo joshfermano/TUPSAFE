@@ -63,10 +63,10 @@ export async function GET(
     }
 
     // Verify admin/HR permissions
-    const allowedRoles = ['admin', 'hr'];
+    const allowedRoles = ['admin', 'co_admin', 'hr'];
     if (!allowedRoles.includes(currentUser.role)) {
       return NextResponse.json(
-        { error: 'Unauthorized. Admin or HR role required.' },
+        { error: 'Unauthorized. Admin, Co-Admin, or HR role required.' },
         { status: 403 }
       );
     }
@@ -448,10 +448,10 @@ export async function PATCH(
     }
 
     // Verify admin/HR permissions
-    const allowedRoles = ['admin', 'hr'];
+    const allowedRoles = ['admin', 'co_admin', 'hr'];
     if (!allowedRoles.includes(currentUser.role)) {
       return NextResponse.json(
-        { error: 'Unauthorized. Admin or HR role required.' },
+        { error: 'Unauthorized. Admin, Co-Admin, or HR role required.' },
         { status: 403 }
       );
     }
@@ -597,10 +597,10 @@ export async function DELETE(
     }
 
     // Verify admin/HR permissions
-    const allowedRoles = ['admin', 'hr'];
+    const allowedRoles = ['admin', 'co_admin', 'hr'];
     if (!allowedRoles.includes(currentUser.role)) {
       return NextResponse.json(
-        { error: 'Unauthorized. Admin or HR role required.' },
+        { error: 'Unauthorized. Admin, Co-Admin, or HR role required.' },
         { status: 403 }
       );
     }

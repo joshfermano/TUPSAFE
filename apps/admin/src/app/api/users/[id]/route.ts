@@ -13,7 +13,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkUserRoleFromSupabase, getUserFromSupabase, getProfilePicturePublicUrl } from '@tupsafe/auth/server';
+import { checkUserRoleFromSupabase, getUserFromSupabase, getProfilePicturePublicUrl, createAdminClient } from '@tupsafe/auth/server';
 import {
   db,
   profiles,
@@ -35,6 +35,8 @@ import {
   updateUserSchema,
   type UserDetail,
   ROLE_HIERARCHY,
+  isAdminPortalRole,
+  isHRDepartment,
 } from '@tupsafe/types';
 
 /**
@@ -47,10 +49,10 @@ export async function GET(
 ) {
   try {
     // Verify permissions using Supabase auth
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr', 'supervisor'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'co_admin', 'hr', 'supervisor'], 'admin');
     if (!hasPermission) {
       return NextResponse.json(
-        { error: 'Unauthorized. Admin, HR, or Supervisor role required.' },
+        { error: 'Unauthorized. Admin, Co-Admin, HR, or Supervisor role required.' },
         { status: 403 }
       );
     }
@@ -274,10 +276,10 @@ export async function PATCH(
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'co_admin', 'hr'], 'admin');
     if (!hasPermission) {
       return NextResponse.json(
-        { error: 'Unauthorized. Admin or HR role required.' },
+        { error: 'Unauthorized. Admin, Co-Admin, or HR role required.' },
         { status: 403 }
       );
     }
@@ -325,11 +327,28 @@ export async function PATCH(
       const targetCurrentRole = currentUser.role;
       const targetNewRole = validatedData.role;
 
+      // Debug: Log role hierarchy check
+      console.log('[PATCH /api/users/[id]] Role Hierarchy Check:', {
+        currentUserRole,
+        currentUserHierarchy: ROLE_HIERARCHY[currentUserRole as keyof typeof ROLE_HIERARCHY],
+        targetCurrentRole,
+        targetCurrentHierarchy: ROLE_HIERARCHY[targetCurrentRole as keyof typeof ROLE_HIERARCHY],
+        targetNewRole,
+        targetNewHierarchy: ROLE_HIERARCHY[targetNewRole as keyof typeof ROLE_HIERARCHY],
+        fullRoleHierarchy: ROLE_HIERARCHY,
+      });
+
       // Check if current user can modify target user's role
-      if (
-        ROLE_HIERARCHY[targetCurrentRole as keyof typeof ROLE_HIERARCHY] >=
-        ROLE_HIERARCHY[currentUserRole as keyof typeof ROLE_HIERARCHY]
-      ) {
+      const canModifyTarget =
+        ROLE_HIERARCHY[targetCurrentRole as keyof typeof ROLE_HIERARCHY] <
+        ROLE_HIERARCHY[currentUserRole as keyof typeof ROLE_HIERARCHY];
+
+      console.log('[PATCH /api/users/[id]] Can modify target user?', {
+        canModifyTarget,
+        comparison: `${ROLE_HIERARCHY[targetCurrentRole as keyof typeof ROLE_HIERARCHY]} < ${ROLE_HIERARCHY[currentUserRole as keyof typeof ROLE_HIERARCHY]}`,
+      });
+
+      if (!canModifyTarget) {
         return NextResponse.json(
           {
             error: 'Cannot modify users with equal or higher role privilege',
@@ -339,15 +358,60 @@ export async function PATCH(
       }
 
       // Check if current user can assign the new role
-      if (
-        ROLE_HIERARCHY[targetNewRole as keyof typeof ROLE_HIERARCHY] >=
-        ROLE_HIERARCHY[currentUserRole as keyof typeof ROLE_HIERARCHY]
-      ) {
+      const canAssignNewRole =
+        ROLE_HIERARCHY[targetNewRole as keyof typeof ROLE_HIERARCHY] <
+        ROLE_HIERARCHY[currentUserRole as keyof typeof ROLE_HIERARCHY];
+
+      console.log('[PATCH /api/users/[id]] Can assign new role?', {
+        canAssignNewRole,
+        comparison: `${ROLE_HIERARCHY[targetNewRole as keyof typeof ROLE_HIERARCHY]} < ${ROLE_HIERARCHY[currentUserRole as keyof typeof ROLE_HIERARCHY]}`,
+      });
+
+      if (!canAssignNewRole) {
         return NextResponse.json(
           {
             error: 'Cannot assign role with equal or higher privilege',
           },
           { status: 403 }
+        );
+      }
+    }
+
+    // Determine the effective role and department for HR office validation
+    const effectiveRole = validatedData.role || currentUser.role;
+    const effectiveDepartmentId = validatedData.departmentId ?? currentUser.departmentId;
+
+    // Enforce HR* department requirement for Admin Portal roles
+    if (isAdminPortalRole(effectiveRole)) {
+      if (!effectiveDepartmentId) {
+        return NextResponse.json(
+          {
+            error: `Department is required for ${effectiveRole} role. Admin Portal users must be assigned to an HR office.`,
+          },
+          { status: 400 }
+        );
+      }
+
+      // Validate department is an HR office
+      const [dept] = await db
+        .select({ code: departments.code, name: departments.name })
+        .from(departments)
+        .where(eq(departments.id, effectiveDepartmentId))
+        .limit(1);
+
+      if (!dept) {
+        return NextResponse.json(
+          { error: 'Department not found.' },
+          { status: 400 }
+        );
+      }
+
+      if (!isHRDepartment(dept.code)) {
+        return NextResponse.json(
+          {
+            error: `Admin Portal users (admin, co-admin, HR) must be assigned to an HR office. "${dept.name}" (${dept.code}) is not an HR department. HR departments have codes starting with "HR".`,
+          },
+          { status: 400 }
         );
       }
     }
@@ -402,6 +466,24 @@ export async function PATCH(
       })
       .where(eq(profiles.id, userId))
       .returning();
+
+    // Sync Supabase Auth metadata when role or department changes
+    if (validatedData.role || validatedData.departmentId) {
+      try {
+        const supabase = createAdminClient();
+        await supabase.auth.admin.updateUserById(userId, {
+          user_metadata: {
+            role: updatedUser.role,
+            department_id: updatedUser.departmentId || null,
+            updated_at: new Date().toISOString(),
+          },
+        });
+        console.log(`✓ Synced user metadata for ${userId} (role: ${updatedUser.role})`);
+      } catch (metadataError) {
+        console.error('Error syncing user metadata:', metadataError);
+        // Non-critical - database is source of truth, continue
+      }
+    }
 
     // Create audit log
     const changes = generateChanges(
@@ -468,10 +550,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'co_admin', 'hr'], 'admin');
     if (!hasPermission) {
       return NextResponse.json(
-        { error: 'Unauthorized. Admin or HR role required.' },
+        { error: 'Unauthorized. Admin, Co-Admin, or HR role required.' },
         { status: 403 }
       );
     }

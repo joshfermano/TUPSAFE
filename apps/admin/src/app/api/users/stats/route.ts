@@ -31,7 +31,7 @@ export async function GET(_request: NextRequest) {
 
     // Verify permissions (using Supabase session)
     const authStartTime = Date.now();
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr', 'supervisor'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'co_admin', 'hr', 'supervisor'], 'admin');
     const authDuration = Date.now() - authStartTime;
     console.log(`[Stats API] Permission check completed in ${authDuration}ms - result:`, hasPermission);
 
@@ -193,6 +193,7 @@ export async function GET(_request: NextRequest) {
       employee: 0,
       hr: 0,
       admin: 0,
+      co_admin: 0,
       supervisor: 0,
       auditor: 0,
     };

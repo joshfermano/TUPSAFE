@@ -33,21 +33,46 @@ export function isInstitutionalEmail(email: string): boolean {
 
 /**
  * Role hierarchy for permission validation
+ * Higher number = higher privilege level
  */
 export const ROLE_HIERARCHY = {
-  employee: 1,
-  hr: 2,
-  admin: 3,
-  supervisor: 4,
-  auditor: 5,
+  employee: 1,     // Regular employee - lowest privilege
+  supervisor: 2,   // Department supervisor - can view department submissions
+  auditor: 2,      // Auditor - can view/audit records (same level as supervisor)
+  hr: 3,           // HR personnel - can manage users and submissions
+  co_admin: 4,     // Co-admin - admin assistant with full portal access
+  admin: 5,        // Full admin - highest privilege
 } as const;
+
+/**
+ * Roles that can access the Admin Portal
+ * These roles require an HR* department assignment
+ */
+export const ADMIN_PORTAL_ROLES = ['admin', 'co_admin', 'hr'] as const;
+export type AdminPortalRole = (typeof ADMIN_PORTAL_ROLES)[number];
+
+/**
+ * Check if a role can access the Admin Portal
+ */
+export function isAdminPortalRole(role: string): role is AdminPortalRole {
+  return ADMIN_PORTAL_ROLES.includes(role as AdminPortalRole);
+}
+
+/**
+ * Check if a department code indicates an HR office
+ * HR offices have department codes starting with "HR" (case-insensitive)
+ */
+export function isHRDepartment(departmentCode: string | null | undefined): boolean {
+  if (!departmentCode) return false;
+  return departmentCode.toUpperCase().startsWith('HR');
+}
 
 /**
  * User update validation schema
  * Validates admin updates to user profiles
  */
 export const updateUserSchema = z.object({
-  role: z.enum(['employee', 'hr', 'admin', 'supervisor', 'auditor']).optional(),
+  role: z.enum(['employee', 'hr', 'admin', 'co_admin', 'supervisor', 'auditor']).optional(),
   departmentId: z.string().uuid().optional(),
   positionId: z.string().uuid().optional(),
   accountStatus: z.enum(['pending', 'active', 'suspended', 'rejected']).optional(),
@@ -80,7 +105,7 @@ export const userListQuerySchema = z.object({
   search: z.string().max(200).optional(),
 
   // Filters
-  role: z.enum(['employee', 'hr', 'admin', 'supervisor', 'auditor']).optional(),
+  role: z.enum(['employee', 'hr', 'admin', 'co_admin', 'supervisor', 'auditor']).optional(),
   userType: z.enum(['employee', 'applicant']).optional(),
   accountStatus: z.enum(['pending', 'active', 'suspended', 'rejected']).optional(),
   isActive: z.boolean().optional(),
@@ -124,7 +149,7 @@ const createUserBaseSchema = z.object({
     /^\d{4}-\d{2}-\d{2}$/,
     'Date of birth must be in YYYY-MM-DD format'
   ),
-  role: z.enum(['employee', 'hr', 'admin', 'supervisor', 'auditor']),
+  role: z.enum(['employee', 'hr', 'admin', 'co_admin', 'supervisor', 'auditor']),
   employmentCategory: z.enum(['faculty', 'administrative', 'contractual']),
 
   // Optional fields

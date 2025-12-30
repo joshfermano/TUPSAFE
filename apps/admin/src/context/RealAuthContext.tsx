@@ -43,7 +43,7 @@ export interface AdminProfile {
   firstName: string;
   lastName: string;
   middleName?: string;
-  role: 'admin' | 'super_admin' | 'hr';
+  role: 'admin' | 'co_admin' | 'super_admin' | 'hr';
   employeeId?: string;
   departmentId?: string;
   positionId?: string;

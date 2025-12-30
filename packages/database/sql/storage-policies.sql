@@ -77,7 +77,7 @@ USING (
 );
 
 -- ============================================================================
--- POLICY 7: Admins and HR have full access to all buckets
+-- POLICY 7: Admins, Co-Admins, and HR have full access to all buckets
 -- ============================================================================
 CREATE POLICY "Admins and HR full access"
 ON storage.objects FOR ALL
@@ -86,7 +86,7 @@ USING (
   EXISTS (
     SELECT 1 FROM profiles
     WHERE id = auth.uid() 
-    AND role IN ('admin', 'hr')
+    AND role IN ('admin', 'co_admin', 'hr')
     AND is_active = true
   )
 );
@@ -108,7 +108,7 @@ USING (
 );
 
 -- ============================================================================
--- POLICY 9: Archives are admin/HR only
+-- POLICY 9: Archives are admin/co-admin/HR only
 -- ============================================================================
 CREATE POLICY "Archives admin only"
 ON storage.objects FOR ALL
@@ -118,7 +118,7 @@ USING (
   EXISTS (
     SELECT 1 FROM profiles
     WHERE id = auth.uid() 
-    AND role IN ('admin', 'hr')
+    AND role IN ('admin', 'co_admin', 'hr')
     AND is_active = true
   )
 );

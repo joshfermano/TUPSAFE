@@ -72,7 +72,7 @@ const userFormSchema = z.object({
   suffix: z.string().optional(),
   dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date of birth is required (YYYY-MM-DD)'),
   email: z.string().email('Invalid email address'),
-  role: z.enum(['employee', 'hr', 'admin', 'supervisor', 'auditor'], {
+  role: z.enum(['employee', 'hr', 'co_admin', 'admin', 'supervisor', 'auditor'], {
     required_error: 'Role is required',
   }),
   employmentCategory: z.enum(['faculty', 'administrative', 'contractual'], {
@@ -93,10 +93,20 @@ type UserFormValues = z.infer<typeof userFormSchema>;
 const ROLES = [
   { value: 'employee', label: 'Employee' },
   { value: 'hr', label: 'HR Personnel' },
+  { value: 'co_admin', label: 'Co-Admin' },
   { value: 'admin', label: 'Admin' },
   { value: 'supervisor', label: 'Supervisor' },
   { value: 'auditor', label: 'Auditor' },
 ];
+
+// Roles that require HR department assignment
+const ADMIN_PORTAL_ROLES = ['admin', 'co_admin', 'hr'];
+
+// Check if a department code indicates an HR office
+function isHRDepartmentCode(code: string | undefined | null): boolean {
+  if (!code) return false;
+  return code.toUpperCase().startsWith('HR');
+}
 
 // Employment categories
 const EMPLOYMENT_CATEGORIES = [
@@ -330,20 +340,32 @@ export default function CreateUserPage() {
     [createUserAsync]
   );
 
+  // Check if selected role requires a department
   const roleRequiresDepartment = useMemo(() => {
-    return ['employee', 'supervisor'].includes(watchRole || '');
+    return ['employee', 'supervisor', ...ADMIN_PORTAL_ROLES].includes(watchRole || '');
+  }, [watchRole]);
+
+  // Check if selected role requires an HR department specifically
+  const roleRequiresHRDepartment = useMemo(() => {
+    return ADMIN_PORTAL_ROLES.includes(watchRole || '');
   }, [watchRole]);
 
   // Transform API data into dropdown format
+  // Filter to HR* departments only for admin portal roles
   const departmentOptions = useMemo(() => {
+    const filteredDepartments = roleRequiresHRDepartment
+      ? departments.filter((dept) => isHRDepartmentCode(dept.code))
+      : departments;
+
     return [
-      { value: 'none', label: 'None' },
-      ...departments.map((dept) => ({
+      ...(roleRequiresHRDepartment ? [] : [{ value: 'none', label: 'None' }]),
+      ...filteredDepartments.map((dept) => ({
         value: dept.id,
-        label: dept.name,
+        label: `${dept.name} (${dept.code})`,
+        code: dept.code,
       })),
     ];
-  }, [departments]);
+  }, [departments, roleRequiresHRDepartment]);
 
   const positionOptions = useMemo(() => {
     return [
@@ -761,7 +783,9 @@ export default function CreateUserPage() {
                                 placeholder={
                                   isDepartmentsLoading
                                     ? 'Loading departments...'
-                                    : 'Select department'
+                                    : roleRequiresHRDepartment
+                                      ? 'Select HR department'
+                                      : 'Select department'
                                 }
                               />
                             </SelectTrigger>
@@ -776,6 +800,11 @@ export default function CreateUserPage() {
                         </Select>
                         {isDepartmentsLoading && (
                           <FormDescription>Loading departments...</FormDescription>
+                        )}
+                        {roleRequiresHRDepartment && !isDepartmentsLoading && (
+                          <FormDescription className="text-amber-600 dark:text-amber-400">
+                            Admin Portal users (Admin, Co-Admin, HR) must be assigned to an HR office.
+                          </FormDescription>
                         )}
                         <FormMessage />
                       </FormItem>

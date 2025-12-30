@@ -19,7 +19,7 @@ import type { PaginationMeta } from './common';
  * Allows optional role, department, and position assignment overrides
  */
 export const approveRegistrationSchema = z.object({
-  role: z.enum(['employee', 'hr', 'admin', 'supervisor', 'auditor']).optional(),
+  role: z.enum(['employee', 'hr', 'admin', 'co_admin', 'supervisor', 'auditor']).optional(),
   assignedDepartmentId: z.string().uuid('Invalid department ID').optional(),
   assignedPositionId: z.string().uuid('Invalid position ID').optional(),
   notes: z.string().max(500, 'Notes must not exceed 500 characters').optional(),
@@ -51,7 +51,7 @@ export const bulkApproveRegistrationsSchema = z.object({
     .array(z.string().uuid('Invalid registration ID'))
     .min(1, 'At least one registration ID required')
     .max(50, 'Cannot approve more than 50 registrations at once'),
-  defaultRole: z.enum(['employee', 'hr', 'admin', 'supervisor', 'auditor']).optional(),
+  defaultRole: z.enum(['employee', 'hr', 'admin', 'co_admin', 'supervisor', 'auditor']).optional(),
   notes: z.string().max(500, 'Notes must not exceed 500 characters').optional(),
   sendWelcomeEmails: z.boolean().optional().default(true),
 });
@@ -135,8 +135,8 @@ export interface RegistrationDetail extends RegistrationListItem {
   emailVerifiedAt: Date | null;
   phoneNumber: string | null;
   employmentCategory: 'faculty' | 'administrative' | 'contractual' | 'not_applicable';
-  role: 'employee' | 'hr' | 'admin' | 'supervisor' | 'auditor';
-  requestedRole?: 'employee' | 'hr' | 'admin' | 'supervisor' | 'auditor';
+  role: 'employee' | 'hr' | 'admin' | 'co_admin' | 'supervisor' | 'auditor';
+  requestedRole?: 'employee' | 'hr' | 'admin' | 'co_admin' | 'supervisor' | 'auditor';
   academicRank: string | null;
   tenureStatus: string | null;
   employmentType: string | null;

@@ -267,10 +267,10 @@ export async function PATCH(
     }
 
     // Verify permissions
-    const allowedRoles = ['admin', 'hr'];
+    const allowedRoles = ['admin', 'co_admin', 'hr'];
     if (!allowedRoles.includes(sessionUser.role)) {
       return NextResponse.json(
-        { error: 'Unauthorized. Admin or HR role required.' },
+        { error: 'Unauthorized. Admin, Co-Admin, or HR role required.' },
         { status: 403 }
       );
     }

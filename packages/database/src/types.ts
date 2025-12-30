@@ -122,7 +122,7 @@ export type SessionLog = InferSelectModel<typeof schema.sessionLogs>;
 export type NewSessionLog = InferInsertModel<typeof schema.sessionLogs>;
 
 // Enum Types
-export type Role = 'employee' | 'hr' | 'admin' | 'supervisor' | 'auditor';
+export type Role = 'employee' | 'hr' | 'admin' | 'co_admin' | 'supervisor' | 'auditor';
 export type SubmissionStatus =
   | 'draft'
   | 'submitted'

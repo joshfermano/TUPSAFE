@@ -44,7 +44,7 @@ ON "pds_attachments" FOR SELECT
 TO authenticated
 USING (user_id = auth.uid());
 
--- Admins/HR can view all attachments
+-- Admins/Co-Admins/HR can view all attachments
 CREATE POLICY "Admins can view all PDS attachments"
 ON "pds_attachments" FOR SELECT
 TO authenticated
@@ -52,7 +52,7 @@ USING (
   EXISTS (
     SELECT 1 FROM profiles
     WHERE id = auth.uid() 
-    AND role IN ('admin', 'hr')
+    AND role IN ('admin', 'co_admin', 'hr')
     AND is_active = true
   )
 );
@@ -69,7 +69,7 @@ ON "pds_attachments" FOR DELETE
 TO authenticated
 USING (user_id = auth.uid());
 
--- Admins/HR can manage all attachments
+-- Admins/Co-Admins/HR can manage all attachments
 CREATE POLICY "Admins can manage all PDS attachments"
 ON "pds_attachments" FOR ALL
 TO authenticated
@@ -77,7 +77,7 @@ USING (
   EXISTS (
     SELECT 1 FROM profiles
     WHERE id = auth.uid() 
-    AND role IN ('admin', 'hr')
+    AND role IN ('admin', 'co_admin', 'hr')
     AND is_active = true
   )
 );
