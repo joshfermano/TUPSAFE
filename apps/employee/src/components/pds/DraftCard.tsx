@@ -91,11 +91,11 @@ export const DraftCard = memo(
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1.5">
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                      Annual PDS - CY {submission.year}
+                      PDS {submission.year}
                     </h3>
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-400">
-                    CY {submission.year} v{submission.version} • Last saved {timeAgo}
+                    Last saved {timeAgo}
                   </p>
                 </div>
                 <Badge
@@ -126,7 +126,7 @@ export const DraftCard = memo(
               <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
                 <span className="flex items-center gap-1">
                   <FileText className="h-3 w-3" />
-                  CY {submission.year} v{submission.version}
+                  PDS {submission.year}
                 </span>
                 <span className="flex items-center gap-1">
                   <Calendar className="h-3 w-3" />

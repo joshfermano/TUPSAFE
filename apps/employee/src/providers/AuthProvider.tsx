@@ -7,6 +7,7 @@ import {
   useState,
   useCallback,
   useMemo,
+  useRef,
 } from 'react';
 import { createClient } from '@tupsafe/auth';
 import type { User, Session } from '@supabase/supabase-js';
@@ -61,6 +62,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // SSR guards are in the cookie methods (getAll/setAll), not here
   const supabase = useMemo(() => createClient(), []);
 
+  // Debounce profile fetches to prevent rapid refetches on tab switch
+  const lastProfileFetchRef = useRef<number>(0);
+  const PROFILE_FETCH_DEBOUNCE_MS = 30000; // 30 seconds - prevent refetch during typical tab switching
+
+  // Track if initial profile has been loaded (to avoid loading flash on refetch)
+  const initialProfileLoadedRef = useRef(false);
+
+  // Stable reference to supabase.auth to prevent effect re-runs
+  const supabaseAuthRef = useRef(supabase.auth);
+
   // Detect when component mounts (client-side only)
   useEffect(() => {
     setMounted(true);
@@ -68,16 +79,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   /**
    * Fetch user profile from the server
+   * @param isInitialLoad - Only show loading state on initial load, not refetches
    */
-  const fetchProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
+  const fetchProfile = useCallback(async (userId: string, isInitialLoad = false): Promise<UserProfile | null> => {
     try {
-      setProfileLoading(true);
+      // Only show loading indicator on initial load to prevent flash on refetch
+      if (isInitialLoad && !initialProfileLoadedRef.current) {
+        setProfileLoading(true);
+      }
       const response = await fetch('/api/auth/profile');
       if (!response.ok) {
         console.warn('[AuthProvider] Profile fetch returned', response.status);
         return null;
       }
       const data = await response.json();
+      initialProfileLoadedRef.current = true;
       return data.profile as UserProfile;
     } catch (error) {
       console.error('[AuthProvider] Error fetching profile:', error);
@@ -169,7 +185,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const {
           data: { session: initialSession },
           error,
-        } = await supabase.auth.getSession();
+        } = await supabaseAuthRef.current.getSession();
 
         if (error) {
           console.error('[AuthProvider] Error getting initial session:', error);
@@ -183,7 +199,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Fetch user profile if session exists
         if (initialSession?.user) {
           console.log('[AuthProvider] Fetching user profile...');
-          const userProfile = await fetchProfile(initialSession.user.id);
+          lastProfileFetchRef.current = Date.now(); // Mark initial fetch time
+          const userProfile = await fetchProfile(initialSession.user.id, true);
           if (userProfile) {
             setProfile(userProfile);
             console.log('[AuthProvider] ✅ Profile loaded:', userProfile.userType);
@@ -200,7 +217,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     initializeAuth();
-  }, [mounted, supabase.auth, fetchProfile]);
+  }, [mounted, fetchProfile]); // Removed supabase.auth - using ref instead
 
   // Listen for auth state changes
   useEffect(() => {
@@ -212,33 +229,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+    } = supabaseAuthRef.current.onAuthStateChange(async (event, newSession) => {
       console.log('[AuthProvider] Auth state changed:', event, newSession ? 'Session exists' : 'No session');
-      
+
+      // Always update session and user state
       setSession(newSession);
       setUser(newSession?.user ?? null);
 
-      // CRITICAL: Fetch/clear profile based on auth state
+      // CRITICAL: Only fetch profile on actual sign-in events, NOT token refresh
+      // TOKEN_REFRESHED fires on tab switch which causes the "restart" effect
       if (newSession?.user) {
-        // User logged in or session refreshed - fetch profile
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
-          console.log('[AuthProvider] Fetching profile after auth event:', event);
-          const userProfile = await fetchProfile(newSession.user.id);
-          if (userProfile) {
-            setProfile(userProfile);
-            console.log('[AuthProvider] ✅ Profile set after', event, ':', userProfile.userType);
+        // Only fetch profile on genuine auth events, not token refresh
+        if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+          // Still apply debounce for rapid sign-in attempts
+          const now = Date.now();
+          if (now - lastProfileFetchRef.current < PROFILE_FETCH_DEBOUNCE_MS) {
+            console.log('[AuthProvider] Skipping profile fetch - debounced (too recent)');
+            // Don't return early - still need to set loading to false
           } else {
-            console.warn('[AuthProvider] ⚠️ Profile fetch returned null after', event);
-            setProfile(null);
+            lastProfileFetchRef.current = now;
+
+            console.log('[AuthProvider] Fetching profile after auth event:', event);
+            const userProfile = await fetchProfile(newSession.user.id, event === 'SIGNED_IN');
+            if (userProfile) {
+              setProfile(userProfile);
+              console.log('[AuthProvider] ✅ Profile set after', event, ':', userProfile.userType);
+            } else {
+              console.warn('[AuthProvider] ⚠️ Profile fetch returned null after', event);
+              // Don't clear profile on fetch failure - keep existing profile
+            }
           }
         }
+        // For TOKEN_REFRESHED: just update session, don't refetch profile
+        // This prevents the "app restart" effect on tab switch
       } else {
         // User logged out or session cleared - clear profile
         console.log('[AuthProvider] Clearing profile (no session)');
         setProfile(null);
         setProfileLoading(false);
+        initialProfileLoadedRef.current = false;
       }
-      
+
       setLoading(false);
     });
 
@@ -246,7 +277,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('[AuthProvider] Cleaning up auth state listener');
       subscription.unsubscribe();
     };
-  }, [mounted, supabase.auth, fetchProfile]);
+  }, [mounted, fetchProfile]); // Removed supabase.auth - using ref instead
 
   // Auto-refresh session every 5 minutes
   useEffect(() => {

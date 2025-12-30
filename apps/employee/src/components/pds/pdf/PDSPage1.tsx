@@ -295,7 +295,9 @@ export function PDSPage1({ data }: PDSPage1Props) {
           </View>
           <View style={[styles.fieldCell, styles.w30]}>
             <Text style={styles.value}>
-              {personalInfo.heightM ? personalInfo.heightM.toFixed(2) : ''}
+              {personalInfo.heightM
+                ? parseFloat(String(personalInfo.heightM)).toFixed(2)
+                : ''}
             </Text>
           </View>
           <View style={[styles.labelCell, styles.w20]}>
@@ -303,7 +305,9 @@ export function PDSPage1({ data }: PDSPage1Props) {
           </View>
           <View style={[styles.fieldCellLast, styles.w30]}>
             <Text style={styles.value}>
-              {personalInfo.weightKg ? personalInfo.weightKg.toString() : ''}
+              {personalInfo.weightKg
+                ? parseFloat(String(personalInfo.weightKg)).toFixed(2)
+                : ''}
             </Text>
           </View>
         </View>

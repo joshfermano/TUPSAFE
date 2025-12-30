@@ -4,6 +4,9 @@ import React, { useMemo, useCallback, useState, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../providers/AuthProvider';
 import { usePDSSubmissions, type PDSSubmission } from '../../../../hooks/usePDS';
+import { usePDSPdf } from '../../../../hooks/usePDSPdf';
+import { transformPdsForPdf } from '../../../../lib/utils/pds-transformations';
+import { toast } from 'sonner';
 import { BlurFade, Badge, NumberTicker } from '@tupsafe/shared-ui';
 import { Card, CardContent } from '../../../../components/ui/card';
 import { Button } from '../../../../components/ui/button';
@@ -143,7 +146,8 @@ const ApprovedCard = memo<{
   onView: (id: string) => void;
   onDownload: (id: string) => void;
   onPrint: (id: string) => void;
-}>(({ submission, delay, onView, onDownload, onPrint }) => (
+  isDownloading?: boolean;
+}>(({ submission, delay, onView, onDownload, onPrint, isDownloading = false }) => (
   <BlurFade delay={delay} inView>
     <Card className="border-slate-200 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all duration-300">
       <CardContent className="p-6">
@@ -155,10 +159,7 @@ const ApprovedCard = memo<{
                 <FileText className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg">Annual PDS - CY {submission.year}</h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  v{submission.version}
-                </p>
+                <h3 className="font-semibold text-lg">PDS {submission.year}</h3>
               </div>
             </div>
             <Badge
@@ -215,14 +216,20 @@ const ApprovedCard = memo<{
               variant="outline"
               size="sm"
               onClick={() => onDownload(submission.id)}
+              disabled={isDownloading}
               className="flex-1 min-w-[100px]">
-              <Download className="h-4 w-4 mr-2" />
-              Download
+              {isDownloading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4 mr-2" />
+              )}
+              {isDownloading ? 'Downloading...' : 'Download'}
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => onPrint(submission.id)}
+              disabled={isDownloading}
               className="flex-1 min-w-[100px]">
               <Printer className="h-4 w-4 mr-2" />
               Print
@@ -256,10 +263,7 @@ const RejectedCard = memo<{
                 <FileText className="h-5 w-5 text-rose-600 dark:text-rose-400" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg">Annual PDS - CY {submission.year}</h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  v{submission.version}
-                </p>
+                <h3 className="font-semibold text-lg">PDS {submission.year}</h3>
               </div>
             </div>
             <Badge
@@ -402,6 +406,12 @@ export default function SubmissionsPage() {
     error: queryError,
   } = usePDSSubmissions();
 
+  // PDF generation hook
+  const { downloadPDF, openPDFInNewTab, isGenerating } = usePDSPdf();
+
+  // Track which submission is being downloaded
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
   const submissions = useMemo(() => {
     if (!pdsResponse?.data) return [];
     return pdsResponse.data;
@@ -483,16 +493,135 @@ export default function SubmissionsPage() {
     [router]
   );
 
-  const handleDownload = useCallback((id: string) => {
-    // Navigate to the detailed view where PDF download is implemented
-    router.push(`/dashboard/pds/view/${id}`);
-  }, [router]);
+  /**
+   * Fetch complete PDS data and download as PDF
+   */
+  const handleDownload = useCallback(
+    async (id: string) => {
+      try {
+        setDownloadingId(id);
+        toast.loading('Preparing PDF...', { id: 'pds-pdf-download' });
 
-  const handlePrint = useCallback(
-    (id: string) => {
-      router.push(`/dashboard/pds/view/${id}`);
+        // Fetch complete PDS data
+        const response = await fetch(`/api/pds/${id}`, {
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch PDS data');
+        }
+
+        const result = await response.json();
+
+        if (!result.success || !result.data) {
+          throw new Error('Invalid API response: Missing data');
+        }
+
+        const pdsData = result.data;
+
+        // Validate required data before transformation
+        if (!pdsData.personalInfo) {
+          throw new Error('Cannot generate PDF: Personal information is missing');
+        }
+
+        if (!pdsData.personalInfo.surname || !pdsData.personalInfo.firstName) {
+          throw new Error('Cannot generate PDF: Name fields are required (surname and first name)');
+        }
+
+        console.log('PDS Data structure:', {
+          hasSubmission: !!pdsData.submission,
+          hasPersonalInfo: !!pdsData.personalInfo,
+          hasFamilyBackground: !!pdsData.familyBackground,
+          hasEducation: !!pdsData.education,
+          year: pdsData.submission?.year || pdsData.year,
+          version: pdsData.submission?.version || pdsData.version,
+        });
+
+        // Transform to PDF format
+        const pdfReadyData = transformPdsForPdf(pdsData);
+
+        console.log('PDF Ready Data validation:', {
+          hasPersonalInfo: !!pdfReadyData.personalInfo,
+          surname: pdfReadyData.personalInfo?.surname,
+          firstName: pdfReadyData.personalInfo?.firstName,
+        });
+
+        // Generate and download PDF
+        await downloadPDF(pdfReadyData);
+
+        toast.success('PDS PDF downloaded successfully', {
+          id: 'pds-pdf-download',
+          description: `PDS for CY ${pdsData.submission?.year || pdsData.year || 'N/A'} has been downloaded.`,
+        });
+      } catch (error) {
+        console.error('PDF download error:', error);
+        toast.error('Failed to download PDF', {
+          id: 'pds-pdf-download',
+          description: error instanceof Error ? error.message : 'An unexpected error occurred',
+        });
+      } finally {
+        setDownloadingId(null);
+      }
     },
-    [router]
+    [downloadPDF]
+  );
+
+  /**
+   * Fetch complete PDS data and open PDF in new tab for printing
+   */
+  const handlePrint = useCallback(
+    async (id: string) => {
+      try {
+        setDownloadingId(id);
+        toast.loading('Preparing PDF for print...', { id: 'pds-pdf-print' });
+
+        // Fetch complete PDS data
+        const response = await fetch(`/api/pds/${id}`, {
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch PDS data');
+        }
+
+        const result = await response.json();
+
+        if (!result.success || !result.data) {
+          throw new Error('Invalid API response: Missing data');
+        }
+
+        const pdsData = result.data;
+
+        // Validate required data before transformation
+        if (!pdsData.personalInfo) {
+          throw new Error('Cannot generate PDF: Personal information is missing');
+        }
+
+        if (!pdsData.personalInfo.surname || !pdsData.personalInfo.firstName) {
+          throw new Error('Cannot generate PDF: Name fields are required (surname and first name)');
+        }
+
+        // Transform to PDF format
+        const pdfReadyData = transformPdsForPdf(pdsData);
+
+        // Open PDF in new tab for printing
+        await openPDFInNewTab(pdfReadyData);
+
+        toast.success('PDF opened in new tab', {
+          id: 'pds-pdf-print',
+          description: 'Use your browser\'s print function to print the PDF.',
+        });
+      } catch (error) {
+        console.error('PDF print error:', error);
+        toast.error('Failed to open PDF', {
+          id: 'pds-pdf-print',
+          description: error instanceof Error ? error.message : 'An unexpected error occurred',
+        });
+      } finally {
+        setDownloadingId(null);
+      }
+    },
+    [openPDFInNewTab]
   );
 
   const handleEdit = useCallback(
@@ -634,6 +763,7 @@ export default function SubmissionsPage() {
                     onView={handleView}
                     onDownload={handleDownload}
                     onPrint={handlePrint}
+                    isDownloading={downloadingId === submission.id || isGenerating}
                   />
                 );
               } else {

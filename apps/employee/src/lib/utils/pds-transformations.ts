@@ -324,9 +324,15 @@ export function transformPdsFromBackend(backendData: any): Partial<CompletePdsDa
  *
  * @param data - The complete PDS data from API (backend structure)
  * @returns PDSData formatted for PDF generation
+ * @throws Error if required fields are missing
  */
 export function transformPdsForPdf(data: any): PDSData {
-  // Handle both direct structure and nested submission structure
+  // STEP 1: Validate input data
+  if (!data) {
+    throw new Error('Cannot transform PDS for PDF: Data is null or undefined');
+  }
+
+  // STEP 2: Handle both direct structure and nested submission structure
   const personalInfo = data.personalInfo || {};
   const familyBackground = data.familyBackground || data.family || {};
   const children = data.children || familyBackground.children || [];
@@ -336,6 +342,25 @@ export function transformPdsForPdf(data: any): PDSData {
   const voluntaryWork = data.voluntaryWork || [];
   const training = data.training || data.learningDevelopment || [];
   const otherInfo = data.otherInfo || {};
+
+  // STEP 3: Validate critical fields early
+  if (!personalInfo.surname || !personalInfo.firstName) {
+    throw new Error(
+      'Cannot transform PDS for PDF: Personal information must include surname and firstName. ' +
+      'Please ensure the PDS submission has complete personal information.'
+    );
+  }
+
+  // STEP 4: Log debugging information for data structure
+  console.log('[transformPdsForPdf] Data structure check:', {
+    hasPersonalInfo: !!personalInfo,
+    hasSurname: !!personalInfo.surname,
+    hasFirstName: !!personalInfo.firstName,
+    hasFamilyBackground: !!familyBackground,
+    hasEducation: !!education,
+    educationType: Array.isArray(education) ? 'array' : typeof education,
+    hasOtherInfo: !!otherInfo,
+  });
 
   // Transform address format
   const transformAddress = (addr: any) => {
@@ -489,57 +514,58 @@ export function transformPdsForPdf(data: any): PDSData {
     };
   };
 
-  return {
+  // Build the transformed data with safe defaults
+  const transformedData: PDSData = {
     id: data.id || data.submission?.id || '',
     submittedAt: data.submittedAt || data.submission?.submittedAt || null,
     version: data.version || data.submission?.version || 1,
 
     personalInfo: {
-      surname: personalInfo.surname || '',
-      firstName: personalInfo.firstName || '',
-      middleName: personalInfo.middleName || null,
-      nameExtension: personalInfo.nameExtension || null,
-      dateOfBirth: personalInfo.dateOfBirth || null,
+      surname: personalInfo.surname,
+      firstName: personalInfo.firstName,
+      middleName: personalInfo.middleName ?? null,
+      nameExtension: personalInfo.nameExtension ?? null,
+      dateOfBirth: personalInfo.dateOfBirth ?? null,
       placeOfBirth: personalInfo.placeOfBirth || '',
       sex: personalInfo.sex || 'male',
       civilStatus: personalInfo.civilStatus || 'single',
-      heightM: personalInfo.heightM || null,
-      weightKg: personalInfo.weightKg || null,
-      bloodType: personalInfo.bloodType || null,
-      gsisNo: personalInfo.gsisNo || null,
-      pagibigNo: personalInfo.pagibigNo || null,
-      philhealthNo: personalInfo.philhealthNo || null,
-      sssNo: personalInfo.sssNo || null,
-      tinNo: personalInfo.tinNo || null,
-      agencyEmployeeNo: personalInfo.agencyEmployeeNo || null,
+      heightM: stringToNumber(personalInfo.heightM),
+      weightKg: stringToNumber(personalInfo.weightKg),
+      bloodType: personalInfo.bloodType ?? null,
+      gsisNo: personalInfo.gsisNo ?? null,
+      pagibigNo: personalInfo.pagibigNo ?? null,
+      philhealthNo: personalInfo.philhealthNo ?? null,
+      sssNo: personalInfo.sssNo ?? null,
+      tinNo: personalInfo.tinNo ?? null,
+      agencyEmployeeNo: personalInfo.agencyEmployeeNo ?? null,
       citizenship: personalInfo.citizenship || { type: 'Filipino' },
       residentialAddress: transformAddress(personalInfo.residentialAddress),
       permanentAddress: transformAddress(personalInfo.permanentAddress),
-      telephoneNo: personalInfo.telephoneNo || null,
-      mobileNo: personalInfo.mobileNo || null,
-      emailAddress: personalInfo.emailAddress || null,
+      telephoneNo: personalInfo.telephoneNo ?? null,
+      mobileNo: personalInfo.mobileNo ?? null,
+      emailAddress: personalInfo.emailAddress ?? null,
     },
 
     familyBackground: {
-      spouseSurname: familyBackground.spouseSurname || null,
-      spouseFirstName: familyBackground.spouseFirstName || null,
-      spouseMiddleName: familyBackground.spouseMiddleName || null,
-      spouseNameExtension: familyBackground.spouseNameExtension || null,
-      spouseOccupation: familyBackground.spouseOccupation || null,
-      spouseEmployer: familyBackground.spouseEmployer || null,
-      spouseBusinessAddress: familyBackground.spouseBusinessAddress || null,
-      spouseTelephoneNo: familyBackground.spouseTelephoneNo || null,
-      fatherSurname: familyBackground.fatherSurname || null,
-      fatherFirstName: familyBackground.fatherFirstName || null,
-      fatherMiddleName: familyBackground.fatherMiddleName || null,
-      fatherNameExtension: familyBackground.fatherNameExtension || null,
-      motherMaidenSurname: familyBackground.motherMaidenSurname || null,
-      motherFirstName: familyBackground.motherFirstName || null,
-      motherMiddleName: familyBackground.motherMiddleName || null,
+      spouseSurname: familyBackground.spouseSurname ?? null,
+      spouseFirstName: familyBackground.spouseFirstName ?? null,
+      spouseMiddleName: familyBackground.spouseMiddleName ?? null,
+      spouseNameExtension: familyBackground.spouseNameExtension ?? null,
+      spouseOccupation: familyBackground.spouseOccupation ?? null,
+      spouseEmployer: familyBackground.spouseEmployer ?? null,
+      spouseBusinessAddress: familyBackground.spouseBusinessAddress ?? null,
+      spouseTelephoneNo: familyBackground.spouseTelephoneNo ?? null,
+      fatherSurname: familyBackground.fatherSurname ?? null,
+      fatherFirstName: familyBackground.fatherFirstName ?? null,
+      fatherMiddleName: familyBackground.fatherMiddleName ?? null,
+      fatherNameExtension: familyBackground.fatherNameExtension ?? null,
+      motherMaidenSurname: familyBackground.motherMaidenSurname ?? null,
+      motherFirstName: familyBackground.motherFirstName ?? null,
+      motherMiddleName: familyBackground.motherMiddleName ?? null,
       children: Array.isArray(children)
         ? children.map((child: any) => ({
             fullName: child.fullName || '',
-            dateOfBirth: child.dateOfBirth || null,
+            dateOfBirth: child.dateOfBirth ?? null,
           }))
         : [],
     },
@@ -549,46 +575,46 @@ export function transformPdsForPdf(data: any): PDSData {
     civilServiceEligibilities: Array.isArray(civilService)
       ? civilService.map((cs: any) => ({
           eligibilityName: cs.eligibilityName || '',
-          rating: cs.rating || null,
-          dateOfExam: cs.dateOfExam || null,
-          placeOfExam: cs.placeOfExam || null,
-          licenseNo: cs.licenseNo || null,
-          licenseValidityDate: cs.licenseValidityDate || null,
+          rating: cs.rating ?? null,
+          dateOfExam: cs.dateOfExam ?? null,
+          placeOfExam: cs.placeOfExam ?? null,
+          licenseNo: cs.licenseNo ?? null,
+          licenseValidityDate: cs.licenseValidityDate ?? null,
         }))
       : [],
 
     workExperiences: Array.isArray(workExperience)
       ? workExperience.map((work: any) => ({
-          dateFrom: work.dateFrom || null,
-          dateTo: work.dateTo || null,
+          dateFrom: work.dateFrom ?? null,
+          dateTo: work.dateTo ?? null,
           positionTitle: work.positionTitle || '',
           departmentAgency: work.departmentAgency || '',
-          monthlySalary: work.monthlySalary || null,
-          salaryGrade: work.salaryGrade || null,
-          statusOfAppointment: work.statusOfAppointment || null,
-          isGovernment: work.isGovernment || false,
+          monthlySalary: work.monthlySalary ?? null,
+          salaryGrade: work.salaryGrade ?? null,
+          statusOfAppointment: work.statusOfAppointment ?? null,
+          isGovernment: work.isGovernment ?? false,
         }))
       : [],
 
     voluntaryWorks: Array.isArray(voluntaryWork)
       ? voluntaryWork.map((vol: any) => ({
           organizationName: vol.organizationName || '',
-          organizationAddress: vol.organizationAddress || null,
-          dateFrom: vol.dateFrom || null,
-          dateTo: vol.dateTo || null,
-          numberOfHours: vol.numberOfHours || null,
-          positionNature: vol.positionNature || null,
+          organizationAddress: vol.organizationAddress ?? null,
+          dateFrom: vol.dateFrom ?? null,
+          dateTo: vol.dateTo ?? null,
+          numberOfHours: vol.numberOfHours ?? null,
+          positionNature: vol.positionNature ?? null,
         }))
       : [],
 
     trainings: Array.isArray(training)
       ? training.map((t: any) => ({
           title: t.title || '',
-          dateFrom: t.dateFrom || null,
-          dateTo: t.dateTo || null,
-          hours: t.hours || null,
-          typeOfLd: t.typeOfLd || null,
-          conductedBy: t.conductedBy || null,
+          dateFrom: t.dateFrom ?? null,
+          dateTo: t.dateTo ?? null,
+          hours: t.hours ?? null,
+          typeOfLd: t.typeOfLd ?? null,
+          conductedBy: t.conductedBy ?? null,
         }))
       : [],
 
@@ -603,8 +629,8 @@ export function transformPdsForPdf(data: any): PDSData {
     associations: Array.isArray(otherInfo.associations)
       ? otherInfo.associations.map((a: any) => ({
           name: a.name || '',
-          position: a.position || undefined,
-          yearJoined: a.yearJoined || undefined,
+          position: a.position ?? undefined,
+          yearJoined: a.yearJoined ?? undefined,
         }))
       : [],
 
@@ -614,13 +640,15 @@ export function transformPdsForPdf(data: any): PDSData {
       ? otherInfo.references.map((ref: any) => ({
           name: ref.name || '',
           address: ref.address || '',
-          telephoneNo: ref.telephoneNo || undefined,
+          telephoneNo: ref.telephoneNo ?? undefined,
         }))
       : [],
 
-    governmentId: data.governmentId || undefined,
-    photoUrl: data.photoUrl || null,
+    governmentId: data.governmentId ?? undefined,
+    photoUrl: data.photoUrl ?? null,
   };
+
+  return transformedData;
 }
 
 /**

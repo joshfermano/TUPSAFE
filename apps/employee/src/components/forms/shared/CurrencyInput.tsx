@@ -107,6 +107,10 @@ export const CurrencyInput = memo(function CurrencyInput({
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Debounce timer ref for form state updates (prevents lag during fast typing)
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const DEBOUNCE_MS = 300; // 300ms debounce for form state updates
+
   // Get nested error if exists
   const error = useMemo(() => {
     const pathParts = name.split('.');
@@ -131,7 +135,8 @@ export const CurrencyInput = memo(function CurrencyInput({
   }, [errors, name]);
 
   /**
-   * Handle input change with real-time validation
+   * Handle input change with debounced form state updates
+   * Display updates immediately for responsive UX, form state updates are debounced
    */
   const handleInputChange = useCallback(
     (value: string, onChange: (value: number) => void) => {
@@ -143,11 +148,11 @@ export const CurrencyInput = memo(function CurrencyInput({
         return;
       }
 
-      // Format for display
+      // Format for display - IMMEDIATE update for responsive UX
       const formatted = formatCurrencyInput(cleaned);
       setDisplayValue(formatted);
 
-      // Parse and emit numeric value
+      // Parse numeric value
       const numericValue = parseCurrency(formatted);
 
       // Apply min/max constraints
@@ -159,27 +164,60 @@ export const CurrencyInput = memo(function CurrencyInput({
         constrainedValue = max;
       }
 
-      onChange(constrainedValue);
-      onValueChange?.(constrainedValue);
+      // Clear existing debounce timer
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      // DEBOUNCED form state update - prevents lag during fast typing
+      debounceTimerRef.current = setTimeout(() => {
+        onChange(constrainedValue);
+        onValueChange?.(constrainedValue);
+      }, DEBOUNCE_MS);
     },
     [min, max, onValueChange]
   );
 
-  /**
-   * Handle blur event - format the value with currency symbol
-   */
-  const handleBlur = useCallback((value: number) => {
-    setIsFocused(false);
-
-    if (value === 0 || isNaN(value)) {
-      setDisplayValue('');
-      return;
-    }
-
-    // Format with full currency notation on blur
-    const formatted = formatCurrency(value);
-    setDisplayValue(formatted);
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, []);
+
+  /**
+   * Handle blur event - flush pending changes and format with currency symbol
+   */
+  const handleBlur = useCallback(
+    (value: number, onChange: (value: number) => void) => {
+      setIsFocused(false);
+
+      // Flush any pending debounced change immediately on blur
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+
+        // Commit the current display value to form
+        const numericValue = parseCurrency(displayValue);
+        if (!isNaN(numericValue)) {
+          onChange(numericValue);
+          onValueChange?.(numericValue);
+        }
+      }
+
+      if (value === 0 || isNaN(value)) {
+        setDisplayValue('');
+        return;
+      }
+
+      // Format with full currency notation on blur
+      const formatted = formatCurrency(value);
+      setDisplayValue(formatted);
+    },
+    [displayValue, onValueChange]
+  );
 
   /**
    * Handle focus event - remove currency symbol for easier editing
@@ -339,7 +377,7 @@ export const CurrencyInput = memo(function CurrencyInput({
                 onChange={(e) => handleInputChange(e.target.value, onChange)}
                 onFocus={() => handleFocus(value || 0)}
                 onBlur={() => {
-                  handleBlur(value || 0);
+                  handleBlur(value || 0, onChange);
                   onBlur();
                 }}
                 onKeyDown={handleKeyDown}

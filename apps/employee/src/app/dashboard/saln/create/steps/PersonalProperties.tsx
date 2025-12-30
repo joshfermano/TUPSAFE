@@ -56,6 +56,12 @@ export const PersonalProperties = memo(function PersonalProperties() {
 
   const personalProperties = watch('personalProperties') || [];
 
+  // Memoize year options to prevent recreation on every render
+  const yearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return Array.from({ length: 75 }, (_, i) => currentYear - i);
+  }, []);
+
   const totalPersonalPropertyValue = useMemo(() => {
     return personalProperties.reduce(
       (sum: number, prop: PropertyItem) => sum + (prop.acquisitionCost || 0),
@@ -71,7 +77,8 @@ export const PersonalProperties = memo(function PersonalProperties() {
     });
   };
 
-  const suggestedCategories = [
+  // Memoize suggested categories to prevent recreation
+  const suggestedCategories = useMemo(() => [
     'Motor Vehicles',
     'Jewelry and Watches',
     'Electronics and Appliances',
@@ -80,7 +87,7 @@ export const PersonalProperties = memo(function PersonalProperties() {
     'Stocks and Bonds',
     'Investment Securities',
     'Other Investments',
-  ];
+  ], []);
 
   return (
     <div className="space-y-8">
@@ -215,10 +222,7 @@ export const PersonalProperties = memo(function PersonalProperties() {
                                   }}
                                   className="flex h-10 w-full rounded-lg border bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all px-3 py-2 text-sm shadow-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>option]:bg-white [&>option]:dark:bg-slate-800">
                                   <option value="">Select year</option>
-                                  {Array.from(
-                                    { length: 75 },
-                                    (_, i) => new Date().getFullYear() - i
-                                  ).map((year) => (
+                                  {yearOptions.map((year) => (
                                     <option key={year} value={year.toString()}>
                                       {year}
                                     </option>

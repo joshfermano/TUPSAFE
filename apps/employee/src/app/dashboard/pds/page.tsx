@@ -1,7 +1,7 @@
 'use client';
 
 // React and Next.js
-import { useMemo, memo, useCallback } from 'react';
+import { useMemo, memo, useCallback, useState } from 'react';
 import Link from 'next/link';
 
 // Motion and Animation
@@ -288,7 +288,7 @@ const SubmissionCard = memo(function SubmissionCard({
               <div>
                 <div className="flex items-center gap-2">
                   <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                    CY {submission.year} v{submission.version}
+                    PDS {submission.year}
                   </h4>
                   <Badge className={cn('text-xs px-2 py-0.5 border', config.className)}>
                     <StatusIcon className="h-3 w-3 mr-1" />
@@ -379,6 +379,9 @@ export default function PDSPage() {
   const { deadline } = useDeadlineForForm('pds');
   const { downloadPDF, openPDFInNewTab, isGenerating } = usePDSPdf();
 
+  // Track which submission is being downloaded
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
   // Extract submissions from the response
   const submissions = useMemo(() => {
     if (!pdsResponse?.data) return [];
@@ -447,21 +450,42 @@ export default function PDSPage() {
     }
 
     try {
-      toast.loading('Generating PDF...', { id: 'pdf-download' });
-      // Note: You'll need to fetch the complete submission data here
-      // For now, showing a placeholder
-      toast.error('Please use the View page to download PDF', {
-        id: 'pdf-download',
-        description: 'Navigate to the submission details to download.',
+      setDownloadingId(latest.id);
+      toast.loading('Preparing PDF...', { id: 'pds-pdf-download' });
+
+      // Fetch complete PDS data
+      const response = await fetch(`/api/pds/${latest.id}`, {
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch PDS data');
+      }
+
+      const result = await response.json();
+      const pdsData = result.data;
+
+      // Transform to PDF format
+      const pdfReadyData = transformPdsForPdf(pdsData);
+
+      // Generate and download PDF
+      await downloadPDF(pdfReadyData);
+
+      toast.success('PDS PDF downloaded successfully', {
+        id: 'pds-pdf-download',
+        description: `PDS for CY ${pdsData.year || 'N/A'} has been downloaded.`,
       });
     } catch (err) {
-      toast.error('Failed to generate PDF', {
-        id: 'pdf-download',
+      console.error('PDF download error:', err);
+      toast.error('Failed to download PDF', {
+        id: 'pds-pdf-download',
         description:
           err instanceof Error ? err.message : 'An unexpected error occurred',
       });
+    } finally {
+      setDownloadingId(null);
     }
-  }, [latest]);
+  }, [latest, downloadPDF]);
 
   // Handler for printing the latest PDS
   const handlePrintPDS = useCallback(async () => {
@@ -473,29 +497,88 @@ export default function PDSPage() {
     }
 
     try {
-      toast.loading('Preparing print preview...', { id: 'pdf-print' });
-      toast.error('Please use the View page to print', {
-        id: 'pdf-print',
-        description: 'Navigate to the submission details to print.',
+      setDownloadingId(latest.id);
+      toast.loading('Preparing PDF for print...', { id: 'pds-pdf-print' });
+
+      // Fetch complete PDS data
+      const response = await fetch(`/api/pds/${latest.id}`, {
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch PDS data');
+      }
+
+      const result = await response.json();
+      const pdsData = result.data;
+
+      // Transform to PDF format
+      const pdfReadyData = transformPdsForPdf(pdsData);
+
+      // Open PDF in new tab for printing
+      await openPDFInNewTab(pdfReadyData);
+
+      toast.success('PDF opened in new tab', {
+        id: 'pds-pdf-print',
+        description: 'Use your browser\'s print function to print the PDF.',
       });
     } catch (err) {
-      toast.error('Failed to open print preview', {
-        id: 'pdf-print',
+      console.error('PDF print error:', err);
+      toast.error('Failed to open PDF', {
+        id: 'pds-pdf-print',
         description:
           err instanceof Error ? err.message : 'An unexpected error occurred',
       });
+    } finally {
+      setDownloadingId(null);
     }
-  }, [latest]);
+  }, [latest, openPDFInNewTab]);
 
   // View submission handler
   const handleViewSubmission = useCallback((id: string) => {
     window.location.href = `/dashboard/pds/view/${id}`;
   }, []);
 
-  // Download submission handler
-  const handleDownloadSubmission = useCallback((id: string) => {
-    window.location.href = `/dashboard/pds/view/${id}`;
-  }, []);
+  // Download submission handler - directly downloads PDF like SALN page
+  const handleDownloadSubmission = useCallback(async (id: string) => {
+    if (isGenerating || downloadingId) return;
+
+    try {
+      setDownloadingId(id);
+      toast.loading('Preparing PDF...', { id: 'pds-pdf-download' });
+
+      // Fetch complete PDS data
+      const response = await fetch(`/api/pds/${id}`, {
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch PDS data');
+      }
+
+      const result = await response.json();
+      const pdsData = result.data;
+
+      // Transform to PDF format
+      const pdfReadyData = transformPdsForPdf(pdsData);
+
+      // Generate and download PDF
+      await downloadPDF(pdfReadyData);
+
+      toast.success('PDS PDF downloaded successfully', {
+        id: 'pds-pdf-download',
+        description: `PDS for CY ${pdsData.year || 'N/A'} has been downloaded.`,
+      });
+    } catch (error) {
+      console.error('PDF download error:', error);
+      toast.error('Failed to download PDF', {
+        id: 'pds-pdf-download',
+        description: error instanceof Error ? error.message : 'An unexpected error occurred',
+      });
+    } finally {
+      setDownloadingId(null);
+    }
+  }, [downloadPDF, isGenerating, downloadingId]);
 
   // Memoized status badge renderer
   const getStatusBadge = useCallback(
@@ -727,14 +810,14 @@ export default function PDSPage() {
                   <Tooltip content={getPdfRestrictionMessage()} disabled={canDownloadPDF}>
                     <Button
                       onClick={canDownloadPDF ? handleDownloadPDF : undefined}
-                      disabled={isGenerating || !latest || !canDownloadPDF}
+                      disabled={downloadingId !== null || isGenerating || !latest || !canDownloadPDF}
                       variant="outline"
                       className={cn(
                         'w-full h-10 text-sm border-slate-200 dark:border-slate-700 disabled:opacity-50 disabled:cursor-not-allowed',
                         canDownloadPDF && 'hover:bg-slate-50 dark:hover:bg-slate-800'
                       )}
                     >
-                      {isGenerating ? (
+                      {(downloadingId === latest?.id || isGenerating) ? (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       ) : (
                         <Download className="h-4 w-4 mr-2" />
@@ -747,14 +830,14 @@ export default function PDSPage() {
                   <Tooltip content={getPdfRestrictionMessage()} disabled={canDownloadPDF}>
                     <Button
                       onClick={canDownloadPDF ? handlePrintPDS : undefined}
-                      disabled={isGenerating || !latest || !canDownloadPDF}
+                      disabled={downloadingId !== null || isGenerating || !latest || !canDownloadPDF}
                       variant="outline"
                       className={cn(
                         'w-full h-10 text-sm border-slate-200 dark:border-slate-700 disabled:opacity-50 disabled:cursor-not-allowed',
                         canDownloadPDF && 'hover:bg-slate-50 dark:hover:bg-slate-800'
                       )}
                     >
-                      {isGenerating ? (
+                      {(downloadingId === latest?.id || isGenerating) ? (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       ) : (
                         <Printer className="h-4 w-4 mr-2" />
@@ -815,10 +898,10 @@ export default function PDSPage() {
                           </div>
                           <div className="text-right">
                             <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                              Annual PDS - CY {latest.year}
+                              PDS {latest.year}
                             </p>
                             <p className="text-xs text-slate-500 dark:text-slate-400">
-                              v{latest.version} • {new Date(latest.updatedAt).toLocaleDateString('en-US', {
+                              {new Date(latest.updatedAt).toLocaleDateString('en-US', {
                                 month: 'short',
                                 day: 'numeric',
                                 year: 'numeric',

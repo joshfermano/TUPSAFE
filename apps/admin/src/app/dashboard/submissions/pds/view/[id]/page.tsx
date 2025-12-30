@@ -525,7 +525,7 @@ export default function PdsSubmissionViewPage() {
                 {submission.submittedAt
                   ? format(new Date(submission.submittedAt), 'MMMM d, yyyy')
                   : 'N/A'}
-                {' • '}CY {submission.year}
+                {' • '}{submission.year}
               </p>
             </div>
 
@@ -1634,10 +1634,6 @@ export default function PdsSubmissionViewPage() {
                         }
                       />
                     </dd>
-                  </div>
-                  <div>
-                    <dt className="text-muted-foreground">Version</dt>
-                    <dd className="font-medium">v{submission.version}</dd>
                   </div>
                   <div>
                     <dt className="text-muted-foreground">Submitted</dt>

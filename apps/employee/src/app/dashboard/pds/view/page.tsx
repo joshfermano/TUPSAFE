@@ -289,7 +289,7 @@ const PDSCard = React.memo(
           {/* Version and Last Updated */}
           <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
             <span className="flex items-center gap-1">
-              <FileText className="h-3 w-3" />CY {submission.year}
+              <FileText className="h-3 w-3" />PDS {submission.year}
             </span>
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />

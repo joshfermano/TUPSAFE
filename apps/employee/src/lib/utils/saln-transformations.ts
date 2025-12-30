@@ -294,19 +294,28 @@ export function calculateSalnTotals(data: Partial<CompleteSalnData>): {
   netWorth: number;
 } {
   const totalRealPropertyValue = (data.realProperties || []).reduce(
-    (sum: number, prop: any) => sum + toCurrency(prop.currentFairMarketValue),
+    (sum: number, prop: any) => {
+      const value = toCurrency(prop.currentFairMarketValue);
+      return sum + (isNaN(value) ? 0 : value);
+    },
     0
   );
 
   const totalPersonalPropertyValue = (data.personalProperties || []).reduce(
-    (sum: number, prop: any) => sum + toCurrency(prop.acquisitionCost),
+    (sum: number, prop: any) => {
+      const value = toCurrency(prop.acquisitionCost);
+      return sum + (isNaN(value) ? 0 : value);
+    },
     0
   );
 
   const totalAssets = totalRealPropertyValue + totalPersonalPropertyValue;
 
   const totalLiabilities = (data.liabilities || []).reduce(
-    (sum: number, liability: any) => sum + toCurrency(liability.outstandingBalance),
+    (sum: number, liability: any) => {
+      const value = toCurrency(liability.outstandingBalance);
+      return sum + (isNaN(value) ? 0 : value);
+    },
     0
   );
 

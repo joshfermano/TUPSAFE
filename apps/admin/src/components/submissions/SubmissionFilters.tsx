@@ -168,7 +168,7 @@ export function SubmissionFilters({ onFilterChange }: SubmissionFiltersProps) {
             <SelectItem value="all">All Years</SelectItem>
             {fiscalYears.map((year) => (
               <SelectItem key={year} value={year.toString()}>
-                CY {year}
+                {year}
               </SelectItem>
             ))}
           </SelectContent>

@@ -604,10 +604,11 @@ export function createEmptySaln(year: number, userId?: string): Partial<Complete
 export function calculateTotalRealPropertyValue(
   realProperties: RealProperty[]
 ): number {
-  return realProperties.reduce(
-    (sum, prop) => sum + (prop.currentFairMarketValue || 0),
-    0
-  );
+  return realProperties.reduce((sum, prop) => {
+    const value = prop.currentFairMarketValue;
+    const numValue = typeof value === 'string' ? parseFloat(value) : (value || 0);
+    return sum + (isNaN(numValue) ? 0 : numValue);
+  }, 0);
 }
 
 /**
@@ -618,10 +619,11 @@ export function calculateTotalRealPropertyValue(
 export function calculateTotalPersonalPropertyValue(
   personalProperties: PersonalProperty[]
 ): number {
-  return personalProperties.reduce(
-    (sum, prop) => sum + (prop.acquisitionCost || 0),
-    0
-  );
+  return personalProperties.reduce((sum, prop) => {
+    const value = prop.acquisitionCost;
+    const numValue = typeof value === 'string' ? parseFloat(value) : (value || 0);
+    return sum + (isNaN(numValue) ? 0 : numValue);
+  }, 0);
 }
 
 /**
@@ -645,7 +647,11 @@ export function calculateTotalAssets(
  * @returns Total outstanding balance
  */
 export function calculateTotalLiabilities(liabilities: Liability[]): number {
-  return liabilities.reduce((sum, liability) => sum + (liability.outstandingBalance || 0), 0);
+  return liabilities.reduce((sum, liability) => {
+    const balance = liability.outstandingBalance;
+    const numBalance = typeof balance === 'string' ? parseFloat(balance) : (balance || 0);
+    return sum + (isNaN(numBalance) ? 0 : numBalance);
+  }, 0);
 }
 
 /**

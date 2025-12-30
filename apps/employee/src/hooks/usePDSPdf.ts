@@ -161,7 +161,17 @@ export function usePDSPdf(): UsePDSPdfReturn {
     setError(null);
 
     try {
-      // Validate data before generating PDF
+      // STEP 1: Validate that pdsData is not null or undefined
+      if (!pdsData) {
+        throw new Error('Cannot generate PDF: PDS data is null or undefined');
+      }
+
+      // STEP 2: Validate critical structure exists
+      if (!pdsData.personalInfo) {
+        throw new Error('Cannot generate PDF: Personal information is missing');
+      }
+
+      // STEP 3: Validate required fields using validator
       const validation = validatePDSForPDF(pdsData);
 
       if (!validation.isValid) {
@@ -171,10 +181,54 @@ export function usePDSPdf(): UsePDSPdfReturn {
         throw new Error(`Cannot generate PDF - ${errorMessages}`);
       }
 
-      // Log warnings if any
+      // STEP 4: Log warnings if any
       if (validation.warnings.length > 0) {
         console.warn('PDF Generation Warnings:', validation.warnings);
       }
+
+      // STEP 5: Ensure required nested structures exist
+      if (!pdsData.familyBackground) {
+        console.warn('Family background is missing, using empty structure');
+        pdsData.familyBackground = {
+          children: [],
+        };
+      }
+
+      if (!pdsData.education) {
+        console.warn('Education is missing, using empty structure');
+        pdsData.education = {
+          elementary: null,
+          secondary: null,
+          vocational: null,
+          college: null,
+          graduate: null,
+        };
+      }
+
+      if (!pdsData.questions) {
+        console.warn('Questions are missing, using default structure');
+        pdsData.questions = {
+          Q34_criminal_charged: false,
+          Q35_criminal_convicted: false,
+          Q36_separated_from_service: false,
+          Q37_candidate_for_election: false,
+          Q38_resigned_from_government: false,
+          Q39_immigrant_or_acquired_residence: false,
+          Q40_indigenous_group: false,
+          Q41_disabled: false,
+          Q42_solo_parent: false,
+        };
+      }
+
+      // STEP 6: Ensure arrays exist
+      pdsData.civilServiceEligibilities = pdsData.civilServiceEligibilities || [];
+      pdsData.workExperiences = pdsData.workExperiences || [];
+      pdsData.voluntaryWorks = pdsData.voluntaryWorks || [];
+      pdsData.trainings = pdsData.trainings || [];
+      pdsData.skills = pdsData.skills || [];
+      pdsData.recognitions = pdsData.recognitions || [];
+      pdsData.associations = pdsData.associations || [];
+      pdsData.references = pdsData.references || [];
 
       // Get base URL for font paths and ensure fonts are registered
       const baseUrl =

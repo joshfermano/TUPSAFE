@@ -62,11 +62,11 @@ export const RealProperties = memo(function RealProperties() {
 
   const realProperties = watch('realProperties') || [];
 
-  // Generate year options (75 years back)
-  const yearOptions = Array.from(
-    { length: 75 },
-    (_, i) => new Date().getFullYear() - i
-  );
+  // Memoize year options to prevent recreation on every render
+  const yearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return Array.from({ length: 75 }, (_, i) => currentYear - i);
+  }, []);
 
   const totalRealPropertyValue = useMemo(() => {
     return realProperties.reduce(
@@ -226,10 +226,7 @@ export const RealProperties = memo(function RealProperties() {
                                   }}
                                   className="flex h-10 w-full rounded-lg border bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all px-3 py-2 text-sm shadow-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>option]:bg-white [&>option]:dark:bg-slate-800">
                                   <option value="">Select year</option>
-                                  {Array.from(
-                                    { length: 75 },
-                                    (_, i) => new Date().getFullYear() - i
-                                  ).map((year) => (
+                                  {yearOptions.map((year) => (
                                     <option key={year} value={year.toString()}>
                                       {year}
                                     </option>

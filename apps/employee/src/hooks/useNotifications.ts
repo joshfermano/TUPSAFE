@@ -123,7 +123,7 @@ export function useNotifications(params?: NotificationsQueryParams) {
     staleTime: 1 * 60 * 1000, // 1 minute
     gcTime: 5 * 60 * 1000, // 5 minutes
     retry: 2,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false, // DISABLED: Prevents app "restart" on tab switch
   });
 }
 

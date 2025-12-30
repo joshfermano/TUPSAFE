@@ -243,20 +243,61 @@ export default function PDSViewDetailPage({
 
   // Transform PDS data for PDF generation
   const pdfReadyData = useMemo(() => {
-    if (!pdsData || !submission) return null;
-    return transformPdsForPdf({
-      ...pdsData,
-      id: submission.id,
-      submittedAt: submission.submittedAt,
-      version: submission.version,
+    if (!pdsData || !submission) {
+      console.log('PDF data transformation skipped:', {
+        hasPdsData: !!pdsData,
+        hasSubmission: !!submission,
+      });
+      return null;
+    }
+
+    // Debug log to check data structure
+    console.log('Transforming PDS data for PDF:', {
+      hasPersonalInfo: !!pdsData.personalInfo,
+      personalInfoKeys: pdsData.personalInfo
+        ? Object.keys(pdsData.personalInfo)
+        : [],
+      hasSurname: !!pdsData.personalInfo?.surname,
+      hasFirstName: !!pdsData.personalInfo?.firstName,
     });
+
+    try {
+      return transformPdsForPdf({
+        ...pdsData,
+        id: submission.id,
+        submittedAt: submission.submittedAt,
+        version: submission.version,
+      });
+    } catch (error) {
+      console.error('Error transforming PDS data for PDF:', error);
+      return null;
+    }
   }, [pdsData, submission]);
 
   // Handler for downloading PDF
   const handleDownload = useCallback(async () => {
+    // Validate that pdfReadyData exists
     if (!pdfReadyData) {
       toast.error('PDS data not available', {
         description: 'Unable to generate PDF. Please try again.',
+      });
+      return;
+    }
+
+    // Validate required personal info fields exist
+    if (
+      !pdfReadyData.personalInfo ||
+      !pdfReadyData.personalInfo.surname ||
+      !pdfReadyData.personalInfo.firstName
+    ) {
+      console.error('Missing required personal info:', {
+        hasPersonalInfo: !!pdfReadyData.personalInfo,
+        hasSurname: !!pdfReadyData.personalInfo?.surname,
+        hasFirstName: !!pdfReadyData.personalInfo?.firstName,
+      });
+      toast.error('Incomplete PDS data', {
+        description:
+          'Required personal information is missing. Please ensure your PDS is complete.',
       });
       return;
     }
@@ -269,6 +310,7 @@ export default function PDSViewDetailPage({
         description: `PDS_${pdfReadyData.personalInfo.surname}_${pdfReadyData.personalInfo.firstName}.pdf`,
       });
     } catch (error) {
+      console.error('PDF generation error:', error);
       toast.error('Failed to generate PDF', {
         id: 'pdf-download',
         description:
@@ -281,9 +323,28 @@ export default function PDSViewDetailPage({
 
   // Handler for printing (opens PDF in new tab)
   const handlePrint = useCallback(async () => {
+    // Validate that pdfReadyData exists
     if (!pdfReadyData) {
       toast.error('PDS data not available', {
         description: 'Unable to generate PDF for printing. Please try again.',
+      });
+      return;
+    }
+
+    // Validate required personal info fields exist
+    if (
+      !pdfReadyData.personalInfo ||
+      !pdfReadyData.personalInfo.surname ||
+      !pdfReadyData.personalInfo.firstName
+    ) {
+      console.error('Missing required personal info:', {
+        hasPersonalInfo: !!pdfReadyData.personalInfo,
+        hasSurname: !!pdfReadyData.personalInfo?.surname,
+        hasFirstName: !!pdfReadyData.personalInfo?.firstName,
+      });
+      toast.error('Incomplete PDS data', {
+        description:
+          'Required personal information is missing. Please ensure your PDS is complete.',
       });
       return;
     }
@@ -297,6 +358,7 @@ export default function PDSViewDetailPage({
           'Use the browser print function (Ctrl+P / Cmd+P) to print.',
       });
     } catch (error) {
+      console.error('Print preview error:', error);
       toast.error('Failed to open print preview', {
         id: 'pdf-print',
         description:
@@ -351,7 +413,7 @@ export default function PDSViewDetailPage({
               Personal Data Sheet {submissionYear}
             </h1>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-              CY {submission.year} • Submitted{' '}
+              PDS {submission.year} • Submitted{' '}
               {format(
                 new Date(submission.submittedAt || submission.createdAt),
                 'MMM d, yyyy'

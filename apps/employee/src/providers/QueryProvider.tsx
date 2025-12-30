@@ -10,7 +10,8 @@ import { useState } from 'react';
  * Performance Optimizations:
  * - 5-minute stale time: Data considered fresh for 5 minutes
  * - 10-minute cache time: Inactive data cached for 10 minutes
- * - Automatic background refetching when window regains focus
+ * - NO refetch on window focus (prevents app "restart" on tab switch)
+ * - Refetch on network reconnect for resilience
  * - Retry failed requests 3 times with exponential backoff
  */
 export function QueryProvider({ children }: { children: React.ReactNode }) {
@@ -30,8 +31,9 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
             retryDelay: (attemptIndex) =>
               Math.min(1000 * 2 ** attemptIndex, 30000),
 
-            // Refetch on window focus (for real-time feel)
-            refetchOnWindowFocus: true,
+            // DISABLED: Refetch on window focus causes app to "restart" when switching tabs
+            // Use manual refetch or invalidateQueries for real-time updates instead
+            refetchOnWindowFocus: false,
 
             // Don't refetch on mount if data is fresh
             refetchOnMount: false,
