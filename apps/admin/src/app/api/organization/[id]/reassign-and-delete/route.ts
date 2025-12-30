@@ -114,13 +114,13 @@ export async function POST(
     // Verify admin or HR permissions
     // This is a critical operation that permanently affects organizational structure
     const hasPermission = await checkUserRoleFromSupabase(
-      ['admin', 'hr'],
+      ['admin', 'co_admin', 'hr'],
       'admin'
     );
 
     if (!hasPermission) {
       return NextResponse.json(
-        { error: 'Unauthorized. Admin or HR role required for this operation.' },
+        { error: 'Unauthorized. Admin, Co-Admin, or HR role required for this operation.' },
         { status: 403 }
       );
     }

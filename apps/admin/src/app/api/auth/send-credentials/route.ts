@@ -46,12 +46,12 @@ export async function POST(request: NextRequest) {
   try {
     // Verify admin/HR permissions
     const hasPermission = await checkUserRoleFromSupabase(
-      ['admin', 'hr'],
+      ['admin', 'co_admin', 'hr'],
       'admin'
     );
     if (!hasPermission) {
       return NextResponse.json(
-        { error: 'Unauthorized. Admin or HR role required.' },
+        { error: 'Unauthorized. Admin, Co-Admin, or HR role required.' },
         { status: 403 }
       );
     }

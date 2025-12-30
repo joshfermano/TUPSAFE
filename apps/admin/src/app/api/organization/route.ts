@@ -47,15 +47,15 @@ import { ZodError } from 'zod';
  */
 export async function GET(request: NextRequest) {
   try {
-    // Verify admin/HR/supervisor permissions
+    // Verify admin/Co-Admin/HR/supervisor permissions
     const hasPermission = await checkUserRoleFromSupabase(
-      ['admin', 'hr', 'supervisor'],
+      ['admin', 'co_admin', 'hr', 'supervisor'],
       'admin'
     );
 
     if (!hasPermission) {
       return NextResponse.json(
-        { error: 'Unauthorized. Admin, HR, or Supervisor role required.' },
+        { error: 'Unauthorized. Admin, Co-Admin, HR, or Supervisor role required.' },
         { status: 403 }
       );
     }
@@ -310,7 +310,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check authorization based on type
-    const requiredRoles = type === 'college' ? ['admin'] : ['admin', 'hr'];
+    const requiredRoles = type === 'college' ? ['admin'] : ['admin', 'co_admin', 'hr'];
     const hasPermission = await checkUserRoleFromSupabase(
       requiredRoles,
       'admin'
@@ -319,7 +319,7 @@ export async function POST(request: NextRequest) {
     if (!hasPermission) {
       return NextResponse.json(
         {
-          error: `Unauthorized. ${type === 'college' ? 'Admin' : 'Admin or HR'} role required to create ${type}s.`,
+          error: `Unauthorized. ${type === 'college' ? 'Admin' : 'Admin, Co-Admin, or HR'} role required to create ${type}s.`,
         },
         { status: 403 }
       );

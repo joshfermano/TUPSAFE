@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
 
     // Verify admin/HR permissions
     const authStartTime = Date.now();
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['admin', 'co_admin', 'hr'], 'admin');
     const authDuration = Date.now() - authStartTime;
     console.log(
       `[Audit Logs API] Permission check completed in ${authDuration}ms - result:`,
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
     if (!hasPermission) {
       console.log('[Audit Logs API] Permission denied - returning 403');
       return NextResponse.json(
-        { error: 'Unauthorized. Admin or HR role required.' },
+        { error: 'Unauthorized. Admin, Co-Admin, or HR role required.' },
         { status: 403 }
       );
     }

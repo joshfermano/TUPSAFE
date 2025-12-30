@@ -260,7 +260,9 @@ export const submissionListQuerySchema = z.object({
   search: z.string().max(200).optional(), // Employee name or ID
 
   // Sorting
-  sortBy: z.enum(['submittedAt', 'reviewedAt', 'employeeName']).default('submittedAt'),
+  sortBy: z
+    .enum(['submittedAt', 'reviewedAt', 'employeeName'])
+    .default('submittedAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 
@@ -280,7 +282,10 @@ export type ApproveSubmissionData = z.infer<typeof approveSubmissionSchema>;
  * Rejection reason is required for compliance and audit trail
  */
 export const rejectSubmissionSchema = z.object({
-  reason: z.string().min(20, 'Rejection reason must be at least 20 characters').max(1000),
+  reason: z
+    .string()
+    .min(20, 'Rejection reason must be at least 20 characters')
+    .max(1000),
 });
 
 export type RejectSubmissionData = z.infer<typeof rejectSubmissionSchema>;
@@ -455,6 +460,7 @@ export interface SALNSubmissionDetail {
     lastName: string;
     middleName?: string | null;
     email: string | null;
+    avatarUrl?: string | null;
     officeAddress?: string | null;
     department: {
       id: string;

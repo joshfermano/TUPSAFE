@@ -131,7 +131,7 @@ export async function PATCH(
     // Determine required roles based on unit type
     // Colleges require admin, departments/offices allow admin or hr
     const isCollege = existing.officeType === 'academic' && !existing.parentCollegeId;
-    const requiredRoles = isCollege ? ['admin'] : ['admin', 'hr'];
+    const requiredRoles = isCollege ? ['admin'] : ['admin', 'co_admin', 'hr'];
 
     const hasPermission = await checkUserRoleFromSupabase(
       requiredRoles,
@@ -294,7 +294,7 @@ export async function DELETE(
       requiredRoles = ['admin'];
     } else {
       // Soft delete of departments/offices allows admin or hr
-      requiredRoles = ['admin', 'hr'];
+      requiredRoles = ['admin', 'co_admin', 'hr'];
     }
 
     const hasPermission = await checkUserRoleFromSupabase(

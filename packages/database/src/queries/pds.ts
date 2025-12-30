@@ -24,7 +24,7 @@ import {
   pdsOtherInfo,
   archives,
 } from '../schema';
-import { eq, and, desc, gte, inArray, notInArray } from 'drizzle-orm';
+import { eq, and, desc, gte, notInArray } from 'drizzle-orm';
 import type {
   PdsSubmission,
   PdsPersonalInfo,

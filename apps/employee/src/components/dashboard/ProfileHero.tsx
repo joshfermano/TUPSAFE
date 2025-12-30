@@ -20,6 +20,7 @@ interface ProfileHeroProps {
 // Static constants extracted outside component to prevent recreation on every render
 const ROLE_BADGE_COLORS: Record<string, string> = {
   admin: 'bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400',
+  co_admin: 'bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400',
   hr: 'bg-tup-crimson-subtle text-primary dark:bg-primary/30 dark:text-tup-crimson-light',
   supervisor:
     'bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400',

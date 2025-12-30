@@ -13,7 +13,7 @@
  * - Count statistics for dashboard
  *
  * Security:
- * - Requires admin or hr role
+ * - Requires admin, co_admin, or hr role
  * - Audit logging for access
  * - Row-level security via database policies
  *
@@ -45,11 +45,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Session expired' }, { status: 401 });
     }
 
-    // Verify admin/HR permissions
-    const allowedRoles = ['admin', 'hr'];
+    // Verify admin/HR/Co-Admin permissions
+    const allowedRoles = ['admin', 'co_admin', 'hr'];
     if (!allowedRoles.includes(sessionUser.role)) {
       return NextResponse.json(
-        { error: 'Unauthorized. Admin or HR role required.' },
+        { error: 'Unauthorized. Admin, Co-Admin, or HR role required.' },
         { status: 403 }
       );
     }

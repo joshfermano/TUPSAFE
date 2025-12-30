@@ -148,8 +148,21 @@ const SidebarNav = memo(
     const displayName = profile
       ? `${profile.firstName} ${profile.lastName}`
       : user?.email || 'Admin User';
-    const userRole =
-      profile?.role === 'admin' ? 'Administrator' : 'HR Personnel';
+    
+    // Map role to display label
+    const getRoleLabel = (role?: string) => {
+      switch (role) {
+        case 'admin':
+          return 'Administrator';
+        case 'co_admin':
+          return 'Co-Administrator';
+        case 'hr':
+          return 'HR Personnel';
+        default:
+          return 'Staff';
+      }
+    };
+    const userRole = getRoleLabel(profile?.role);
 
     // Group navigation items by section
     const groupedNavItems = navItems.reduce((acc, item) => {

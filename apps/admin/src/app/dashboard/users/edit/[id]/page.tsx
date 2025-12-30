@@ -13,6 +13,8 @@ import {
   Loader2,
   Save,
   Shield,
+  ShieldCheck,
+  ShieldOff,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -73,8 +75,33 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { ErrorAlert, LoadingCard } from '@/components/admin';
+import { Badge } from '@/components/ui/badge';
 
-// Form validation schema - refine for role-based requirements
+// Check if a code indicates an HR office (works for both departments and colleges/offices)
+function isHRCode(code: string | undefined | null): boolean {
+  if (!code) return false;
+  const upperCode = code.toUpperCase();
+  // Check various HR patterns: HR, HRO, HRMO, HRMD, etc.
+  return (
+    upperCode.startsWith('HR') ||
+    upperCode.includes('HUMAN RESOURCE') ||
+    upperCode.includes('HUMAN-RESOURCE')
+  );
+}
+
+// Check if a name indicates an HR office
+function isHRName(name: string | undefined | null): boolean {
+  if (!name) return false;
+  const upperName = name.toUpperCase();
+  return (
+    upperName.includes('HUMAN RESOURCE') ||
+    upperName.includes('HR OFFICE') ||
+    upperName.includes('HR DEPARTMENT') ||
+    upperName.includes('PERSONNEL')
+  );
+}
+
+// Form validation schema - more permissive for editing (only co-admin requires HR department)
 const editUserSchema = z
   .object({
     firstName: z.string().min(1, 'First name is required').max(50, 'Too long'),
@@ -86,9 +113,10 @@ const editUserSchema = z
       .min(1, 'Employee ID is required')
       .regex(/^[A-Z0-9-]+$/, 'Invalid format (use A-Z, 0-9, and hyphen only)'),
     email: z.string().email('Invalid email address'),
-    role: z.enum(['employee', 'hr', 'admin', 'supervisor', 'auditor'], {
+    baseRole: z.enum(['employee', 'hr', 'supervisor', 'auditor'], {
       required_error: 'Role is required',
     }),
+    isCoAdmin: z.boolean().default(false),
     departmentId: z.string().optional(),
     collegeId: z.string().optional(), // For UI filtering only, not sent to API
     positionId: z.string().optional(),
@@ -98,38 +126,22 @@ const editUserSchema = z
   })
   .refine(
     (data) => {
-      // Require department for employee/supervisor roles
-      if (['employee', 'supervisor'].includes(data.role)) {
-        return data.departmentId !== undefined && data.departmentId !== 'none';
-      }
+      // Co-admin HR validation happens in onSubmit with full organizationsData context
+      // Schema-level validation cannot access organizationsData to check if college is HR
       return true;
     },
     {
-      message: 'Department is required for employees and supervisors',
+      message: 'Department is required for Co-Admin users (must be HR office)',
       path: ['departmentId'],
-    }
-  )
-  .refine(
-    (data) => {
-      // Require position for employee/supervisor roles
-      if (['employee', 'supervisor'].includes(data.role)) {
-        return data.positionId !== undefined && data.positionId !== 'none';
-      }
-      return true;
-    },
-    {
-      message: 'Position is required for employees and supervisors',
-      path: ['positionId'],
     }
   );
 
 type EditUserFormValues = z.infer<typeof editUserSchema>;
 
-// Available roles
-const ROLES = [
+// Available base roles (admin/co_admin is controlled separately via toggle)
+const BASE_ROLES = [
   { value: 'employee', label: 'Employee' },
   { value: 'hr', label: 'HR Personnel' },
-  { value: 'admin', label: 'Admin' },
   { value: 'supervisor', label: 'Supervisor' },
   { value: 'auditor', label: 'Auditor' },
 ];
@@ -169,11 +181,13 @@ export default function EditUserPage() {
   const { data: user, isLoading, isError, error } = useUserDetail(userId);
 
   // Fetch organizations (colleges and departments), positions, and user email
-  const { data: organizationsData, isLoading: isOrganizationsLoading } = useOrganizations({
-    type: 'all',
-    includeInactive: false,
-  });
-  const { data: positions = [], isLoading: isPositionsLoading } = usePositionsQuery();
+  const { data: organizationsData, isLoading: isOrganizationsLoading } =
+    useOrganizations({
+      type: 'all',
+      includeInactive: false,
+    });
+  const { data: positions = [], isLoading: isPositionsLoading } =
+    usePositionsQuery();
   const { data: emailData } = useUserEmail(userId);
 
   // State for dialogs
@@ -189,7 +203,8 @@ export default function EditUserPage() {
       suffix: 'none',
       employeeId: '',
       email: '',
-      role: undefined,
+      baseRole: undefined,
+      isCoAdmin: false,
       collegeId: 'none',
       departmentId: 'none',
       positionId: 'none',
@@ -201,8 +216,10 @@ export default function EditUserPage() {
 
   const { watch, formState, reset } = form;
   const { dirtyFields, isDirty } = formState;
-  const watchRole = watch('role');
+  const watchBaseRole = watch('baseRole');
+  const watchIsCoAdmin = watch('isCoAdmin');
   const watchCollegeId = watch('collegeId');
+  const watchDepartmentId = watch('departmentId');
 
   // Get salary grade options
   const salaryGradeOptions = useMemo(() => getSalaryGradeOptions(), []);
@@ -226,47 +243,55 @@ export default function EditUserPage() {
     ];
   }, [organizationsData]);
 
-  // Filter departments based on selected college
-  const departmentOptions = useMemo(() => {
-    if (!organizationsData) return [{ value: 'none', label: 'None' }];
-
-    const allDepartments = organizationsData.departments;
-
-    // If a college is selected, filter departments by that college
-    const filteredDepartments = watchCollegeId && watchCollegeId !== 'none'
-      ? allDepartments.filter((dept) => dept.parentCollegeId === watchCollegeId)
-      : allDepartments;
-
-    return [
+  const positionOptions = useMemo(
+    () => [
       { value: 'none', label: 'None' },
-      ...filteredDepartments.map((dept) => ({
-        value: dept.id,
-        label: `${dept.name} (${dept.code})`,
+      ...positions.map((pos) => ({
+        value: pos.id,
+        label: pos.title,
       })),
-    ];
-  }, [organizationsData, watchCollegeId]);
-
-  const positionOptions = useMemo(() => [
-    { value: 'none', label: 'None' },
-    ...positions.map((pos) => ({
-      value: pos.id,
-      label: pos.title,
-    })),
-  ], [positions]);
+    ],
+    [positions]
+  );
 
   // Pre-populate form when user data and email are loaded
   useEffect(() => {
     if (user && emailData && organizationsData) {
       // Determine college ID from department
       let collegeId = 'none';
+      let userDepartment = null;
+      let userCollege = null;
+
       if (user.departmentId) {
         // Find the department in the organizations data
-        const department = organizationsData.departments.find(
+        userDepartment = organizationsData.departments.find(
           (dept) => dept.id === user.departmentId
         );
-        if (department && department.parentCollegeId) {
-          collegeId = department.parentCollegeId;
+        if (userDepartment && userDepartment.parentCollegeId) {
+          collegeId = userDepartment.parentCollegeId;
+          // Find the college/office
+          userCollege =
+            organizationsData.colleges.find((c) => c.id === collegeId) ||
+            organizationsData.offices.find((o) => o.id === collegeId);
         }
+      }
+
+      // Determine base role and co-admin status from stored role
+      // If role is 'admin' or 'co_admin', they have co-admin access
+      const isCoAdmin = user.role === 'admin' || user.role === 'co_admin';
+
+      // Map role to base role - for admin/co_admin, check if they're in HR to set 'hr' as base
+      let baseRole: 'employee' | 'hr' | 'supervisor' | 'auditor';
+      if (['admin', 'co_admin'].includes(user.role)) {
+        // Check if user is in HR office/department - if so, their base role is 'hr'
+        const isInHR =
+          (userDepartment &&
+            (isHRCode(userDepartment.code) || isHRName(userDepartment.name))) ||
+          (userCollege &&
+            (isHRCode(userCollege.code) || isHRName(userCollege.name)));
+        baseRole = isInHR ? 'hr' : 'employee';
+      } else {
+        baseRole = user.role as 'employee' | 'hr' | 'supervisor' | 'auditor';
       }
 
       reset({
@@ -276,7 +301,8 @@ export default function EditUserPage() {
         suffix: 'none', // Not stored in database, default to none
         employeeId: user.employeeId ?? '',
         email: emailData.email || '',
-        role: user.role,
+        baseRole: baseRole,
+        isCoAdmin: isCoAdmin,
         collegeId: collegeId,
         departmentId: user.departmentId || 'none',
         positionId: user.positionId || 'none',
@@ -288,19 +314,131 @@ export default function EditUserPage() {
   }, [user, emailData, organizationsData, reset]);
 
   const roleRequiresDepartment = useMemo(() => {
-    return ['employee', 'supervisor'].includes(watchRole || '');
-  }, [watchRole]);
+    return (
+      ['employee', 'supervisor'].includes(watchBaseRole || '') || watchIsCoAdmin
+    );
+  }, [watchBaseRole, watchIsCoAdmin]);
 
-  // Reset department when college changes
+  // Check if co-admin requires HR department
+  const coAdminRequiresHRDepartment = useMemo(() => {
+    return watchIsCoAdmin;
+  }, [watchIsCoAdmin]);
+
+  // Check if selected college/office is an HR office
+  const selectedCollegeIsHR = useMemo(() => {
+    if (!watchCollegeId || watchCollegeId === 'none' || !organizationsData)
+      return false;
+    const college =
+      organizationsData.colleges.find((c) => c.id === watchCollegeId) ||
+      organizationsData.offices.find((o) => o.id === watchCollegeId);
+    return college ? isHRCode(college.code) || isHRName(college.name) : false;
+  }, [watchCollegeId, organizationsData]);
+
+  // Check if selected department is an HR department
+  const selectedDepartmentIsHR = useMemo(() => {
+    if (
+      !watchDepartmentId ||
+      watchDepartmentId === 'none' ||
+      !organizationsData
+    )
+      return false;
+    const department = organizationsData.departments.find(
+      (d) => d.id === watchDepartmentId
+    );
+    return department
+      ? isHRCode(department.code) || isHRName(department.name)
+      : false;
+  }, [watchDepartmentId, organizationsData]);
+
+  // For co-admin: either college OR department can be HR
+  const isInHROffice = useMemo(() => {
+    return selectedCollegeIsHR || selectedDepartmentIsHR;
+  }, [selectedCollegeIsHR, selectedDepartmentIsHR]);
+
+  // Filter departments based on college and co-admin status
+  const filteredDepartmentOptions = useMemo(() => {
+    if (!organizationsData) return [{ value: 'none', label: 'None' }];
+
+    const allDepartments = organizationsData.departments;
+
+    // If a college is selected, filter departments by that college
+    let filteredDepartments =
+      watchCollegeId && watchCollegeId !== 'none'
+        ? allDepartments.filter(
+            (dept) => dept.parentCollegeId === watchCollegeId
+          )
+        : allDepartments;
+
+    // If co-admin is enabled AND the selected college is NOT an HR office,
+    // then filter to only HR departments
+    if (watchIsCoAdmin && !selectedCollegeIsHR) {
+      filteredDepartments = filteredDepartments.filter(
+        (dept) => isHRCode(dept.code) || isHRName(dept.name)
+      );
+    }
+    // If co-admin is enabled AND the college IS an HR office,
+    // show all departments under that HR office (no filtering needed)
+
+    return [
+      { value: 'none', label: 'None' },
+      ...filteredDepartments.map((dept) => ({
+        value: dept.id,
+        label: `${dept.name} (${dept.code})`,
+      })),
+    ];
+  }, [organizationsData, watchCollegeId, watchIsCoAdmin, selectedCollegeIsHR]);
+
+  // Reset department when college changes or when co-admin is toggled
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
       if (name === 'collegeId') {
         // Reset department selection when college changes
         form.setValue('departmentId', 'none');
       }
+      if (name === 'isCoAdmin' && value.isCoAdmin) {
+        // When co-admin is enabled, check if current office/department is HR
+        const currentCollegeId = value.collegeId;
+        const currentDeptId = value.departmentId;
+
+        // Check if college is HR
+        let collegeIsHR = false;
+        if (
+          currentCollegeId &&
+          currentCollegeId !== 'none' &&
+          organizationsData
+        ) {
+          const college =
+            organizationsData.colleges.find((c) => c.id === currentCollegeId) ||
+            organizationsData.offices.find((o) => o.id === currentCollegeId);
+          collegeIsHR = college
+            ? isHRCode(college.code) || isHRName(college.name)
+            : false;
+        }
+
+        // If college is HR, department can be anything - no reset needed
+        // If college is NOT HR, check if department is HR
+        if (
+          !collegeIsHR &&
+          currentDeptId &&
+          currentDeptId !== 'none' &&
+          organizationsData
+        ) {
+          const department = organizationsData.departments.find(
+            (d) => d.id === currentDeptId
+          );
+          if (
+            department &&
+            !isHRCode(department.code) &&
+            !isHRName(department.name)
+          ) {
+            // Reset department if it's not an HR department
+            form.setValue('departmentId', 'none');
+          }
+        }
+      }
     });
     return () => subscription.unsubscribe();
-  }, [form]);
+  }, [form, organizationsData]);
 
   const handleCancel = useCallback(() => {
     if (isDirty) {
@@ -313,15 +451,76 @@ export default function EditUserPage() {
   const onSubmit = useCallback(
     async (values: EditUserFormValues) => {
       try {
+        // Determine actual role: if co-admin is enabled, use 'co_admin', otherwise use baseRole
+        const actualRole:
+          | 'employee'
+          | 'hr'
+          | 'admin'
+          | 'co_admin'
+          | 'supervisor'
+          | 'auditor' = values.isCoAdmin ? 'co_admin' : values.baseRole;
+
+        // Validate HR office/department requirement for co-admin
+        if (values.isCoAdmin) {
+          // Check if college/office is HR
+          let collegeIsHR = false;
+          if (
+            values.collegeId &&
+            values.collegeId !== 'none' &&
+            organizationsData
+          ) {
+            const college =
+              organizationsData.colleges.find(
+                (c) => c.id === values.collegeId
+              ) ||
+              organizationsData.offices.find((o) => o.id === values.collegeId);
+            collegeIsHR = college
+              ? isHRCode(college.code) || isHRName(college.name)
+              : false;
+          }
+
+          // Check if department is HR
+          let deptIsHR = false;
+          if (
+            values.departmentId &&
+            values.departmentId !== 'none' &&
+            organizationsData
+          ) {
+            const department = organizationsData.departments.find(
+              (d) => d.id === values.departmentId
+            );
+            deptIsHR = department
+              ? isHRCode(department.code) || isHRName(department.name)
+              : false;
+          }
+
+          // Co-admin must be in HR office OR HR department
+          if (!collegeIsHR && !deptIsHR) {
+            toast.error('Invalid assignment for Co-Admin', {
+              description:
+                'Co-Admin users must be assigned to an HR office or HR department.',
+            });
+            return;
+          }
+        }
+
         // Filter out non-updatable fields (email, employeeId, suffix, collegeId)
         // and convert 'none' values to undefined (API expects string | undefined, not null)
+
+        // For HR offices without sub-departments, use the office ID as departmentId
+        let effectiveDepartmentId = values.departmentId === 'none' ? undefined : values.departmentId;
+        if (selectedCollegeIsHR && values.departmentId === 'none' && values.collegeId && values.collegeId !== 'none') {
+          effectiveDepartmentId = values.collegeId;
+        }
+
         const dataToSubmit = {
           firstName: values.firstName,
           lastName: values.lastName,
           middleName: values.middleName || null,
-          role: values.role,
-          departmentId: values.departmentId === 'none' ? undefined : values.departmentId,
-          positionId: values.positionId === 'none' ? undefined : values.positionId,
+          role: actualRole,
+          departmentId: effectiveDepartmentId,
+          positionId:
+            values.positionId === 'none' ? undefined : values.positionId,
           salaryGrade: values.salaryGrade || null,
           positionTitle: values.positionTitle || null,
           isActive: values.isActive,
@@ -339,11 +538,14 @@ export default function EditUserPage() {
         router.push(`/dashboard/users/view/${userId}`);
       } catch (error) {
         toast.error('Failed to update user', {
-          description: error instanceof Error ? error.message : 'An unexpected error occurred.',
+          description:
+            error instanceof Error
+              ? error.message
+              : 'An unexpected error occurred.',
         });
       }
     },
-    [userId, updateUserAsync, router]
+    [userId, updateUserAsync, router, organizationsData, selectedCollegeIsHR]
   );
 
   if (isLoading) {
@@ -363,7 +565,10 @@ export default function EditUserPage() {
   if (isError || !user) {
     return (
       <PageTransition className="space-y-6">
-        <ErrorAlert error={error || 'User not found'} title="Failed to load user details" />
+        <ErrorAlert
+          error={error || 'User not found'}
+          title="Failed to load user details"
+        />
         <Button onClick={() => router.push('/dashboard/users')}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Users
@@ -372,7 +577,9 @@ export default function EditUserPage() {
     );
   }
 
-  const fullName = `${user.firstName} ${user.middleName || ''} ${user.lastName}`.trim();
+  const fullName = `${user.firstName} ${user.middleName || ''} ${
+    user.lastName
+  }`.trim();
 
   return (
     <PageTransition className="space-y-6">
@@ -410,7 +617,9 @@ export default function EditUserPage() {
         </Button>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Edit User</h1>
-          <p className="text-muted-foreground">Update user information and permissions</p>
+          <p className="text-muted-foreground">
+            Update user information and permissions
+          </p>
         </div>
       </div>
 
@@ -418,7 +627,9 @@ export default function EditUserPage() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           {/* Personal Information Section */}
-          <SectionCard title="Personal Information" icon={<User className="h-5 w-5" />}>
+          <SectionCard
+            title="Personal Information"
+            icon={<User className="h-5 w-5" />}>
             <div className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <FormField
@@ -471,7 +682,9 @@ export default function EditUserPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Suffix</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select suffix" />
@@ -520,7 +733,11 @@ export default function EditUserPage() {
                   <FormItem>
                     <FormLabel>Email Address *</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="juan.delacruz@tup.edu.ph" {...field} />
+                      <Input
+                        type="email"
+                        placeholder="juan.delacruz@tup.edu.ph"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -530,42 +747,179 @@ export default function EditUserPage() {
           </SectionCard>
 
           {/* Role & Assignment Section */}
-          <SectionCard title="Role & Assignment" icon={<Briefcase className="h-5 w-5" />}>
+          <SectionCard
+            title="Role & Assignment"
+            icon={<Briefcase className="h-5 w-5" />}>
             <div className="space-y-4">
-              <FormField
-                control={form.control}
-                name="role"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Role *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select role" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {ROLES.map((role) => (
-                          <SelectItem key={role.value} value={role.value}>
-                            {role.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>This determines the user&apos;s permissions</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Role and Co-Admin Toggle Row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="baseRole"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Primary Role *</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select role" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {BASE_ROLES.map((role) => (
+                            <SelectItem key={role.value} value={role.value}>
+                              {role.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        This determines the user&apos;s base permissions
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              {roleRequiresDepartment && (
-                <div className="rounded-lg border border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-900 p-4">
+                <FormField
+                  control={form.control}
+                  name="isCoAdmin"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <Shield className="h-4 w-4 text-primary" />
+                        Admin Portal Access
+                      </FormLabel>
+                      <div
+                        className={`
+                          rounded-lg border transition-all duration-200
+                          ${
+                            field.value
+                              ? 'border-primary/50 bg-primary/5 dark:bg-primary/10'
+                              : 'border-border bg-muted/20 hover:bg-muted/40'
+                          }
+                        `}>
+                        <div className="flex items-center gap-3 p-4">
+                          {/* Icon */}
+                          <div
+                            className={`
+                              flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors
+                              ${
+                                field.value
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-muted text-muted-foreground'
+                              }
+                            `}>
+                            {field.value ? (
+                              <ShieldCheck className="h-5 w-5" />
+                            ) : (
+                              <ShieldOff className="h-5 w-5" />
+                            )}
+                          </div>
+
+                          {/* Text */}
+                          <div className="flex-1 min-w-0 space-y-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold">
+                                Co-Admin
+                              </span>
+                              <Badge
+                                variant={field.value ? 'default' : 'secondary'}
+                                className={`text-[10px] px-1.5 py-0 ${
+                                  field.value
+                                    ? 'bg-primary'
+                                    : 'bg-muted-foreground/20 text-muted-foreground'
+                                }`}>
+                                {field.value ? 'Active' : 'Inactive'}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Full admin portal access
+                            </p>
+                          </div>
+
+                          {/* Switch - wrapped for visibility */}
+                          <div className="flex items-center">
+                            <FormControl>
+                              <button
+                                type="button"
+                                role="switch"
+                                aria-checked={field.value}
+                                onClick={() => field.onChange(!field.value)}
+                                className={`
+                                  relative inline-flex h-7 w-14 shrink-0 cursor-pointer items-center 
+                                  rounded-full border-2 transition-colors duration-200
+                                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2
+                                  ${
+                                    field.value
+                                      ? 'bg-primary border-primary'
+                                      : 'bg-zinc-200 border-zinc-300 dark:bg-zinc-700 dark:border-zinc-600'
+                                  }
+                                `}>
+                                <span
+                                  className={`
+                                    pointer-events-none inline-block h-5 w-5 transform rounded-full 
+                                    bg-white shadow-lg ring-0 transition-transform duration-200
+                                    ${
+                                      field.value
+                                        ? 'translate-x-7'
+                                        : 'translate-x-1'
+                                    }
+                                  `}
+                                />
+                              </button>
+                            </FormControl>
+                          </div>
+                        </div>
+
+                        {field.value && (
+                          <div className="border-t border-primary/20 bg-primary/5 px-4 py-2">
+                            <p className="text-xs text-primary dark:text-primary/90">
+                              <span className="font-medium">Note:</span>{' '}
+                              Requires HR department assignment
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Department/Position Recommended Info */}
+              {roleRequiresDepartment && !watchIsCoAdmin && (
+                <div className="rounded-lg border border-muted bg-muted/30 p-3">
+                  <p className="text-xs text-muted-foreground">
+                    💡 <span className="font-medium">Tip:</span> Assigning a
+                    department and position helps organize employees and enables
+                    department-level reporting.
+                  </p>
+                </div>
+              )}
+
+              {/* HR Warning when Co-Admin is enabled but not in HR office/department */}
+              {watchIsCoAdmin && !isInHROffice && (
+                <div className="rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900 p-4">
                   <div className="flex gap-3">
-                    <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 shrink-0 mt-0.5" />
-                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                      Department and position are required for employees and supervisors
+                    <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+                    <p className="text-sm text-red-800 dark:text-red-200">
+                      Co-Admin users must be assigned to an HR office or HR
+                      department. Please select an HR-related college/office or
+                      department.
                     </p>
                   </div>
+                </div>
+              )}
+
+              {/* Success indicator when Co-Admin is in HR */}
+              {watchIsCoAdmin && isInHROffice && (
+                <div className="rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-900 p-3">
+                  <p className="text-sm text-green-800 dark:text-green-200">
+                    ✓ Valid HR assignment for Co-Admin
+                  </p>
                 </div>
               )}
 
@@ -578,8 +932,7 @@ export default function EditUserPage() {
                     <Select
                       onValueChange={field.onChange}
                       value={field.value}
-                      disabled={isOrganizationsLoading}
-                    >
+                      disabled={isOrganizationsLoading}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue
@@ -612,35 +965,54 @@ export default function EditUserPage() {
                 name="departmentId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Department {roleRequiresDepartment && '*'}</FormLabel>
+                    <FormLabel>
+                      Department{' '}
+                      {(roleRequiresDepartment ||
+                        coAdminRequiresHRDepartment) &&
+                        !selectedCollegeIsHR && '*'}
+                    </FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       value={field.value}
-                      disabled={isOrganizationsLoading}
-                    >
+                      disabled={isOrganizationsLoading}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue
                             placeholder={
                               isOrganizationsLoading
                                 ? 'Loading departments...'
+                                : watchIsCoAdmin
+                                ? 'Select HR department'
                                 : 'Select department'
                             }
                           />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {departmentOptions.map((dept) => (
+                        {filteredDepartmentOptions.map((dept) => (
                           <SelectItem key={dept.value} value={dept.value}>
                             {dept.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    {watchCollegeId && watchCollegeId !== 'none' && (
+                    {watchIsCoAdmin && !selectedCollegeIsHR ? (
+                      <FormDescription className="text-blue-600 dark:text-blue-400">
+                        Only HR departments shown (or select an HR office above)
+                      </FormDescription>
+                    ) : watchIsCoAdmin && selectedCollegeIsHR ? (
+                      <FormDescription className="text-green-600 dark:text-green-400">
+                        All departments shown (HR office selected)
+                      </FormDescription>
+                    ) : watchCollegeId && watchCollegeId !== 'none' ? (
                       <FormDescription>
                         Showing departments for selected college
                       </FormDescription>
+                    ) : null}
+                    {selectedCollegeIsHR && filteredDepartmentOptions.length <= 1 && (
+                      <p className="text-sm text-green-600 mt-1">
+                        HR office selected - no additional department required
+                      </p>
                     )}
                     <FormMessage />
                   </FormItem>
@@ -652,12 +1024,13 @@ export default function EditUserPage() {
                 name="positionId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Position {roleRequiresDepartment && '*'}</FormLabel>
+                    <FormLabel>
+                      Position {roleRequiresDepartment && '*'}
+                    </FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       value={field.value}
-                      disabled={isPositionsLoading}
-                    >
+                      disabled={isPositionsLoading}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue
@@ -671,7 +1044,9 @@ export default function EditUserPage() {
                       </FormControl>
                       <SelectContent>
                         {positionOptions.map((position) => (
-                          <SelectItem key={position.value} value={position.value}>
+                          <SelectItem
+                            key={position.value}
+                            value={position.value}>
                             {position.label}
                           </SelectItem>
                         ))}
@@ -696,10 +1071,11 @@ export default function EditUserPage() {
                     <Select
                       onValueChange={(value) => {
                         // Convert to number, or undefined if 'none'
-                        field.onChange(value === 'none' ? undefined : parseInt(value, 10));
+                        field.onChange(
+                          value === 'none' ? undefined : parseInt(value, 10)
+                        );
                       }}
-                      value={field.value ? field.value.toString() : 'none'}
-                    >
+                      value={field.value ? field.value.toString() : 'none'}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select salary grade" />
@@ -707,11 +1083,15 @@ export default function EditUserPage() {
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="none">None</SelectItem>
-                        {salaryGradeOptions.map((grade: { value: number; label: string }) => (
-                          <SelectItem key={grade.value} value={grade.value.toString()}>
-                            {grade.label}
-                          </SelectItem>
-                        ))}
+                        {salaryGradeOptions.map(
+                          (grade: { value: number; label: string }) => (
+                            <SelectItem
+                              key={grade.value}
+                              value={grade.value.toString()}>
+                              {grade.label}
+                            </SelectItem>
+                          )
+                        )}
                       </SelectContent>
                     </Select>
                     <FormDescription>
@@ -764,7 +1144,10 @@ export default function EditUserPage() {
                       </FormDescription>
                     </div>
                     <FormControl>
-                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
                     </FormControl>
                   </FormItem>
                 )}
@@ -779,7 +1162,9 @@ export default function EditUserPage() {
                 <Shield className="h-5 w-5" />
                 <div>
                   <CardTitle>Security</CardTitle>
-                  <CardDescription>Manage user authentication and credentials</CardDescription>
+                  <CardDescription>
+                    Manage user authentication and credentials
+                  </CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -789,7 +1174,8 @@ export default function EditUserPage() {
                   <div className="space-y-0.5">
                     <div className="font-medium">Password Reset</div>
                     <p className="text-sm text-muted-foreground">
-                      Generate a new temporary password for {user?.firstName} {user?.lastName}
+                      Generate a new temporary password for {user?.firstName}{' '}
+                      {user?.lastName}
                     </p>
                     {emailData?.email && (
                       <p className="text-xs text-muted-foreground mt-1">
@@ -800,8 +1186,7 @@ export default function EditUserPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setShowPasswordDialog(true)}
-                  >
+                    onClick={() => setShowPasswordDialog(true)}>
                     Reset Password
                   </Button>
                 </div>
@@ -812,17 +1197,30 @@ export default function EditUserPage() {
           {/* Action Buttons */}
           <Card>
             <CardContent className="pt-6">
-              <Separator className="mb-6" />
               <div className="flex flex-col sm:flex-row justify-between gap-3">
-                <Button type="button" variant="outline" onClick={handleCancel}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancel}
+                  className="border-border hover:bg-muted/50">
                   Cancel
                 </Button>
 
-                <Button type="submit" disabled={isUpdating || !isDirty}>
+                <Button
+                  type="submit"
+                  disabled={isUpdating || !isDirty}
+                  className={`
+                    relative overflow-hidden border transition-all duration-200
+                    ${
+                      isDirty && !isUpdating
+                        ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:border-primary/80 shadow-sm hover:shadow-md'
+                        : 'border-border bg-muted text-muted-foreground cursor-not-allowed'
+                    }
+                  `}>
                   {isUpdating ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving Changes...
+                      Saving...
                     </>
                   ) : (
                     <>
@@ -834,9 +1232,12 @@ export default function EditUserPage() {
               </div>
 
               {isDirty && (
-                <p className="text-sm text-muted-foreground text-center mt-4">
-                  You have unsaved changes
-                </p>
+                <div className="mt-4 flex items-center justify-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                  <p className="text-sm text-muted-foreground">
+                    You have unsaved changes
+                  </p>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -849,16 +1250,15 @@ export default function EditUserPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
             <AlertDialogDescription>
-              You have unsaved changes. Are you sure you want to leave this page? All changes will
-              be lost.
+              You have unsaved changes. Are you sure you want to leave this
+              page? All changes will be lost.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Continue Editing</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => router.push(`/dashboard/users/view/${userId}`)}
-              className="bg-red-600 hover:bg-red-700"
-            >
+              className="bg-red-600 hover:bg-red-700">
               Discard Changes
             </AlertDialogAction>
           </AlertDialogFooter>

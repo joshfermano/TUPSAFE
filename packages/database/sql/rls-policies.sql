@@ -37,14 +37,14 @@ ALTER TABLE archives ENABLE ROW LEVEL SECURITY;
 -- HELPER FUNCTIONS
 -- ============================================================================
 
--- Function to check if user is admin or HR
+-- Function to check if user is admin, co-admin, or HR
 CREATE OR REPLACE FUNCTION is_admin_or_hr()
 RETURNS BOOLEAN AS $$
 BEGIN
   RETURN EXISTS (
     SELECT 1 FROM profiles
     WHERE id = auth.uid()
-    AND role IN ('admin', 'hr')
+    AND role IN ('admin', 'co_admin', 'hr')
     AND is_active = true
   );
 END;
