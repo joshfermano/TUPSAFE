@@ -37,10 +37,10 @@
     }
   },
   "scripts": {
-    "build": "npx tsc --build",
-    "dev": "npx tsc --watch",
+    "build": "tsc --build",
+    "dev": "tsc --watch",
     "lint": "eslint src/",
-    "type-check": "npx tsc --noEmit",
+    "type-check": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:migrate": "drizzle-kit migrate",
