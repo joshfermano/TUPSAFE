@@ -1,5 +1,18 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "DATABASE_URL",
+    "NEXT_PUBLIC_APP_PORTAL",
+    "SENDGRID_API_KEY",
+    "EMAIL_FROM",
+    "EMAIL_FROM_NAME",
+    "USE_MOCK_EMAILS",
+    "NEXT_PUBLIC_EMPLOYEE_APP_URL",
+    "NEXT_PUBLIC_ADMIN_APP_URL"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
