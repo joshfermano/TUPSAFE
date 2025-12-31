@@ -13,11 +13,11 @@
     }
   },
   "scripts": {
-    "prebuild": "rimraf dist && rimraf --glob \"*.tsbuildinfo\"",
-    "build": "tsc",
-    "dev": "tsc --watch",
+    "prebuild": "npx rimraf dist && npx rimraf --glob \"*.tsbuildinfo\"",
+    "build": "npx tsc",
+    "dev": "npx tsc --watch",
     "lint": "eslint src/",
-    "type-check": "tsc --noEmit"
+    "type-check": "npx tsc --noEmit"
   },
   "dependencies": {
     "@fontsource/roboto": "^5.2.9",
