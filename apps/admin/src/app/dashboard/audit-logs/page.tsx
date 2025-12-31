@@ -26,6 +26,7 @@ import {
   type AuditLogsFilters,
 } from '@/hooks/useAuditLogsQuery';
 import { useAuditLogsAnalytics } from '@/hooks/useAuditLogsAnalytics';
+import { usePagination } from '@/hooks/usePagination';
 import { EmptyState, ErrorAlert } from '@/components/admin';
 import { PageTransition } from '@/components/PageTransition';
 import {
@@ -68,6 +69,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 
 // Action types for filtering
 const ACTIONS = [
@@ -251,19 +253,23 @@ export default function AuditLogsPage() {
   const [selectedLog, setSelectedLog] = useState<SelectedLog | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
+  // Initialize pagination hook
+  const { page, pageSize, paginationParams, setPage, setPageSize } = usePagination(20);
+
   // Build filters object
   const filters = useMemo<AuditLogsFilters>(
     () => ({
+      ...paginationParams,
       user: userFilter !== 'all' ? userFilter : undefined,
       action: actionFilter !== 'all' ? actionFilter : undefined,
       resource: resourceFilter !== 'all' ? resourceFilter : undefined,
       search: searchQuery,
     }),
-    [userFilter, actionFilter, resourceFilter, searchQuery]
+    [paginationParams, userFilter, actionFilter, resourceFilter, searchQuery]
   );
 
   // Fetch audit logs with filters
-  const { logs, stats, isLoading, isError, error, exportAuditLogsToCSV } = useAuditLogsQuery(filters);
+  const { logs, stats, pagination, isLoading, isError, error, exportAuditLogsToCSV } = useAuditLogsQuery(filters);
 
   // Fetch analytics data for charts
   const {
@@ -647,34 +653,51 @@ export default function AuditLogsPage() {
 
           {/* Audit Logs Table */}
           {!isLoading && !isError && logs && logs.length > 0 && (
-            <div className="overflow-x-auto">
-              <EnhancedTable>
-                <EnhancedTableHeader>
-                  <EnhancedTableRow animate={false}>
-                    <EnhancedTableHead className="hidden lg:table-cell">
-                      Timestamp
-                    </EnhancedTableHead>
-                    <EnhancedTableHead>User</EnhancedTableHead>
-                    <EnhancedTableHead>Action</EnhancedTableHead>
-                    <EnhancedTableHead>Resource</EnhancedTableHead>
-                    <EnhancedTableHead className="hidden xl:table-cell">
-                      IP Address
-                    </EnhancedTableHead>
-                    <EnhancedTableHead>Details</EnhancedTableHead>
-                  </EnhancedTableRow>
-                </EnhancedTableHeader>
-                <EnhancedTableBody>
-                  {logs.map((log, index) => (
-                    <AuditLogRow
-                      key={log.id}
-                      log={log}
-                      index={index}
-                      onClick={() => handleLogClick(log)}
-                    />
-                  ))}
-                </EnhancedTableBody>
-              </EnhancedTable>
-            </div>
+            <>
+              <div className="overflow-x-auto">
+                <EnhancedTable>
+                  <EnhancedTableHeader>
+                    <EnhancedTableRow animate={false}>
+                      <EnhancedTableHead className="hidden lg:table-cell">
+                        Timestamp
+                      </EnhancedTableHead>
+                      <EnhancedTableHead>User</EnhancedTableHead>
+                      <EnhancedTableHead>Action</EnhancedTableHead>
+                      <EnhancedTableHead>Resource</EnhancedTableHead>
+                      <EnhancedTableHead className="hidden xl:table-cell">
+                        IP Address
+                      </EnhancedTableHead>
+                      <EnhancedTableHead>Details</EnhancedTableHead>
+                    </EnhancedTableRow>
+                  </EnhancedTableHeader>
+                  <EnhancedTableBody>
+                    {logs.map((log, index) => (
+                      <AuditLogRow
+                        key={log.id}
+                        log={log}
+                        index={index}
+                        onClick={() => handleLogClick(log)}
+                      />
+                    ))}
+                  </EnhancedTableBody>
+                </EnhancedTable>
+              </div>
+
+              {/* Pagination */}
+              {pagination && (
+                <div className="mt-4">
+                  <DataTablePagination
+                    currentPage={page}
+                    totalPages={pagination.totalPages}
+                    pageSize={pageSize}
+                    total={pagination.total}
+                    onPageChange={setPage}
+                    onPageSizeChange={setPageSize}
+                    itemName="logs"
+                  />
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

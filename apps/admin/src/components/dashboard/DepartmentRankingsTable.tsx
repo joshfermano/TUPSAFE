@@ -99,8 +99,8 @@ export function DepartmentRankingsTable() {
           </div>
         ) : (
           <div className="space-y-2">
-            {/* Table Header */}
-            <div className="grid grid-cols-12 gap-4 px-2 pb-2 text-xs font-medium text-muted-foreground">
+            {/* Table Header - Hidden on mobile, visible on desktop */}
+            <div className="hidden px-2 pb-2 text-xs font-medium text-muted-foreground md:grid md:grid-cols-12 md:gap-4">
               <div className="col-span-1">Rank</div>
               <div className="col-span-5">Department</div>
               <div className="col-span-2 text-center">Users</div>
@@ -118,58 +118,114 @@ export function DepartmentRankingsTable() {
                 <div
                   key={dept.id}
                   className={cn(
-                    'grid grid-cols-12 gap-4 rounded-lg border p-3 transition-colors hover:bg-muted/50',
+                    'rounded-lg border p-3 transition-colors hover:bg-muted/50',
                     rank <= 3 && 'border-yellow-500/30 bg-yellow-50/50 dark:bg-yellow-950/20'
                   )}>
-                  {/* Rank */}
-                  <div className="col-span-1 flex items-center text-lg font-bold">
-                    {medal || rank}
-                  </div>
-
-                  {/* Department Name */}
-                  <div className="col-span-5 flex items-center gap-2">
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{dept.name}</p>
-                      <p className="text-xs text-muted-foreground">{dept.code}</p>
+                  {/* Mobile & Tablet Layout (< md) */}
+                  <div className="md:hidden">
+                    {/* Department Header */}
+                    <div className="mb-3 flex items-start gap-3">
+                      <div className="text-2xl font-bold">{medal || rank}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="truncate text-sm font-medium">{dept.name}</p>
+                          {getTrendIcon(dept.trend)}
+                        </div>
+                        <p className="text-xs text-muted-foreground">{dept.code}</p>
+                      </div>
                     </div>
-                    {getTrendIcon(dept.trend)}
+
+                    {/* Metrics Grid */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="flex flex-col items-center gap-1 rounded-md bg-muted/30 p-2">
+                        <span className="text-xs text-muted-foreground">Users</span>
+                        <Badge variant="secondary" className="text-xs">
+                          {dept.users.total}
+                        </Badge>
+                      </div>
+                      <div className="flex flex-col items-center gap-1 rounded-md bg-muted/30 p-2">
+                        <span className="text-xs text-muted-foreground">PDS</span>
+                        <Badge
+                          variant={
+                            dept.submissions.pdsCompliance >= 90
+                              ? 'default'
+                              : dept.submissions.pdsCompliance >= 70
+                                ? 'secondary'
+                                : 'destructive'
+                          }
+                          className="text-xs">
+                          {Math.round(dept.submissions.pdsCompliance)}%
+                        </Badge>
+                      </div>
+                      <div className="flex flex-col items-center gap-1 rounded-md bg-muted/30 p-2">
+                        <span className="text-xs text-muted-foreground">SALN</span>
+                        <Badge
+                          variant={
+                            dept.submissions.salnCompliance >= 90
+                              ? 'default'
+                              : dept.submissions.salnCompliance >= 70
+                                ? 'secondary'
+                                : 'destructive'
+                          }
+                          className="text-xs">
+                          {Math.round(dept.submissions.salnCompliance)}%
+                        </Badge>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Users */}
-                  <div className="col-span-2 flex items-center justify-center">
-                    <Badge variant="secondary" className="text-xs">
-                      {dept.users.total}
-                    </Badge>
-                  </div>
+                  {/* Desktop Layout (md+) */}
+                  <div className="hidden md:grid md:grid-cols-12 md:gap-4">
+                    {/* Rank */}
+                    <div className="col-span-1 flex items-center text-lg font-bold">
+                      {medal || rank}
+                    </div>
 
-                  {/* PDS Compliance */}
-                  <div className="col-span-2 flex items-center justify-center">
-                    <Badge
-                      variant={
-                        dept.submissions.pdsCompliance >= 90
-                          ? 'default'
-                          : dept.submissions.pdsCompliance >= 70
-                            ? 'secondary'
-                            : 'destructive'
-                      }
-                      className="text-xs">
-                      {Math.round(dept.submissions.pdsCompliance)}%
-                    </Badge>
-                  </div>
+                    {/* Department Name */}
+                    <div className="col-span-5 flex items-center gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">{dept.name}</p>
+                        <p className="text-xs text-muted-foreground">{dept.code}</p>
+                      </div>
+                      {getTrendIcon(dept.trend)}
+                    </div>
 
-                  {/* SALN Compliance */}
-                  <div className="col-span-2 flex items-center justify-center">
-                    <Badge
-                      variant={
-                        dept.submissions.salnCompliance >= 90
-                          ? 'default'
-                          : dept.submissions.salnCompliance >= 70
-                            ? 'secondary'
-                            : 'destructive'
-                      }
-                      className="text-xs">
-                      {Math.round(dept.submissions.salnCompliance)}%
-                    </Badge>
+                    {/* Users */}
+                    <div className="col-span-2 flex items-center justify-center">
+                      <Badge variant="secondary" className="text-xs">
+                        {dept.users.total}
+                      </Badge>
+                    </div>
+
+                    {/* PDS Compliance */}
+                    <div className="col-span-2 flex items-center justify-center">
+                      <Badge
+                        variant={
+                          dept.submissions.pdsCompliance >= 90
+                            ? 'default'
+                            : dept.submissions.pdsCompliance >= 70
+                              ? 'secondary'
+                              : 'destructive'
+                        }
+                        className="text-xs">
+                        {Math.round(dept.submissions.pdsCompliance)}%
+                      </Badge>
+                    </div>
+
+                    {/* SALN Compliance */}
+                    <div className="col-span-2 flex items-center justify-center">
+                      <Badge
+                        variant={
+                          dept.submissions.salnCompliance >= 90
+                            ? 'default'
+                            : dept.submissions.salnCompliance >= 70
+                              ? 'secondary'
+                              : 'destructive'
+                        }
+                        className="text-xs">
+                        {Math.round(dept.submissions.salnCompliance)}%
+                      </Badge>
+                    </div>
                   </div>
                 </div>
               );
@@ -198,21 +254,43 @@ export function DepartmentRankingsTableSkeleton() {
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          <div className="grid grid-cols-12 gap-4 px-2 pb-2">
+          {/* Header skeleton - hidden on mobile */}
+          <div className="hidden px-2 pb-2 md:grid md:grid-cols-12 md:gap-4">
             {Array.from({ length: 5 }).map((_, i) => (
               <Skeleton key={i} className="h-3 w-full" />
             ))}
           </div>
+
+          {/* Row skeletons */}
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="grid grid-cols-12 gap-4 rounded-lg border p-3">
-              <Skeleton className="col-span-1 h-6 w-6" />
-              <div className="col-span-5 space-y-1">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-3 w-16" />
+            <div key={i} className="rounded-lg border p-3">
+              {/* Mobile skeleton */}
+              <div className="md:hidden">
+                <div className="mb-3 flex items-start gap-3">
+                  <Skeleton className="h-8 w-8" />
+                  <div className="flex-1 space-y-1">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                </div>
               </div>
-              <Skeleton className="col-span-2 h-5 w-10" />
-              <Skeleton className="col-span-2 h-5 w-10" />
-              <Skeleton className="col-span-2 h-5 w-10" />
+
+              {/* Desktop skeleton */}
+              <div className="hidden md:grid md:grid-cols-12 md:gap-4">
+                <Skeleton className="col-span-1 h-6 w-6" />
+                <div className="col-span-5 space-y-1">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+                <Skeleton className="col-span-2 h-5 w-10" />
+                <Skeleton className="col-span-2 h-5 w-10" />
+                <Skeleton className="col-span-2 h-5 w-10" />
+              </div>
             </div>
           ))}
         </div>

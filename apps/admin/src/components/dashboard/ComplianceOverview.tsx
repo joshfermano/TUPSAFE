@@ -123,7 +123,7 @@ export function ComplianceOverview() {
           </div>
 
           {/* Breakdown */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">PDS Compliance</p>
               <p className="text-xl font-bold">{data.deadlines.pds.submitted}</p>
@@ -169,7 +169,7 @@ export function ComplianceOverviewSkeleton() {
             </div>
           </div>
           <Skeleton className="h-16 w-full rounded-lg" />
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {Array.from({ length: 2 }).map((_, i) => (
               <div key={i} className="space-y-1">
                 <Skeleton className="h-4 w-24" />

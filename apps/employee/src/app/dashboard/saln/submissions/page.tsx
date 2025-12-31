@@ -25,6 +25,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../providers/AuthProvider';
 import { useSALNSubmissions } from '../../../../hooks/useSALN';
 import { useSALNPdf } from '../../../../hooks/useSALNPdf';
+import { usePagination } from '../../../../hooks/usePagination';
 import type { SALNData } from '../../../../components/saln/pdf';
 import { toast } from 'sonner';
 import { BlurFade, Badge, NumberTicker, AnimatedGradientText } from '@tupsafe/shared-ui';
@@ -38,6 +39,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../../../components/ui/select';
+import { CardGridPagination } from '../../../../components/ui/card-grid-pagination';
 import { cn } from '../../../../lib/utils';
 import { format } from 'date-fns';
 import {
@@ -325,6 +327,9 @@ export default function SalnSubmissionsPage() {
   const { user, profile } = useAuth();
   const { downloadPDF, openPDFInNewTab, isGenerating } = useSALNPdf();
 
+  // Pagination hook
+  const { page, pageSize, setPage, setPageSize } = usePagination(12);
+
   // Use real hook for SALN submissions
   const { data: submissionsResponse, isLoading, error: submissionsError } = useSALNSubmissions();
 
@@ -433,6 +438,17 @@ export default function SalnSubmissionsPage() {
     });
   }, [approvedSubmissions, searchQuery, sortBy]);
 
+  // Client-side pagination
+  const paginatedSubmissions = useMemo(() => {
+    const startIndex = (page - 1) * pageSize;
+    return filteredSubmissions.slice(startIndex, startIndex + pageSize);
+  }, [filteredSubmissions, page, pageSize]);
+
+  // Calculate total pages
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredSubmissions.length / pageSize);
+  }, [filteredSubmissions.length, pageSize]);
+
   // Calculate statistics
   const stats = useMemo(() => {
     const totalApproved = approvedSubmissions.length;
@@ -539,7 +555,7 @@ export default function SalnSubmissionsPage() {
 
   if (error) return <ErrorState error={error.message || 'Failed to load submissions'} />;
 
-  const isEmpty = filteredSubmissions.length === 0;
+  const isEmpty = paginatedSubmissions.length === 0;
 
   return (
     <EmployeeOnlyGuard>
@@ -640,18 +656,35 @@ export default function SalnSubmissionsPage() {
             />
           </BlurFade>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredSubmissions.map((submission, index) => (
-              <ApprovedSalnCard
-                key={submission.id}
-                submission={submission}
-                onView={() => handleView(submission.id)}
-                onDownload={() => handleDownload(submission.id)}
-                onPrint={() => handlePrint(submission.id)}
-                delay={0.3 + index * 0.05}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {paginatedSubmissions.map((submission, index) => (
+                <ApprovedSalnCard
+                  key={submission.id}
+                  submission={submission}
+                  onView={() => handleView(submission.id)}
+                  onDownload={() => handleDownload(submission.id)}
+                  onPrint={() => handlePrint(submission.id)}
+                  delay={0.3 + index * 0.05}
+                />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {filteredSubmissions.length > 0 && (
+              <BlurFade delay={0.35}>
+                <CardGridPagination
+                  currentPage={page}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  total={filteredSubmissions.length}
+                  onPageChange={setPage}
+                  onPageSizeChange={setPageSize}
+                  itemName="submissions"
+                />
+              </BlurFade>
+            )}
+          </>
         )}
       </div>
     </div>

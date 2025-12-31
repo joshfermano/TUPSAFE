@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
@@ -40,6 +40,8 @@ import { ShineBorder } from '../../../components/ui/shine-border';
 import { ShimmerButton } from '../../../components/ui/shimmer-button';
 import AnimatedGradientText from '../../../components/ui/animated-gradient-text';
 import { BorderBeam } from '../../../components/ui/border-beam';
+import { usePagination } from '@/hooks/usePagination';
+import { CardGridPagination } from '@/components/ui/card-grid-pagination';
 
 /**
  * Position card component
@@ -243,6 +245,9 @@ export default function OpenPositionsPage() {
   );
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Pagination hook
+  const { page, pageSize, setPage, setPageSize } = usePagination(10);
+
   const { data, isLoading, error } = useOpenPositionsQuery({
     employmentCategory: employmentCategoryFilter !== 'all' ? employmentCategoryFilter : undefined,
     sort: sortBy,
@@ -257,8 +262,23 @@ export default function OpenPositionsPage() {
         pos.description.toLowerCase().includes(searchQuery.toLowerCase())
     ) || [];
 
-  const featuredPositions = filteredPositions.filter((p) => p.isFeatured);
-  const regularPositions = filteredPositions.filter((p) => !p.isFeatured);
+  // Combine featured and regular positions (featured first)
+  const combinedPositions = useMemo(() => {
+    const featured = filteredPositions.filter((p) => p.isFeatured);
+    const regular = filteredPositions.filter((p) => !p.isFeatured);
+    return [...featured, ...regular];
+  }, [filteredPositions]);
+
+  // Pagination calculation
+  const totalPositions = combinedPositions.length;
+  const totalPages = Math.ceil(totalPositions / pageSize);
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedPositions = combinedPositions.slice(startIndex, endIndex);
+
+  // Separate featured and regular from paginated results
+  const featuredPositions = paginatedPositions.filter((p) => p.isFeatured);
+  const regularPositions = paginatedPositions.filter((p) => !p.isFeatured);
 
   return (
     <div className="space-y-8">
@@ -294,14 +314,14 @@ export default function OpenPositionsPage() {
 
             {/* Filters Row */}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 <Filter className="h-4 w-4 text-slate-600 dark:text-slate-400" />
 
                 {/* Employment Category Filter */}
                 <Select
                   value={employmentCategoryFilter}
                   onValueChange={setEmploymentCategoryFilter}>
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-full sm:w-[180px]">
                     <SelectValue placeholder="All Categories" />
                   </SelectTrigger>
                   <SelectContent>
@@ -318,7 +338,7 @@ export default function OpenPositionsPage() {
                 <Select
                   value={sortBy}
                   onValueChange={(value) => setSortBy(value as any)}>
-                  <SelectTrigger className="w-[160px]">
+                  <SelectTrigger className="w-full sm:w-[160px]">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
                   <SelectContent>
@@ -331,8 +351,8 @@ export default function OpenPositionsPage() {
 
               {/* Results Count */}
               <div className="text-sm text-slate-600 dark:text-slate-400">
-                {filteredPositions.length} position
-                {filteredPositions.length !== 1 ? 's' : ''} available
+                {totalPositions} position
+                {totalPositions !== 1 ? 's' : ''} available
               </div>
             </div>
           </div>
@@ -362,7 +382,7 @@ export default function OpenPositionsPage() {
       {/* Positions Grid */}
       {!isLoading && !error && (
         <>
-          {filteredPositions.length === 0 ? (
+          {totalPositions === 0 ? (
             <EmptyState />
           ) : (
             <div className="space-y-8">
@@ -377,7 +397,7 @@ export default function OpenPositionsPage() {
                       </h2>
                     </div>
                   </BlurFade>
-                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     {featuredPositions.map((position) => (
                       <PositionCard key={position.id} position={position} />
                     ))}
@@ -398,12 +418,27 @@ export default function OpenPositionsPage() {
                       </div>
                     </BlurFade>
                   )}
-                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     {regularPositions.map((position) => (
                       <PositionCard key={position.id} position={position} />
                     ))}
                   </div>
                 </div>
+              )}
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <BlurFade delay={0.25} inView>
+                  <CardGridPagination
+                    currentPage={page}
+                    totalPages={totalPages}
+                    pageSize={pageSize}
+                    total={totalPositions}
+                    onPageChange={setPage}
+                    onPageSizeChange={setPageSize}
+                    itemName="positions"
+                  />
+                </BlurFade>
               )}
             </div>
           )}

@@ -69,7 +69,7 @@ export function ComplianceByDeptChart() {
           <CardDescription>Failed to load department data</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex h-[300px] items-center justify-center text-sm text-muted-foreground">
+          <div className="flex h-[200px] sm:h-[250px] md:h-[300px] items-center justify-center text-sm text-muted-foreground">
             Unable to load department compliance data
           </div>
         </CardContent>
@@ -130,14 +130,14 @@ export function ComplianceByDeptChart() {
       </CardHeader>
       <CardContent>
         {chartData.length === 0 ? (
-          <div className="flex h-[300px] flex-col items-center justify-center text-center">
+          <div className="flex h-[200px] sm:h-[250px] md:h-[300px] flex-col items-center justify-center text-center">
             <Building2 className="mb-4 h-12 w-12 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
               No department data available
             </p>
           </div>
         ) : (
-          <ChartContainer config={chartConfig} className="h-[300px] w-full">
+          <ChartContainer config={chartConfig} className="h-[200px] sm:h-[250px] md:h-[300px] w-full">
             <BarChart
               data={chartData}
               layout="vertical"
@@ -172,7 +172,7 @@ export function ComplianceByDeptChart() {
         )}
 
         {/* Best and Worst Performers */}
-        <div className="mt-4 grid grid-cols-2 gap-4 border-t pt-4">
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 border-t pt-4">
           <div>
             <p className="mb-2 text-sm font-medium text-green-600 dark:text-green-400">
               Best Performing
@@ -227,8 +227,8 @@ export function ComplianceByDeptChartSkeleton() {
         </div>
       </CardHeader>
       <CardContent>
-        <Skeleton className="h-[300px] w-full" />
-        <div className="mt-4 grid grid-cols-2 gap-4 border-t pt-4">
+        <Skeleton className="h-[200px] sm:h-[250px] md:h-[300px] w-full" />
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 border-t pt-4">
           <div className="space-y-2">
             <Skeleton className="h-4 w-32" />
             <Skeleton className="h-4 w-24" />

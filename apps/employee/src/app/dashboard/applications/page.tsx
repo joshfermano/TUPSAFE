@@ -37,6 +37,8 @@ import {
   APPLICATION_STATUS,
   type ApplicationStatus,
 } from '@tupsafe/types';
+import { usePagination } from '@/hooks/usePagination';
+import { CardGridPagination } from '@/components/ui/card-grid-pagination';
 
 /**
  * Status badge color mapping (consistent with @tupsafe/types)
@@ -219,6 +221,17 @@ export default function ApplicationsPage() {
           .includes(searchQuery.toLowerCase())
     ) || [];
 
+  // Pagination
+  const { page, pageSize, setPage, setPageSize } = usePagination(6);
+
+  // Calculate pagination slice
+  const startIndex = (page - 1) * pageSize;
+  const paginatedApplications = filteredApplications.slice(
+    startIndex,
+    startIndex + pageSize
+  );
+  const totalPages = Math.ceil(filteredApplications.length / pageSize);
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -238,7 +251,7 @@ export default function ApplicationsPage() {
       {/* Filters */}
       <BlurFade delay={0.1} inView>
         <Card className="p-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between flex-wrap">
             {/* Search */}
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -255,7 +268,7 @@ export default function ApplicationsPage() {
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-slate-600 dark:text-slate-400" />
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="w-full sm:w-[200px]">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -310,14 +323,29 @@ export default function ApplicationsPage() {
               </BlurFade>
 
               {/* Grid */}
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                {filteredApplications.map((application) => (
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                {paginatedApplications.map((application) => (
                   <ApplicationCard
                     key={application.id}
                     application={application}
                   />
                 ))}
               </div>
+
+              {/* Pagination */}
+              {filteredApplications.length > pageSize && (
+                <BlurFade delay={0.2} inView>
+                  <CardGridPagination
+                    currentPage={page}
+                    totalPages={totalPages}
+                    pageSize={pageSize}
+                    total={filteredApplications.length}
+                    itemName="applications"
+                    onPageChange={setPage}
+                    onPageSizeChange={setPageSize}
+                  />
+                </BlurFade>
+              )}
             </>
           )}
         </>

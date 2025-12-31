@@ -685,7 +685,7 @@ export default function SettingsPage() {
                   {isLoading ? (
                     <div className="space-y-3">
                       <Skeleton className="h-6 w-40" />
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                         <Skeleton className="h-20" />
                         <Skeleton className="h-20" />
                         <Skeleton className="h-20" />
@@ -699,7 +699,7 @@ export default function SettingsPage() {
                           Profile Visibility
                         </Label>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                         <VisibilityOption
                           label="Public"
                           description="Everyone can see"
@@ -776,7 +776,7 @@ export default function SettingsPage() {
                   {isLoading ? (
                     <>
                       <Skeleton className="h-20" />
-                      <div className="ml-8 space-y-3 pl-5 border-l-2 border-slate-200 dark:border-slate-700">
+                      <div className="ml-4 sm:ml-8 space-y-3 pl-3 sm:pl-5 border-l-2 border-slate-200 dark:border-slate-700">
                         <Skeleton className="h-20" />
                         <Skeleton className="h-20" />
                         <Skeleton className="h-20" />
@@ -793,7 +793,7 @@ export default function SettingsPage() {
                         onChange={toggleEmailNotifications}
                       />
 
-                      <div className="ml-8 space-y-3 pl-5 border-l-2 border-slate-200 dark:border-slate-700">
+                      <div className="ml-4 sm:ml-8 space-y-3 pl-3 sm:pl-5 border-l-2 border-slate-200 dark:border-slate-700">
                         <ToggleItem
                           icon={<Bell className="h-5 w-5" />}
                           title="Push Notifications"
@@ -851,7 +851,7 @@ export default function SettingsPage() {
                 </div>
 
                 {sessionLoading ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                     <div className="space-y-2">
                       <Skeleton className="h-4 w-24" />
                       <Skeleton className="h-6 w-32" />
@@ -866,7 +866,7 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 ) : session ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                     <SessionItem
                       icon={<Clock className="h-4 w-4" />}
                       label="Last Login"

@@ -33,9 +33,10 @@ import {
   UsersDataTable,
   ResetPasswordDialog,
   SyncMetadataDialog,
-  UsersPagination,
 } from '@/components/users';
 import { useUsers, useUserStats, useToggleUserStatus, useDeleteUser, type DeleteUserError } from '@/hooks/useUsers';
+import { usePagination } from '@/hooks/usePagination';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import type { UserListQuery } from '@tupsafe/types';
 import Link from 'next/link';
 
@@ -43,11 +44,14 @@ export default function UsersPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Pagination
+  const pagination = usePagination();
+
   // Dialog states
   const [resetPasswordUserId, setResetPasswordUserId] = useState<string | null>(null);
   const [syncMetadataUserId, setSyncMetadataUserId] = useState<string | null>(null);
   const [showDetailedStats, setShowDetailedStats] = useState(false);
-  
+
   // Delete confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [pendingDeleteUserId, setPendingDeleteUserId] = useState<string | null>(null);
@@ -68,8 +72,8 @@ export default function UsersPage() {
   // Build query params from URL
   const queryParams = useMemo<Partial<UserListQuery>>(() => {
     const params: Partial<UserListQuery> = {
-      page: Number(searchParams.get('page') || 1),
-      limit: Number(searchParams.get('limit') || 20),
+      page: pagination.page,
+      limit: pagination.pageSize,
     };
 
     const search = searchParams.get('search');
@@ -100,7 +104,7 @@ export default function UsersPage() {
     if (sortOrder) params.sortOrder = sortOrder as 'asc' | 'desc';
 
     return params;
-  }, [searchParams]);
+  }, [searchParams, pagination.page, pagination.pageSize]);
 
   // Fetch users with current filters
   const { data, isLoading, isError, error } = useUsers(queryParams);
@@ -342,11 +346,14 @@ export default function UsersPage() {
 
           {/* Pagination */}
           {data && data.pagination.totalPages > 1 && (
-            <UsersPagination
+            <DataTablePagination
               currentPage={data.pagination.page}
               totalPages={data.pagination.totalPages}
               pageSize={data.pagination.pageSize}
               total={data.pagination.total}
+              onPageChange={pagination.setPage}
+              onPageSizeChange={pagination.setPageSize}
+              itemName="users"
             />
           )}
         </CardContent>

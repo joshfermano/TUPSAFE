@@ -28,6 +28,7 @@ import { useSalnStatsQuery } from '@/hooks/useSalnStatsQuery';
 import { useDepartmentsQuery } from '@/hooks/useDepartmentsQuery';
 import { useAuth } from '@/context/AuthContext';
 import { useSALNPdf } from '@/hooks/useSALNPdf';
+import { usePagination } from '@/hooks/usePagination';
 import type { SALNData } from '@/components/saln/pdf/types';
 import { DeadlineManagementCard } from '@/components/deadlines';
 import { ReviewDialog } from '@/components/admin/ReviewDialog';
@@ -86,6 +87,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 
 
 // Generate year options (current year and previous 5 years)
@@ -387,20 +389,26 @@ export default function SalnSubmissionsPage() {
   // PDF hook
   const { downloadPDF, isGenerating } = useSALNPdf();
 
+  // Pagination hook
+  const { page, pageSize, paginationParams, setPage, setPageSize } = usePagination(20);
+
   // Build filters object
   const filters = useMemo<SalnSubmissionsFilters>(
     () => ({
+      page: paginationParams.page,
+      limit: paginationParams.limit,
       status: statusFilter !== 'all' ? statusFilter : undefined,
       year: yearFilter !== 'all' ? parseInt(yearFilter) : undefined,
       department: departmentFilter !== 'all' ? departmentFilter : undefined,
       search: searchQuery,
     }),
-    [statusFilter, yearFilter, departmentFilter, searchQuery]
+    [paginationParams.page, paginationParams.limit, statusFilter, yearFilter, departmentFilter, searchQuery]
   );
 
   // Fetch submissions with filters and mutations
   const {
     submissions,
+    pagination,
     isLoading,
     isError,
     error,
@@ -870,46 +878,63 @@ export default function SalnSubmissionsPage() {
 
           {/* Submissions Table */}
           {!isLoading && !isError && submissions.length > 0 && (
-              <div className="overflow-x-auto">
-                <EnhancedTable>
-                  <EnhancedTableHeader>
-                    <EnhancedTableRow animate={false}>
-                      <EnhancedTableHead>Employee</EnhancedTableHead>
-                      <EnhancedTableHead className="hidden md:table-cell">
-                        Year
-                      </EnhancedTableHead>
-                      <EnhancedTableHead className="hidden lg:table-cell">
-                        Net Worth
-                      </EnhancedTableHead>
-                      <EnhancedTableHead className="hidden xl:table-cell">
-                        Department
-                      </EnhancedTableHead>
-                      <EnhancedTableHead>Status</EnhancedTableHead>
-                      <EnhancedTableHead className="hidden 2xl:table-cell">
-                        Submitted
-                      </EnhancedTableHead>
-                      <EnhancedTableHead className="w-[50px]">
-                        <span className="sr-only">Actions</span>
-                      </EnhancedTableHead>
-                    </EnhancedTableRow>
-                  </EnhancedTableHeader>
-                  <EnhancedTableBody>
-                    {submissions.map((submission, index) => (
-                      <SalnSubmissionRow
-                        key={submission.id}
-                        submission={submission}
-                        index={index}
-                        onApprove={handleApprove}
-                        onReject={handleReject}
-                        isSubmitting={isSubmitting}
-                        onDownload={handleDownload}
-                        isDownloading={!!downloadingId}
-                        downloadingId={downloadingId}
-                      />
-                    ))}
-                  </EnhancedTableBody>
-                </EnhancedTable>
-              </div>
+              <>
+                <div className="overflow-x-auto">
+                  <EnhancedTable>
+                    <EnhancedTableHeader>
+                      <EnhancedTableRow animate={false}>
+                        <EnhancedTableHead>Employee</EnhancedTableHead>
+                        <EnhancedTableHead className="hidden md:table-cell">
+                          Year
+                        </EnhancedTableHead>
+                        <EnhancedTableHead className="hidden lg:table-cell">
+                          Net Worth
+                        </EnhancedTableHead>
+                        <EnhancedTableHead className="hidden xl:table-cell">
+                          Department
+                        </EnhancedTableHead>
+                        <EnhancedTableHead>Status</EnhancedTableHead>
+                        <EnhancedTableHead className="hidden 2xl:table-cell">
+                          Submitted
+                        </EnhancedTableHead>
+                        <EnhancedTableHead className="w-[50px]">
+                          <span className="sr-only">Actions</span>
+                        </EnhancedTableHead>
+                      </EnhancedTableRow>
+                    </EnhancedTableHeader>
+                    <EnhancedTableBody>
+                      {submissions.map((submission, index) => (
+                        <SalnSubmissionRow
+                          key={submission.id}
+                          submission={submission}
+                          index={index}
+                          onApprove={handleApprove}
+                          onReject={handleReject}
+                          isSubmitting={isSubmitting}
+                          onDownload={handleDownload}
+                          isDownloading={!!downloadingId}
+                          downloadingId={downloadingId}
+                        />
+                      ))}
+                    </EnhancedTableBody>
+                  </EnhancedTable>
+                </div>
+
+                {/* Pagination */}
+                {pagination && (
+                  <div className="mt-4">
+                    <DataTablePagination
+                      currentPage={page}
+                      totalPages={pagination.totalPages}
+                      pageSize={pageSize}
+                      total={pagination.total}
+                      onPageChange={setPage}
+                      onPageSizeChange={setPageSize}
+                      itemName="submissions"
+                    />
+                  </div>
+                )}
+              </>
             )}
         </CardContent>
       </Card>

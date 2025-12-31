@@ -13,6 +13,7 @@ import {
   useReactTable,
   type ColumnDef,
 } from '@tanstack/react-table';
+import { useIsMobile, useIsTablet } from '@/hooks/useMediaQuery';
 import {
   Table,
   TableBody,
@@ -73,6 +74,20 @@ export function JobsDataTable({
   onEdit,
   onDelete,
 }: JobsDataTableProps) {
+  const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
+
+  // Responsive column visibility
+  const columnVisibility = useMemo(
+    () => ({
+      department: !isMobile, // Hide on mobile
+      employmentCategory: !isMobile && !isTablet, // Hide on mobile and tablet
+      applicationDeadline: !isMobile, // Hide on mobile
+      applicationsReceived: !isMobile && !isTablet, // Hide on mobile and tablet
+    }),
+    [isMobile, isTablet]
+  );
+
   const columns: ColumnDef<OpenPositionListItem>[] = useMemo(
     () => [
       {
@@ -242,6 +257,9 @@ export function JobsDataTable({
     columns,
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => row.id,
+    state: {
+      columnVisibility,
+    },
   });
 
   if (isLoading) {

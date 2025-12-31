@@ -35,6 +35,8 @@ import {
 } from '@/components/organization';
 import { ReassignAndDeleteDialog } from '@/components/organization/ReassignAndDeleteDialog';
 import { useOrganizations, useReactivateOrganization, useBulkDeleteOrganization } from '@/hooks/useOrganization';
+import { usePagination } from '@/hooks/usePagination';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import type { OrganizationQuery } from '@tupsafe/types';
 
 export default function OrganizationPage() {
@@ -55,6 +57,9 @@ export default function OrganizationPage() {
   // Mutations
   const reactivateOrg = useReactivateOrganization();
   const bulkDeleteOrg = useBulkDeleteOrganization();
+
+  // Pagination
+  const { page, pageSize, setPage, setPageSize } = usePagination();
 
   // Sync local search state with URL on mount and when URL changes
   useEffect(() => {
@@ -116,7 +121,7 @@ export default function OrganizationPage() {
   }, [data]);
 
   // Combine all organizations for table display
-  const allOrganizations = useMemo(() => {
+  const filteredOrganizations = useMemo(() => {
     if (!data) return [];
 
     const all = [...data.colleges, ...data.departments, ...data.offices];
@@ -133,6 +138,12 @@ export default function OrganizationPage() {
 
     return all;
   }, [data, queryParams.search]);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredOrganizations.length / pageSize);
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedOrganizations = filteredOrganizations.slice(startIndex, endIndex);
 
   // Update URL params
   const updateParams = (updates: Record<string, string | undefined>) => {
@@ -242,12 +253,12 @@ export default function OrganizationPage() {
               />
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Select
                 value={queryParams.includeInactive ? 'true' : 'false'}
                 onValueChange={(value) => updateParams({ includeInactive: value })}
               >
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-full sm:w-[140px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -260,7 +271,7 @@ export default function OrganizationPage() {
                 value={queryParams.sortBy || 'name'}
                 onValueChange={(value) => updateParams({ sortBy: value })}
               >
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-full sm:w-[140px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -274,7 +285,7 @@ export default function OrganizationPage() {
                 value={queryParams.sortOrder || 'asc'}
                 onValueChange={(value) => updateParams({ sortOrder: value })}
               >
-                <SelectTrigger className="w-[120px]">
+                <SelectTrigger className="w-full sm:w-[120px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -287,7 +298,7 @@ export default function OrganizationPage() {
 
           {/* Data Table */}
           <OrganizationTable
-            data={allOrganizations}
+            data={paginatedOrganizations}
             isLoading={isLoading}
             onViewDetails={handleViewDetails}
             onEdit={handleEdit}
@@ -295,6 +306,17 @@ export default function OrganizationPage() {
             onReactivate={handleReactivate}
             onBulkDelete={handleBulkDelete}
             isBulkDeleting={bulkDeleteOrg.isPending}
+          />
+
+          {/* Pagination */}
+          <DataTablePagination
+            currentPage={page}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            total={filteredOrganizations.length}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            itemName="organizations"
           />
         </CardContent>
       </Card>

@@ -32,7 +32,6 @@ export interface FilterState {
   departmentId?: string;
   fiscalYear?: number;
   search?: string;
-  page: number;
 }
 
 export function SubmissionFilters({ onFilterChange }: SubmissionFiltersProps) {
@@ -47,20 +46,31 @@ export function SubmissionFilters({ onFilterChange }: SubmissionFiltersProps) {
       ? parseInt(searchParams.get('fiscalYear')!)
       : undefined,
     search: searchParams.get('search') || '',
-    page: parseInt(searchParams.get('page') || '1'),
   });
 
   const debouncedSearch = useDebounce(filters.search || '', 300);
 
   useEffect(() => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(searchParams.toString());
+
+    // Preserve existing pagination params
+    const existingPage = searchParams.get('page');
+    const existingLimit = searchParams.get('limit');
 
     if (filters.type !== 'all') params.set('type', filters.type);
+    else params.delete('type');
     if (filters.status !== 'all') params.set('status', filters.status);
+    else params.delete('status');
     if (filters.departmentId) params.set('departmentId', filters.departmentId);
+    else params.delete('departmentId');
     if (filters.fiscalYear) params.set('fiscalYear', filters.fiscalYear.toString());
+    else params.delete('fiscalYear');
     if (debouncedSearch) params.set('search', debouncedSearch);
-    params.set('page', filters.page.toString());
+    else params.delete('search');
+
+    // Reset to page 1 when filters change (pagination managed by usePagination)
+    params.set('page', '1');
+    if (existingLimit) params.set('limit', existingLimit);
 
     router.push(`?${params.toString()}`, { scroll: false });
     onFilterChange?.({ ...filters, search: debouncedSearch });
@@ -70,14 +80,15 @@ export function SubmissionFilters({ onFilterChange }: SubmissionFiltersProps) {
     filters.departmentId,
     filters.fiscalYear,
     debouncedSearch,
-    filters.page,
+    searchParams,
+    router,
+    onFilterChange,
   ]);
 
   const updateFilter = (key: keyof FilterState, value: any) => {
     setFilters((prev) => ({
       ...prev,
       [key]: value,
-      page: 1, // Reset to page 1 when filter changes
     }));
   };
 
@@ -88,7 +99,6 @@ export function SubmissionFilters({ onFilterChange }: SubmissionFiltersProps) {
       departmentId: undefined,
       fiscalYear: undefined,
       search: '',
-      page: 1,
     });
   };
 
@@ -125,7 +135,7 @@ export function SubmissionFilters({ onFilterChange }: SubmissionFiltersProps) {
       </Tabs>
 
       {/* Search and Filters Row */}
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         {/* Search Input */}
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

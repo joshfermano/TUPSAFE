@@ -653,7 +653,7 @@ export default function SalnPage() {
               </h3>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
               <Link href="/dashboard/saln/create" className="w-full">
                 <ShimmerButton className="w-full h-10 text-sm gap-2">
                   <Plus className="h-4 w-4" />
@@ -806,7 +806,7 @@ export default function SalnPage() {
       <BlurFade delay={0.45}>
         <Card className="border-slate-200 dark:border-slate-800 hover:border-[oklch(0.55_0.22_15)] transition-colors">
           <CardContent className="p-5">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
               {/* Net Worth */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400">
@@ -891,7 +891,7 @@ export default function SalnPage() {
           <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
             SALN Categories
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {salnSections.map((section, index) => (
               <motion.div
                 key={section.id}

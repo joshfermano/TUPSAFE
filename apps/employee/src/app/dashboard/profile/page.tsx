@@ -47,18 +47,18 @@ function InfoRow({
   return (
     <div
       className={cn(
-        'flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-800 last:border-0',
+        'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 py-3 border-b border-slate-100 dark:border-slate-800 last:border-0',
         highlight && 'bg-primary/5 dark:bg-primary/10 -mx-4 px-4 rounded-lg'
       )}>
       <div className="flex items-center gap-3">
         {Icon && (
-          <Icon className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+          <Icon className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0" />
         )}
         <span className="text-sm text-slate-600 dark:text-slate-400">
           {label}
         </span>
       </div>
-      <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+      <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 sm:text-right break-words">
         {value || '—'}
       </div>
     </div>
@@ -133,7 +133,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 pb-8">
       {/* Page Header */}
       <BlurFade delay={0}>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -192,7 +192,7 @@ export default function ProfilePage() {
             colorTo="var(--tup-crimson-light)"
             borderWidth={1}
           />
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-tup-crimson-dark text-white shadow-md">
                 <User className="h-5 w-5" />
@@ -242,7 +242,7 @@ export default function ProfilePage() {
           gradientFrom="var(--primary)"
           gradientTo="var(--tup-crimson-dark)"
           className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-primary dark:text-tup-crimson-light">
                 <Briefcase className="h-5 w-5" />
@@ -320,7 +320,7 @@ export default function ProfilePage() {
           gradientFrom="var(--primary)"
           gradientTo="var(--tup-crimson-dark)"
           className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-primary dark:text-tup-crimson-light">
                 <Shield className="h-5 w-5" />
@@ -376,7 +376,7 @@ export default function ProfilePage() {
             gradientFrom="var(--primary)"
             gradientTo="var(--tup-crimson-dark)"
             className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-primary dark:text-tup-crimson-light">
                   <Building2 className="h-5 w-5" />
@@ -424,8 +424,8 @@ export default function ProfilePage() {
             gradientFrom="var(--primary)"
             gradientTo="var(--tup-crimson-dark)"
             className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden hover:border-primary/30 transition-all duration-300">
-            <div className="p-6">
-              <div className="flex items-start gap-4">
+            <div className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-start gap-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 group-hover:from-primary/20 group-hover:to-primary/10 transition-colors">
                   <FileText className="h-6 w-6 text-primary" />
                 </div>
@@ -453,8 +453,8 @@ export default function ProfilePage() {
             gradientFrom="var(--secondary)"
             gradientTo="var(--tup-gold-dark)"
             className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden hover:border-secondary/30 transition-all duration-300">
-            <div className="p-6">
-              <div className="flex items-start gap-4">
+            <div className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-start gap-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-secondary/10 to-secondary/5 dark:from-secondary/20 dark:to-secondary/10 group-hover:from-secondary/20 group-hover:to-secondary/10 transition-colors">
                   <Award className="h-6 w-6 text-secondary" />
                 </div>

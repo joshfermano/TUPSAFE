@@ -10,4 +10,3 @@ export { UsersDataTable } from './UsersDataTable';
 export { EditUserDialog } from './EditUserDialog';
 export { ResetPasswordDialog } from './ResetPasswordDialog';
 export { SyncMetadataDialog } from './SyncMetadataDialog';
-export { UsersPagination } from './UsersPagination';

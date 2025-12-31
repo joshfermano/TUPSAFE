@@ -6,6 +6,7 @@
  * - Advanced filtering
  * - Positions data table
  * - Create/Edit position dialogs
+ * - Standardized pagination
  */
 
 'use client';
@@ -16,6 +17,7 @@ import { Briefcase, Plus, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import {
   JobsStatsCards,
   JobsFilters,
@@ -24,6 +26,7 @@ import {
   EditJobDialog,
 } from '@/components/jobs';
 import { useOpenPositions } from '@/hooks/useJobsQuery';
+import { usePagination } from '@/hooks/usePagination';
 import { useQuery } from '@tanstack/react-query';
 import type { OpenPositionsFilters } from '@/hooks/useJobsQuery';
 import type { CreateOpenPositionData, UpdateOpenPositionData, JobsStatsResponse } from '@tupsafe/types';
@@ -37,6 +40,9 @@ export default function JobsPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editPositionId, setEditPositionId] = useState<string | null>(null);
 
+  // Pagination state
+  const { page, pageSize, paginationParams, setPage, setPageSize } = usePagination(20);
+
   // Build filters from URL params
   const filters = useMemo<OpenPositionsFilters>(() => {
     const status = searchParams.get('status');
@@ -44,11 +50,9 @@ export default function JobsPage() {
     const employmentCategory = searchParams.get('employmentCategory');
     const search = searchParams.get('search');
     const isFeatured = searchParams.get('isFeatured');
-    const page = searchParams.get('page');
 
     return {
-      page: page ? parseInt(page) : 1,
-      limit: 20,
+      ...paginationParams,
       status: status && status !== 'all' ? (status as 'open' | 'closed' | 'filled' | 'cancelled') : undefined,
       departmentId: departmentId && departmentId !== 'all' ? departmentId : undefined,
       employmentCategory: employmentCategory && employmentCategory !== 'all' ? (employmentCategory as 'faculty' | 'administrative' | 'contractual' | 'not_applicable') : undefined,
@@ -57,7 +61,7 @@ export default function JobsPage() {
       sortBy: 'postedAt',
       sortOrder: 'desc',
     };
-  }, [searchParams]);
+  }, [searchParams, paginationParams]);
 
   // Fetch positions
   const {
@@ -232,40 +236,19 @@ export default function JobsPage() {
             onDelete={handleDelete}
           />
 
-          {/* Simple Pagination */}
+          {/* Standardized Pagination */}
           {pagination && pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4">
-              <div className="text-sm text-muted-foreground">
-                Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
-                {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-                {pagination.total} positions
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={pagination.page <= 1}
-                  onClick={() => {
-                    const params = new URLSearchParams(searchParams.toString());
-                    params.set('page', String(pagination.page - 1));
-                    router.push(`?${params.toString()}`);
-                  }}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={pagination.page >= pagination.totalPages}
-                  onClick={() => {
-                    const params = new URLSearchParams(searchParams.toString());
-                    params.set('page', String(pagination.page + 1));
-                    router.push(`?${params.toString()}`);
-                  }}
-                >
-                  Next
-                </Button>
-              </div>
+            <div className="mt-4">
+              <DataTablePagination
+                currentPage={page}
+                totalPages={pagination.totalPages}
+                pageSize={pageSize}
+                total={pagination.total}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                itemName="positions"
+                pageSizeOptions={[10, 20, 50, 100]}
+              />
             </div>
           )}
         </CardContent>

@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '../../providers/AuthProvider';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { Button } from '../../components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '../../components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../../components/ui/sheet';
 import { cn } from '../../lib/utils';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -22,6 +22,8 @@ import {
   ChevronDown,
   AlertTriangle,
   X,
+  PanelLeftClose,
+  PanelLeftOpen,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -50,6 +52,7 @@ interface NavItemProps {
   onToggle?: () => void;
   onNavigate?: (href: string) => void;
   currentPathname?: string;
+  isCollapsed?: boolean;
 }
 
 interface UserInfoProps {
@@ -62,6 +65,8 @@ interface UserInfoProps {
 interface DashboardSidebarProps {
   className?: string;
   userType?: 'employee' | 'applicant' | undefined;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 // ============================================================================
@@ -167,7 +172,8 @@ const NavItem = memo<NavItemProps>(
     isExpanded,
     onToggle,
     onNavigate,
-    currentPathname
+    currentPathname,
+    isCollapsed = false,
   }) => {
     const Icon = item.icon;
     const hasSubItems = item.subItems && item.subItems.length > 0;
@@ -177,47 +183,54 @@ const NavItem = memo<NavItemProps>(
         <motion.button
           onClick={hasSubItems ? onToggle : onClick}
           {...getAnimationProps(prefersReducedMotion, {
-            whileHover: { x: 2 },
+            whileHover: { x: isCollapsed ? 0 : 2 },
             whileTap: { scale: 0.98 },
             transition: { duration: 0.2 },
           })}
           className={cn(
-            'relative w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 group',
+            'relative w-full flex items-center rounded-xl text-sm font-medium transition-all duration-300 group',
+            isCollapsed ? 'justify-center px-2 py-3' : 'gap-3 px-4 py-3',
             isActive
               ? 'bg-primary text-white shadow-sm shadow-primary/20'
               : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100'
-          )}>
+          )}
+          title={isCollapsed ? item.name : undefined}>
           <Icon
             className={cn(
               'h-5 w-5 transition-all duration-300',
+              isCollapsed ? 'shrink-0' : '',
               isActive
                 ? 'text-white'
                 : 'text-slate-500 dark:text-slate-400 group-hover:text-primary dark:group-hover:text-primary'
             )}
           />
-          <span className="flex-1 text-left">{item.name}</span>
+          {!isCollapsed && (
+            <>
+              <span className="flex-1 text-left">{item.name}</span>
 
-          {hasSubItems ? (
-            <ChevronDown
-              className={cn(
-                'h-4 w-4 transition-transform duration-300',
-                isExpanded && 'rotate-180',
-                isActive
-                  ? 'text-white'
-                  : 'text-slate-400 dark:text-slate-500'
-              )}
-            />
-          ) : isActive ? (
-            <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="h-1.5 w-1.5 rounded-full bg-white"
-            />
-          ) : null}
+              {hasSubItems ? (
+                <ChevronDown
+                  className={cn(
+                    'h-4 w-4 transition-transform duration-300',
+                    isExpanded && 'rotate-180',
+                    isActive
+                      ? 'text-white'
+                      : 'text-slate-400 dark:text-slate-500'
+                  )}
+                />
+              ) : isActive ? (
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="h-1.5 w-1.5 rounded-full bg-white"
+                />
+              ) : null}
+            </>
+          )}
         </motion.button>
 
-        {/* Sub-items with smooth expand/collapse animation */}
-        {hasSubItems && (
+        {/* Sub-items with smooth expand/collapse animation - Hidden when collapsed */}
+        {hasSubItems && !isCollapsed && (
           <motion.div
             initial={false}
             animate={{
@@ -265,6 +278,8 @@ NavItem.displayName = 'NavItem';
 const DashboardSidebar = memo(function DashboardSidebar({
   className,
   userType,
+  isCollapsed = false,
+  onToggleCollapse,
 }: DashboardSidebarProps) {
   // CRITICAL: Default to 'applicant' (safer - more restricted) when userType is undefined
   // This prevents showing SALN to users whose profile hasn't loaded yet
@@ -420,23 +435,43 @@ const DashboardSidebar = memo(function DashboardSidebar({
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-sm">
               <LayoutDashboard className="h-5 w-5 text-white" />
             </div>
-            <div className="flex flex-col">
-              <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                TUPSAFE
-              </h1>
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                Employee Portal
-              </span>
-            </div>
+            {!isCollapsed && (
+              <div className="flex flex-col">
+                <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                  TUPSAFE
+                </h1>
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                  Employee Portal
+                </span>
+              </div>
+            )}
           </motion.div>
 
-          {/* Memoized User Info */}
-          <UserInfo
-            email={user?.email}
-            initials={userInitials}
-            avatarUrl={profile?.avatarUrl}
-            prefersReducedMotion={prefersReducedMotion}
-          />
+          {/* Collapse Toggle Button - Visible only on tablets (md:flex lg:hidden) */}
+          {onToggleCollapse && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onToggleCollapse}
+              className="hidden md:flex lg:hidden h-8 w-8 shrink-0 self-center"
+              aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+              {isCollapsed ? (
+                <PanelLeftOpen className="h-4 w-4" />
+              ) : (
+                <PanelLeftClose className="h-4 w-4" />
+              )}
+            </Button>
+          )}
+
+          {/* Memoized User Info - Only show when not collapsed */}
+          {!isCollapsed && (
+            <UserInfo
+              email={user?.email}
+              initials={userInitials}
+              avatarUrl={profile?.avatarUrl}
+              prefersReducedMotion={prefersReducedMotion}
+            />
+          )}
         </div>
 
         {/* Navigation - Clean list with subtle hover states */}
@@ -469,6 +504,7 @@ const DashboardSidebar = memo(function DashboardSidebar({
                   onToggle={() => handleToggle(item.name)}
                   onNavigate={handleNavigate}
                   currentPathname={pathname || ''}
+                  isCollapsed={isCollapsed}
                 />
               </motion.div>
             );
@@ -479,15 +515,19 @@ const DashboardSidebar = memo(function DashboardSidebar({
         <div className="p-4 border-t border-slate-200 dark:border-slate-800">
           <motion.div
             {...getAnimationProps(prefersReducedMotion, {
-              whileHover: { x: 2 },
+              whileHover: { x: isCollapsed ? 0 : 2 },
               whileTap: { scale: 0.98 },
             })}>
             <Button
               variant="ghost"
-              className="w-full justify-start gap-3 text-slate-700 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all duration-300"
-              onClick={handleSignOut}>
+              className={cn(
+                "w-full gap-3 text-slate-700 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all duration-300",
+                isCollapsed ? "justify-center px-2" : "justify-start"
+              )}
+              onClick={handleSignOut}
+              title={isCollapsed ? "Sign Out" : undefined}>
               <LogOut className="h-5 w-5" />
-              <span>Sign Out</span>
+              {!isCollapsed && <span>Sign Out</span>}
             </Button>
           </motion.div>
         </div>
@@ -564,9 +604,33 @@ export default function DashboardLayout({
   const { user, profile, loading, profileLoading } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [showPasswordBanner, setShowPasswordBanner] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  // Load/save collapsed state from localStorage
+  useEffect(() => {
+    if (mounted) {
+      const savedState = localStorage.getItem('employee-sidebar-collapsed');
+      if (savedState !== null) {
+        setSidebarCollapsed(savedState === 'true');
+      }
+    }
+  }, [mounted]);
+
+  // Save collapsed state to localStorage whenever it changes
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem('employee-sidebar-collapsed', String(sidebarCollapsed));
+    }
+  }, [sidebarCollapsed, mounted]);
+
+  // Toggle sidebar collapse callback
+  const toggleSidebarCollapse = useCallback(() => {
+    setSidebarCollapsed(prev => !prev);
   }, []);
 
   // Redirect to login if not authenticated
@@ -667,31 +731,48 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-900">
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-72 flex-shrink-0">
-        <DashboardSidebar userType={userType} />
+      {/* Mobile Header - Fixed top bar with menu toggle */}
+      <div className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center gap-3 border-b bg-white dark:bg-slate-900 px-4 md:hidden">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setMobileMenuOpen(true)}
+          className="h-9 w-9 shrink-0">
+          <Menu className="h-5 w-5" />
+        </Button>
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white">
+            <LayoutDashboard className="h-4 w-4" />
+          </div>
+          <span className="text-sm font-semibold">TUPSAFE</span>
+        </div>
+      </div>
+
+      {/* Desktop/Tablet Sidebar */}
+      <aside className={cn(
+        "hidden shrink-0 border-r shadow-sm transition-all duration-300 md:block",
+        sidebarCollapsed ? "md:w-20 lg:w-72" : "md:w-72"
+      )}>
+        <DashboardSidebar
+          userType={userType}
+          isCollapsed={sidebarCollapsed}
+          onToggleCollapse={toggleSidebarCollapse}
+        />
       </aside>
 
       {/* Mobile Sidebar */}
-      <div className="lg:hidden">
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="fixed top-4 left-4 z-50 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all duration-300">
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-72 p-0">
-            <DashboardSidebar userType={userType} />
-          </SheetContent>
-        </Sheet>
-      </div>
+      <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <SheetContent side="left" className="w-72 p-0">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Navigation Menu</SheetTitle>
+          </SheetHeader>
+          <DashboardSidebar userType={userType} />
+        </SheetContent>
+      </Sheet>
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
-        <div className="container mx-auto px-4 py-6 lg:px-8 lg:py-8">
+        <div className="container mx-auto max-w-screen-2xl px-4 pt-20 pb-6 md:pt-6 md:px-6 lg:px-8 lg:py-8">
           {/* Temporary Password Reminder Banner */}
           {profile?.temporaryPassword && showPasswordBanner && (
             <TemporaryPasswordBanner
