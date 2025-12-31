@@ -8,6 +8,8 @@ import { BlurFade, Badge } from '@tupsafe/shared-ui';
 import { FileEdit, Inbox } from 'lucide-react';
 import { DraftCard, DraftsFilterBar as FilterBar, DraftsEmptyState as EmptyState, type DraftsSortOption as SortOption } from '@/components/pds';
 import { useDebounce } from '@/hooks/useDebounce';
+import { usePagination } from '@/hooks/usePagination';
+import { CardGridPagination } from '@/components/ui/card-grid-pagination';
 
 // Loading State Component
 const LoadingState = memo(() => (
@@ -117,6 +119,9 @@ export default function PDSDraftsPage() {
   // Debounce search query for performance
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
+  // Pagination
+  const { page, pageSize, setPage, setPageSize } = usePagination();
+
   // Filter draft submissions only (already filtered by hook, but keep for search)
   const draftSubmissions = useMemo(() => {
     let filtered = submissions;
@@ -151,12 +156,22 @@ export default function PDSDraftsPage() {
     });
   }, [submissions, debouncedSearchQuery, sortBy]);
 
-  // Calculate statistics
+  // Calculate statistics and pagination
   const stats = useMemo(() => {
     return {
       total: draftSubmissions.length,
     };
   }, [draftSubmissions]);
+
+  // Client-side pagination
+  const paginatedDrafts = useMemo(() => {
+    const startIndex = (page - 1) * pageSize;
+    return draftSubmissions.slice(startIndex, startIndex + pageSize);
+  }, [draftSubmissions, page, pageSize]);
+
+  const totalPages = useMemo(() => {
+    return Math.ceil(draftSubmissions.length / pageSize);
+  }, [draftSubmissions.length, pageSize]);
 
   // Handlers
   const handleContinue = useCallback(
@@ -177,7 +192,8 @@ export default function PDSDraftsPage() {
   const handleClearFilters = useCallback(() => {
     setSearchQuery('');
     setSortBy('date-desc');
-  }, []);
+    setPage(1); // Reset to first page when clearing filters
+  }, [setPage]);
 
   const hasActiveFilters = useMemo(
     () => debouncedSearchQuery !== '',
@@ -258,24 +274,38 @@ export default function PDSDraftsPage() {
             />
           </BlurFade>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {draftSubmissions.map((submission: PDSSubmission, index: number) => (
-              <DraftCard
-                key={submission.id}
-                submission={{
-                  id: submission.id,
-                  year: submission.year,
-                  version: submission.version,
-                  createdAt: toISOString(submission.createdAt) || new Date().toISOString(),
-                  updatedAt: toISOString(submission.updatedAt) || new Date().toISOString(),
-                  completion: calculateDraftCompletion(),
-                }}
-                onContinue={() => handleContinue(submission.id)}
-                onView={() => handleView(submission.id)}
-                delay={0.4 + index * 0.05}
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {paginatedDrafts.map((submission: PDSSubmission, index: number) => (
+                <DraftCard
+                  key={submission.id}
+                  submission={{
+                    id: submission.id,
+                    year: submission.year,
+                    version: submission.version,
+                    createdAt: toISOString(submission.createdAt) || new Date().toISOString(),
+                    updatedAt: toISOString(submission.updatedAt) || new Date().toISOString(),
+                    completion: calculateDraftCompletion(),
+                  }}
+                  onContinue={() => handleContinue(submission.id)}
+                  onView={() => handleView(submission.id)}
+                  delay={0.4 + index * 0.05}
+                />
+              ))}
+            </div>
+
+            {totalPages > 1 && (
+              <CardGridPagination
+                currentPage={page}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                total={draftSubmissions.length}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                itemName="drafts"
               />
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
     </div>

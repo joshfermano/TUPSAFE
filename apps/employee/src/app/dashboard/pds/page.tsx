@@ -777,7 +777,7 @@ export default function PDSPage() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                   <Link href="/dashboard/pds/create" className="w-full">
                     <ShimmerButton className="w-full h-10 text-sm gap-2">
                       <Plus className="h-4 w-4" />
@@ -859,7 +859,7 @@ export default function PDSPage() {
           </BlurFade>
 
           {/* Main Grid */}
-          <div className="grid lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column - Current Status & Submissions */}
             <div className="lg:col-span-2 space-y-6">
               {/* Current Status Card */}
@@ -977,7 +977,7 @@ export default function PDSPage() {
             {/* Right Column - PDS Sections */}
             <div className="lg:col-span-1">
               <BlurFade delay={0.5}>
-                <Card className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 shadow-sm sticky top-6">
+                <Card className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 shadow-sm lg:sticky lg:top-6">
                   <CardContent className="p-5">
                     <div className="flex items-center gap-2 mb-4">
                       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">

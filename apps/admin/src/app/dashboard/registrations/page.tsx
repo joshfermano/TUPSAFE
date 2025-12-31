@@ -13,15 +13,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from '@/components/ui/pagination';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import {
   RegistrationStatsCards,
   RegistrationFilters,
@@ -44,14 +36,16 @@ import {
 } from '@tupsafe/database';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import type { PendingRegistration } from '@tupsafe/database';
+import { usePagination } from '@/hooks/usePagination';
 
 export default function RegistrationsPage() {
   // Query client for Realtime integration
   const queryClient = useQueryClient();
 
+  // Pagination
+  const { page, pageSize, setPage, setPageSize } = usePagination(20);
+
   // State
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(20);
   const [filters, setFilters] = useState<RegistrationFiltersState>({
     status: 'pending', // Default to pending
   });
@@ -141,11 +135,6 @@ export default function RegistrationsPage() {
     setSelectedRows(new Set()); // Clear selection
   };
 
-  const handlePageChange = (newPage: number) => {
-    setPage(newPage);
-    setSelectedRows(new Set()); // Clear selection on page change
-  };
-
   // Get selected registrations for bulk actions
   const selectedRegistrations = registrations.filter((r) =>
     selectedRows.has(r.id)
@@ -159,7 +148,7 @@ export default function RegistrationsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
               Registration Approvals
@@ -168,10 +157,6 @@ export default function RegistrationsPage() {
               Review and manage pending registration requests
             </p>
           </div>
-          <Button variant="outline" className="gap-2">
-            <UserPlus className="h-4 w-4" />
-            Manual Registration
-          </Button>
         </div>
       </div>
 
@@ -228,73 +213,16 @@ export default function RegistrationsPage() {
       />
 
       {/* Pagination */}
-      {pagination && pagination.totalPages > 1 && (
-        <div className="flex justify-center">
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  onClick={() => handlePageChange(Math.max(1, page - 1))}
-                  className={
-                    page === 1
-                      ? 'pointer-events-none opacity-50'
-                      : 'cursor-pointer'
-                  }
-                />
-              </PaginationItem>
-
-              {/* Page numbers */}
-              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
-                .filter((p) => {
-                  // Show first page, last page, current page, and pages around current
-                  return (
-                    p === 1 ||
-                    p === pagination.totalPages ||
-                    Math.abs(p - page) <= 1
-                  );
-                })
-                .map((p, index, array) => {
-                  // Add ellipsis if there's a gap
-                  const prevPage = array[index - 1];
-                  const showEllipsis = prevPage && p - prevPage > 1;
-
-                  return (
-                    <PaginationItem key={p}>
-                      {showEllipsis && <PaginationEllipsis />}
-                      <PaginationLink
-                        onClick={() => handlePageChange(p)}
-                        isActive={page === p}
-                        className="cursor-pointer">
-                        {p}
-                      </PaginationLink>
-                    </PaginationItem>
-                  );
-                })}
-
-              <PaginationItem>
-                <PaginationNext
-                  onClick={() =>
-                    handlePageChange(Math.min(pagination.totalPages, page + 1))
-                  }
-                  className={
-                    page === pagination.totalPages
-                      ? 'pointer-events-none opacity-50'
-                      : 'cursor-pointer'
-                  }
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </div>
-      )}
-
-      {/* Summary Footer */}
       {pagination && (
-        <div className="text-sm text-muted-foreground text-center">
-          Showing {(page - 1) * pageSize + 1} to{' '}
-          {Math.min(page * pageSize, pagination.total)} of {pagination.total}{' '}
-          registrations
-        </div>
+        <DataTablePagination
+          currentPage={page}
+          totalPages={pagination.totalPages}
+          pageSize={pageSize}
+          total={pagination.total}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          itemName="registrations"
+        />
       )}
 
       {/* Dialogs */}

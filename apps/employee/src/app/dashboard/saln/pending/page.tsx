@@ -16,6 +16,8 @@ import {
 import { EmptyState } from '@/components/saln/EmptyState';
 import { PendingCard } from '@/components/saln/PendingCard';
 import { useDebounce } from '../../../../hooks/useDebounce';
+import { usePagination } from '@/hooks/usePagination';
+import { CardGridPagination } from '@/components/ui/card-grid-pagination';
 
 // Loading State Component
 const LoadingState = memo(() => (
@@ -134,6 +136,9 @@ function SALNPendingPageContent() {
   // Debounce search query for performance
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
+  // Pagination state
+  const { page, pageSize, setPage, setPageSize } = usePagination();
+
   // Filter pending submissions (only submitted and reviewing)
   const pendingSubmissions = useMemo(() => {
     if (!allSubmissions || allSubmissions.length === 0) return [];
@@ -201,6 +206,12 @@ function SALNPendingPageContent() {
       reviewing,
     };
   }, [pendingSubmissions]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(pendingSubmissions.length / pageSize);
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedSubmissions = pendingSubmissions.slice(startIndex, endIndex);
 
   // Handlers
   const handleContinue = useCallback(
@@ -326,28 +337,40 @@ function SALNPendingPageContent() {
             />
           </BlurFade>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {pendingSubmissions.map((submission: SALNSubmission, index: number) => (
-              <PendingCard
-                key={submission.id}
-                submission={{
-                  id: submission.id,
-                  year: submission.year,
-                  status: submission.status as
-                    | 'submitted'
-                    | 'reviewing',
-                  createdAt: submission.createdAt,
-                  updatedAt: submission.updatedAt,
-                  submittedAt: safeDate(submission.submittedAt),
-                  reviewedBy: undefined, // Not available for pending submissions
-                }}
-                onContinue={() => handleContinue(submission.id)}
-                onView={() => handleView(submission.id)}
-                onDownload={() => handleDownload(submission.id)}
-                delay={0.4 + index * 0.05}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {paginatedSubmissions.map((submission: SALNSubmission, index: number) => (
+                <PendingCard
+                  key={submission.id}
+                  submission={{
+                    id: submission.id,
+                    year: submission.year,
+                    status: submission.status as
+                      | 'submitted'
+                      | 'reviewing',
+                    createdAt: submission.createdAt,
+                    updatedAt: submission.updatedAt,
+                    submittedAt: safeDate(submission.submittedAt),
+                    reviewedBy: undefined, // Not available for pending submissions
+                  }}
+                  onContinue={() => handleContinue(submission.id)}
+                  onView={() => handleView(submission.id)}
+                  onDownload={() => handleDownload(submission.id)}
+                  delay={0.4 + index * 0.05}
+                />
+              ))}
+            </div>
+
+            <CardGridPagination
+              currentPage={page}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              total={pendingSubmissions.length}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              itemName="submissions"
+            />
+          </>
         )}
       </div>
     </div>

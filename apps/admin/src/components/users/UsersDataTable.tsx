@@ -12,13 +12,14 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   flexRender,
   getCoreRowModel,
   useReactTable,
   type ColumnDef,
 } from '@tanstack/react-table';
+import { useIsMobile, useIsTablet } from '@/hooks/useMediaQuery';
 import { MoreVertical, Eye, Edit, UserCheck, UserX, Key, Trash2, RefreshCw } from 'lucide-react';
 import {
   Table,
@@ -93,6 +94,19 @@ export function UsersDataTable({
   onDelete,
 }: UsersDataTableProps) {
   const [rowSelection, setRowSelection] = useState({});
+  const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
+
+  // Responsive column visibility
+  const columnVisibility = useMemo(
+    () => ({
+      email: !isMobile, // Hide on mobile
+      userType: !isMobile && !isTablet, // Hide on mobile and tablet
+      department: !isMobile, // Hide on mobile
+      isActive: !isMobile, // Hide on mobile
+    }),
+    [isMobile, isTablet]
+  );
 
   const columns: ColumnDef<UserListItem>[] = [
     {
@@ -252,6 +266,7 @@ export function UsersDataTable({
     onRowSelectionChange: setRowSelection,
     state: {
       rowSelection,
+      columnVisibility,
     },
   });
 

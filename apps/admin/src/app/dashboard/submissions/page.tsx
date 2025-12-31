@@ -8,6 +8,8 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
+import { usePagination } from '@/hooks/usePagination';
 import { CheckCircle, Plus } from 'lucide-react';
 import {
   SubmissionStatsCards,
@@ -32,11 +34,13 @@ import {
 import type { SubmissionListItem } from '@tupsafe/types';
 
 export default function SubmissionsPage() {
+  // Pagination
+  const pagination = usePagination();
+
   // Filter state
   const [filters, setFilters] = useState<FilterState>({
     type: 'all',
     status: 'submitted',
-    page: 1,
   });
 
   // Selected submissions for bulk operations
@@ -58,8 +62,8 @@ export default function SubmissionsPage() {
 
   // Data fetching
   const { data: submissionsData, isLoading: submissionsLoading } = useSubmissions({
-    page: filters.page,
-    limit: 20,
+    page: pagination.page,
+    limit: pagination.pageSize,
     type: filters.type,
     status: filters.status,
     departmentId: filters.departmentId,
@@ -182,7 +186,7 @@ export default function SubmissionsPage() {
   return (
     <div className="flex-1 space-y-6 p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Submission Review</h1>
           <p className="text-muted-foreground mt-1">
@@ -215,31 +219,15 @@ export default function SubmissionsPage() {
 
       {/* Pagination */}
       {submissionsData && submissionsData.submissions.length > 0 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Showing {submissionsData.submissions.length} of{' '}
-            {submissionsData.pagination.total} submissions
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setFilters((f) => ({ ...f, page: f.page - 1 }))}
-              disabled={filters.page === 1}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setFilters((f) => ({ ...f, page: f.page + 1 }))}
-              disabled={
-                submissionsData.submissions.length < 20 ||
-                submissionsData.submissions.length === submissionsData.pagination.total
-              }
-            >
-              Next
-            </Button>
-          </div>
-        </div>
+        <DataTablePagination
+          currentPage={pagination.page}
+          totalPages={Math.ceil(submissionsData.pagination.total / pagination.pageSize)}
+          pageSize={pagination.pageSize}
+          total={submissionsData.pagination.total}
+          onPageChange={pagination.setPage}
+          onPageSizeChange={pagination.setPageSize}
+          itemName="submissions"
+        />
       )}
 
       {/* Detail Dialogs */}

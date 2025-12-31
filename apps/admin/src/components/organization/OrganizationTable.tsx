@@ -17,6 +17,7 @@ import {
   getSortedRowModel,
 } from '@tanstack/react-table';
 import { MoreHorizontal, Eye, Pencil, Trash2, RefreshCw, ArrowUpDown, Building2 } from 'lucide-react';
+import { useIsMobile, useIsTablet } from '@/hooks/useMediaQuery';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -119,6 +120,17 @@ export function OrganizationTable({
 }: OrganizationTableProps) {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
+
+  // Responsive column visibility
+  const columnVisibility = useMemo(
+    () => ({
+      employeeCount: !isMobile, // Hide on mobile
+      type: !isMobile && !isTablet, // Hide on mobile and tablet
+    }),
+    [isMobile, isTablet]
+  );
 
   const columns = useMemo<ColumnDef<DepartmentWithStats>[]>(
     () => [
@@ -292,6 +304,7 @@ export function OrganizationTable({
     onRowSelectionChange: setRowSelection,
     state: {
       rowSelection,
+      columnVisibility,
     },
     getRowId: (row) => row.id,
   });

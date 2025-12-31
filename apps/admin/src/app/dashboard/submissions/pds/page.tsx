@@ -42,6 +42,8 @@ import {
   EnhancedTableHeader,
   EnhancedTableRow,
 } from '@/components/admin/EnhancedTable';
+import { usePagination } from '@/hooks/usePagination';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 
 import {
   Card,
@@ -255,6 +257,13 @@ export default function PdsSubmissionsPage() {
   const [searchFocused, setSearchFocused] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
+  // Pagination hook
+  const {
+    paginationParams,
+    setPage,
+    setPageSize,
+  } = usePagination();
+
   // Build filters object
   const filters = useMemo<PdsSubmissionsFilters>(
     () => ({
@@ -262,13 +271,16 @@ export default function PdsSubmissionsPage() {
       department: departmentFilter !== 'all' ? departmentFilter : undefined,
       year: yearFilter !== 'all' ? parseInt(yearFilter) : undefined,
       search: searchQuery,
+      page: paginationParams.page,
+      limit: paginationParams.limit,
     }),
-    [statusFilter, departmentFilter, yearFilter, searchQuery]
+    [statusFilter, departmentFilter, yearFilter, searchQuery, paginationParams]
   );
 
   // Fetch submissions with filters
   const {
     submissions,
+    pagination,
     isLoading,
     isError,
     error,
@@ -655,47 +667,62 @@ export default function PdsSubmissionsPage() {
 
           {/* Submissions Table */}
           {!isLoading && !isError && submissions.length > 0 && (
-            <div className="overflow-x-auto">
-              <EnhancedTable>
-                <EnhancedTableHeader>
-                  <EnhancedTableRow animate={false}>
-                    <EnhancedTableHead>Employee</EnhancedTableHead>
-                    <EnhancedTableHead className="hidden md:table-cell">
-                      Department
-                    </EnhancedTableHead>
-                    <EnhancedTableHead className="hidden sm:table-cell">
-                      Year
-                    </EnhancedTableHead>
-                    <EnhancedTableHead>Status</EnhancedTableHead>
-                    <EnhancedTableHead className="hidden lg:table-cell">
-                      Submitted
-                    </EnhancedTableHead>
-                    <EnhancedTableHead className="hidden xl:table-cell">
-                      Reviewed
-                    </EnhancedTableHead>
-                    <EnhancedTableHead className="w-[50px]">
-                      <span className="sr-only">Actions</span>
-                    </EnhancedTableHead>
-                  </EnhancedTableRow>
-                </EnhancedTableHeader>
-                <EnhancedTableBody>
-                  {submissions.map((submission, index) => (
-                    <PdsSubmissionRow
-                      key={submission.id}
-                      submission={submission}
-                      index={index}
-                      onApprove={handleApprove}
-                      onReject={handleReject}
-                      onDownload={handleDownload}
-                      isApproving={isApproving}
-                      isRejecting={isRejecting}
-                      isDownloading={isGenerating || downloadingId !== null}
-                      downloadingId={downloadingId}
-                    />
-                  ))}
-                </EnhancedTableBody>
-              </EnhancedTable>
-            </div>
+            <>
+              <div className="overflow-x-auto">
+                <EnhancedTable>
+                  <EnhancedTableHeader>
+                    <EnhancedTableRow animate={false}>
+                      <EnhancedTableHead>Employee</EnhancedTableHead>
+                      <EnhancedTableHead className="hidden md:table-cell">
+                        Department
+                      </EnhancedTableHead>
+                      <EnhancedTableHead className="hidden sm:table-cell">
+                        Year
+                      </EnhancedTableHead>
+                      <EnhancedTableHead>Status</EnhancedTableHead>
+                      <EnhancedTableHead className="hidden lg:table-cell">
+                        Submitted
+                      </EnhancedTableHead>
+                      <EnhancedTableHead className="hidden xl:table-cell">
+                        Reviewed
+                      </EnhancedTableHead>
+                      <EnhancedTableHead className="w-[50px]">
+                        <span className="sr-only">Actions</span>
+                      </EnhancedTableHead>
+                    </EnhancedTableRow>
+                  </EnhancedTableHeader>
+                  <EnhancedTableBody>
+                    {submissions.map((submission, index) => (
+                      <PdsSubmissionRow
+                        key={submission.id}
+                        submission={submission}
+                        index={index}
+                        onApprove={handleApprove}
+                        onReject={handleReject}
+                        onDownload={handleDownload}
+                        isApproving={isApproving}
+                        isRejecting={isRejecting}
+                        isDownloading={isGenerating || downloadingId !== null}
+                        downloadingId={downloadingId}
+                      />
+                    ))}
+                  </EnhancedTableBody>
+                </EnhancedTable>
+              </div>
+
+              {/* Pagination */}
+              {pagination && (
+                <DataTablePagination
+                  currentPage={pagination.page}
+                  pageSize={pagination.pageSize}
+                  total={pagination.total}
+                  totalPages={pagination.totalPages}
+                  onPageChange={setPage}
+                  onPageSizeChange={setPageSize}
+                  itemName="submissions"
+                />
+              )}
+            </>
           )}
         </CardContent>
       </Card>

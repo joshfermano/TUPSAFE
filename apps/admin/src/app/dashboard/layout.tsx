@@ -19,6 +19,8 @@ import {
   UserCheck,
   Briefcase,
   Building2,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 
 import { useAuth } from '@/context/AuthContext';
@@ -134,7 +136,17 @@ const getUserInitials = (name: string | undefined): string => {
 
 // Sidebar navigation component (memoized)
 const SidebarNav = memo(
-  ({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) => {
+  ({
+    pathname,
+    onNavigate,
+    isCollapsed = false,
+    onToggleCollapse
+  }: {
+    pathname: string;
+    onNavigate?: () => void;
+    isCollapsed?: boolean;
+    onToggleCollapse?: () => void;
+  }) => {
     const router = useRouter();
     const { user, profile, signOut } = useAuth();
     const { resolvedTheme, toggleTheme } = useTheme();
@@ -173,24 +185,42 @@ const SidebarNav = memo(
     }, {} as Record<string, NavItem[]>);
 
     return (
-      <div className="flex h-full flex-col bg-muted/30">
+      <div className="flex h-full flex-col bg-muted/30 transition-all duration-300">
         {/* Logo Section - Clean header with proper spacing */}
-        <div className="flex h-16 shrink-0 items-center border-b bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="flex h-16 shrink-0 items-center justify-between border-b bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <Link
             href="/dashboard"
             className="group flex items-center gap-3 transition-opacity hover:opacity-80">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#8B1538] text-white shadow-sm ring-1 ring-[#8B1538]/10">
               <span className="text-sm font-bold">TS</span>
             </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold tracking-tight">
-                TUPSAFE
-              </span>
-              <span className="text-xs text-muted-foreground">
-                Admin Portal
-              </span>
-            </div>
+            {!isCollapsed && (
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold tracking-tight">
+                  TUPSAFE
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  Admin Portal
+                </span>
+              </div>
+            )}
           </Link>
+
+          {/* Collapse Toggle Button - Only visible on tablet screens */}
+          {onToggleCollapse && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onToggleCollapse}
+              className="hidden md:flex lg:hidden h-8 w-8"
+              title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+              {isCollapsed ? (
+                <PanelLeftOpen className="h-4 w-4" />
+              ) : (
+                <PanelLeftClose className="h-4 w-4" />
+              )}
+            </Button>
+          )}
         </div>
 
         {/* Navigation Items - Scrollable area with grouped sections */}
@@ -198,12 +228,14 @@ const SidebarNav = memo(
           <nav className="space-y-6 py-4">
             {Object.entries(groupedNavItems).map(([section, items]) => (
               <div key={section} className="space-y-1">
-                {/* Section Label */}
-                <div className="mb-2 px-3">
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
-                    {sectionLabels[section] || section}
-                  </h4>
-                </div>
+                {/* Section Label - Hidden when collapsed */}
+                {!isCollapsed && (
+                  <div className="mb-2 px-3">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
+                      {sectionLabels[section] || section}
+                    </h4>
+                  </div>
+                )}
 
                 {/* Section Items */}
                 <div className="space-y-0.5">
@@ -216,26 +248,34 @@ const SidebarNav = memo(
                         key={item.href}
                         variant={isActive ? 'secondary' : 'ghost'}
                         className={cn(
-                          'w-full justify-start gap-3 h-10 px-3 font-medium transition-all',
+                          'w-full h-10 font-medium transition-all',
+                          isCollapsed
+                            ? 'justify-center px-2'
+                            : 'justify-start gap-3 px-3',
                           isActive
                             ? 'bg-[#8B1538]/10 text-[#8B1538] hover:bg-[#8B1538]/15 hover:text-[#8B1538] shadow-sm dark:bg-[#8B1538]/20 dark:text-[#e87d9a] dark:hover:bg-[#8B1538]/25'
                             : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                         )}
+                        title={isCollapsed ? item.name : undefined}
                         asChild>
                         <Link href={item.href} onClick={onNavigate}>
                           <Icon className="h-5 w-5 shrink-0" />
-                          <span className="flex-1 text-left text-sm">
-                            {item.name}
-                          </span>
-                          {item.badge && (
-                            <Badge
-                              variant="secondary"
-                              className="ml-auto h-5 min-w-5 px-1.5 text-xs font-medium">
-                              {item.badge}
-                            </Badge>
-                          )}
-                          {isActive && (
-                            <ChevronRight className="h-4 w-4 shrink-0 opacity-50" />
+                          {!isCollapsed && (
+                            <>
+                              <span className="flex-1 text-left text-sm">
+                                {item.name}
+                              </span>
+                              {item.badge && (
+                                <Badge
+                                  variant="secondary"
+                                  className="ml-auto h-5 min-w-5 px-1.5 text-xs font-medium">
+                                  {item.badge}
+                                </Badge>
+                              )}
+                              {isActive && (
+                                <ChevronRight className="h-4 w-4 shrink-0 opacity-50" />
+                              )}
+                            </>
                           )}
                         </Link>
                       </Button>
@@ -250,51 +290,71 @@ const SidebarNav = memo(
         {/* User Profile Section - Modern card layout */}
         <div className="shrink-0 border-t bg-background/95 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           {/* User Info Card */}
-          <div className="mb-3 flex items-center gap-3 rounded-lg border bg-card p-3 shadow-sm transition-shadow hover:shadow-md">
+          <div className={cn(
+            "mb-3 flex items-center rounded-lg border bg-card p-3 shadow-sm transition-shadow hover:shadow-md",
+            isCollapsed ? "justify-center" : "gap-3"
+          )}>
             <Avatar className="h-10 w-10 ring-2 ring-background">
               <AvatarImage src={profile?.avatarUrl || undefined} alt={displayName} />
               <AvatarFallback className="bg-[#8B1538] text-white text-xs font-semibold">
                 {getUserInitials(displayName)}
               </AvatarFallback>
             </Avatar>
-            <div className="flex-1 overflow-hidden">
-              <p className="truncate text-sm font-semibold leading-tight">
-                {displayName}
-              </p>
-              <div className="mt-0.5 flex items-center gap-1.5">
-                <Badge
-                  variant="outline"
-                  className="h-5 px-1.5 text-[10px] font-medium">
-                  {userRole}
-                </Badge>
+            {!isCollapsed && (
+              <div className="flex-1 overflow-hidden">
+                <p className="truncate text-sm font-semibold leading-tight">
+                  {displayName}
+                </p>
+                <div className="mt-0.5 flex items-center gap-1.5">
+                  <Badge
+                    variant="outline"
+                    className="h-5 px-1.5 text-[10px] font-medium">
+                    {userRole}
+                  </Badge>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Action Buttons - Clean layout */}
-          <div className="flex items-center gap-2">
+          <div className={cn(
+            "flex items-center gap-2",
+            isCollapsed && "flex-col"
+          )}>
             <Button
               variant="outline"
-              size="sm"
+              size={isCollapsed ? "icon" : "sm"}
               onClick={toggleTheme}
-              className="flex-1 gap-2 h-9">
+              className={cn(
+                "h-9 transition-all",
+                isCollapsed ? "w-9" : "flex-1 gap-2"
+              )}
+              title={isCollapsed ? (resolvedTheme === 'dark' ? 'Light mode' : 'Dark mode') : undefined}>
               {resolvedTheme === 'dark' ? (
                 <Sun className="h-4 w-4" />
               ) : (
                 <Moon className="h-4 w-4" />
               )}
-              <span className="text-xs font-medium">
-                {resolvedTheme === 'dark' ? 'Light' : 'Dark'}
-              </span>
+              {!isCollapsed && (
+                <span className="text-xs font-medium">
+                  {resolvedTheme === 'dark' ? 'Light' : 'Dark'}
+                </span>
+              )}
             </Button>
 
             <Button
               variant="outline"
-              size="sm"
+              size={isCollapsed ? "icon" : "sm"}
               onClick={handleSignOut}
-              className="flex-1 gap-2 h-9 text-destructive hover:bg-destructive/10 hover:text-destructive">
+              className={cn(
+                "h-9 text-destructive hover:bg-destructive/10 hover:text-destructive transition-all",
+                isCollapsed ? "w-9" : "flex-1 gap-2"
+              )}
+              title={isCollapsed ? 'Sign out' : undefined}>
               <LogOut className="h-4 w-4" />
-              <span className="text-xs font-medium">Sign Out</span>
+              {!isCollapsed && (
+                <span className="text-xs font-medium">Sign Out</span>
+              )}
             </Button>
           </div>
         </div>
@@ -315,6 +375,15 @@ export default function DashboardLayout({
   const router = useRouter();
   const { user, loading } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Load sidebar collapsed state from localStorage on mount
+  useEffect(() => {
+    const savedState = localStorage.getItem('admin-sidebar-collapsed');
+    if (savedState !== null) {
+      setSidebarCollapsed(savedState === 'true');
+    }
+  }, []);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -325,6 +394,15 @@ export default function DashboardLayout({
 
   const closeMobileMenu = useCallback(() => {
     setMobileMenuOpen(false);
+  }, []);
+
+  // Toggle sidebar collapse and persist to localStorage
+  const toggleSidebarCollapse = useCallback(() => {
+    setSidebarCollapsed((prev) => {
+      const newState = !prev;
+      localStorage.setItem('admin-sidebar-collapsed', String(newState));
+      return newState;
+    });
   }, []);
 
   // Show loading while checking authentication
@@ -347,22 +425,39 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {/* Desktop Sidebar - Modern fixed width with clean styling */}
-      <aside className="hidden w-72 shrink-0 border-r shadow-sm lg:block">
-        <SidebarNav pathname={pathname} />
+      {/* Desktop Sidebar - Responsive width with smooth transitions */}
+      <aside
+        className={cn(
+          "hidden shrink-0 border-r shadow-sm transition-all duration-300 md:block",
+          sidebarCollapsed ? "md:w-20 lg:w-72" : "md:w-72"
+        )}>
+        <SidebarNav
+          pathname={pathname}
+          isCollapsed={sidebarCollapsed}
+          onToggleCollapse={toggleSidebarCollapse}
+        />
       </aside>
 
-      {/* Mobile Menu - Sheet drawer with improved styling */}
+      {/* Mobile Header - Fixed top bar with menu toggle */}
+      <div className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center gap-3 border-b bg-background px-4 md:hidden">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setMobileMenuOpen(true)}
+          className="h-9 w-9 shrink-0">
+          <Menu className="h-5 w-5" />
+          <span className="sr-only">Toggle menu</span>
+        </Button>
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#8B1538] text-white">
+            <span className="text-xs font-bold">TS</span>
+          </div>
+          <span className="text-sm font-semibold">TUPSAFE Admin</span>
+        </div>
+      </div>
+
+      {/* Mobile Menu - Sheet drawer */}
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-        <SheetTrigger asChild className="lg:hidden">
-          <Button
-            variant="outline"
-            size="icon"
-            className="fixed left-4 top-4 z-40 h-10 w-10 shadow-md">
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle menu</span>
-          </Button>
-        </SheetTrigger>
         <SheetContent side="left" className="w-72 p-0">
           <SheetHeader className="sr-only">
             <SheetTitle>Navigation Menu</SheetTitle>
@@ -371,9 +466,12 @@ export default function DashboardLayout({
         </SheetContent>
       </Sheet>
 
-      {/* Main Content Area - Clean layout with proper spacing */}
+      {/* Main Content Area - Improved responsive padding and ultra-wide support */}
       <main className="flex-1 overflow-y-auto bg-muted/10">
-        <div className="container mx-auto p-6 lg:p-8">{children}</div>
+        {/* Add top padding on mobile to account for fixed header */}
+        <div className="container mx-auto max-w-screen-2xl px-4 pt-20 pb-4 md:p-6 md:pt-6 lg:p-8">
+          {children}
+        </div>
       </main>
     </div>
   );

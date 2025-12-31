@@ -124,3 +124,13 @@ export type {
   DeadlinesListParams,
   FormType,
 } from '@/lib/api/deadlines';
+
+// Media Query Hooks
+export {
+  useMediaQuery,
+  useIsMobile,
+  useIsTablet,
+  useIsDesktop,
+  useIsSmall,
+  useIsLarge,
+} from './useMediaQuery';

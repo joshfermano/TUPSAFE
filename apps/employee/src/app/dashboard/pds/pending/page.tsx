@@ -15,6 +15,8 @@ import {
 import { EmptyState } from '@/components/pds/pending/EmptyState';
 import { PendingCard } from '@/components/pds/pending/PendingCard';
 import { useDebounce } from '../../../../hooks/useDebounce';
+import { usePagination } from '@/hooks/usePagination';
+import { CardGridPagination } from '@/components/ui/card-grid-pagination';
 
 // Loading State Component
 const LoadingState = memo(() => (
@@ -132,6 +134,9 @@ export default function PDSPendingPage() {
   // Debounce search query for performance
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
+  // Pagination hook
+  const { page, pageSize, setPage, setPageSize } = usePagination();
+
   // Filter pending submissions (excluding drafts and rejected - they are managed separately)
   const pendingSubmissions = useMemo(() => {
     const pendingStatuses = ['submitted', 'reviewing'];
@@ -181,6 +186,19 @@ export default function PDSPendingPage() {
       }
     });
   }, [submissions, statusFilter, debouncedSearchQuery, sortBy]);
+
+  // Paginate filtered submissions
+  const { paginatedSubmissions, totalPages } = useMemo(() => {
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginated = pendingSubmissions.slice(startIndex, endIndex);
+    const total = Math.ceil(pendingSubmissions.length / pageSize);
+
+    return {
+      paginatedSubmissions: paginated,
+      totalPages: total,
+    };
+  }, [pendingSubmissions, page, pageSize]);
 
   // Calculate statistics (drafts and rejected excluded from pending submissions)
   const stats = useMemo(() => {
@@ -322,28 +340,43 @@ export default function PDSPendingPage() {
             />
           </BlurFade>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {pendingSubmissions.map((submission: PDSSubmission, index: number) => (
-              <PendingCard
-                key={submission.id}
-                submission={{
-                  id: submission.id,
-                  version: submission.version,
-                  status: submission.status as
-                    | 'submitted'
-                    | 'reviewing',
-                  createdAt: toISOString(submission.createdAt) || new Date().toISOString(),
-                  updatedAt: toISOString(submission.updatedAt) || new Date().toISOString(),
-                  submittedAt: toISOString(submission.submittedAt),
-                  reviewedBy: undefined,
-                }}
-                onContinue={() => handleContinue(submission.id)}
-                onView={() => handleView(submission.id)}
-                onDownload={() => handleDownload(submission.id)}
-                delay={0.4 + index * 0.05}
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {paginatedSubmissions.map((submission: PDSSubmission, index: number) => (
+                <PendingCard
+                  key={submission.id}
+                  submission={{
+                    id: submission.id,
+                    version: submission.version,
+                    status: submission.status as
+                      | 'submitted'
+                      | 'reviewing',
+                    createdAt: toISOString(submission.createdAt) || new Date().toISOString(),
+                    updatedAt: toISOString(submission.updatedAt) || new Date().toISOString(),
+                    submittedAt: toISOString(submission.submittedAt),
+                    reviewedBy: undefined,
+                  }}
+                  onContinue={() => handleContinue(submission.id)}
+                  onView={() => handleView(submission.id)}
+                  onDownload={() => handleDownload(submission.id)}
+                  delay={0.4 + index * 0.05}
+                />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <CardGridPagination
+                currentPage={page}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                total={pendingSubmissions.length}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                itemName="submissions"
               />
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
     </div>

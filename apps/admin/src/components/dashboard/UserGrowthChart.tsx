@@ -88,7 +88,7 @@ export function UserGrowthChart() {
           <CardDescription>Failed to load chart data</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex h-[300px] items-center justify-center text-sm text-muted-foreground">
+          <div className="flex h-[200px] sm:h-[250px] md:h-[300px] items-center justify-center text-sm text-muted-foreground">
             Unable to load chart data. Please try again later.
           </div>
         </CardContent>
@@ -137,7 +137,7 @@ export function UserGrowthChart() {
         </div>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="h-[300px] w-full">
+        <ChartContainer config={chartConfig} className="h-[200px] sm:h-[250px] md:h-[300px] w-full">
           <AreaChart data={chartData}>
             <defs>
               <linearGradient id="fillTotal" x1="0" y1="0" x2="0" y2="1">
@@ -217,7 +217,7 @@ export function UserGrowthChart() {
         </ChartContainer>
 
         {/* Summary Stats */}
-        <div className="mt-4 grid grid-cols-3 gap-4 border-t pt-4">
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 border-t pt-4">
           <div>
             <p className="text-sm text-muted-foreground">Total</p>
             <p className="text-xl font-bold">
@@ -258,8 +258,8 @@ export function UserGrowthChartSkeleton() {
         </div>
       </CardHeader>
       <CardContent>
-        <Skeleton className="h-[300px] w-full" />
-        <div className="mt-4 grid grid-cols-3 gap-4 border-t pt-4">
+        <Skeleton className="h-[200px] sm:h-[250px] md:h-[300px] w-full" />
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 border-t pt-4">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i}>
               <Skeleton className="h-4 w-16" />

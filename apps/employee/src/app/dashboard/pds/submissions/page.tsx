@@ -38,6 +38,8 @@ import {
   Filter,
 } from 'lucide-react';
 import { useDebounce } from '../../../../hooks/useDebounce';
+import { usePagination } from '../../../../hooks/usePagination';
+import { CardGridPagination } from '../../../../components/ui/card-grid-pagination';
 
 type SortOption = 'date-desc' | 'date-asc' | 'year-desc' | 'year-asc';
 type StatusFilter = 'all' | 'approved' | 'rejected';
@@ -409,6 +411,9 @@ export default function SubmissionsPage() {
   // PDF generation hook
   const { downloadPDF, openPDFInNewTab, isGenerating } = usePDSPdf();
 
+  // Pagination hook
+  const { page, pageSize, setPage, setPageSize } = usePagination(20);
+
   // Track which submission is being downloaded
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
@@ -472,6 +477,18 @@ export default function SubmissionsPage() {
       }
     });
   }, [submissions, statusFilter, debouncedSearchQuery, sortBy]);
+
+  // Client-side pagination - slice the filtered submissions
+  const paginatedSubmissions = useMemo(() => {
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    return filteredSubmissions.slice(startIndex, endIndex);
+  }, [filteredSubmissions, page, pageSize]);
+
+  // Calculate total pages
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredSubmissions.length / pageSize);
+  }, [filteredSubmissions.length, pageSize]);
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -740,46 +757,61 @@ export default function SubmissionsPage() {
             <EmptyState hasFilters={hasActiveFilters} onClearFilters={handleClearFilters} />
           </BlurFade>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredSubmissions.map((submission: PDSSubmission, index: number) => {
-              const mappedSubmission: Submission = {
-                id: submission.id,
-                year: submission.year,
-                version: submission.version,
-                status: submission.status,
-                submittedAt: submission.submittedAt,
-                approvedAt: submission.approvedAt,
-                approvedBy: null,
-                rejectionReason: null,
-                reviewNotes: null,
-              };
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {paginatedSubmissions.map((submission: PDSSubmission, index: number) => {
+                const mappedSubmission: Submission = {
+                  id: submission.id,
+                  year: submission.year,
+                  version: submission.version,
+                  status: submission.status,
+                  submittedAt: submission.submittedAt,
+                  approvedAt: submission.approvedAt,
+                  approvedBy: null,
+                  rejectionReason: null,
+                  reviewNotes: null,
+                };
 
-              if (submission.status === 'approved') {
-                return (
-                  <ApprovedCard
-                    key={submission.id}
-                    submission={mappedSubmission}
-                    delay={0.4 + index * 0.05}
-                    onView={handleView}
-                    onDownload={handleDownload}
-                    onPrint={handlePrint}
-                    isDownloading={downloadingId === submission.id || isGenerating}
-                  />
-                );
-              } else {
-                return (
-                  <RejectedCard
-                    key={submission.id}
-                    submission={mappedSubmission}
-                    delay={0.4 + index * 0.05}
-                    onView={handleView}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                  />
-                );
-              }
-            })}
-          </div>
+                if (submission.status === 'approved') {
+                  return (
+                    <ApprovedCard
+                      key={submission.id}
+                      submission={mappedSubmission}
+                      delay={0.4 + index * 0.05}
+                      onView={handleView}
+                      onDownload={handleDownload}
+                      onPrint={handlePrint}
+                      isDownloading={downloadingId === submission.id || isGenerating}
+                    />
+                  );
+                } else {
+                  return (
+                    <RejectedCard
+                      key={submission.id}
+                      submission={mappedSubmission}
+                      delay={0.4 + index * 0.05}
+                      onView={handleView}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                    />
+                  );
+                }
+              })}
+            </div>
+
+            {/* Pagination */}
+            <BlurFade delay={0.5} inView>
+              <CardGridPagination
+                currentPage={page}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                total={filteredSubmissions.length}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                itemName="submissions"
+              />
+            </BlurFade>
+          </>
         )}
       </div>
     </div>

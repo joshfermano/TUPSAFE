@@ -16,6 +16,8 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { useDebounce } from '@/hooks/useDebounce';
+import { usePagination } from '@/hooks/usePagination';
+import { CardGridPagination } from '@/components/ui/card-grid-pagination';
 import { EmployeeOnlyGuard } from '@/components/guards/EmployeeOnlyGuard';
 import { toast } from 'sonner';
 
@@ -312,6 +314,9 @@ export default function SALNDraftsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [yearFilter, setYearFilter] = useState('all');
 
+  // Pagination hook
+  const { page, pageSize, setPage, setPageSize } = usePagination();
+
   // Debounce search query for performance
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
@@ -319,7 +324,7 @@ export default function SALNDraftsPage() {
   const submissions = useMemo(() => response?.data || [], [response]);
 
   // Filter and sort draft submissions (already filtered by API with status: 'draft')
-  const draftSubmissions = useMemo(() => {
+  const filteredDraftSubmissions = useMemo(() => {
     let filtered = submissions; // API already filters by status: 'draft'
 
     // Apply search filter
@@ -361,6 +366,13 @@ export default function SALNDraftsPage() {
     });
   }, [submissions, debouncedSearchQuery, yearFilter, sortBy]);
 
+  // Apply client-side pagination
+  const totalPages = Math.ceil(filteredDraftSubmissions.length / pageSize);
+  const startIndex = (page - 1) * pageSize;
+  const draftSubmissions = useMemo(() => {
+    return filteredDraftSubmissions.slice(startIndex, startIndex + pageSize);
+  }, [filteredDraftSubmissions, startIndex, pageSize]);
+
   // Get available years for filter (submissions already filtered by API)
   const availableYears = useMemo(() => {
     const years = new Set<number>(
@@ -372,9 +384,9 @@ export default function SALNDraftsPage() {
   // Calculate statistics
   const stats = useMemo(() => {
     return {
-      total: draftSubmissions.length,
+      total: filteredDraftSubmissions.length,
     };
-  }, [draftSubmissions]);
+  }, [filteredDraftSubmissions]);
 
   // Handlers
   const handleContinue = useCallback(
@@ -468,7 +480,7 @@ export default function SALNDraftsPage() {
     );
   }
 
-  const isEmpty = draftSubmissions.length === 0;
+  const isEmpty = filteredDraftSubmissions.length === 0;
 
   return (
     <EmployeeOnlyGuard>
@@ -518,18 +530,33 @@ export default function SALNDraftsPage() {
               />
             </BlurFade>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {draftSubmissions.map((submission: SALNSubmission, index: number) => (
-                <SalnDraftCard
-                  key={submission.id}
-                  submission={submission}
-                  onContinue={() => handleContinue(submission.id)}
-                  onView={() => handleView(submission.id)}
-                  onDelete={handleDelete}
-                  delay={0.4 + index * 0.05}
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {draftSubmissions.map((submission: SALNSubmission, index: number) => (
+                  <SalnDraftCard
+                    key={submission.id}
+                    submission={submission}
+                    onContinue={() => handleContinue(submission.id)}
+                    onView={() => handleView(submission.id)}
+                    onDelete={handleDelete}
+                    delay={0.4 + index * 0.05}
+                  />
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <CardGridPagination
+                  currentPage={page}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  total={filteredDraftSubmissions.length}
+                  onPageChange={setPage}
+                  onPageSizeChange={setPageSize}
+                  itemName="drafts"
                 />
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
       </div>
