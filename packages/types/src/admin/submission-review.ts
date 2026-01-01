@@ -165,6 +165,26 @@ export interface PDSOtherInfo {
     address?: string;
     telephoneNo?: string;
   }>;
+  questions?: {
+    Q34_criminal_charged?: boolean;
+    Q34_criminal_charged_details?: string;
+    Q35_criminal_convicted?: boolean;
+    Q35_criminal_convicted_details?: string;
+    Q36_separated_from_service?: boolean;
+    Q36_separated_from_service_details?: string;
+    Q37_candidate_for_election?: boolean;
+    Q37_candidate_for_election_details?: string;
+    Q38_resigned_from_government?: boolean;
+    Q38_resigned_from_government_details?: string;
+    Q39_immigrant_or_acquired_residence?: boolean;
+    Q39_immigrant_or_acquired_residence_details?: string;
+    Q40_indigenous_group?: boolean;
+    Q40_indigenous_group_details?: string;
+    Q41_disabled?: boolean;
+    Q41_disabled_details?: string;
+    Q42_solo_parent?: boolean;
+    Q42_solo_parent_details?: string;
+  };
 }
 
 /**

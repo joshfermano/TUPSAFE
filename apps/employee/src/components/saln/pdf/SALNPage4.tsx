@@ -148,7 +148,7 @@ export function SALNPage4({ data }: SALNPage4Props) {
             BUSINESS INTERESTS AND FINANCIAL CONNECTIONS (CONTINUATION)
           </Text>
           <Text style={[styles.noteText, { textAlign: 'center', marginBottom: 3 }]}>
-            (of Declarant / Declarant's spouse/ Unmarried Children Below Eighteen (18) years of Age Living in Declarant's Household)
+            (of Declarant / Declarant&apos;s spouse/ Unmarried Children Below Eighteen (18) years of Age Living in Declarant&apos;s Household)
           </Text>
 
           <View style={styles.table}>

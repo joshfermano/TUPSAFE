@@ -1483,7 +1483,7 @@ export default function PdsSubmissionViewPage() {
                     </AccordionContent>
                   </AccordionItem>
 
-                  {/* IX. QUESTIONS (Placeholder - would need questions data from schema) */}
+                  {/* IX. QUESTIONS */}
                   <AccordionItem value="section-9">
                     <AccordionTrigger className="hover:no-underline">
                       <div className="flex items-center justify-between w-full pr-4">
@@ -1493,20 +1493,498 @@ export default function PdsSubmissionViewPage() {
                             IX. QUESTIONS (34-40)
                           </span>
                         </div>
-                        <Badge
-                          variant="outline"
-                          className="gap-1 bg-gray-50 text-gray-600 border-gray-200">
-                          <Info className="h-3 w-3" />
-                          Not Available
-                        </Badge>
+                        <ValidationBadge
+                          status={getSectionStatus(
+                            pdsData.otherInfo?.questions,
+                            true
+                          )}
+                        />
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
-                      <div className="pt-4">
-                        <p className="text-sm text-muted-foreground italic text-center py-8">
-                          Questions section data not available in current
-                          submission
-                        </p>
+                      <div className="space-y-6 pt-4">
+                        {pdsData.otherInfo?.questions ? (
+                          <>
+                            {/* Question 34a */}
+                            <div className="space-y-3">
+                              <div className="flex items-start gap-3">
+                                <span className="text-sm font-semibold text-muted-foreground min-w-[30px]">
+                                  34a.
+                                </span>
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium mb-2">
+                                    Are you related by consanguinity or affinity to the
+                                    appointing or recommending authority, or to the chief of
+                                    bureau or office or to the person who has immediate
+                                    supervision over you in the Office, Bureau or Department
+                                    where you will be appointed?
+                                  </p>
+                                  <p className="text-sm text-muted-foreground mb-1">
+                                    a. within the third degree?
+                                  </p>
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <Badge
+                                      variant={
+                                        pdsData.otherInfo.questions
+                                          .Q34_criminal_charged
+                                          ? 'default'
+                                          : 'outline'
+                                      }
+                                      className={
+                                        pdsData.otherInfo.questions
+                                          .Q34_criminal_charged
+                                          ? 'bg-emerald-600'
+                                          : ''
+                                      }>
+                                      {pdsData.otherInfo.questions
+                                        .Q34_criminal_charged
+                                        ? 'Yes'
+                                        : 'No'}
+                                    </Badge>
+                                  </div>
+                                  {pdsData.otherInfo.questions
+                                    .Q34_criminal_charged &&
+                                    pdsData.otherInfo.questions
+                                      .Q34_criminal_charged_details && (
+                                      <div className="p-3 bg-muted/30 rounded-md mt-2">
+                                        <p className="text-sm text-muted-foreground font-medium mb-1">
+                                          Details:
+                                        </p>
+                                        <p className="text-sm">
+                                          {
+                                            pdsData.otherInfo.questions
+                                              .Q34_criminal_charged_details
+                                          }
+                                        </p>
+                                      </div>
+                                    )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <Separator />
+
+                            {/* Question 35a */}
+                            <div className="space-y-3">
+                              <div className="flex items-start gap-3">
+                                <span className="text-sm font-semibold text-muted-foreground min-w-[30px]">
+                                  35a.
+                                </span>
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium mb-2">
+                                    Have you ever been found guilty of any administrative
+                                    offense?
+                                  </p>
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <Badge
+                                      variant={
+                                        pdsData.otherInfo.questions
+                                          .Q35_criminal_convicted
+                                          ? 'default'
+                                          : 'outline'
+                                      }
+                                      className={
+                                        pdsData.otherInfo.questions
+                                          .Q35_criminal_convicted
+                                          ? 'bg-emerald-600'
+                                          : ''
+                                      }>
+                                      {pdsData.otherInfo.questions
+                                        .Q35_criminal_convicted
+                                        ? 'Yes'
+                                        : 'No'}
+                                    </Badge>
+                                  </div>
+                                  {pdsData.otherInfo.questions
+                                    .Q35_criminal_convicted &&
+                                    pdsData.otherInfo.questions
+                                      .Q35_criminal_convicted_details && (
+                                      <div className="p-3 bg-muted/30 rounded-md mt-2">
+                                        <p className="text-sm text-muted-foreground font-medium mb-1">
+                                          Details:
+                                        </p>
+                                        <p className="text-sm">
+                                          {
+                                            pdsData.otherInfo.questions
+                                              .Q35_criminal_convicted_details
+                                          }
+                                        </p>
+                                      </div>
+                                    )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <Separator />
+
+                            {/* Question 36 */}
+                            <div className="space-y-3">
+                              <div className="flex items-start gap-3">
+                                <span className="text-sm font-semibold text-muted-foreground min-w-[30px]">
+                                  36.
+                                </span>
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium mb-2">
+                                    Have you ever been separated from the service in any of
+                                    the following modes: resignation, retirement, dropped
+                                    from the rolls, dismissal, termination, end of term,
+                                    finished contract or phased out (abolition) in the public
+                                    or private sector?
+                                  </p>
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <Badge
+                                      variant={
+                                        pdsData.otherInfo.questions
+                                          .Q36_separated_from_service
+                                          ? 'default'
+                                          : 'outline'
+                                      }
+                                      className={
+                                        pdsData.otherInfo.questions
+                                          .Q36_separated_from_service
+                                          ? 'bg-emerald-600'
+                                          : ''
+                                      }>
+                                      {pdsData.otherInfo.questions
+                                        .Q36_separated_from_service
+                                        ? 'Yes'
+                                        : 'No'}
+                                    </Badge>
+                                  </div>
+                                  {pdsData.otherInfo.questions
+                                    .Q36_separated_from_service &&
+                                    pdsData.otherInfo.questions
+                                      .Q36_separated_from_service_details && (
+                                      <div className="p-3 bg-muted/30 rounded-md mt-2">
+                                        <p className="text-sm text-muted-foreground font-medium mb-1">
+                                          Details:
+                                        </p>
+                                        <p className="text-sm">
+                                          {
+                                            pdsData.otherInfo.questions
+                                              .Q36_separated_from_service_details
+                                          }
+                                        </p>
+                                      </div>
+                                    )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <Separator />
+
+                            {/* Question 37a */}
+                            <div className="space-y-3">
+                              <div className="flex items-start gap-3">
+                                <span className="text-sm font-semibold text-muted-foreground min-w-[30px]">
+                                  37a.
+                                </span>
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium mb-2">
+                                    Have you ever been a candidate in a national or local
+                                    election held within the last year (except Barangay
+                                    election)?
+                                  </p>
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <Badge
+                                      variant={
+                                        pdsData.otherInfo.questions
+                                          .Q37_candidate_for_election
+                                          ? 'default'
+                                          : 'outline'
+                                      }
+                                      className={
+                                        pdsData.otherInfo.questions
+                                          .Q37_candidate_for_election
+                                          ? 'bg-emerald-600'
+                                          : ''
+                                      }>
+                                      {pdsData.otherInfo.questions
+                                        .Q37_candidate_for_election
+                                        ? 'Yes'
+                                        : 'No'}
+                                    </Badge>
+                                  </div>
+                                  {pdsData.otherInfo.questions
+                                    .Q37_candidate_for_election &&
+                                    pdsData.otherInfo.questions
+                                      .Q37_candidate_for_election_details && (
+                                      <div className="p-3 bg-muted/30 rounded-md mt-2">
+                                        <p className="text-sm text-muted-foreground font-medium mb-1">
+                                          Details:
+                                        </p>
+                                        <p className="text-sm">
+                                          {
+                                            pdsData.otherInfo.questions
+                                              .Q37_candidate_for_election_details
+                                          }
+                                        </p>
+                                      </div>
+                                    )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <Separator />
+
+                            {/* Question 37b */}
+                            <div className="space-y-3">
+                              <div className="flex items-start gap-3">
+                                <span className="text-sm font-semibold text-muted-foreground min-w-[30px]">
+                                  37b.
+                                </span>
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium mb-2">
+                                    Have you resigned from the government service during the
+                                    three (3)-month period before the last election to
+                                    promote/actively campaign for a national or local
+                                    candidate?
+                                  </p>
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <Badge
+                                      variant={
+                                        pdsData.otherInfo.questions
+                                          .Q38_resigned_from_government
+                                          ? 'default'
+                                          : 'outline'
+                                      }
+                                      className={
+                                        pdsData.otherInfo.questions
+                                          .Q38_resigned_from_government
+                                          ? 'bg-emerald-600'
+                                          : ''
+                                      }>
+                                      {pdsData.otherInfo.questions
+                                        .Q38_resigned_from_government
+                                        ? 'Yes'
+                                        : 'No'}
+                                    </Badge>
+                                  </div>
+                                  {pdsData.otherInfo.questions
+                                    .Q38_resigned_from_government &&
+                                    pdsData.otherInfo.questions
+                                      .Q38_resigned_from_government_details && (
+                                      <div className="p-3 bg-muted/30 rounded-md mt-2">
+                                        <p className="text-sm text-muted-foreground font-medium mb-1">
+                                          Details:
+                                        </p>
+                                        <p className="text-sm">
+                                          {
+                                            pdsData.otherInfo.questions
+                                              .Q38_resigned_from_government_details
+                                          }
+                                        </p>
+                                      </div>
+                                    )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <Separator />
+
+                            {/* Question 38 */}
+                            <div className="space-y-3">
+                              <div className="flex items-start gap-3">
+                                <span className="text-sm font-semibold text-muted-foreground min-w-[30px]">
+                                  38.
+                                </span>
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium mb-2">
+                                    Have you acquired the status of an immigrant or permanent
+                                    resident of another country?
+                                  </p>
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <Badge
+                                      variant={
+                                        pdsData.otherInfo.questions
+                                          .Q39_immigrant_or_acquired_residence
+                                          ? 'default'
+                                          : 'outline'
+                                      }
+                                      className={
+                                        pdsData.otherInfo.questions
+                                          .Q39_immigrant_or_acquired_residence
+                                          ? 'bg-emerald-600'
+                                          : ''
+                                      }>
+                                      {pdsData.otherInfo.questions
+                                        .Q39_immigrant_or_acquired_residence
+                                        ? 'Yes'
+                                        : 'No'}
+                                    </Badge>
+                                  </div>
+                                  {pdsData.otherInfo.questions
+                                    .Q39_immigrant_or_acquired_residence &&
+                                    pdsData.otherInfo.questions
+                                      .Q39_immigrant_or_acquired_residence_details && (
+                                      <div className="p-3 bg-muted/30 rounded-md mt-2">
+                                        <p className="text-sm text-muted-foreground font-medium mb-1">
+                                          Details:
+                                        </p>
+                                        <p className="text-sm">
+                                          {
+                                            pdsData.otherInfo.questions
+                                              .Q39_immigrant_or_acquired_residence_details
+                                          }
+                                        </p>
+                                      </div>
+                                    )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <Separator />
+
+                            {/* Question 39a */}
+                            <div className="space-y-3">
+                              <div className="flex items-start gap-3">
+                                <span className="text-sm font-semibold text-muted-foreground min-w-[30px]">
+                                  39a.
+                                </span>
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium mb-2">
+                                    Are you a member of any indigenous group?
+                                  </p>
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <Badge
+                                      variant={
+                                        pdsData.otherInfo.questions
+                                          .Q40_indigenous_group
+                                          ? 'default'
+                                          : 'outline'
+                                      }
+                                      className={
+                                        pdsData.otherInfo.questions
+                                          .Q40_indigenous_group
+                                          ? 'bg-emerald-600'
+                                          : ''
+                                      }>
+                                      {pdsData.otherInfo.questions
+                                        .Q40_indigenous_group
+                                        ? 'Yes'
+                                        : 'No'}
+                                    </Badge>
+                                  </div>
+                                  {pdsData.otherInfo.questions.Q40_indigenous_group &&
+                                    pdsData.otherInfo.questions
+                                      .Q40_indigenous_group_details && (
+                                      <div className="p-3 bg-muted/30 rounded-md mt-2">
+                                        <p className="text-sm text-muted-foreground font-medium mb-1">
+                                          Details:
+                                        </p>
+                                        <p className="text-sm">
+                                          {
+                                            pdsData.otherInfo.questions
+                                              .Q40_indigenous_group_details
+                                          }
+                                        </p>
+                                      </div>
+                                    )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <Separator />
+
+                            {/* Question 39b */}
+                            <div className="space-y-3">
+                              <div className="flex items-start gap-3">
+                                <span className="text-sm font-semibold text-muted-foreground min-w-[30px]">
+                                  39b.
+                                </span>
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium mb-2">
+                                    Are you a person with disability?
+                                  </p>
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <Badge
+                                      variant={
+                                        pdsData.otherInfo.questions.Q41_disabled
+                                          ? 'default'
+                                          : 'outline'
+                                      }
+                                      className={
+                                        pdsData.otherInfo.questions.Q41_disabled
+                                          ? 'bg-emerald-600'
+                                          : ''
+                                      }>
+                                      {pdsData.otherInfo.questions.Q41_disabled
+                                        ? 'Yes'
+                                        : 'No'}
+                                    </Badge>
+                                  </div>
+                                  {pdsData.otherInfo.questions.Q41_disabled &&
+                                    pdsData.otherInfo.questions
+                                      .Q41_disabled_details && (
+                                      <div className="p-3 bg-muted/30 rounded-md mt-2">
+                                        <p className="text-sm text-muted-foreground font-medium mb-1">
+                                          Details:
+                                        </p>
+                                        <p className="text-sm">
+                                          {
+                                            pdsData.otherInfo.questions
+                                              .Q41_disabled_details
+                                          }
+                                        </p>
+                                      </div>
+                                    )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <Separator />
+
+                            {/* Question 39c */}
+                            <div className="space-y-3">
+                              <div className="flex items-start gap-3">
+                                <span className="text-sm font-semibold text-muted-foreground min-w-[30px]">
+                                  39c.
+                                </span>
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium mb-2">
+                                    Are you a solo parent?
+                                  </p>
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <Badge
+                                      variant={
+                                        pdsData.otherInfo.questions.Q42_solo_parent
+                                          ? 'default'
+                                          : 'outline'
+                                      }
+                                      className={
+                                        pdsData.otherInfo.questions.Q42_solo_parent
+                                          ? 'bg-emerald-600'
+                                          : ''
+                                      }>
+                                      {pdsData.otherInfo.questions.Q42_solo_parent
+                                        ? 'Yes'
+                                        : 'No'}
+                                    </Badge>
+                                  </div>
+                                  {pdsData.otherInfo.questions.Q42_solo_parent &&
+                                    pdsData.otherInfo.questions
+                                      .Q42_solo_parent_details && (
+                                      <div className="p-3 bg-muted/30 rounded-md mt-2">
+                                        <p className="text-sm text-muted-foreground font-medium mb-1">
+                                          Details:
+                                        </p>
+                                        <p className="text-sm">
+                                          {
+                                            pdsData.otherInfo.questions
+                                              .Q42_solo_parent_details
+                                          }
+                                        </p>
+                                      </div>
+                                    )}
+                                </div>
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic text-center py-8">
+                            No questions data provided
+                          </p>
+                        )}
                       </div>
                     </AccordionContent>
                   </AccordionItem>

@@ -119,6 +119,85 @@ export const Education = memo(function Education() {
               <FormField
                 control={form.control}
                 name={
+                  `education.${level.key}.periodFrom` as FieldPath<CompletePdsData>
+                }
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Period From</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="1950"
+                        max={new Date().getFullYear()}
+                        placeholder="e.g., 2016"
+                        {...field}
+                        value={(field?.value as number) || ''}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value ? parseInt(e.target.value) : null
+                          )
+                        }
+                        className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name={
+                  `education.${level.key}.periodTo` as FieldPath<CompletePdsData>
+                }
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Period To</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="1950"
+                        max={new Date().getFullYear()}
+                        placeholder="e.g., 2020"
+                        {...field}
+                        value={(field?.value as number) || ''}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value ? parseInt(e.target.value) : null
+                          )
+                        }
+                        className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name={
+                  `education.${level.key}.highestLevelEarned` as FieldPath<CompletePdsData>
+                }
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Highest Level Earned</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="If not graduated (e.g., 4th Year)"
+                        {...field}
+                        value={(field?.value as string) || ''}
+                        className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name={
                   `education.${level.key}.yearGraduated` as FieldPath<CompletePdsData>
                 }
                 render={({ field }) => (
@@ -137,6 +216,27 @@ export const Education = memo(function Education() {
                             e.target.value ? parseInt(e.target.value) : null
                           )
                         }
+                        className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name={
+                  `education.${level.key}.honorsReceived` as FieldPath<CompletePdsData>
+                }
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Honors Received</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g., Cum Laude, Dean's Lister"
+                        {...field}
+                        value={(field?.value as string) || ''}
                         className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                       />
                     </FormControl>
