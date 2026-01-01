@@ -643,7 +643,7 @@ function PendingApprovalContent() {
                               Admin Approval Required
                             </p>
                             <p className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
-                              You cannot log in until an administrator approves your registration. You'll receive an email notification once approved.
+                              You cannot log in until an administrator approves your registration. You&apos;ll receive an email notification once approved.
                             </p>
                           </div>
                         </div>

@@ -14,6 +14,13 @@ import {
 import { Input } from '../../../../../components/ui/input';
 import { Button } from '../../../../../components/ui/button';
 import { Separator } from '../../../../../components/ui/separator';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../../../../components/ui/select';
 import { FormSection } from '../../../../../components/forms/shared/FormSection';
 import {
   type CompletePdsData,
@@ -96,6 +103,53 @@ export const Family = memo(function Family() {
 
                 <FormField
                   control={form.control}
+                  name="family.spouseMiddleName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Middle Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Middle Name"
+                          {...field}
+                          value={field.value || ''}
+                          className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="family.spouseNameExtension"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name Extension/Suffix</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value || undefined}>
+                        <FormControl>
+                          <SelectTrigger className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all">
+                            <SelectValue placeholder="None (if applicable)" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Jr.">Jr.</SelectItem>
+                          <SelectItem value="Sr.">Sr.</SelectItem>
+                          <SelectItem value="II">II</SelectItem>
+                          <SelectItem value="III">III</SelectItem>
+                          <SelectItem value="IV">IV</SelectItem>
+                          <SelectItem value="V">V</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
                   name="family.spouseOccupation"
                   render={({ field }) => (
                     <FormItem>
@@ -122,6 +176,44 @@ export const Family = memo(function Family() {
                       <FormControl>
                         <Input
                           placeholder="e.g., TUP Manila"
+                          {...field}
+                          value={field.value || ''}
+                          className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="family.spouseBusinessAddress"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>Business Address</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g., Ayala Avenue, Makati City"
+                          {...field}
+                          value={field.value || ''}
+                          className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="family.spouseTelephoneNo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Telephone No.</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g., (02) 1234-5678"
                           {...field}
                           value={field.value || ''}
                           className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
