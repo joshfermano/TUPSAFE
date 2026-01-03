@@ -55,6 +55,12 @@ function formatForDb(value: number | null | undefined): string {
 /**
  * Transforms SALN data from frontend format to backend format
  *
+ * IMPORTANT: This function preserves undefined values for partial updates.
+ * Only sections explicitly provided in data will be included in the result.
+ * This allows the API/database layer to distinguish between:
+ * - undefined: Don't update this section (preserve existing data)
+ * - []: Clear all items in this section
+ *
  * @param data - Form data in frontend format (CompleteSalnData)
  * @returns Transformed data ready for backend API
  */
@@ -72,77 +78,92 @@ export function transformSalnForSubmission(data: Partial<CompleteSalnData>): any
   };
 
   // ========================================================================
-  // STEP 2: Transform Real Properties (Section II)
+  // STEP 2: Transform Real Properties (Section II) - preserve undefined
   // ========================================================================
-  const realProperties = (data.realProperties || []).map((prop: any) => ({
-    description: prop.description,
-    kind: prop.kind,
-    exactLocation: prop.exactLocation,
-    assessedValue: formatForDb(toCurrency(prop.assessedValue)),
-    currentFairMarketValue: formatForDb(toCurrency(prop.currentFairMarketValue)),
-    acquisitionYear: prop.acquisitionYear,
-    acquisitionMode: prop.acquisitionMode,
-    acquisitionCost: formatForDb(toCurrency(prop.acquisitionCost)),
-  }));
+  const realProperties = data.realProperties !== undefined
+    ? data.realProperties.map((prop: any) => ({
+        description: prop.description,
+        kind: prop.kind,
+        exactLocation: prop.exactLocation,
+        assessedValue: formatForDb(toCurrency(prop.assessedValue)),
+        currentFairMarketValue: formatForDb(toCurrency(prop.currentFairMarketValue)),
+        acquisitionYear: prop.acquisitionYear,
+        acquisitionMode: prop.acquisitionMode,
+        acquisitionCost: formatForDb(toCurrency(prop.acquisitionCost)),
+      }))
+    : undefined;
 
   // ========================================================================
-  // STEP 3: Transform Personal Properties (Section III)
+  // STEP 3: Transform Personal Properties (Section III) - preserve undefined
   // ========================================================================
-  const personalProperties = (data.personalProperties || []).map((prop: any) => ({
-    description: prop.description,
-    yearAcquired: prop.yearAcquired,
-    acquisitionCost: formatForDb(toCurrency(prop.acquisitionCost)),
-  }));
+  const personalProperties = data.personalProperties !== undefined
+    ? data.personalProperties.map((prop: any) => ({
+        description: prop.description,
+        yearAcquired: prop.yearAcquired,
+        acquisitionCost: formatForDb(toCurrency(prop.acquisitionCost)),
+      }))
+    : undefined;
 
   // ========================================================================
-  // STEP 4: Transform Liabilities (Section IV)
+  // STEP 4: Transform Liabilities (Section IV) - preserve undefined
   // ========================================================================
-  const liabilities = (data.liabilities || []).map((liability: any) => ({
-    nature: liability.nature,
-    creditorName: liability.creditorName,
-    outstandingBalance: formatForDb(toCurrency(liability.outstandingBalance)),
-  }));
+  const liabilities = data.liabilities !== undefined
+    ? data.liabilities.map((liability: any) => ({
+        nature: liability.nature,
+        creditorName: liability.creditorName,
+        outstandingBalance: formatForDb(toCurrency(liability.outstandingBalance)),
+      }))
+    : undefined;
 
   // ========================================================================
-  // STEP 5: Transform Business Interests (Section V)
+  // STEP 5: Transform Business Interests (Section V) - preserve undefined
   // ========================================================================
-  const businessInterests = (data.businessInterests || []).map((interest: any) => {
-    // Convert date to ISO string for database storage
-    const date = stringToDate(interest.dateOfAcquisition);
-    return {
-      entityName: interest.entityName,
-      businessAddress: interest.businessAddress,
-      natureOfBusiness: interest.natureOfBusiness,
-      dateOfAcquisition: date ? date.toISOString() : null,
-    };
-  });
+  const businessInterests = data.businessInterests !== undefined
+    ? data.businessInterests.map((interest: any) => {
+        // Convert date to ISO string for database storage
+        const date = stringToDate(interest.dateOfAcquisition);
+        return {
+          entityName: interest.entityName,
+          businessAddress: interest.businessAddress,
+          natureOfBusiness: interest.natureOfBusiness,
+          dateOfAcquisition: date ? date.toISOString() : null,
+        };
+      })
+    : undefined;
 
   // ========================================================================
-  // STEP 6: Transform Relatives in Government (Section VI)
+  // STEP 6: Transform Relatives in Government (Section VI) - preserve undefined
   // ========================================================================
-  const relativesInGov = (data.relativesInGov || []).map((relative: any) => ({
-    name: relative.name,
-    relationship: relative.relationship,
-    position: relative.position,
-    agencyAddress: relative.agencyAddress,
-  }));
+  const relativesInGov = data.relativesInGov !== undefined
+    ? data.relativesInGov.map((relative: any) => ({
+        name: relative.name,
+        relationship: relative.relationship,
+        position: relative.position,
+        agencyAddress: relative.agencyAddress,
+      }))
+    : undefined;
 
   // ========================================================================
   // STEP 7: Create backend-compatible data structure
+  // Only include defined sections (undefined sections will be omitted)
   // ========================================================================
-  return {
+  const result: any = {
     year: submission.year,
     filingType: submission.filingType || 'separate',
     spouseName: submission.spouseName || undefined,
     position: submission.position || undefined,
     agency: submission.agency || undefined,
     officeAddress: submission.officeAddress || undefined,
-    realProperties,
-    personalProperties,
-    liabilities,
-    businessInterests,
-    relativesInGov,
   };
+
+  // Only add section arrays if they were explicitly provided
+  if (realProperties !== undefined) result.realProperties = realProperties;
+  if (personalProperties !== undefined) result.personalProperties = personalProperties;
+  if (liabilities !== undefined) result.liabilities = liabilities;
+  if (businessInterests !== undefined) result.businessInterests = businessInterests;
+  if (relativesInGov !== undefined) result.relativesInGov = relativesInGov;
+
+  return result;
 }
 
 /**

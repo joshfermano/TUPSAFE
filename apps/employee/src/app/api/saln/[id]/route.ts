@@ -68,7 +68,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
     // ENFORCE EMPLOYEE-ONLY ACCESS
     if (!profile || profile.userType !== 'employee') {
       console.error(
-        `[GET /api/saln/[id]] Access denied for user ${user.id}: userType=${profile?.userType || 'null'}`
+        `[GET /api/saln/[id]] Access denied for user ${user.id}: userType=${
+          profile?.userType || 'null'
+        }`
       );
       return NextResponse.json(
         {
@@ -144,8 +146,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     return NextResponse.json(
       {
         success: false,
-        error:
-          error instanceof Error ? error.message : 'Failed to fetch SALN',
+        error: error instanceof Error ? error.message : 'Failed to fetch SALN',
       },
       { status: 500 }
     );
@@ -207,7 +208,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     // ENFORCE EMPLOYEE-ONLY ACCESS
     if (!profile || profile.userType !== 'employee') {
       console.error(
-        `[PATCH /api/saln/[id]] Access denied for user ${user.id}: userType=${profile?.userType || 'null'}`
+        `[PATCH /api/saln/[id]] Access denied for user ${user.id}: userType=${
+          profile?.userType || 'null'
+        }`
       );
       return NextResponse.json(
         {
@@ -341,21 +344,27 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     // ========================================================================
-    // STEP 7: Prepare update input (always send all sections)
-    // This ensures deletions are properly reflected (empty arrays clear DB)
+    // STEP 7: Prepare update input (only include explicitly provided sections)
+    // IMPORTANT: undefined sections are preserved in DB, empty arrays clear them
+    // This prevents accidental data loss during partial updates
     // ========================================================================
     const updateInput: UpdateSalnInput = {
-      year: transformedData.year !== undefined ? parseInt(transformedData.year) : undefined,
+      year:
+        transformedData.year !== undefined
+          ? parseInt(transformedData.year)
+          : undefined,
       filingType: transformedData.filingType,
       spouseName: transformedData.spouseName,
       position: transformedData.position,
       agency: transformedData.agency,
       officeAddress: transformedData.officeAddress,
-      realProperties: transformedData.realProperties || [],
-      personalProperties: transformedData.personalProperties || [],
-      liabilities: transformedData.liabilities || [],
-      businessInterests: transformedData.businessInterests || [],
-      relativesInGov: transformedData.relativesInGov || [],
+      // Only include sections that were explicitly provided in the request
+      // undefined = preserve existing data, [] = clear the section
+      realProperties: transformedData.realProperties,
+      personalProperties: transformedData.personalProperties,
+      liabilities: transformedData.liabilities,
+      businessInterests: transformedData.businessInterests,
+      relativesInGov: transformedData.relativesInGov,
     };
 
     // ========================================================================
@@ -396,8 +405,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     return NextResponse.json(
       {
         success: false,
-        error:
-          error instanceof Error ? error.message : 'Failed to update SALN',
+        error: error instanceof Error ? error.message : 'Failed to update SALN',
       },
       { status: 500 }
     );
@@ -432,7 +440,10 @@ export async function DELETE(
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      console.error('[DELETE /api/saln/[id]] Authentication failed:', authError);
+      console.error(
+        '[DELETE /api/saln/[id]] Authentication failed:',
+        authError
+      );
       return NextResponse.json(
         { success: false, error: 'Unauthorized. Please log in.' },
         { status: 401 }
@@ -450,7 +461,9 @@ export async function DELETE(
 
     if (!profile || profile.userType !== 'employee') {
       console.error(
-        `[DELETE /api/saln/[id]] Access denied for user ${user.id}: userType=${profile?.userType || 'null'}`
+        `[DELETE /api/saln/[id]] Access denied for user ${user.id}: userType=${
+          profile?.userType || 'null'
+        }`
       );
       return NextResponse.json(
         {

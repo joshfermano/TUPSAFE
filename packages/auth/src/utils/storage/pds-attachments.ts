@@ -5,19 +5,20 @@
  * seminar proofs, training documents) for civil service eligibility and
  * learning & development sections.
  *
- * Path format: {userId}/{year}/{pdsSubmissionId}/{kind}/{itemId}/{uuid}.{ext}
+ * Path format: pds/{userId}/{year}/{pdsSubmissionId}/{kind}/{itemId}/{uuid}.{ext}
  * - kind: 'training' | 'civil_service'
  * - itemId: trainingId or civilServiceId
  *
- * Uses Supabase Storage with public bucket URLs.
+ * Uses Supabase Storage with private bucket and signed URLs.
  */
 
 import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Supabase Storage bucket name for PDS attachments
+ * Uses the existing 'user-documents' bucket (private) instead of separate bucket
  */
-export const PDS_ATTACHMENTS_BUCKET = 'pds-attachments';
+export const PDS_ATTACHMENTS_BUCKET = 'user-documents';
 
 /**
  * Attachment kind (training or civil service)
@@ -116,8 +117,9 @@ export function getAttachmentExtensionFromMimeType(mimeType: string): string {
 /**
  * Build storage path for a PDS attachment
  *
- * Path format: {userId}/{year}/{pdsSubmissionId}/{kind}/{itemId}/{uuid}.{ext}
+ * Path format: pds/{userId}/{year}/{pdsSubmissionId}/{kind}/{itemId}/{uuid}.{ext}
  * This ensures:
+ * - PDS attachments are grouped under 'pds/' prefix in user-documents bucket
  * - Each user's files are in their own folder (for RLS policies)
  * - Organized by year and submission
  * - Grouped by attachment type (training/civil_service)
@@ -138,10 +140,15 @@ export function buildAttachmentPath(params: {
   const ext = getAttachmentExtensionFromMimeType(mimeType);
   const filename = `${uuidv4()}.${ext}`;
 
-  return `${userId}/${year}/${pdsSubmissionId}/${kind}/${itemId}/${filename}`;
+  // Prefix with 'pds/' to separate from other documents in user-documents bucket
+  return `pds/${userId}/${year}/${pdsSubmissionId}/${kind}/${itemId}/${filename}`;
 }
 
 /**
+ * @deprecated Use signed URLs from Supabase client instead.
+ * This function returns a public URL format but the bucket is private.
+ * Use `supabase.storage.from(bucket).createSignedUrl()` in API routes.
+ *
  * Get the public URL for a PDS attachment from Supabase Storage
  *
  * @param supabaseUrl - Supabase project URL (e.g., https://xxx.supabase.co)
@@ -159,10 +166,15 @@ export function getAttachmentPublicUrl(
   // Ensure URL doesn't have trailing slash
   const baseUrl = supabaseUrl.replace(/\/$/, '');
 
-  // Build public URL
+  // Build public URL format (note: bucket is private, use signed URLs instead)
   // Format: {supabaseUrl}/storage/v1/object/public/{bucket}/{path}
   return `${baseUrl}/storage/v1/object/public/${PDS_ATTACHMENTS_BUCKET}/${filePath}`;
 }
+
+/**
+ * Default signed URL expiration time in seconds (1 hour)
+ */
+export const SIGNED_URL_EXPIRY_SECONDS = 3600;
 
 /**
  * Upload result from storage operations

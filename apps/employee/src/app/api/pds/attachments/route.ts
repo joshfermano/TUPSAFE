@@ -11,8 +11,8 @@ import { createServerClient } from '@tupsafe/auth/server';
 import {
   validateAttachmentFile,
   buildAttachmentPath,
-  getAttachmentPublicUrl,
   PDS_ATTACHMENTS_BUCKET,
+  SIGNED_URL_EXPIRY_SECONDS,
 } from '@tupsafe/auth/server';
 import {
   db,
@@ -181,9 +181,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get public URL
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const fileUrl = getAttachmentPublicUrl(supabaseUrl, filePath);
+    // Generate signed URL for private bucket access
+    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+      .from(PDS_ATTACHMENTS_BUCKET)
+      .createSignedUrl(filePath, SIGNED_URL_EXPIRY_SECONDS);
+
+    if (signedUrlError) {
+      console.error('[POST /api/pds/attachments] Signed URL error:', signedUrlError);
+      // Continue without URL - upload succeeded
+    }
+
+    const fileUrl = signedUrlData?.signedUrl || null;
 
     // Insert attachment record in database
     const [attachment] = await db
