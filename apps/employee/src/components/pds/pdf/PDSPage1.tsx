@@ -384,222 +384,112 @@ export function PDSPage1({ data }: PDSPage1Props) {
           </View>
         </View>
 
-        {/* Field 19: RESIDENTIAL ADDRESS */}
-        <View style={styles.fieldRow}>
+        {/* Field 19: RESIDENTIAL ADDRESS - Compact layout */}
+        <View style={{ flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: colors.borderColor, minHeight: 45, maxHeight: 50 }}>
           <View style={[styles.labelCell, styles.w20]}>
             <Text style={styles.labelSmall}>19. RESIDENTIAL ADDRESS</Text>
           </View>
-          <View style={[styles.fieldCellLast, { flex: 1 }]}>
-            <View style={styles.row}>
-              <View style={{ flex: 1, paddingRight: 5 }}>
-                <Text style={styles.valueSmall}>
+          <View style={[styles.fieldCellLast, { flex: 1, padding: 2 }]}>
+            <View style={[styles.row, { height: 14 }]}>
+              <View style={{ flex: 1, paddingRight: 3 }}>
+                <Text style={styles.valueSingleLine}>
                   {displayOrEmpty(personalInfo.residentialAddress?.houseNumber)}
                 </Text>
-                <Text
-                  style={[
-                    styles.labelSmall,
-                    styles.center,
-                    { borderTopWidth: 1, borderTopColor: '#ccc' },
-                  ]}>
-                  House/Block/Lot No.
-                </Text>
+                <Text style={[styles.labelSmall, styles.center, { fontSize: 4 }]}>House/Block/Lot</Text>
               </View>
-              <View style={{ flex: 1, paddingRight: 5 }}>
-                <Text style={styles.valueSmall}>
+              <View style={{ flex: 1, paddingRight: 3 }}>
+                <Text style={styles.valueSingleLine}>
                   {displayOrEmpty(personalInfo.residentialAddress?.street)}
                 </Text>
-                <Text
-                  style={[
-                    styles.labelSmall,
-                    styles.center,
-                    { borderTopWidth: 1, borderTopColor: '#ccc' },
-                  ]}>
-                  Street
-                </Text>
+                <Text style={[styles.labelSmall, styles.center, { fontSize: 4 }]}>Street</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.valueSmall}>
+                <Text style={styles.valueSingleLine}>
                   {displayOrEmpty(personalInfo.residentialAddress?.subdivision)}
                 </Text>
-                <Text
-                  style={[
-                    styles.labelSmall,
-                    styles.center,
-                    { borderTopWidth: 1, borderTopColor: '#ccc' },
-                  ]}>
-                  Subdivision/Village
-                </Text>
+                <Text style={[styles.labelSmall, styles.center, { fontSize: 4 }]}>Subdivision</Text>
               </View>
             </View>
-            <View style={[styles.row, styles.marginTop5]}>
-              <View style={{ flex: 1, paddingRight: 5 }}>
-                <Text style={styles.valueSmall}>
+            <View style={[styles.row, { height: 14, marginTop: 2 }]}>
+              <View style={{ flex: 1, paddingRight: 3 }}>
+                <Text style={styles.valueSingleLine}>
                   {displayOrEmpty(personalInfo.residentialAddress?.barangay)}
                 </Text>
-                <Text
-                  style={[
-                    styles.labelSmall,
-                    styles.center,
-                    { borderTopWidth: 1, borderTopColor: '#ccc' },
-                  ]}>
-                  Barangay
-                </Text>
+                <Text style={[styles.labelSmall, styles.center, { fontSize: 4 }]}>Barangay</Text>
               </View>
-              <View style={{ flex: 1, paddingRight: 5 }}>
-                <Text style={styles.valueSmall}>
+              <View style={{ flex: 1, paddingRight: 3 }}>
+                <Text style={styles.valueSingleLine}>
                   {displayOrEmpty(personalInfo.residentialAddress?.city)}
                 </Text>
-                <Text
-                  style={[
-                    styles.labelSmall,
-                    styles.center,
-                    { borderTopWidth: 1, borderTopColor: '#ccc' },
-                  ]}>
-                  City/Municipality
-                </Text>
+                <Text style={[styles.labelSmall, styles.center, { fontSize: 4 }]}>City/Municipality</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.valueSmall}>
+                <Text style={styles.valueSingleLine}>
                   {displayOrEmpty(personalInfo.residentialAddress?.province)}
                 </Text>
-                <Text
-                  style={[
-                    styles.labelSmall,
-                    styles.center,
-                    { borderTopWidth: 1, borderTopColor: '#ccc' },
-                  ]}>
-                  Province
-                </Text>
+                <Text style={[styles.labelSmall, styles.center, { fontSize: 4 }]}>Province</Text>
               </View>
             </View>
-            <View
-              style={[
-                styles.row,
-                styles.marginTop5,
-                { justifyContent: 'center', alignItems: 'center' },
-              ]}>
-              <Text style={styles.labelSmall}>ZIP CODE</Text>
-              <View
-                style={{
-                  width: 100,
-                  borderBottomWidth: 1,
-                  borderBottomColor: 'black',
-                  marginLeft: 5,
-                }}>
-                <Text style={[styles.valueSmall, styles.center]}>
-                  {displayOrEmpty(personalInfo.residentialAddress?.zipCode)}
-                </Text>
-              </View>
+            <View style={[styles.row, { height: 10, marginTop: 1, justifyContent: 'flex-end', alignItems: 'center' }]}>
+              <Text style={[styles.labelSmall, { fontSize: 5 }]}>ZIP CODE:</Text>
+              <Text style={[styles.valueSingleLine, { marginLeft: 3, width: 40 }]}>
+                {displayOrEmpty(personalInfo.residentialAddress?.zipCode)}
+              </Text>
             </View>
           </View>
         </View>
 
-        {/* Field 20: PERMANENT ADDRESS */}
-        <View style={styles.fieldRow}>
+        {/* Field 20: PERMANENT ADDRESS - Compact layout */}
+        <View style={{ flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: colors.borderColor, minHeight: 45, maxHeight: 50 }}>
           <View style={[styles.labelCell, styles.w20]}>
             <Text style={styles.labelSmall}>20. PERMANENT ADDRESS</Text>
           </View>
-          <View style={[styles.fieldCellLast, { flex: 1 }]}>
-            <View style={styles.row}>
-              <View style={{ flex: 1, paddingRight: 5 }}>
-                <Text style={styles.valueSmall}>
+          <View style={[styles.fieldCellLast, { flex: 1, padding: 2 }]}>
+            <View style={[styles.row, { height: 14 }]}>
+              <View style={{ flex: 1, paddingRight: 3 }}>
+                <Text style={styles.valueSingleLine}>
                   {displayOrEmpty(personalInfo.permanentAddress?.houseNumber)}
                 </Text>
-                <Text
-                  style={[
-                    styles.labelSmall,
-                    styles.center,
-                    { borderTopWidth: 1, borderTopColor: '#ccc' },
-                  ]}>
-                  House/Block/Lot No.
-                </Text>
+                <Text style={[styles.labelSmall, styles.center, { fontSize: 4 }]}>House/Block/Lot</Text>
               </View>
-              <View style={{ flex: 1, paddingRight: 5 }}>
-                <Text style={styles.valueSmall}>
+              <View style={{ flex: 1, paddingRight: 3 }}>
+                <Text style={styles.valueSingleLine}>
                   {displayOrEmpty(personalInfo.permanentAddress?.street)}
                 </Text>
-                <Text
-                  style={[
-                    styles.labelSmall,
-                    styles.center,
-                    { borderTopWidth: 1, borderTopColor: '#ccc' },
-                  ]}>
-                  Street
-                </Text>
+                <Text style={[styles.labelSmall, styles.center, { fontSize: 4 }]}>Street</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.valueSmall}>
+                <Text style={styles.valueSingleLine}>
                   {displayOrEmpty(personalInfo.permanentAddress?.subdivision)}
                 </Text>
-                <Text
-                  style={[
-                    styles.labelSmall,
-                    styles.center,
-                    { borderTopWidth: 1, borderTopColor: '#ccc' },
-                  ]}>
-                  Subdivision/Village
-                </Text>
+                <Text style={[styles.labelSmall, styles.center, { fontSize: 4 }]}>Subdivision</Text>
               </View>
             </View>
-            <View style={[styles.row, styles.marginTop5]}>
-              <View style={{ flex: 1, paddingRight: 5 }}>
-                <Text style={styles.valueSmall}>
+            <View style={[styles.row, { height: 14, marginTop: 2 }]}>
+              <View style={{ flex: 1, paddingRight: 3 }}>
+                <Text style={styles.valueSingleLine}>
                   {displayOrEmpty(personalInfo.permanentAddress?.barangay)}
                 </Text>
-                <Text
-                  style={[
-                    styles.labelSmall,
-                    styles.center,
-                    { borderTopWidth: 1, borderTopColor: '#ccc' },
-                  ]}>
-                  Barangay
-                </Text>
+                <Text style={[styles.labelSmall, styles.center, { fontSize: 4 }]}>Barangay</Text>
               </View>
-              <View style={{ flex: 1, paddingRight: 5 }}>
-                <Text style={styles.valueSmall}>
+              <View style={{ flex: 1, paddingRight: 3 }}>
+                <Text style={styles.valueSingleLine}>
                   {displayOrEmpty(personalInfo.permanentAddress?.city)}
                 </Text>
-                <Text
-                  style={[
-                    styles.labelSmall,
-                    styles.center,
-                    { borderTopWidth: 1, borderTopColor: '#ccc' },
-                  ]}>
-                  City/Municipality
-                </Text>
+                <Text style={[styles.labelSmall, styles.center, { fontSize: 4 }]}>City/Municipality</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.valueSmall}>
+                <Text style={styles.valueSingleLine}>
                   {displayOrEmpty(personalInfo.permanentAddress?.province)}
                 </Text>
-                <Text
-                  style={[
-                    styles.labelSmall,
-                    styles.center,
-                    { borderTopWidth: 1, borderTopColor: '#ccc' },
-                  ]}>
-                  Province
-                </Text>
+                <Text style={[styles.labelSmall, styles.center, { fontSize: 4 }]}>Province</Text>
               </View>
             </View>
-            <View
-              style={[
-                styles.row,
-                styles.marginTop5,
-                { justifyContent: 'center', alignItems: 'center' },
-              ]}>
-              <Text style={styles.labelSmall}>ZIP CODE</Text>
-              <View
-                style={{
-                  width: 100,
-                  borderBottomWidth: 1,
-                  borderBottomColor: 'black',
-                  marginLeft: 5,
-                }}>
-                <Text style={[styles.valueSmall, styles.center]}>
-                  {displayOrEmpty(personalInfo.permanentAddress?.zipCode)}
-                </Text>
-              </View>
+            <View style={[styles.row, { height: 10, marginTop: 1, justifyContent: 'flex-end', alignItems: 'center' }]}>
+              <Text style={[styles.labelSmall, { fontSize: 5 }]}>ZIP CODE:</Text>
+              <Text style={[styles.valueSingleLine, { marginLeft: 3, width: 40 }]}>
+                {displayOrEmpty(personalInfo.permanentAddress?.zipCode)}
+              </Text>
             </View>
           </View>
         </View>
@@ -805,13 +695,13 @@ export function PDSPage1({ data }: PDSPage1Props) {
           </View>
         </View>
 
-        {/* Children rows (show up to 12, minimum 4 empty rows) */}
+        {/* Children rows (show up to 8 on page 1 to prevent overflow, remaining on page 2) */}
         {Array.from({
-          length: Math.max(12, familyBackground.children.length),
+          length: Math.max(8, Math.min(8, familyBackground.children.length)),
         }).map((_, index) => {
           const child = familyBackground.children[index];
           return (
-            <View key={index} style={styles.fieldRow}>
+            <View key={index} style={styles.fieldRowCompact}>
               <View style={[styles.tableCell, styles.w70]}>
                 <Text style={styles.value}>
                   {child ? displayOrEmpty(child.fullName) : ''}

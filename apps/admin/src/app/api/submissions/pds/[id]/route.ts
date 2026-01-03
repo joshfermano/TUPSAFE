@@ -424,7 +424,7 @@ export async function GET(
                 surname: familyBackground.fatherSurname ?? undefined,
                 firstName: familyBackground.fatherFirstName ?? undefined,
                 middleName: familyBackground.fatherMiddleName ?? undefined,
-                nameExtension: undefined, // Not in DB schema
+                nameExtension: familyBackground.fatherNameExtension ?? undefined,
               },
               mother: {
                 maidenName: familyBackground.motherMaidenSurname ?? undefined,

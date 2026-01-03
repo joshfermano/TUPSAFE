@@ -15,6 +15,8 @@ import {
   Users,
   TrendingUp,
   TrendingDown,
+  Printer,
+  Loader2,
 } from 'lucide-react';
 
 import {
@@ -468,23 +470,39 @@ export default function SalnSubmissionViewPage() {
 
             <div className="flex items-center gap-3">
               <StatusBadge status={submission?.status || 'draft'} />
-              {canReview && (
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleExportPdf}
-                    disabled={isGenerating}
-                    className="gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportPdf}
+                disabled={isGenerating}
+                className="gap-2">
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
                     <Download className="h-4 w-4" />
-                    {isGenerating ? 'Generating...' : 'Export PDF'}
-                  </Button>
-                  <Button
-                    onClick={() => setIsReviewDialogOpen(true)}
-                    className="gap-2 bg-tup-primary hover:bg-tup-primary/90">
-                    Review Submission
-                  </Button>
-                </>
+                    Download PDF
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePreviewPdf}
+                disabled={isGenerating}
+                className="gap-2">
+                <Printer className="h-4 w-4" />
+                Print PDF
+              </Button>
+              {canReview && (
+                <Button
+                  onClick={() => setIsReviewDialogOpen(true)}
+                  className="gap-2 bg-tup-primary hover:bg-tup-primary/90">
+                  Review Submission
+                </Button>
               )}
             </div>
           </div>
@@ -1208,27 +1226,42 @@ export default function SalnSubmissionViewPage() {
                 </div>
 
                 {/* Action Buttons */}
-                {canReview && (
-                  <>
-                    <Separator />
-                    <div className="space-y-2">
-                      <Button
-                        onClick={() => setIsReviewDialogOpen(true)}
-                        className="w-full bg-emerald-600 hover:bg-emerald-700 gap-2">
-                        <CheckCircle2 className="h-4 w-4" />
-                        Review Submission
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={handleExportPdf}
-                        disabled={isGenerating}
-                        className="w-full gap-2">
+                <Separator />
+                <div className="space-y-2">
+                  {canReview && (
+                    <Button
+                      onClick={() => setIsReviewDialogOpen(true)}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 gap-2">
+                      <CheckCircle2 className="h-4 w-4" />
+                      Review Submission
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    onClick={handleExportPdf}
+                    disabled={isGenerating}
+                    className="w-full gap-2">
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
                         <Download className="h-4 w-4" />
-                        {isGenerating ? 'Generating...' : 'Export PDF'}
-                      </Button>
-                    </div>
-                  </>
-                )}
+                        Download PDF
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handlePreviewPdf}
+                    disabled={isGenerating}
+                    className="w-full gap-2">
+                    <Printer className="h-4 w-4" />
+                    Print PDF
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>

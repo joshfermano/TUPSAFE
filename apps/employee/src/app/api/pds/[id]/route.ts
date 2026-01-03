@@ -16,7 +16,7 @@ import {
 } from '@tupsafe/database/server';
 import { createServerClient } from '@tupsafe/auth/server';
 import { createAuditLog } from '@tupsafe/database/server';
-import { getAttachmentPublicUrl } from '@tupsafe/auth/server';
+import { PDS_ATTACHMENTS_BUCKET, SIGNED_URL_EXPIRY_SECONDS } from '@tupsafe/auth/server';
 import { eq } from 'drizzle-orm';
 
 interface RouteContext {
@@ -82,21 +82,31 @@ export async function GET(request: NextRequest, context: RouteContext) {
       .from(pdsAttachments)
       .where(eq(pdsAttachments.pdsSubmissionId, id));
 
-    // Get Supabase URL for public URLs
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    // Generate signed URLs for all attachments (private bucket)
+    const attachmentsWithUrls = await Promise.all(
+      attachmentsList.map(async (att) => {
+        let fileUrl: string | null = null;
+        
+        if (att.filePath) {
+          const { data: signedUrlData } = await supabase.storage
+            .from(PDS_ATTACHMENTS_BUCKET)
+            .createSignedUrl(att.filePath, SIGNED_URL_EXPIRY_SECONDS);
+          fileUrl = signedUrlData?.signedUrl || null;
+        }
 
-    // Transform attachments with public URLs and group by entry ID
-    const attachmentsWithUrls = attachmentsList.map((att) => ({
-      id: att.id,
-      fileName: att.fileName,
-      mimeType: att.mimeType,
-      sizeBytes: att.sizeBytes,
-      filePath: att.filePath,
-      fileUrl: getAttachmentPublicUrl(supabaseUrl, att.filePath),
-      trainingId: att.trainingId,
-      civilServiceId: att.civilServiceId,
-      createdAt: att.createdAt,
-    }));
+        return {
+          id: att.id,
+          fileName: att.fileName,
+          mimeType: att.mimeType,
+          sizeBytes: att.sizeBytes,
+          filePath: att.filePath,
+          fileUrl,
+          trainingId: att.trainingId,
+          civilServiceId: att.civilServiceId,
+          createdAt: att.createdAt,
+        };
+      })
+    );
 
     // Group attachments by trainingId and civilServiceId for easy frontend access
     const attachmentsByTraining: Record<string, typeof attachmentsWithUrls> = {};

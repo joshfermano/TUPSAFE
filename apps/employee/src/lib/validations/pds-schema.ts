@@ -365,6 +365,11 @@ const parentSchema = z.object({
     .nullable()
     .optional(),
 
+  fatherNameExtension: z
+    .enum(['Jr.', 'Sr.', 'II', 'III', 'IV', 'V', ''])
+    .nullable()
+    .optional(),
+
   // Mother's maiden name
   motherMaidenSurname: z
     .string()

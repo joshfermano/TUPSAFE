@@ -67,7 +67,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
     // ENFORCE EMPLOYEE-ONLY ACCESS
     if (!profile || profile.userType !== 'employee') {
       console.error(
-        `[POST /api/saln/[id]/submit] Access denied for user ${user.id}: userType=${profile?.userType || 'null'}`
+        `[POST /api/saln/[id]/submit] Access denied for user ${
+          user.id
+        }: userType=${profile?.userType || 'null'}`
       );
       return NextResponse.json(
         {
@@ -134,11 +136,21 @@ export async function POST(request: NextRequest, context: RouteContext) {
     // Transform to frontend format for validation
     const frontendSaln = transformSalnFromBackend(saln);
 
+    // Debug logging for SALN data structure (non-PII)
+    console.log('[POST /api/saln/[id]/submit] SALN data check:', {
+      hasSubmission: !!frontendSaln.submission,
+      realPropertiesCount: frontendSaln.realProperties?.length ?? 0,
+      personalPropertiesCount: frontendSaln.personalProperties?.length ?? 0,
+      liabilitiesCount: frontendSaln.liabilities?.length ?? 0,
+      businessInterestsCount: frontendSaln.businessInterests?.length ?? 0,
+      relativesInGovCount: frontendSaln.relativesInGov?.length ?? 0,
+    });
+
     // Validate required sections are present
-    const hasAssets =
-      (frontendSaln.realProperties && frontendSaln.realProperties.length > 0) ||
-      (frontendSaln.personalProperties &&
-        frontendSaln.personalProperties.length > 0);
+    const realPropertiesCount = frontendSaln.realProperties?.length ?? 0;
+    const personalPropertiesCount =
+      frontendSaln.personalProperties?.length ?? 0;
+    const hasAssets = realPropertiesCount > 0 || personalPropertiesCount > 0;
 
     if (!hasAssets) {
       return NextResponse.json(
@@ -146,6 +158,11 @@ export async function POST(request: NextRequest, context: RouteContext) {
           success: false,
           error:
             'Cannot submit incomplete SALN. At least one asset (real property or personal property) is required.',
+          details: {
+            realPropertiesCount,
+            personalPropertiesCount,
+            hint: 'Please add at least one real property (land, house, etc.) or personal property (vehicle, cash, investments, etc.) before submitting.',
+          },
         },
         { status: 400 }
       );
@@ -160,17 +177,24 @@ export async function POST(request: NextRequest, context: RouteContext) {
         validationError
       );
 
-      // Extract validation errors
+      // Extract validation errors with clear path information
       const errors =
         validationError.errors?.map((err: any) => ({
           path: err.path.join('.'),
+          field: err.path[err.path.length - 1] || 'unknown',
           message: err.message,
         })) || [];
+
+      // Get the first error for a clearer message
+      const firstError = errors[0];
+      const errorSummary = firstError
+        ? `${firstError.path}: ${firstError.message}`
+        : validationError.message;
 
       return NextResponse.json(
         {
           success: false,
-          error: 'SALN validation failed. Please complete all required fields.',
+          error: `SALN validation failed: ${errorSummary}`,
           details: errors.length > 0 ? errors : validationError.message,
         },
         { status: 400 }
@@ -216,8 +240,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return NextResponse.json(
       {
         success: false,
-        error:
-          error instanceof Error ? error.message : 'Failed to submit SALN',
+        error: error instanceof Error ? error.message : 'Failed to submit SALN',
       },
       { status: 500 }
     );

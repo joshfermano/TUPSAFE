@@ -240,7 +240,7 @@ export const Family = memo(function Family() {
               <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
                 Father&apos;s Name
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <FormField
                   control={form.control}
                   name="family.fatherSurname"
@@ -293,6 +293,34 @@ export const Family = memo(function Family() {
                           className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                         />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="family.fatherNameExtension"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name Extension/Suffix</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value || undefined}>
+                        <FormControl>
+                          <SelectTrigger className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all">
+                            <SelectValue placeholder="None (if applicable)" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Jr.">Jr.</SelectItem>
+                          <SelectItem value="Sr.">Sr.</SelectItem>
+                          <SelectItem value="II">II</SelectItem>
+                          <SelectItem value="III">III</SelectItem>
+                          <SelectItem value="IV">IV</SelectItem>
+                          <SelectItem value="V">V</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

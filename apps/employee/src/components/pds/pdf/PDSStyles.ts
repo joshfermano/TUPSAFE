@@ -197,6 +197,21 @@ export const styles = StyleSheet.create({
     fontSize: 6,
     color: colors.black,
   },
+  // Single-line value that prevents wrapping (used for fields that could overflow)
+  valueSingleLine: {
+    fontSize: 6,
+    color: colors.black,
+    maxLines: 1,
+    overflow: 'hidden',
+  },
+  // Single-line bold value
+  valueSingleLineBold: {
+    fontSize: 7,
+    fontWeight: 'bold',
+    color: colors.black,
+    maxLines: 1,
+    overflow: 'hidden',
+  },
   italic: {
     fontStyle: 'italic',
   },
@@ -218,6 +233,24 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     borderBottomWidth: dimensions.borderWidth,
     borderBottomColor: colors.borderColor,
+  },
+  // Compact field row with fixed height (prevents overflow)
+  fieldRowCompact: {
+    flexDirection: 'row',
+    borderBottomWidth: dimensions.borderWidth,
+    borderBottomColor: colors.borderColor,
+    height: dimensions.rowHeight,
+    maxHeight: dimensions.rowHeight,
+    overflow: 'hidden',
+  },
+  // Slightly taller compact row for address sub-rows
+  fieldRowCompactTall: {
+    flexDirection: 'row',
+    borderBottomWidth: dimensions.borderWidth,
+    borderBottomColor: colors.borderColor,
+    height: 20,
+    maxHeight: 20,
+    overflow: 'hidden',
   },
   fieldCell: {
     borderRightWidth: dimensions.borderWidth,

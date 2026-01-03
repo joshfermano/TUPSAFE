@@ -593,6 +593,7 @@ export const pdsFamilyBackground = pgTable(
     fatherSurname: text('father_surname'),
     fatherFirstName: text('father_first_name'),
     fatherMiddleName: text('father_middle_name'),
+    fatherNameExtension: text('father_name_extension'),
     motherMaidenSurname: text('mother_maiden_surname'),
     motherFirstName: text('mother_first_name'),
     motherMiddleName: text('mother_middle_name'),
