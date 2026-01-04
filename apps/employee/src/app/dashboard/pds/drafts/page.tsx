@@ -81,13 +81,6 @@ const SkeletonCard = memo(({ delay = 0 }: { delay?: number }) => (
 
 SkeletonCard.displayName = 'SkeletonCard';
 
-// Calculate completion percentage for draft (estimated from stored data)
-const calculateDraftCompletion = (): number => {
-  // For drafts, we'll show a range between 10-90%
-  // In a real implementation, this would come from the actual form completion state
-  return Math.floor(Math.random() * 80) + 10;
-};
-
 // Helper to safely convert dates to ISO strings
 const toISOString = (date: Date | string | null | undefined): string | undefined => {
   if (!date) return undefined;
@@ -276,22 +269,27 @@ export default function PDSDraftsPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {paginatedDrafts.map((submission: PDSSubmission, index: number) => (
-                <DraftCard
-                  key={submission.id}
-                  submission={{
-                    id: submission.id,
-                    year: submission.year,
-                    version: submission.version,
-                    createdAt: toISOString(submission.createdAt) || new Date().toISOString(),
-                    updatedAt: toISOString(submission.updatedAt) || new Date().toISOString(),
-                    completion: calculateDraftCompletion(),
-                  }}
-                  onContinue={() => handleContinue(submission.id)}
-                  onView={() => handleView(submission.id)}
-                  delay={0.4 + index * 0.05}
-                />
-              ))}
+              {paginatedDrafts.map((submission: PDSSubmission, index: number) => {
+                const createdAt = toISOString(submission.createdAt) || new Date().toISOString();
+                const updatedAt = toISOString(submission.updatedAt) || new Date().toISOString();
+                return (
+                  <DraftCard
+                    key={submission.id}
+                    submission={{
+                      id: submission.id,
+                      year: submission.year,
+                      version: submission.version,
+                      createdAt,
+                      updatedAt,
+                      // Use the completion value from the API (computed and persisted server-side)
+                      completion: submission.completion ?? 0,
+                    }}
+                    onContinue={() => handleContinue(submission.id)}
+                    onView={() => handleView(submission.id)}
+                    delay={0.4 + index * 0.05}
+                  />
+                );
+              })}
             </div>
 
             {totalPages > 1 && (

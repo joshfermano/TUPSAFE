@@ -72,7 +72,7 @@ function isImageFile(mimeType: string): boolean {
 }
 
 function AttachmentChip({ attachment }: { attachment: PdsAttachment }) {
-  const isImage = isImageFile(attachment.mimeType);
+  const isImage = isImageFile(attachment.mimeType || '');
   const [showPreview, setShowPreview] = useState(false);
 
   return (
@@ -86,9 +86,11 @@ function AttachmentChip({ attachment }: { attachment: PdsAttachment }) {
         <span className="flex-1 truncate max-w-[150px]" title={attachment.fileName}>
           {attachment.fileName}
         </span>
-        <span className="text-xs text-muted-foreground">
-          {formatFileSize(attachment.sizeBytes)}
-        </span>
+        {attachment.sizeBytes !== undefined && (
+          <span className="text-xs text-muted-foreground">
+            {formatFileSize(attachment.sizeBytes)}
+          </span>
+        )}
         <div className="flex items-center gap-1">
           {isImage && attachment.fileUrl && (
             <Button

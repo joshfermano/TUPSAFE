@@ -66,6 +66,7 @@ export interface SALNSubmission {
   year: number;
   filingType: FilingType;
   status: SALNStatus;
+  completion: number; // Completion percentage (0-100) based on submission readiness
   submittedAt: string | null;
   reviewedAt: string | null;
   approvedAt: string | null;

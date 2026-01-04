@@ -15,13 +15,16 @@ import { Heart, BookOpen, Plus, GraduationCap } from 'lucide-react';
 import { useFormContext, useFieldArray } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { v4 as uuidv4 } from 'uuid';
 import { Button } from '../../../../../components/ui/button';
 import { VoluntaryWorkItem, TrainingItem } from '../../../../../components/pds/array-items';
 import { type CompletePdsData } from '../../../../../lib/validations/pds-schema';
 import { autoSortWithNotification } from '../../../../../lib/utils/pds-sort';
+import { usePdsContextSafe } from '../../../../../context/PdsContext';
 
 export const SectionV = memo(function SectionV() {
   const form = useFormContext<CompletePdsData>();
+  const pdsContext = usePdsContextSafe();
 
   // Refs for virtualization
   const trainingParentRef = useRef<HTMLDivElement>(null);
@@ -104,9 +107,11 @@ export const SectionV = memo(function SectionV() {
 
   /**
    * Handle adding new training with auto-sort
+   * Note: id is required for attachment linking
    */
   const handleAddTraining = useCallback(() => {
     appendTraining({
+      id: uuidv4(), // Generate stable ID for attachments linking
       title: '',
       dateFrom: new Date(),
       dateTo: new Date(),
@@ -132,6 +137,38 @@ export const SectionV = memo(function SectionV() {
   const handleTrainingDateBlur = useCallback(() => {
     sortTrainingEntries();
   }, [sortTrainingEntries]);
+
+  /**
+   * Handle removing training with attachment cleanup
+   */
+  const handleRemoveTraining = useCallback(
+    (index: number) => {
+      const training = form.getValues(`learningDevelopment.${index}`);
+
+      // Clean up attachments before removing entry
+      if (pdsContext && training?.id) {
+        const trainingId = training.id; // Extract to help TypeScript narrow the type
+        const attachments = pdsContext.getTrainingAttachments(trainingId) || [];
+
+        // Delete each attachment from storage + DB
+        attachments.forEach(async (att) => {
+          try {
+            await fetch(`/api/pds/attachments/${att.id}`, { method: 'DELETE' });
+            // Remove attachment from context by updating with filtered list
+            const remainingAttachments = attachments.filter((a) => a.id !== att.id);
+            pdsContext.updateTrainingAttachments(trainingId, remainingAttachments);
+          } catch (error) {
+            console.error('Failed to delete attachment:', error);
+            // Continue with entry deletion even if attachment cleanup fails
+          }
+        });
+      }
+
+      // Remove the entry
+      removeTraining(index);
+    },
+    [form, pdsContext, removeTraining]
+  );
 
   return (
     <div className="space-y-8">
@@ -270,7 +307,7 @@ export const SectionV = memo(function SectionV() {
                     <div className="pb-4">
                       <TrainingItem
                         index={virtualItem.index}
-                        onRemove={removeTraining}
+                        onRemove={handleRemoveTraining}
                         onDateBlur={handleTrainingDateBlur}
                       />
                     </div>
@@ -285,7 +322,7 @@ export const SectionV = memo(function SectionV() {
                 <TrainingItem
                   key={field.id}
                   index={index}
-                  onRemove={removeTraining}
+                  onRemove={handleRemoveTraining}
                   onDateBlur={handleTrainingDateBlur}
                 />
               ))}

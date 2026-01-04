@@ -265,45 +265,6 @@ const EmptyState = memo(
 
 EmptyState.displayName = 'EmptyState';
 
-// Calculate completion percentage for a draft
-const calculateDraftCompletion = (submission: SALNSubmission): number => {
-  let completion = 0;
-
-  if (submission.filingType && submission.filingType !== 'not_applicable') {
-    completion += 14;
-  }
-
-  if (Array.isArray(submission.realProperties) && submission.realProperties.length > 0) {
-    completion += 14;
-  }
-
-  if (Array.isArray(submission.personalProperties) && submission.personalProperties.length > 0) {
-    completion += 14;
-  }
-
-  if (Array.isArray(submission.liabilities) && submission.liabilities.length > 0) {
-    completion += 14;
-  }
-
-  if (Array.isArray(submission.businessInterests) && submission.businessInterests.length > 0) {
-    completion += 14;
-  }
-
-  if (Array.isArray(submission.relativesInGov) && submission.relativesInGov.length > 0) {
-    completion += 15;
-  }
-
-  if (
-    (Array.isArray(submission.realProperties) && submission.realProperties.length > 0) ||
-    (Array.isArray(submission.personalProperties) && submission.personalProperties.length > 0) ||
-    (Array.isArray(submission.liabilities) && submission.liabilities.length > 0)
-  ) {
-    completion += 15;
-  }
-
-  return Math.min(completion, 100);
-};
-
 // Main SALN Drafts Page
 export default function SALNDraftsPage() {
   const router = useRouter();
@@ -357,9 +318,10 @@ export default function SALNDraftsPage() {
         case 'year-asc':
           return a.year - b.year;
         case 'completion-desc':
-          return calculateDraftCompletion(b) - calculateDraftCompletion(a);
+          // Use the completion value from the API (computed and persisted server-side)
+          return (b.completion ?? 0) - (a.completion ?? 0);
         case 'completion-asc':
-          return calculateDraftCompletion(a) - calculateDraftCompletion(b);
+          return (a.completion ?? 0) - (b.completion ?? 0);
         default:
           return 0;
       }

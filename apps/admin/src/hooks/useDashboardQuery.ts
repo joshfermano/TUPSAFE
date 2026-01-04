@@ -1,8 +1,6 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { MockDatabase } from '@tupsafe/mock-data';
-import { calculateDashboardStats } from '@/lib/mock-helpers';
 
 /**
  * Dashboard query key factory
@@ -114,10 +112,25 @@ export function useDashboardQuery() {
   const query = useQuery<DashboardStats, Error>({
     queryKey: dashboardKeys.stats(),
     queryFn: async () => {
-      // Simulate API delay for realism
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      const stats = calculateDashboardStats();
+      // TODO: Replace with real API call to fetch dashboard stats
+      // For now, return empty/default stats
+      const stats: DashboardStats = {
+        users: { total: 0, active: 0, inactive: 0, byRole: {} },
+        pds: { total: 0, pending: 0, approved: 0, rejected: 0, draft: 0, complianceRate: 0 },
+        saln: { total: 0, pending: 0, approved: 0, rejected: 0, draft: 0, currentYear: new Date().getFullYear(), complianceRate: 0 },
+        departments: { total: 0, active: 0 },
+        positions: { total: 0, active: 0 },
+        pendingApprovals: { total: 0, pds: 0, saln: 0 },
+        recentActivity: [],
+        pendingSubmissions: [],
+        totalUsers: 0,
+        totalPendingApprovals: 0,
+        pdsSubmissions: 0,
+        salnSubmissions: 0,
+        complianceRate: 0,
+        systemHealth: 'healthy',
+        trends: { users: 0, pds: 0, saln: 0 },
+      };
       return stats;
     },
     staleTime: 3 * 60 * 1000, // 3 minutes
@@ -133,9 +146,10 @@ export function useDashboardQuery() {
    * Useful for improving perceived performance when navigating to approvals page
    */
   const prefetchPendingApprovals = async () => {
+    // TODO: Replace with real API call
     await queryClient.prefetchQuery({
       queryKey: ['approvals', 'pending'],
-      queryFn: () => MockDatabase.getPendingApprovals(),
+      queryFn: () => Promise.resolve([]),
       staleTime: 3 * 60 * 1000,
     });
   };

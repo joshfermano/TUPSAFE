@@ -46,7 +46,10 @@ import {
 import { Separator } from '../../../../../components/ui/separator';
 import { AddressInput } from '../../../../../components/forms/shared/AddressInput';
 import { type CompletePdsData } from '../../../../../lib/validations/pds-schema';
-import { formatDateForInput, parseDateFromInput } from '../../../../../lib/utils/date-utils';
+import {
+  formatDateForInput,
+  parseDateFromInput,
+} from '../../../../../lib/utils/date-utils';
 
 export const SectionI = memo(function SectionI() {
   const form = useFormContext<CompletePdsData>();
@@ -516,7 +519,9 @@ export const SectionI = memo(function SectionI() {
                         className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
                       />
                     </FormControl>
-                    <FormDescription>Your TUP Manila employee ID</FormDescription>
+                    <FormDescription>
+                      Your TUP Manila employee ID
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -703,7 +708,9 @@ export const SectionI = memo(function SectionI() {
                       className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
                     />
                   </FormControl>
-                  <FormDescription>Mobile phone number (optional)</FormDescription>
+                  <FormDescription>
+                    Mobile phone number (optional)
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

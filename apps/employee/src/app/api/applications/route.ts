@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@tupsafe/auth/server';
 import { db } from '@tupsafe/database/server';
-import { jobApplications, openPositions, departments, profiles } from '@tupsafe/database/server';
+import {
+  jobApplications,
+  openPositions,
+  departments,
+  profiles,
+} from '@tupsafe/database/server';
 import { eq, desc, and } from 'drizzle-orm';
 
 // Valid application statuses that can be filtered
@@ -18,12 +23,12 @@ const VALID_STATUSES = [
   'hired',
 ] as const;
 
-type ApplicationStatus = typeof VALID_STATUSES[number];
+type ApplicationStatus = (typeof VALID_STATUSES)[number];
 
 /**
  * GET /api/applications
  * Fetch all applications for the current applicant
- * 
+ *
  * Query params:
  * - status: Filter by application status (optional)
  */
@@ -72,10 +77,7 @@ export async function GET(request: NextRequest) {
     // Employees may have been hired from applicant status and should still see their application history
     const allowedUserTypes = ['applicant', 'employee'];
     if (!allowedUserTypes.includes(profile.userType ?? '')) {
-      return NextResponse.json(
-        { error: 'Access denied.' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Access denied.' }, { status: 403 });
     }
 
     if (profile.accountStatus !== 'active') {

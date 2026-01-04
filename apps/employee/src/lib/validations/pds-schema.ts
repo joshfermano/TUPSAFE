@@ -1737,6 +1737,26 @@ export function getOverallPdsProgress(data: Partial<CompletePdsData>): number {
 }
 
 /**
+ * Calculate PDS readiness progress (submission readiness)
+ * Only considers the required sections for submission:
+ * - Personal Info (50%)
+ * - Other Info with ≥3 references (50%)
+ * 
+ * @param data - Partial PDS data
+ * @returns Completion percentage (0-100) based on submission readiness
+ */
+export function getPdsReadinessProgress(data: Partial<CompletePdsData>): number {
+  const sectionProgress = getPdsSectionProgress(data);
+  
+  // Only consider required sections for submission readiness
+  const personalInfoProgress = sectionProgress.personalInfo || 0;
+  const otherInfoProgress = sectionProgress.otherInfo || 0;
+  
+  // Equal weight: 50% for personal info, 50% for other info (references)
+  return Math.round((personalInfoProgress + otherInfoProgress) / 2);
+}
+
+/**
  * Check if PDS is ready for submission
  * @param data - Complete PDS data
  * @returns boolean indicating if PDS meets minimum requirements

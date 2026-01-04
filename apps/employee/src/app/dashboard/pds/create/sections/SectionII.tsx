@@ -62,173 +62,176 @@ export const SectionII = memo(function SectionII() {
         </div>
       </div>
 
-      {/* Spouse Information Card */}
-      {isMarried && (
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm hover:shadow-md transition-shadow duration-200">
-          <div className="p-6 sm:p-8 space-y-6">
-            <div className="flex items-center gap-2">
-              <Heart className="h-5 w-5 text-primary" />
-              <h3 className="text-base font-semibold text-foreground">
-                Spouse Information
-              </h3>
-            </div>
+      {/* Spouse Information Card - Always visible per CS Form No. 212 */}
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm hover:shadow-md transition-shadow duration-200">
+        <div className="p-6 sm:p-8 space-y-6">
+          <div className="flex items-center gap-2">
+            <Heart className="h-5 w-5 text-primary" />
+            <h3 className="text-base font-semibold text-foreground">
+              Spouse Information
+            </h3>
+            {!isMarried && (
+              <span className="text-xs text-muted-foreground italic ml-2">
+                (Leave blank if N/A)
+              </span>
+            )}
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="family.spouseSurname"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Surname</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Surname"
-                        {...field}
-                        value={field.value || ''}
-                        className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField
+              control={form.control}
+              name="family.spouseSurname"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Surname</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Surname"
+                      {...field}
+                      value={field.value || ''}
+                      className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="family.spouseFirstName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>First Name</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="First Name"
-                        {...field}
-                        value={field.value || ''}
-                        className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name="family.spouseFirstName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>First Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="First Name"
+                      {...field}
+                      value={field.value || ''}
+                      className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="family.spouseMiddleName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Middle Name</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Middle Name"
-                        {...field}
-                        value={field.value || ''}
-                        className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name="family.spouseMiddleName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Middle Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Middle Name"
+                      {...field}
+                      value={field.value || ''}
+                      className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="family.spouseNameExtension"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name Extension</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="e.g., Jr., Sr."
-                        {...field}
-                        value={field.value || ''}
-                        className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name="family.spouseNameExtension"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name Extension</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g., Jr., Sr."
+                      {...field}
+                      value={field.value || ''}
+                      className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="family.spouseOccupation"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Occupation</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="e.g., Teacher"
-                        {...field}
-                        value={field.value || ''}
-                        className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name="family.spouseOccupation"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Occupation</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g., Teacher"
+                      {...field}
+                      value={field.value || ''}
+                      className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="family.spouseEmployer"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Employer/Business Name</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="e.g., TUP Manila"
-                        {...field}
-                        value={field.value || ''}
-                        className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name="family.spouseEmployer"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Employer/Business Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g., TUP Manila"
+                      {...field}
+                      value={field.value || ''}
+                      className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="family.spouseBusinessAddress"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel>Business Address</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Complete business address"
-                        {...field}
-                        value={field.value || ''}
-                        className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name="family.spouseBusinessAddress"
+              render={({ field }) => (
+                <FormItem className="md:col-span-2">
+                  <FormLabel>Business Address</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Complete business address"
+                      {...field}
+                      value={field.value || ''}
+                      className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="family.spouseTelephoneNo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Telephone No.</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="+63-2-8123-4567"
-                        {...field}
-                        value={field.value || ''}
-                        className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="family.spouseTelephoneNo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Telephone No.</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="+63-2-8123-4567"
+                      {...field}
+                      value={field.value || ''}
+                      className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
         </div>
-      )}
+      </div>
 
       {/* Parents Information Card */}
       <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm hover:shadow-md transition-shadow duration-200">
@@ -245,7 +248,7 @@ export const SectionII = memo(function SectionII() {
             <p className="text-sm font-medium text-muted-foreground">
               Father&apos;s Name
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <FormField
                 control={form.control}
                 name="family.fatherSurname"
@@ -293,6 +296,25 @@ export const SectionII = memo(function SectionII() {
                     <FormControl>
                       <Input
                         placeholder="Middle Name"
+                        {...field}
+                        value={field.value || ''}
+                        className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="family.fatherNameExtension"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name Extension</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g., Jr., Sr."
                         {...field}
                         value={field.value || ''}
                         className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"

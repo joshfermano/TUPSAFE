@@ -5,7 +5,8 @@
  * seminar proofs, training documents) for civil service eligibility and
  * learning & development sections.
  *
- * Path format: pds/{userId}/{year}/{pdsSubmissionId}/{kind}/{itemId}/{uuid}.{ext}
+ * Path format: {userId}/pds/{year}/{pdsSubmissionId}/{kind}/{itemId}/{uuid}.{ext}
+ * - userId is FIRST to match Supabase Storage RLS policy that checks (storage.foldername(name))[1] = auth.uid()
  * - kind: 'training' | 'civil_service'
  * - itemId: trainingId or civilServiceId
  *
@@ -117,10 +118,10 @@ export function getAttachmentExtensionFromMimeType(mimeType: string): string {
 /**
  * Build storage path for a PDS attachment
  *
- * Path format: pds/{userId}/{year}/{pdsSubmissionId}/{kind}/{itemId}/{uuid}.{ext}
+ * Path format: {userId}/pds/{year}/{pdsSubmissionId}/{kind}/{itemId}/{uuid}.{ext}
  * This ensures:
- * - PDS attachments are grouped under 'pds/' prefix in user-documents bucket
- * - Each user's files are in their own folder (for RLS policies)
+ * - userId is FIRST to match Supabase Storage RLS policy: (storage.foldername(name))[1] = auth.uid()
+ * - PDS attachments are grouped under '{userId}/pds/' in user-documents bucket
  * - Organized by year and submission
  * - Grouped by attachment type (training/civil_service)
  * - Unique filenames to prevent overwrites
@@ -140,8 +141,9 @@ export function buildAttachmentPath(params: {
   const ext = getAttachmentExtensionFromMimeType(mimeType);
   const filename = `${uuidv4()}.${ext}`;
 
-  // Prefix with 'pds/' to separate from other documents in user-documents bucket
-  return `pds/${userId}/${year}/${pdsSubmissionId}/${kind}/${itemId}/${filename}`;
+  // userId MUST be first folder to satisfy Supabase Storage RLS policy
+  // RLS checks: (storage.foldername(name))[1] = auth.uid()::text
+  return `${userId}/pds/${year}/${pdsSubmissionId}/${kind}/${itemId}/${filename}`;
 }
 
 /**

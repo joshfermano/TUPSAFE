@@ -674,6 +674,42 @@ export async function updateSALNSubmission(
 }
 
 /**
+ * Update the completion percentage for a SALN submission
+ *
+ * @param id - SALN submission UUID
+ * @param completion - Completion percentage (0-100)
+ * @returns Promise<void>
+ */
+export async function updateSALNCompletion(
+  id: string,
+  completion: number
+): Promise<void> {
+  try {
+    if (!id || typeof id !== 'string') {
+      throw new Error('Valid SALN submission ID is required');
+    }
+
+    // Ensure completion is within valid range
+    const validCompletion = Math.max(0, Math.min(100, Math.round(completion)));
+
+    await db
+      .update(salnSubmissions)
+      .set({
+        completion: validCompletion,
+        updatedAt: new Date(),
+      })
+      .where(eq(salnSubmissions.id, id));
+  } catch (error) {
+    console.error('[updateSALNCompletion] Database error:', error);
+    throw new Error(
+      `Failed to update SALN completion for ${id}: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
+    );
+  }
+}
+
+/**
  * Calculate total assets, liabilities, and net worth for a SALN submission
  *
  * @param id - SALN submission ID

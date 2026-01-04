@@ -27,6 +27,7 @@ export interface PDSSubmission {
   status: PDSStatus;
   version: number;
   year: number;
+  completion: number; // Completion percentage (0-100) based on submission readiness
   submittedAt: string | null;
   reviewedAt: string | null;
   approvedAt: string | null;
@@ -213,6 +214,23 @@ async function archivePDS(id: string) {
   return response.json();
 }
 
+/**
+ * Delete a PDS submission (draft or rejected only)
+ */
+async function deletePDS(id: string) {
+  const response = await fetch(`/api/pds/${id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to delete PDS');
+  }
+
+  return response.json();
+}
+
 // ============================================================================
 // React Query Hooks
 // ============================================================================
@@ -362,7 +380,8 @@ export function useCreatePDS() {
     },
     onError: (error: Error) => {
       toast.error('Failed to create PDS', {
-        description: error.message || 'An error occurred while creating your PDS.',
+        description:
+          error.message || 'An error occurred while creating your PDS.',
       });
     },
   });
@@ -413,7 +432,8 @@ export function useUpdatePDS(id: string) {
       }
 
       toast.error('Failed to update PDS', {
-        description: error.message || 'An error occurred while updating your PDS.',
+        description:
+          error.message || 'An error occurred while updating your PDS.',
       });
     },
     onSuccess: () => {
@@ -461,7 +481,8 @@ export function useSubmitPDS(id: string) {
     },
     onError: (error: Error) => {
       toast.error('Failed to submit PDS', {
-        description: error.message || 'An error occurred while submitting your PDS.',
+        description:
+          error.message || 'An error occurred while submitting your PDS.',
       });
     },
   });
@@ -499,7 +520,45 @@ export function useArchivePDS(id: string) {
     },
     onError: (error: Error) => {
       toast.error('Failed to archive PDS', {
-        description: error.message || 'An error occurred while archiving your PDS.',
+        description:
+          error.message || 'An error occurred while archiving your PDS.',
+      });
+    },
+  });
+}
+
+/**
+ * Hook to delete a PDS submission
+ *
+ * Permanently deletes a PDS submission (draft or rejected only).
+ * This action cannot be undone. Automatically invalidates cache on success.
+ *
+ * @returns Mutation function and state
+ *
+ * @example
+ * ```tsx
+ * const deleteMutation = useDeletePDS();
+ * deleteMutation.mutate(pdsId);
+ * ```
+ */
+export function useDeletePDS() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => deletePDS(id),
+    onSuccess: (_data, id) => {
+      // Invalidate all PDS queries
+      queryClient.invalidateQueries({ queryKey: pdsKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: pdsKeys.detail(id) });
+
+      toast.success('PDS deleted successfully', {
+        description: 'Your PDS submission has been permanently deleted.',
+      });
+    },
+    onError: (error: Error) => {
+      toast.error('Failed to delete PDS', {
+        description:
+          error.message || 'An error occurred while deleting your PDS.',
       });
     },
   });

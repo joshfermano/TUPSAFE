@@ -5,10 +5,9 @@ import { z } from 'zod';
  * CSC Form No. SALN 2019 Revised
  *
  * CRITICAL COMPATIBILITY NOTES:
- * - ✅ Compatible with @tupsafe/mock-data package (current frontend development)
- * - ✅ Compatible with @tupsafe/database package (future Supabase integration)
- * - Field names match EXACTLY between mock-data and database schemas
- * - All schemas are production-ready for both phases
+ * - ✅ Compatible with @tupsafe/database package (Supabase integration)
+ * - Field names match EXACTLY with database schemas
+ * - All schemas are production-ready
  *
  * SALN Structure (7 Sections):
  * I. Declarant Information
@@ -154,64 +153,66 @@ export const RELATIONSHIP_TYPE = [
  * @see database schema: salnSubmissions (line 267-288)
  * @see mock-data: SalnSubmission type (saln.ts line 5-18)
  */
-export const declarantInfoSchema = z.object({
-  // Submission metadata (from database schema)
-  id: z.string().uuid().optional(), // UUID v7, optional for new submissions
-  userId: z.string().uuid().optional(), // References auth.users.id (added server-side)
-  year: z
-    .number()
-    .int('Year must be a whole number')
-    .min(2000, 'Year must be 2000 or later')
-    .max(new Date().getFullYear() + 1, 'Invalid year'),
+export const declarantInfoSchema = z
+  .object({
+    // Submission metadata (from database schema)
+    id: z.string().uuid().optional(), // UUID v7, optional for new submissions
+    userId: z.string().uuid().optional(), // References auth.users.id (added server-side)
+    year: z
+      .number()
+      .int('Year must be a whole number')
+      .min(2000, 'Year must be 2000 or later')
+      .max(new Date().getFullYear() + 1, 'Invalid year'),
 
-  // Filing information
-  filingType: z.enum(FILING_TYPE, {
-    required_error: 'Filing type is required',
-  }),
+    // Filing information
+    filingType: z.enum(FILING_TYPE, {
+      required_error: 'Filing type is required',
+    }),
 
-  // Spouse information (required if filingType is 'joint')
-  spouseName: z
-    .string()
-    .max(150, 'Spouse name must not exceed 150 characters')
-    .nullable()
-    .optional(),
+    // Spouse information (required if filingType is 'joint')
+    spouseName: z
+      .string()
+      .max(150, 'Spouse name must not exceed 150 characters')
+      .nullable()
+      .optional(),
 
-  // Employment information (from user profile, displayed for context)
-  position: z
-    .string()
-    .max(150, 'Position must not exceed 150 characters')
-    .optional(),
-  agency: z
-    .string()
-    .max(200, 'Agency/Office must not exceed 200 characters')
-    .optional(),
-  officeAddress: z
-    .string()
-    .max(300, 'Office address must not exceed 300 characters')
-    .optional(),
+    // Employment information (from user profile, displayed for context)
+    position: z
+      .string()
+      .max(150, 'Position must not exceed 150 characters')
+      .optional(),
+    agency: z
+      .string()
+      .max(200, 'Agency/Office must not exceed 200 characters')
+      .optional(),
+    officeAddress: z
+      .string()
+      .max(300, 'Office address must not exceed 300 characters')
+      .optional(),
 
-  // Submission status
-  status: z.enum(SUBMISSION_STATUS).default('draft'),
+    // Submission status
+    status: z.enum(SUBMISSION_STATUS).default('draft'),
 
-  // Timestamps
-  submittedAt: z.date().nullable().optional(),
-  approvedAt: z.date().nullable().optional(),
-  approvedBy: z.string().uuid().nullable().optional(),
-  createdAt: z.date().default(() => new Date()),
-  updatedAt: z.date().default(() => new Date()),
-}).refine(
-  (data) => {
-    // If filing type is 'joint', spouse name must be provided
-    if (data.filingType === 'joint') {
-      return !!data.spouseName && data.spouseName.trim().length > 0;
+    // Timestamps
+    submittedAt: z.date().nullable().optional(),
+    approvedAt: z.date().nullable().optional(),
+    approvedBy: z.string().uuid().nullable().optional(),
+    createdAt: z.date().default(() => new Date()),
+    updatedAt: z.date().default(() => new Date()),
+  })
+  .refine(
+    (data) => {
+      // If filing type is 'joint', spouse name must be provided
+      if (data.filingType === 'joint') {
+        return !!data.spouseName && data.spouseName.trim().length > 0;
+      }
+      return true;
+    },
+    {
+      message: 'Spouse name is required for joint filing',
+      path: ['spouseName'],
     }
-    return true;
-  },
-  {
-    message: 'Spouse name is required for joint filing',
-    path: ['spouseName'],
-  }
-);
+  );
 
 // ============================================================================
 // SECTION II: REAL PROPERTIES
@@ -222,55 +223,62 @@ export const declarantInfoSchema = z.object({
  * Matches database schema: salnRealProperties (line 290-312)
  * Matches mock-data: SalnRealProperty interface (saln.ts line 19-30)
  */
-export const realPropertySchema = z.object({
-  id: z.string().uuid().optional(), // UUID v7, optional for new entries
-  salnSubmissionId: z.string().uuid().optional(), // Set when saving
+export const realPropertySchema = z
+  .object({
+    id: z.string().uuid().optional(), // UUID v7, optional for new entries
+    salnSubmissionId: z.string().uuid().optional(), // Set when saving
 
-  description: z
-    .string()
-    .min(1, 'Property description is required')
-    .max(500, 'Description must not exceed 500 characters')
-    .describe('e.g., "3-bedroom house and lot", "Vacant lot", "Condominium unit"'),
+    description: z
+      .string()
+      .min(1, 'Property description is required')
+      .max(500, 'Description must not exceed 500 characters')
+      .describe(
+        'e.g., "3-bedroom house and lot", "Vacant lot", "Condominium unit"'
+      ),
 
-  kind: z.enum(PROPERTY_KIND, {
-    required_error: 'Property kind is required',
-  }),
+    kind: z.enum(PROPERTY_KIND, {
+      required_error: 'Property kind is required',
+    }),
 
-  exactLocation: z
-    .string()
-    .min(1, 'Exact location is required')
-    .max(500, 'Location must not exceed 500 characters')
-    .describe('Complete address including street, barangay, city/municipality, province'),
+    exactLocation: z
+      .string()
+      .min(1, 'Exact location is required')
+      .max(500, 'Location must not exceed 500 characters')
+      .describe(
+        'Complete address including street, barangay, city/municipality, province'
+      ),
 
-  assessedValue: currencySchema.describe(
-    'Assessed value from tax declaration (PHP)'
-  ),
+    assessedValue: currencySchema.describe(
+      'Assessed value from tax declaration (PHP)'
+    ),
 
-  currentFairMarketValue: currencySchema.describe(
-    'Current fair market value (PHP)'
-  ),
+    currentFairMarketValue: currencySchema.describe(
+      'Current fair market value (PHP)'
+    ),
 
-  acquisitionYear: pastYearSchema.describe('Year the property was acquired'),
+    acquisitionYear: pastYearSchema.describe('Year the property was acquired'),
 
-  acquisitionMode: z
-    .enum(ACQUISITION_MODE)
-    .or(z.string().max(100))
-    .describe('How the property was acquired'),
+    acquisitionMode: z
+      .enum(ACQUISITION_MODE)
+      .or(z.string().max(100))
+      .describe('How the property was acquired'),
 
-  acquisitionCost: currencySchema.describe(
-    'Original acquisition cost (PHP). Use 0 for inheritance/donation.'
-  ),
-}).refine(
-  (data) => {
-    // Current fair market value should typically be >= assessed value
-    // This is a warning, not a strict validation
-    return data.currentFairMarketValue >= data.assessedValue * 0.5; // Allow some flexibility
-  },
-  {
-    message: 'Current fair market value seems unusually low compared to assessed value',
-    path: ['currentFairMarketValue'],
-  }
-);
+    acquisitionCost: currencySchema.describe(
+      'Original acquisition cost (PHP). Use 0 for inheritance/donation.'
+    ),
+  })
+  .refine(
+    (data) => {
+      // Current fair market value should typically be >= assessed value
+      // This is a warning, not a strict validation
+      return data.currentFairMarketValue >= data.assessedValue * 0.5; // Allow some flexibility
+    },
+    {
+      message:
+        'Current fair market value seems unusually low compared to assessed value',
+      path: ['currentFairMarketValue'],
+    }
+  );
 
 // ============================================================================
 // SECTION III: PERSONAL PROPERTIES
@@ -297,7 +305,9 @@ export const personalPropertySchema = z.object({
 
   yearAcquired: pastYearSchema.describe('Year the property was acquired'),
 
-  acquisitionCost: currencySchema.describe('Acquisition cost or current value (PHP)'),
+  acquisitionCost: currencySchema.describe(
+    'Acquisition cost or current value (PHP)'
+  ),
 });
 
 // ============================================================================
@@ -319,7 +329,9 @@ export const liabilitySchema = z.object({
     .string()
     .min(1, 'Nature of liability is required')
     .max(200, 'Nature must not exceed 200 characters')
-    .describe('e.g., "Home Mortgage Loan", "Car Loan", "Personal Loan", "Credit Card"'),
+    .describe(
+      'e.g., "Home Mortgage Loan", "Car Loan", "Personal Loan", "Credit Card"'
+    ),
 
   creditorName: z
     .string()
@@ -327,7 +339,9 @@ export const liabilitySchema = z.object({
     .max(200, 'Creditor name must not exceed 200 characters')
     .describe('Name of bank, lending institution, or creditor'),
 
-  outstandingBalance: currencySchema.describe('Current outstanding balance (PHP)'),
+  outstandingBalance: currencySchema.describe(
+    'Current outstanding balance (PHP)'
+  ),
 });
 
 // ============================================================================
@@ -464,7 +478,9 @@ export const completeSalnSchema = z
     personalProperties: z
       .array(personalPropertySchema)
       .default([])
-      .describe('List of all personal properties (vehicles, jewelry, cash, investments, etc.)'),
+      .describe(
+        'List of all personal properties (vehicles, jewelry, cash, investments, etc.)'
+      ),
 
     // Section IV: Liabilities
     liabilities: z
@@ -482,7 +498,9 @@ export const completeSalnSchema = z
     relativesInGov: z
       .array(relativeInGovernmentSchema)
       .default([])
-      .describe('List of relatives within 4th degree in government (can be empty)'),
+      .describe(
+        'List of relatives within 4th degree in government (can be empty)'
+      ),
 
     // Section VII: Summary (auto-calculated, optional for validation)
     calculations: salnSummarySchema.optional(),
@@ -495,7 +513,8 @@ export const completeSalnSchema = z
       return hasAssets;
     },
     {
-      message: 'At least one asset (real property or personal property) is required',
+      message:
+        'At least one asset (real property or personal property) is required',
       path: ['realProperties'],
     }
   )
@@ -519,7 +538,8 @@ export const completeSalnSchema = z
         // Allow small rounding differences (within 1 peso)
         const realPropertyMatch =
           Math.abs(
-            data.calculations.totalRealPropertyValue - calculatedTotalRealProperty
+            data.calculations.totalRealPropertyValue -
+              calculatedTotalRealProperty
           ) < 1;
         const personalPropertyMatch =
           Math.abs(
@@ -527,8 +547,9 @@ export const completeSalnSchema = z
               calculatedTotalPersonalProperty
           ) < 1;
         const liabilitiesMatch =
-          Math.abs(data.calculations.totalLiabilities - calculatedTotalLiabilities) <
-          1;
+          Math.abs(
+            data.calculations.totalLiabilities - calculatedTotalLiabilities
+          ) < 1;
 
         return realPropertyMatch && personalPropertyMatch && liabilitiesMatch;
       }
@@ -571,7 +592,10 @@ export type RelationshipType = (typeof RELATIONSHIP_TYPE)[number];
  * @param userId - The user's UUID (optional, can be added server-side)
  * @returns Empty SALN data object with default values
  */
-export function createEmptySaln(year: number, userId?: string): Partial<CompleteSalnData> {
+export function createEmptySaln(
+  year: number,
+  userId?: string
+): Partial<CompleteSalnData> {
   return {
     submission: {
       userId,
@@ -606,7 +630,7 @@ export function calculateTotalRealPropertyValue(
 ): number {
   return realProperties.reduce((sum, prop) => {
     const value = prop.currentFairMarketValue;
-    const numValue = typeof value === 'string' ? parseFloat(value) : (value || 0);
+    const numValue = typeof value === 'string' ? parseFloat(value) : value || 0;
     return sum + (isNaN(numValue) ? 0 : numValue);
   }, 0);
 }
@@ -621,7 +645,7 @@ export function calculateTotalPersonalPropertyValue(
 ): number {
   return personalProperties.reduce((sum, prop) => {
     const value = prop.acquisitionCost;
-    const numValue = typeof value === 'string' ? parseFloat(value) : (value || 0);
+    const numValue = typeof value === 'string' ? parseFloat(value) : value || 0;
     return sum + (isNaN(numValue) ? 0 : numValue);
   }, 0);
 }
@@ -637,7 +661,8 @@ export function calculateTotalAssets(
   personalProperties: PersonalProperty[]
 ): number {
   const realPropertyValue = calculateTotalRealPropertyValue(realProperties);
-  const personalPropertyValue = calculateTotalPersonalPropertyValue(personalProperties);
+  const personalPropertyValue =
+    calculateTotalPersonalPropertyValue(personalProperties);
   return realPropertyValue + personalPropertyValue;
 }
 
@@ -649,7 +674,8 @@ export function calculateTotalAssets(
 export function calculateTotalLiabilities(liabilities: Liability[]): number {
   return liabilities.reduce((sum, liability) => {
     const balance = liability.outstandingBalance;
-    const numBalance = typeof balance === 'string' ? parseFloat(balance) : (balance || 0);
+    const numBalance =
+      typeof balance === 'string' ? parseFloat(balance) : balance || 0;
     return sum + (isNaN(numBalance) ? 0 : numBalance);
   }, 0);
 }
@@ -669,7 +695,9 @@ export function calculateNetWorth(assets: number, liabilities: number): number {
  * @param data - Partial or complete SALN data
  * @returns Complete summary object
  */
-export function calculateSalnSummary(data: Partial<CompleteSalnData>): SalnSummary {
+export function calculateSalnSummary(
+  data: Partial<CompleteSalnData>
+): SalnSummary {
   const totalRealPropertyValue = calculateTotalRealPropertyValue(
     data.realProperties || []
   );
@@ -821,7 +849,8 @@ export function getSalnSectionProgress(
     data.personalProperties && data.personalProperties.length > 0 ? 100 : 0;
 
   // Section IV: Liabilities (optional, but 100% if any exist)
-  progress.liabilities = data.liabilities && data.liabilities.length > 0 ? 100 : 100; // 100% even if empty
+  progress.liabilities =
+    data.liabilities && data.liabilities.length > 0 ? 100 : 100; // 100% even if empty
 
   // Section V: Business Interests (optional)
   progress.businessInterests =
@@ -839,7 +868,9 @@ export function getSalnSectionProgress(
  * @param data - Partial SALN data
  * @returns Completion percentage (0-100)
  */
-export function getOverallSalnProgress(data: Partial<CompleteSalnData>): number {
+export function getOverallSalnProgress(
+  data: Partial<CompleteSalnData>
+): number {
   const sectionProgress = getSalnSectionProgress(data);
   const sections = Object.values(sectionProgress);
   const total = sections.reduce((sum, progress) => sum + progress, 0);
@@ -847,11 +878,41 @@ export function getOverallSalnProgress(data: Partial<CompleteSalnData>): number 
 }
 
 /**
+ * Calculate SALN readiness progress (submission readiness)
+ * Only considers the required sections for submission:
+ * - Declarant Info (50%)
+ * - Has at least one asset (real or personal property) (50%)
+ *
+ * @param data - Partial SALN data
+ * @returns Completion percentage (0-100) based on submission readiness
+ */
+export function getSalnReadinessProgress(
+  data: Partial<CompleteSalnData>
+): number {
+  const sectionProgress = getSalnSectionProgress(data);
+
+  // Declarant info progress
+  const declarantProgress = sectionProgress.declarantInfo || 0;
+
+  // Has assets check: 100 if at least one asset (real or personal property), 0 otherwise
+  const hasRealProperties =
+    data.realProperties && data.realProperties.length > 0;
+  const hasPersonalProperties =
+    data.personalProperties && data.personalProperties.length > 0;
+  const assetsProgress = hasRealProperties || hasPersonalProperties ? 100 : 0;
+
+  // Equal weight: 50% for declarant info, 50% for having assets
+  return Math.round((declarantProgress + assetsProgress) / 2);
+}
+
+/**
  * Check if SALN is ready for submission
  * @param data - Complete SALN data
  * @returns boolean indicating if SALN meets minimum requirements
  */
-export function isSalnReadyForSubmission(data: Partial<CompleteSalnData>): boolean {
+export function isSalnReadyForSubmission(
+  data: Partial<CompleteSalnData>
+): boolean {
   try {
     // Must have declarant information
     if (!data.submission) return false;

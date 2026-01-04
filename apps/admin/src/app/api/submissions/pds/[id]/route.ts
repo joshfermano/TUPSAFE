@@ -42,7 +42,7 @@ import {
 } from '@tupsafe/database/server';
 import { and, eq, desc } from 'drizzle-orm';
 import { createAuditLog } from '@tupsafe/database/utils/audit-log';
-import { getAttachmentPublicUrl } from '@tupsafe/auth/server';
+import { PDS_ATTACHMENTS_BUCKET, SIGNED_URL_EXPIRY_SECONDS } from '@tupsafe/auth/server';
 import type { PDSSubmissionDetail } from '@tupsafe/types';
 
 export async function GET(
@@ -258,20 +258,40 @@ export async function GET(
     // Get Supabase URL for public URLs
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 
+    // Generate signed URLs for attachments (private bucket requires signed URLs)
+    const processedAttachments = await Promise.all(
+      attachmentsList.map(async (att) => {
+        let fileUrl: string | null = null;
+
+        if (att.filePath) {
+          try {
+            const { data: signedUrlData } = await adminClient.storage
+              .from(PDS_ATTACHMENTS_BUCKET)
+              .createSignedUrl(att.filePath, SIGNED_URL_EXPIRY_SECONDS);
+
+            fileUrl = signedUrlData?.signedUrl || null;
+          } catch (error) {
+            console.error(`Failed to generate signed URL for attachment ${att.id}:`, error);
+          }
+        }
+
+        return {
+          id: att.id,
+          fileName: att.fileName,
+          mimeType: att.mimeType,
+          sizeBytes: att.sizeBytes,
+          filePath: att.filePath,
+          fileUrl,
+          trainingId: att.trainingId,
+          civilServiceId: att.civilServiceId,
+          createdAt: att.createdAt,
+        };
+      })
+    );
+
     // Group attachments by training ID and civil service ID
     const attachmentsByTraining: Record<string, typeof processedAttachments> = {};
     const attachmentsByCivilService: Record<string, typeof processedAttachments> = {};
-    const processedAttachments = attachmentsList.map((att) => ({
-      id: att.id,
-      fileName: att.fileName,
-      mimeType: att.mimeType,
-      sizeBytes: att.sizeBytes,
-      filePath: att.filePath,
-      fileUrl: getAttachmentPublicUrl(supabaseUrl, att.filePath),
-      trainingId: att.trainingId,
-      civilServiceId: att.civilServiceId,
-      createdAt: att.createdAt,
-    }));
 
     processedAttachments.forEach((att) => {
       if (att.trainingId) {
@@ -365,6 +385,8 @@ export async function GET(
             }
           : null,
       },
+      // pdsData uses canonical flat field names (same as employee API)
+      // This ensures transformPdsForPdf() works consistently across both portals
       pdsData: {
         personalInfo: personalInfo
           ? {
@@ -376,69 +398,49 @@ export async function GET(
               placeOfBirth: personalInfo.placeOfBirth ?? undefined,
               sex: personalInfo.sex ?? undefined,
               civilStatus: personalInfo.civilStatus ?? undefined,
-              height: personalInfo.heightM ? parseFloat(personalInfo.heightM) : undefined,
-              weight: personalInfo.weightKg ? parseFloat(personalInfo.weightKg) : undefined,
+              heightM: personalInfo.heightM ?? undefined,
+              weightKg: personalInfo.weightKg ?? undefined,
               bloodType: personalInfo.bloodType ?? undefined,
               gsisNo: personalInfo.gsisNo ?? undefined,
               pagibigNo: personalInfo.pagibigNo ?? undefined,
               philhealthNo: personalInfo.philhealthNo ?? undefined,
               sssNo: personalInfo.sssNo ?? undefined,
               tinNo: personalInfo.tinNo ?? undefined,
-              citizenship: personalInfo.citizenship as string | undefined,
-              residentialAddress: personalInfo.residentialAddress as {
-                houseNo?: string;
-                street?: string;
-                subdivision?: string;
-                barangay?: string;
-                city?: string;
-                province?: string;
-                zipCode?: string;
-              } | undefined,
-              permanentAddress: personalInfo.permanentAddress as {
-                houseNo?: string;
-                street?: string;
-                subdivision?: string;
-                barangay?: string;
-                city?: string;
-                province?: string;
-                zipCode?: string;
-              } | undefined,
+              agencyEmployeeNo: personalInfo.agencyEmployeeNo ?? undefined,
+              citizenship: personalInfo.citizenship,
+              residentialAddress: personalInfo.residentialAddress,
+              permanentAddress: personalInfo.permanentAddress,
               telephoneNo: personalInfo.telephoneNo ?? undefined,
               mobileNo: personalInfo.mobileNo ?? undefined,
               emailAddress: personalInfo.emailAddress ?? undefined,
             }
-          : {},
+          : null,
+        // familyBackground: flat DB field names for PDF transform compatibility
         familyBackground: familyBackground
           ? {
-              spouse: {
-                surname: familyBackground.spouseSurname ?? undefined,
-                firstName: familyBackground.spouseFirstName ?? undefined,
-                middleName: familyBackground.spouseMiddleName ?? undefined,
-                nameExtension: familyBackground.spouseNameExtension ?? undefined,
-                occupation: familyBackground.spouseOccupation ?? undefined,
-                employer: familyBackground.spouseEmployer ?? undefined,
-                businessAddress: familyBackground.spouseBusinessAddress ?? undefined,
-                telephoneNo: familyBackground.spouseTelephoneNo ?? undefined,
-              },
-              father: {
-                surname: familyBackground.fatherSurname ?? undefined,
-                firstName: familyBackground.fatherFirstName ?? undefined,
-                middleName: familyBackground.fatherMiddleName ?? undefined,
-                nameExtension: familyBackground.fatherNameExtension ?? undefined,
-              },
-              mother: {
-                maidenName: familyBackground.motherMaidenSurname ?? undefined,
-                surname: undefined, // Not in DB schema
-                firstName: familyBackground.motherFirstName ?? undefined,
-                middleName: familyBackground.motherMiddleName ?? undefined,
-              },
+              spouseSurname: familyBackground.spouseSurname ?? undefined,
+              spouseFirstName: familyBackground.spouseFirstName ?? undefined,
+              spouseMiddleName: familyBackground.spouseMiddleName ?? undefined,
+              spouseNameExtension: familyBackground.spouseNameExtension ?? undefined,
+              spouseOccupation: familyBackground.spouseOccupation ?? undefined,
+              spouseEmployer: familyBackground.spouseEmployer ?? undefined,
+              spouseBusinessAddress: familyBackground.spouseBusinessAddress ?? undefined,
+              spouseTelephoneNo: familyBackground.spouseTelephoneNo ?? undefined,
+              fatherSurname: familyBackground.fatherSurname ?? undefined,
+              fatherFirstName: familyBackground.fatherFirstName ?? undefined,
+              fatherMiddleName: familyBackground.fatherMiddleName ?? undefined,
+              fatherNameExtension: familyBackground.fatherNameExtension ?? undefined,
+              motherMaidenSurname: familyBackground.motherMaidenSurname ?? undefined,
+              motherFirstName: familyBackground.motherFirstName ?? undefined,
+              motherMiddleName: familyBackground.motherMiddleName ?? undefined,
             }
-          : {},
+          : null,
         children: children.map((child) => ({
           fullName: child.fullName,
           dateOfBirth: child.dateOfBirth,
         })),
         education: education.map((edu) => ({
+          id: edu.id,
           level: edu.level,
           schoolName: edu.schoolName,
           degreeCourse: edu.degreeCourse ?? undefined,
@@ -450,31 +452,33 @@ export async function GET(
         })),
         civilService: civilService.map((cs) => ({
           id: cs.id,
-          careerService: cs.eligibilityName ?? undefined,
-          rating: cs.rating ? parseFloat(cs.rating) : undefined,
-          dateOfExamination: cs.dateOfExam ?? undefined,
-          placeOfExamination: cs.placeOfExam ?? undefined,
-          licenseNumber: cs.licenseNo ?? undefined,
-          validity: cs.licenseValidityDate ?? undefined,
+          eligibilityName: cs.eligibilityName ?? undefined,
+          rating: cs.rating ? parseFloat(cs.rating) : null,
+          dateOfExam: cs.dateOfExam ?? undefined,
+          placeOfExam: cs.placeOfExam ?? undefined,
+          licenseNo: cs.licenseNo ?? undefined,
+          licenseValidityDate: cs.licenseValidityDate ?? undefined,
           attachments: attachmentsByCivilService[cs.id] || [],
         })),
         workExperience: workExperience.map((we) => ({
+          id: we.id,
           positionTitle: we.positionTitle ?? undefined,
-          department: we.departmentAgency ?? undefined,
-          monthlySalary: we.monthlySalary ? parseFloat(we.monthlySalary) : undefined,
+          departmentAgency: we.departmentAgency ?? undefined,
+          monthlySalary: we.monthlySalary ?? undefined,
           salaryGrade: we.salaryGrade ?? undefined,
           statusOfAppointment: we.statusOfAppointment ?? undefined,
-          govService: we.isGovernment ?? undefined,
-          periodFrom: we.dateFrom ?? undefined,
-          periodTo: we.dateTo ?? undefined,
+          isGovernment: we.isGovernment ?? undefined,
+          dateFrom: we.dateFrom ?? undefined,
+          dateTo: we.dateTo ?? undefined,
         })),
         voluntaryWork: voluntaryWork.map((vw) => ({
+          id: vw.id,
           organizationName: vw.organizationName ?? undefined,
+          organizationAddress: vw.organizationAddress ?? undefined,
           positionNature: vw.positionNature ?? undefined,
           dateFrom: vw.dateFrom ?? undefined,
           dateTo: vw.dateTo ?? undefined,
           numberOfHours: vw.numberOfHours ?? undefined,
-          organizationAddress: vw.organizationAddress ?? undefined,
         })),
         training: training.map((t) => ({
           id: t.id,
@@ -488,38 +492,13 @@ export async function GET(
         })),
         otherInfo: otherInfo
           ? {
-              skills: Array.isArray(otherInfo.skills) ? (otherInfo.skills as string[]) : undefined,
-              recognitions: Array.isArray(otherInfo.recognitions)
-                ? (otherInfo.recognitions as Array<{ recognition?: string; date?: string }>)
-                : undefined,
-              organizations: Array.isArray(otherInfo.associations)
-                ? (otherInfo.associations as Array<{ organization?: string; role?: string }>)
-                : undefined,
-              references: Array.isArray(otherInfo.references)
-                ? (otherInfo.references as Array<{ name?: string; address?: string; telephoneNo?: string }>)
-                : undefined,
-              questions: otherInfo.questions ? (otherInfo.questions as {
-                Q34_criminal_charged?: boolean;
-                Q34_criminal_charged_details?: string;
-                Q35_criminal_convicted?: boolean;
-                Q35_criminal_convicted_details?: string;
-                Q36_separated_from_service?: boolean;
-                Q36_separated_from_service_details?: string;
-                Q37_candidate_for_election?: boolean;
-                Q37_candidate_for_election_details?: string;
-                Q38_resigned_from_government?: boolean;
-                Q38_resigned_from_government_details?: string;
-                Q39_immigrant_or_acquired_residence?: boolean;
-                Q39_immigrant_or_acquired_residence_details?: string;
-                Q40_indigenous_group?: boolean;
-                Q40_indigenous_group_details?: string;
-                Q41_disabled?: boolean;
-                Q41_disabled_details?: string;
-                Q42_solo_parent?: boolean;
-                Q42_solo_parent_details?: string;
-              }) : undefined,
+              skills: otherInfo.skills,
+              recognitions: otherInfo.recognitions,
+              associations: otherInfo.associations,
+              references: otherInfo.references,
+              questions: otherInfo.questions,
             }
-          : {},
+          : null,
       },
       previousVersions,
       auditTrail: auditTrail.map((log) => ({

@@ -11,12 +11,44 @@ import { profiles } from '@tupsafe/database/schema';
 import { eq } from 'drizzle-orm';
 import {
   getSALNSubmissions,
+  getSALNSubmissionById,
   createSALNSubmission,
   getActiveSALNDraft,
   updateSALNSubmission,
+  updateSALNCompletion,
   type CreateSalnInput,
 } from '@tupsafe/database/server';
-import { transformSalnForSubmission } from '../../../lib/utils/saln-transformations';
+import { transformSalnForSubmission, transformSalnFromBackend } from '../../../lib/utils/saln-transformations';
+import { getSalnReadinessProgress } from '../../../lib/validations/saln-schema';
+
+/**
+ * Helper function to compute and persist SALN completion
+ * Fetches the full submission, transforms to frontend format, computes readiness, and stores it
+ */
+async function computeAndPersistCompletion(salnId: string, userId: string): Promise<void> {
+  try {
+    // Fetch the complete SALN submission
+    const saln = await getSALNSubmissionById(salnId, userId);
+    if (!saln) {
+      console.warn(`[computeAndPersistCompletion] SALN ${salnId} not found`);
+      return;
+    }
+
+    // Transform to frontend format for progress calculation
+    const frontendData = transformSalnFromBackend(saln);
+
+    // Compute readiness-based completion (declarant info + has assets)
+    const completion = getSalnReadinessProgress(frontendData);
+
+    // Persist the completion value
+    await updateSALNCompletion(salnId, completion);
+
+    console.log(`[computeAndPersistCompletion] Updated SALN ${salnId} completion to ${completion}%`);
+  } catch (error) {
+    // Log but don't fail the main operation
+    console.error(`[computeAndPersistCompletion] Failed for SALN ${salnId}:`, error);
+  }
+}
 
 /**
  * GET /api/saln
@@ -331,6 +363,9 @@ export async function POST(request: NextRequest) {
       // Update existing draft
       await updateSALNSubmission(existingDraftId, user.id, salnInput);
 
+      // Compute and persist the completion percentage
+      await computeAndPersistCompletion(existingDraftId, user.id);
+
       return NextResponse.json(
         {
           success: true,
@@ -346,6 +381,9 @@ export async function POST(request: NextRequest) {
     // ========================================================================
     // No recent draft exists - create new one
     const newSaln = await createSALNSubmission(user.id, salnInput);
+
+    // Compute and persist the completion percentage
+    await computeAndPersistCompletion(newSaln.id, user.id);
 
     console.log(
       `[POST /api/saln] Created new SALN submission ${newSaln.id} for user ${user.id}, year ${year}`

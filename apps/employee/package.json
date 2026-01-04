@@ -30,7 +30,6 @@
     "@tanstack/react-query-devtools": "^5.62.19",
     "@tupsafe/auth": "*",
     "@tupsafe/database": "*",
-    "@tupsafe/mock-data": "*",
     "@tupsafe/shared-ui": "*",
     "@tupsafe/types": "*",
     "canvas-confetti": "^1.9.4",

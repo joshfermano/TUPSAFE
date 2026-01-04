@@ -28,11 +28,28 @@ import type { PDSData } from '../../components/pds/pdf/types';
 
 /**
  * Helper function to convert string to Date
+ * Handles ISO date strings (YYYY-MM-DD) using LOCAL timezone to prevent -1 day shift
  */
 function stringToDate(value: any): Date | null {
   if (!value) return null;
   if (value instanceof Date) return value;
   if (typeof value === 'string') {
+    // Check if it's an ISO date string (YYYY-MM-DD) - parse as LOCAL time
+    const dateOnlyRegex = /^(\d{4})-(\d{2})-(\d{2})$/;
+    const match = value.match(dateOnlyRegex);
+    if (match) {
+      // Parse as local timezone to prevent -1 day shift from UTC conversion
+      const year = parseInt(match[1], 10);
+      const month = parseInt(match[2], 10) - 1; // JS months are 0-indexed
+      const day = parseInt(match[3], 10);
+      const date = new Date(year, month, day);
+      // Validate the date components match (handles invalid dates like Feb 30)
+      if (date.getFullYear() === year && date.getMonth() === month && date.getDate() === day) {
+        return date;
+      }
+      return null;
+    }
+    // For other date formats (e.g., ISO datetime), use standard parsing
     const date = new Date(value);
     return isNaN(date.getTime()) ? null : date;
   }
@@ -83,16 +100,41 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
     }));
   }
 
-  // Convert Civil Service Eligibility dates
+  // Convert Civil Service Eligibility dates and rating
   if (transformedData.eligibility) {
     transformedData.eligibility = transformedData.eligibility.map((item: any) => ({
       ...item,
+      id: item.id, // CRITICAL: Preserve ID for attachment linking (upsert-by-id logic)
       dateOfExam: stringToDate(item.dateOfExam),
       licenseValidityDate: stringToDate(item.licenseValidityDate),
+      rating: stringToNumber(item.rating),
+      _attachmentIds: item._attachmentIds || [], // Preserve for draft metadata
     }));
+
+    // Log civil service data for debugging
+    console.log('[transformPdsForSubmission] Civil Service entries:', {
+      count: transformedData.eligibility.length,
+      entries: transformedData.eligibility.map((cs: any) => ({
+        id: cs.id,
+        eligibilityName: cs.eligibilityName,
+        hasDateOfExam: !!cs.dateOfExam,
+      })),
+    });
+
+    // Filter out completely empty entries (but preserve entries with IDs for upsert)
+    transformedData.eligibility = transformedData.eligibility.filter(
+      (cs: any) => {
+        // Always keep entries with IDs (already in database, may have attachments)
+        if (cs.id) {
+          return true;
+        }
+        // For new entries, require at least eligibilityName
+        return cs.eligibilityName && cs.eligibilityName.trim() !== '';
+      }
+    );
   }
 
-  // Convert Work Experience dates
+  // Convert Work Experience dates and filter empty entries
   if (transformedData.workExperience) {
     transformedData.workExperience = transformedData.workExperience.map((item: any) => ({
       ...item,
@@ -100,9 +142,14 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
       dateTo: stringToDate(item.dateTo),
       monthlySalary: stringToNumber(item.monthlySalary),
     }));
+    // Filter out empty/incomplete work experience entries
+    // dateFrom is NOT NULL in database - only keep entries with valid dateFrom
+    transformedData.workExperience = transformedData.workExperience.filter(
+      (work: any) => work.dateFrom !== null && work.dateFrom !== undefined
+    );
   }
 
-  // Convert Voluntary Work dates
+  // Convert Voluntary Work dates and filter empty entries
   if (transformedData.voluntaryWork) {
     transformedData.voluntaryWork = transformedData.voluntaryWork.map((item: any) => ({
       ...item,
@@ -110,16 +157,62 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
       dateTo: stringToDate(item.dateTo),
       numberOfHours: stringToNumber(item.numberOfHours),
     }));
+    // Filter out empty/incomplete voluntary work entries
+    // dateFrom is NOT NULL in database - only keep entries with valid dateFrom
+    transformedData.voluntaryWork = transformedData.voluntaryWork.filter(
+      (vol: any) => vol.dateFrom !== null && vol.dateFrom !== undefined
+    );
   }
 
-  // Convert Learning Development dates
+  // Convert Learning Development dates and filter empty entries
   if (transformedData.learningDevelopment) {
     transformedData.learningDevelopment = transformedData.learningDevelopment.map((item: any) => ({
       ...item,
+      id: item.id, // CRITICAL: Preserve ID for attachment linking (upsert-by-id logic)
       dateFrom: stringToDate(item.dateFrom),
       dateTo: stringToDate(item.dateTo),
       hours: stringToNumber(item.hours),
+      _attachmentIds: item._attachmentIds || [], // Preserve for draft metadata
     }));
+
+    // Log training data BEFORE filtering
+    console.log('[transformPdsForSubmission] Training entries BEFORE filter:', {
+      count: transformedData.learningDevelopment.length,
+      entries: transformedData.learningDevelopment.map((t: any) => ({
+        id: t.id,
+        title: t.title,
+        hasDateFrom: !!t.dateFrom,
+        hasDateTo: !!t.dateTo,
+        dateFrom: t.dateFrom,
+        dateTo: t.dateTo,
+      })),
+    });
+
+    // Filter out empty/incomplete training entries
+    // IMPORTANT: Preserve entries that have IDs (already saved in DB) even if dates are incomplete
+    // This prevents deletion of training entries with attachments during auto-save
+    transformedData.learningDevelopment = transformedData.learningDevelopment.filter(
+      (training: any) => {
+        // Always keep entries with IDs (already in database, may have attachments)
+        if (training.id) {
+          return true;
+        }
+        // For new entries without IDs, require both dates to be valid
+        return training.dateFrom !== null && training.dateFrom !== undefined &&
+               training.dateTo !== null && training.dateTo !== undefined;
+      }
+    );
+
+    // Log training data AFTER filtering
+    console.log('[transformPdsForSubmission] Training entries AFTER filter:', {
+      count: transformedData.learningDevelopment.length,
+      entries: transformedData.learningDevelopment.map((t: any) => ({
+        id: t.id,
+        title: t.title,
+        hasDateFrom: !!t.dateFrom,
+        hasDateTo: !!t.dateTo,
+      })),
+    });
   }
 
   // ========================================================================
@@ -238,9 +331,31 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
   // STEP 3: Create backend-compatible data structure
   // ========================================================================
   // Backend expects specific field names for different sections
+  // IMPORTANT: Children must be extracted as a SEPARATE property from family
+  // The backend expects: { familyBackground: {...}, children: [...] }
+  // NOT: { familyBackground: { ..., children: [...] } }
   const backendData = {
     ...transformedData,
-    familyBackground: transformedData.family, // Map 'family' to 'familyBackground'
+    // Extract family background WITHOUT children (children go as separate property)
+    familyBackground: transformedData.family ? {
+      spouseSurname: transformedData.family.spouseSurname ?? null,
+      spouseFirstName: transformedData.family.spouseFirstName ?? null,
+      spouseMiddleName: transformedData.family.spouseMiddleName ?? null,
+      spouseNameExtension: transformedData.family.spouseNameExtension ?? null,
+      spouseOccupation: transformedData.family.spouseOccupation ?? null,
+      spouseEmployer: transformedData.family.spouseEmployer ?? null,
+      spouseBusinessAddress: transformedData.family.spouseBusinessAddress ?? null,
+      spouseTelephoneNo: transformedData.family.spouseTelephoneNo ?? null,
+      fatherSurname: transformedData.family.fatherSurname ?? null,
+      fatherFirstName: transformedData.family.fatherFirstName ?? null,
+      fatherMiddleName: transformedData.family.fatherMiddleName ?? null,
+      fatherNameExtension: transformedData.family.fatherNameExtension ?? null,
+      motherMaidenSurname: transformedData.family.motherMaidenSurname ?? null,
+      motherFirstName: transformedData.family.motherFirstName ?? null,
+      motherMiddleName: transformedData.family.motherMiddleName ?? null,
+    } : undefined,
+    // Extract children as separate array for backend API
+    children: transformedData.family?.children || [],
     education: educationArray, // Use transformed education array
     civilService: transformedData.eligibility, // Map 'eligibility' to 'civilService'
     training: transformedData.learningDevelopment, // Map 'learningDevelopment' to 'training'
@@ -250,6 +365,16 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
   delete (backendData as any).family;
   delete (backendData as any).eligibility;
   delete (backendData as any).learningDevelopment;
+
+  // Log the final backend data structure for debugging
+  console.log('[transformPdsForSubmission] Final backend data:', {
+    hasCivilService: !!backendData.civilService,
+    civilServiceCount: backendData.civilService?.length || 0,
+    hasTraining: !!backendData.training,
+    trainingCount: backendData.training?.length || 0,
+    trainingWithIds: backendData.training?.filter((t: any) => t.id).length || 0,
+    trainingWithoutIds: backendData.training?.filter((t: any) => !t.id).length || 0,
+  });
 
   return backendData;
 }
@@ -300,16 +425,97 @@ export function transformPdsFromBackend(backendData: any): Partial<CompletePdsDa
   }
 
   // ========================================================================
-  // STEP 2: Create frontend-compatible data structure
+  // STEP 2: Convert serialized data types back to proper JavaScript types
   // ========================================================================
+  // Database returns dates as ISO strings and numbers may be strings
+  // Frontend form components expect Date objects and proper numbers
+
+  // Convert Personal Info date/number fields
+  let personalInfo = backendData.personalInfo;
+  if (personalInfo) {
+    personalInfo = {
+      ...personalInfo,
+      dateOfBirth: stringToDate(personalInfo.dateOfBirth),
+      heightM: stringToNumber(personalInfo.heightM),
+      weightKg: stringToNumber(personalInfo.weightKg),
+    };
+  }
+
+  // Convert children dateOfBirth
+  let children = backendData.children || [];
+  if (Array.isArray(children)) {
+    children = children.map((child: any) => ({
+      ...child,
+      dateOfBirth: stringToDate(child.dateOfBirth),
+    }));
+  }
+
+  // Convert Civil Service dates and rating
+  let eligibility = backendData.civilService || [];
+  if (Array.isArray(eligibility)) {
+    eligibility = eligibility.map((item: any) => ({
+      ...item,
+      id: item.id, // CRITICAL: Preserve ID for attachment linking
+      dateOfExam: stringToDate(item.dateOfExam),
+      licenseValidityDate: stringToDate(item.licenseValidityDate),
+      rating: stringToNumber(item.rating),
+      _attachmentIds: item._attachmentIds || [], // Restore for PdsContext sync
+    }));
+  }
+
+  // Convert Work Experience dates and numbers
+  let workExperience = backendData.workExperience || [];
+  if (Array.isArray(workExperience)) {
+    workExperience = workExperience.map((item: any) => ({
+      ...item,
+      dateFrom: stringToDate(item.dateFrom),
+      dateTo: stringToDate(item.dateTo),
+      monthlySalary: stringToNumber(item.monthlySalary),
+    }));
+  }
+
+  // Convert Voluntary Work dates and numbers
+  let voluntaryWork = backendData.voluntaryWork || [];
+  if (Array.isArray(voluntaryWork)) {
+    voluntaryWork = voluntaryWork.map((item: any) => ({
+      ...item,
+      dateFrom: stringToDate(item.dateFrom),
+      dateTo: stringToDate(item.dateTo),
+      numberOfHours: stringToNumber(item.numberOfHours),
+    }));
+  }
+
+  // Convert Training/Learning Development dates and numbers
+  let learningDevelopment = backendData.training || [];
+  if (Array.isArray(learningDevelopment)) {
+    learningDevelopment = learningDevelopment.map((item: any) => ({
+      ...item,
+      id: item.id, // CRITICAL: Preserve ID for attachment linking
+      dateFrom: stringToDate(item.dateFrom),
+      dateTo: stringToDate(item.dateTo),
+      hours: stringToNumber(item.hours),
+      _attachmentIds: item._attachmentIds || [], // Restore for PdsContext sync
+    }));
+  }
+
+  // ========================================================================
+  // STEP 3: Create frontend-compatible data structure
+  // ========================================================================
+  // IMPORTANT: Children are stored as a SEPARATE property in backend
+  // but frontend expects them nested in family.children
+  // We must merge children back into the family object
   const frontendData: Partial<CompletePdsData> = {
-    personalInfo: backendData.personalInfo,
-    family: backendData.familyBackground, // Map familyBackground back to family
+    personalInfo,
+    // Merge children back into family object - backend stores them separately
+    family: backendData.familyBackground ? {
+      ...backendData.familyBackground,
+      children,
+    } : { children },
     education: educationObj,
-    eligibility: backendData.civilService || [],
-    workExperience: backendData.workExperience || [],
-    voluntaryWork: backendData.voluntaryWork || [],
-    learningDevelopment: backendData.training || [],
+    eligibility,
+    workExperience,
+    voluntaryWork,
+    learningDevelopment,
     otherInfo: backendData.otherInfo,
   };
 

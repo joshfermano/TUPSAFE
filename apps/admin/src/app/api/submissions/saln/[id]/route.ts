@@ -296,16 +296,55 @@ export async function GET(
             }
           : null,
       },
+      // salnData uses canonical format consistent with employee API
+      // Financial fields are converted to numbers for PDF compatibility
       salnData: {
         spouseName: submission.spouseName,
-        realProperties,
-        personalProperties,
-        liabilities,
-        businessInterests,
-        relativesInGov,
-        totalAssets: submission.totalAssets || '0',
-        totalLiabilities: submission.totalLiabilities || '0',
-        netWorth: submission.netWorth || '0',
+        // Transform real properties with number values for PDF
+        realProperties: realProperties.map((prop) => ({
+          id: prop.id,
+          description: prop.description,
+          kind: prop.kind,
+          exactLocation: prop.exactLocation,
+          assessedValue: prop.assessedValue ? parseFloat(prop.assessedValue) : 0,
+          currentFairMarketValue: prop.currentFairMarketValue ? parseFloat(prop.currentFairMarketValue) : 0,
+          acquisitionYear: prop.acquisitionYear,
+          acquisitionMode: prop.acquisitionMode,
+          acquisitionCost: prop.acquisitionCost ? parseFloat(prop.acquisitionCost) : 0,
+        })),
+        // Transform personal properties with number values for PDF
+        personalProperties: personalProperties.map((prop) => ({
+          id: prop.id,
+          description: prop.description,
+          yearAcquired: prop.yearAcquired,
+          acquisitionCost: prop.acquisitionCost ? parseFloat(prop.acquisitionCost) : 0,
+        })),
+        // Transform liabilities with number values for PDF
+        liabilities: liabilities.map((liability) => ({
+          id: liability.id,
+          nature: liability.nature,
+          creditorName: liability.creditorName,
+          outstandingBalance: liability.outstandingBalance ? parseFloat(liability.outstandingBalance) : 0,
+        })),
+        // Business interests - keep dates as strings
+        businessInterests: businessInterests.map((interest) => ({
+          id: interest.id,
+          entityName: interest.entityName,
+          businessAddress: interest.businessAddress,
+          natureOfBusiness: interest.natureOfBusiness,
+          dateOfAcquisition: interest.dateOfAcquisition,
+        })),
+        // Relatives in government - pass through
+        relativesInGov: relativesInGov.map((relative) => ({
+          id: relative.id,
+          name: relative.name,
+          relationship: relative.relationship,
+          position: relative.position,
+          agencyAddress: relative.agencyAddress,
+        })),
+        totalAssets: submission.totalAssets ? parseFloat(submission.totalAssets) : 0,
+        totalLiabilities: submission.totalLiabilities ? parseFloat(submission.totalLiabilities) : 0,
+        netWorth: submission.netWorth ? parseFloat(submission.netWorth) : 0,
       },
       previousYear,
       auditTrail: auditTrail.map((log) => ({
