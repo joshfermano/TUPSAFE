@@ -213,6 +213,16 @@ export default function SalnPage() {
   const latest = submissions[0] ?? null;
   const hasExistingSALN = submissions.length > 0;
 
+  // Filter to only approved submissions for financial calculations
+  const approvedSubmissions = useMemo(() => {
+    return submissions.filter((s: any) => s.status === 'approved');
+  }, [submissions]);
+
+  // Get latest approved submission for Net Worth Overview
+  const latestApproved = useMemo(() => {
+    return approvedSubmissions[0] ?? null;
+  }, [approvedSubmissions]);
+
   // Loading state (only from submissions query, like PDS)
   const loading = isLoading;
   const error = submissionsError?.message || null;
@@ -421,18 +431,18 @@ export default function SalnPage() {
     };
   }, [hasExistingSALN, submissions]);
 
-  // Memoize net worth calculation
+  // Memoize net worth calculation - only compare approved submissions
   const netWorthChange = useMemo(() => {
-    if (submissions.length < 2) return null;
-    const sorted = [...submissions].sort((a: any, b: any) => b.year - a.year);
+    if (approvedSubmissions.length < 2) return null;
+    const sorted = [...approvedSubmissions].sort((a: any, b: any) => b.year - a.year);
     const currentYear = sorted[0];
     const previousYear = sorted[1];
     const currentNetWorth = Number(currentYear.netWorth);
     const previousNetWorth = Number(previousYear.netWorth);
     const change = currentNetWorth - previousNetWorth;
-    const percentChange = (change / previousNetWorth) * 100;
+    const percentChange = previousNetWorth !== 0 ? (change / previousNetWorth) * 100 : 0;
     return { change, percentChange, isPositive: change >= 0 };
-  }, [submissions]);
+  }, [approvedSubmissions]);
 
   // Transform submission data to SALNData format for PDF
   const transformSALNToData = useCallback(
@@ -802,85 +812,93 @@ export default function SalnPage() {
         </BlurFade>
       )}
 
-      {/* Net Worth Overview Card */}
+      {/* Net Worth Overview Card - Only shows approved submission data */}
       <BlurFade delay={0.45}>
         <Card className="border-slate-200 dark:border-slate-800 hover:border-[oklch(0.55_0.22_15)] transition-colors">
           <CardContent className="p-5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-              {/* Net Worth */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400">
-                  <BarChart3 className="h-4 w-4" />
-                  Net Worth
-                </div>
-                <div className="flex items-end gap-2">
-                  <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                    ₱
-                    <NumberTicker
-                      value={latest ? Number(latest.netWorth) : 0}
-                    />
-                  </span>
-                </div>
-                {netWorthChange && (
-                  <div
-                    className={cn(
-                      'flex items-center gap-1 text-xs font-medium',
-                      netWorthChange.isPositive
-                        ? 'text-green-600 dark:text-green-400'
-                        : 'text-red-600 dark:text-red-400'
-                    )}>
-                    {netWorthChange.isPositive ? (
-                      <ArrowUpRight className="h-3 w-3" />
-                    ) : (
-                      <ArrowDownRight className="h-3 w-3" />
-                    )}
-                    <span>
-                      {netWorthChange.isPositive ? '+' : ''}
-                      {formatCurrency(netWorthChange.change)} (
+            {!latestApproved ? (
+              <div className="text-center py-4">
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  No approved SALN submissions yet. Financial summary will appear once a submission is approved.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                {/* Net Worth */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400">
+                    <BarChart3 className="h-4 w-4" />
+                    Net Worth
+                  </div>
+                  <div className="flex items-end gap-2">
+                    <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                      ₱
                       <NumberTicker
-                        value={Math.abs(netWorthChange.percentChange)}
-                        decimalPlaces={1}
+                        value={Number(latestApproved.netWorth) || 0}
                       />
-                      %)
                     </span>
                   </div>
-                )}
-              </div>
+                  {netWorthChange && (
+                    <div
+                      className={cn(
+                        'flex items-center gap-1 text-xs font-medium',
+                        netWorthChange.isPositive
+                          ? 'text-green-600 dark:text-green-400'
+                          : 'text-red-600 dark:text-red-400'
+                      )}>
+                      {netWorthChange.isPositive ? (
+                        <ArrowUpRight className="h-3 w-3" />
+                      ) : (
+                        <ArrowDownRight className="h-3 w-3" />
+                      )}
+                      <span>
+                        {netWorthChange.isPositive ? '+' : ''}
+                        {formatCurrency(netWorthChange.change)} (
+                        <NumberTicker
+                          value={Math.abs(netWorthChange.percentChange)}
+                          decimalPlaces={1}
+                        />
+                        %)
+                      </span>
+                    </div>
+                  )}
+                </div>
 
-              {/* Total Assets */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400">
-                  <TrendingUp className="h-4 w-4" />
-                  Total Assets
+                {/* Total Assets */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400">
+                    <TrendingUp className="h-4 w-4" />
+                    Total Assets
+                  </div>
+                  <div className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+                    ₱
+                    <NumberTicker
+                      value={Number(latestApproved.totalAssets) || 0}
+                    />
+                  </div>
+                  <div className="text-xs text-slate-600 dark:text-slate-400">
+                    Real property, personal property, and investments
+                  </div>
                 </div>
-                <div className="text-xl font-semibold text-slate-900 dark:text-slate-100">
-                  ₱
-                  <NumberTicker
-                    value={latest ? Number(latest.totalAssets) : 0}
-                  />
-                </div>
-                <div className="text-xs text-slate-600 dark:text-slate-400">
-                  Real property, personal property, and investments
-                </div>
-              </div>
 
-              {/* Total Liabilities */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400">
-                  <CreditCard className="h-4 w-4" />
-                  Total Liabilities
-                </div>
-                <div className="text-xl font-semibold text-slate-900 dark:text-slate-100">
-                  ₱
-                  <NumberTicker
-                    value={latest ? Number(latest.totalLiabilities) : 0}
-                  />
-                </div>
-                <div className="text-xs text-slate-600 dark:text-slate-400">
-                  Loans, mortgages, and other obligations
+                {/* Total Liabilities */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400">
+                    <CreditCard className="h-4 w-4" />
+                    Total Liabilities
+                  </div>
+                  <div className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+                    ₱
+                    <NumberTicker
+                      value={Number(latestApproved.totalLiabilities) || 0}
+                    />
+                  </div>
+                  <div className="text-xs text-slate-600 dark:text-slate-400">
+                    Loans, mortgages, and other obligations
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </BlurFade>

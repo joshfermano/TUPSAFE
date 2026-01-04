@@ -17,6 +17,7 @@ export {
   getSALNSubmissionById,
   getSALNByYear,
   getActiveDraft as getActiveSALNDraft,
+  getEditableSALNForYear,
   createSALNSubmission,
   updateSALNSubmission,
   updateSALNCompletion,
