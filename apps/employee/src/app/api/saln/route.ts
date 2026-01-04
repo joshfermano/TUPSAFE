@@ -13,7 +13,7 @@ import {
   getSALNSubmissions,
   getSALNSubmissionById,
   createSALNSubmission,
-  getActiveSALNDraft,
+  getEditableSALNForYear,
   updateSALNSubmission,
   updateSALNCompletion,
   type CreateSalnInput,
@@ -352,25 +352,23 @@ export async function POST(request: NextRequest) {
       relativesInGov: transformedData.relativesInGov || [],
     };
 
-    // Check for existing draft within 24 hours (deduplication)
-    const existingDraftId = await getActiveSALNDraft(user.id, year);
+    // Check for existing editable SALN (draft or rejected) for this year
+    const editableSalnId = await getEditableSALNForYear(user.id, year);
 
-    if (existingDraftId) {
+    if (editableSalnId) {
       console.log(
-        `[POST /api/saln] Found existing draft ${existingDraftId}, updating instead of creating new`
+        `[POST /api/saln] Found existing editable SALN ${editableSalnId}, updating instead of creating new`
       );
 
-      // Update existing draft
-      await updateSALNSubmission(existingDraftId, user.id, salnInput);
-
-      // Compute and persist the completion percentage
-      await computeAndPersistCompletion(existingDraftId, user.id);
+      // Update existing (draft or rejected) submission
+      await updateSALNSubmission(editableSalnId, user.id, salnInput);
+      await computeAndPersistCompletion(editableSalnId, user.id);
 
       return NextResponse.json(
         {
           success: true,
-          data: { id: existingDraftId },
-          message: 'Draft updated successfully',
+          data: { id: editableSalnId },
+          message: 'Submission updated successfully',
         },
         { status: 200 }
       );

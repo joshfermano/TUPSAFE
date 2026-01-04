@@ -7,7 +7,7 @@
  * @module queries/saln
  */
 
-import { eq, and, desc, gte } from 'drizzle-orm';
+import { eq, and, desc, gte, or } from 'drizzle-orm';
 import { db } from '../db';
 import {
   salnSubmissions,
@@ -322,6 +322,43 @@ export async function getActiveDraft(
   }
 }
 
+
+/**
+ * Get an editable SALN for a specific year (draft or rejected)
+ * Used by POST route to find existing submission to update instead of creating new
+ *
+ * @param userId - The user ID
+ * @param year - The year to check
+ * @returns The editable SALN ID if found (draft or rejected), null otherwise
+ */
+export async function getEditableSALNForYear(
+  userId: string,
+  year: number
+): Promise<string | null> {
+  try {
+    const [result] = await db
+      .select({ id: salnSubmissions.id })
+      .from(salnSubmissions)
+      .where(
+        and(
+          eq(salnSubmissions.userId, userId),
+          eq(salnSubmissions.year, year),
+          or(
+            eq(salnSubmissions.status, 'draft'),
+            eq(salnSubmissions.status, 'rejected')
+          )
+        )
+      )
+      .orderBy(desc(salnSubmissions.createdAt))
+      .limit(1);
+
+    return result?.id || null;
+  } catch (error) {
+    console.error('[getEditableSALNForYear] Error:', error);
+    return null;
+  }
+}
+
 /**
  * Create a new SALN submission with all sections in a transaction
  *
@@ -485,6 +522,18 @@ export async function updateSALNSubmission(
   }
 
   return await db.transaction(async (tx) => {
+    // Reset rejected submissions to draft when updated
+    if (existing.status === 'rejected') {
+      await tx
+        .update(salnSubmissions)
+        .set({
+          status: 'draft',
+          rejectionReason: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(salnSubmissions.id, id));
+    }
+
     // Update main submission metadata fields
     const hasMetadataUpdates =
       data.year !== undefined ||
