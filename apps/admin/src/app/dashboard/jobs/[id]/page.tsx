@@ -41,17 +41,15 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ApplicationsDataTable,
-  EditJobDialog,
   UpdateStatusDialog,
 } from '@/components/jobs';
 import {
   useOpenPositionDetails,
   usePositionApplications,
-  useOpenPositions,
   useJobApplications,
+  useOpenPositions,
 } from '@/hooks/useJobsQuery';
 import type {
-  UpdateOpenPositionData,
   UpdateApplicationStatusData,
   ApplicationStatus,
   JobApplicationListItem,
@@ -92,7 +90,6 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
   const router = useRouter();
 
   // State
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<{
     id: string;
@@ -122,17 +119,13 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
     isError: applicationsError,
   } = usePositionApplications(id, applicationsFilters);
 
-  // Get mutation functions
-  const { updatePosition, isUpdating } = useOpenPositions();
-  // Only need the mutation, not the query (we use usePositionApplications for fetching)
+  // Get mutation functions (only need the mutation, not the query)
   const { updateApplicationStatus, isUpdatingStatus } = useJobApplications({
     enableQuery: false,
   });
 
-  // Handle actions
-  const handleEdit = () => {
-    setEditDialogOpen(true);
-  };
+  // Get updatePosition mutation from useOpenPositions (it will query but we just need the mutation)
+  const { updatePosition } = useOpenPositions();
 
   const handleClosePosition = () => {
     if (
@@ -161,22 +154,6 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
     );
   };
 
-  const handleUpdatePosition = (data: UpdateOpenPositionData) => {
-    updatePosition(
-      { id, data },
-      {
-        onSuccess: () => {
-          toast.success('Position updated successfully');
-          setEditDialogOpen(false);
-        },
-        onError: (error) => {
-          toast.error('Failed to update position', {
-            description: error.message,
-          });
-        },
-      }
-    );
-  };
 
   const handleViewApplication = (applicationId: string) => {
     router.push(`/dashboard/jobs/${id}/applications/${applicationId}`);
@@ -338,7 +315,7 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={handleEdit}>
+              <Button variant="outline" onClick={() => router.push(`/dashboard/jobs/edit/${id}`)}>
                 <Edit className="mr-2 h-4 w-4" />
                 Edit
               </Button>
@@ -684,14 +661,6 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
       </Card>
 
       {/* Dialogs */}
-      <EditJobDialog
-        position={position}
-        open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
-        onSubmit={handleUpdatePosition}
-        isLoading={isUpdating}
-      />
-
       <UpdateStatusDialog
         open={statusDialogOpen}
         onOpenChange={(open) => {

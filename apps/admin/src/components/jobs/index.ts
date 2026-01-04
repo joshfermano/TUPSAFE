@@ -7,8 +7,6 @@
 export { JobsStatsCards } from './JobsStatsCards';
 export { JobsFilters } from './JobsFilters';
 export { JobsDataTable } from './JobsDataTable';
-export { CreateJobDialog } from './CreateJobDialog';
-export { EditJobDialog } from './EditJobDialog';
 export { ApplicationsDataTable } from './ApplicationsDataTable';
 export { UpdateStatusDialog } from './UpdateStatusDialog';
 export { ApplicationTimeline } from './ApplicationTimeline';

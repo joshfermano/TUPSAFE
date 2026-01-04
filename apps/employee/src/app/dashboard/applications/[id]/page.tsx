@@ -393,6 +393,62 @@ export default function ApplicationDetailsPage({
                         </ul>
                       </div>
                     )}
+
+                    {application.position.requirements && (
+                      <div className="space-y-4">
+                        <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                          Requirements
+                        </h3>
+
+                        {application.position.requirements.education &&
+                         application.position.requirements.education.length > 0 && (
+                          <div>
+                            <h4 className="font-medium text-sm text-slate-800 dark:text-slate-200 mb-1.5">
+                              Education
+                            </h4>
+                            <ul className="list-disc list-inside space-y-1 text-sm text-slate-700 dark:text-slate-300">
+                              {application.position.requirements.education.map(
+                                (edu, index) => (
+                                  <li key={index}>{edu}</li>
+                                )
+                              )}
+                            </ul>
+                          </div>
+                        )}
+
+                        {application.position.requirements.experience &&
+                         application.position.requirements.experience.length > 0 && (
+                          <div>
+                            <h4 className="font-medium text-sm text-slate-800 dark:text-slate-200 mb-1.5">
+                              Experience
+                            </h4>
+                            <ul className="list-disc list-inside space-y-1 text-sm text-slate-700 dark:text-slate-300">
+                              {application.position.requirements.experience.map(
+                                (exp, index) => (
+                                  <li key={index}>{exp}</li>
+                                )
+                              )}
+                            </ul>
+                          </div>
+                        )}
+
+                        {application.position.requirements.skills &&
+                         application.position.requirements.skills.length > 0 && (
+                          <div>
+                            <h4 className="font-medium text-sm text-slate-800 dark:text-slate-200 mb-1.5">
+                              Skills
+                            </h4>
+                            <ul className="list-disc list-inside space-y-1 text-sm text-slate-700 dark:text-slate-300">
+                              {application.position.requirements.skills.map(
+                                (skill, index) => (
+                                  <li key={index}>{skill}</li>
+                                )
+                              )}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </Card>

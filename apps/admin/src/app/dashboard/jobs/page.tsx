@@ -5,13 +5,13 @@
  * - Statistics cards
  * - Advanced filtering
  * - Positions data table
- * - Create/Edit position dialogs
+ * - Navigation to create/edit pages
  * - Standardized pagination
  */
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Briefcase, Plus, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,26 +22,31 @@ import {
   JobsStatsCards,
   JobsFilters,
   JobsDataTable,
-  CreateJobDialog,
-  EditJobDialog,
 } from '@/components/jobs';
 import { useOpenPositions } from '@/hooks/useJobsQuery';
 import { usePagination } from '@/hooks/usePagination';
 import { useQuery } from '@tanstack/react-query';
 import type { OpenPositionsFilters } from '@/hooks/useJobsQuery';
-import type { CreateOpenPositionData, UpdateOpenPositionData, JobsStatsResponse } from '@tupsafe/types';
+import type { JobsStatsResponse } from '@tupsafe/types';
 import { toast } from 'sonner';
 
 export default function JobsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Dialog states
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [editPositionId, setEditPositionId] = useState<string | null>(null);
-
   // Pagination state
   const { page, pageSize, paginationParams, setPage, setPageSize } = usePagination(20);
+
+  // Handle success toast from create page
+  useEffect(() => {
+    if (searchParams.get('created') === 'true') {
+      toast.success('Position created successfully');
+      // Clean up the URL
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('created');
+      window.history.replaceState({}, '', newUrl.toString());
+    }
+  }, [searchParams]);
 
   // Build filters from URL params
   const filters = useMemo<OpenPositionsFilters>(() => {
@@ -70,12 +75,6 @@ export default function JobsPage() {
     isLoading,
     isError,
     error,
-    createPosition,
-    isCreating,
-    createError,
-    updatePosition,
-    isUpdating,
-    updateError,
     deletePosition,
     isDeleting,
   } = useOpenPositions(filters);
@@ -98,10 +97,6 @@ export default function JobsPage() {
     router.push(`/dashboard/jobs/${id}`);
   };
 
-  const handleEdit = (id: string) => {
-    setEditPositionId(id);
-  };
-
   const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this position? This action cannot be undone.')) {
       deletePosition(id, {
@@ -117,39 +112,6 @@ export default function JobsPage() {
     }
   };
 
-  const handleCreatePosition = (data: CreateOpenPositionData) => {
-    createPosition(data, {
-      onSuccess: () => {
-        toast.success('Position created successfully');
-        setCreateDialogOpen(false);
-      },
-      onError: (error) => {
-        toast.error('Failed to create position', {
-          description: error.message,
-        });
-      },
-    });
-  };
-
-  const handleUpdatePosition = (data: UpdateOpenPositionData) => {
-    if (!editPositionId) return;
-
-    updatePosition(
-      { id: editPositionId, data },
-      {
-        onSuccess: () => {
-          toast.success('Position updated successfully');
-          setEditPositionId(null);
-        },
-        onError: (error) => {
-          toast.error('Failed to update position', {
-            description: error.message,
-          });
-        },
-      }
-    );
-  };
-
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -160,7 +122,7 @@ export default function JobsPage() {
             Manage job positions and review applications
           </p>
         </div>
-        <Button onClick={() => setCreateDialogOpen(true)}>
+        <Button onClick={() => router.push('/dashboard/jobs/create')}>
           <Plus className="mr-2 h-4 w-4" />
           Create Position
         </Button>
@@ -196,24 +158,6 @@ export default function JobsPage() {
         </Alert>
       )}
 
-      {/* Create Error */}
-      {createError && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error Creating Position</AlertTitle>
-          <AlertDescription>{createError.message}</AlertDescription>
-        </Alert>
-      )}
-
-      {/* Update Error */}
-      {updateError && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error Updating Position</AlertTitle>
-          <AlertDescription>{updateError.message}</AlertDescription>
-        </Alert>
-      )}
-
       {/* Positions Table */}
       <Card>
         <CardHeader>
@@ -232,7 +176,6 @@ export default function JobsPage() {
             data={positions}
             isLoading={isLoading || isDeleting}
             onViewDetails={handleViewDetails}
-            onEdit={handleEdit}
             onDelete={handleDelete}
           />
 
@@ -253,22 +196,6 @@ export default function JobsPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* Dialogs */}
-      <CreateJobDialog
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
-        onSubmit={handleCreatePosition}
-        isLoading={isCreating}
-      />
-
-      <EditJobDialog
-        positionId={editPositionId}
-        open={!!editPositionId}
-        onOpenChange={(open) => !open && setEditPositionId(null)}
-        onSubmit={handleUpdatePosition}
-        isLoading={isUpdating}
-      />
     </div>
   );
 }
