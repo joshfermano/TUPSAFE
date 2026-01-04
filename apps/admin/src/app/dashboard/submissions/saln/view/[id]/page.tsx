@@ -131,50 +131,49 @@ export default function SalnSubmissionViewPage() {
     [salnData?.relativesInGov]
   );
 
-  // Calculate totals
+  // Calculate totals - API now returns numbers, use directly
   const totalRealProperties = React.useMemo(() => {
     return realProperties.reduce(
-      (sum: number, prop: { acquisitionCost: string | null }) =>
-        sum + (prop.acquisitionCost ? parseFloat(prop.acquisitionCost) : 0),
+      (sum: number, prop: { currentFairMarketValue?: number }) =>
+        sum + (prop.currentFairMarketValue || 0),
       0
     );
   }, [realProperties]);
 
   const totalPersonalProperties = React.useMemo(() => {
     return personalProperties.reduce(
-      (sum: number, prop: { acquisitionCost: string | null }) =>
-        sum + (prop.acquisitionCost ? parseFloat(prop.acquisitionCost) : 0),
+      (sum: number, prop: { acquisitionCost?: number }) =>
+        sum + (prop.acquisitionCost || 0),
       0
     );
   }, [personalProperties]);
 
   const totalAssets = React.useMemo(() => {
-    // Use API-calculated total if available, otherwise calculate
-    if (salnData?.totalAssets) {
-      return parseFloat(salnData.totalAssets);
+    // API returns number values; use directly
+    if (typeof salnData?.totalAssets === 'number') {
+      return salnData.totalAssets;
     }
+    // Fallback: calculate from properties
     return totalRealProperties + totalPersonalProperties;
   }, [salnData?.totalAssets, totalRealProperties, totalPersonalProperties]);
 
   const totalLiabilities = React.useMemo(() => {
-    // Use API-calculated total if available, otherwise calculate
-    if (salnData?.totalLiabilities) {
-      return parseFloat(salnData.totalLiabilities);
+    // API returns number values; use directly
+    if (typeof salnData?.totalLiabilities === 'number') {
+      return salnData.totalLiabilities;
     }
+    // Fallback: calculate from liabilities
     return liabilities.reduce(
-      (sum: number, liability: { outstandingBalance: string | null }) =>
-        sum +
-        (liability.outstandingBalance
-          ? parseFloat(liability.outstandingBalance)
-          : 0),
+      (sum: number, liability: { outstandingBalance?: number }) =>
+        sum + (liability.outstandingBalance || 0),
       0
     );
   }, [salnData?.totalLiabilities, liabilities]);
 
   const netWorth = React.useMemo(() => {
-    // Use API-calculated net worth if available, otherwise calculate
-    if (salnData?.netWorth) {
-      return parseFloat(salnData.netWorth);
+    // API returns number values; use directly
+    if (typeof salnData?.netWorth === 'number') {
+      return salnData.netWorth;
     }
     return totalAssets - totalLiabilities;
   }, [salnData?.netWorth, totalAssets, totalLiabilities]);
@@ -184,6 +183,7 @@ export default function SalnSubmissionViewPage() {
   const employee = completeSubmission?.employee;
 
   // Transform SALN submission data to PDF format
+  // API now returns canonical format with number values - simplified transformation
   const transformSALNToData = React.useCallback((): SALNData | null => {
     if (!completeSubmission || !submission || !employee) {
       console.error('Missing required data for PDF generation:', {
@@ -197,7 +197,7 @@ export default function SalnSubmissionViewPage() {
     // Parse spouse name if filing type is joint
     let spouseInfo = undefined;
     if (submission.filingType === 'joint' && salnData?.spouseName) {
-      const nameParts = salnData.spouseName.split(' ');
+      const nameParts = salnData.spouseName.trim().split(/\s+/);
       spouseInfo = {
         surname: nameParts[nameParts.length - 1] || '',
         firstName: nameParts[0] || '',
@@ -208,6 +208,7 @@ export default function SalnSubmissionViewPage() {
       };
     }
 
+    // API returns number values in canonical format; use directly
     const pdfData: SALNData = {
       id: submission.id,
       year: submission.fiscalYear,
@@ -222,37 +223,42 @@ export default function SalnSubmissionViewPage() {
       },
       spouseInfo,
       children: [], // Children data not currently stored in DB
-      realProperties: (salnData?.realProperties || []).map((prop: any) => ({
-        description: prop.description || '',
-        kind: prop.kind || 'residential',
-        exactLocation: prop.exactLocation || '',
-        assessedValue: parseFloat(prop.assessedValue || '0'),
-        currentFairMarketValue: parseFloat(prop.currentFairMarketValue || '0'),
-        acquisitionYear: prop.acquisitionYear || new Date().getFullYear(),
-        acquisitionMode: prop.acquisitionMode || 'Purchase',
-        acquisitionCost: parseFloat(prop.acquisitionCost || '0'),
+      // Real properties - API returns numbers, pass through with defaults
+      realProperties: (salnData?.realProperties || []).map((prop: Record<string, unknown>) => ({
+        description: (prop.description as string) || '',
+        kind: (prop.kind as string) || 'residential',
+        exactLocation: (prop.exactLocation as string) || '',
+        assessedValue: (prop.assessedValue as number) || 0,
+        currentFairMarketValue: (prop.currentFairMarketValue as number) || 0,
+        acquisitionYear: (prop.acquisitionYear as number) || new Date().getFullYear(),
+        acquisitionMode: (prop.acquisitionMode as string) || 'Purchase',
+        acquisitionCost: (prop.acquisitionCost as number) || 0,
       })),
-      personalProperties: (salnData?.personalProperties || []).map((prop: any) => ({
-        description: prop.description || '',
-        yearAcquired: prop.yearAcquired || new Date().getFullYear(),
-        acquisitionCost: parseFloat(prop.acquisitionCost || '0'),
+      // Personal properties - API returns numbers
+      personalProperties: (salnData?.personalProperties || []).map((prop: Record<string, unknown>) => ({
+        description: (prop.description as string) || '',
+        yearAcquired: (prop.yearAcquired as number) || new Date().getFullYear(),
+        acquisitionCost: (prop.acquisitionCost as number) || 0,
       })),
-      liabilities: (salnData?.liabilities || []).map((liability: any) => ({
-        nature: liability.nature || '',
-        creditorName: liability.creditorName || '',
-        outstandingBalance: parseFloat(liability.outstandingBalance || '0'),
+      // Liabilities - API returns numbers
+      liabilities: (salnData?.liabilities || []).map((liability: Record<string, unknown>) => ({
+        nature: (liability.nature as string) || '',
+        creditorName: (liability.creditorName as string) || '',
+        outstandingBalance: (liability.outstandingBalance as number) || 0,
       })),
-      businessInterests: (salnData?.businessInterests || []).map((business: any) => ({
-        entityName: business.entityName || '',
-        businessAddress: business.businessAddress || '',
-        natureOfBusiness: business.natureOfBusiness || '',
-        dateOfAcquisition: business.dateOfAcquisition || new Date().toISOString(),
+      // Business interests - pass through
+      businessInterests: (salnData?.businessInterests || []).map((business: Record<string, unknown>) => ({
+        entityName: (business.entityName as string) || '',
+        businessAddress: (business.businessAddress as string) || '',
+        natureOfBusiness: (business.natureOfBusiness as string) || '',
+        dateOfAcquisition: (business.dateOfAcquisition as string) || new Date().toISOString(),
       })),
-      relativesInGov: (salnData?.relativesInGov || []).map((relative: any) => ({
-        name: relative.name || '',
-        relationship: relative.relationship || '',
-        position: relative.position || '',
-        agencyAddress: relative.agencyAddress || '',
+      // Relatives in government - pass through
+      relativesInGov: (salnData?.relativesInGov || []).map((relative: Record<string, unknown>) => ({
+        name: (relative.name as string) || '',
+        relationship: (relative.relationship as string) || '',
+        position: (relative.position as string) || '',
+        agencyAddress: (relative.agencyAddress as string) || '',
       })),
       totalAssets,
       totalLiabilities,
@@ -260,7 +266,7 @@ export default function SalnSubmissionViewPage() {
       submittedAt: submission.submittedAt,
     };
 
-    console.log('PDF data transformed successfully:', {
+    console.log('[SALN PDF] Data transformed successfully:', {
       id: pdfData.id,
       year: pdfData.year,
       filingType: pdfData.filingType,
@@ -327,19 +333,35 @@ export default function SalnSubmissionViewPage() {
     [submissionId, user?.id, requestChangesAsync]
   );
 
-  // Handle PDF download
+  // Handle PDF download with runtime assertions
   const handleExportPdf = React.useCallback(async () => {
-    const salnData = transformSALNToData();
+    const salnPdfData = transformSALNToData();
 
-    if (!salnData) {
+    if (!salnPdfData) {
       toast.error('Cannot generate PDF', {
         description: 'SALN data is not available',
       });
       return;
     }
 
+    // Runtime assertions: verify canonical data shape at PDF boundary
+    console.log('[Admin SALN PDF] Asserting data shape:', {
+      hasDeclarantInfo: !!salnPdfData.declarantInfo,
+      declarantSurname: salnPdfData.declarantInfo?.surname,
+      declarantFirstName: salnPdfData.declarantInfo?.firstName,
+      year: salnPdfData.year,
+      filingType: salnPdfData.filingType,
+      realPropertiesCount: salnPdfData.realProperties?.length,
+      personalPropertiesCount: salnPdfData.personalProperties?.length,
+      liabilitiesCount: salnPdfData.liabilities?.length,
+      totalAssets: salnPdfData.totalAssets,
+      totalAssetsType: typeof salnPdfData.totalAssets,
+      totalLiabilities: salnPdfData.totalLiabilities,
+      netWorth: salnPdfData.netWorth,
+    });
+
     try {
-      await downloadPDF(salnData);
+      await downloadPDF(salnPdfData);
       toast.success('SALN PDF downloaded successfully');
     } catch (error) {
       console.error('PDF generation error:', error);

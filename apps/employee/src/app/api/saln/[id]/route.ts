@@ -12,6 +12,7 @@ import { eq } from 'drizzle-orm';
 import {
   getSALNSubmissionById,
   updateSALNSubmission,
+  updateSALNCompletion,
   deleteSALNSubmission,
   type UpdateSalnInput,
 } from '@tupsafe/database/server';
@@ -19,6 +20,36 @@ import {
   transformSalnFromBackend,
   transformSalnForSubmission,
 } from '../../../../lib/utils/saln-transformations';
+import { getSalnReadinessProgress } from '../../../../lib/validations/saln-schema';
+
+/**
+ * Helper function to compute and persist SALN completion
+ * Fetches the full submission, transforms to frontend format, computes readiness, and stores it
+ */
+async function computeAndPersistCompletion(salnId: string, userId: string): Promise<void> {
+  try {
+    // Fetch the complete SALN submission
+    const saln = await getSALNSubmissionById(salnId, userId);
+    if (!saln) {
+      console.warn(`[computeAndPersistCompletion] SALN ${salnId} not found`);
+      return;
+    }
+
+    // Transform to frontend format for progress calculation
+    const frontendData = transformSalnFromBackend(saln);
+
+    // Compute readiness-based completion (declarant info + has assets)
+    const completion = getSalnReadinessProgress(frontendData);
+
+    // Persist the completion value
+    await updateSALNCompletion(salnId, completion);
+
+    console.log(`[computeAndPersistCompletion] Updated SALN ${salnId} completion to ${completion}%`);
+  } catch (error) {
+    // Log but don't fail the main operation
+    console.error(`[computeAndPersistCompletion] Failed for SALN ${salnId}:`, error);
+  }
+}
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -371,6 +402,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     // STEP 8: Update SALN submission
     // ========================================================================
     await updateSALNSubmission(id, user.id, updateInput);
+
+    // Compute and persist the completion percentage
+    await computeAndPersistCompletion(id, user.id);
 
     console.log(
       `[PATCH /api/saln/[id]] Updated SALN ${id} for user ${user.id}`

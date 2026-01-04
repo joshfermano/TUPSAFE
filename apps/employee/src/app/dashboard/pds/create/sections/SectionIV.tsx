@@ -61,6 +61,33 @@ export const SectionIV = memo(function SectionIV() {
     });
   }, [appendEligibility]);
 
+  // Handle removing eligibility with attachment cleanup
+  const handleRemoveEligibility = useCallback((index: number) => {
+    const eligibility = form.getValues(`eligibility.${index}`);
+
+    // Clean up attachments before removing entry
+    if (pdsContext && eligibility?.id) {
+      const eligibilityId = eligibility.id; // Extract to help TypeScript narrow the type
+      const attachments = pdsContext.getCivilServiceAttachments(eligibilityId) || [];
+
+      // Delete each attachment from storage + DB
+      attachments.forEach(async (att) => {
+        try {
+          await fetch(`/api/pds/attachments/${att.id}`, { method: 'DELETE' });
+          // Remove attachment from context by updating with filtered list
+          const remainingAttachments = attachments.filter((a) => a.id !== att.id);
+          pdsContext.updateCivilServiceAttachments(eligibilityId, remainingAttachments);
+        } catch (error) {
+          console.error('Failed to delete attachment:', error);
+          // Continue with entry deletion even if attachment cleanup fails
+        }
+      });
+    }
+
+    // Remove the entry
+    removeEligibility(index);
+  }, [form, pdsContext, removeEligibility]);
+
   const {
     fields: workFields,
     append: appendWork,
@@ -197,7 +224,7 @@ export const SectionIV = memo(function SectionIV() {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      onClick={() => removeEligibility(index)}
+                      onClick={() => handleRemoveEligibility(index)}
                       className="text-muted-foreground hover:text-destructive">
                       <X className="h-4 w-4" />
                     </Button>
@@ -364,6 +391,7 @@ export const SectionIV = memo(function SectionIV() {
                             pdsContext.updateCivilServiceAttachments(entryId, attachments);
                           }
                         }}
+                        onBeforeUpload={pdsContext.onBeforeUpload}
                       />
                     </div>
                   )}

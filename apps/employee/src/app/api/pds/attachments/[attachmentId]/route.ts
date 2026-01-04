@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@tupsafe/auth/server';
+import { createServerClient, createAdminClient } from '@tupsafe/auth/server';
 import { PDS_ATTACHMENTS_BUCKET } from '@tupsafe/auth/server';
 import { db, pdsAttachments } from '@tupsafe/database/server';
 import { eq, and } from 'drizzle-orm';
@@ -61,8 +61,12 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       );
     }
 
-    // Delete from Supabase Storage
-    const { error: deleteStorageError } = await supabase.storage
+    // Use admin client for storage to bypass RLS
+    // Authorization is already verified above (user owns the attachment)
+    const adminClient = createAdminClient();
+
+    // Delete from Supabase Storage using admin client
+    const { error: deleteStorageError } = await adminClient.storage
       .from(PDS_ATTACHMENTS_BUCKET)
       .remove([attachment.filePath]);
 

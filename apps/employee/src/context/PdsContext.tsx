@@ -15,6 +15,7 @@ import {
   useContext,
   useState,
   useCallback,
+  useEffect,
   ReactNode,
   useMemo,
 } from 'react';
@@ -40,6 +41,15 @@ interface PdsContextValue {
   getTrainingAttachments: (trainingId: string | undefined) => AttachmentData[];
   /** Get attachments for a civil service entry */
   getCivilServiceAttachments: (civilServiceId: string | undefined) => AttachmentData[];
+  /** Handler to auto-save before upload (optional) */
+  onBeforeUpload?: (entryContext: {
+    entryType: 'training' | 'civil_service';
+    entryId: string | null;
+  }) => Promise<{
+    success: boolean;
+    pdsSubmissionId?: string;
+    entryId?: string;
+  }>;
 }
 
 const PdsContext = createContext<PdsContextValue | null>(null);
@@ -49,6 +59,15 @@ interface PdsProviderProps {
   pdsSubmissionId: string | null;
   canEdit?: boolean;
   initialAttachments?: PdsAttachmentsMap;
+  onAttachmentsChange?: (attachments: PdsAttachmentsMap) => void;
+  onBeforeUpload?: (entryContext: {
+    entryType: 'training' | 'civil_service';
+    entryId: string | null;
+  }) => Promise<{
+    success: boolean;
+    pdsSubmissionId?: string;
+    entryId?: string;
+  }>;
 }
 
 export function PdsProvider({
@@ -56,6 +75,8 @@ export function PdsProvider({
   pdsSubmissionId,
   canEdit = true,
   initialAttachments,
+  onAttachmentsChange,
+  onBeforeUpload,
 }: PdsProviderProps) {
   const [attachments, setAttachments] = useState<PdsAttachmentsMap>(
     initialAttachments || {
@@ -63,6 +84,20 @@ export function PdsProvider({
       byCivilService: {},
     }
   );
+
+  // Sync attachments when initialAttachments prop changes (e.g., when loading from DB)
+  useEffect(() => {
+    if (initialAttachments) {
+      setAttachments(initialAttachments);
+    }
+  }, [initialAttachments]);
+
+  // Notify parent when attachments change
+  useEffect(() => {
+    if (onAttachmentsChange) {
+      onAttachmentsChange(attachments);
+    }
+  }, [attachments, onAttachmentsChange]);
 
   const updateTrainingAttachments = useCallback(
     (trainingId: string, newAttachments: AttachmentData[]) => {
@@ -115,6 +150,7 @@ export function PdsProvider({
       updateCivilServiceAttachments,
       getTrainingAttachments,
       getCivilServiceAttachments,
+      onBeforeUpload,
     }),
     [
       pdsSubmissionId,
@@ -124,6 +160,7 @@ export function PdsProvider({
       updateCivilServiceAttachments,
       getTrainingAttachments,
       getCivilServiceAttachments,
+      onBeforeUpload,
     ]
   );
 

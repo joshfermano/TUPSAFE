@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@tupsafe/auth/server';
+import { createServerClient, createAdminClient } from '@tupsafe/auth/server';
 import {
   validateAttachmentFile,
   buildAttachmentPath,
@@ -108,6 +108,11 @@ export async function POST(request: NextRequest) {
     let kind: 'training' | 'civil_service';
 
     if (trainingId) {
+      console.log('[POST /api/pds/attachments] Looking up training entry:', {
+        trainingId,
+        pdsSubmissionId,
+      });
+
       const [training] = await db
         .select({ id: pdsTraining.id })
         .from(pdsTraining)
@@ -119,9 +124,33 @@ export async function POST(request: NextRequest) {
         )
         .limit(1);
 
+      console.log('[POST /api/pds/attachments] Training lookup result:', {
+        found: !!training,
+        trainingId: training?.id,
+      });
+
       if (!training) {
+        // Debug: List all training entries for this PDS to help diagnose
+        const allTraining = await db
+          .select({ id: pdsTraining.id, title: pdsTraining.title })
+          .from(pdsTraining)
+          .where(eq(pdsTraining.pdsSubmissionId, pdsSubmissionId));
+
+        console.error('[POST /api/pds/attachments] Training entry not found. Available entries:', {
+          requestedTrainingId: trainingId,
+          pdsSubmissionId,
+          allTrainingForPds: allTraining,
+        });
+
         return NextResponse.json(
-          { error: 'Training entry not found or does not belong to this submission' },
+          {
+            error: 'Training entry not found or does not belong to this submission',
+            debug: {
+              requestedTrainingId: trainingId,
+              availableTrainingIds: allTraining.map((t) => t.id),
+              pdsSubmissionId,
+            }
+          },
           { status: 404 }
         );
       }
@@ -161,11 +190,23 @@ export async function POST(request: NextRequest) {
       mimeType: file.type,
     });
 
+    // Debug logging
+    console.log('[POST /api/pds/attachments] Upload details:', {
+      bucket: PDS_ATTACHMENTS_BUCKET,
+      filePath,
+      userId,
+      fileType: file.type,
+    });
+
     // Convert File to ArrayBuffer for upload
     const arrayBuffer = await file.arrayBuffer();
 
-    // Upload to Supabase Storage
-    const { error: uploadError } = await supabase.storage
+    // Use admin client for storage to bypass RLS
+    // Authorization is already verified above (user owns the PDS submission)
+    const adminClient = createAdminClient();
+
+    // Upload to Supabase Storage using admin client
+    const { error: uploadError } = await adminClient.storage
       .from(PDS_ATTACHMENTS_BUCKET)
       .upload(filePath, arrayBuffer, {
         contentType: file.type,
@@ -181,8 +222,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate signed URL for private bucket access
-    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+    // Generate signed URL for private bucket access using admin client
+    const { data: signedUrlData, error: signedUrlError } = await adminClient.storage
       .from(PDS_ATTACHMENTS_BUCKET)
       .createSignedUrl(filePath, SIGNED_URL_EXPIRY_SECONDS);
 

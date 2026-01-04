@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { RealAuthProvider } from '@/context/RealAuthContext';
-import { MockDataProvider } from '@tupsafe/mock-data/providers';
 import { QueryProvider, ToastProvider, RealtimeProvider } from '@/providers';
 import { ThemeProvider, ThemeScript } from '@/context/ThemeContext';
 
@@ -28,10 +27,8 @@ export default function RootLayout({
           <RealAuthProvider>
             <QueryProvider>
               <RealtimeProvider>
-                <MockDataProvider>
-                  {children}
-                  <ToastProvider />
-                </MockDataProvider>
+                {children}
+                <ToastProvider />
               </RealtimeProvider>
             </QueryProvider>
           </RealAuthProvider>

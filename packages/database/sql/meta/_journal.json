@@ -64,6 +64,13 @@
       "when": 1735531260000,
       "tag": "0013_add_salary_grade_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1767512847261,
+      "tag": "0009_thin_the_anarchist",
+      "breakpoints": true
     }
   ]
 }

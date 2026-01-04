@@ -9,15 +9,47 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   getPDSSubmissionById,
   updatePDSSubmission,
+  updatePDSCompletion,
   deletePDSSubmission,
   type UpdatePDSData,
   db,
   pdsAttachments,
 } from '@tupsafe/database/server';
-import { createServerClient } from '@tupsafe/auth/server';
+import { createServerClient, createAdminClient } from '@tupsafe/auth/server';
 import { createAuditLog } from '@tupsafe/database/server';
 import { PDS_ATTACHMENTS_BUCKET, SIGNED_URL_EXPIRY_SECONDS } from '@tupsafe/auth/server';
 import { eq } from 'drizzle-orm';
+import { transformPdsFromBackend } from '../../../../lib/utils/pds-transformations';
+import { getPdsReadinessProgress } from '../../../../lib/validations/pds-schema';
+
+/**
+ * Helper function to compute and persist PDS completion
+ * Fetches the full submission, transforms to frontend format, computes readiness, and stores it
+ */
+async function computeAndPersistCompletion(pdsId: string, userId: string): Promise<void> {
+  try {
+    // Fetch the complete PDS submission
+    const pds = await getPDSSubmissionById(pdsId, userId);
+    if (!pds) {
+      console.warn(`[computeAndPersistCompletion] PDS ${pdsId} not found`);
+      return;
+    }
+
+    // Transform to frontend format for progress calculation
+    const frontendData = transformPdsFromBackend(pds);
+
+    // Compute readiness-based completion (personal info + other info with references)
+    const completion = getPdsReadinessProgress(frontendData);
+
+    // Persist the completion value
+    await updatePDSCompletion(pdsId, completion);
+
+    console.log(`[computeAndPersistCompletion] Updated PDS ${pdsId} completion to ${completion}%`);
+  } catch (error) {
+    // Log but don't fail the main operation
+    console.error(`[computeAndPersistCompletion] Failed for PDS ${pdsId}:`, error);
+  }
+}
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -82,13 +114,17 @@ export async function GET(request: NextRequest, context: RouteContext) {
       .from(pdsAttachments)
       .where(eq(pdsAttachments.pdsSubmissionId, id));
 
+    // Use admin client for storage to bypass RLS
+    // Authorization is already verified above (user owns the submission)
+    const adminClient = createAdminClient();
+
     // Generate signed URLs for all attachments (private bucket)
     const attachmentsWithUrls = await Promise.all(
       attachmentsList.map(async (att) => {
         let fileUrl: string | null = null;
-        
+
         if (att.filePath) {
-          const { data: signedUrlData } = await supabase.storage
+          const { data: signedUrlData } = await adminClient.storage
             .from(PDS_ATTACHMENTS_BUCKET)
             .createSignedUrl(att.filePath, SIGNED_URL_EXPIRY_SECONDS);
           fileUrl = signedUrlData?.signedUrl || null;
@@ -213,6 +249,23 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     let body: UpdatePDSData;
     try {
       body = await request.json();
+
+      // DEBUG: Log what data is received in the PATCH request
+      console.log('[PATCH /api/pds/[id]] Received update data:', {
+        id,
+        hasCivilService: !!body.civilService,
+        civilServiceCount: body.civilService?.length || 0,
+        civilServiceWithIds: body.civilService?.filter((cs) => cs.id).length || 0,
+        hasTraining: !!body.training,
+        trainingCount: body.training?.length || 0,
+        trainingWithIds: body.training?.filter((tr) => tr.id).length || 0,
+        trainingEntries: body.training?.map((tr) => ({
+          id: tr.id,
+          title: tr.title,
+          dateFrom: tr.dateFrom,
+          dateTo: tr.dateTo,
+        })) || [],
+      });
     } catch (parseError) {
       console.error('[PATCH /api/pds/[id]] Invalid JSON body:', parseError);
       return NextResponse.json(
@@ -272,6 +325,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     // Update PDS submission
     await updatePDSSubmission(id, user.id, body);
+
+    // Compute and persist the completion percentage
+    await computeAndPersistCompletion(id, user.id);
 
     console.log(
       `[PATCH /api/pds/[id]] Updated PDS ${id} for user ${user.id}`

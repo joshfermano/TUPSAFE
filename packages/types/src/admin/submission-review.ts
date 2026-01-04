@@ -11,6 +11,10 @@ import { z } from 'zod';
  * Base types for PDS data sections
  * These represent the structured data from CSC forms
  */
+/**
+ * PDS Personal Info
+ * Note: API may use canonical DB field names (heightM, weightKg) or display names (height, weight)
+ */
 export interface PDSPersonalInfo {
   surname?: string;
   firstName?: string;
@@ -20,38 +24,49 @@ export interface PDSPersonalInfo {
   placeOfBirth?: string;
   sex?: string;
   civilStatus?: string;
-  height?: number;
-  weight?: number;
+  height?: number | string;
+  heightM?: string; // Canonical DB field name
+  weight?: number | string;
+  weightKg?: string; // Canonical DB field name
   bloodType?: string;
   gsisNo?: string;
   pagibigNo?: string;
   philhealthNo?: string;
   sssNo?: string;
   tinNo?: string;
-  citizenship?: string;
-  residentialAddress?: {
-    houseNo?: string;
-    street?: string;
-    subdivision?: string;
-    barangay?: string;
-    city?: string;
-    province?: string;
-    zipCode?: string;
-  };
-  permanentAddress?: {
-    houseNo?: string;
-    street?: string;
-    subdivision?: string;
-    barangay?: string;
-    city?: string;
-    province?: string;
-    zipCode?: string;
-  };
+  agencyEmployeeNo?: string; // Canonical DB field name
+  citizenship?: string | unknown; // Can be JSONB from DB
+  residentialAddress?:
+    | {
+        houseNo?: string;
+        street?: string;
+        subdivision?: string;
+        barangay?: string;
+        city?: string;
+        province?: string;
+        zipCode?: string;
+      }
+    | unknown;
+  permanentAddress?:
+    | {
+        houseNo?: string;
+        street?: string;
+        subdivision?: string;
+        barangay?: string;
+        city?: string;
+        province?: string;
+        zipCode?: string;
+      }
+    | unknown;
   telephoneNo?: string;
   mobileNo?: string;
   emailAddress?: string;
 }
 
+/**
+ * PDS Family Background - UI Display Format (nested)
+ * Used for admin view components that expect nested spouse/father/mother objects
+ */
 export interface PDSFamilyBackground {
   spouse?: {
     surname?: string;
@@ -77,6 +92,29 @@ export interface PDSFamilyBackground {
   };
 }
 
+/**
+ * PDS Family Background - Canonical API Format (flat DB fields)
+ * API returns this format; UI adapts to nested format for display
+ * PDF generation uses this canonical format directly
+ */
+export interface PDSFamilyBackgroundCanonical {
+  spouseSurname?: string;
+  spouseFirstName?: string;
+  spouseMiddleName?: string;
+  spouseNameExtension?: string;
+  spouseOccupation?: string;
+  spouseEmployer?: string;
+  spouseBusinessAddress?: string;
+  spouseTelephoneNo?: string;
+  fatherSurname?: string;
+  fatherFirstName?: string;
+  fatherMiddleName?: string;
+  fatherNameExtension?: string;
+  motherMaidenSurname?: string;
+  motherFirstName?: string;
+  motherMiddleName?: string;
+}
+
 export interface PDSChild {
   fullName: string;
   dateOfBirth: string;
@@ -95,39 +133,60 @@ export interface PDSEducation {
 
 /**
  * PDS Attachment for training or civil service entries
+ * Note: Some fields are optional when using simplified attachment format in API
  */
 export interface PdsAttachment {
   id: string;
   fileName: string;
-  mimeType: string;
-  sizeBytes: number;
-  filePath: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  filePath?: string;
   fileUrl: string | null;
   trainingId?: string | null;
   civilServiceId?: string | null;
-  createdAt: Date | string;
+  createdAt?: Date | string;
 }
 
+/**
+ * PDS Civil Service entry
+ * Note: API may use canonical DB field names (eligibilityName) or display names (careerService)
+ * Rating can be string, number, or null depending on source
+ */
 export interface PDSCivilService {
   id?: string;
   careerService?: string;
-  rating?: number;
+  eligibilityName?: string; // Canonical DB field name
+  rating?: number | string | null;
   dateOfExamination?: string;
+  dateOfExam?: string; // Canonical DB field name
   placeOfExamination?: string;
+  placeOfExam?: string; // Canonical DB field name
   licenseNumber?: string;
+  licenseNo?: string; // Canonical DB field name
   validity?: string;
+  licenseValidityDate?: string; // Canonical DB field name
   attachments?: PdsAttachment[];
 }
 
+/**
+ * PDS Work Experience entry
+ * Note: API may use canonical DB field names or display names
+ * MonthlySalary can be string or number depending on source
+ */
 export interface PDSWorkExperience {
+  id?: string;
   positionTitle?: string;
   department?: string;
-  monthlySalary?: number;
+  departmentAgency?: string; // Canonical DB field name
+  monthlySalary?: number | string;
   salaryGrade?: string;
   statusOfAppointment?: string;
   govService?: boolean;
+  isGovernment?: boolean; // Canonical DB field name
   periodFrom?: string;
+  dateFrom?: string; // Canonical DB field name
   periodTo?: string;
+  dateTo?: string; // Canonical DB field name
 }
 
 export interface PDSVoluntaryWork {
@@ -150,81 +209,108 @@ export interface PDSTraining {
   attachments?: PdsAttachment[];
 }
 
+/**
+ * PDS Other Info section
+ * Note: API may use canonical DB field names (associations) or display names (organizations)
+ * All fields use unknown to accept any JSONB structure from DB
+ */
 export interface PDSOtherInfo {
-  skills?: string[];
-  recognitions?: Array<{
-    recognition?: string;
-    date?: string;
-  }>;
-  organizations?: Array<{
-    organization?: string;
-    role?: string;
-  }>;
-  references?: Array<{
-    name?: string;
-    address?: string;
-    telephoneNo?: string;
-  }>;
-  questions?: {
-    Q34_criminal_charged?: boolean;
-    Q34_criminal_charged_details?: string;
-    Q35_criminal_convicted?: boolean;
-    Q35_criminal_convicted_details?: string;
-    Q36_separated_from_service?: boolean;
-    Q36_separated_from_service_details?: string;
-    Q37_candidate_for_election?: boolean;
-    Q37_candidate_for_election_details?: string;
-    Q38_resigned_from_government?: boolean;
-    Q38_resigned_from_government_details?: string;
-    Q39_immigrant_or_acquired_residence?: boolean;
-    Q39_immigrant_or_acquired_residence_details?: string;
-    Q40_indigenous_group?: boolean;
-    Q40_indigenous_group_details?: string;
-    Q41_disabled?: boolean;
-    Q41_disabled_details?: string;
-    Q42_solo_parent?: boolean;
-    Q42_solo_parent_details?: string;
-  };
+  skills?: string[] | unknown;
+  recognitions?:
+    | Array<{
+        recognition?: string;
+        date?: string;
+      }>
+    | unknown;
+  organizations?:
+    | Array<{
+        organization?: string;
+        role?: string;
+      }>
+    | unknown;
+  associations?: unknown; // Canonical DB field name for organizations
+  references?:
+    | Array<{
+        name?: string;
+        address?: string;
+        telephoneNo?: string;
+      }>
+    | unknown;
+  questions?:
+    | {
+        Q34_criminal_charged?: boolean;
+        Q34_criminal_charged_details?: string;
+        Q35_criminal_convicted?: boolean;
+        Q35_criminal_convicted_details?: string;
+        Q36_separated_from_service?: boolean;
+        Q36_separated_from_service_details?: string;
+        Q37_candidate_for_election?: boolean;
+        Q37_candidate_for_election_details?: string;
+        Q38_resigned_from_government?: boolean;
+        Q38_resigned_from_government_details?: string;
+        Q39_immigrant_or_acquired_residence?: boolean;
+        Q39_immigrant_or_acquired_residence_details?: string;
+        Q40_indigenous_group?: boolean;
+        Q40_indigenous_group_details?: string;
+        Q41_disabled?: boolean;
+        Q41_disabled_details?: string;
+        Q42_solo_parent?: boolean;
+        Q42_solo_parent_details?: string;
+      }
+    | unknown;
 }
 
 /**
  * Base types for SALN data sections
+ * Note: Financial fields accept both string and number for API flexibility
+ * API returns numbers (canonical), UI may display as formatted strings
  */
 export interface SALNRealProperty {
+  id?: string;
   description?: string;
   kind?: string;
   exactLocation?: string;
-  assessedValue?: string;
-  marketValue?: string;
+  assessedValue?: string | number;
+  currentFairMarketValue?: string | number;
+  marketValue?: string | number; // Alias for currentFairMarketValue
   acquisitionYear?: number;
   acquisitionMode?: string;
-  acquisitionCost?: string;
+  acquisitionCost?: string | number;
 }
 
 export interface SALNPersonalProperty {
+  id?: string;
   description?: string;
-  acquisitionYear?: number;
-  acquisitionCost?: string;
+  yearAcquired?: number;
+  acquisitionYear?: number; // Alias for yearAcquired
+  acquisitionCost?: string | number;
 }
 
 export interface SALNLiability {
+  id?: string;
   nature?: string;
-  creditor?: string;
-  amount?: string;
+  creditorName?: string;
+  creditor?: string; // Alias for creditorName
+  outstandingBalance?: string | number;
+  amount?: string | number; // Alias for outstandingBalance
 }
 
 export interface SALNBusinessInterest {
-  businessName?: string;
+  id?: string;
+  entityName?: string;
+  businessName?: string; // Alias for entityName
   businessAddress?: string;
   natureOfBusiness?: string;
-  dateOfAcquisition?: string;
+  dateOfAcquisition?: string | Date;
 }
 
 export interface SALNRelativeInGov {
+  id?: string;
   name?: string;
   relationship?: string;
   position?: string;
-  agency?: string;
+  agencyAddress?: string;
+  agency?: string; // Alias for agencyAddress
 }
 
 /**
@@ -424,15 +510,15 @@ export interface PDSSubmissionDetail {
     } | null;
   };
   pdsData: {
-    personalInfo: PDSPersonalInfo;
-    familyBackground: PDSFamilyBackground;
+    personalInfo: PDSPersonalInfo | null;
+    familyBackground: PDSFamilyBackground | PDSFamilyBackgroundCanonical | null;
     children: PDSChild[];
     education: PDSEducation[];
     civilService: PDSCivilService[];
     workExperience: PDSWorkExperience[];
     voluntaryWork: PDSVoluntaryWork[];
     training: PDSTraining[];
-    otherInfo: PDSOtherInfo;
+    otherInfo: PDSOtherInfo | null;
   };
   previousVersions: Array<{
     id: string;
@@ -499,9 +585,10 @@ export interface SALNSubmissionDetail {
     liabilities: SALNLiability[];
     businessInterests: SALNBusinessInterest[];
     relativesInGov: SALNRelativeInGov[];
-    totalAssets: string | null;
-    totalLiabilities: string | null;
-    netWorth: string | null;
+    // Financial totals: API returns numbers (canonical), legacy may return strings
+    totalAssets: string | number | null;
+    totalLiabilities: string | number | null;
+    netWorth: string | number | null;
   };
   previousYear?: {
     fiscalYear: number;

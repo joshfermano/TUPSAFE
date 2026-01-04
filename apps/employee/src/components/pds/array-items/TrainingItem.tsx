@@ -1,12 +1,14 @@
 import { memo } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { X } from 'lucide-react';
+import { X, Paperclip } from 'lucide-react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '../../ui/form';
 import { Input } from '../../ui/input';
 import { Button } from '../../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { type CompletePdsData } from '../../../lib/validations/pds-schema';
 import { formatDateForInput, parseDateFromInput } from '../../../lib/utils/date-utils';
+import { usePdsContextSafe } from '../../../context/PdsContext';
+import { EntryAttachments } from '../EntryAttachments';
 
 interface TrainingItemProps {
   index: number;
@@ -16,6 +18,7 @@ interface TrainingItemProps {
 
 export const TrainingItem = memo(({ index, onRemove, onDateBlur }: TrainingItemProps) => {
   const form = useFormContext<CompletePdsData>();
+  const pdsContext = usePdsContextSafe();
 
   return (
     <div className="p-5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 space-y-6">
@@ -175,6 +178,37 @@ export const TrainingItem = memo(({ index, onRemove, onDateBlur }: TrainingItemP
           )}
         />
       </div>
+
+      {/* Attachments Section */}
+      {pdsContext && (
+        <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-2 mb-3">
+            <Paperclip className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-muted-foreground">
+              Attachments
+            </span>
+            <span className="text-xs text-muted-foreground">
+              (certificates, seminar proofs, etc.)
+            </span>
+          </div>
+          <EntryAttachments
+            pdsSubmissionId={pdsContext.pdsSubmissionId}
+            entryId={form.getValues(`learningDevelopment.${index}.id`) || null}
+            entryType="training"
+            attachments={pdsContext.getTrainingAttachments(
+              form.getValues(`learningDevelopment.${index}.id`)
+            )}
+            canEdit={pdsContext.canEdit}
+            onAttachmentsChange={(attachments) => {
+              const entryId = form.getValues(`learningDevelopment.${index}.id`);
+              if (entryId) {
+                pdsContext.updateTrainingAttachments(entryId, attachments);
+              }
+            }}
+            onBeforeUpload={pdsContext.onBeforeUpload}
+          />
+        </div>
+      )}
     </div>
   );
 });

@@ -51,6 +51,15 @@ interface EntryAttachmentsProps {
   canEdit: boolean;
   /** Callback when attachments change */
   onAttachmentsChange?: (attachments: AttachmentData[]) => void;
+  /** Callback to trigger auto-save before upload (returns IDs after save) */
+  onBeforeUpload?: (entryContext: {
+    entryType: 'training' | 'civil_service';
+    entryId: string | null;
+  }) => Promise<{
+    success: boolean;
+    pdsSubmissionId?: string;
+    entryId?: string;
+  }>;
   /** Additional class names */
   className?: string;
 }
@@ -89,6 +98,7 @@ export function EntryAttachments({
   attachments = [],
   canEdit,
   onAttachmentsChange,
+  onBeforeUpload,
   className,
 }: EntryAttachmentsProps) {
   const [isUploading, setIsUploading] = useState(false);
@@ -96,8 +106,10 @@ export function EntryAttachments({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Check if uploads are allowed
-  const canUpload = canEdit && pdsSubmissionId && entryId;
+  // Check if uploads are allowed - Allow upload if we can auto-save
+  const hasRequiredIds = Boolean(pdsSubmissionId && entryId);
+  const canAutoSave = Boolean(onBeforeUpload);
+  const canUpload = canEdit && (hasRequiredIds || canAutoSave);
 
   const handleFileSelect = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -125,24 +137,68 @@ export function EntryAttachments({
         return;
       }
 
-      if (!pdsSubmissionId || !entryId) {
-        toast.error('Cannot upload', {
-          description: 'Please save the PDS draft first before uploading attachments.',
-        });
-        return;
-      }
-
       setIsUploading(true);
 
       try {
+        // Determine effective IDs - either from props or from auto-save
+        let effectivePdsSubmissionId = pdsSubmissionId;
+        let effectiveEntryId = entryId;
+
+        // ALWAYS trigger auto-save before upload when onBeforeUpload is available
+        // This ensures the entry exists in the database before we try to upload attachments
+        // (even if IDs exist in form state, the entry might not yet be persisted)
+        if (onBeforeUpload) {
+          console.log('[EntryAttachments] Triggering auto-save before upload...', {
+            pdsSubmissionId,
+            entryId,
+            entryType,
+          });
+
+          toast.info('Saving draft...', {
+            description: 'Ensuring your entry is saved before uploading.',
+            duration: 2000,
+          });
+
+          const saveResult = await onBeforeUpload({
+            entryType,
+            entryId,
+          });
+
+          if (!saveResult.success) {
+            toast.error('Cannot upload attachment', {
+              description: 
+                'Failed to save draft. Please ensure all required fields are filled and try "Save Draft" first.',
+              duration: 5000,
+            });
+            return;
+          }
+
+          // Use returned IDs (these come from the actual database after save)
+          effectivePdsSubmissionId = saveResult.pdsSubmissionId || pdsSubmissionId;
+          effectiveEntryId = saveResult.entryId || entryId;
+
+          console.log('[EntryAttachments] Auto-save completed, using IDs:', {
+            effectivePdsSubmissionId,
+            effectiveEntryId,
+          });
+        }
+
+        // Verify we have required IDs after auto-save attempt
+        if (!effectivePdsSubmissionId || !effectiveEntryId) {
+          toast.error('Cannot upload', {
+            description: 'Please save the PDS draft first before uploading attachments.',
+          });
+          return;
+        }
+
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('pdsSubmissionId', pdsSubmissionId);
+        formData.append('pdsSubmissionId', effectivePdsSubmissionId);
 
         if (entryType === 'training') {
-          formData.append('trainingId', entryId);
+          formData.append('trainingId', effectiveEntryId);
         } else {
-          formData.append('civilServiceId', entryId);
+          formData.append('civilServiceId', effectiveEntryId);
         }
 
         const response = await fetch('/api/pds/attachments', {
@@ -173,7 +229,7 @@ export function EntryAttachments({
         setIsUploading(false);
       }
     },
-    [pdsSubmissionId, entryId, entryType, attachments, onAttachmentsChange]
+    [pdsSubmissionId, entryId, entryType, attachments, onAttachmentsChange, onBeforeUpload]
   );
 
   const handleDelete = useCallback(

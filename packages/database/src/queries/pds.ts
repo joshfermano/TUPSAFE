@@ -24,7 +24,7 @@ import {
   pdsOtherInfo,
   archives,
 } from '../schema';
-import { eq, and, desc, gte, notInArray } from 'drizzle-orm';
+import { eq, and, desc, gte, notInArray, inArray } from 'drizzle-orm';
 import type {
   PdsSubmission,
   PdsPersonalInfo,
@@ -191,8 +191,8 @@ export async function getPDSSubmissions(
         ? baseQuery.limit(filters.limit).offset(filters.offset)
         : baseQuery.offset(filters.offset)
       : filters?.limit
-        ? baseQuery.limit(filters.limit)
-        : baseQuery;
+      ? baseQuery.limit(filters.limit)
+      : baseQuery;
 
     const submissions = await query;
     return submissions;
@@ -343,7 +343,6 @@ export async function getPDSSubmissionById(
   }
 }
 
-
 /**
  * Get the active draft for a user (within 24 hours and current year)
  * Returns the most recently updated draft created in the last 24 hours for the current year
@@ -352,7 +351,10 @@ export async function getPDSSubmissionById(
  * @param year - Optional year to check (defaults to current year)
  * @returns Draft ID if found, null otherwise
  */
-export async function getActiveDraft(userId: string, year?: number): Promise<string | null> {
+export async function getActiveDraft(
+  userId: string,
+  year?: number
+): Promise<string | null> {
   try {
     // Only consider drafts from the last 24 hours for the specified year
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -472,7 +474,7 @@ export async function createPDSSubmission(
       const existingSubmissions = await tx
         .select({
           version: pdsSubmissions.version,
-          status: pdsSubmissions.status
+          status: pdsSubmissions.status,
         })
         .from(pdsSubmissions)
         .where(
@@ -487,7 +489,11 @@ export async function createPDSSubmission(
       // Check if user has a pending submission for this year
       if (existingSubmissions.length > 0) {
         const latest = existingSubmissions[0];
-        if (latest.status === 'draft' || latest.status === 'submitted' || latest.status === 'reviewing') {
+        if (
+          latest.status === 'draft' ||
+          latest.status === 'submitted' ||
+          latest.status === 'reviewing'
+        ) {
           throw new Error(
             `You already have a pending PDS submission for CY ${submissionYear}. Please complete or withdraw it before creating a new one.`
           );
@@ -661,6 +667,22 @@ export async function updatePDSSubmission(
       throw new Error('Valid user ID is required');
     }
 
+    // DEBUG: Log what data is received in updatePDSSubmission
+    console.log('[updatePDSSubmission] START:', {
+      pdsId: id,
+      userId,
+      hasTraining: !!data.training,
+      trainingCount: data.training?.length || 0,
+      trainingIds: data.training?.map(t => ({
+        id: t.id,
+        title: t.title,
+        dateFrom: t.dateFrom,
+        dateTo: t.dateTo,
+      })) || [],
+      hasCivilService: !!data.civilService,
+      civilServiceCount: data.civilService?.length || 0,
+    });
+
     await db.transaction(async (tx) => {
       // Validate ownership
       const [submission] = await tx
@@ -734,54 +756,92 @@ export async function updatePDSSubmission(
       }
 
       // Update children if provided (delete and recreate)
-      if (data.children !== undefined && data.children.length > 0) {
+      // undefined = no change, [] = clear all, [...] = replace with new entries
+      if (data.children !== undefined) {
         await tx.delete(pdsChildren).where(eq(pdsChildren.pdsSubmissionId, id));
-        await tx.insert(pdsChildren).values(
-          data.children.map((child) => ({
-            ...child,
-            pdsSubmissionId: id,
-          })) as (typeof pdsChildren.$inferInsert)[]
-        );
+        if (data.children.length > 0) {
+          await tx.insert(pdsChildren).values(
+            data.children.map((child) => ({
+              ...child,
+              pdsSubmissionId: id,
+            })) as (typeof pdsChildren.$inferInsert)[]
+          );
+        }
       }
 
       // Update education if provided (delete and recreate)
-      if (data.education !== undefined && data.education.length > 0) {
+      // undefined = no change, [] = clear all, [...] = replace with new entries
+      if (data.education !== undefined) {
         await tx
           .delete(pdsEducation)
           .where(eq(pdsEducation.pdsSubmissionId, id));
-        await tx.insert(pdsEducation).values(
-          data.education.map((edu) => ({
-            ...edu,
-            pdsSubmissionId: id,
-          })) as (typeof pdsEducation.$inferInsert)[]
-        );
+        if (data.education.length > 0) {
+          await tx.insert(pdsEducation).values(
+            data.education.map((edu) => ({
+              ...edu,
+              pdsSubmissionId: id,
+            })) as (typeof pdsEducation.$inferInsert)[]
+          );
+        }
       }
 
       // Update civil service if provided (upsert-by-id to preserve attachment links)
       if (data.civilService !== undefined) {
-        // Separate entries with IDs (existing) from entries without IDs (new)
-        const existingEntries = data.civilService.filter((cs) => cs.id);
-        const newEntries = data.civilService.filter((cs) => !cs.id);
-        const existingIds = existingEntries.map((cs) => cs.id as string);
+        // Get all entry IDs from the payload
+        const entriesWithIds = data.civilService.filter((cs) => cs.id);
+        const entryIds = entriesWithIds.map((cs) => cs.id as string);
+
+        // Query which IDs actually exist in the database
+        let actuallyExistingIds: string[] = [];
+        if (entryIds.length > 0) {
+          const dbEntries = await tx
+            .select({ id: pdsCivilService.id })
+            .from(pdsCivilService)
+            .where(
+              and(
+                eq(pdsCivilService.pdsSubmissionId, id),
+                inArray(pdsCivilService.id, entryIds)
+              )
+            );
+          actuallyExistingIds = dbEntries.map((e) => e.id);
+        }
+
+        // Classify based on what actually exists in DB (not just presence of ID)
+        const existingEntries = data.civilService.filter(
+          (cs) => cs.id && actuallyExistingIds.includes(cs.id as string)
+        );
+        const newEntries = data.civilService.filter(
+          (cs) => !cs.id || !actuallyExistingIds.includes(cs.id as string)
+        );
+        const allPayloadIds = data.civilService.filter((cs) => cs.id).map((cs) => cs.id as string);
+
+        console.log('[updatePDSSubmission] Civil Service update operation:', {
+          pdsId: id,
+          totalCivilService: data.civilService.length,
+          entriesWithIdsInPayload: entryIds.length,
+          actuallyExistingInDb: actuallyExistingIds.length,
+          existingEntriesCount: existingEntries.length,
+          newEntriesCount: newEntries.length,
+        });
 
         // Delete entries that are no longer in the payload
-        if (existingIds.length > 0) {
+        if (allPayloadIds.length > 0) {
           await tx
             .delete(pdsCivilService)
             .where(
               and(
                 eq(pdsCivilService.pdsSubmissionId, id),
-                notInArray(pdsCivilService.id, existingIds)
+                notInArray(pdsCivilService.id, allPayloadIds)
               )
             );
         } else {
           // If no entries have IDs, delete all existing entries
-        await tx
-          .delete(pdsCivilService)
-          .where(eq(pdsCivilService.pdsSubmissionId, id));
+          await tx
+            .delete(pdsCivilService)
+            .where(eq(pdsCivilService.pdsSubmissionId, id));
         }
 
-        // Update existing entries
+        // Update entries that actually exist in the database
         for (const cs of existingEntries) {
           const { id: csId, ...updateData } = cs;
           await tx
@@ -790,85 +850,159 @@ export async function updatePDSSubmission(
             .where(eq(pdsCivilService.id, csId as string));
         }
 
-        // Insert new entries
+        // Insert new entries (including those with client-generated IDs that don't exist in DB)
         if (newEntries.length > 0) {
-        await tx.insert(pdsCivilService).values(
+          const insertResult = await tx.insert(pdsCivilService).values(
             newEntries.map((cs) => ({
-            ...cs,
-            pdsSubmissionId: id,
-          })) as (typeof pdsCivilService.$inferInsert)[]
-        );
+              ...cs,
+              pdsSubmissionId: id,
+            })) as (typeof pdsCivilService.$inferInsert)[]
+          ).returning();
+          console.log(`[updatePDSSubmission] Inserted ${newEntries.length} new civil service entries:`, {
+            insertedCount: insertResult.length,
+            insertedIds: insertResult.map(e => e.id),
+          });
         }
       }
 
       // Update work experience if provided (delete and recreate)
-      if (data.workExperience !== undefined && data.workExperience.length > 0) {
+      // undefined = no change, [] = clear all, [...] = replace with new entries
+      if (data.workExperience !== undefined) {
         await tx
           .delete(pdsWorkExperience)
           .where(eq(pdsWorkExperience.pdsSubmissionId, id));
-        await tx.insert(pdsWorkExperience).values(
-          data.workExperience.map((we) => ({
-            ...we,
-            pdsSubmissionId: id,
-          })) as (typeof pdsWorkExperience.$inferInsert)[]
-        );
+        if (data.workExperience.length > 0) {
+          await tx.insert(pdsWorkExperience).values(
+            data.workExperience.map((we) => ({
+              ...we,
+              pdsSubmissionId: id,
+            })) as (typeof pdsWorkExperience.$inferInsert)[]
+          );
+        }
       }
 
       // Update voluntary work if provided (delete and recreate)
-      if (data.voluntaryWork !== undefined && data.voluntaryWork.length > 0) {
+      // undefined = no change, [] = clear all, [...] = replace with new entries
+      if (data.voluntaryWork !== undefined) {
         await tx
           .delete(pdsVoluntaryWork)
           .where(eq(pdsVoluntaryWork.pdsSubmissionId, id));
-        await tx.insert(pdsVoluntaryWork).values(
-          data.voluntaryWork.map((vw) => ({
-            ...vw,
-            pdsSubmissionId: id,
-          })) as (typeof pdsVoluntaryWork.$inferInsert)[]
-        );
+        if (data.voluntaryWork.length > 0) {
+          await tx.insert(pdsVoluntaryWork).values(
+            data.voluntaryWork.map((vw) => ({
+              ...vw,
+              pdsSubmissionId: id,
+            })) as (typeof pdsVoluntaryWork.$inferInsert)[]
+          );
+        }
       }
 
       // Update training if provided (upsert-by-id to preserve attachment links)
       if (data.training !== undefined) {
-        // Separate entries with IDs (existing) from entries without IDs (new)
-        const existingEntries = data.training.filter((tr) => tr.id);
-        const newEntries = data.training.filter((tr) => !tr.id);
-        const existingIds = existingEntries.map((tr) => tr.id as string);
+        // Get all entry IDs from the payload
+        const entriesWithIds = data.training.filter((tr) => tr.id);
+        const entryIds = entriesWithIds.map((tr) => tr.id as string);
+
+        // Query which IDs actually exist in the database
+        let actuallyExistingIds: string[] = [];
+        if (entryIds.length > 0) {
+          const dbEntries = await tx
+            .select({ id: pdsTraining.id })
+            .from(pdsTraining)
+            .where(
+              and(
+                eq(pdsTraining.pdsSubmissionId, id),
+                inArray(pdsTraining.id, entryIds)
+              )
+            );
+          actuallyExistingIds = dbEntries.map((e) => e.id);
+        }
+
+        // Classify based on what actually exists in DB (not just presence of ID)
+        const existingEntries = data.training.filter(
+          (tr) => tr.id && actuallyExistingIds.includes(tr.id as string)
+        );
+        const newEntries = data.training.filter(
+          (tr) => !tr.id || !actuallyExistingIds.includes(tr.id as string)
+        );
+        const allPayloadIds = data.training.filter((tr) => tr.id).map((tr) => tr.id as string);
+
+        console.log('[updatePDSSubmission] Training update operation:', {
+          pdsId: id,
+          totalTraining: data.training.length,
+          entriesWithIdsInPayload: entryIds.length,
+          actuallyExistingInDb: actuallyExistingIds.length,
+          existingEntriesCount: existingEntries.length,
+          newEntriesCount: newEntries.length,
+          actuallyExistingIds,
+          trainingDetails: data.training.map((tr) => ({
+            id: tr.id,
+            title: tr.title,
+            dateFrom: tr.dateFrom,
+            dateTo: tr.dateTo,
+            existsInDb: tr.id ? actuallyExistingIds.includes(tr.id as string) : false,
+          })),
+        });
 
         // Delete entries that are no longer in the payload
-        if (existingIds.length > 0) {
+        if (allPayloadIds.length > 0) {
           await tx
             .delete(pdsTraining)
             .where(
               and(
                 eq(pdsTraining.pdsSubmissionId, id),
-                notInArray(pdsTraining.id, existingIds)
+                notInArray(pdsTraining.id, allPayloadIds)
               )
             );
+          console.log('[updatePDSSubmission] Deleted old training entries (not in payload)');
         } else {
           // If no entries have IDs, delete all existing entries
           await tx
             .delete(pdsTraining)
             .where(eq(pdsTraining.pdsSubmissionId, id));
+          console.log('[updatePDSSubmission] Deleted ALL existing training entries (no IDs in payload)');
         }
 
-        // Update existing entries
+        // Update entries that actually exist in the database
         for (const tr of existingEntries) {
           const { id: trId, ...updateData } = tr;
           await tx
             .update(pdsTraining)
             .set(updateData)
             .where(eq(pdsTraining.id, trId as string));
+          console.log(`[updatePDSSubmission] Updated training entry ${trId}:`, updateData);
         }
 
-        // Insert new entries
+        // Insert new entries (including those with client-generated IDs that don't exist in DB)
         if (newEntries.length > 0) {
-        await tx.insert(pdsTraining).values(
+          const insertResult = await tx.insert(pdsTraining).values(
             newEntries.map((tr) => ({
-            ...tr,
-            pdsSubmissionId: id,
-          })) as (typeof pdsTraining.$inferInsert)[]
-        );
+              ...tr,
+              pdsSubmissionId: id,
+            })) as (typeof pdsTraining.$inferInsert)[]
+          ).returning();
+          console.log(`[updatePDSSubmission] Inserted ${newEntries.length} new training entries:`, {
+            insertedCount: insertResult.length,
+            insertedIds: insertResult.map(t => t.id),
+            insertedTitles: insertResult.map(t => t.title),
+          });
         }
+
+        // DEBUG: Verify training entries were saved
+        const allTrainingForPds = await tx
+          .select()
+          .from(pdsTraining)
+          .where(eq(pdsTraining.pdsSubmissionId, id));
+        console.log('[updatePDSSubmission] Final training entries in database:', {
+          pdsId: id,
+          count: allTrainingForPds.length,
+          entries: allTrainingForPds.map(t => ({
+            id: t.id,
+            title: t.title,
+            dateFrom: t.dateFrom,
+            dateTo: t.dateTo,
+          })),
+        });
       }
 
       // Update other info if provided
@@ -892,10 +1026,49 @@ export async function updatePDSSubmission(
         }
       }
     });
+
+    // DEBUG: Final verification after transaction completes
+    console.log('[updatePDSSubmission] END: Transaction completed successfully for PDS', id);
   } catch (error) {
     console.error('[updatePDSSubmission] Transaction error:', error);
     throw new Error(
       `Failed to update PDS submission ${id}: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
+    );
+  }
+}
+
+/**
+ * Update the completion percentage for a PDS submission
+ *
+ * @param id - PDS submission UUID
+ * @param completion - Completion percentage (0-100)
+ * @returns Promise<void>
+ */
+export async function updatePDSCompletion(
+  id: string,
+  completion: number
+): Promise<void> {
+  try {
+    if (!id || typeof id !== 'string') {
+      throw new Error('Valid PDS submission ID is required');
+    }
+
+    // Ensure completion is within valid range
+    const validCompletion = Math.max(0, Math.min(100, Math.round(completion)));
+
+    await db
+      .update(pdsSubmissions)
+      .set({
+        completion: validCompletion,
+        updatedAt: new Date(),
+      })
+      .where(eq(pdsSubmissions.id, id));
+  } catch (error) {
+    console.error('[updatePDSCompletion] Database error:', error);
+    throw new Error(
+      `Failed to update PDS completion for ${id}: ${
         error instanceof Error ? error.message : 'Unknown error'
       }`
     );
@@ -1262,8 +1435,8 @@ export async function getArchivedPDS(
         ? baseQuery.limit(options.limit).offset(options.offset)
         : baseQuery.offset(options.offset)
       : options?.limit
-        ? baseQuery.limit(options.limit)
-        : baseQuery;
+      ? baseQuery.limit(options.limit)
+      : baseQuery;
 
     const results = await query;
 
@@ -1376,7 +1549,9 @@ export async function deletePDSSubmission(
       await tx.delete(pdsSubmissions).where(eq(pdsSubmissions.id, id));
     });
 
-    console.log(`[deletePDSSubmission] Successfully deleted PDS ${id} (status: ${deletedStatus})`);
+    console.log(
+      `[deletePDSSubmission] Successfully deleted PDS ${id} (status: ${deletedStatus})`
+    );
   } catch (error) {
     console.error('[deletePDSSubmission] Transaction error:', error);
     throw new Error(

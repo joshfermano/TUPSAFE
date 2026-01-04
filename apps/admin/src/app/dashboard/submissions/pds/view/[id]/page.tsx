@@ -23,6 +23,7 @@ import {
   XCircle,
   CheckCircle,
   Loader2,
+  Paperclip,
 } from 'lucide-react';
 
 import {
@@ -62,6 +63,7 @@ import { ReviewDialog } from '@/components/admin/ReviewDialog';
 import { LoadingCard } from '@/components/admin/LoadingCard';
 import { ErrorAlert } from '@/components/admin/ErrorAlert';
 import { EmptyState } from '@/components/admin/EmptyState';
+import { PdsAttachmentsList } from '@/components/admin/PdsAttachmentsList';
 
 import { usePdsSubmissionsQuery } from '@/hooks/usePdsSubmissionsQuery';
 import { useAuth } from '@/context/AuthContext';
@@ -105,9 +107,9 @@ export default function PdsSubmissionViewPage() {
   const submissionId = params.id as string;
 
   const [isReviewDialogOpen, setIsReviewDialogOpen] = React.useState(false);
-  const [reviewAction, setReviewAction] = React.useState<
-    'approve' | 'reject'
-  >('approve');
+  const [reviewAction, setReviewAction] = React.useState<'approve' | 'reject'>(
+    'approve'
+  );
 
   const {
     useCompleteSubmission,
@@ -137,6 +139,106 @@ export default function PdsSubmissionViewPage() {
       version: completeSubmission.submission.version,
     });
   }, [completeSubmission]);
+
+  // UI view-model adapter: converts canonical flat pdsData fields to nested format for display
+  // This is display-only; PDF export uses the canonical pdsData directly
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const viewPdsData = React.useMemo((): any => {
+    if (!completeSubmission?.pdsData) return null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pd = completeSubmission.pdsData as any;
+    return {
+      personalInfo: pd.personalInfo
+        ? {
+            ...pd.personalInfo,
+            // Map heightM/weightKg to height/weight for display helpers
+            height: pd.personalInfo.heightM
+              ? parseFloat(pd.personalInfo.heightM as string)
+              : undefined,
+            weight: pd.personalInfo.weightKg
+              ? parseFloat(pd.personalInfo.weightKg as string)
+              : undefined,
+          }
+        : null,
+      // Convert flat familyBackground to nested for display
+      familyBackground: pd.familyBackground
+        ? {
+            spouse: {
+              surname: pd.familyBackground.spouseSurname,
+              firstName: pd.familyBackground.spouseFirstName,
+              middleName: pd.familyBackground.spouseMiddleName,
+              nameExtension: pd.familyBackground.spouseNameExtension,
+              occupation: pd.familyBackground.spouseOccupation,
+              employer: pd.familyBackground.spouseEmployer,
+              businessAddress: pd.familyBackground.spouseBusinessAddress,
+              telephoneNo: pd.familyBackground.spouseTelephoneNo,
+            },
+            father: {
+              surname: pd.familyBackground.fatherSurname,
+              firstName: pd.familyBackground.fatherFirstName,
+              middleName: pd.familyBackground.fatherMiddleName,
+              nameExtension: pd.familyBackground.fatherNameExtension,
+            },
+            mother: {
+              maidenName: pd.familyBackground.motherMaidenSurname,
+              firstName: pd.familyBackground.motherFirstName,
+              middleName: pd.familyBackground.motherMiddleName,
+            },
+          }
+        : null,
+      children: pd.children,
+      education: pd.education,
+      // Map canonical civilService fields to view fields
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      civilService: pd.civilService?.map((cs: any) => ({
+        id: cs.id,
+        careerService: cs.eligibilityName,
+        rating: cs.rating ? parseFloat(cs.rating as string) : null,
+        dateOfExamination: cs.dateOfExam,
+        placeOfExamination: cs.placeOfExam,
+        licenseNumber: cs.licenseNo,
+        validity: cs.licenseValidityDate,
+        attachments: cs.attachments,
+      })),
+      // Map canonical workExperience fields to view fields
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      workExperience: pd.workExperience?.map((we: any) => ({
+        id: we.id,
+        positionTitle: we.positionTitle,
+        department: we.departmentAgency,
+        monthlySalary: we.monthlySalary
+          ? parseFloat(we.monthlySalary as string)
+          : null,
+        salaryGrade: we.salaryGrade,
+        statusOfAppointment: we.statusOfAppointment,
+        govService: we.isGovernment,
+        periodFrom: we.dateFrom,
+        periodTo: we.dateTo,
+      })),
+      // Map canonical voluntaryWork fields to view fields
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      voluntaryWork: pd.voluntaryWork?.map((vw: any) => ({
+        id: vw.id,
+        organizationName: vw.organizationName,
+        organizationAddress: vw.organizationAddress,
+        positionNature: vw.positionNature,
+        dateFrom: vw.dateFrom,
+        dateTo: vw.dateTo,
+        numberOfHours: vw.numberOfHours,
+      })),
+      training: pd.training,
+      // Map canonical otherInfo fields to view fields
+      otherInfo: pd.otherInfo
+        ? {
+            skills: pd.otherInfo.skills as string[] | undefined,
+            recognitions: pd.otherInfo.recognitions,
+            organizations: pd.otherInfo.associations,
+            references: pd.otherInfo.references,
+            questions: pd.otherInfo.questions,
+          }
+        : null,
+    };
+  }, [completeSubmission?.pdsData]);
 
   // Handle approval
   const handleApprove = React.useCallback(
@@ -174,12 +276,29 @@ export default function PdsSubmissionViewPage() {
     [submissionId, user?.id, rejectSubmissionAsync]
   );
 
-  // Handle PDF export
+  // Handle PDF export with runtime assertions
   const handleExportPdf = React.useCallback(async () => {
     if (!pdfReadyData) {
       toast.error('PDS data not available');
       return;
     }
+
+    // Runtime assertions: verify canonical data shape at PDF boundary
+    console.log('[Admin PDS PDF] Asserting data shape:', {
+      hasPersonalInfo: !!pdfReadyData.personalInfo,
+      hasSurname: !!pdfReadyData.personalInfo?.surname,
+      hasFirstName: !!pdfReadyData.personalInfo?.firstName,
+      hasFamilyBackground: !!pdfReadyData.familyBackground,
+      familyBackgroundKeys: pdfReadyData.familyBackground
+        ? Object.keys(pdfReadyData.familyBackground)
+        : [],
+      spouseFields: pdfReadyData.familyBackground
+        ? {
+            hasSurname: 'spouseSurname' in pdfReadyData.familyBackground,
+            hasFirstName: 'spouseFirstName' in pdfReadyData.familyBackground,
+          }
+        : null,
+    });
 
     try {
       // Validate before generating
@@ -362,11 +481,9 @@ export default function PdsSubmissionViewPage() {
     );
   }
 
-  const {
-    submission,
-    employee: submissionUser,
-    pdsData,
-  } = completeSubmission as PDSSubmissionDetail;
+  const { submission, employee: submissionUser } =
+    completeSubmission as PDSSubmissionDetail;
+  // Use viewPdsData (UI adapter) for display, pdfReadyData for PDF export
   // Admin can only review submissions that are in reviewable states
   // API only accepts 'submitted' or 'reviewing' status for approve/reject
   const canReview =
@@ -525,7 +642,8 @@ export default function PdsSubmissionViewPage() {
                 {submission.submittedAt
                   ? format(new Date(submission.submittedAt), 'MMMM d, yyyy')
                   : 'N/A'}
-                {' • '}{submission.year}
+                {' • '}
+                {submission.year}
               </p>
             </div>
 
@@ -572,7 +690,10 @@ export default function PdsSubmissionViewPage() {
                           </span>
                         </div>
                         <ValidationBadge
-                          status={getSectionStatus(pdsData.personalInfo, true)}
+                          status={getSectionStatus(
+                            viewPdsData?.personalInfo,
+                            true
+                          )}
                         />
                       </div>
                     </AccordionTrigger>
@@ -586,19 +707,19 @@ export default function PdsSubmissionViewPage() {
                           <SectionCardGrid columns={4}>
                             <SectionCardField
                               label="Surname"
-                              value={pdsData.personalInfo?.surname}
+                              value={viewPdsData?.personalInfo?.surname}
                             />
                             <SectionCardField
                               label="First Name"
-                              value={pdsData.personalInfo?.firstName}
+                              value={viewPdsData?.personalInfo?.firstName}
                             />
                             <SectionCardField
                               label="Middle Name"
-                              value={pdsData.personalInfo?.middleName}
+                              value={viewPdsData?.personalInfo?.middleName}
                             />
                             <SectionCardField
                               label="Name Extension"
-                              value={pdsData.personalInfo?.nameExtension}
+                              value={viewPdsData?.personalInfo?.nameExtension}
                             />
                           </SectionCardGrid>
                         </div>
@@ -614,10 +735,10 @@ export default function PdsSubmissionViewPage() {
                             <SectionCardField
                               label="Date of Birth"
                               value={
-                                pdsData.personalInfo?.dateOfBirth
+                                viewPdsData?.personalInfo?.dateOfBirth
                                   ? format(
                                       new Date(
-                                        pdsData.personalInfo.dateOfBirth
+                                        viewPdsData?.personalInfo.dateOfBirth
                                       ),
                                       'MMMM d, yyyy'
                                     )
@@ -626,11 +747,11 @@ export default function PdsSubmissionViewPage() {
                             />
                             <SectionCardField
                               label="Place of Birth"
-                              value={pdsData.personalInfo?.placeOfBirth}
+                              value={viewPdsData?.personalInfo?.placeOfBirth}
                             />
                             <SectionCardField
                               label="Sex"
-                              value={capitalize(pdsData.personalInfo?.sex)}
+                              value={capitalize(viewPdsData?.personalInfo?.sex)}
                             />
                           </SectionCardGrid>
                         </div>
@@ -646,15 +767,16 @@ export default function PdsSubmissionViewPage() {
                             <SectionCardField
                               label="Civil Status"
                               value={capitalize(
-                                pdsData.personalInfo?.civilStatus
+                                viewPdsData?.personalInfo?.civilStatus
                               )}
                             />
                             <SectionCardField
                               label="Citizenship"
                               value={
-                                pdsData.personalInfo?.citizenship
+                                viewPdsData?.personalInfo?.citizenship
                                   ? formatCitizenship(
-                                      pdsData.personalInfo.citizenship as never
+                                      viewPdsData?.personalInfo
+                                        .citizenship as never
                                     )
                                   : 'N/A'
                               }
@@ -672,15 +794,19 @@ export default function PdsSubmissionViewPage() {
                           <SectionCardGrid columns={4}>
                             <SectionCardField
                               label="Height"
-                              value={formatHeight(pdsData.personalInfo?.height)}
+                              value={formatHeight(
+                                viewPdsData?.personalInfo?.height
+                              )}
                             />
                             <SectionCardField
                               label="Weight"
-                              value={formatWeight(pdsData.personalInfo?.weight)}
+                              value={formatWeight(
+                                viewPdsData?.personalInfo?.weight
+                              )}
                             />
                             <SectionCardField
                               label="Blood Type"
-                              value={pdsData.personalInfo?.bloodType}
+                              value={viewPdsData?.personalInfo?.bloodType}
                             />
                           </SectionCardGrid>
                         </div>
@@ -696,26 +822,26 @@ export default function PdsSubmissionViewPage() {
                             <SectionCardField
                               label="Residential Address"
                               value={formatAddress(
-                                pdsData.personalInfo?.residentialAddress
+                                viewPdsData?.personalInfo?.residentialAddress
                               )}
                             />
                             <SectionCardField
                               label="Permanent Address"
                               value={formatAddress(
-                                pdsData.personalInfo?.permanentAddress
+                                viewPdsData?.personalInfo?.permanentAddress
                               )}
                             />
                             <SectionCardField
                               label="Telephone Number"
-                              value={pdsData.personalInfo?.telephoneNo}
+                              value={viewPdsData?.personalInfo?.telephoneNo}
                             />
                             <SectionCardField
                               label="Mobile Number"
-                              value={pdsData.personalInfo?.mobileNo}
+                              value={viewPdsData?.personalInfo?.mobileNo}
                             />
                             <SectionCardField
                               label="Email Address"
-                              value={pdsData.personalInfo?.emailAddress}
+                              value={viewPdsData?.personalInfo?.emailAddress}
                             />
                           </SectionCardGrid>
                         </div>
@@ -730,23 +856,23 @@ export default function PdsSubmissionViewPage() {
                           <SectionCardGrid columns={3}>
                             <SectionCardField
                               label="GSIS ID No."
-                              value={pdsData.personalInfo?.gsisNo}
+                              value={viewPdsData?.personalInfo?.gsisNo}
                             />
                             <SectionCardField
                               label="PAG-IBIG ID No."
-                              value={pdsData.personalInfo?.pagibigNo}
+                              value={viewPdsData?.personalInfo?.pagibigNo}
                             />
                             <SectionCardField
                               label="PhilHealth No."
-                              value={pdsData.personalInfo?.philhealthNo}
+                              value={viewPdsData?.personalInfo?.philhealthNo}
                             />
                             <SectionCardField
                               label="SSS No."
-                              value={pdsData.personalInfo?.sssNo}
+                              value={viewPdsData?.personalInfo?.sssNo}
                             />
                             <SectionCardField
                               label="TIN"
-                              value={pdsData.personalInfo?.tinNo}
+                              value={viewPdsData?.personalInfo?.tinNo}
                             />
                           </SectionCardGrid>
                         </div>
@@ -766,7 +892,7 @@ export default function PdsSubmissionViewPage() {
                         </div>
                         <ValidationBadge
                           status={getSectionStatus(
-                            pdsData.familyBackground,
+                            viewPdsData?.familyBackground,
                             true
                           )}
                         />
@@ -775,7 +901,7 @@ export default function PdsSubmissionViewPage() {
                     <AccordionContent>
                       <div className="space-y-6 pt-4">
                         {/* Spouse Information */}
-                        {pdsData.familyBackground?.spouse?.surname && (
+                        {viewPdsData?.familyBackground?.spouse?.surname && (
                           <>
                             <div>
                               <h4 className="text-sm font-semibold text-muted-foreground mb-3">
@@ -785,51 +911,56 @@ export default function PdsSubmissionViewPage() {
                                 <SectionCardField
                                   label="Surname"
                                   value={
-                                    pdsData.familyBackground.spouse.surname
+                                    viewPdsData?.familyBackground.spouse.surname
                                   }
                                 />
                                 <SectionCardField
                                   label="First Name"
                                   value={
-                                    pdsData.familyBackground.spouse.firstName
+                                    viewPdsData?.familyBackground.spouse
+                                      .firstName
                                   }
                                 />
                                 <SectionCardField
                                   label="Middle Name"
                                   value={
-                                    pdsData.familyBackground.spouse.middleName
+                                    viewPdsData?.familyBackground.spouse
+                                      .middleName
                                   }
                                 />
                                 <SectionCardField
                                   label="Name Extension"
                                   value={
-                                    pdsData.familyBackground.spouse
+                                    viewPdsData?.familyBackground.spouse
                                       .nameExtension
                                   }
                                 />
                                 <SectionCardField
                                   label="Occupation"
                                   value={
-                                    pdsData.familyBackground.spouse.occupation
+                                    viewPdsData?.familyBackground.spouse
+                                      .occupation
                                   }
                                 />
                                 <SectionCardField
                                   label="Employer/Business Name"
                                   value={
-                                    pdsData.familyBackground.spouse.employer
+                                    viewPdsData?.familyBackground.spouse
+                                      .employer
                                   }
                                 />
                                 <SectionCardField
                                   label="Business Address"
                                   value={
-                                    pdsData.familyBackground.spouse
+                                    viewPdsData?.familyBackground.spouse
                                       .businessAddress
                                   }
                                 />
                                 <SectionCardField
                                   label="Telephone No."
                                   value={
-                                    pdsData.familyBackground.spouse.telephoneNo
+                                    viewPdsData?.familyBackground.spouse
+                                      .telephoneNo
                                   }
                                 />
                               </SectionCardGrid>
@@ -846,18 +977,21 @@ export default function PdsSubmissionViewPage() {
                           <SectionCardGrid columns={3}>
                             <SectionCardField
                               label="Surname"
-                              value={pdsData.familyBackground?.father?.surname}
+                              value={
+                                viewPdsData?.familyBackground?.father?.surname
+                              }
                             />
                             <SectionCardField
                               label="First Name"
                               value={
-                                pdsData.familyBackground?.father?.firstName
+                                viewPdsData?.familyBackground?.father?.firstName
                               }
                             />
                             <SectionCardField
                               label="Middle Name"
                               value={
-                                pdsData.familyBackground?.father?.middleName
+                                viewPdsData?.familyBackground?.father
+                                  ?.middleName
                               }
                             />
                           </SectionCardGrid>
@@ -874,64 +1008,75 @@ export default function PdsSubmissionViewPage() {
                             <SectionCardField
                               label="Maiden Surname"
                               value={
-                                pdsData.familyBackground?.mother?.maidenName
+                                viewPdsData?.familyBackground?.mother
+                                  ?.maidenName
                               }
                             />
                             <SectionCardField
                               label="First Name"
                               value={
-                                pdsData.familyBackground?.mother?.firstName
+                                viewPdsData?.familyBackground?.mother?.firstName
                               }
                             />
                             <SectionCardField
                               label="Middle Name"
                               value={
-                                pdsData.familyBackground?.mother?.middleName
+                                viewPdsData?.familyBackground?.mother
+                                  ?.middleName
                               }
                             />
                           </SectionCardGrid>
                         </div>
 
                         {/* Children */}
-                        {pdsData.children && pdsData.children.length > 0 && (
-                          <>
-                            <Separator />
-                            <div>
-                              <h4 className="text-sm font-semibold text-muted-foreground mb-3">
-                                Children (List all children&apos;s names in
-                                chronological order)
-                              </h4>
-                              <Table>
-                                <TableHeader>
-                                  <TableRow>
-                                    <TableHead className="w-12">#</TableHead>
-                                    <TableHead>Name of Children</TableHead>
-                                    <TableHead>Date of Birth</TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {pdsData.children.map((child, index) => (
-                                    <TableRow key={index}>
-                                      <TableCell>{index + 1}</TableCell>
-                                      <TableCell className="font-medium">
-                                        {child.fullName}
-                                      </TableCell>
-                                      <TableCell>
-                                        {format(
-                                          new Date(child.dateOfBirth),
-                                          'MMMM d, yyyy'
-                                        )}
-                                      </TableCell>
+                        {viewPdsData?.children &&
+                          viewPdsData?.children.length > 0 && (
+                            <>
+                              <Separator />
+                              <div>
+                                <h4 className="text-sm font-semibold text-muted-foreground mb-3">
+                                  Children (List all children&apos;s names in
+                                  chronological order)
+                                </h4>
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead className="w-12">#</TableHead>
+                                      <TableHead>Name of Children</TableHead>
+                                      <TableHead>Date of Birth</TableHead>
                                     </TableRow>
-                                  ))}
-                                </TableBody>
-                              </Table>
-                            </div>
-                          </>
-                        )}
+                                  </TableHeader>
+                                  <TableBody>
+                                    {viewPdsData?.children.map(
+                                      (
+                                        child: {
+                                          fullName: string;
+                                          dateOfBirth: string;
+                                        },
+                                        index: number
+                                      ) => (
+                                        <TableRow key={index}>
+                                          <TableCell>{index + 1}</TableCell>
+                                          <TableCell className="font-medium">
+                                            {child.fullName}
+                                          </TableCell>
+                                          <TableCell>
+                                            {format(
+                                              new Date(child.dateOfBirth),
+                                              'MMMM d, yyyy'
+                                            )}
+                                          </TableCell>
+                                        </TableRow>
+                                      )
+                                    )}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            </>
+                          )}
 
-                        {(!pdsData.children ||
-                          pdsData.children.length === 0) && (
+                        {(!viewPdsData?.children ||
+                          viewPdsData?.children.length === 0) && (
                           <>
                             <Separator />
                             <p className="text-sm text-muted-foreground italic text-center py-4">
@@ -954,13 +1099,17 @@ export default function PdsSubmissionViewPage() {
                           </span>
                         </div>
                         <ValidationBadge
-                          status={getSectionStatus(pdsData.education, true)}
+                          status={getSectionStatus(
+                            viewPdsData?.education,
+                            true
+                          )}
                         />
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="pt-4">
-                        {pdsData.education && pdsData.education.length > 0 ? (
+                        {viewPdsData?.education &&
+                        viewPdsData?.education.length > 0 ? (
                           <div className="overflow-x-auto">
                             <Table>
                               <TableHeader>
@@ -989,32 +1138,46 @@ export default function PdsSubmissionViewPage() {
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {pdsData.education.map((edu, index) => (
-                                  <TableRow key={index}>
-                                    <TableCell className="font-medium capitalize">
-                                      {edu.level}
-                                    </TableCell>
-                                    <TableCell>{edu.schoolName}</TableCell>
-                                    <TableCell>
-                                      {edu.degreeCourse || '-'}
-                                    </TableCell>
-                                    <TableCell>
-                                      {formatYearRange(
-                                        edu.periodFrom,
-                                        edu.periodTo
-                                      )}
-                                    </TableCell>
-                                    <TableCell>
-                                      {edu.highestLevelEarned || '-'}
-                                    </TableCell>
-                                    <TableCell>
-                                      {edu.yearGraduated || '-'}
-                                    </TableCell>
-                                    <TableCell>
-                                      {edu.honorsReceived || '-'}
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
+                                {viewPdsData?.education.map(
+                                  (
+                                    edu: {
+                                      level?: string;
+                                      schoolName?: string;
+                                      degreeCourse?: string;
+                                      periodFrom?: string;
+                                      periodTo?: string;
+                                      highestLevelEarned?: string;
+                                      yearGraduated?: number;
+                                      honorsReceived?: string;
+                                    },
+                                    index: number
+                                  ) => (
+                                    <TableRow key={index}>
+                                      <TableCell className="font-medium capitalize">
+                                        {edu.level}
+                                      </TableCell>
+                                      <TableCell>{edu.schoolName}</TableCell>
+                                      <TableCell>
+                                        {edu.degreeCourse || '-'}
+                                      </TableCell>
+                                      <TableCell>
+                                        {formatYearRange(
+                                          edu.periodFrom,
+                                          edu.periodTo
+                                        )}
+                                      </TableCell>
+                                      <TableCell>
+                                        {edu.highestLevelEarned || '-'}
+                                      </TableCell>
+                                      <TableCell>
+                                        {edu.yearGraduated || '-'}
+                                      </TableCell>
+                                      <TableCell>
+                                        {edu.honorsReceived || '-'}
+                                      </TableCell>
+                                    </TableRow>
+                                  )
+                                )}
                               </TableBody>
                             </Table>
                           </div>
@@ -1038,76 +1201,110 @@ export default function PdsSubmissionViewPage() {
                           </span>
                         </div>
                         <ValidationBadge
-                          status={getSectionStatus(pdsData.civilService, false)}
+                          status={getSectionStatus(
+                            viewPdsData?.civilService,
+                            false
+                          )}
                         />
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="pt-4">
-                        {pdsData.civilService &&
-                        pdsData.civilService.length > 0 ? (
-                          <div className="overflow-x-auto">
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead className="min-w-[240px]">
-                                    Career Service/RA 1080 (Board/Bar) Under
-                                    Special Laws/CES/CSEE
-                                  </TableHead>
-                                  <TableHead className="min-w-[100px]">
-                                    Rating
-                                  </TableHead>
-                                  <TableHead className="min-w-[120px]">
-                                    Date of Examination
-                                  </TableHead>
-                                  <TableHead className="min-w-[180px]">
-                                    Place of Examination
-                                  </TableHead>
-                                  <TableHead className="min-w-[140px]">
-                                    License Number
-                                  </TableHead>
-                                  <TableHead className="min-w-[120px]">
-                                    Date of Validity
-                                  </TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {pdsData.civilService.map((exam, index) => (
-                                  <TableRow key={index}>
-                                    <TableCell className="font-medium">
-                                      {exam.careerService || 'N/A'}
-                                    </TableCell>
-                                    <TableCell>
-                                      {exam.rating
-                                        ? `${exam.rating.toFixed(2)}%`
-                                        : '-'}
-                                    </TableCell>
-                                    <TableCell>
-                                      {exam.dateOfExamination
-                                        ? format(
-                                            new Date(exam.dateOfExamination),
-                                            'MMM d, yyyy'
-                                          )
-                                        : '-'}
-                                    </TableCell>
-                                    <TableCell>
-                                      {exam.placeOfExamination || '-'}
-                                    </TableCell>
-                                    <TableCell>
-                                      {exam.licenseNumber || '-'}
-                                    </TableCell>
-                                    <TableCell>
-                                      {exam.validity
-                                        ? format(
-                                            new Date(exam.validity),
-                                            'MMM d, yyyy'
-                                          )
-                                        : '-'}
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
+                        {viewPdsData?.civilService &&
+                        viewPdsData?.civilService.length > 0 ? (
+                          <div className="space-y-4">
+                            {viewPdsData?.civilService.map(
+                              (
+                                exam: {
+                                  id?: string;
+                                  careerService?: string;
+                                  rating?: number | null;
+                                  dateOfExamination?: string;
+                                  placeOfExamination?: string;
+                                  licenseNumber?: string;
+                                  validity?: string;
+                                  attachments?: Array<{
+                                    id: string;
+                                    fileName: string;
+                                    fileUrl: string | null;
+                                  }>;
+                                },
+                                index: number
+                              ) => (
+                                <Card
+                                  key={index}
+                                  className="gradient-card-subtle">
+                                  <CardContent className="p-4">
+                                    {/* Field grid */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                      <SectionCardField
+                                        label="Career Service"
+                                        value={exam.careerService}
+                                        className="lg:col-span-3"
+                                      />
+                                      <SectionCardField
+                                        label="Rating"
+                                        value={
+                                          exam.rating
+                                            ? `${exam.rating.toFixed(2)}%`
+                                            : null
+                                        }
+                                      />
+                                      <SectionCardField
+                                        label="Date of Examination"
+                                        value={
+                                          exam.dateOfExamination
+                                            ? format(
+                                                new Date(
+                                                  exam.dateOfExamination
+                                                ),
+                                                'MMM d, yyyy'
+                                              )
+                                            : null
+                                        }
+                                      />
+                                      <SectionCardField
+                                        label="Place of Examination"
+                                        value={exam.placeOfExamination}
+                                      />
+                                      <SectionCardField
+                                        label="License Number"
+                                        value={exam.licenseNumber}
+                                      />
+                                      <SectionCardField
+                                        label="Date of Validity"
+                                        value={
+                                          exam.validity
+                                            ? format(
+                                                new Date(exam.validity),
+                                                'MMM d, yyyy'
+                                              )
+                                            : null
+                                        }
+                                      />
+                                    </div>
+
+                                    {/* Attachments */}
+                                    {exam.attachments &&
+                                      exam.attachments.length > 0 && (
+                                        <>
+                                          <Separator className="my-4" />
+                                          <div>
+                                            <h5 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                                              <Paperclip className="h-4 w-4" />
+                                              Attachments (
+                                              {exam.attachments.length})
+                                            </h5>
+                                            <PdsAttachmentsList
+                                              attachments={exam.attachments}
+                                            />
+                                          </div>
+                                        </>
+                                      )}
+                                  </CardContent>
+                                </Card>
+                              )
+                            )}
                           </div>
                         ) : (
                           <p className="text-sm text-muted-foreground italic text-center py-8">
@@ -1130,7 +1327,7 @@ export default function PdsSubmissionViewPage() {
                         </div>
                         <ValidationBadge
                           status={getSectionStatus(
-                            pdsData.workExperience,
+                            viewPdsData?.workExperience,
                             false
                           )}
                         />
@@ -1138,8 +1335,8 @@ export default function PdsSubmissionViewPage() {
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="pt-4">
-                        {pdsData.workExperience &&
-                        pdsData.workExperience.length > 0 ? (
+                        {viewPdsData?.workExperience &&
+                        viewPdsData?.workExperience.length > 0 ? (
                           <div className="overflow-x-auto">
                             <Table>
                               <TableHeader>
@@ -1168,36 +1365,51 @@ export default function PdsSubmissionViewPage() {
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {pdsData.workExperience.map((work, index) => (
-                                  <TableRow key={index}>
-                                    <TableCell>
-                                      {formatDateRange(
-                                        work.periodFrom,
-                                        work.periodTo
-                                      )}
-                                    </TableCell>
-                                    <TableCell className="font-medium">
-                                      {work.positionTitle || 'N/A'}
-                                    </TableCell>
-                                    <TableCell>
-                                      {work.department || 'N/A'}
-                                    </TableCell>
-                                    <TableCell>
-                                      {formatCurrency(work.monthlySalary)}
-                                    </TableCell>
-                                    <TableCell>
-                                      {work.salaryGrade || '-'}
-                                    </TableCell>
-                                    <TableCell>
-                                      {work.statusOfAppointment || '-'}
-                                    </TableCell>
-                                    <TableCell>
-                                      {work.govService !== undefined
-                                        ? formatBoolean(work.govService)
-                                        : '-'}
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
+                                {viewPdsData?.workExperience.map(
+                                  (
+                                    work: {
+                                      id?: string;
+                                      positionTitle?: string;
+                                      department?: string;
+                                      monthlySalary?: number | null;
+                                      salaryGrade?: string;
+                                      statusOfAppointment?: string;
+                                      govService?: boolean;
+                                      periodFrom?: string;
+                                      periodTo?: string;
+                                    },
+                                    index: number
+                                  ) => (
+                                    <TableRow key={index}>
+                                      <TableCell>
+                                        {formatDateRange(
+                                          work.periodFrom,
+                                          work.periodTo
+                                        )}
+                                      </TableCell>
+                                      <TableCell className="font-medium">
+                                        {work.positionTitle || 'N/A'}
+                                      </TableCell>
+                                      <TableCell>
+                                        {work.department || 'N/A'}
+                                      </TableCell>
+                                      <TableCell>
+                                        {formatCurrency(work.monthlySalary)}
+                                      </TableCell>
+                                      <TableCell>
+                                        {work.salaryGrade || '-'}
+                                      </TableCell>
+                                      <TableCell>
+                                        {work.statusOfAppointment || '-'}
+                                      </TableCell>
+                                      <TableCell>
+                                        {work.govService !== undefined
+                                          ? formatBoolean(work.govService)
+                                          : '-'}
+                                      </TableCell>
+                                    </TableRow>
+                                  )
+                                )}
                               </TableBody>
                             </Table>
                           </div>
@@ -1223,7 +1435,7 @@ export default function PdsSubmissionViewPage() {
                         </div>
                         <ValidationBadge
                           status={getSectionStatus(
-                            pdsData.voluntaryWork,
+                            viewPdsData?.voluntaryWork,
                             false
                           )}
                         />
@@ -1231,8 +1443,8 @@ export default function PdsSubmissionViewPage() {
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="pt-4">
-                        {pdsData.voluntaryWork &&
-                        pdsData.voluntaryWork.length > 0 ? (
+                        {viewPdsData?.voluntaryWork &&
+                        viewPdsData?.voluntaryWork.length > 0 ? (
                           <div className="overflow-x-auto">
                             <Table>
                               <TableHeader>
@@ -1252,32 +1464,47 @@ export default function PdsSubmissionViewPage() {
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {pdsData.voluntaryWork.map((work, index) => (
-                                  <TableRow key={index}>
-                                    <TableCell className="font-medium">
-                                      <div>
-                                        <p>{work.organizationName || 'N/A'}</p>
-                                        {work.organizationAddress && (
-                                          <p className="text-xs text-muted-foreground mt-1">
-                                            {work.organizationAddress}
+                                {viewPdsData?.voluntaryWork.map(
+                                  (
+                                    work: {
+                                      id?: string;
+                                      organizationName?: string;
+                                      organizationAddress?: string;
+                                      positionNature?: string;
+                                      dateFrom?: string;
+                                      dateTo?: string;
+                                      numberOfHours?: number;
+                                    },
+                                    index: number
+                                  ) => (
+                                    <TableRow key={index}>
+                                      <TableCell className="font-medium">
+                                        <div>
+                                          <p>
+                                            {work.organizationName || 'N/A'}
                                           </p>
+                                          {work.organizationAddress && (
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                              {work.organizationAddress}
+                                            </p>
+                                          )}
+                                        </div>
+                                      </TableCell>
+                                      <TableCell>
+                                        {formatDateRange(
+                                          work.dateFrom,
+                                          work.dateTo
                                         )}
-                                      </div>
-                                    </TableCell>
-                                    <TableCell>
-                                      {formatDateRange(
-                                        work.dateFrom,
-                                        work.dateTo
-                                      )}
-                                    </TableCell>
-                                    <TableCell>
-                                      {work.numberOfHours || '-'}
-                                    </TableCell>
-                                    <TableCell>
-                                      {work.positionNature || '-'}
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
+                                      </TableCell>
+                                      <TableCell>
+                                        {work.numberOfHours || '-'}
+                                      </TableCell>
+                                      <TableCell>
+                                        {work.positionNature || '-'}
+                                      </TableCell>
+                                    </TableRow>
+                                  )
+                                )}
                               </TableBody>
                             </Table>
                           </div>
@@ -1302,69 +1529,114 @@ export default function PdsSubmissionViewPage() {
                           </span>
                         </div>
                         <ValidationBadge
-                          status={getSectionStatus(pdsData.training, false)}
+                          status={getSectionStatus(
+                            viewPdsData?.training,
+                            false
+                          )}
                         />
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="pt-4">
-                        {pdsData.training && pdsData.training.length > 0 ? (
-                          <div className="overflow-x-auto">
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead className="min-w-[240px]">
-                                    Title of Learning and Development
-                                    Interventions/Training Programs
-                                  </TableHead>
-                                  <TableHead className="min-w-[120px]">
-                                    Inclusive Dates
-                                  </TableHead>
-                                  <TableHead className="min-w-[100px]">
-                                    Number of Hours
-                                  </TableHead>
-                                  <TableHead className="min-w-[140px]">
-                                    Type of LD
-                                  </TableHead>
-                                  <TableHead className="min-w-[240px]">
-                                    Conducted/Sponsored By
-                                  </TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {pdsData.training.map((training, index) => (
-                                  <TableRow key={index}>
-                                    <TableCell className="font-medium">
-                                      {training.title || 'N/A'}
-                                    </TableCell>
-                                    <TableCell>
-                                      {training.dateFrom && training.dateTo
-                                        ? `${format(
-                                            new Date(training.dateFrom),
-                                            'MMM dd, yyyy'
-                                          )} - ${format(
-                                            new Date(training.dateTo),
-                                            'MMM dd, yyyy'
-                                          )}`
-                                        : '-'}
-                                    </TableCell>
-                                    <TableCell>
-                                      {training.hours || '-'}
-                                    </TableCell>
-                                    <TableCell>
-                                      {training.typeOfLd || '-'}
-                                    </TableCell>
-                                    <TableCell>
-                                      {training.conductedBy || '-'}
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
+                        {viewPdsData?.training &&
+                        viewPdsData?.training.length > 0 ? (
+                          <div className="space-y-3">
+                            {viewPdsData?.training.map(
+                              (
+                                training: {
+                                  id?: string;
+                                  title?: string;
+                                  dateFrom?: string;
+                                  dateTo?: string;
+                                  hours?: number;
+                                  typeOfLd?: string;
+                                  conductedBy?: string;
+                                  attachments?: Array<{
+                                    id: string;
+                                    fileName: string;
+                                    fileUrl: string | null;
+                                  }>;
+                                },
+                                index: number
+                              ) => (
+                                <Card
+                                  key={index}
+                                  className="gradient-card-subtle">
+                                  <CardContent className="p-4">
+                                    {/* Field grid */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <SectionCardField
+                                        label="Training Title"
+                                        value={training.title}
+                                        className="md:col-span-2"
+                                      />
+                                      <SectionCardField
+                                        label="From"
+                                        value={
+                                          training.dateFrom
+                                            ? format(
+                                                new Date(training.dateFrom),
+                                                'MMM d, yyyy'
+                                              )
+                                            : null
+                                        }
+                                      />
+                                      <SectionCardField
+                                        label="To"
+                                        value={
+                                          training.dateTo
+                                            ? format(
+                                                new Date(training.dateTo),
+                                                'MMM d, yyyy'
+                                              )
+                                            : null
+                                        }
+                                      />
+                                      <SectionCardField
+                                        label="Number of Hours"
+                                        value={
+                                          training.hours !== null &&
+                                          training.hours !== undefined
+                                            ? training.hours.toString()
+                                            : null
+                                        }
+                                      />
+                                      <SectionCardField
+                                        label="Type of L&D"
+                                        value={training.typeOfLd}
+                                      />
+                                      <SectionCardField
+                                        label="Conducted/Sponsored By"
+                                        value={training.conductedBy}
+                                        className="md:col-span-2"
+                                      />
+                                    </div>
+
+                                    {/* Attachments */}
+                                    {training.attachments &&
+                                      training.attachments.length > 0 && (
+                                        <>
+                                          <Separator className="my-4" />
+                                          <div>
+                                            <h5 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                                              <Paperclip className="h-4 w-4" />
+                                              Attachments (
+                                              {training.attachments.length})
+                                            </h5>
+                                            <PdsAttachmentsList
+                                              attachments={training.attachments}
+                                            />
+                                          </div>
+                                        </>
+                                      )}
+                                  </CardContent>
+                                </Card>
+                              )
+                            )}
                           </div>
                         ) : (
                           <p className="text-sm text-muted-foreground italic text-center py-8">
-                            No training or development programs provided
+                            No learning and development interventions provided
                           </p>
                         )}
                       </div>
@@ -1382,7 +1654,10 @@ export default function PdsSubmissionViewPage() {
                           </span>
                         </div>
                         <ValidationBadge
-                          status={getSectionStatus(pdsData.otherInfo, true)}
+                          status={getSectionStatus(
+                            viewPdsData?.otherInfo,
+                            true
+                          )}
                         />
                       </div>
                     </AccordionTrigger>
@@ -1393,11 +1668,11 @@ export default function PdsSubmissionViewPage() {
                             31. Special Skills and Hobbies
                           </h4>
                           <div className="p-4 bg-muted/30 rounded-md min-h-[60px]">
-                            {pdsData.otherInfo?.skills &&
-                            pdsData.otherInfo.skills.length > 0 ? (
+                            {viewPdsData?.otherInfo?.skills &&
+                            viewPdsData?.otherInfo.skills.length > 0 ? (
                               <div className="flex flex-wrap gap-2">
-                                {pdsData.otherInfo.skills.map(
-                                  (skill, index) => (
+                                {viewPdsData?.otherInfo.skills.map(
+                                  (skill: string, index: number) => (
                                     <Badge key={index} variant="secondary">
                                       {skill}
                                     </Badge>
@@ -1419,11 +1694,17 @@ export default function PdsSubmissionViewPage() {
                             32. Non-Academic Distinctions/Recognition
                           </h4>
                           <div className="p-4 bg-muted/30 rounded-md min-h-[60px]">
-                            {pdsData.otherInfo?.recognitions &&
-                            pdsData.otherInfo.recognitions.length > 0 ? (
+                            {viewPdsData?.otherInfo?.recognitions &&
+                            viewPdsData?.otherInfo.recognitions.length > 0 ? (
                               <ul className="space-y-2">
-                                {pdsData.otherInfo.recognitions.map(
-                                  (recog, index) => (
+                                {viewPdsData?.otherInfo.recognitions.map(
+                                  (
+                                    recog: {
+                                      recognition?: string;
+                                      date?: string;
+                                    },
+                                    index: number
+                                  ) => (
                                     <li key={index} className="text-sm">
                                       <span className="font-medium">
                                         {recog.recognition || 'Recognition'}
@@ -1453,11 +1734,17 @@ export default function PdsSubmissionViewPage() {
                             33. Membership in Association/Organization
                           </h4>
                           <div className="p-4 bg-muted/30 rounded-md min-h-[60px]">
-                            {pdsData.otherInfo?.organizations &&
-                            pdsData.otherInfo.organizations.length > 0 ? (
+                            {viewPdsData?.otherInfo?.organizations &&
+                            viewPdsData?.otherInfo.organizations.length > 0 ? (
                               <ul className="space-y-2">
-                                {pdsData.otherInfo.organizations.map(
-                                  (org, index) => (
+                                {viewPdsData?.otherInfo.organizations.map(
+                                  (
+                                    org: {
+                                      organization?: string;
+                                      role?: string;
+                                    },
+                                    index: number
+                                  ) => (
                                     <li key={index} className="text-sm">
                                       <span className="font-medium">
                                         {org.organization || 'Organization'}
@@ -1495,7 +1782,7 @@ export default function PdsSubmissionViewPage() {
                         </div>
                         <ValidationBadge
                           status={getSectionStatus(
-                            pdsData.otherInfo?.questions,
+                            viewPdsData?.otherInfo?.questions,
                             true
                           )}
                         />
@@ -1503,7 +1790,7 @@ export default function PdsSubmissionViewPage() {
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="space-y-6 pt-4">
-                        {pdsData.otherInfo?.questions ? (
+                        {viewPdsData?.otherInfo?.questions ? (
                           <>
                             {/* Question 34a */}
                             <div className="space-y-3">
@@ -1513,10 +1800,11 @@ export default function PdsSubmissionViewPage() {
                                 </span>
                                 <div className="flex-1">
                                   <p className="text-sm font-medium mb-2">
-                                    Are you related by consanguinity or affinity to the
-                                    appointing or recommending authority, or to the chief of
-                                    bureau or office or to the person who has immediate
-                                    supervision over you in the Office, Bureau or Department
+                                    Are you related by consanguinity or affinity
+                                    to the appointing or recommending authority,
+                                    or to the chief of bureau or office or to
+                                    the person who has immediate supervision
+                                    over you in the Office, Bureau or Department
                                     where you will be appointed?
                                   </p>
                                   <p className="text-sm text-muted-foreground mb-1">
@@ -1525,26 +1813,26 @@ export default function PdsSubmissionViewPage() {
                                   <div className="flex items-center gap-3 mb-2">
                                     <Badge
                                       variant={
-                                        pdsData.otherInfo.questions
+                                        viewPdsData?.otherInfo.questions
                                           .Q34_criminal_charged
                                           ? 'default'
                                           : 'outline'
                                       }
                                       className={
-                                        pdsData.otherInfo.questions
+                                        viewPdsData?.otherInfo.questions
                                           .Q34_criminal_charged
                                           ? 'bg-emerald-600'
                                           : ''
                                       }>
-                                      {pdsData.otherInfo.questions
+                                      {viewPdsData?.otherInfo.questions
                                         .Q34_criminal_charged
                                         ? 'Yes'
                                         : 'No'}
                                     </Badge>
                                   </div>
-                                  {pdsData.otherInfo.questions
+                                  {viewPdsData?.otherInfo.questions
                                     .Q34_criminal_charged &&
-                                    pdsData.otherInfo.questions
+                                    viewPdsData?.otherInfo.questions
                                       .Q34_criminal_charged_details && (
                                       <div className="p-3 bg-muted/30 rounded-md mt-2">
                                         <p className="text-sm text-muted-foreground font-medium mb-1">
@@ -1552,7 +1840,7 @@ export default function PdsSubmissionViewPage() {
                                         </p>
                                         <p className="text-sm">
                                           {
-                                            pdsData.otherInfo.questions
+                                            viewPdsData?.otherInfo.questions
                                               .Q34_criminal_charged_details
                                           }
                                         </p>
@@ -1572,32 +1860,32 @@ export default function PdsSubmissionViewPage() {
                                 </span>
                                 <div className="flex-1">
                                   <p className="text-sm font-medium mb-2">
-                                    Have you ever been found guilty of any administrative
-                                    offense?
+                                    Have you ever been found guilty of any
+                                    administrative offense?
                                   </p>
                                   <div className="flex items-center gap-3 mb-2">
                                     <Badge
                                       variant={
-                                        pdsData.otherInfo.questions
+                                        viewPdsData?.otherInfo.questions
                                           .Q35_criminal_convicted
                                           ? 'default'
                                           : 'outline'
                                       }
                                       className={
-                                        pdsData.otherInfo.questions
+                                        viewPdsData?.otherInfo.questions
                                           .Q35_criminal_convicted
                                           ? 'bg-emerald-600'
                                           : ''
                                       }>
-                                      {pdsData.otherInfo.questions
+                                      {viewPdsData?.otherInfo.questions
                                         .Q35_criminal_convicted
                                         ? 'Yes'
                                         : 'No'}
                                     </Badge>
                                   </div>
-                                  {pdsData.otherInfo.questions
+                                  {viewPdsData?.otherInfo.questions
                                     .Q35_criminal_convicted &&
-                                    pdsData.otherInfo.questions
+                                    viewPdsData?.otherInfo.questions
                                       .Q35_criminal_convicted_details && (
                                       <div className="p-3 bg-muted/30 rounded-md mt-2">
                                         <p className="text-sm text-muted-foreground font-medium mb-1">
@@ -1605,7 +1893,7 @@ export default function PdsSubmissionViewPage() {
                                         </p>
                                         <p className="text-sm">
                                           {
-                                            pdsData.otherInfo.questions
+                                            viewPdsData?.otherInfo.questions
                                               .Q35_criminal_convicted_details
                                           }
                                         </p>
@@ -1625,35 +1913,36 @@ export default function PdsSubmissionViewPage() {
                                 </span>
                                 <div className="flex-1">
                                   <p className="text-sm font-medium mb-2">
-                                    Have you ever been separated from the service in any of
-                                    the following modes: resignation, retirement, dropped
-                                    from the rolls, dismissal, termination, end of term,
-                                    finished contract or phased out (abolition) in the public
-                                    or private sector?
+                                    Have you ever been separated from the
+                                    service in any of the following modes:
+                                    resignation, retirement, dropped from the
+                                    rolls, dismissal, termination, end of term,
+                                    finished contract or phased out (abolition)
+                                    in the public or private sector?
                                   </p>
                                   <div className="flex items-center gap-3 mb-2">
                                     <Badge
                                       variant={
-                                        pdsData.otherInfo.questions
+                                        viewPdsData?.otherInfo.questions
                                           .Q36_separated_from_service
                                           ? 'default'
                                           : 'outline'
                                       }
                                       className={
-                                        pdsData.otherInfo.questions
+                                        viewPdsData?.otherInfo.questions
                                           .Q36_separated_from_service
                                           ? 'bg-emerald-600'
                                           : ''
                                       }>
-                                      {pdsData.otherInfo.questions
+                                      {viewPdsData?.otherInfo.questions
                                         .Q36_separated_from_service
                                         ? 'Yes'
                                         : 'No'}
                                     </Badge>
                                   </div>
-                                  {pdsData.otherInfo.questions
+                                  {viewPdsData?.otherInfo.questions
                                     .Q36_separated_from_service &&
-                                    pdsData.otherInfo.questions
+                                    viewPdsData?.otherInfo.questions
                                       .Q36_separated_from_service_details && (
                                       <div className="p-3 bg-muted/30 rounded-md mt-2">
                                         <p className="text-sm text-muted-foreground font-medium mb-1">
@@ -1661,7 +1950,7 @@ export default function PdsSubmissionViewPage() {
                                         </p>
                                         <p className="text-sm">
                                           {
-                                            pdsData.otherInfo.questions
+                                            viewPdsData?.otherInfo.questions
                                               .Q36_separated_from_service_details
                                           }
                                         </p>
@@ -1681,33 +1970,33 @@ export default function PdsSubmissionViewPage() {
                                 </span>
                                 <div className="flex-1">
                                   <p className="text-sm font-medium mb-2">
-                                    Have you ever been a candidate in a national or local
-                                    election held within the last year (except Barangay
-                                    election)?
+                                    Have you ever been a candidate in a national
+                                    or local election held within the last year
+                                    (except Barangay election)?
                                   </p>
                                   <div className="flex items-center gap-3 mb-2">
                                     <Badge
                                       variant={
-                                        pdsData.otherInfo.questions
+                                        viewPdsData?.otherInfo.questions
                                           .Q37_candidate_for_election
                                           ? 'default'
                                           : 'outline'
                                       }
                                       className={
-                                        pdsData.otherInfo.questions
+                                        viewPdsData?.otherInfo.questions
                                           .Q37_candidate_for_election
                                           ? 'bg-emerald-600'
                                           : ''
                                       }>
-                                      {pdsData.otherInfo.questions
+                                      {viewPdsData?.otherInfo.questions
                                         .Q37_candidate_for_election
                                         ? 'Yes'
                                         : 'No'}
                                     </Badge>
                                   </div>
-                                  {pdsData.otherInfo.questions
+                                  {viewPdsData?.otherInfo.questions
                                     .Q37_candidate_for_election &&
-                                    pdsData.otherInfo.questions
+                                    viewPdsData?.otherInfo.questions
                                       .Q37_candidate_for_election_details && (
                                       <div className="p-3 bg-muted/30 rounded-md mt-2">
                                         <p className="text-sm text-muted-foreground font-medium mb-1">
@@ -1715,7 +2004,7 @@ export default function PdsSubmissionViewPage() {
                                         </p>
                                         <p className="text-sm">
                                           {
-                                            pdsData.otherInfo.questions
+                                            viewPdsData?.otherInfo.questions
                                               .Q37_candidate_for_election_details
                                           }
                                         </p>
@@ -1735,34 +2024,34 @@ export default function PdsSubmissionViewPage() {
                                 </span>
                                 <div className="flex-1">
                                   <p className="text-sm font-medium mb-2">
-                                    Have you resigned from the government service during the
-                                    three (3)-month period before the last election to
-                                    promote/actively campaign for a national or local
-                                    candidate?
+                                    Have you resigned from the government
+                                    service during the three (3)-month period
+                                    before the last election to promote/actively
+                                    campaign for a national or local candidate?
                                   </p>
                                   <div className="flex items-center gap-3 mb-2">
                                     <Badge
                                       variant={
-                                        pdsData.otherInfo.questions
+                                        viewPdsData?.otherInfo.questions
                                           .Q38_resigned_from_government
                                           ? 'default'
                                           : 'outline'
                                       }
                                       className={
-                                        pdsData.otherInfo.questions
+                                        viewPdsData?.otherInfo.questions
                                           .Q38_resigned_from_government
                                           ? 'bg-emerald-600'
                                           : ''
                                       }>
-                                      {pdsData.otherInfo.questions
+                                      {viewPdsData?.otherInfo.questions
                                         .Q38_resigned_from_government
                                         ? 'Yes'
                                         : 'No'}
                                     </Badge>
                                   </div>
-                                  {pdsData.otherInfo.questions
+                                  {viewPdsData?.otherInfo.questions
                                     .Q38_resigned_from_government &&
-                                    pdsData.otherInfo.questions
+                                    viewPdsData?.otherInfo.questions
                                       .Q38_resigned_from_government_details && (
                                       <div className="p-3 bg-muted/30 rounded-md mt-2">
                                         <p className="text-sm text-muted-foreground font-medium mb-1">
@@ -1770,7 +2059,7 @@ export default function PdsSubmissionViewPage() {
                                         </p>
                                         <p className="text-sm">
                                           {
-                                            pdsData.otherInfo.questions
+                                            viewPdsData?.otherInfo.questions
                                               .Q38_resigned_from_government_details
                                           }
                                         </p>
@@ -1790,32 +2079,32 @@ export default function PdsSubmissionViewPage() {
                                 </span>
                                 <div className="flex-1">
                                   <p className="text-sm font-medium mb-2">
-                                    Have you acquired the status of an immigrant or permanent
-                                    resident of another country?
+                                    Have you acquired the status of an immigrant
+                                    or permanent resident of another country?
                                   </p>
                                   <div className="flex items-center gap-3 mb-2">
                                     <Badge
                                       variant={
-                                        pdsData.otherInfo.questions
+                                        viewPdsData?.otherInfo.questions
                                           .Q39_immigrant_or_acquired_residence
                                           ? 'default'
                                           : 'outline'
                                       }
                                       className={
-                                        pdsData.otherInfo.questions
+                                        viewPdsData?.otherInfo.questions
                                           .Q39_immigrant_or_acquired_residence
                                           ? 'bg-emerald-600'
                                           : ''
                                       }>
-                                      {pdsData.otherInfo.questions
+                                      {viewPdsData?.otherInfo.questions
                                         .Q39_immigrant_or_acquired_residence
                                         ? 'Yes'
                                         : 'No'}
                                     </Badge>
                                   </div>
-                                  {pdsData.otherInfo.questions
+                                  {viewPdsData?.otherInfo.questions
                                     .Q39_immigrant_or_acquired_residence &&
-                                    pdsData.otherInfo.questions
+                                    viewPdsData?.otherInfo.questions
                                       .Q39_immigrant_or_acquired_residence_details && (
                                       <div className="p-3 bg-muted/30 rounded-md mt-2">
                                         <p className="text-sm text-muted-foreground font-medium mb-1">
@@ -1823,7 +2112,7 @@ export default function PdsSubmissionViewPage() {
                                         </p>
                                         <p className="text-sm">
                                           {
-                                            pdsData.otherInfo.questions
+                                            viewPdsData?.otherInfo.questions
                                               .Q39_immigrant_or_acquired_residence_details
                                           }
                                         </p>
@@ -1848,25 +2137,26 @@ export default function PdsSubmissionViewPage() {
                                   <div className="flex items-center gap-3 mb-2">
                                     <Badge
                                       variant={
-                                        pdsData.otherInfo.questions
+                                        viewPdsData?.otherInfo.questions
                                           .Q40_indigenous_group
                                           ? 'default'
                                           : 'outline'
                                       }
                                       className={
-                                        pdsData.otherInfo.questions
+                                        viewPdsData?.otherInfo.questions
                                           .Q40_indigenous_group
                                           ? 'bg-emerald-600'
                                           : ''
                                       }>
-                                      {pdsData.otherInfo.questions
+                                      {viewPdsData?.otherInfo.questions
                                         .Q40_indigenous_group
                                         ? 'Yes'
                                         : 'No'}
                                     </Badge>
                                   </div>
-                                  {pdsData.otherInfo.questions.Q40_indigenous_group &&
-                                    pdsData.otherInfo.questions
+                                  {viewPdsData?.otherInfo.questions
+                                    .Q40_indigenous_group &&
+                                    viewPdsData?.otherInfo.questions
                                       .Q40_indigenous_group_details && (
                                       <div className="p-3 bg-muted/30 rounded-md mt-2">
                                         <p className="text-sm text-muted-foreground font-medium mb-1">
@@ -1874,7 +2164,7 @@ export default function PdsSubmissionViewPage() {
                                         </p>
                                         <p className="text-sm">
                                           {
-                                            pdsData.otherInfo.questions
+                                            viewPdsData?.otherInfo.questions
                                               .Q40_indigenous_group_details
                                           }
                                         </p>
@@ -1899,22 +2189,26 @@ export default function PdsSubmissionViewPage() {
                                   <div className="flex items-center gap-3 mb-2">
                                     <Badge
                                       variant={
-                                        pdsData.otherInfo.questions.Q41_disabled
+                                        viewPdsData?.otherInfo.questions
+                                          .Q41_disabled
                                           ? 'default'
                                           : 'outline'
                                       }
                                       className={
-                                        pdsData.otherInfo.questions.Q41_disabled
+                                        viewPdsData?.otherInfo.questions
+                                          .Q41_disabled
                                           ? 'bg-emerald-600'
                                           : ''
                                       }>
-                                      {pdsData.otherInfo.questions.Q41_disabled
+                                      {viewPdsData?.otherInfo.questions
+                                        .Q41_disabled
                                         ? 'Yes'
                                         : 'No'}
                                     </Badge>
                                   </div>
-                                  {pdsData.otherInfo.questions.Q41_disabled &&
-                                    pdsData.otherInfo.questions
+                                  {viewPdsData?.otherInfo.questions
+                                    .Q41_disabled &&
+                                    viewPdsData?.otherInfo.questions
                                       .Q41_disabled_details && (
                                       <div className="p-3 bg-muted/30 rounded-md mt-2">
                                         <p className="text-sm text-muted-foreground font-medium mb-1">
@@ -1922,7 +2216,7 @@ export default function PdsSubmissionViewPage() {
                                         </p>
                                         <p className="text-sm">
                                           {
-                                            pdsData.otherInfo.questions
+                                            viewPdsData?.otherInfo.questions
                                               .Q41_disabled_details
                                           }
                                         </p>
@@ -1947,22 +2241,26 @@ export default function PdsSubmissionViewPage() {
                                   <div className="flex items-center gap-3 mb-2">
                                     <Badge
                                       variant={
-                                        pdsData.otherInfo.questions.Q42_solo_parent
+                                        viewPdsData?.otherInfo.questions
+                                          .Q42_solo_parent
                                           ? 'default'
                                           : 'outline'
                                       }
                                       className={
-                                        pdsData.otherInfo.questions.Q42_solo_parent
+                                        viewPdsData?.otherInfo.questions
+                                          .Q42_solo_parent
                                           ? 'bg-emerald-600'
                                           : ''
                                       }>
-                                      {pdsData.otherInfo.questions.Q42_solo_parent
+                                      {viewPdsData?.otherInfo.questions
+                                        .Q42_solo_parent
                                         ? 'Yes'
                                         : 'No'}
                                     </Badge>
                                   </div>
-                                  {pdsData.otherInfo.questions.Q42_solo_parent &&
-                                    pdsData.otherInfo.questions
+                                  {viewPdsData?.otherInfo.questions
+                                    .Q42_solo_parent &&
+                                    viewPdsData?.otherInfo.questions
                                       .Q42_solo_parent_details && (
                                       <div className="p-3 bg-muted/30 rounded-md mt-2">
                                         <p className="text-sm text-muted-foreground font-medium mb-1">
@@ -1970,7 +2268,7 @@ export default function PdsSubmissionViewPage() {
                                         </p>
                                         <p className="text-sm">
                                           {
-                                            pdsData.otherInfo.questions
+                                            viewPdsData?.otherInfo.questions
                                               .Q42_solo_parent_details
                                           }
                                         </p>
@@ -1999,7 +2297,7 @@ export default function PdsSubmissionViewPage() {
                         </div>
                         <ValidationBadge
                           status={getSectionStatus(
-                            pdsData.otherInfo?.references,
+                            viewPdsData?.otherInfo?.references,
                             true
                           )}
                         />
@@ -2007,8 +2305,8 @@ export default function PdsSubmissionViewPage() {
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="pt-4">
-                        {pdsData.otherInfo?.references &&
-                        pdsData.otherInfo.references.length > 0 ? (
+                        {viewPdsData?.otherInfo?.references &&
+                        viewPdsData?.otherInfo.references.length > 0 ? (
                           <div className="overflow-x-auto">
                             <Table>
                               <TableHeader>
@@ -2025,8 +2323,15 @@ export default function PdsSubmissionViewPage() {
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {pdsData.otherInfo.references.map(
-                                  (ref, index) => (
+                                {viewPdsData?.otherInfo.references.map(
+                                  (
+                                    ref: {
+                                      name?: string;
+                                      address?: string;
+                                      telephoneNo?: string;
+                                    },
+                                    index: number
+                                  ) => (
                                     <TableRow key={index}>
                                       <TableCell className="font-medium">
                                         {ref.name || 'N/A'}
@@ -2135,6 +2440,78 @@ export default function PdsSubmissionViewPage() {
                       </dd>
                     </div>
                   )}
+                </div>
+
+                <Separator />
+
+                {/* Attachments Summary */}
+                <div>
+                  <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <Paperclip className="h-4 w-4" />
+                    Attachments
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    {(() => {
+                      // Calculate attachment counts
+                      const civilServiceCount =
+                        viewPdsData?.civilService?.reduce(
+                          (acc: number, cs: { attachments?: unknown[] }) =>
+                            acc + (cs.attachments?.length || 0),
+                          0
+                        ) || 0;
+                      const trainingCount =
+                        viewPdsData?.training?.reduce(
+                          (acc: number, t: { attachments?: unknown[] }) =>
+                            acc + (t.attachments?.length || 0),
+                          0
+                        ) || 0;
+                      const totalCount = civilServiceCount + trainingCount;
+
+                      // Display summary
+                      if (totalCount === 0) {
+                        return (
+                          <p className="text-muted-foreground text-center py-2">
+                            No attachments
+                          </p>
+                        );
+                      }
+
+                      return (
+                        <>
+                          <div className="flex items-center justify-between p-2 rounded bg-muted/30">
+                            <span className="text-muted-foreground">
+                              Total Files
+                            </span>
+                            <Badge
+                              variant="secondary"
+                              className="font-semibold">
+                              {totalCount}
+                            </Badge>
+                          </div>
+                          {civilServiceCount > 0 && (
+                            <div className="flex items-center justify-between px-2">
+                              <span className="text-muted-foreground text-xs">
+                                Civil Service
+                              </span>
+                              <span className="text-xs font-medium">
+                                {civilServiceCount}
+                              </span>
+                            </div>
+                          )}
+                          {trainingCount > 0 && (
+                            <div className="flex items-center justify-between px-2">
+                              <span className="text-muted-foreground text-xs">
+                                Training
+                              </span>
+                              <span className="text-xs font-medium">
+                                {trainingCount}
+                              </span>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
                 </div>
 
                 {/* Action Buttons */}

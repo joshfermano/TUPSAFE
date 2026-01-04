@@ -7,14 +7,47 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   getPDSSubmissions,
+  getPDSSubmissionById,
   createPDSSubmission,
   updatePDSSubmission,
+  updatePDSCompletion,
   getActivePDSDraft,
   type PDSFilterOptions,
   type CreatePDSData,
   type UpdatePDSData,
 } from '@tupsafe/database/server';
 import { createServerClient } from '@tupsafe/auth/server';
+import { transformPdsFromBackend } from '../../../lib/utils/pds-transformations';
+import { getPdsReadinessProgress } from '../../../lib/validations/pds-schema';
+
+/**
+ * Helper function to compute and persist PDS completion
+ * Fetches the full submission, transforms to frontend format, computes readiness, and stores it
+ */
+async function computeAndPersistCompletion(pdsId: string, userId: string): Promise<void> {
+  try {
+    // Fetch the complete PDS submission
+    const pds = await getPDSSubmissionById(pdsId, userId);
+    if (!pds) {
+      console.warn(`[computeAndPersistCompletion] PDS ${pdsId} not found`);
+      return;
+    }
+
+    // Transform to frontend format for progress calculation
+    const frontendData = transformPdsFromBackend(pds);
+
+    // Compute readiness-based completion (personal info + other info with references)
+    const completion = getPdsReadinessProgress(frontendData);
+
+    // Persist the completion value
+    await updatePDSCompletion(pdsId, completion);
+
+    console.log(`[computeAndPersistCompletion] Updated PDS ${pdsId} completion to ${completion}%`);
+  } catch (error) {
+    // Log but don't fail the main operation
+    console.error(`[computeAndPersistCompletion] Failed for PDS ${pdsId}:`, error);
+  }
+}
 
 /**
  * Convert CreatePDSData to UpdatePDSData for draft updates
@@ -260,6 +293,9 @@ export async function POST(request: NextRequest) {
       const updateData = convertCreateToUpdateData(body);
       await updatePDSSubmission(existingDraftId, user.id, updateData);
 
+      // Compute and persist the completion percentage
+      await computeAndPersistCompletion(existingDraftId, user.id);
+
       return NextResponse.json(
         {
           success: true,
@@ -272,6 +308,9 @@ export async function POST(request: NextRequest) {
 
     // No recent draft exists - create new one
     const pdsId = await createPDSSubmission(user.id, body);
+
+    // Compute and persist the completion percentage
+    await computeAndPersistCompletion(pdsId, user.id);
 
     console.log(
       `[POST /api/pds] Created new PDS submission ${pdsId} for user ${user.id}`

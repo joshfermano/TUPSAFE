@@ -85,6 +85,7 @@ interface PdsDraftData {
   completedSections: number[];
   currentSection: number;
   savedAt: string;
+  attachments?: PdsAttachmentsMap;
 }
 
 /**
@@ -298,8 +299,9 @@ export default function PDSCreatePage() {
       completedSections,
       currentSection,
       savedAt: new Date().toISOString(),
+      attachments,
     }),
-    [completedSections, currentSection, form]
+    [completedSections, currentSection, form, attachments]
   );
 
   // Auto-save setup - localStorage ONLY (no DB sync on auto-save)
@@ -383,6 +385,11 @@ export default function PDSCreatePage() {
       // Restore form data
       form.reset(savedDraft.formData);
 
+      // Restore attachments if available
+      if (savedDraft.attachments) {
+        setAttachments(savedDraft.attachments);
+      }
+
       // Restore completed sections from saved draft
       if (
         savedDraft.completedSections &&
@@ -426,6 +433,188 @@ export default function PDSCreatePage() {
       description: 'Starting with a blank form.',
     });
   }, [clearSaved]);
+
+  // Auto-save handler for attachment uploads (no navigation)
+  // Returns IDs if save succeeded, success: false otherwise
+  const handleAutoSaveForUpload = useCallback(
+    async (entryContext: {
+      entryType: 'training' | 'civil_service';
+      entryId: string | null;
+    }): Promise<{
+      success: boolean;
+      pdsSubmissionId?: string;
+      entryId?: string;
+    }> => {
+      try {
+        const formData = form.getValues();
+
+        // DEBUG: Log draft data BEFORE auto-save
+        console.log('[AUTO-SAVE] Draft data before save:', {
+          entryContext,
+          hasTraining: !!formData.learningDevelopment,
+          trainingCount: formData.learningDevelopment?.length || 0,
+          trainingIds:
+            formData.learningDevelopment?.map((t) => ({
+              id: t.id,
+              title: t.title,
+              dateFrom: t.dateFrom,
+              dateTo: t.dateTo,
+            })) || [],
+          hasCivilService: !!formData.eligibility,
+          civilServiceCount: formData.eligibility?.length || 0,
+          civilServiceIds:
+            formData.eligibility?.map((cs) => ({
+              id: cs.id,
+              eligibilityName: cs.eligibilityName,
+            })) || [],
+        });
+
+        // STEP 1: Always save to localStorage first (offline backup, no validation)
+        await saveNow();
+
+        // STEP 2: Transform data using the same pipeline as submit
+        const transformedData = transformPdsForSubmission(formData);
+
+        // DEBUG: Log transformed data structure
+        console.log('[AUTO-SAVE] Transformed data structure:', {
+          hasTraining: !!transformedData.training,
+          trainingCount: transformedData.training?.length || 0,
+          trainingData:
+            transformedData.training?.map((t: any) => ({
+              id: t.id,
+              title: t.title,
+              dateFrom: t.dateFrom,
+              dateTo: t.dateTo,
+            })) || [],
+          hasCivilService: !!transformedData.civilService,
+          civilServiceCount: transformedData.civilService?.length || 0,
+        });
+
+        // STEP 2.5: CRITICAL - Verify the entry exists in the transformed payload
+        // The transformation filters out incomplete entries, so we need to check
+        // if the requested entry will actually be saved to the database
+        if (entryContext.entryId) {
+          if (entryContext.entryType === 'training') {
+            const entryInPayload = transformedData.training?.find(
+              (t: any) => t.id === entryContext.entryId
+            );
+            if (!entryInPayload) {
+              console.error(
+                '[AUTO-SAVE] Training entry not found in transformed payload:',
+                {
+                  requestedId: entryContext.entryId,
+                  availableIds:
+                    transformedData.training?.map((t: any) => t.id) || [],
+                  hint: 'Entry may have been filtered out due to missing required fields (dateFrom, dateTo)',
+                }
+              );
+              toast.error('Cannot save entry', {
+                description:
+                  'Please fill in the required date fields (From and To) before uploading attachments.',
+                duration: 5000,
+              });
+              return { success: false };
+            }
+          } else if (entryContext.entryType === 'civil_service') {
+            const entryInPayload = transformedData.civilService?.find(
+              (cs: any) => cs.id === entryContext.entryId
+            );
+            if (!entryInPayload) {
+              console.error(
+                '[AUTO-SAVE] Civil service entry not found in transformed payload:',
+                {
+                  requestedId: entryContext.entryId,
+                  availableIds:
+                    transformedData.civilService?.map((cs: any) => cs.id) || [],
+                  hint: 'Entry may have been filtered out due to missing required fields',
+                }
+              );
+              toast.error('Cannot save entry', {
+                description:
+                  'Please fill in the required fields before uploading attachments.',
+                duration: 5000,
+              });
+              return { success: false };
+            }
+          }
+        }
+
+        // STEP 3: Save to database
+        const currentDraftId = draftIdRef.current;
+
+        if (currentDraftId) {
+          // Update existing draft
+          console.log(
+            '[PDS Create] Auto-saving for upload (update):',
+            currentDraftId
+          );
+          const response = await fetch(`/api/pds/${currentDraftId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(transformedData),
+          });
+
+          if (!response.ok) {
+            const errorData = await response
+              .json()
+              .catch(() => ({ error: 'Unknown error' }));
+            throw new Error(errorData.error || 'Failed to update draft');
+          }
+
+          const result = await response.json();
+          console.log(
+            '[PDS Create] Auto-save update succeeded:',
+            currentDraftId
+          );
+
+          // Return the entry ID (we already verified it exists in the payload)
+          return {
+            success: true,
+            pdsSubmissionId: currentDraftId,
+            entryId: entryContext.entryId || undefined,
+          };
+        } else {
+          // Create new draft
+          console.log('[PDS Create] Auto-saving for upload (create new)');
+          const response = await fetch('/api/pds', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(transformedData),
+          });
+
+          if (!response.ok) {
+            const errorData = await response
+              .json()
+              .catch(() => ({ error: 'Unknown error' }));
+            throw new Error(errorData.error || 'Failed to create draft');
+          }
+
+          const result = await response.json();
+          if (result.data?.id) {
+            // Update both ref and state together
+            updateDraftId(result.data.id);
+            console.log(
+              '[PDS Create] Auto-save create succeeded:',
+              result.data.id
+            );
+
+            // Return the entry ID (we already verified it exists in the payload)
+            return {
+              success: true,
+              pdsSubmissionId: result.data.id,
+              entryId: entryContext.entryId || undefined,
+            };
+          } else {
+            throw new Error('No draft ID returned from server');
+          }
+        }
+      } catch (error) {
+        console.error('[PDS Create] Auto-save for upload failed:', error);
+        return { success: false };
+      }
+    },
+    [form, saveNow, updateDraftId]
+  );
 
   // Manual save and navigate handler
   // Uses the same transformation pipeline as submit, but without full validation
@@ -1115,7 +1304,9 @@ export default function PDSCreatePage() {
           <PdsProvider
             pdsSubmissionId={draftId}
             canEdit={true}
-            initialAttachments={attachments}>
+            initialAttachments={attachments}
+            onAttachmentsChange={setAttachments}
+            onBeforeUpload={handleAutoSaveForUpload}>
             <form onSubmit={form.handleSubmit(handleSubmit)}>
               {/* Section content - No key prop to prevent remounting */}
               <Suspense fallback={<FormStepSkeleton fieldCount={10} />}>

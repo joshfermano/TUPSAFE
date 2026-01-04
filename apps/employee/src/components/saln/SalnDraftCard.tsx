@@ -27,62 +27,6 @@ interface SalnDraftCardProps {
 }
 
 /**
- * Calculate completion percentage for SALN draft
- * Each section contributes to the total completion:
- * - Filing type: 14%
- * - Real properties: 14%
- * - Personal properties: 14%
- * - Liabilities: 14%
- * - Business interests: 14%
- * - Relatives in gov: 15%
- * - Net worth: 15%
- */
-const calculateCompletion = (submission: SALNSubmission): number => {
-  let completion = 0;
-
-  // Filing type (14%)
-  if (submission.filingType && submission.filingType !== 'not_applicable') {
-    completion += 14;
-  }
-
-  // Real properties (14%)
-  if (submission.realProperties && submission.realProperties.length > 0) {
-    completion += 14;
-  }
-
-  // Personal properties (14%)
-  if (submission.personalProperties && submission.personalProperties.length > 0) {
-    completion += 14;
-  }
-
-  // Liabilities (14%)
-  if (submission.liabilities && submission.liabilities.length > 0) {
-    completion += 14;
-  }
-
-  // Business interests (14%)
-  if (submission.businessInterests && submission.businessInterests.length > 0) {
-    completion += 14;
-  }
-
-  // Relatives in government (15%)
-  if (submission.relativesInGov && submission.relativesInGov.length > 0) {
-    completion += 15;
-  }
-
-  // Net worth calculation (15%) - if any assets or liabilities exist
-  if (
-    (submission.realProperties && submission.realProperties.length > 0) ||
-    (submission.personalProperties && submission.personalProperties.length > 0) ||
-    (submission.liabilities && submission.liabilities.length > 0)
-  ) {
-    completion += 15;
-  }
-
-  return Math.min(completion, 100);
-};
-
-/**
  * Get filing type display label
  */
 const getFilingTypeLabel = (filingType: string): string => {
@@ -109,8 +53,8 @@ export const SalnDraftCard = memo(
     const [isDeleting, setIsDeleting] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-    // Calculate completion percentage
-    const completion = calculateCompletion(submission);
+    // Use completion percentage from the API (computed and persisted server-side)
+    const completion = submission.completion ?? 0;
 
     // Calculate time since last update
     const lastModified = new Date(submission.updatedAt);

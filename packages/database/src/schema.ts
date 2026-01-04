@@ -495,6 +495,7 @@ export const pdsSubmissions = pgTable(
     reviewNotes: text('review_notes'), // Optional review feedback from admin/HR
     pdfFilePath: text('pdf_file_path'), // Supabase Storage path to generated PDF
     isLatest: boolean('is_latest').default(true).notNull(),
+    completion: integer('completion').default(0).notNull(), // Completion percentage (0-100) based on submission readiness
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
@@ -765,8 +766,8 @@ export const pdsAttachments = pgTable(
     userId: uuid('user_id').notNull(), // References Supabase auth.users.id
     pdsSubmissionId: uuid('pds_submission_id').notNull(), // References pds_submissions.id (CASCADE DELETE)
     year: integer('year').notNull(), // Denormalized from pds_submissions.year for fast grouping
-    trainingId: uuid('training_id'), // Nullable FK to pds_training.id
-    civilServiceId: uuid('civil_service_id'), // Nullable FK to pds_civil_service.id
+    trainingId: uuid('training_id').references(() => pdsTraining.id, { onDelete: 'cascade' }), // Nullable FK to pds_training.id with CASCADE DELETE
+    civilServiceId: uuid('civil_service_id').references(() => pdsCivilService.id, { onDelete: 'cascade' }), // Nullable FK to pds_civil_service.id with CASCADE DELETE
     filePath: text('file_path').notNull(), // Storage path in pds-attachments bucket
     fileName: text('file_name').notNull(), // Original file name
     mimeType: text('mime_type').notNull(), // MIME type (e.g., image/jpeg, application/pdf)
@@ -829,6 +830,7 @@ export const salnSubmissions = pgTable(
     position: text('position'), // Employee position/rank
     agency: text('agency'), // Office/Agency name
     officeAddress: text('office_address'), // Office address
+    completion: integer('completion').default(0).notNull(), // Completion percentage (0-100) based on submission readiness
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
