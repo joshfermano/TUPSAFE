@@ -7,6 +7,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   flexRender,
   getCoreRowModel,
@@ -41,7 +42,6 @@ interface JobsDataTableProps {
   data: OpenPositionListItem[];
   isLoading: boolean;
   onViewDetails: (id: string) => void;
-  onEdit: (id: string) => void;
   onDelete: (id: string) => void;
 }
 
@@ -71,9 +71,9 @@ export function JobsDataTable({
   data,
   isLoading,
   onViewDetails,
-  onEdit,
   onDelete,
 }: JobsDataTableProps) {
+  const router = useRouter();
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
 
@@ -221,7 +221,7 @@ export function JobsDataTable({
                   View Details
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => onEdit(position.id)}
+                  onClick={() => router.push(`/dashboard/jobs/edit/${position.id}`)}
                   className="gap-2"
                 >
                   <Edit className="h-4 w-4" />
@@ -249,7 +249,7 @@ export function JobsDataTable({
         },
       },
     ],
-    [onViewDetails, onEdit, onDelete]
+    [onViewDetails, onDelete, router]
   );
 
   const table = useReactTable({
