@@ -307,7 +307,7 @@ export default function SALNViewDetailPage({
 
   const submissionYear = submission.year;
   const statusConfig =
-    STATUS_CONFIG[submission.status as keyof typeof STATUS_CONFIG];
+    STATUS_CONFIG[submission.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.draft;
 
   const handleEdit = () => router.push(`/dashboard/saln/edit/${salnId}`);
 
@@ -441,10 +441,15 @@ export default function SALNViewDetailPage({
               Statement of Assets, Liabilities, and Net Worth
             </h1>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-              As of December 31, {submissionYear} • Submitted{' '}
-              {format(
-                new Date(submission.submittedAt || submission.createdAt),
-                'MMM d, yyyy'
+              As of December 31, {submissionYear}
+              {(submission.submittedAt || submission.createdAt) && (
+                <>
+                  {' • Submitted '}
+                  {format(
+                    new Date(submission.submittedAt || submission.createdAt),
+                    'MMM d, yyyy'
+                  )}
+                </>
               )}
             </p>
           </div>
@@ -493,26 +498,26 @@ export default function SALNViewDetailPage({
           <Field
             label="Filing Type"
             value={
-              salnData.submission?.filingType === 'joint'
+              submission.filingType === 'joint'
                 ? 'Joint Filing'
-                : salnData.submission?.filingType === 'separate'
+                : submission.filingType === 'separate'
                 ? 'Separate Filing'
                 : 'Not Applicable'
             }
           />
           <Field label="Year" value={submissionYear} />
-          {salnData.submission?.filingType === 'joint' && (
+          {submission.filingType === 'joint' && (
             <Field
               label="Spouse Name"
-              value={salnData.submission?.spouseName}
+              value={submission.spouseName}
               fullWidth
             />
           )}
-          <Field label="Position" value={salnData.submission?.position} />
-          <Field label="Agency/Office" value={salnData.submission?.agency} />
+          <Field label="Position" value={submission.position} />
+          <Field label="Agency/Office" value={submission.agency} />
           <Field
             label="Office Address"
-            value={salnData.submission?.officeAddress}
+            value={submission.officeAddress}
             fullWidth
           />
         </div>
