@@ -232,7 +232,7 @@ export default function PdsSubmissionViewPage() {
         ? {
             skills: pd.otherInfo.skills as string[] | undefined,
             recognitions: pd.otherInfo.recognitions,
-            organizations: pd.otherInfo.associations,
+            associations: pd.otherInfo.associations,
             references: pd.otherInfo.references,
             questions: pd.otherInfo.questions,
           }
@@ -1700,19 +1700,26 @@ export default function PdsSubmissionViewPage() {
                                 {viewPdsData?.otherInfo.recognitions.map(
                                   (
                                     recog: {
-                                      recognition?: string;
-                                      date?: string;
+                                      title?: string;
+                                      year?: string;
+                                      organization?: string;
                                     },
                                     index: number
                                   ) => (
                                     <li key={index} className="text-sm">
                                       <span className="font-medium">
-                                        {recog.recognition || 'Recognition'}
+                                        {recog.title || 'Recognition'}
                                       </span>
-                                      {recog.date && (
+                                      {recog.year && (
                                         <span className="text-muted-foreground">
                                           {' '}
-                                          ({recog.date})
+                                          ({recog.year})
+                                        </span>
+                                      )}
+                                      {recog.organization && (
+                                        <span className="text-muted-foreground">
+                                          {' '}
+                                          - {recog.organization}
                                         </span>
                                       )}
                                     </li>
@@ -1734,25 +1741,32 @@ export default function PdsSubmissionViewPage() {
                             33. Membership in Association/Organization
                           </h4>
                           <div className="p-4 bg-muted/30 rounded-md min-h-[60px]">
-                            {viewPdsData?.otherInfo?.organizations &&
-                            viewPdsData?.otherInfo.organizations.length > 0 ? (
+                            {viewPdsData?.otherInfo?.associations &&
+                            viewPdsData?.otherInfo.associations.length > 0 ? (
                               <ul className="space-y-2">
-                                {viewPdsData?.otherInfo.organizations.map(
+                                {viewPdsData?.otherInfo.associations.map(
                                   (
                                     org: {
-                                      organization?: string;
-                                      role?: string;
+                                      name?: string;
+                                      position?: string;
+                                      yearJoined?: string;
                                     },
                                     index: number
                                   ) => (
                                     <li key={index} className="text-sm">
                                       <span className="font-medium">
-                                        {org.organization || 'Organization'}
+                                        {org.name || 'Organization'}
                                       </span>
-                                      {org.role && (
+                                      {org.position && (
                                         <span className="text-muted-foreground">
                                           {' '}
-                                          - {org.role}
+                                          - {org.position}
+                                        </span>
+                                      )}
+                                      {org.yearJoined && (
+                                        <span className="text-muted-foreground">
+                                          {' '}
+                                          ({org.yearJoined})
                                         </span>
                                       )}
                                     </li>
