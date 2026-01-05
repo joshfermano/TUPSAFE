@@ -10,6 +10,14 @@
     "./components/*": {
       "types": "./dist/components/*.d.ts",
       "default": "./dist/components/*.js"
+    },
+    "./saln-pdf": {
+      "types": "./dist/saln-pdf/index.d.ts",
+      "default": "./dist/saln-pdf/index.js"
+    },
+    "./saln-pdf/*": {
+      "types": "./dist/saln-pdf/*.d.ts",
+      "default": "./dist/saln-pdf/*.js"
     }
   },
   "scripts": {
@@ -30,9 +38,11 @@
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-separator": "^1.1.7",
     "@radix-ui/react-slot": "^1.2.3",
+    "@react-pdf/renderer": "^4.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cobe": "^0.6.4",
+    "date-fns": "^4.1.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.544.0",
     "motion": "^12.23.22",
@@ -48,7 +58,6 @@
   },
   "peerDependencies": {
     "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "@react-pdf/renderer": "^4.0.0"
+    "react-dom": "19.1.0"
   }
 }

@@ -55,3 +55,6 @@ export * from './ui/enhanced-success';
 
 // Export PDF fonts utility
 export * from './fonts';
+
+// Export SALN PDF components and utilities
+export * from './saln-pdf';

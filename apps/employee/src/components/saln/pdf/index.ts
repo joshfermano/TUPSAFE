@@ -1,19 +1,13 @@
 /**
  * SALN PDF Components
  *
- * Export all SALN PDF generation components and utilities
+ * Re-export all SALN PDF generation components and utilities from shared package
  * Based on CSC SALN Form 2019 (Revised)
+ *
+ * This file now acts as a re-export layer for the centralized SALN PDF implementation
+ * in @tupsafe/shared-ui/saln-pdf. All components, types, and utilities are maintained
+ * in the shared package to ensure consistency across admin and employee portals.
  */
 
-// Components
-export { SALNDocument } from './SALNDocument';
-export { SALNPage1 } from './SALNPage1';
-export { SALNPage2 } from './SALNPage2';
-export { SALNPage3, shouldRenderSALNPage3 } from './SALNPage3';
-export { SALNPage4, shouldRenderSALNPage4 } from './SALNPage4';
-
-// Types
-export * from './types';
-
-// Styles & Utilities
-export * from './SALNStyles';
+// Re-export all SALN PDF components and utilities from shared package
+export * from '@tupsafe/shared-ui/saln-pdf';

@@ -7,7 +7,7 @@
  * @module lib/utils/saln-validation
  */
 
-import type { SALNData, ValidationResult } from '@/components/saln/pdf/types';
+import type { SALNData, ValidationResult } from '@/components/saln/pdf';
 
 /**
  * Validates SALN data before PDF generation

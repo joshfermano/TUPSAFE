@@ -3,6 +3,7 @@
  * CSC SALN Form 2019
  *
  * Contains:
+ * - CSC header (Revised as of January 2015)
  * - Form header and title
  * - Filing type checkboxes
  * - Declarant information
@@ -53,10 +54,12 @@ export function SALNPage1({ data }: SALNPage1Props) {
     filingType,
     declarantInfo,
     spouseInfo,
-    children = [],
     realProperties = [],
     personalProperties = [],
   } = data;
+
+  // Ensure children is always an array (handle null/undefined)
+  const children = data.children || [];
 
   // Limit real properties to first 10 items for page 1
   const displayedRealProperties = realProperties.slice(0, 10);
@@ -79,7 +82,22 @@ export function SALNPage1({ data }: SALNPage1Props) {
   );
 
   return (
-    <Page size="LEGAL" style={styles.page}>
+    <Page size="LETTER" style={styles.page}>
+      {/* CSC Header - Top Right */}
+      <Text
+        style={{
+          position: 'absolute',
+          top: 10,
+          right: 20,
+          fontSize: 6,
+          fontStyle: 'italic',
+          textAlign: 'right',
+        }}>
+        Revised as of January 2015{'\n'}
+        Per CSC Resolution No. 1500088{'\n'}
+        Promulgated on January 23, 2015
+      </Text>
+
       {/* Form Header */}
       <View style={styles.formHeader}>
         <Text style={styles.formTitle}>
@@ -88,8 +106,11 @@ export function SALNPage1({ data }: SALNPage1Props) {
         <Text style={styles.formSubtitle}>
           (As of {year ? year.toString() : '_____________'})
         </Text>
-        <Text style={styles.formInfo}>Revised 2019</Text>
-        <Text style={[styles.formSubtitle, { fontSize: SALN_FONT_SIZES.legalText }]}>
+        <Text
+          style={[
+            styles.formSubtitle,
+            { fontSize: SALN_FONT_SIZES.legalText },
+          ]}>
           PURSUANT TO REPUBLIC ACT NO. 6713 AND REPUBLIC ACT NO. 3019
         </Text>
       </View>
@@ -98,15 +119,21 @@ export function SALNPage1({ data }: SALNPage1Props) {
       <View style={[styles.row, { marginBottom: 8, alignItems: 'center' }]}>
         <View style={[styles.row, { alignItems: 'center', marginRight: 15 }]}>
           <Checkbox checked={filingType === 'joint'} />
-          <Text style={{ fontSize: SALN_FONT_SIZES.fieldLabel }}>Joint Filing</Text>
+          <Text style={{ fontSize: SALN_FONT_SIZES.fieldLabel }}>
+            Joint Filing
+          </Text>
         </View>
         <View style={[styles.row, { alignItems: 'center', marginRight: 15 }]}>
           <Checkbox checked={filingType === 'separate'} />
-          <Text style={{ fontSize: SALN_FONT_SIZES.fieldLabel }}>Separate Filing</Text>
+          <Text style={{ fontSize: SALN_FONT_SIZES.fieldLabel }}>
+            Separate Filing
+          </Text>
         </View>
         <View style={[styles.row, { alignItems: 'center' }]}>
           <Checkbox checked={filingType === 'not_applicable'} />
-          <Text style={{ fontSize: SALN_FONT_SIZES.fieldLabel }}>Not Applicable</Text>
+          <Text style={{ fontSize: SALN_FONT_SIZES.fieldLabel }}>
+            Not Applicable
+          </Text>
         </View>
       </View>
 
@@ -241,7 +268,7 @@ export function SALNPage1({ data }: SALNPage1Props) {
           </View>
         </View>
 
-        {children && children.length > 0 ? (
+        {children.length > 0 ? (
           children.map((child, index) => {
             const age = calculateAge(child.dateOfBirth);
             return (
@@ -319,7 +346,9 @@ export function SALNPage1({ data }: SALNPage1Props) {
                 <Text>{formatCurrency(property.assessedValue || 0)}</Text>
               </View>
               <View style={[styles.currencyCell, { width: '12%' }]}>
-                <Text>{formatCurrency(property.currentFairMarketValue || 0)}</Text>
+                <Text>
+                  {formatCurrency(property.currentFairMarketValue || 0)}
+                </Text>
               </View>
               <View style={[styles.tableCell, { width: '8%' }]}>
                 <Text style={styles.center}>{property.acquisitionYear}</Text>
@@ -394,7 +423,9 @@ export function SALNPage1({ data }: SALNPage1Props) {
           ))
         ) : (
           <View style={styles.emptyRow}>
-            <Text style={styles.emptyText}>No personal properties declared</Text>
+            <Text style={styles.emptyText}>
+              No personal properties declared
+            </Text>
           </View>
         )}
 

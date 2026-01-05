@@ -59,7 +59,7 @@ import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/formatting-helpers';
 import { useSALNPdf } from '@/hooks/useSALNPdf';
-import type { SALNData } from '@/components/saln/pdf/types';
+import type { SALNData } from '@/components/saln/pdf';
 
 /**
  * SALN Submission View Page

@@ -29,7 +29,7 @@ import { useDepartmentsQuery } from '@/hooks/useDepartmentsQuery';
 import { useAuth } from '@/context/AuthContext';
 import { useSALNPdf } from '@/hooks/useSALNPdf';
 import { usePagination } from '@/hooks/usePagination';
-import type { SALNData } from '@/components/saln/pdf/types';
+import type { SALNData } from '@/components/saln/pdf';
 import { DeadlineManagementCard } from '@/components/deadlines';
 import { ReviewDialog } from '@/components/admin/ReviewDialog';
 import type { SalnSubmissionListItem } from '@tupsafe/types';
