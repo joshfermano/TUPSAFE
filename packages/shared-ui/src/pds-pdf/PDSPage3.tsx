@@ -1,6 +1,6 @@
 /**
  * PDS Page 3 - Voluntary Work, Training, and Other Information
- * CS Form No. 212 (Revised 2017)
+ * CS Form No. 212 (Revised 2025)
  *
  * Contains:
  * - Section VI: Voluntary Work or Involvement in Civic/Non-Government/People/Voluntary Organizations
@@ -10,6 +10,7 @@
 
 import { Page, View, Text } from '@react-pdf/renderer';
 import { styles, formatDateMMDDYYYY, displayOrEmpty } from './PDSStyles';
+import { PDSPageFooter, ContinueText } from './PDSComponents';
 import type { PDSData, VoluntaryWork, Training } from './types';
 
 interface PDSPage3Props {
@@ -102,6 +103,7 @@ export function PDSPage3({ data }: PDSPage3Props) {
         {/* Voluntary Work Data Rows */}
         {Array.from({ length: voluntaryWorkRows }).map((_, index) => {
           const work: VoluntaryWork | undefined = sortedVoluntaryWorks[index];
+          const isLastCell = true;
           return (
             <View key={`voluntary-${index}`} style={styles.fieldRow}>
               <View style={[styles.tableCell, styles.w40]}>
@@ -124,7 +126,7 @@ export function PDSPage3({ data }: PDSPage3Props) {
                   </View>
                   <View style={[styles.flex1, { padding: 1 }]}>
                     <Text style={[styles.valueSmall, styles.center]}>
-                      {work ? formatDateMMDDYYYY(work.dateTo) : ''}
+                      {work && work.dateTo ? formatDateMMDDYYYY(work.dateTo) : ''}
                     </Text>
                   </View>
                 </View>
@@ -134,7 +136,7 @@ export function PDSPage3({ data }: PDSPage3Props) {
                   {work?.numberOfHours ? String(work.numberOfHours) : ''}
                 </Text>
               </View>
-              <View style={[styles.tableCellNoBorder, { flex: 1 }]}>
+              <View style={[isLastCell ? styles.tableCellNoBorder : styles.tableCell, { flex: 1 }]}>
                 <Text style={styles.valueSmall}>
                   {work ? displayOrEmpty(work.positionNature) : ''}
                 </Text>
@@ -142,6 +144,9 @@ export function PDSPage3({ data }: PDSPage3Props) {
             </View>
           );
         })}
+
+        {/* Continuation note for Voluntary Work */}
+        <ContinueText align="right" marginTop={3} />
       </View>
 
       {/* Section VII: Learning and Development */}
@@ -212,6 +217,7 @@ export function PDSPage3({ data }: PDSPage3Props) {
         {/* Training Data Rows */}
         {Array.from({ length: trainingRows }).map((_, index) => {
           const training: Training | undefined = sortedTrainings[index];
+          const isLastCell = true;
           return (
             <View key={`training-${index}`} style={styles.fieldRow}>
               <View style={[styles.tableCell, styles.w33]}>
@@ -243,7 +249,7 @@ export function PDSPage3({ data }: PDSPage3Props) {
                   {training ? displayOrEmpty(training.typeOfLd) : ''}
                 </Text>
               </View>
-              <View style={[styles.tableCellNoBorder, { flex: 1 }]}>
+              <View style={[isLastCell ? styles.tableCellNoBorder : styles.tableCell, { flex: 1 }]}>
                 <Text style={styles.valueSmall}>
                   {training ? displayOrEmpty(training.conductedBy) : ''}
                 </Text>
@@ -251,6 +257,9 @@ export function PDSPage3({ data }: PDSPage3Props) {
             </View>
           );
         })}
+
+        {/* Continuation note for Training */}
+        <ContinueText align="right" marginTop={3} />
       </View>
 
       {/* Section VIII: Other Information */}
@@ -289,6 +298,7 @@ export function PDSPage3({ data }: PDSPage3Props) {
           const skill = skills[index];
           const recognition = recognitions[index];
           const association = associations[index];
+          const isLastCell = true;
 
           return (
             <View key={`other-${index}`} style={styles.fieldRow}>
@@ -315,7 +325,7 @@ export function PDSPage3({ data }: PDSPage3Props) {
               </View>
 
               {/* Associations Column */}
-              <View style={[styles.tableCellNoBorder, { flex: 1 }]}>
+              <View style={[isLastCell ? styles.tableCellNoBorder : styles.tableCell, { flex: 1 }]}>
                 <Text style={styles.valueSmall}>
                   {association
                     ? `${displayOrEmpty(association.name)}${
@@ -333,19 +343,13 @@ export function PDSPage3({ data }: PDSPage3Props) {
             </View>
           );
         })}
+
+        {/* Continuation note for Other Information */}
+        <ContinueText align="right" marginTop={3} />
       </View>
 
-      {/* Continuation note */}
-      <View style={[styles.marginTop5]}>
-        <Text style={styles.noteText}>
-          (Continue on separate sheet if necessary)
-        </Text>
-      </View>
-
-      {/* Page footer */}
-      <View style={styles.pageNumber}>
-        <Text style={styles.noteText}>CS FORM 212 (Revised 2025), Page 3 of 4</Text>
-      </View>
+      {/* Page footer with signature and page number */}
+      <PDSPageFooter pageNumber={3} totalPages={4} showSignature={true} />
     </Page>
   );
 }

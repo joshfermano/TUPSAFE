@@ -5,7 +5,7 @@
  * Separates validation into errors (blocking) and warnings (non-blocking).
  */
 
-import type { PDSData } from '../../components/pds/pdf/types';
+import type { PDSData } from '@tupsafe/shared-ui/pds-pdf';
 
 export interface ValidationError {
   field: string;

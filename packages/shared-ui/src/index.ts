@@ -58,3 +58,6 @@ export * from './fonts';
 
 // Export SALN PDF components and utilities
 export * from './saln-pdf';
+
+// Export PDS PDF components and utilities
+export * from './pds-pdf';

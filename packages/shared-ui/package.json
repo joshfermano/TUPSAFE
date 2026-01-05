@@ -18,6 +18,14 @@
     "./saln-pdf/*": {
       "types": "./dist/saln-pdf/*.d.ts",
       "default": "./dist/saln-pdf/*.js"
+    },
+    "./pds-pdf": {
+      "types": "./dist/pds-pdf/index.d.ts",
+      "default": "./dist/pds-pdf/index.js"
+    },
+    "./pds-pdf/*": {
+      "types": "./dist/pds-pdf/*.d.ts",
+      "default": "./dist/pds-pdf/*.js"
     }
   },
   "scripts": {
