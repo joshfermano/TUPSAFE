@@ -332,9 +332,9 @@ export interface PDFGenerationOptions {
 
   /**
    * Page size for PDF
-   * @default "A4"
+   * @default "LETTER"
    */
-  pageSize?: 'A4' | 'Letter' | 'Legal';
+  pageSize?: 'A4' | 'LETTER' | 'Legal';
 
   /**
    * Page orientation

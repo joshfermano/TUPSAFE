@@ -5,15 +5,15 @@
  * SALN (Statement of Assets, Liabilities and Net Worth) forms as PDF documents.
  *
  * Uses @react-pdf/renderer for client-side PDF generation.
+ * Components are imported from the shared package via local re-exports.
  *
  * @module hooks/useSalnPdf
  */
 
 import { useState, useCallback } from 'react';
 import { pdf } from '@react-pdf/renderer';
-import { SALNDocument } from '@/components/saln/pdf';
-import { registerSALNFonts } from '@/components/saln/pdf/SALNStyles';
-import type { SALNData } from '@/components/saln/pdf/types';
+// Import from local re-export layer (which uses @tupsafe/shared-ui/saln-pdf)
+import { SALNDocument, registerSALNFonts, type SALNData } from '@/components/saln/pdf';
 import { validateSALNData } from '@/lib/utils/saln-validation';
 
 // ============================================================================

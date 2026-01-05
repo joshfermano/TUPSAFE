@@ -1,16 +1,24 @@
 import { Font, StyleSheet } from '@react-pdf/renderer';
 import { format } from 'date-fns';
 
-// Local type definitions for calculation functions
-type RealProperty = { acquisitionCost?: number | null };
-type PersonalProperty = { acquisitionCost?: number | null };
-type Liability = { outstandingBalance?: number | null };
+// Type definitions for SALN properties (subset for calculations)
+interface SalnRealProperty {
+  acquisitionCost: number | string | null;
+}
+
+interface SalnPersonalProperty {
+  acquisitionCost: number | string | null;
+}
+
+interface SalnLiability {
+  outstandingBalance: number | string | null;
+}
 
 // Track registration state
 let fontsRegistered = false;
 
 /**
- * Register Roboto fonts for SALN PDF generation
+ * Register Liberation Serif fonts for SALN PDF generation
  * Font files are located in public/fonts/
  * This function checks if fonts are already registered to avoid duplicate registration
  * Call this before generating any SALN PDF
@@ -18,30 +26,31 @@ let fontsRegistered = false;
  * @param baseUrl - Base URL for font paths (default: '')
  */
 export function registerSALNFonts(baseUrl: string = ''): void {
+  // Check if fonts are already registered
   if (fontsRegistered) {
     return; // Already registered, skip
   }
 
   Font.register({
-    family: 'Roboto',
+    family: 'LiberationSerif',
     fonts: [
       {
-        src: `${baseUrl}/fonts/roboto-latin-400-normal.woff`,
+        src: `${baseUrl}/fonts/liberation-serif-regular.woff`,
         fontWeight: 'normal',
         fontStyle: 'normal',
       },
       {
-        src: `${baseUrl}/fonts/roboto-latin-400-italic.woff`,
+        src: `${baseUrl}/fonts/liberation-serif-italic.woff`,
         fontWeight: 'normal',
         fontStyle: 'italic',
       },
       {
-        src: `${baseUrl}/fonts/roboto-latin-700-normal.woff`,
+        src: `${baseUrl}/fonts/liberation-serif-bold.woff`,
         fontWeight: 'bold',
         fontStyle: 'normal',
       },
       {
-        src: `${baseUrl}/fonts/roboto-latin-700-italic.woff`,
+        src: `${baseUrl}/fonts/liberation-serif-bold-italic.woff`,
         fontWeight: 'bold',
         fontStyle: 'italic',
       },
@@ -50,6 +59,8 @@ export function registerSALNFonts(baseUrl: string = ''): void {
 
   // Disable hyphenation for better text control
   Font.registerHyphenationCallback((word) => [word]);
+
+  // Mark as registered
   fontsRegistered = true;
 }
 
@@ -60,9 +71,7 @@ export function registerSALNFonts(baseUrl: string = ''): void {
  * @param baseUrl - Base URL for font paths (default: '')
  */
 export function ensureSALNFontsRegistered(baseUrl: string = ''): void {
-  if (!fontsRegistered) {
-    registerSALNFonts(baseUrl);
-  }
+  registerSALNFonts(baseUrl);
 }
 
 /**
@@ -71,10 +80,10 @@ export function ensureSALNFontsRegistered(baseUrl: string = ''): void {
  */
 export const SALN_COLORS = {
   formTitle: '#000000', // Black for main title
-  headerBg: '#404040', // Dark gray for table headers
-  headerText: '#FFFFFF', // White text on headers
+  headerBg: '#E0E0E0', // Light gray for table headers (CSC compliant)
+  headerText: '#000000', // Black text on headers (CSC compliant)
   borderColor: '#000000', // Black borders
-  currencyGreen: '#006600', // Green for currency values
+  currencyBlack: '#000000', // Black for currency values (CSC compliant)
   subtotalBorder: '#000000', // Thick border for subtotals
   lightGray: '#D3D3D3', // Light gray for header backgrounds
   mediumGray: '#808080', // Medium gray for section backgrounds
@@ -124,7 +133,7 @@ export const styles = StyleSheet.create({
   // Page layout
   page: {
     padding: SALN_DIMENSIONS.pagePadding,
-    fontFamily: 'Roboto',
+    fontFamily: 'LiberationSerif',
     fontSize: SALN_FONT_SIZES.fieldValue,
     lineHeight: 1.3,
     color: SALN_COLORS.textGray,
@@ -142,6 +151,7 @@ export const styles = StyleSheet.create({
     marginBottom: 2,
     color: SALN_COLORS.formTitle,
     textTransform: 'uppercase',
+    textDecoration: 'underline',
   },
   formSubtitle: {
     fontSize: SALN_FONT_SIZES.formSubtitle,
@@ -177,6 +187,11 @@ export const styles = StyleSheet.create({
     fontSize: SALN_FONT_SIZES.fieldValue,
     width: '70%',
     color: SALN_COLORS.black,
+  },
+  labelSmall: {
+    fontSize: SALN_FONT_SIZES.noteText,
+    color: SALN_COLORS.textGray,
+    fontStyle: 'italic',
   },
 
   // Section headers
@@ -259,14 +274,14 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'flex-end',
     fontSize: SALN_FONT_SIZES.currencyValue,
-    color: SALN_COLORS.currencyGreen,
+    color: SALN_COLORS.currencyBlack,
   },
   currencyCellNoBorder: {
     padding: SALN_DIMENSIONS.cellPadding,
     justifyContent: 'center',
     alignItems: 'flex-end',
     fontSize: SALN_FONT_SIZES.currencyValue,
-    color: SALN_COLORS.currencyGreen,
+    color: SALN_COLORS.currencyBlack,
   },
 
   // Subtotal and total rows
@@ -295,7 +310,7 @@ export const styles = StyleSheet.create({
   subtotalValue: {
     fontSize: SALN_FONT_SIZES.currencyValue,
     fontWeight: 'bold',
-    color: SALN_COLORS.currencyGreen,
+    color: SALN_COLORS.currencyBlack,
   },
 
   // Net Worth section (highlighted)
@@ -321,7 +336,7 @@ export const styles = StyleSheet.create({
   netWorthValue: {
     fontSize: SALN_FONT_SIZES.formTitle,
     fontWeight: 'bold',
-    color: SALN_COLORS.currencyGreen,
+    color: SALN_COLORS.currencyBlack,
   },
 
   // Signature section
@@ -448,13 +463,6 @@ export const styles = StyleSheet.create({
     color: SALN_COLORS.mediumGray,
   },
 
-  // Label styles
-  labelSmall: {
-    fontSize: 6,
-    color: SALN_COLORS.textGray,
-    marginBottom: 1,
-  },
-
   // Footer styles
   footerText: {
     fontSize: SALN_FONT_SIZES.footerText,
@@ -482,23 +490,22 @@ export const styles = StyleSheet.create({
 });
 
 /**
- * Format currency as ₱#,###,###.00
- * Uses Philippine Peso formatting with 2 decimal places
+ * Format currency as P#,###,###.00
+ * Uses letter P prefix (CSC compliant) with 2 decimal places
  *
  * @param amount - The numeric amount to format
- * @returns Formatted currency string with peso sign
+ * @returns Formatted currency string with P prefix
  *
  * @example
- * formatCurrency(1234567.89) // "₱1,234,567.89"
- * formatCurrency(0) // "₱0.00"
+ * formatCurrency(1234567.89) // "P1,234,567.89"
+ * formatCurrency(0) // "P0.00"
  */
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-PH', {
-    style: 'currency',
-    currency: 'PHP',
+  const formatted = new Intl.NumberFormat('en-PH', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount);
+  return `P${formatted}`;
 }
 
 /**
@@ -591,9 +598,14 @@ export function sumArray(arr: number[]): number {
  * calculateRealPropertiesTotal(properties) // 1500000
  */
 export function calculateRealPropertiesTotal(
-  properties: RealProperty[]
+  properties: SalnRealProperty[]
 ): number {
-  return sumArray(properties.map((p) => p.acquisitionCost || 0));
+  return sumArray(
+    properties.map((p) => {
+      const cost = p.acquisitionCost;
+      return typeof cost === 'string' ? parseFloat(cost) || 0 : cost || 0;
+    })
+  );
 }
 
 /**
@@ -611,9 +623,14 @@ export function calculateRealPropertiesTotal(
  * calculatePersonalPropertiesTotal(properties) // 75000
  */
 export function calculatePersonalPropertiesTotal(
-  properties: PersonalProperty[]
+  properties: SalnPersonalProperty[]
 ): number {
-  return sumArray(properties.map((p) => p.acquisitionCost || 0));
+  return sumArray(
+    properties.map((p) => {
+      const cost = p.acquisitionCost;
+      return typeof cost === 'string' ? parseFloat(cost) || 0 : cost || 0;
+    })
+  );
 }
 
 /**
@@ -631,9 +648,14 @@ export function calculatePersonalPropertiesTotal(
  * calculateLiabilitiesTotal(liabilities) // 150000
  */
 export function calculateLiabilitiesTotal(
-  liabilities: Liability[]
+  liabilities: SalnLiability[]
 ): number {
-  return sumArray(liabilities.map((l) => l.outstandingBalance || 0));
+  return sumArray(
+    liabilities.map((l) => {
+      const balance = l.outstandingBalance;
+      return typeof balance === 'string' ? parseFloat(balance) || 0 : balance || 0;
+    })
+  );
 }
 
 /**
@@ -645,8 +667,8 @@ export function calculateLiabilitiesTotal(
  * @returns Total asset value
  */
 export function calculateTotalAssets(
-  realProperties: RealProperty[],
-  personalProperties: PersonalProperty[]
+  realProperties: SalnRealProperty[],
+  personalProperties: SalnPersonalProperty[]
 ): number {
   return (
     calculateRealPropertiesTotal(realProperties) +
@@ -680,15 +702,15 @@ export function calculateNetWorth(
  * @returns Abbreviated currency string
  *
  * @example
- * formatCurrencyAbbreviated(1500000) // "₱1.5M"
- * formatCurrencyAbbreviated(750000) // "₱750K"
+ * formatCurrencyAbbreviated(1500000) // "P1.5M"
+ * formatCurrencyAbbreviated(750000) // "P750K"
  */
 export function formatCurrencyAbbreviated(amount: number): string {
   if (amount >= 1000000) {
-    return `₱${(amount / 1000000).toFixed(1)}M`;
+    return `P${(amount / 1000000).toFixed(1)}M`;
   }
   if (amount >= 1000) {
-    return `₱${(amount / 1000).toFixed(0)}K`;
+    return `P${(amount / 1000).toFixed(0)}K`;
   }
   return formatCurrency(amount);
 }
