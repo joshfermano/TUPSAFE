@@ -1,9 +1,8 @@
 /**
- * PDS Page 2 - Educational Background, Civil Service Eligibility, Work Experience
- * CS Form No. 212 (Revised 2017)
+ * PDS Page 2 - Civil Service Eligibility, Work Experience
+ * CS Form No. 212 (Revised 2025)
  *
  * Contains:
- * - Section III: Educational Background
  * - Section IV: Civil Service Eligibility
  * - Section V: Work Experience (sorted by date - latest first)
  */
@@ -15,189 +14,35 @@ import {
   formatCurrency,
   displayOrEmpty,
 } from './PDSStyles';
-import type { PDSData, Education } from './types';
+import { SectionHeader, ContinueText, PDSPageFooter } from './PDSComponents';
+import type { PDSData } from './types';
 
 interface PDSPage2Props {
   data: PDSData;
 }
 
-// Helper to get year from date
-function getYear(date: Date | string | null | undefined): string {
-  if (!date) return '';
-  const d = typeof date === 'string' ? new Date(date) : date;
-  if (isNaN(d.getTime())) return '';
-  return d.getFullYear().toString();
-}
-
-// Education row component
-function EducationRow({
-  level,
-  education,
-}: {
-  level: string;
-  education?: Education | null;
-}) {
-  return (
-    <View style={styles.fieldRow}>
-      {/* Level */}
-      <View style={[styles.tableCell, styles.w15]}>
-        <Text style={styles.labelSmall}>{level}</Text>
-      </View>
-      {/* Name of School */}
-      <View style={[styles.tableCell, styles.w20]}>
-        <Text style={styles.valueSmall}>
-          {education ? displayOrEmpty(education.schoolName) : ''}
-        </Text>
-      </View>
-      {/* Basic Education/Degree/Course */}
-      <View style={[styles.tableCell, styles.w15]}>
-        <Text style={styles.valueSmall}>
-          {education ? displayOrEmpty(education.degreeCourse) : ''}
-        </Text>
-      </View>
-      {/* Period of Attendance - From */}
-      <View style={[styles.tableCell, { width: '7%' }]}>
-        <Text style={[styles.valueSmall, styles.center]}>
-          {education ? getYear(education.periodFrom) : ''}
-        </Text>
-      </View>
-      {/* Period of Attendance - To */}
-      <View style={[styles.tableCell, { width: '7%' }]}>
-        <Text style={[styles.valueSmall, styles.center]}>
-          {education ? getYear(education.periodTo) : ''}
-        </Text>
-      </View>
-      {/* Highest Level/Units Earned */}
-      <View style={[styles.tableCell, styles.w15]}>
-        <Text style={styles.valueSmall}>
-          {education ? displayOrEmpty(education.highestLevelEarned) : ''}
-        </Text>
-      </View>
-      {/* Year Graduated */}
-      <View style={[styles.tableCell, { width: '8%' }]}>
-        <Text style={[styles.valueSmall, styles.center]}>
-          {education?.yearGraduated ? String(education.yearGraduated) : ''}
-        </Text>
-      </View>
-      {/* Scholarship/Academic Honors */}
-      <View style={[styles.tableCellNoBorder, { width: '13%' }]}>
-        <Text style={styles.valueSmall}>
-          {education ? displayOrEmpty(education.honorsReceived) : ''}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
 export function PDSPage2({ data }: PDSPage2Props) {
-  const { education, civilServiceEligibilities, workExperiences } = data;
+  const { civilServiceEligibilities, workExperiences } = data;
 
   // Work experiences should already be sorted, display in order received
   // (latest date on top - sorted by dateTo DESC, then dateFrom DESC)
   const sortedWorkExperiences = workExperiences;
 
   // Minimum rows to display for each section
-  const minEligibilityRows = 4;
-  const minWorkExperienceRows = 7;
+  const minEligibilityRows = 7;
+  const minWorkExperienceRows = 28;
 
   return (
     <Page size="LEGAL" style={styles.page}>
-      {/* Section III: Educational Background */}
-      <View style={styles.borderedSection}>
-        <View style={styles.sectionHeader}>
-          <Text>26. III. EDUCATIONAL BACKGROUND</Text>
-        </View>
-
-        {/* Header Row */}
-        <View style={styles.fieldRow}>
-          <View style={[styles.tableCellHeader, styles.w15]}>
-            <Text style={[styles.labelSmall, styles.center]}>LEVEL</Text>
-          </View>
-          <View style={[styles.tableCellHeader, styles.w20]}>
-            <Text style={[styles.labelSmall, styles.center]}>
-              NAME OF SCHOOL
-            </Text>
-            <Text style={[styles.labelSmall, styles.center]}>
-              (Write in full)
-            </Text>
-          </View>
-          <View style={[styles.tableCellHeader, styles.w15]}>
-            <Text style={[styles.labelSmall, styles.center]}>
-              BASIC EDUCATION/DEGREE/COURSE
-            </Text>
-            <Text style={[styles.labelSmall, styles.center]}>
-              (Write in full)
-            </Text>
-          </View>
-          <View style={[styles.tableCellHeader, { width: '14%' }]}>
-            <Text style={[styles.labelSmall, styles.center]}>
-              PERIOD OF ATTENDANCE
-            </Text>
-            <View style={[styles.row, { marginTop: 2 }]}>
-              <View style={[styles.tableCell, styles.w50]}>
-                <Text style={[styles.labelSmall, styles.center]}>From</Text>
-              </View>
-              <View style={[styles.tableCellNoBorder, styles.w50]}>
-                <Text style={[styles.labelSmall, styles.center]}>To</Text>
-              </View>
-            </View>
-          </View>
-          <View style={[styles.tableCellHeader, styles.w15]}>
-            <Text style={[styles.labelSmall, styles.center]}>
-              HIGHEST LEVEL/
-            </Text>
-            <Text style={[styles.labelSmall, styles.center]}>UNITS EARNED</Text>
-            <Text style={[styles.labelSmall, styles.center]}>
-              (if not graduated)
-            </Text>
-          </View>
-          <View style={[styles.tableCellHeader, { width: '8%' }]}>
-            <Text style={[styles.labelSmall, styles.center]}>YEAR</Text>
-            <Text style={[styles.labelSmall, styles.center]}>GRADUATED</Text>
-          </View>
-          <View
-            style={[
-              styles.tableCellHeader,
-              { width: '13%', borderRightWidth: 0 },
-            ]}
-          >
-            <Text style={[styles.labelSmall, styles.center]}>
-              SCHOLARSHIP/
-            </Text>
-            <Text style={[styles.labelSmall, styles.center]}>
-              ACADEMIC HONORS
-            </Text>
-            <Text style={[styles.labelSmall, styles.center]}>RECEIVED</Text>
-          </View>
-        </View>
-
-        {/* Education Rows */}
-        <EducationRow level="ELEMENTARY" education={education.elementary} />
-        <EducationRow level="SECONDARY" education={education.secondary} />
-        <EducationRow
-          level="VOCATIONAL/TRADE COURSE"
-          education={education.vocational}
-        />
-        <EducationRow level="COLLEGE" education={education.college} />
-        <EducationRow
-          level="GRADUATE STUDIES"
-          education={education.graduate}
-        />
-      </View>
-
       {/* Section IV: Civil Service Eligibility */}
-      <View style={[styles.borderedSection, styles.marginTop5]}>
-        <View style={styles.sectionHeader}>
-          <Text>
-            27. IV. CIVIL SERVICE ELIGIBILITY
-          </Text>
-        </View>
+      <View style={styles.borderedSection}>
+        <SectionHeader number="IV" title="CIVIL SERVICE ELIGIBILITY" />
 
         {/* Note */}
         <View style={styles.subSectionHeader}>
           <Text style={styles.labelSmall}>
-            (Career Service/ RA 1080 (BOARD/BAR) Under Special Laws/ CES/ CSEE
-            Barangay Eligibility / Driver&apos;s License under RA 10054)
+            27. CAREER SERVICE/ RA 1080 (BOARD/ BAR) UNDER SPECIAL LAWS/ CES/
+            CSEE BARANGAY ELIGIBILITY / DRIVER&apos;S LICENSE
           </Text>
         </View>
 
@@ -214,7 +59,7 @@ export function PDSPage2({ data }: PDSPage2Props) {
               CSEE BARANGAY ELIGIBILITY /
             </Text>
             <Text style={[styles.labelSmall, styles.center]}>
-              DRIVER&apos;S LICENSE UNDER RA 10054
+              DRIVER&apos;S LICENSE
             </Text>
           </View>
           <View style={[styles.tableCellHeader, styles.w10]}>
@@ -233,7 +78,7 @@ export function PDSPage2({ data }: PDSPage2Props) {
             </Text>
             <Text style={[styles.labelSmall, styles.center]}>CONFERMENT</Text>
           </View>
-          <View style={[styles.tableCellHeader, styles.w15]}>
+          <View style={[styles.tableCellHeader, { width: '15%' }]}>
             <Text style={[styles.labelSmall, styles.center]}>LICENSE</Text>
             <Text style={[styles.labelSmall, styles.center]}>(if applicable)</Text>
             <View style={[styles.row, { marginTop: 2 }]}>
@@ -242,10 +87,18 @@ export function PDSPage2({ data }: PDSPage2Props) {
               </View>
               <View style={[styles.tableCellNoBorder, styles.w50]}>
                 <Text style={[styles.labelSmall, styles.center]}>
-                  Date of Validity
+                  VALID UNTIL
                 </Text>
               </View>
             </View>
+          </View>
+          <View
+            style={[
+              styles.tableCellHeader,
+              { width: '15%', borderRightWidth: 0 },
+            ]}
+          >
+            <Text style={[styles.labelSmall, styles.center]}>N/A</Text>
           </View>
         </View>
 
@@ -281,31 +134,34 @@ export function PDSPage2({ data }: PDSPage2Props) {
                   {eligibility ? displayOrEmpty(eligibility.licenseNo) : ''}
                 </Text>
               </View>
-              <View style={[styles.tableCellNoBorder, { width: '7.5%' }]}>
+              <View style={[styles.tableCell, { width: '7.5%' }]}>
                 <Text style={[styles.valueSmall, styles.center]}>
                   {eligibility
                     ? formatDateMMDDYYYY(eligibility.licenseValidityDate)
                     : ''}
                 </Text>
               </View>
+              <View style={[styles.tableCellNoBorder, { width: '15%' }]}>
+                <Text style={styles.valueSmall}></Text>
+              </View>
             </View>
           );
         })}
+
+        {/* Continuation note for eligibility */}
+        <ContinueText align="right" marginTop={3} />
       </View>
 
       {/* Section V: Work Experience */}
       <View style={[styles.borderedSection, styles.marginTop5]}>
-        <View style={styles.sectionHeader}>
-          <Text>
-            28. V. WORK EXPERIENCE
-          </Text>
-        </View>
+        <SectionHeader number="V" title="WORK EXPERIENCE" />
 
         {/* Note */}
         <View style={styles.subSectionHeader}>
           <Text style={styles.labelSmall}>
-            (Include private employment. Start from your recent work) Description
-            of duties should be indicated in the attached Work Experience Sheet.
+            28. (Include private employment. Start from your recent work)
+            Description of duties should be indicated in the attached Work
+            Experience sheet.
           </Text>
         </View>
 
@@ -374,7 +230,7 @@ export function PDSPage2({ data }: PDSPage2Props) {
         }).map((_, index) => {
           const work = sortedWorkExperiences[index];
           return (
-            <View key={index} style={styles.fieldRow}>
+            <View key={index} style={[styles.fieldRow, { minHeight: 18 }]}>
               {/* Inclusive Dates - From */}
               <View style={[styles.tableCell, { width: '7%' }]}>
                 <Text style={[styles.valueSmall, styles.center]}>
@@ -430,21 +286,13 @@ export function PDSPage2({ data }: PDSPage2Props) {
             </View>
           );
         })}
-      </View>
 
-      {/* Continuation note */}
-      <View style={styles.marginTop5}>
-        <Text style={styles.noteText}>
-          (Continue on separate sheet if necessary)
-        </Text>
+        {/* Continuation note for work experience */}
+        <ContinueText align="right" marginTop={3} />
       </View>
 
       {/* Page footer */}
-      <View style={styles.pageNumber}>
-        <Text style={styles.noteText}>
-          CS FORM 212 (Revised 2025), Page 2 of 4
-        </Text>
-      </View>
+      <PDSPageFooter pageNumber={2} totalPages={4} showSignature={true} />
     </Page>
   );
 }

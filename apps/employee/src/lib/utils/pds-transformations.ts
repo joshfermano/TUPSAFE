@@ -24,7 +24,7 @@
  */
 
 import type { CompletePdsData } from '../validations/pds-schema';
-import type { PDSData } from '../../components/pds/pdf/types';
+import type { PDSData } from '@tupsafe/shared-ui/pds-pdf';
 
 /**
  * Helper function to convert string to Date

@@ -11,9 +11,8 @@
 
 import { useState, useCallback } from 'react';
 import { pdf } from '@react-pdf/renderer';
-import { PDSDocument } from '../components/pds/pdf';
-import { ensurePDFFontsRegistered } from '../components/pds/pdf/PDSStyles';
-import type { PDSData } from '../components/pds/pdf/types';
+import { PDSDocument, ensurePDSFontsRegistered } from '@tupsafe/shared-ui/pds-pdf';
+import type { PDSData } from '@tupsafe/shared-ui/pds-pdf';
 import { validatePDSForPDF } from '../lib/utils/pds-validation';
 
 // ============================================================================
@@ -233,7 +232,7 @@ export function usePDSPdf(): UsePDSPdfReturn {
       // Get base URL for font paths and ensure fonts are registered
       const baseUrl =
         typeof window !== 'undefined' ? window.location.origin : '';
-      ensurePDFFontsRegistered(baseUrl);
+      ensurePDSFontsRegistered(baseUrl);
 
       // Create the PDF document element
       const document = PDSDocument({ data: pdsData });
