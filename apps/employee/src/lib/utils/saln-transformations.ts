@@ -150,11 +150,24 @@ export function transformSalnForSubmission(data: Partial<CompleteSalnData>): any
   const result: any = {
     year: submission.year,
     filingType: submission.filingType || 'separate',
-    spouseName: submission.spouseName || undefined,
-    position: submission.position || undefined,
-    agency: submission.agency || undefined,
-    officeAddress: submission.officeAddress || undefined,
   };
+
+  // Only include optional scalar fields if they have actual values
+  // This prevents auto-save from overwriting existing database values
+  // undefined = don't update (preserve existing)
+  // null or string = update with new value
+  if (submission.spouseName !== undefined) {
+    result.spouseName = submission.spouseName;
+  }
+  if (submission.position !== undefined) {
+    result.position = submission.position;
+  }
+  if (submission.agency !== undefined) {
+    result.agency = submission.agency;
+  }
+  if (submission.officeAddress !== undefined) {
+    result.officeAddress = submission.officeAddress;
+  }
 
   // Only add section arrays if they were explicitly provided
   if (realProperties !== undefined) result.realProperties = realProperties;
@@ -176,16 +189,17 @@ export function transformSalnForSubmission(data: Partial<CompleteSalnData>): any
 export function transformSalnFromBackend(backendData: any): Partial<CompleteSalnData> {
   // ========================================================================
   // STEP 1: Transform submission metadata
+  // Use nullish coalescing (??) to preserve empty strings if intentionally cleared
   // ========================================================================
   const submission = {
     id: backendData.id,
     userId: backendData.userId,
     year: backendData.year,
     filingType: backendData.filingType || 'separate',
-    spouseName: backendData.spouseName || null,
-    position: backendData.position || undefined,
-    agency: backendData.agency || undefined,
-    officeAddress: backendData.officeAddress || undefined,
+    spouseName: backendData.spouseName ?? null,
+    position: backendData.position ?? undefined,
+    agency: backendData.agency ?? undefined,
+    officeAddress: backendData.officeAddress ?? undefined,
     status: backendData.status || 'draft',
     submittedAt: backendData.submittedAt ? new Date(backendData.submittedAt) : null,
     approvedAt: backendData.approvedAt ? new Date(backendData.approvedAt) : null,
