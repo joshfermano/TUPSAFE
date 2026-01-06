@@ -178,8 +178,10 @@ export default function SALNEditDetailPage({
   const submitMutation = useSubmitSALN(salnId);
   const loading = isLoading;
 
-  // Extract submission data from salnData
-  const submission = salnData;
+  // Extract submission metadata from salnData
+  // salnData has shape: { submission: {...}, realProperties: [...], ... }
+  // submission contains Part I declarant info: year, filingType, spouseName, position, agency, officeAddress
+  const submission = salnData?.submission;
   const initialData = salnData as CompleteSalnData | null;
 
   const [isSaving, setIsSaving] = useState(false);

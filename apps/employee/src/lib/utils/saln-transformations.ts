@@ -53,6 +53,88 @@ function formatForDb(value: number | null | undefined): string {
 }
 
 /**
+ * Transform a flat (legacy) payload to ensure proper DB formatting
+ * Used when the payload is already in flat format (e.g., already transformed once)
+ * This prevents double-transformation issues
+ *
+ * @param data - Flat payload with year, filingType at root level
+ * @returns Properly formatted flat payload for DB
+ */
+function transformFlatPayload(data: any): any {
+  const result: any = {
+    year: data.year,
+    filingType: data.filingType || 'separate',
+  };
+
+  // Pass through optional scalar fields
+  if (data.spouseName !== undefined) {
+    result.spouseName = data.spouseName;
+  }
+  if (data.position !== undefined) {
+    result.position = data.position;
+  }
+  if (data.agency !== undefined) {
+    result.agency = data.agency;
+  }
+  if (data.officeAddress !== undefined) {
+    result.officeAddress = data.officeAddress;
+  }
+
+  // Transform arrays if present (ensure proper DB formatting)
+  if (data.realProperties !== undefined) {
+    result.realProperties = data.realProperties.map((prop: any) => ({
+      description: prop.description,
+      kind: prop.kind,
+      exactLocation: prop.exactLocation,
+      assessedValue: typeof prop.assessedValue === 'string' ? prop.assessedValue : formatForDb(toCurrency(prop.assessedValue)),
+      currentFairMarketValue: typeof prop.currentFairMarketValue === 'string' ? prop.currentFairMarketValue : formatForDb(toCurrency(prop.currentFairMarketValue)),
+      acquisitionYear: prop.acquisitionYear,
+      acquisitionMode: prop.acquisitionMode,
+      acquisitionCost: typeof prop.acquisitionCost === 'string' ? prop.acquisitionCost : formatForDb(toCurrency(prop.acquisitionCost)),
+    }));
+  }
+
+  if (data.personalProperties !== undefined) {
+    result.personalProperties = data.personalProperties.map((prop: any) => ({
+      description: prop.description,
+      yearAcquired: prop.yearAcquired,
+      acquisitionCost: typeof prop.acquisitionCost === 'string' ? prop.acquisitionCost : formatForDb(toCurrency(prop.acquisitionCost)),
+    }));
+  }
+
+  if (data.liabilities !== undefined) {
+    result.liabilities = data.liabilities.map((liability: any) => ({
+      nature: liability.nature,
+      creditorName: liability.creditorName,
+      outstandingBalance: typeof liability.outstandingBalance === 'string' ? liability.outstandingBalance : formatForDb(toCurrency(liability.outstandingBalance)),
+    }));
+  }
+
+  if (data.businessInterests !== undefined) {
+    result.businessInterests = data.businessInterests.map((interest: any) => {
+      const date = stringToDate(interest.dateOfAcquisition);
+      return {
+        entityName: interest.entityName,
+        businessAddress: interest.businessAddress,
+        natureOfBusiness: interest.natureOfBusiness,
+        dateOfAcquisition: date ? date.toISOString() : (interest.dateOfAcquisition || null),
+      };
+    });
+  }
+
+  if (data.relativesInGov !== undefined) {
+    result.relativesInGov = data.relativesInGov.map((relative: any) => ({
+      name: relative.name,
+      relationship: relative.relationship,
+      position: relative.position,
+      agencyAddress: relative.agencyAddress,
+    }));
+  }
+
+  return result;
+}
+
+/**
  * Transforms SALN data from frontend format to backend format
  *
  * IMPORTANT: This function preserves undefined values for partial updates.
@@ -61,12 +143,32 @@ function formatForDb(value: number | null | undefined): string {
  * - undefined: Don't update this section (preserve existing data)
  * - []: Clear all items in this section
  *
- * @param data - Form data in frontend format (CompleteSalnData)
+ * BACKWARD COMPATIBILITY: This function accepts both:
+ * 1. Nested format (preferred): { submission: { year, filingType, ... }, realProperties: [...] }
+ * 2. Legacy flat format: { year, filingType, realProperties: [...] }
+ *
+ * Detection: If `data.submission` exists, use nested format. Otherwise, treat as flat.
+ *
+ * @param data - Form data in frontend format (CompleteSalnData) or legacy flat format
  * @returns Transformed data ready for backend API
  */
-export function transformSalnForSubmission(data: Partial<CompleteSalnData>): any {
+export function transformSalnForSubmission(data: Partial<CompleteSalnData> | any): any {
   // ========================================================================
-  // STEP 1: Extract submission metadata
+  // STEP 0: Detect input format (nested vs flat/legacy)
+  // If data.submission exists, it's nested format from the form
+  // If data.year exists but data.submission doesn't, it's already flat (legacy)
+  // ========================================================================
+  const isNestedFormat = data.submission !== undefined;
+  const isLegacyFlatFormat = !isNestedFormat && data.year !== undefined;
+
+  // If already in flat format (legacy), just pass through with minimal processing
+  if (isLegacyFlatFormat) {
+    console.log('[transformSalnForSubmission] Detected legacy flat format, passing through');
+    return transformFlatPayload(data);
+  }
+
+  // ========================================================================
+  // STEP 1: Extract submission metadata from nested format
   // ========================================================================
   const submission = data.submission || {
     year: new Date().getFullYear(),
