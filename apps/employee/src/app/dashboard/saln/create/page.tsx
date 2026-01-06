@@ -82,11 +82,11 @@ import { DotPattern } from '../../../../components/ui/dot-pattern';
 // Hooks
 import { useAutoSave, getSavedDraft } from '../../../../hooks/useAutoSave';
 import { useAuth } from '../../../../providers/AuthProvider';
+import { useProfile } from '../../../../hooks/useProfile';
 import { useCreateSALN, useUpdateSALN, useSubmitSALN } from '../../../../hooks/useSALN';
 
 // Transformations
 import {
-  transformSalnForSubmission,
   transformSalnFromBackend,
 } from '../../../../lib/utils/saln-transformations';
 
@@ -221,11 +221,17 @@ const getSectionRequiredFieldsDescription = (step: number): string => {
 // MAIN COMPONENT
 // ============================================================================
 
+// Default agency for TUP Manila
+const DEFAULT_AGENCY = 'Technological University of the Philippines - Manila';
+
 export default function SALNCreatePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const userId = user?.id || 'guest';
+
+  // Get profile data for backfilling declarant info
+  const { data: profileData } = useProfile();
 
   // Check if loading from existing draft
   const draftIdFromUrl = searchParams.get('draftId');
@@ -264,6 +270,40 @@ export default function SALNCreatePage() {
     mode: 'onBlur',
   });
 
+  // Backfill declarant info from profile for NEW forms only
+  // This runs once when profile loads (and only if no existing draft is being edited)
+  const hasBackfilledRef = useRef(false);
+  useEffect(() => {
+    // Only backfill if:
+    // 1. Profile data has loaded
+    // 2. No draft ID from URL (i.e., not editing existing)
+    // 3. Haven't already backfilled
+    // 4. Current form values are empty
+    if (
+      profileData &&
+      !draftIdFromUrl &&
+      !hasBackfilledRef.current
+    ) {
+      const currentPosition = form.getValues('submission.position');
+      const currentAgency = form.getValues('submission.agency');
+
+      // Only backfill if fields are empty (don't overwrite user input)
+      if (!currentPosition && !currentAgency) {
+        // profileData is ProfileData directly (not wrapped)
+        const positionValue = profileData.position?.title || profileData.positionTitle || '';
+
+        console.log('[SALN Create] Backfilling from profile:', {
+          position: positionValue,
+          agency: DEFAULT_AGENCY,
+        });
+
+        form.setValue('submission.position', positionValue, { shouldDirty: false });
+        form.setValue('submission.agency', DEFAULT_AGENCY, { shouldDirty: false });
+        hasBackfilledRef.current = true;
+      }
+    }
+  }, [profileData, draftIdFromUrl, form]);
+
   // Use useWatch for reactive updates to nested field arrays
   // This properly tracks changes to individual fields within arrays
   const watchedRealProperties = useWatch({
@@ -296,11 +336,15 @@ export default function SALNCreatePage() {
   );
 
   // Save draft to database (create or update)
+  // NOTE: We send the raw nested form data directly to the API.
+  // The server handles all DB formatting via saln-transformations.ts.
+  // This prevents double-transformation bugs where declarant metadata gets lost.
   const saveDraftToDatabase = useCallback(
     async (data: SalnDraftData): Promise<{ success: boolean; draftId?: string }> => {
       try {
-        // Transform form data for backend
-        const transformedData = transformSalnForSubmission(data.formData);
+        // Send raw form data directly - server handles transformation
+        // The form already has the nested shape: { submission: {...}, realProperties: [...], ... }
+        const formData = data.formData;
 
         // Read from ref (synchronous) instead of state (asynchronous)
         const currentDraftId = draftIdRef.current;
@@ -308,13 +352,13 @@ export default function SALNCreatePage() {
         if (currentDraftId) {
           // Update existing draft
           console.log('[SALN Create] Updating draft:', currentDraftId);
-          await updateSALNMutation.mutateAsync(transformedData as any);
+          await updateSALNMutation.mutateAsync(formData as any);
           console.log('[SALN Create] Draft updated successfully:', currentDraftId);
           return { success: true, draftId: currentDraftId };
         } else {
           // Create new draft
           console.log('[SALN Create] Creating new draft submission');
-          const result = await createSALNMutation.mutateAsync(transformedData as any);
+          const result = await createSALNMutation.mutateAsync(formData as any);
 
           if (result?.data?.id) {
             // Update both ref and state together

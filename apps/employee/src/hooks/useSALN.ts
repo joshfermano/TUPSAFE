@@ -114,15 +114,55 @@ export interface SALNSubmissionsResponse {
   };
 }
 
-export interface CreateSALNData {
+/**
+ * Nested submission metadata (Part I - Declarant Info)
+ * This is the canonical format used by the form
+ */
+export interface SALNSubmissionMetadata {
   year: number;
   filingType: FilingType;
+  spouseName?: string | null;
+  position?: string;
+  agency?: string;
+  officeAddress?: string;
+}
+
+/**
+ * Nested payload format (preferred) for creating/updating SALN
+ * This matches the React Hook Form structure in the create/edit pages
+ */
+export interface SALNNestedPayload {
+  submission: SALNSubmissionMetadata;
   realProperties?: RealProperty[];
   personalProperties?: PersonalProperty[];
   liabilities?: Liability[];
   businessInterests?: BusinessInterest[];
   relativesInGov?: RelativeInGov[];
 }
+
+/**
+ * Legacy flat format for creating SALN (backward compatibility)
+ * @deprecated Use SALNNestedPayload instead
+ */
+export interface CreateSALNData {
+  year: number;
+  filingType: FilingType;
+  spouseName?: string | null;
+  position?: string;
+  agency?: string;
+  officeAddress?: string;
+  realProperties?: RealProperty[];
+  personalProperties?: PersonalProperty[];
+  liabilities?: Liability[];
+  businessInterests?: BusinessInterest[];
+  relativesInGov?: RelativeInGov[];
+}
+
+/**
+ * Input type that accepts both nested and flat formats
+ * The API transformation layer handles both formats correctly
+ */
+export type SALNUpsertPayload = SALNNestedPayload | CreateSALNData;
 
 export interface UpdateSALNData extends Partial<CreateSALNData> {
   status?: SALNStatus;
@@ -256,8 +296,10 @@ async function compareSALN(year1: number, year2: number) {
 
 /**
  * Create a new SALN submission
+ * Accepts both nested (preferred) and flat (legacy) payload formats
+ * Server transformation handles format detection automatically
  */
-async function createSALN(data: CreateSALNData) {
+async function createSALN(data: SALNUpsertPayload) {
   const response = await fetch('/api/saln', {
     method: 'POST',
     credentials: 'include',
@@ -277,8 +319,10 @@ async function createSALN(data: CreateSALNData) {
 
 /**
  * Update an existing SALN submission
+ * Accepts both nested (preferred) and flat (legacy) payload formats
+ * Server transformation handles format detection automatically
  */
-async function updateSALN(id: string, data: UpdateSALNData) {
+async function updateSALN(id: string, data: SALNUpsertPayload | UpdateSALNData) {
   const response = await fetch(`/api/saln/${id}`, {
     method: 'PATCH',
     credentials: 'include',
@@ -436,13 +480,17 @@ export function useCompareSALN(year1: number | null, year2: number | null) {
  *
  * Validates year uniqueness before creation.
  * Automatically invalidates the SALN list cache on success.
+ * Accepts both nested and flat payload formats.
  *
  * @returns Mutation function and state
  *
  * @example
  * ```tsx
  * const createMutation = useCreateSALN();
- * createMutation.mutate(salnData);
+ * // Nested format (preferred):
+ * createMutation.mutate({ submission: { year: 2024, filingType: 'separate' }, realProperties: [...] });
+ * // Or flat format (legacy):
+ * createMutation.mutate({ year: 2024, filingType: 'separate', realProperties: [...] });
  * ```
  */
 export function useCreateSALN() {
@@ -450,15 +498,17 @@ export function useCreateSALN() {
 
   return useMutation({
     mutationFn: createSALN,
-    onSuccess: (data) => {
+    onSuccess: (responseData) => {
       // Invalidate SALN lists to trigger refetch
       queryClient.invalidateQueries({ queryKey: salnKeys.lists() });
 
-      toast.success('SALN created successfully', {
-        description: `Your SALN for year ${data.data.year} has been created.`,
+      // API returns { success: true, data: { id }, message }
+      // Toast with generic message since we don't have year in response
+      toast.success('SALN draft saved', {
+        description: responseData.message || 'Your SALN has been saved successfully.',
       });
 
-      return data;
+      return responseData;
     },
     onError: (error: Error) => {
       toast.error('Failed to create SALN', {
@@ -474,6 +524,7 @@ export function useCreateSALN() {
  *
  * Supports optimistic updates for immediate UI feedback.
  * Automatically invalidates relevant cache on success.
+ * Accepts both nested and flat payload formats.
  *
  * @param id - SALN submission UUID
  * @returns Mutation function and state
@@ -481,14 +532,17 @@ export function useCreateSALN() {
  * @example
  * ```tsx
  * const updateMutation = useUpdateSALN(salnId);
- * updateMutation.mutate(updatedData);
+ * // Nested format (preferred):
+ * updateMutation.mutate({ submission: { year: 2024, filingType: 'separate' }, realProperties: [...] });
+ * // Or flat format (legacy):
+ * updateMutation.mutate({ year: 2024, filingType: 'separate', realProperties: [...] });
  * ```
  */
 export function useUpdateSALN(id: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: UpdateSALNData) => updateSALN(id, data),
+    mutationFn: (data: SALNUpsertPayload | UpdateSALNData) => updateSALN(id, data),
     onMutate: async (newData) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: salnKeys.detail(id) });

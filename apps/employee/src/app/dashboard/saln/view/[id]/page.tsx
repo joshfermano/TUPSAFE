@@ -200,8 +200,10 @@ export default function SALNViewDetailPage({
   const { downloadPDF, openPDFInNewTab, isGenerating } = useSALNPdf();
   const loading = isLoading;
 
-  // Extract submission data from salnData
-  const submission = salnData;
+  // Extract submission metadata from salnData
+  // salnData has shape: { submission: {...}, realProperties: [...], ... }
+  // submission contains Part I declarant info: year, filingType, spouseName, position, agency, officeAddress
+  const submission = salnData?.submission;
 
   const canEdit =
     submission?.status === 'draft' || submission?.status === 'rejected';
@@ -236,38 +238,43 @@ export default function SALNViewDetailPage({
     }
   };
 
-  // Transform submission data to SALNData format for PDF
+  // Transform SALN data to SALNData format for PDF
+  // salnData: { submission: {...}, realProperties: [...], ... }
+  // profile: user profile for declarant name
   const transformSALNToData = (
-    submission: any,
+    salnDataInput: any,
     profile: any
   ): SALNData => {
     // Validate required fields exist
-    if (!submission) {
-      throw new Error('Submission data is missing');
+    if (!salnDataInput) {
+      throw new Error('SALN data is missing');
     }
+
+    // salnData has nested structure: { submission: {...}, realProperties: [...], ... }
+    const submissionMeta = salnDataInput.submission || salnDataInput;
 
     if (!profile) {
       throw new Error('Profile data is missing');
     }
 
-    const spouseParsedName = parseSpouseName(submission.spouseName);
+    const spouseParsedName = parseSpouseName(submissionMeta.spouseName);
 
     return {
-      id: submission.id || '',
-      year: submission.year || new Date().getFullYear(),
-      filingType: submission.filingType || 'not_applicable',
+      id: submissionMeta.id || '',
+      year: submissionMeta.year || new Date().getFullYear(),
+      filingType: submissionMeta.filingType || 'not_applicable',
       declarantInfo: {
         surname: profile?.lastName || '',
         firstName: profile?.firstName || '',
         middleInitial: profile?.middleName || null,
-        position: submission.position || '',
+        position: submissionMeta.position || '',
         agency:
-          submission.agency ||
+          submissionMeta.agency ||
           'Technological University of the Philippines - Manila',
-        officeAddress: submission.officeAddress || '',
+        officeAddress: submissionMeta.officeAddress || '',
       },
       spouseInfo:
-        submission.filingType === 'joint' && submission.spouseName
+        submissionMeta.filingType === 'joint' && submissionMeta.spouseName
           ? {
               surname: spouseParsedName.surname,
               firstName: spouseParsedName.firstName,
@@ -278,26 +285,28 @@ export default function SALNViewDetailPage({
             }
           : undefined,
       children: [],
-      realProperties: submission.realProperties || [],
-      personalProperties: submission.personalProperties || [],
-      liabilities: submission.liabilities || [],
+      // Arrays are at the root of salnData, not inside submission
+      realProperties: salnDataInput.realProperties || [],
+      personalProperties: salnDataInput.personalProperties || [],
+      liabilities: salnDataInput.liabilities || [],
       businessInterests:
-        submission.businessInterests?.map((bi: any) => ({
+        salnDataInput.businessInterests?.map((bi: any) => ({
           entityName: bi.businessName || bi.entityName || '',
           businessAddress: bi.businessAddress || '',
           natureOfBusiness: bi.nature || bi.natureOfBusiness || '',
           dateOfAcquisition: bi.dateAcquired || bi.dateOfAcquisition || '',
         })) || [],
       relativesInGov:
-        submission.relativesInGov?.map((rel: any) => ({
+        salnDataInput.relativesInGov?.map((rel: any) => ({
           name: rel.name || '',
           relationship: rel.relationship || '',
           position: rel.position || '',
           agencyAddress: rel.agency || rel.agencyAddress || '',
         })) || [],
-      totalAssets: parseFloat(submission.totalAssets || '0'),
-      totalLiabilities: parseFloat(submission.totalLiabilities || '0'),
-      netWorth: parseFloat(submission.netWorth || '0'),
+      // Calculate totals from arrays
+      totalAssets: 0, // Will be recalculated
+      totalLiabilities: 0, // Will be recalculated
+      netWorth: 0, // Will be recalculated
     };
   };
 
@@ -314,8 +323,8 @@ export default function SALNViewDetailPage({
   const handleDownload = async () => {
     try {
       // Validate data exists before transformation
-      if (!submission) {
-        toast.error('SALN submission data is not available');
+      if (!salnData) {
+        toast.error('SALN data is not available');
         return;
       }
 
@@ -330,8 +339,8 @@ export default function SALNViewDetailPage({
         return;
       }
 
-      // Transform data with error handling
-      const salnPdfData = transformSALNToData(submission, profile);
+      // Transform data with error handling - pass full salnData, not just submission
+      const salnPdfData = transformSALNToData(salnData, profile);
 
       // Download PDF (validation happens in useSALNPdf hook)
       await downloadPDF(salnPdfData);
@@ -354,8 +363,8 @@ export default function SALNViewDetailPage({
   const handlePrint = async () => {
     try {
       // Validate data exists before transformation
-      if (!submission) {
-        toast.error('SALN submission data is not available');
+      if (!salnData) {
+        toast.error('SALN data is not available');
         return;
       }
 
@@ -370,8 +379,8 @@ export default function SALNViewDetailPage({
         return;
       }
 
-      // Transform data with error handling
-      const salnPdfData = transformSALNToData(submission, profile);
+      // Transform data with error handling - pass full salnData, not just submission
+      const salnPdfData = transformSALNToData(salnData, profile);
 
       // Open PDF in new tab (validation happens in useSALNPdf hook)
       await openPDFInNewTab(salnPdfData);
