@@ -21,6 +21,7 @@ import {
   Building2,
   PanelLeftClose,
   PanelLeftOpen,
+  Bot,
 } from 'lucide-react';
 
 import { useAuth } from '@/context/AuthContext';
@@ -36,7 +37,6 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from '@/components/ui/sheet';
 
 // Navigation item type
@@ -55,6 +55,12 @@ const navItems: NavItem[] = [
     name: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
+    section: 'main',
+  },
+  {
+    name: 'AI Assistant',
+    href: '/dashboard/assistant',
+    icon: Bot,
     section: 'main',
   },
   {
