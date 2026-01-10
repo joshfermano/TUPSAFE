@@ -39,20 +39,20 @@ export function ChatHeader({
   return (
     <div
       className={cn(
-        'flex items-center justify-between gap-3 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 py-3 sm:py-4 shrink-0',
+        'flex items-center justify-between gap-3 border-b border-border/30 bg-background/80 backdrop-blur-md px-4 md:px-8 lg:px-12 py-4 shrink-0',
         className
       )}
     >
       {/* Left Side: Title and Status */}
-      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-        <div className="flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-lg bg-[#8B1538] text-white shadow-sm shrink-0">
-          <Bot className="h-4 w-4 sm:h-5 sm:w-5" />
+      <div className="flex items-center gap-2.5 md:gap-3 min-w-0">
+        <div className="flex items-center justify-center h-10 w-10 md:h-11 md:w-11 rounded-xl bg-gradient-to-br from-[#8B1538] to-[#6B0F28] text-white shadow-md shadow-[#8B1538]/20 shrink-0">
+          <Bot className="h-5 w-5 md:h-5.5 md:w-5.5" />
         </div>
 
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-base sm:text-lg font-semibold tracking-tight">
-              AI Assistant
+            <h1 className="text-lg md:text-xl font-medium tracking-tight">
+              Assistant
             </h1>
             {isConnected ? (
               <Badge variant="outline" className="h-5 px-1.5 gap-1 hidden xs:flex">
@@ -80,14 +80,14 @@ export function ChatHeader({
           <Button
             variant="outline"
             size="sm"
-            className="h-8 sm:h-9 gap-1.5 shrink-0 px-2.5 sm:px-3"
+            className="h-8 md:h-9 gap-1.5 shrink-0 px-2.5 md:px-3"
             disabled={messageCount === 0}
           >
-            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline text-xs sm:text-sm">Clear</span>
+            <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4" />
+            <span className="hidden md:inline text-xs md:text-sm">Clear</span>
           </Button>
         </AlertDialogTrigger>
-        <AlertDialogContent className="max-w-[90vw] sm:max-w-lg">
+        <AlertDialogContent className="max-w-[90vw] md:max-w-lg">
           <AlertDialogHeader>
             <AlertDialogTitle>Clear conversation?</AlertDialogTitle>
             <AlertDialogDescription>

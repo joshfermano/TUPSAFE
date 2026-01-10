@@ -14,10 +14,10 @@ Key features:
 
 from typing import Any, Literal, Optional
 
-from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 
-from src.tools.mcp_client import get_mcp_client
+from src.db.validators import sanitize_string, validate_uuid
+from src.tools.base import TUPSAFETool
 
 
 class JobApplicationStatsInput(BaseModel):
@@ -58,14 +58,23 @@ class ApplicationFunnelInput(BaseModel):
     )
 
 
-@tool(args_schema=JobApplicationStatsInput)
-async def get_job_application_stats(status: Optional[str] = None) -> dict[str, Any]:
-    """
-    Get job application statistics, optionally filtered by status.
+class PositionApplicationSummaryInput(BaseModel):
+    """Input schema for getting position application summary."""
+
+    pass
+
+
+class GetJobApplicationStatsTool(TUPSAFETool):
+    """Tool for getting job application statistics.
 
     This tool provides insights into the recruitment pipeline by counting applications
     at each stage of the review process. Useful for understanding application volume,
     conversion rates, and identifying bottlenecks.
+    """
+
+    name: str = "get_job_application_stats"
+    description: str = """
+    Get job application statistics, optionally filtered by status.
 
     Args:
         status: Optional status filter - 'pending', 'under_review', 'shortlisted',
@@ -81,86 +90,80 @@ async def get_job_application_stats(status: Optional[str] = None) -> dict[str, A
         - successful_applications: Applications accepted or hired
 
     Example:
-        >>> result = await get_job_application_stats()
+        >>> result = get_job_application_stats()
         >>> print(f"Total applications: {result['total_applications']}")
         >>> print(f"Active in pipeline: {result['active_applications']}")
-        >>> for status, count in result['status_breakdown'].items():
-        ...     print(f"  {status}: {count}")
     """
-    client = get_mcp_client()
+    args_schema: type[BaseModel] = JobApplicationStatsInput
 
-    # Build query based on status filter
-    filters = []
-    if status:
-        filters.append(f"status = '{status}'")
+    def _run(self, status: Optional[str] = None) -> str:
+        """Execute the job application stats query."""
+        try:
+            # Build query
+            query = self._query("job_applications", "id,status")
 
-    where_clause = "WHERE " + " AND ".join(filters) if filters else ""
+            if status:
+                sanitized_status = sanitize_string(status)
+                query = query.eq("status", sanitized_status)
 
-    # Get total count and breakdown
-    query = f"""
-        SELECT
-            COUNT(*) as total_applications,
-            COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending,
-            COUNT(CASE WHEN status = 'under_review' THEN 1 END) as under_review,
-            COUNT(CASE WHEN status = 'shortlisted' THEN 1 END) as shortlisted,
-            COUNT(CASE WHEN status = 'for_interview' THEN 1 END) as for_interview,
-            COUNT(CASE WHEN status = 'interviewed' THEN 1 END) as interviewed,
-            COUNT(CASE WHEN status = 'for_final_review' THEN 1 END) as for_final_review,
-            COUNT(CASE WHEN status = 'accepted' THEN 1 END) as accepted,
-            COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected,
-            COUNT(CASE WHEN status = 'withdrawn' THEN 1 END) as withdrawn,
-            COUNT(CASE WHEN status = 'hired' THEN 1 END) as hired,
-            COUNT(CASE WHEN status NOT IN ('rejected', 'withdrawn', 'hired') THEN 1 END) as active
-        FROM job_applications
-        {where_clause}
-    """
+            # Execute query
+            response = query.execute()
+            applications = response.data if response.data else []
 
-    result = await client.execute_sql(query)
+            # Count by status
+            status_counts = {
+                "pending": 0,
+                "under_review": 0,
+                "shortlisted": 0,
+                "for_interview": 0,
+                "interviewed": 0,
+                "for_final_review": 0,
+                "accepted": 0,
+                "rejected": 0,
+                "withdrawn": 0,
+                "hired": 0,
+            }
 
-    if not result.success or not result.data:
-        return {
-            "total_applications": 0,
-            "status_filter": status or "all",
-            "status_breakdown": {},
-            "active_applications": 0,
-            "successful_applications": 0,
-            "error": result.error,
-        }
+            active_count = 0
+            for app in applications:
+                app_status = app.get("status")
+                if app_status in status_counts:
+                    status_counts[app_status] += 1
 
-    data = result.data[0]
+                if app_status not in ["rejected", "withdrawn", "hired"]:
+                    active_count += 1
 
-    status_breakdown = {
-        "pending": data.get("pending", 0),
-        "under_review": data.get("under_review", 0),
-        "shortlisted": data.get("shortlisted", 0),
-        "for_interview": data.get("for_interview", 0),
-        "interviewed": data.get("interviewed", 0),
-        "for_final_review": data.get("for_final_review", 0),
-        "accepted": data.get("accepted", 0),
-        "rejected": data.get("rejected", 0),
-        "withdrawn": data.get("withdrawn", 0),
-        "hired": data.get("hired", 0),
-    }
+            successful = status_counts["accepted"] + status_counts["hired"]
 
-    return {
-        "total_applications": data.get("total_applications", 0),
-        "status_filter": status or "all",
-        "status_breakdown": status_breakdown,
-        "active_applications": data.get("active", 0),
-        "successful_applications": data.get("accepted", 0) + data.get("hired", 0),
-    }
+            result = {
+                "total_applications": len(applications),
+                "status_filter": status or "all",
+                "status_breakdown": status_counts,
+                "active_applications": active_count,
+                "successful_applications": successful,
+            }
+
+            return self._format_response(
+                [result],
+                f"Found {len(applications)} applications",
+                {"status_filter": status or "all"}
+            )
+
+        except Exception as e:
+            return self._handle_error(e, {"status": status})
 
 
-@tool(args_schema=OpenPositionsByDepartmentInput)
-async def get_open_positions_by_department(
-    position_status: Optional[str] = None, employment_category: Optional[str] = None
-) -> dict[str, Any]:
-    """
-    Get open positions breakdown by department, with optional filters.
+class GetOpenPositionsByDepartmentTool(TUPSAFETool):
+    """Tool for getting open positions breakdown by department.
 
     This tool provides department-level insights into position availability and hiring activity.
     Useful for understanding recruitment needs across the organization and identifying
     departments with active hiring.
+    """
+
+    name: str = "get_open_positions_by_department"
+    description: str = """
+    Get open positions breakdown by department, with optional filters.
 
     Args:
         position_status: Optional filter - 'open', 'closed', 'filled', 'cancelled'
@@ -176,95 +179,155 @@ async def get_open_positions_by_department(
         - filled_positions: Count of positions with 'filled' status
 
     Example:
-        >>> result = await get_open_positions_by_department("open", "faculty")
+        >>> result = get_open_positions_by_department("open", "faculty")
         >>> print(f"Open faculty positions: {result['open_positions']}")
-        >>> for dept in result['departments']:
-        ...     print(f"  {dept['name']}: {dept['total_positions']} positions")
-        ...     print(f"    Open: {dept['open']}, Applications: {dept['application_count']}")
     """
-    client = get_mcp_client()
+    args_schema: type[BaseModel] = OpenPositionsByDepartmentInput
 
-    # Build filters
-    filters = []
-    if position_status:
-        filters.append(f"op.status = '{position_status}'")
-    if employment_category:
-        filters.append(f"op.employment_category = '{employment_category}'")
+    def _run(self, position_status: Optional[str] = None, employment_category: Optional[str] = None) -> str:
+        """Execute the open positions by department query."""
+        try:
+            # Build query for positions
+            positions_query = self._query("open_positions", "id,department_id,status,employment_category")
 
-    where_clause = "WHERE " + " AND ".join(filters) if filters else ""
+            if position_status:
+                sanitized_status = sanitize_string(position_status)
+                positions_query = positions_query.eq("status", sanitized_status)
 
-    query = f"""
-        SELECT
-            d.id as department_id,
-            d.name as department_name,
-            d.code as department_code,
-            d.office_type,
-            COUNT(op.id) as total_positions,
-            COUNT(CASE WHEN op.status = 'open' THEN 1 END) as open_positions,
-            COUNT(CASE WHEN op.status = 'closed' THEN 1 END) as closed_positions,
-            COUNT(CASE WHEN op.status = 'filled' THEN 1 END) as filled_positions,
-            COUNT(CASE WHEN op.status = 'cancelled' THEN 1 END) as cancelled_positions,
-            COUNT(DISTINCT ja.id) as application_count
-        FROM open_positions op
-        INNER JOIN departments d ON op.department_id = d.id
-        LEFT JOIN job_applications ja ON op.id = ja.position_id
-        {where_clause}
-        GROUP BY d.id, d.name, d.code, d.office_type
-        HAVING COUNT(op.id) > 0
-        ORDER BY open_positions DESC, total_positions DESC
-    """
+            if employment_category:
+                sanitized_category = sanitize_string(employment_category)
+                positions_query = positions_query.eq("employment_category", sanitized_category)
 
-    result = await client.execute_sql(query)
+            positions_response = positions_query.execute()
+            positions = positions_response.data if positions_response.data else []
 
-    if not result.success or not result.data:
-        return {
-            "departments": [],
-            "position_status": position_status or "all",
-            "employment_category": employment_category or "all",
-            "total_positions": 0,
-            "open_positions": 0,
-            "filled_positions": 0,
-            "error": result.error,
-        }
+            if not positions:
+                return self._format_response(
+                    [],
+                    "No positions found",
+                    {
+                        "position_status": position_status or "all",
+                        "employment_category": employment_category or "all",
+                        "total_positions": 0,
+                        "open_positions": 0,
+                        "filled_positions": 0,
+                    }
+                )
 
-    departments = [
-        {
-            "id": row.get("department_id"),
-            "name": row.get("department_name"),
-            "code": row.get("department_code"),
-            "office_type": row.get("office_type"),
-            "total_positions": row.get("total_positions", 0),
-            "open": row.get("open_positions", 0),
-            "closed": row.get("closed_positions", 0),
-            "filled": row.get("filled_positions", 0),
-            "cancelled": row.get("cancelled_positions", 0),
-            "application_count": row.get("application_count", 0),
-        }
-        for row in result.data
-    ]
+            # Get unique department IDs
+            dept_ids = list(set(p["department_id"] for p in positions if p.get("department_id")))
 
-    total_positions = sum(dept["total_positions"] for dept in departments)
-    open_positions = sum(dept["open"] for dept in departments)
-    filled_positions = sum(dept["filled"] for dept in departments)
+            if not dept_ids:
+                return self._format_response(
+                    [],
+                    f"Found {len(positions)} positions with no department assignment",
+                    {
+                        "position_status": position_status or "all",
+                        "employment_category": employment_category or "all",
+                        "total_positions": len(positions),
+                        "open_positions": 0,
+                        "filled_positions": 0,
+                    }
+                )
 
-    return {
-        "departments": departments,
-        "position_status": position_status or "all",
-        "employment_category": employment_category or "all",
-        "total_positions": total_positions,
-        "open_positions": open_positions,
-        "filled_positions": filled_positions,
-    }
+            # Get department details
+            departments_response = self._query("departments", "id,name,code,office_type").in_("id", dept_ids).execute()
+            departments_data = departments_response.data if departments_response.data else []
+
+            # Get all position IDs
+            position_ids = [p["id"] for p in positions]
+
+            # Get application counts for these positions
+            applications_response = self._query("job_applications", "id,position_id").in_("position_id", position_ids).execute()
+            applications = applications_response.data if applications_response.data else []
+
+            # Count applications by position
+            app_counts_by_position = {}
+            for app in applications:
+                pos_id = app["position_id"]
+                app_counts_by_position[pos_id] = app_counts_by_position.get(pos_id, 0) + 1
+
+            # Aggregate positions by department
+            dept_stats = {}
+            for pos in positions:
+                dept_id = pos.get("department_id")
+                if not dept_id:
+                    continue
+
+                if dept_id not in dept_stats:
+                    dept_stats[dept_id] = {
+                        "total": 0,
+                        "open": 0,
+                        "closed": 0,
+                        "filled": 0,
+                        "cancelled": 0,
+                        "applications": 0,
+                    }
+
+                dept_stats[dept_id]["total"] += 1
+                pos_status = pos.get("status")
+                if pos_status in dept_stats[dept_id]:
+                    dept_stats[dept_id][pos_status] += 1
+
+                # Add application count for this position
+                dept_stats[dept_id]["applications"] += app_counts_by_position.get(pos.get("id"), 0)
+
+            # Build result
+            departments_list = []
+            for dept in departments_data:
+                dept_id = dept["id"]
+                if dept_id in dept_stats:
+                    stats = dept_stats[dept_id]
+                    departments_list.append({
+                        "id": dept_id,
+                        "name": dept.get("name"),
+                        "code": dept.get("code"),
+                        "office_type": dept.get("office_type"),
+                        "total_positions": stats["total"],
+                        "open": stats["open"],
+                        "closed": stats["closed"],
+                        "filled": stats["filled"],
+                        "cancelled": stats["cancelled"],
+                        "application_count": stats["applications"],
+                    })
+
+            # Sort by open positions descending
+            departments_list.sort(key=lambda x: (x["open"], x["total_positions"]), reverse=True)
+
+            total_positions = sum(d["total_positions"] for d in departments_list)
+            open_positions = sum(d["open"] for d in departments_list)
+            filled_positions = sum(d["filled"] for d in departments_list)
+
+            return self._format_response(
+                departments_list,
+                f"Found {len(departments_list)} departments with positions",
+                {
+                    "position_status": position_status or "all",
+                    "employment_category": employment_category or "all",
+                    "total_positions": total_positions,
+                    "open_positions": open_positions,
+                    "filled_positions": filled_positions,
+                }
+            )
+
+        except Exception as e:
+            return self._handle_error(e, {
+                "position_status": position_status,
+                "employment_category": employment_category
+            })
 
 
-@tool(args_schema=ApplicationFunnelInput)
-async def get_application_funnel_metrics(position_id: Optional[str] = None) -> dict[str, Any]:
-    """
-    Get application funnel metrics showing conversion rates through the hiring process.
+class GetApplicationFunnelMetricsTool(TUPSAFETool):
+    """Tool for getting application funnel metrics.
 
     This tool provides funnel analysis to understand how applications progress through
     each stage of the recruitment process. Useful for identifying drop-off points and
     optimizing the hiring pipeline.
+    """
+
+    name: str = "get_application_funnel_metrics"
+    description: str = """
+    Get application funnel metrics showing conversion rates through the hiring process.
 
     Args:
         position_id: Optional position UUID to get funnel for specific position.
@@ -276,123 +339,154 @@ async def get_application_funnel_metrics(position_id: Optional[str] = None) -> d
         - funnel_stages: List of stages with counts and conversion rates
         - total_applications: Total applications entered into funnel
         - conversion_rate: Percentage of applications that resulted in hire
-        - average_time_to_hire: Average days from application to hire (if available)
 
     Example:
-        >>> result = await get_application_funnel_metrics()
+        >>> result = get_application_funnel_metrics()
         >>> print("Application Funnel:")
         >>> for stage in result['funnel_stages']:
         ...     print(f"  {stage['stage']}: {stage['count']} ({stage['conversion_rate']}%)")
-        >>> print(f"Overall conversion to hire: {result['conversion_rate']}%")
     """
-    client = get_mcp_client()
+    args_schema: type[BaseModel] = ApplicationFunnelInput
 
-    # Build position filter
-    position_filter = f"WHERE ja.position_id = '{position_id}'::uuid" if position_id else ""
+    def _run(self, position_id: Optional[str] = None) -> str:
+        """Execute the application funnel metrics query."""
+        try:
+            # Validate position_id if provided
+            pos_id_validated = None
+            if position_id:
+                if not validate_uuid(position_id):
+                    raise ValueError(f"Invalid UUID format for position_id: {position_id}")
+                pos_id_validated = position_id
 
-    # Get funnel metrics
-    query = f"""
-        SELECT
-            COUNT(*) as total_applications,
-            COUNT(CASE WHEN status IN ('pending', 'under_review', 'shortlisted', 'for_interview',
-                                       'interviewed', 'for_final_review', 'accepted', 'hired') THEN 1 END) as entered_review,
-            COUNT(CASE WHEN status IN ('shortlisted', 'for_interview', 'interviewed',
-                                       'for_final_review', 'accepted', 'hired') THEN 1 END) as shortlisted,
-            COUNT(CASE WHEN status IN ('for_interview', 'interviewed', 'for_final_review',
-                                       'accepted', 'hired') THEN 1 END) as interview_stage,
-            COUNT(CASE WHEN status IN ('interviewed', 'for_final_review', 'accepted', 'hired') THEN 1 END) as interviewed,
-            COUNT(CASE WHEN status IN ('for_final_review', 'accepted', 'hired') THEN 1 END) as final_review,
-            COUNT(CASE WHEN status IN ('accepted', 'hired') THEN 1 END) as accepted,
-            COUNT(CASE WHEN status = 'hired' THEN 1 END) as hired,
-            COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected,
-            COUNT(CASE WHEN status = 'withdrawn' THEN 1 END) as withdrawn
-        FROM job_applications ja
-        {position_filter}
-    """
+            # Build query
+            query = self._query("job_applications", "id,status")
 
-    result = await client.execute_sql(query)
+            if pos_id_validated:
+                query = query.eq("position_id", pos_id_validated)
 
-    if not result.success or not result.data:
-        return {
-            "position_id": position_id or "all",
-            "funnel_stages": [],
-            "total_applications": 0,
-            "conversion_rate": 0.0,
-            "error": result.error,
-        }
+            # Execute query
+            response = query.execute()
+            applications = response.data if response.data else []
 
-    data = result.data[0]
-    total = data.get("total_applications", 0)
+            if not applications:
+                return self._format_response(
+                    [],
+                    "No applications found",
+                    {
+                        "position_id": position_id or "all",
+                        "total_applications": 0,
+                        "hired": 0,
+                        "rejected": 0,
+                        "withdrawn": 0,
+                        "conversion_rate": 0.0,
+                    }
+                )
 
-    def calc_rate(count: int) -> float:
-        """Calculate conversion rate as percentage."""
-        return round((count / total * 100) if total > 0 else 0.0, 2)
+            # Count applications at each stage
+            total = len(applications)
 
-    funnel_stages = [
-        {
-            "stage": "Total Applications",
-            "count": total,
-            "conversion_rate": 100.0,
-        },
-        {
-            "stage": "Under Review",
-            "count": data.get("entered_review", 0),
-            "conversion_rate": calc_rate(data.get("entered_review", 0)),
-        },
-        {
-            "stage": "Shortlisted",
-            "count": data.get("shortlisted", 0),
-            "conversion_rate": calc_rate(data.get("shortlisted", 0)),
-        },
-        {
-            "stage": "Interview Stage",
-            "count": data.get("interview_stage", 0),
-            "conversion_rate": calc_rate(data.get("interview_stage", 0)),
-        },
-        {
-            "stage": "Interviewed",
-            "count": data.get("interviewed", 0),
-            "conversion_rate": calc_rate(data.get("interviewed", 0)),
-        },
-        {
-            "stage": "Final Review",
-            "count": data.get("final_review", 0),
-            "conversion_rate": calc_rate(data.get("final_review", 0)),
-        },
-        {
-            "stage": "Accepted",
-            "count": data.get("accepted", 0),
-            "conversion_rate": calc_rate(data.get("accepted", 0)),
-        },
-        {
-            "stage": "Hired",
-            "count": data.get("hired", 0),
-            "conversion_rate": calc_rate(data.get("hired", 0)),
-        },
-    ]
+            # Define stage hierarchies (later stages include earlier stages)
+            entered_review_statuses = ["pending", "under_review", "shortlisted", "for_interview",
+                                       "interviewed", "for_final_review", "accepted", "hired"]
+            shortlisted_statuses = ["shortlisted", "for_interview", "interviewed",
+                                   "for_final_review", "accepted", "hired"]
+            interview_stage_statuses = ["for_interview", "interviewed", "for_final_review",
+                                        "accepted", "hired"]
+            interviewed_statuses = ["interviewed", "for_final_review", "accepted", "hired"]
+            final_review_statuses = ["for_final_review", "accepted", "hired"]
+            accepted_statuses = ["accepted", "hired"]
 
-    hired_count = data.get("hired", 0)
-    overall_conversion = calc_rate(hired_count)
+            # Count applications at each stage
+            counts = {
+                "total": total,
+                "entered_review": sum(1 for a in applications if a.get("status") in entered_review_statuses),
+                "shortlisted": sum(1 for a in applications if a.get("status") in shortlisted_statuses),
+                "interview_stage": sum(1 for a in applications if a.get("status") in interview_stage_statuses),
+                "interviewed": sum(1 for a in applications if a.get("status") in interviewed_statuses),
+                "final_review": sum(1 for a in applications if a.get("status") in final_review_statuses),
+                "accepted": sum(1 for a in applications if a.get("status") in accepted_statuses),
+                "hired": sum(1 for a in applications if a.get("status") == "hired"),
+                "rejected": sum(1 for a in applications if a.get("status") == "rejected"),
+                "withdrawn": sum(1 for a in applications if a.get("status") == "withdrawn"),
+            }
 
-    return {
-        "position_id": position_id or "all",
-        "funnel_stages": funnel_stages,
-        "total_applications": total,
-        "hired": hired_count,
-        "rejected": data.get("rejected", 0),
-        "withdrawn": data.get("withdrawn", 0),
-        "conversion_rate": overall_conversion,
-    }
+            def calc_rate(count: int) -> float:
+                """Calculate conversion rate as percentage."""
+                return round((count / total * 100) if total > 0 else 0.0, 2)
+
+            funnel_stages = [
+                {
+                    "stage": "Total Applications",
+                    "count": counts["total"],
+                    "conversion_rate": 100.0,
+                },
+                {
+                    "stage": "Under Review",
+                    "count": counts["entered_review"],
+                    "conversion_rate": calc_rate(counts["entered_review"]),
+                },
+                {
+                    "stage": "Shortlisted",
+                    "count": counts["shortlisted"],
+                    "conversion_rate": calc_rate(counts["shortlisted"]),
+                },
+                {
+                    "stage": "Interview Stage",
+                    "count": counts["interview_stage"],
+                    "conversion_rate": calc_rate(counts["interview_stage"]),
+                },
+                {
+                    "stage": "Interviewed",
+                    "count": counts["interviewed"],
+                    "conversion_rate": calc_rate(counts["interviewed"]),
+                },
+                {
+                    "stage": "Final Review",
+                    "count": counts["final_review"],
+                    "conversion_rate": calc_rate(counts["final_review"]),
+                },
+                {
+                    "stage": "Accepted",
+                    "count": counts["accepted"],
+                    "conversion_rate": calc_rate(counts["accepted"]),
+                },
+                {
+                    "stage": "Hired",
+                    "count": counts["hired"],
+                    "conversion_rate": calc_rate(counts["hired"]),
+                },
+            ]
+
+            overall_conversion = calc_rate(counts["hired"])
+
+            return self._format_response(
+                funnel_stages,
+                f"Funnel analysis for {total} applications",
+                {
+                    "position_id": position_id or "all",
+                    "total_applications": total,
+                    "hired": counts["hired"],
+                    "rejected": counts["rejected"],
+                    "withdrawn": counts["withdrawn"],
+                    "conversion_rate": overall_conversion,
+                }
+            )
+
+        except Exception as e:
+            return self._handle_error(e, {"position_id": position_id})
 
 
-@tool
-async def get_position_application_summary() -> dict[str, Any]:
-    """
-    Get a summary of open positions and their application metrics.
+class GetPositionApplicationSummaryTool(TUPSAFETool):
+    """Tool for getting position application summary.
 
     This tool provides a high-level overview of the recruitment landscape, showing
     which positions are available and how many applications each has received.
     Useful for understanding overall hiring activity and position popularity.
+    """
+
+    name: str = "get_position_application_summary"
+    description: str = """
+    Get a summary of open positions and their application metrics.
 
     Returns:
         Dictionary containing:
@@ -402,73 +496,123 @@ async def get_position_application_summary() -> dict[str, Any]:
         - average_applications_per_position: Mean applications per position
 
     Example:
-        >>> result = await get_position_application_summary()
+        >>> result = get_position_application_summary()
         >>> print(f"Open Positions: {result['total_open_positions']}")
         >>> print(f"Total Applications: {result['total_applications']}")
-        >>> print(f"\\nTop positions by applications:")
-        >>> for pos in result['positions'][:5]:
-        ...     print(f"  {pos['title']} - {pos['application_count']} applications")
     """
-    client = get_mcp_client()
+    args_schema: type[BaseModel] = PositionApplicationSummaryInput
 
-    query = """
-        SELECT
-            op.id,
-            op.position_title,
-            op.employment_category,
-            d.name as department_name,
-            d.code as department_code,
-            op.created_at,
-            op.application_deadline,
-            COUNT(ja.id) as application_count,
-            COUNT(CASE WHEN ja.status IN ('pending', 'under_review', 'shortlisted',
-                                          'for_interview', 'interviewed', 'for_final_review') THEN 1 END) as active_applications,
-            COUNT(CASE WHEN ja.status = 'accepted' THEN 1 END) as accepted_applications
-        FROM open_positions op
-        INNER JOIN departments d ON op.department_id = d.id
-        LEFT JOIN job_applications ja ON op.id = ja.position_id
-        WHERE op.status = 'open'
-        GROUP BY op.id, op.position_title, op.employment_category, d.name, d.code,
-                 op.created_at, op.application_deadline
-        ORDER BY application_count DESC, op.created_at DESC
-    """
+    def _run(self) -> str:
+        """Execute the position application summary query."""
+        try:
+            # Get all open positions
+            positions_response = self._query(
+                "open_positions",
+                "id,position_title,employment_category,department_id,created_at,application_deadline"
+            ).eq("status", "open").execute()
 
-    result = await client.execute_sql(query)
+            positions = positions_response.data if positions_response.data else []
 
-    if not result.success or not result.data:
-        return {
-            "total_open_positions": 0,
-            "positions": [],
-            "total_applications": 0,
-            "average_applications_per_position": 0.0,
-            "error": result.error,
-        }
+            if not positions:
+                return self._format_response(
+                    [],
+                    "No open positions found",
+                    {
+                        "total_open_positions": 0,
+                        "total_applications": 0,
+                        "average_applications_per_position": 0.0,
+                    }
+                )
 
-    positions = [
-        {
-            "id": row.get("id"),
-            "title": row.get("position_title"),
-            "employment_category": row.get("employment_category"),
-            "department_name": row.get("department_name"),
-            "department_code": row.get("department_code"),
-            "application_count": row.get("application_count", 0),
-            "active_applications": row.get("active_applications", 0),
-            "accepted_applications": row.get("accepted_applications", 0),
-            "created_at": row.get("created_at"),
-            "application_deadline": row.get("application_deadline"),
-        }
-        for row in result.data
-    ]
+            # Get department IDs
+            dept_ids = list(set(p["department_id"] for p in positions if p.get("department_id")))
 
-    total_positions = len(positions)
-    total_applications = sum(pos["application_count"] for pos in positions)
-    avg_applications = (
-        round(total_applications / total_positions, 2) if total_positions > 0 else 0.0
-    )
+            # Get department details
+            departments_data = {}
+            if dept_ids:
+                departments_response = self._query("departments", "id,name,code").in_("id", dept_ids).execute()
 
-    return {
-        "total_open_positions": total_positions,
-        "positions": positions,
-        "total_applications": total_applications,
-        "average_applications_per_position": avg_applications,
-    }
+                for dept in (departments_response.data if departments_response.data else []):
+                    departments_data[dept["id"]] = {
+                        "name": dept.get("name"),
+                        "code": dept.get("code"),
+                    }
+
+            # Get position IDs
+            position_ids = [p["id"] for p in positions]
+
+            # Get all applications for these positions
+            applications_response = self._query(
+                "job_applications",
+                "id,position_id,status"
+            ).in_("position_id", position_ids).execute()
+
+            applications = applications_response.data if applications_response.data else []
+
+            # Count applications by position and status
+            position_app_stats = {}
+            for app in applications:
+                pos_id = app["position_id"]
+                if pos_id not in position_app_stats:
+                    position_app_stats[pos_id] = {
+                        "total": 0,
+                        "active": 0,
+                        "accepted": 0,
+                    }
+
+                position_app_stats[pos_id]["total"] += 1
+
+                app_status = app.get("status")
+                if app_status not in ["rejected", "withdrawn", "hired"]:
+                    position_app_stats[pos_id]["active"] += 1
+                if app_status == "accepted":
+                    position_app_stats[pos_id]["accepted"] += 1
+
+            # Build result
+            positions_list = []
+            for pos in positions:
+                pos_id = pos.get("id")
+                dept = departments_data.get(pos.get("department_id"), {})
+                stats = position_app_stats.get(pos_id, {"total": 0, "active": 0, "accepted": 0})
+
+                positions_list.append({
+                    "id": pos_id,
+                    "title": pos.get("position_title"),
+                    "employment_category": pos.get("employment_category"),
+                    "department_name": dept.get("name"),
+                    "department_code": dept.get("code"),
+                    "application_count": stats["total"],
+                    "active_applications": stats["active"],
+                    "accepted_applications": stats["accepted"],
+                    "created_at": pos.get("created_at"),
+                    "application_deadline": pos.get("application_deadline"),
+                })
+
+            # Sort by application count descending
+            positions_list.sort(key=lambda x: x["application_count"], reverse=True)
+
+            total_positions = len(positions_list)
+            total_applications = sum(p["application_count"] for p in positions_list)
+            avg_applications = (
+                round(total_applications / total_positions, 2) if total_positions > 0 else 0.0
+            )
+
+            return self._format_response(
+                positions_list,
+                f"Found {total_positions} open positions with {total_applications} total applications",
+                {
+                    "total_open_positions": total_positions,
+                    "total_applications": total_applications,
+                    "average_applications_per_position": avg_applications,
+                }
+            )
+
+        except Exception as e:
+            return self._handle_error(e)
+
+
+# Create tool instances for export
+get_job_application_stats = GetJobApplicationStatsTool()
+get_open_positions_by_department = GetOpenPositionsByDepartmentTool()
+get_application_funnel_metrics = GetApplicationFunnelMetricsTool()
+get_position_application_summary = GetPositionApplicationSummaryTool()

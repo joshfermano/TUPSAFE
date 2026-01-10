@@ -25,6 +25,9 @@ dependencies = [
     # HTTP client
     "httpx>=0.28.0",
 
+    # Supabase client (pinned version, no C++ dependencies)
+    "supabase==2.11.0",
+
     # Data validation and settings
     "pydantic>=2.10.0",
     "pydantic-settings>=2.7.0",

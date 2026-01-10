@@ -11,7 +11,6 @@ from rich.console import Console
 from rich.logging import RichHandler
 
 from .config import settings
-from .tools.mcp_client import initialize_mcp_client, close_mcp_client
 from .memory import initialize_redis, close_redis
 
 # Configure Rich console for colored output
@@ -58,9 +57,8 @@ async def lifespan(app: FastAPI):
             logger.warning(f"Redis not available: {redis_error}")
             logger.warning("Running without Redis - rate limiting and session caching disabled")
 
-        # Initialize MCP client
-        await initialize_mcp_client()
-        logger.info("MCP client initialized successfully")
+        # Supabase client is initialized lazily via @lru_cache in src.db.client
+        logger.info("Supabase client ready (lazy initialization)")
 
     except Exception as e:
         logger.error(f"Failed to initialize application: {e}")
@@ -74,14 +72,12 @@ async def lifespan(app: FastAPI):
     # Shutdown
     logger.info("Shutting down application")
 
-    # Close MCP client
-    await close_mcp_client()
-    logger.info("MCP client closed")
-
     # Close Redis connection (if it was initialized)
     if getattr(app.state, 'redis_available', False):
         await close_redis()
         logger.info("Redis connection closed")
+
+    # Supabase client cleanup is handled by garbage collection (uses @lru_cache)
 
 
 # Create FastAPI application

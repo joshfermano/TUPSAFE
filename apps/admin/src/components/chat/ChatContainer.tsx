@@ -44,9 +44,16 @@ export function ChatContainer({ className }: ChatContainerProps) {
   });
 
   // Auto-scroll to bottom when new messages arrive
+  // Use scrollTop on the viewport instead of scrollIntoView to prevent parent scroll
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (scrollAreaRef.current) {
+      const viewport = scrollAreaRef.current.querySelector('[data-slot="scroll-area-viewport"]');
+      if (viewport) {
+        viewport.scrollTo({
+          top: viewport.scrollHeight,
+          behavior: 'smooth'
+        });
+      }
     }
   }, [messages, isStreaming]);
 
@@ -92,7 +99,7 @@ export function ChatContainer({ className }: ChatContainerProps) {
   return (
     <div
       className={cn(
-        'flex flex-col h-full min-h-0 bg-background border rounded-lg shadow-sm overflow-hidden',
+        'flex flex-1 min-h-0 flex-col w-full bg-gradient-to-b from-background via-background to-muted/20 overflow-hidden',
         className
       )}
     >
@@ -104,14 +111,14 @@ export function ChatContainer({ className }: ChatContainerProps) {
       />
 
       {/* Messages Area - scrollable, takes remaining space */}
-      <ScrollArea className="flex-1 min-h-0" ref={scrollAreaRef}>
-        <div className="p-4 sm:p-6">
-          <div className="space-y-4 sm:space-y-6 max-w-3xl mx-auto">
+      <ScrollArea className="flex-1 min-h-0 overscroll-contain" ref={scrollAreaRef}>
+        <div className="px-4 py-6 md:px-8 lg:px-12 xl:px-16">
+          <div className="space-y-6 md:space-y-8 max-w-4xl mx-auto">
             {/* Empty State */}
             {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center py-8 sm:py-16 text-center">
-                <div className="flex items-center justify-center h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-[#8B1538]/10 mb-4">
-                  <Bot className="h-7 w-7 sm:h-8 sm:w-8 text-[#8B1538]" />
+                <div className="flex items-center justify-center h-20 w-20 md:h-24 md:w-24 rounded-2xl bg-gradient-to-br from-[#8B1538]/10 to-[#8B1538]/5 mb-4">
+                  <Bot className="h-10 w-10 md:h-12 md:w-12 text-[#8B1538]" />
                 </div>
                 <h2 className="text-lg sm:text-xl font-semibold mb-2">
                   AI Assistant Ready
@@ -122,12 +129,12 @@ export function ChatContainer({ className }: ChatContainerProps) {
                 </p>
                 
                 {/* Suggested prompts grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 w-full max-w-xl px-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 w-full max-w-2xl px-2">
                   {suggestedPrompts.map((item, index) => (
                     <Button
                       key={index}
                       variant="outline"
-                      className="h-auto py-3 px-3 sm:px-4 text-left justify-start hover:bg-accent/50 transition-colors"
+                      className="h-auto py-3 px-3 sm:px-4 text-left justify-start bg-muted/30 hover:bg-muted/50 transition-colors rounded-xl"
                       onClick={() => handleSendMessage(item.prompt)}
                     >
                       <div className="flex flex-col gap-0.5 min-w-0">
@@ -177,8 +184,8 @@ export function ChatContainer({ className }: ChatContainerProps) {
       </ScrollArea>
 
       {/* Input Area - fixed at bottom */}
-      <div className="shrink-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-3 sm:p-4">
-        <div className="max-w-3xl mx-auto">
+      <div className="shrink-0 border-t border-border/30 bg-background/80 backdrop-blur-md px-4 py-4 md:px-8 lg:px-12 md:py-5">
+        <div className="max-w-4xl mx-auto">
           <ChatInput
             onSend={handleSendMessage}
             disabled={isStreaming}
