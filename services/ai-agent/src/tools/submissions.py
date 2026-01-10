@@ -8,12 +8,12 @@ These tools are used by the AI agent to answer questions about submission statis
 status breakdowns, and department-level insights.
 """
 
-from typing import Any, Literal, Optional
+from typing import Literal, Optional
 
-from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 
-from src.tools.mcp_client import get_mcp_client
+from src.db.validators import sanitize_string
+from src.tools.base import TUPSAFETool
 
 
 class SubmissionCountInput(BaseModel):
@@ -57,10 +57,15 @@ class OfficesWithMostSubmissionsInput(BaseModel):
     )
 
 
-@tool(args_schema=SubmissionCountInput)
-async def get_submission_count(submission_type: str, status: Optional[str] = None) -> dict[str, Any]:
+class GetSubmissionCountTool(TUPSAFETool):
+    """Get the count of PDS or SALN submissions filtered by status.
+
+    This tool counts submissions in the database, optionally filtering by their approval status.
+    Useful for understanding submission volumes and approval pipeline.
     """
-    Get the count of PDS or SALN submissions filtered by status.
+
+    name: str = "get_submission_count"
+    description: str = """Get the count of PDS or SALN submissions filtered by status.
 
     This tool counts submissions in the database, optionally filtering by their approval status.
     Useful for understanding submission volumes and approval pipeline.
@@ -70,55 +75,73 @@ async def get_submission_count(submission_type: str, status: Optional[str] = Non
         status: Optional status filter ('draft', 'submitted', 'reviewing', 'approved', 'rejected')
 
     Returns:
-        Dictionary containing:
+        JSON string containing:
         - count: Total number of matching submissions
         - submission_type: Type that was queried
         - status: Status filter applied (or 'all')
 
     Example:
-        >>> result = await get_submission_count("pds", "approved")
-        >>> print(f"Approved PDS: {result['count']}")
+        >>> result = get_submission_count("pds", "approved")
+        >>> # Returns: {"data": [{"count": 42, "submission_type": "pds", "status": "approved"}], ...}
     """
-    client = get_mcp_client()
+    args_schema: type[BaseModel] = SubmissionCountInput
 
-    # Build the SQL query based on submission type
-    table = "pds_submissions" if submission_type == "pds" else "saln_submissions"
+    def _run(self, submission_type: str, status: Optional[str] = None) -> str:
+        """Execute the tool to get submission count.
 
-    if status:
-        query = f"""
-            SELECT COUNT(*) as count
-            FROM {table}
-            WHERE status = '{status}'
+        Args:
+            submission_type: Type of submission to count ('pds' or 'saln')
+            status: Optional status filter
+
+        Returns:
+            JSON string with count results
         """
-    else:
-        query = f"""
-            SELECT COUNT(*) as count
-            FROM {table}
-        """
+        try:
+            # Validate inputs
+            submission_type = validate_enum(
+                submission_type,
+                ["pds", "saln"],
+                "submission_type"
+            )
 
-    result = await client.execute_sql(query)
+            if status:
+                status = validate_enum(
+                    status,
+                    ["draft", "submitted", "reviewing", "approved", "rejected"],
+                    "status"
+                )
 
-    if not result.success or not result.data:
-        return {
-            "count": 0,
-            "submission_type": submission_type,
-            "status": status or "all",
-            "error": result.error,
-        }
+            # Determine table name
+            table = "pds_submissions" if submission_type == "pds" else "saln_submissions"
 
-    return {
-        "count": result.data[0].get("count", 0),
-        "submission_type": submission_type,
-        "status": status or "all",
-    }
+            # Build query
+            query = self._query(table, "id")
+
+            if status:
+                query = query.eq("status", sanitize_string(status))
+
+            # Execute query
+            response = query.execute()
+            count = len(response.data) if response.data else 0
+
+            return self._format_response(
+                [{"count": count, "submission_type": submission_type, "status": status or "all"}],
+                f"Found {count} {submission_type} submissions"
+            )
+
+        except Exception as e:
+            return self._handle_error(e, {"submission_type": submission_type, "status": status})
 
 
-@tool(args_schema=SubmissionsByDepartmentInput)
-async def get_submissions_by_department(
-    submission_type: str, year: Optional[int] = None
-) -> dict[str, Any]:
+class GetSubmissionsByDepartmentTool(TUPSAFETool):
+    """Get a breakdown of submissions by department, optionally filtered by year.
+
+    This tool provides department-level statistics showing submission volumes across
+    the organization. Useful for identifying departments with high/low compliance.
     """
-    Get a breakdown of submissions by department, optionally filtered by year.
+
+    name: str = "get_submissions_by_department"
+    description: str = """Get a breakdown of submissions by department, optionally filtered by year.
 
     This tool provides department-level statistics showing submission volumes across
     the organization. Useful for identifying departments with high/low compliance.
@@ -128,72 +151,130 @@ async def get_submissions_by_department(
         year: Optional year filter to focus on specific annual submissions
 
     Returns:
-        Dictionary containing:
+        JSON string containing:
         - departments: List of departments with submission counts
         - submission_type: Type that was queried
         - year: Year filter applied (or 'all')
         - total_submissions: Total across all departments
 
     Example:
-        >>> result = await get_submissions_by_department("saln", 2025)
-        >>> for dept in result['departments']:
-        ...     print(f"{dept['name']}: {dept['count']}")
+        >>> result = get_submissions_by_department("saln", 2025)
+        >>> # Returns departments ranked by submission count for 2025
     """
-    client = get_mcp_client()
+    args_schema: type[BaseModel] = SubmissionsByDepartmentInput
 
-    table = "pds_submissions" if submission_type == "pds" else "saln_submissions"
+    def _run(self, submission_type: str, year: Optional[int] = None) -> str:
+        """Execute the tool to get submissions by department.
 
-    # Join with profiles to get department, then with departments to get name
-    year_filter = f"AND s.year = {year}" if year else ""
+        Args:
+            submission_type: Type of submission ('pds' or 'saln')
+            year: Optional year filter
 
-    query = f"""
-        SELECT
-            d.id as department_id,
-            d.name as department_name,
-            d.code as department_code,
-            COUNT(s.id) as submission_count
-        FROM {table} s
-        INNER JOIN profiles p ON s.user_id = p.id
-        LEFT JOIN departments d ON p.department_id = d.id
-        WHERE p.user_type = 'employee'
-            {year_filter}
-        GROUP BY d.id, d.name, d.code
-        ORDER BY submission_count DESC
+        Returns:
+            JSON string with department breakdown
+        """
+        try:
+            # Validate inputs
+            submission_type = validate_enum(
+                submission_type,
+                ["pds", "saln"],
+                "submission_type"
+            )
+
+            if year is not None:
+                year = validate_positive_integer(year, "year", allow_zero=False)
+
+            table = "pds_submissions" if submission_type == "pds" else "saln_submissions"
+
+            # Build query - select all submissions with user_id
+            query = self._query(table, "id,user_id,year")
+
+            if year:
+                query = query.eq("year", year)
+
+            submissions_response = query.execute()
+            submissions = submissions_response.data or []
+
+            if not submissions:
+                return self._format_response(
+                    [],
+                    "No submissions found",
+                    {"submission_type": submission_type, "year": year or "all", "total_submissions": 0}
+                )
+
+            # Get unique user IDs
+            user_ids = list(set(sub["user_id"] for sub in submissions))
+
+            # Get profiles with department info for these users
+            profiles_response = self._query("profiles", "id,department_id").eq(
+                "user_type", "employee"
+            ).in_("id", user_ids).execute()
+
+            profiles = profiles_response.data or []
+
+            # Get unique department IDs
+            dept_ids = list(set(p["department_id"] for p in profiles if p["department_id"]))
+
+            if not dept_ids:
+                return self._format_response(
+                    [],
+                    "No department data found",
+                    {"submission_type": submission_type, "year": year or "all", "total_submissions": len(submissions)}
+                )
+
+            # Get department details
+            departments_response = self._query("departments", "id,name,code").in_(
+                "id", dept_ids
+            ).execute()
+
+            departments_data = departments_response.data or []
+
+            # Create mapping of user_id to department_id
+            user_to_dept = {p["id"]: p["department_id"] for p in profiles}
+
+            # Aggregate submissions by department
+            dept_counts = {}
+            for sub in submissions:
+                dept_id = user_to_dept.get(sub["user_id"])
+                if dept_id:
+                    dept_counts[dept_id] = dept_counts.get(dept_id, 0) + 1
+
+            # Build result with department details
+            departments_list = []
+            for dept in departments_data:
+                dept_id = dept["id"]
+                if dept_id in dept_counts:
+                    departments_list.append({
+                        "id": dept_id,
+                        "name": dept.get("name", "Unknown Department"),
+                        "code": dept.get("code"),
+                        "count": dept_counts[dept_id],
+                    })
+
+            # Sort by count descending
+            departments_list.sort(key=lambda x: x["count"], reverse=True)
+
+            total = sum(d["count"] for d in departments_list)
+
+            return self._format_response(
+                departments_list,
+                f"Found {len(departments_list)} departments with {total} total submissions",
+                {"submission_type": submission_type, "year": year or "all", "total_submissions": total}
+            )
+
+        except Exception as e:
+            return self._handle_error(e, {"submission_type": submission_type, "year": year})
+
+
+class GetPendingSubmissionsTool(TUPSAFETool):
+    """Get the count of submissions pending review (status: 'submitted' or 'reviewing').
+
+    This tool helps identify workload for HR/admin staff by counting submissions
+    awaiting approval action.
     """
 
-    result = await client.execute_sql(query)
-
-    if not result.success or not result.data:
-        return {
-            "departments": [],
-            "submission_type": submission_type,
-            "year": year or "all",
-            "total_submissions": 0,
-            "error": result.error,
-        }
-
-    total = sum(row.get("submission_count", 0) for row in result.data)
-
-    return {
-        "departments": [
-            {
-                "id": row.get("department_id"),
-                "name": row.get("department_name", "Unknown Department"),
-                "code": row.get("department_code"),
-                "count": row.get("submission_count", 0),
-            }
-            for row in result.data
-        ],
-        "submission_type": submission_type,
-        "year": year or "all",
-        "total_submissions": total,
-    }
-
-
-@tool(args_schema=PendingSubmissionsInput)
-async def get_pending_submissions(submission_type: Optional[str] = None) -> dict[str, Any]:
-    """
-    Get the count of submissions pending review (status: 'submitted' or 'reviewing').
+    name: str = "get_pending_submissions"
+    description: str = """Get the count of submissions pending review (status: 'submitted' or 'reviewing').
 
     This tool helps identify workload for HR/admin staff by counting submissions
     awaiting approval action.
@@ -202,63 +283,84 @@ async def get_pending_submissions(submission_type: Optional[str] = None) -> dict
         submission_type: Optional filter for 'pds' or 'saln'. If None, counts both.
 
     Returns:
-        Dictionary containing:
+        JSON string containing:
         - pending_count: Total pending submissions
         - submitted_count: Submissions in 'submitted' status
         - reviewing_count: Submissions in 'reviewing' status
         - submission_type: Type filter applied (or 'all')
 
     Example:
-        >>> result = await get_pending_submissions()
-        >>> print(f"Total pending: {result['pending_count']}")
-        >>> print(f"  Submitted: {result['submitted_count']}")
-        >>> print(f"  Under Review: {result['reviewing_count']}")
+        >>> result = get_pending_submissions()
+        >>> # Returns: {"data": [{"pending_count": 15, "submitted_count": 10, "reviewing_count": 5, ...}], ...}
     """
-    client = get_mcp_client()
+    args_schema: type[BaseModel] = PendingSubmissionsInput
 
-    if submission_type:
-        table = "pds_submissions" if submission_type == "pds" else "saln_submissions"
-        tables = [table]
-    else:
-        tables = ["pds_submissions", "saln_submissions"]
+    def _run(self, submission_type: Optional[str] = None) -> str:
+        """Execute the tool to get pending submissions count.
 
-    results = {"submitted": 0, "reviewing": 0}
+        Args:
+            submission_type: Optional filter for 'pds' or 'saln'
 
-    for table in tables:
-        query = f"""
-            SELECT
-                status,
-                COUNT(*) as count
-            FROM {table}
-            WHERE status IN ('submitted', 'reviewing')
-            GROUP BY status
+        Returns:
+            JSON string with pending submission counts
         """
+        try:
+            # Validate input
+            if submission_type:
+                submission_type = validate_enum(
+                    submission_type,
+                    ["pds", "saln"],
+                    "submission_type"
+                )
 
-        result = await client.execute_sql(query)
+            if submission_type:
+                table = "pds_submissions" if submission_type == "pds" else "saln_submissions"
+                tables = [table]
+            else:
+                tables = ["pds_submissions", "saln_submissions"]
 
-        if result.success and result.data:
-            for row in result.data:
-                status = row.get("status")
-                count = row.get("count", 0)
-                if status in results:
-                    results[status] += count
+            results = {"submitted": 0, "reviewing": 0}
 
-    total_pending = results["submitted"] + results["reviewing"]
+            for table in tables:
+                # Count submitted status
+                submitted_response = self._query(table, "id").eq(
+                    "status", "submitted"
+                ).execute()
 
-    return {
-        "pending_count": total_pending,
-        "submitted_count": results["submitted"],
-        "reviewing_count": results["reviewing"],
-        "submission_type": submission_type or "all",
-    }
+                results["submitted"] += len(submitted_response.data) if submitted_response.data else 0
+
+                # Count reviewing status
+                reviewing_response = self._query(table, "id").eq(
+                    "status", "reviewing"
+                ).execute()
+
+                results["reviewing"] += len(reviewing_response.data) if reviewing_response.data else 0
+
+            total_pending = results["submitted"] + results["reviewing"]
+
+            return self._format_response(
+                [{
+                    "pending_count": total_pending,
+                    "submitted_count": results["submitted"],
+                    "reviewing_count": results["reviewing"],
+                    "submission_type": submission_type or "all"
+                }],
+                f"Found {total_pending} pending submissions ({results['submitted']} submitted, {results['reviewing']} reviewing)"
+            )
+
+        except Exception as e:
+            return self._handle_error(e, {"submission_type": submission_type})
 
 
-@tool(args_schema=OfficesWithMostSubmissionsInput)
-async def get_offices_with_most_submissions(
-    submission_type: str, limit: int = 10
-) -> dict[str, Any]:
+class GetOfficesWithMostSubmissionsTool(TUPSAFETool):
+    """Get top offices/departments ranked by total submission count.
+
+    This tool identifies which offices have the highest submission volumes,
+    useful for recognizing high compliance or targeting low performers.
     """
-    Get top offices/departments ranked by total submission count.
+
+    name: str = "get_offices_with_most_submissions"
+    description: str = """Get top offices/departments ranked by total submission count.
 
     This tool identifies which offices have the highest submission volumes,
     useful for recognizing high compliance or targeting low performers.
@@ -268,70 +370,143 @@ async def get_offices_with_most_submissions(
         limit: Maximum number of top offices to return (1-50)
 
     Returns:
-        Dictionary containing:
+        JSON string containing:
         - top_offices: List of offices with submission counts, ranked
         - submission_type: Type that was queried
         - limit: Number of results returned
 
     Example:
-        >>> result = await get_offices_with_most_submissions("pds", limit=5)
-        >>> print("Top 5 offices by PDS submissions:")
-        >>> for i, office in enumerate(result['top_offices'], 1):
-        ...     print(f"{i}. {office['name']}: {office['count']}")
+        >>> result = get_offices_with_most_submissions("pds", limit=5)
+        >>> # Returns top 5 offices by PDS submissions with detailed statistics
     """
-    client = get_mcp_client()
+    args_schema: type[BaseModel] = OfficesWithMostSubmissionsInput
 
-    table = "pds_submissions" if submission_type == "pds" else "saln_submissions"
+    def _run(self, submission_type: str, limit: int = 10) -> str:
+        """Execute the tool to get offices with most submissions.
 
-    # Limit parameter validation
-    limit = max(1, min(limit, 50))
+        Args:
+            submission_type: Type of submission ('pds' or 'saln')
+            limit: Maximum number of top offices to return
 
-    query = f"""
-        SELECT
-            d.id as department_id,
-            d.name as department_name,
-            d.code as department_code,
-            d.office_type,
-            COUNT(s.id) as submission_count,
-            COUNT(CASE WHEN s.status = 'approved' THEN 1 END) as approved_count,
-            COUNT(CASE WHEN s.status = 'submitted' THEN 1 END) as submitted_count,
-            COUNT(CASE WHEN s.status = 'reviewing' THEN 1 END) as reviewing_count
-        FROM {table} s
-        INNER JOIN profiles p ON s.user_id = p.id
-        INNER JOIN departments d ON p.department_id = d.id
-        WHERE p.user_type = 'employee'
-            AND d.is_active = true
-        GROUP BY d.id, d.name, d.code, d.office_type
-        HAVING COUNT(s.id) > 0
-        ORDER BY submission_count DESC, approved_count DESC
-        LIMIT {limit}
-    """
+        Returns:
+            JSON string with top offices ranked by submission count
+        """
+        try:
+            # Validate inputs
+            submission_type = validate_enum(
+                submission_type,
+                ["pds", "saln"],
+                "submission_type"
+            )
 
-    result = await client.execute_sql(query)
+            limit = validate_positive_integer(limit, "limit", allow_zero=False)
+            limit = max(1, min(limit, 50))  # Clamp between 1 and 50
 
-    if not result.success or not result.data:
-        return {
-            "top_offices": [],
-            "submission_type": submission_type,
-            "limit": limit,
-            "error": result.error,
-        }
+            table = "pds_submissions" if submission_type == "pds" else "saln_submissions"
 
-    return {
-        "top_offices": [
-            {
-                "rank": idx + 1,
-                "id": row.get("department_id"),
-                "name": row.get("department_name"),
-                "code": row.get("department_code"),
-                "office_type": row.get("office_type"),
-                "total_submissions": row.get("submission_count", 0),
-                "approved": row.get("approved_count", 0),
-                "submitted": row.get("submitted_count", 0),
-                "reviewing": row.get("reviewing_count", 0),
-            }
-            for idx, row in enumerate(result.data)
-        ],
-        "submission_type": submission_type,
-        "limit": limit,
-    }
+            # Get all submissions with user_id and status
+            submissions_response = self._query(table, "id,user_id,status").execute()
+            submissions = submissions_response.data or []
+
+            if not submissions:
+                return self._format_response(
+                    [],
+                    "No submissions found",
+                    {"submission_type": submission_type, "limit": limit}
+                )
+
+            # Get unique user IDs
+            user_ids = list(set(sub["user_id"] for sub in submissions))
+
+            # Get profiles with department info
+            profiles_response = self._query("profiles", "id,department_id").eq(
+                "user_type", "employee"
+            ).in_("id", user_ids).execute()
+
+            profiles = profiles_response.data or []
+
+            # Get unique department IDs
+            dept_ids = list(set(p["department_id"] for p in profiles if p["department_id"]))
+
+            if not dept_ids:
+                return self._format_response(
+                    [],
+                    "No department data found",
+                    {"submission_type": submission_type, "limit": limit}
+                )
+
+            # Get department details
+            departments_response = self._query("departments", "id,name,code,office_type").in_(
+                "id", dept_ids
+            ).eq("is_active", True).execute()
+
+            departments_data = departments_response.data or []
+
+            # Create mapping of user_id to department_id
+            user_to_dept = {p["id"]: p["department_id"] for p in profiles}
+
+            # Aggregate submissions by department with status breakdown
+            dept_stats = {}
+            for sub in submissions:
+                dept_id = user_to_dept.get(sub["user_id"])
+                if dept_id:
+                    if dept_id not in dept_stats:
+                        dept_stats[dept_id] = {
+                            "total": 0,
+                            "approved": 0,
+                            "submitted": 0,
+                            "reviewing": 0,
+                        }
+                    dept_stats[dept_id]["total"] += 1
+                    status = sub.get("status")
+                    if status == "approved":
+                        dept_stats[dept_id]["approved"] += 1
+                    elif status == "submitted":
+                        dept_stats[dept_id]["submitted"] += 1
+                    elif status == "reviewing":
+                        dept_stats[dept_id]["reviewing"] += 1
+
+            # Build result with department details
+            offices_list = []
+            for dept in departments_data:
+                dept_id = dept["id"]
+                if dept_id in dept_stats:
+                    stats = dept_stats[dept_id]
+                    offices_list.append({
+                        "id": dept_id,
+                        "name": dept.get("name"),
+                        "code": dept.get("code"),
+                        "office_type": dept.get("office_type"),
+                        "total_submissions": stats["total"],
+                        "approved": stats["approved"],
+                        "submitted": stats["submitted"],
+                        "reviewing": stats["reviewing"],
+                    })
+
+            # Sort by total submissions descending, then by approved count
+            offices_list.sort(
+                key=lambda x: (x["total_submissions"], x["approved"]),
+                reverse=True
+            )
+
+            # Limit results and add rank
+            top_offices = [
+                {**office, "rank": idx + 1}
+                for idx, office in enumerate(offices_list[:limit])
+            ]
+
+            return self._format_response(
+                top_offices,
+                f"Found top {len(top_offices)} offices by {submission_type} submissions",
+                {"submission_type": submission_type, "limit": limit}
+            )
+
+        except Exception as e:
+            return self._handle_error(e, {"submission_type": submission_type, "limit": limit})
+
+
+# Create tool instances for export
+get_submission_count = GetSubmissionCountTool()
+get_submissions_by_department = GetSubmissionsByDepartmentTool()
+get_pending_submissions = GetPendingSubmissionsTool()
+get_offices_with_most_submissions = GetOfficesWithMostSubmissionsTool()

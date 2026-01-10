@@ -12,8 +12,8 @@ import { ChatContainer } from '@/components/chat/ChatContainer';
 
 export default function AssistantPage() {
   return (
-    <div className="flex flex-col h-full min-h-0 -mt-2 md:-mt-0">
-      <ChatContainer className="flex-1 min-h-0" />
+    <div className="flex-1 flex flex-col min-h-0 w-full overflow-hidden">
+      <ChatContainer className="flex-1 min-h-0 w-full overflow-hidden" />
     </div>
   );
 }

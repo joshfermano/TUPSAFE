@@ -84,7 +84,7 @@ export function ChatInput({
           disabled={disabled}
           rows={2}
           className={cn(
-            'resize-none pr-12 min-h-[52px] max-h-[160px] text-sm',
+            'resize-none pr-12 min-h-[52px] max-h-[160px] text-sm md:text-base rounded-xl border-border/50 bg-muted/30 focus:bg-background focus:ring-2 focus:ring-[#8B1538]/20',
             isOverLimit && 'border-destructive focus-visible:ring-destructive'
           )}
         />
@@ -95,8 +95,8 @@ export function ChatInput({
           disabled={!canSend}
           size="icon"
           className={cn(
-            'absolute bottom-2 right-2 h-8 w-8 sm:h-9 sm:w-9 rounded-lg transition-all',
-            'bg-[#8B1538] hover:bg-[#8B1538]/90 shadow-sm',
+            'absolute bottom-2 right-2 h-8 w-8 md:h-9 md:w-9 rounded-xl transition-all',
+            'bg-gradient-to-r from-[#8B1538] to-[#6B0F28] hover:bg-[#8B1538]/90 shadow-md shadow-[#8B1538]/20',
             'disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none'
           )}
           title={
@@ -119,10 +119,10 @@ export function ChatInput({
 
       {/* Character Counter and Help Text */}
       <div className="flex items-center justify-between text-[11px] text-muted-foreground/70 px-1">
-        <span className="hidden sm:inline">
+        <span className="hidden md:inline">
           Press Enter to send, Shift+Enter for new line
         </span>
-        <span className="sm:hidden">
+        <span className="md:hidden">
           Enter to send
         </span>
 

@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AssistantLoading() {
   return (
-    <div className="flex flex-col h-full min-h-0 -mt-2 md:-mt-0">
+    <div className="flex flex-1 min-h-0 flex-col">
       <div className="flex-1 min-h-0 flex flex-col bg-background border rounded-lg shadow-sm overflow-hidden">
         {/* Header Skeleton */}
         <div className="flex items-center justify-between gap-4 border-b bg-background/95 px-4 sm:px-6 py-4 shrink-0">

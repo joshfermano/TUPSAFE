@@ -65,7 +65,7 @@ export function ChatMessage({
       {/* Avatar */}
       <Avatar
         className={cn(
-          'h-7 w-7 sm:h-8 sm:w-8 shrink-0 shadow-sm',
+          'h-8 w-8 md:h-9 md:w-9 shrink-0 shadow-sm',
           isUser
             ? 'ring-1 ring-[#8B1538]/30'
             : 'ring-1 ring-border'
@@ -93,10 +93,10 @@ export function ChatMessage({
         {/* Message Bubble */}
         <div
           className={cn(
-            'rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 shadow-sm',
+            'rounded-2xl px-4 py-3 md:px-5 md:py-3.5 shadow-sm',
             isUser
-              ? 'bg-[#8B1538] text-white'
-              : 'bg-card text-card-foreground border border-border/60'
+              ? 'bg-gradient-to-r from-[#8B1538] to-[#7B1230] text-white shadow-md shadow-[#8B1538]/10'
+              : 'bg-muted/40 text-foreground hover:bg-muted/50 transition-colors'
           )}
         >
           {isAssistant ? (
