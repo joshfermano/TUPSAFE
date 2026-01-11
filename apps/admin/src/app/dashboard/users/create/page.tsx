@@ -13,6 +13,7 @@ import {
   Mail,
   X,
   User,
+  UserPlus,
   Briefcase,
   Key,
   Eye,
@@ -396,6 +397,37 @@ export default function CreateUserPage() {
 
   return (
     <PageTransition className="space-y-6">
+      {/* Loading Screen Overlay */}
+      {isCreating && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <Card className="w-[400px] border-2 shadow-lg">
+            <CardContent className="pt-6">
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <div className="relative">
+                  <Loader2 className="h-16 w-16 animate-spin text-primary" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <UserPlus className="h-8 w-8 text-primary/50" />
+                  </div>
+                </div>
+                <div className="space-y-2 text-center">
+                  <h3 className="text-lg font-semibold">Creating User</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Please wait while we set up the new user account...
+                  </p>
+                </div>
+                <div className="w-full space-y-2">
+                  <Progress value={66} className="h-2" />
+                  <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                    <span>Validating information</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={handleCancel}>
@@ -1135,7 +1167,11 @@ export default function CreateUserPage() {
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   ) : (
-                    <Button type="submit" disabled={isCreating}>
+                    <Button 
+                      type="submit" 
+                      disabled={isCreating}
+                      className="border-2 border-primary/60 hover:border-primary/80 hover:shadow-lg transition-all duration-200 hover:scale-105"
+                    >
                       {isCreating ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />

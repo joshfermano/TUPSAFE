@@ -16,8 +16,9 @@ interface StatCard {
   title: string;
   description: string;
   value: number;
-  icon: React.ComponentType<{ className?: string }>;
-  iconClassName: string;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  bgColor: string;
+  iconColor: string;
 }
 
 export function UserStatsCards() {
@@ -69,28 +70,32 @@ export function UserStatsCards() {
       description: 'All registered users',
       value: stats.total,
       icon: Users,
-      iconClassName: 'text-blue-600',
+      bgColor: 'bg-blue-100 dark:bg-blue-600/30',
+      iconColor: 'text-blue-600 dark:text-blue-400',
     },
     {
       title: 'Active Users',
       description: `${stats.byAccountStatus.active} active accounts`,
       value: stats.activeUsers,
       icon: UserCheck,
-      iconClassName: 'text-green-600',
+      bgColor: 'bg-green-100 dark:bg-green-600/30',
+      iconColor: 'text-green-600 dark:text-green-400',
     },
     {
       title: 'Pending Approvals',
       description: 'Awaiting approval',
       value: stats.pendingApprovals,
       icon: Clock,
-      iconClassName: 'text-yellow-600',
+      bgColor: 'bg-yellow-100 dark:bg-yellow-600/30',
+      iconColor: 'text-yellow-600 dark:text-yellow-400',
     },
     {
       title: 'Suspended',
       description: 'Suspended accounts',
       value: stats.suspendedUsers,
       icon: UserX,
-      iconClassName: 'text-red-600',
+      bgColor: 'bg-red-100 dark:bg-red-600/30',
+      iconColor: 'text-red-600 dark:text-red-400',
     },
   ];
 
@@ -100,7 +105,9 @@ export function UserStatsCards() {
         <Card key={index} className="border-muted/50">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-            <stat.icon className={`h-4 w-4 ${stat.iconClassName}`} />
+            <div className={`rounded-md ${stat.bgColor} p-2`}>
+              <stat.icon className={`h-4 w-4 ${stat.iconColor}`} strokeWidth={3} />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stat.value.toLocaleString()}</div>
