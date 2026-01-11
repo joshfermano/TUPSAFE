@@ -38,7 +38,14 @@
     "docker:rebuild": "docker compose --env-file .env.local down && docker compose --env-file .env.local build --no-cache && docker compose --env-file .env.local up -d",
     "docker:prod": "docker compose -f docker-compose.prod.yml --env-file .env.local up -d",
     "docker:prod:stop": "docker compose -f docker-compose.prod.yml --env-file .env.local down",
-    "docker:clean": "docker compose --env-file .env.local down -v && docker system prune -f"
+    "docker:clean": "docker compose --env-file .env.local down -v && docker system prune -f",
+    "docker:dev": "docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.local up -d",
+    "docker:dev:stop": "docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.local down",
+    "docker:dev:restart": "docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.local restart",
+    "docker:dev:logs": "docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.local logs -f",
+    "docker:dev:status": "docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.local ps",
+    "docker:dev:build": "docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.local build",
+    "docker:dev:rebuild": "docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.local down && docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.local build --no-cache && docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.local up -d"
   },
   "devDependencies": {
     "drizzle-kit": "^0.12.8",

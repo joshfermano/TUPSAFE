@@ -1,0 +1,41 @@
+# Development Dockerfile for TUPSAFE AI Agent Service
+# Optimized for hot reload with uvicorn --reload
+
+FROM python:3.12-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    curl \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv package manager and move to standard PATH location
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    mv /root/.local/bin/uv /usr/local/bin/uv && \
+    mv /root/.local/bin/uvx /usr/local/bin/uvx 2>/dev/null || true
+
+# Copy dependency files
+COPY pyproject.toml uv.lock* README.md ./
+
+# Sync ALL dependencies (including dev dependencies for testing)
+RUN uv sync --no-install-project
+
+# Copy source code (will be overridden by volume mounts in dev)
+COPY src ./src
+COPY tests ./tests
+
+# Set environment variables for development
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    ENVIRONMENT=development \
+    RELOAD=true
+
+# Expose port
+EXPOSE 8000
+
+# Run uvicorn with hot reload enabled
+CMD ["uv", "run", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/src"]
