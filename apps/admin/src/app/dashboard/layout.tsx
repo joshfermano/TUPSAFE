@@ -21,6 +21,7 @@ import {
   Building2,
   PanelLeftClose,
   PanelLeftOpen,
+  Bot,
 } from 'lucide-react';
 
 import { useAuth } from '@/context/AuthContext';
@@ -36,7 +37,6 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from '@/components/ui/sheet';
 
 // Navigation item type
@@ -55,6 +55,12 @@ const navItems: NavItem[] = [
     name: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
+    section: 'main',
+  },
+  {
+    name: 'AI Assistant',
+    href: '/dashboard/assistant',
+    icon: Bot,
     section: 'main',
   },
   {
@@ -185,7 +191,7 @@ const SidebarNav = memo(
     }, {} as Record<string, NavItem[]>);
 
     return (
-      <div className="flex h-full flex-col bg-muted/30 transition-all duration-300">
+      <div className="flex h-full flex-col bg-muted/30 transition-all duration-300 overflow-hidden">
         {/* Logo Section - Clean header with proper spacing */}
         <div className="flex h-16 shrink-0 items-center justify-between border-b bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <Link
@@ -376,6 +382,7 @@ export default function DashboardLayout({
   const { user, loading } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const isAssistantRoute = pathname === '/dashboard/assistant';
 
   // Load sidebar collapsed state from localStorage on mount
   useEffect(() => {
@@ -424,12 +431,12 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-dvh overflow-hidden bg-background">
       {/* Desktop Sidebar - Responsive width with smooth transitions */}
       <aside
         className={cn(
-          "hidden shrink-0 border-r shadow-sm transition-all duration-300 md:block",
-          sidebarCollapsed ? "md:w-20 lg:w-72" : "md:w-72"
+          "hidden shrink-0 border-r shadow-sm transition-all duration-300 md:flex md:flex-col md:h-full md:overflow-hidden",
+          sidebarCollapsed ? "md:w-20" : "md:w-72"
         )}>
         <SidebarNav
           pathname={pathname}
@@ -466,10 +473,24 @@ export default function DashboardLayout({
         </SheetContent>
       </Sheet>
 
-      {/* Main Content Area - Improved responsive padding and ultra-wide support */}
-      <main className="flex-1 overflow-y-auto bg-muted/10">
-        {/* Add top padding on mobile to account for fixed header */}
-        <div className="container mx-auto max-w-screen-2xl px-4 pt-20 pb-4 md:p-6 md:pt-6 lg:p-8">
+      {/* Main Content Area */}
+      <main className={cn(
+        "flex-1 flex flex-col min-w-0 overflow-hidden",
+        isAssistantRoute ? "bg-background" : "bg-muted/10"
+      )}>
+        <div
+          className={cn(
+            'flex-1 flex flex-col min-h-0',
+            // Most dashboard pages scroll at the shell level
+            !isAssistantRoute && 'overflow-y-auto',
+            // Assistant page: isolate scroll behavior, no scroll here
+            isAssistantRoute && 'overflow-hidden isolate',
+            // Conditional padding based on route
+            isAssistantRoute
+              ? 'pt-14 md:pt-0' // Mobile header clearance only, no desktop padding
+              : 'px-4 pt-14 pb-4 md:p-6 lg:p-8 mx-auto max-w-screen-2xl w-full'
+          )}
+        >
           {children}
         </div>
       </main>

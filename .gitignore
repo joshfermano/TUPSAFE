@@ -168,3 +168,21 @@ drizzle/
 
 # Supabase Local
 .supabase/
+
+# Python (services/ai-agent)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+.eggs/
+*.egg-info/
+*.egg
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+services/ai-agent/.venv/
+services/ai-agent/uv.lock

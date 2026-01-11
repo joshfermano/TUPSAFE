@@ -1,0 +1,244 @@
+# ============================================
+# TUPSAFE Development Docker Compose
+# ============================================
+# Usage: docker compose --env-file .env.local up -d
+#
+# Access:
+#   - Employee Portal: http://localhost:3000
+#   - Admin Portal: http://localhost:3001
+#   - AI Agent API: http://localhost:8000
+#   - Redis: localhost:6379
+#
+# Note: Uses .env.local for all environment variables
+
+x-common-env: &common-env
+  TZ: Asia/Manila
+  NODE_ENV: development
+
+services:
+  # ============================================
+  # Redis - Caching and Session Storage
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: tupsafe-redis-dev
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tupsafe-network
+
+  # ============================================
+  # Employee Portal - Next.js 15 (Port 3000)
+  # ============================================
+  # Applicants + Employees portal
+  # Uses Magic UI for design system
+  employee:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_NAME: employee
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        NEXT_PUBLIC_EMPLOYEE_APP_URL: ${NEXT_PUBLIC_EMPLOYEE_APP_URL:-http://localhost:3000}
+        NEXT_PUBLIC_ADMIN_APP_URL: ${NEXT_PUBLIC_ADMIN_APP_URL:-http://localhost:3001}
+        # CRITICAL: Portal identifier for session isolation
+        NEXT_PUBLIC_APP_PORTAL: employee
+    container_name: tupsafe-employee-dev
+    ports:
+      - '3000:3000'
+    environment:
+      <<: *common-env
+      PORT: 3000
+      # Supabase Configuration
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      # Database
+      DATABASE_URL: ${DATABASE_URL}
+      # App URLs
+      NEXT_PUBLIC_EMPLOYEE_APP_URL: ${NEXT_PUBLIC_EMPLOYEE_APP_URL:-http://localhost:3000}
+      NEXT_PUBLIC_ADMIN_APP_URL: ${NEXT_PUBLIC_ADMIN_APP_URL:-http://localhost:3001}
+      # Portal Identifier
+      NEXT_PUBLIC_APP_PORTAL: employee
+      # Internal Services (Docker network)
+      REDIS_URL: redis://redis:6379
+      AI_AGENT_URL: http://ai-agent:8000
+      # Email Configuration
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-tupsafe@tup.edu.ph}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-TUPSAFE}
+      USE_MOCK_EMAILS: ${USE_MOCK_EMAILS:-true}
+    # Note: Volume mounts removed - using standalone build
+    # For hot-reloading during development, use: npm run dev:employee
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - tupsafe-network
+
+  # ============================================
+  # Admin Portal - Next.js 15 (Port 3001)
+  # ============================================
+  # HR/Admin management portal
+  # Uses shadcn/ui for design system
+  admin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_NAME: admin
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        NEXT_PUBLIC_EMPLOYEE_APP_URL: ${NEXT_PUBLIC_EMPLOYEE_APP_URL:-http://localhost:3000}
+        NEXT_PUBLIC_ADMIN_APP_URL: ${NEXT_PUBLIC_ADMIN_APP_URL:-http://localhost:3001}
+        # CRITICAL: Portal identifier for session isolation
+        NEXT_PUBLIC_APP_PORTAL: admin
+    container_name: tupsafe-admin-dev
+    ports:
+      - '3001:3001'
+    environment:
+      <<: *common-env
+      PORT: 3001
+      # Supabase Configuration
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      # Database
+      DATABASE_URL: ${DATABASE_URL}
+      # App URLs
+      NEXT_PUBLIC_EMPLOYEE_APP_URL: ${NEXT_PUBLIC_EMPLOYEE_APP_URL:-http://localhost:3000}
+      NEXT_PUBLIC_ADMIN_APP_URL: ${NEXT_PUBLIC_ADMIN_APP_URL:-http://localhost:3001}
+      # Portal Identifier
+      NEXT_PUBLIC_APP_PORTAL: admin
+      # Internal Services (Docker network)
+      REDIS_URL: redis://redis:6379
+      AI_AGENT_URL: http://ai-agent:8000
+      # Email Configuration
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-tupsafe@tup.edu.ph}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-TUPSAFE}
+      USE_MOCK_EMAILS: ${USE_MOCK_EMAILS:-true}
+    # Note: Volume mounts removed - using standalone build
+    # For hot-reloading during development, use: npm run dev:admin
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3001/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - tupsafe-network
+
+  # ============================================
+  # AI Agent Service - Python FastAPI (Port 8000)
+  # ============================================
+  # LangChain-based AI agent for admin portal
+  # Provides REST API for agent execution
+  ai-agent:
+    build:
+      context: ./services/ai-agent
+      dockerfile: Dockerfile
+    container_name: tupsafe-ai-agent-dev
+    ports:
+      - '8000:8000'
+    environment:
+      <<: *common-env
+      PYTHONUNBUFFERED: 1
+      PYTHONDONTWRITEBYTECODE: 1
+      ENVIRONMENT: development
+      # Supabase Connection
+      SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET:-your-jwt-secret-here}
+      SUPABASE_PROJECT_REF: ${SUPABASE_PROJECT_REF:-}
+      # LLM Provider API Keys
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      # Default LLM Configuration
+      DEFAULT_LLM_PROVIDER: ${DEFAULT_LLM_PROVIDER:-openrouter}
+      DEFAULT_MODEL: ${DEFAULT_MODEL:-anthropic/claude-3.5-sonnet}
+      # Server Configuration
+      HOST: 0.0.0.0
+      PORT: 8000
+      RELOAD: 'true'
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # Redis (Docker network)
+      REDIS_URL: redis://redis:6379
+      # CORS Configuration (JSON array format for Pydantic)
+      ALLOWED_ORIGINS: '["http://localhost:3000", "http://localhost:3001"]'
+      # Security
+      API_SECRET_KEY: ${API_SECRET_KEY:-dev-secret-key-change-in-production}
+      ALGORITHM: ${ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      # Agent Configuration
+      AGENT_TIMEOUT_SECONDS: ${AGENT_TIMEOUT_SECONDS:-300}
+      MAX_ITERATIONS: ${MAX_ITERATIONS:-25}
+      ENABLE_STREAMING: ${ENABLE_STREAMING:-true}
+      # Rate Limiting
+      RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-60}
+      RATE_LIMIT_PER_HOUR: ${RATE_LIMIT_PER_HOUR:-1000}
+    # Note: Volume mounts removed - using built image
+    # For hot-reloading during development, use: npm run dev:ai-agent
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - tupsafe-network
+
+# ============================================
+# Networks
+# ============================================
+networks:
+  tupsafe-network:
+    driver: bridge
+    name: tupsafe-network
+
+# ============================================
+# Volumes
+# ============================================
+volumes:
+  redis_data:
+    name: tupsafe-redis-data-dev
