@@ -77,7 +77,9 @@ chmod +x scripts/docker-dev.sh
 
 ## Quick Start
 
-### Development Environment
+### Development Environment (with Hot Reload)
+
+For active development with hot reload support, use the dev override file:
 
 1. **Clone the repository and navigate to the project root**
 
@@ -98,22 +100,23 @@ cp apps/admin/.env.example apps/admin/.env.local
 cp services/ai-agent/.env.example services/ai-agent/.env
 ```
 
-3. **Start all services**
+3. **Start all services with hot reload**
 
 ```bash
-docker-compose up -d
+# Use both compose files - the dev file overrides for hot reload
+docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.local up -d
 ```
 
 4. **View logs**
 
 ```bash
 # All services
-docker-compose logs -f
+docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f
 
 # Specific service
-docker-compose logs -f employee
-docker-compose logs -f admin
-docker-compose logs -f ai-agent
+docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f employee
+docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f admin
+docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f ai-agent
 ```
 
 5. **Access the applications**
@@ -123,11 +126,30 @@ docker-compose logs -f ai-agent
 - AI Agent API: http://localhost:8000
 - AI Agent Docs: http://localhost:8000/docs
 
+6. **Hot reload is now active!**
+
+Edit any source files and changes will be reflected automatically:
+- `apps/employee/src/*` - Employee portal components
+- `apps/admin/src/*` - Admin portal components
+- `services/ai-agent/src/*` - AI Agent Python code
+- `packages/*/src/*` - Shared packages
+
+### Development Environment (without Hot Reload)
+
+For running production-like builds locally (no live editing):
+
+```bash
+docker compose --env-file .env.local up -d
+```
+
+> **Note:** This mode builds the apps once and doesn't watch for file changes.
+
 ### Production Environment
 
 1. **Set production environment variables**
 
 Edit your environment files with production values:
+
 - Database connection strings
 - API keys and secrets
 - Redis password
@@ -186,36 +208,78 @@ docker run -p 8000:8000 --env-file .env tupsafe-ai-agent:latest
 
 ## Docker Compose Commands
 
-### Development (docker-compose.yml)
+### Development with Hot Reload (Recommended)
+
+```bash
+# Start all services with hot reload
+docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.local up -d
+
+# Start specific service with hot reload
+docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.local up -d employee
+
+# Stop all services
+docker compose -f docker-compose.yml -f docker-compose.dev.yml down
+
+# Stop and remove volumes
+docker compose -f docker-compose.yml -f docker-compose.dev.yml down -v
+
+# Rebuild and start (after dependency changes)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.local up -d --build
+
+# View logs (follow mode)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f
+
+# View logs for specific service
+docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f employee
+
+# Restart a service
+docker compose -f docker-compose.yml -f docker-compose.dev.yml restart employee
+
+# Execute command in running container
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec employee sh
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec ai-agent bash
+```
+
+> **Tip:** Create an alias for convenience:
+> ```bash
+> # Bash/Zsh
+> alias dc-dev="docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.local"
+> # Then use: dc-dev up -d, dc-dev logs -f, etc.
+>
+> # PowerShell
+> function dc-dev { docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.local $args }
+> ```
+
+### Development without Hot Reload (docker-compose.yml)
 
 ```bash
 # Start all services in detached mode
-docker-compose up -d
+docker compose up -d
 
 # Start specific service
-docker-compose up -d employee
+docker compose up -d employee
 
 # Stop all services
-docker-compose down
+docker compose down
 
 # Stop and remove volumes
-docker-compose down -v
+docker compose down -v
 
 # Rebuild and start
-docker-compose up -d --build
+docker compose up -d --build
 
 # View logs (follow mode)
-docker-compose logs -f
+docker compose logs -f
 
 # View logs for specific service
-docker-compose logs -f employee
+docker compose logs -f employee
 
 # Restart a service
-docker-compose restart employee
+docker compose restart employee
 
 # Execute command in running container
-docker-compose exec employee sh
-docker-compose exec ai-agent bash
+docker compose exec employee sh
+docker compose exec ai-agent bash
 ```
 
 ### Production (docker-compose.prod.yml)
@@ -295,8 +359,8 @@ Development uses bind mounts for hot reloading:
 
 ```yaml
 volumes:
-  - ./apps/employee:/app/apps/employee  # Source code
-  - /app/node_modules                    # Anonymous volume for node_modules
+  - ./apps/employee:/app/apps/employee # Source code
+  - /app/node_modules # Anonymous volume for node_modules
 ```
 
 ### Production Volumes
@@ -305,7 +369,7 @@ Production uses named volumes for data persistence:
 
 ```yaml
 volumes:
-  redis_data_prod:  # Redis data persistence
+  redis_data_prod: # Redis data persistence
 ```
 
 ### Managing Volumes
@@ -329,21 +393,25 @@ docker volume rm tupsafe-redis-data-dev
 All services include health checks for monitoring:
 
 ### Employee Portal
+
 - Endpoint: `http://localhost:3000/api/health`
 - Check interval: 30s
 - Returns: `{"status":"healthy","timestamp":"...","service":"employee-portal"}`
 
 ### Admin Portal
+
 - Endpoint: `http://localhost:3001/api/health`
 - Check interval: 30s
 - Returns: `{"status":"healthy","timestamp":"...","service":"admin-portal"}`
 
 ### AI Agent
+
 - Endpoint: `http://localhost:8000/health`
 - Check interval: 30s
 - Returns: Redis connection status and service info
 
 ### Redis
+
 - Health check: `redis-cli ping`
 - Check interval: 10s
 
@@ -362,18 +430,21 @@ docker inspect --format='{{.State.Health.Status}}' tupsafe-employee-dev
 Production deployment includes resource constraints:
 
 ### Employee/Admin Portals
+
 - CPU Limit: 2 cores
 - Memory Limit: 2GB
 - CPU Reservation: 1 core
 - Memory Reservation: 1GB
 
 ### AI Agent
+
 - CPU Limit: 2 cores
 - Memory Limit: 2GB
 - CPU Reservation: 1 core
 - Memory Reservation: 512MB
 
 ### Redis
+
 - CPU Limit: 0.5 core
 - Memory Limit: 512MB
 - CPU Reservation: 0.25 core
@@ -382,11 +453,13 @@ Production deployment includes resource constraints:
 ## Security Considerations
 
 ### Development
+
 - Uses default passwords (change for production)
 - Port exposed for debugging
 - Source code mounted for hot reload
 
 ### Production
+
 - Non-root user (uid 1001) for all services
 - Read-only filesystem where possible
 - No new privileges flag enabled
@@ -498,6 +571,7 @@ docker-compose logs > logs.txt
 ### Production Logging
 
 Production uses JSON file driver with rotation:
+
 - Max file size: 50MB
 - Max files: 5
 - Total log retention: ~250MB per service
@@ -567,11 +641,24 @@ jobs:
 
 ## Development Workflow
 
-1. **Start services**: `docker-compose up -d`
-2. **Make code changes** (hot reload enabled)
-3. **View logs**: `docker-compose logs -f`
-4. **Run tests**: `docker-compose exec employee npm test`
-5. **Stop services**: `docker-compose down`
+### With Hot Reload (Recommended)
+
+1. **Start services**: `docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.local up -d`
+2. **Make code changes** - changes are automatically reflected
+3. **View logs**: `docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f`
+4. **Run tests**: `docker compose -f docker-compose.yml -f docker-compose.dev.yml exec employee npm test`
+5. **Stop services**: `docker compose -f docker-compose.yml -f docker-compose.dev.yml down`
+
+### Without Docker (Alternative)
+
+For the fastest development experience, run apps directly:
+
+```bash
+npm run dev          # All apps
+npm run dev:employee # Employee portal only
+npm run dev:admin    # Admin portal only
+npm run dev:ai-agent # AI Agent only
+```
 
 ## Production Deployment
 
@@ -591,6 +678,7 @@ jobs:
 ## Support
 
 For issues related to Docker configuration, please check:
+
 1. This documentation
 2. Docker logs (`docker-compose logs`)
 3. Project README.md
@@ -598,6 +686,6 @@ For issues related to Docker configuration, please check:
 
 ---
 
-**Last Updated**: January 9, 2026
+**Last Updated**: January 11, 2026
 **Docker Version**: 24.0+
 **Docker Compose Version**: V2
