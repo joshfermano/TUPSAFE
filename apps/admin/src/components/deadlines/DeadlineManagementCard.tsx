@@ -280,7 +280,7 @@ export function DeadlineManagementCard({
               <Button
                 onClick={() => setIsSetDialogOpen(true)}
                 size="sm"
-                className="gap-1.5"
+                className="gap-1.5 border-2 border-primary/50 hover:border-primary/70 hover:shadow-md transition-all duration-200 hover:scale-105"
               >
                 <Plus className="h-4 w-4" />
                 Set Deadline

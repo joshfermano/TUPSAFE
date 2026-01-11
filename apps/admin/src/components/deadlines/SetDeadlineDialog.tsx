@@ -322,10 +322,15 @@ export function SetDeadlineDialog({
               variant="outline"
               onClick={handleClose}
               disabled={isSubmitting}
+              className="border-2 hover:border-gray-400 transition-all duration-200"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting}
+              className="border-2 border-primary/60 hover:border-primary/80 hover:shadow-lg transition-all duration-200 hover:scale-105"
+            >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
