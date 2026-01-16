@@ -97,19 +97,19 @@ export function RegistrationFilters({
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger
             value="pending"
-            className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-blue-200 dark:data-[state=active]:bg-blue-950/50 dark:data-[state=active]:text-blue-300 dark:data-[state=active]:border-blue-800"
+            className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-blue-200 dark:data-[state=active]:bg-blue-900/70 dark:data-[state=active]:text-blue-300 dark:data-[state=active]:border-blue-800"
           >
             Pending
           </TabsTrigger>
           <TabsTrigger
             value="approved"
-            className="data-[state=active]:bg-green-50 data-[state=active]:text-green-700 data-[state=active]:border-green-200 dark:data-[state=active]:bg-green-950/50 dark:data-[state=active]:text-green-300 dark:data-[state=active]:border-green-800"
+            className="data-[state=active]:bg-green-50 data-[state=active]:text-green-700 data-[state=active]:border-green-200 dark:data-[state=active]:bg-green-900/70 dark:data-[state=active]:text-green-300 dark:data-[state=active]:border-green-800"
           >
             Approved
           </TabsTrigger>
           <TabsTrigger
             value="rejected"
-            className="data-[state=active]:bg-red-50 data-[state=active]:text-red-700 data-[state=active]:border-red-200 dark:data-[state=active]:bg-red-950/50 dark:data-[state=active]:text-red-300 dark:data-[state=active]:border-red-800"
+            className="data-[state=active]:bg-red-50 data-[state=active]:text-red-700 data-[state=active]:border-red-200 dark:data-[state=active]:bg-red-900/70 dark:data-[state=active]:text-red-300 dark:data-[state=active]:border-red-800"
           >
             Rejected
           </TabsTrigger>

@@ -1,0 +1,37 @@
+# Supabase Configuration
+SUPABASE_URL=https://qnghxovloclorfjkjlgs.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFuZ2h4b3Zsb2Nsb3JmamtqbGdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3NzA4NzcsImV4cCI6MjA3ODM0Njg3N30.Ni5peHDvUdciuWzgr23nbaGKpRyhkSef08zSvxSHgUU
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFuZ2h4b3Zsb2Nsb3JmamtqbGdzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Mjc3MDg3NywiZXhwIjoyMDc4MzQ2ODc3fQ.v4eOEkDVgK33qyq4HisovMxt-We_GcsMOpcHtSe9Dfg
+SUPABASE_JWT_SECRET=ls4Hw8j/oQxtLnxcf2k4M9Trl98AYjylH5e/cVlPNJDdSUzingPqbN5uvXyBAClcBUg6l5i2nTm8Uq5/5VQ4ew==
+SUPABASE_PROJECT_REF=qnghxovloclorfjkjlgs
+
+# LLM Provider API Keys (add your keys)
+OPENROUTER_API_KEY=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
+OPENAI_API_KEY=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
+GOOGLE_API_KEY=AIzaSyAVnZZd8CjKEhflpG4ZFAW9xp6SSdy_MgI
+GROQ_API_KEY=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
+
+# Default LLM Configuration
+# Format: provider/model-name (provider prefix determines which API to use)
+# Examples:
+#   - openrouter/anthropic/claude-sonnet-4 (or just anthropic/claude-sonnet-4)
+#   - openrouter/anthropic/claude-opus-4.5
+#   - openai/gpt-4o
+#   - groq/llama-3.3-70b-versatile
+#   - gemini/gemini-2.0-flash-exp
+DEFAULT_LLM_PROVIDER=openrouter
+DEFAULT_LLM_MODEL=openai/gpt-oss-120b:nitro
+
+# Redis Configuration
+REDIS_URL=redis://localhost:6379
+
+# Server Configuration
+HOST=0.0.0.0
+PORT=8000
+
+# CORS Configuration (must be JSON array format)
+ALLOWED_ORIGINS=["http://localhost:3000","http://localhost:3001"]
+
+# Environment
+ENVIRONMENT=development
+DEBUG=true
