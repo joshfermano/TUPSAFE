@@ -240,11 +240,14 @@ export interface UserListItem {
   isActive: boolean;
   avatarPath?: string | null;
   avatarUrl?: string | null;
+  departmentId?: string | null;
   department?: {
     id: string;
     name: string;
     code: string;
+    parentCollegeId: string | null;
   } | null;
+  positionId?: string | null;
   position?: {
     id: string;
     title: string;

@@ -171,9 +171,12 @@ function serializeDates<T>(data: T): T {
     return data;
   }
 
-  // Handle Date objects
+  // Handle Date objects - serialize as YYYY-MM-DD to avoid timezone issues
   if (data instanceof Date) {
-    return data.toISOString() as T;
+    const year = data.getFullYear();
+    const month = String(data.getMonth() + 1).padStart(2, '0');
+    const day = String(data.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}` as T;
   }
 
   // Handle arrays
@@ -216,9 +219,19 @@ function deserializeDates<T>(data: T): T {
   if (typeof data === 'object') {
     const deserialized: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(data)) {
-      // Check if the value is an ISO date string
+      // Check if the value is a date string
       if (typeof value === 'string' && isISODateString(value)) {
-        deserialized[key] = new Date(value);
+        // Check for date-only format (YYYY-MM-DD) - parse as local timezone
+        const dateOnlyMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (dateOnlyMatch) {
+          const year = parseInt(dateOnlyMatch[1], 10);
+          const month = parseInt(dateOnlyMatch[2], 10) - 1; // JS months are 0-indexed
+          const day = parseInt(dateOnlyMatch[3], 10);
+          deserialized[key] = new Date(year, month, day);
+        } else {
+          // Full ISO datetime - parse normally
+          deserialized[key] = new Date(value);
+        }
       } else {
         deserialized[key] = deserializeDates(value);
       }

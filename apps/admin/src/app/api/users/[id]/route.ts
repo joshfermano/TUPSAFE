@@ -103,6 +103,7 @@ export async function GET(
         departmentId: profiles.departmentId,
         departmentName: departments.name,
         departmentCode: departments.code,
+        departmentParentCollegeId: departments.parentCollegeId,
         // Position details
         positionId: profiles.positionId,
         positionTitleFromPosition: positions.title,
@@ -221,13 +222,16 @@ export async function GET(
       campusAssignment: userProfile.campusAssignment,
       salaryGrade: userProfile.salaryGrade,
       positionTitle: userProfile.positionTitle,
+      departmentId: userProfile.departmentId,
       department: userProfile.departmentId
         ? {
             id: userProfile.departmentId,
             name: userProfile.departmentName || '',
             code: userProfile.departmentCode || '',
+            parentCollegeId: userProfile.departmentParentCollegeId,
           }
         : null,
+      positionId: userProfile.positionId,
       position: userProfile.positionId
         ? {
             id: userProfile.positionId,
