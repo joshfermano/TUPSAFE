@@ -236,7 +236,7 @@
 
   /* Financial summary card gradients (SALN specific) */
   .gradient-emerald-card {
-    background: linear-gradient(to bottom right, rgb(236 253 245), rgb(209 250 229));
+    background: linear-gradient(to bottom right, rgb(68, 145, 109), rgb(68, 145, 109));
   }
 
   .dark .gradient-emerald-card {
@@ -244,7 +244,7 @@
   }
 
   .gradient-amber-card {
-    background: linear-gradient(to bottom right, rgb(254 252 232), rgb(254 243 199));
+    background: linear-gradient(to bottom right, rgb(194, 143, 73), rgb(194, 135, 53));
   }
 
   .dark .gradient-amber-card {
@@ -252,7 +252,7 @@
   }
 
   .gradient-blue-card {
-    background: linear-gradient(to bottom right, rgb(239 246 255), rgb(219 234 254));
+    background: linear-gradient(to bottom right, rgb(84, 131, 219), rgb(84, 150, 224));
   }
 
   .dark .gradient-blue-card {

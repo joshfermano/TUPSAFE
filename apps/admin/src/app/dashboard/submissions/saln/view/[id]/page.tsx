@@ -533,10 +533,10 @@ export default function SalnSubmissionViewPage() {
           <div className="grid gap-4 md:grid-cols-3">
             <Card className="gradient-emerald-card border-emerald-200 dark:border-emerald-800">
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                <CardTitle className="text-sm font-medium text-emerald-800 dark:text-emerald-200">
+                <CardTitle className="text-sm font-medium text-emerald-800 dark:text-emerald-300">
                   Total Assets
                 </CardTitle>
-                <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
@@ -550,10 +550,10 @@ export default function SalnSubmissionViewPage() {
 
             <Card className="gradient-amber-card border-amber-200 dark:border-amber-800">
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                <CardTitle className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                <CardTitle className="text-sm font-medium text-amber-800 dark:text-amber-300">
                   Total Liabilities
                 </CardTitle>
-                <TrendingDown className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <TrendingDown className="h-4 w-4 text-amber-600 dark:text-amber-300" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">
@@ -570,13 +570,13 @@ export default function SalnSubmissionViewPage() {
                 <CardTitle className="text-sm font-medium text-blue-800 dark:text-blue-200">
                   Net Worth
                 </CardTitle>
-                <Wallet className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <Wallet className="h-4 w-4 text-blue-600 dark:text-blue-200" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
                   {formatCurrency(netWorth)}
                 </div>
-                <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                <p className="text-xs text-blue-700 dark:text-blue-200 mt-1">
                   Assets - Liabilities
                 </p>
               </CardContent>
@@ -669,7 +669,7 @@ export default function SalnSubmissionViewPage() {
                                     property.currentFairMarketValue
                                   )}
                                 </TableCell>
-                                <TableCell className="text-right font-semibold text-emerald-700 dark:text-emerald-400">
+                                <TableCell className="text-right font-semibold text-emerald-700 dark:text-emerald-500">
                                   {formatCurrency(property.acquisitionCost)}
                                 </TableCell>
                                 <TableCell>{property.acquisitionYear}</TableCell>
@@ -687,7 +687,7 @@ export default function SalnSubmissionViewPage() {
                               className="text-right font-semibold">
                               Total Real Properties:
                             </TableCell>
-                            <TableCell className="text-right font-bold text-emerald-700 dark:text-emerald-400">
+                            <TableCell className="text-right font-bold text-emerald-700 dark:text-emerald-500">
                               {formatCurrency(totalRealProperties)}
                             </TableCell>
                             <TableCell colSpan={2} />
@@ -750,7 +750,7 @@ export default function SalnSubmissionViewPage() {
                                   {property.description}
                                 </TableCell>
                                 <TableCell>{property.yearAcquired}</TableCell>
-                                <TableCell className="text-right font-semibold text-emerald-700 dark:text-emerald-400">
+                                <TableCell className="text-right font-semibold text-emerald-700 dark:text-emerald-500">
                                   {formatCurrency(property.acquisitionCost)}
                                 </TableCell>
                               </TableRow>
@@ -763,7 +763,7 @@ export default function SalnSubmissionViewPage() {
                               Total Personal Properties:
                             </TableCell>
                             <TableCell />
-                            <TableCell className="text-right font-bold text-emerald-700 dark:text-emerald-400">
+                            <TableCell className="text-right font-bold text-emerald-700 dark:text-emerald-500">
                               {formatCurrency(totalPersonalProperties)}
                             </TableCell>
                           </TableRow>
@@ -784,11 +784,11 @@ export default function SalnSubmissionViewPage() {
               {/* Assets Summary Section */}
               <AccordionItem
                 value="assets-summary"
-                className="border rounded-lg bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950">
+                className="border rounded-lg bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900 dark:to-teal-900">
                 <AccordionTrigger className="px-6 py-4 hover:no-underline">
                   <div className="flex items-center gap-3">
-                    <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                    <span className="text-lg font-semibold text-emerald-800 dark:text-emerald-200">
+                    <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-500" />
+                    <span className="text-lg font-semibold text-emerald-800 dark:text-emerald-400">
                       Total Assets Summary
                     </span>
                   </div>
@@ -796,27 +796,27 @@ export default function SalnSubmissionViewPage() {
                 <AccordionContent className="px-6 pb-6">
                   <div className="space-y-4">
                     <div className="flex justify-between items-center p-3 bg-white/50 dark:bg-black/20 rounded-lg">
-                      <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                      <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
                         Real Properties
                       </span>
-                      <span className="text-base font-semibold text-emerald-900 dark:text-emerald-100">
+                      <span className="text-base font-semibold text-emerald-900 dark:text-emerald-400">
                         {formatCurrency(totalRealProperties)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center p-3 bg-white/50 dark:bg-black/20 rounded-lg">
-                      <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                      <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
                         Personal Properties
                       </span>
-                      <span className="text-base font-semibold text-emerald-900 dark:text-emerald-100">
+                      <span className="text-base font-semibold text-emerald-900 dark:text-emerald-400">
                         {formatCurrency(totalPersonalProperties)}
                       </span>
                     </div>
                     <Separator className="bg-emerald-300 dark:bg-emerald-700" />
                     <div className="flex justify-between items-center p-4 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg">
-                      <span className="text-base font-bold text-emerald-800 dark:text-emerald-200">
+                      <span className="text-base font-bold text-emerald-800 dark:text-emerald-400">
                         Total Assets
                       </span>
-                      <span className="text-xl font-bold text-emerald-900 dark:text-emerald-100">
+                      <span className="text-xl font-bold text-emerald-900 dark:text-emerald-400">
                         {formatCurrency(totalAssets)}
                       </span>
                     </div>
@@ -912,18 +912,18 @@ export default function SalnSubmissionViewPage() {
                 <AccordionContent className="px-6 pb-6">
                   <div className="space-y-4">
                     <div className="flex justify-between items-center p-3 bg-white/50 dark:bg-black/20 rounded-lg">
-                      <span className="text-base font-medium text-blue-700 dark:text-blue-300">
+                      <span className="text-base font-medium text-blue-700 dark:text-blue-200">
                         Total Assets
                       </span>
-                      <span className="text-lg font-semibold text-blue-900 dark:text-blue-100">
+                      <span className="text-lg font-semibold text-blue-900 dark:text-blue-200">
                         {formatCurrency(totalAssets)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center p-3 bg-white/50 dark:bg-black/20 rounded-lg">
-                      <span className="text-base font-medium text-blue-700 dark:text-blue-300">
+                      <span className="text-base font-medium text-blue-700 dark:text-blue-200">
                         Less: Total Liabilities
                       </span>
-                      <span className="text-lg font-semibold text-blue-900 dark:text-blue-100">
+                      <span className="text-lg font-semibold text-blue-900 dark:text-blue-200">
                         ({formatCurrency(totalLiabilities)})
                       </span>
                     </div>
@@ -932,7 +932,7 @@ export default function SalnSubmissionViewPage() {
                       <span className="text-xl font-bold text-blue-800 dark:text-blue-200">
                         Net Worth
                       </span>
-                      <span className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                      <span className="text-2xl font-bold text-blue-900 dark:text-blue-200">
                         {formatCurrency(netWorth)}
                       </span>
                     </div>
@@ -1253,7 +1253,7 @@ export default function SalnSubmissionViewPage() {
                   {canReview && (
                     <Button
                       onClick={() => setIsReviewDialogOpen(true)}
-                      className="w-full bg-emerald-600 hover:bg-emerald-700 gap-2">
+                      className="w-full bg-emerald-500 hover:bg-emerald-700 gap-2">
                       <CheckCircle2 className="h-4 w-4" />
                       Review Submission
                     </Button>
