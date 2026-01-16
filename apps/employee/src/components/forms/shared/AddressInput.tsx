@@ -50,6 +50,8 @@ export interface AddressInputProps {
   showRegion?: boolean;
   /** Name of another address field to copy from (e.g., "permanentAddress") */
   sameAsField?: string;
+  /** Initial state for "Same as" checkbox */
+  initialSameAs?: boolean;
   /** Callback when "Same as" checkbox changes */
   onSameAsChange?: (checked: boolean) => void;
   /** Additional CSS classes */
@@ -74,6 +76,7 @@ export const AddressInput = memo(function AddressInput({
   disabled = false,
   showRegion = false,
   sameAsField,
+  initialSameAs,
   onSameAsChange,
   className,
 }: AddressInputProps) {
@@ -85,7 +88,14 @@ export const AddressInput = memo(function AddressInput({
   } = useFormContext();
 
   // Watch the "Same as" checkbox if sameAsField is provided
-  const [sameAs, setSameAs] = useState(false);
+  const [sameAs, setSameAs] = useState(initialSameAs ?? false);
+
+  // Sync sameAs state when initialSameAs prop changes (for form reset scenarios)
+  useEffect(() => {
+    if (initialSameAs !== undefined) {
+      setSameAs(initialSameAs);
+    }
+  }, [initialSameAs]);
 
   // Use useWatch for individual field subscriptions (more performant than watch([]))
   const selectedRegion = useWatch({
@@ -101,6 +111,32 @@ export const AddressInput = memo(function AddressInput({
     control,
     name: `${name}.${FIELD_NAMES.cityMunicipality}`,
   });
+
+  // Watch source address for reactive sync when "Same as" is checked
+  const sourceAddressForSync = useWatch({
+    control,
+    name: sameAsField || '',
+    disabled: !sameAs || !sameAsField,
+  });
+
+  // Reactive sync: when source address changes and sameAs is true, sync to this address
+  useEffect(() => {
+    if (!sameAs || !sameAsField || !sourceAddressForSync) return;
+
+    if (typeof sourceAddressForSync === 'object') {
+      requestAnimationFrame(() => {
+        Object.entries(FIELD_NAMES).forEach(([_, fieldName]) => {
+          const value = (sourceAddressForSync as Record<string, unknown>)[fieldName];
+          if (value !== undefined) {
+            setValue(`${name}.${fieldName}`, value, {
+              shouldValidate: false,
+              shouldDirty: true,
+            });
+          }
+        });
+      });
+    }
+  }, [sameAs, sameAsField, sourceAddressForSync, name, setValue]);
 
   // Memoized filtered data
   const provinces = useMemo(() => {

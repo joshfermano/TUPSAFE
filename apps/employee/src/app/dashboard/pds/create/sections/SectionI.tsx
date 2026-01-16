@@ -11,7 +11,7 @@
  * - No sparkles, no shine borders - clean government form aesthetic
  */
 
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import {
   User,
@@ -57,6 +57,20 @@ export const SectionI = memo(function SectionI() {
     control: form.control,
     name: 'personalInfo.citizenship.type',
   });
+
+  const permanentAddressSameAs = useWatch({
+    control: form.control,
+    name: 'personalInfo.permanentAddressSameAsResidential',
+  });
+
+  const handlePermanentAddressSameAsChange = useCallback(
+    (checked: boolean) => {
+      form.setValue('personalInfo.permanentAddressSameAsResidential', checked, {
+        shouldDirty: true,
+      });
+    },
+    [form]
+  );
 
   return (
     <div className="space-y-8">
@@ -649,6 +663,8 @@ export const SectionI = memo(function SectionI() {
               label="Permanent Address *"
               required={true}
               sameAsField="personalInfo.residentialAddress"
+              initialSameAs={permanentAddressSameAs}
+              onSameAsChange={handlePermanentAddressSameAsChange}
             />
           </div>
         </div>

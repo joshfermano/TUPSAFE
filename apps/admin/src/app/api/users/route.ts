@@ -139,6 +139,7 @@ export async function GET(request: NextRequest) {
         departmentId: profiles.departmentId,
         departmentName: departments.name,
         departmentCode: departments.code,
+        departmentParentCollegeId: departments.parentCollegeId,
         positionId: profiles.positionId,
         positionTitle: positions.title,
         avatarPath: profiles.avatarPath,
@@ -202,13 +203,16 @@ export async function GET(request: NextRequest) {
       employmentCategory: user.employmentCategory,
       accountStatus: user.accountStatus,
       isActive: user.isActive,
+      departmentId: user.departmentId,
       department: user.departmentId
         ? {
             id: user.departmentId,
             name: user.departmentName || '',
             code: user.departmentCode || '',
+            parentCollegeId: user.departmentParentCollegeId,
           }
         : null,
+      positionId: user.positionId,
       position: user.positionId
         ? {
             id: user.positionId,
