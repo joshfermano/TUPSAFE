@@ -76,6 +76,12 @@ import {
 } from '@/components/ui/breadcrumb';
 import { ErrorAlert, LoadingCard } from '@/components/admin';
 import { Badge } from '@/components/ui/badge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 // Check if a code indicates an HR office (works for both departments and colleges/offices)
 function isHRCode(code: string | undefined | null): boolean {
@@ -184,7 +190,7 @@ export default function EditUserPage() {
   const { data: organizationsData, isLoading: isOrganizationsLoading } =
     useOrganizations({
       type: 'all',
-      includeInactive: false,
+      includeInactive: true,
     });
   const { data: positions = [], isLoading: isPositionsLoading } =
     usePositionsQuery();
@@ -193,6 +199,8 @@ export default function EditUserPage() {
   // State for dialogs
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  // State to track form initialization
+  const [formInitialized, setFormInitialized] = useState(false);
 
   const form = useForm<EditUserFormValues>({
     resolver: zodResolver(editUserSchema),
@@ -214,7 +222,7 @@ export default function EditUserPage() {
     },
   });
 
-  const { watch, formState, reset } = form;
+  const { watch, formState } = form;
   const { dirtyFields, isDirty } = formState;
   const watchBaseRole = watch('baseRole');
   const watchIsCoAdmin = watch('isCoAdmin');
@@ -234,51 +242,125 @@ export default function EditUserPage() {
       ...organizationsData.offices,
     ];
 
+    // Check if user has a current college that might not be in the active list
+    let userCollege = null;
+    if (user?.departmentId && user.department?.parentCollegeId) {
+      const currentCollegeId = user.department.parentCollegeId;
+      userCollege = colleges.find((c) => c.id === currentCollegeId);
+    }
+
+    const collegeList = colleges.map((college) => ({
+      value: college.id,
+      label: `${college.name} (${college.code})${!college.isActive ? ' [Inactive]' : ''}`,
+    }));
+
+    // CRITICAL: Include user's current college if not already in list
+    // This ensures the current value can always be found in the options
+    if (userCollege && !collegeList.some((c) => c.value === userCollege!.id)) {
+      console.log('[collegeOptions] Adding user current college:', {
+        id: userCollege.id,
+        name: userCollege.name,
+        code: userCollege.code,
+      });
+      collegeList.unshift({
+        value: userCollege.id,
+        label: `${userCollege.name} (${userCollege.code}) [Current]`,
+      });
+    }
+
     return [
       { value: 'none', label: 'None' },
-      ...colleges.map((college) => ({
-        value: college.id,
-        label: `${college.name} (${college.code})`,
-      })),
+      ...collegeList,
     ];
-  }, [organizationsData]);
+  }, [organizationsData, user]);
 
-  const positionOptions = useMemo(
-    () => [
+  const positionOptions = useMemo(() => {
+    const positionList = positions.map((pos) => ({
+      value: pos.id,
+      label: pos.title,
+    }));
+
+    // CRITICAL: Include user's current position if not already in list
+    // This ensures the current value can always be found in the options
+    if (user?.positionId && user.position) {
+      const posExists = positionList.some(p => p.value === user.positionId);
+      if (!posExists) {
+        console.log('[positionOptions] Adding user current position:', {
+          id: user.position.id,
+          title: user.position.title,
+        });
+        positionList.unshift({
+          value: user.position.id,
+          label: `${user.position.title} [Current]`,
+        });
+      }
+    }
+
+    return [
       { value: 'none', label: 'None' },
-      ...positions.map((pos) => ({
-        value: pos.id,
-        label: pos.title,
-      })),
-    ],
-    [positions]
-  );
+      ...positionList,
+    ];
+  }, [positions, user]);
 
-  // Pre-populate form when user data and email are loaded
+  // Pre-populate form when user data is loaded (Effect 1: Main form data)
+  // CRITICAL: This effect includes computed options (collegeOptions, positionOptions) in dependencies
+  // to ensure form values can be matched to select options after they're computed.
+  // filteredDepartmentOptions is NOT included because it depends on form state (watchCollegeId, watchIsCoAdmin)
+  // which would create a circular dependency.
   useEffect(() => {
-    if (user && emailData && organizationsData) {
+    // Only proceed if we have all required data and options are computed
+    if (user && organizationsData && collegeOptions.length > 1 && positionOptions.length > 1) {
+      console.log('[Form Population] Starting form population with user data:', {
+        userId: user.id,
+        departmentId: user.departmentId,
+        department: user.department,
+        positionId: user.positionId,
+        position: user.position,
+        role: user.role,
+        salaryGrade: user.salaryGrade,
+        positionTitle: user.positionTitle,
+      });
+
       // Determine college ID from department
       let collegeId = 'none';
-      let userDepartment = null;
-      let userCollege = null;
+      let userDepartment: { id: string; name: string; code: string; parentCollegeId?: string | null } | null = null;
+      let userCollege: { id: string; name: string; code: string } | null = null;
 
       if (user.departmentId) {
         // Find the department in the organizations data
-        userDepartment = organizationsData.departments.find(
+        const foundDept = organizationsData.departments.find(
           (dept) => dept.id === user.departmentId
         );
+
+        // Use found department or fall back to embedded department from user API response
+        if (foundDept) {
+          userDepartment = foundDept;
+          console.log('[Form Population] Found department in organizations data:', foundDept);
+        } else if (user.department) {
+          // Use embedded department data from API as fallback
+          userDepartment = {
+            id: user.department.id,
+            name: user.department.name,
+            code: user.department.code,
+            parentCollegeId: user.department.parentCollegeId,
+          };
+          console.log('[Form Population] Using embedded department from API:', userDepartment);
+        }
+
         if (userDepartment && userDepartment.parentCollegeId) {
           collegeId = userDepartment.parentCollegeId;
           // Find the college/office
           userCollege =
             organizationsData.colleges.find((c) => c.id === collegeId) ||
-            organizationsData.offices.find((o) => o.id === collegeId);
+            organizationsData.offices.find((o) => o.id === collegeId) ||
+            null;
+          console.log('[Form Population] Found college:', userCollege);
         }
       }
 
       // Determine base role and co-admin status from stored role
       // If role is 'admin' or 'co_admin', they have co-admin access
-      const isCoAdmin = user.role === 'admin' || user.role === 'co_admin';
+      const isCoAdminUser = user.role === 'admin' || user.role === 'co_admin';
 
       // Map role to base role - for admin/co_admin, check if they're in HR to set 'hr' as base
       let baseRole: 'employee' | 'hr' | 'supervisor' | 'auditor';
@@ -294,24 +376,61 @@ export default function EditUserPage() {
         baseRole = user.role as 'employee' | 'hr' | 'supervisor' | 'auditor';
       }
 
-      reset({
+      const formData = {
         firstName: user.firstName,
         lastName: user.lastName,
         middleName: user.middleName || '',
         suffix: 'none', // Not stored in database, default to none
         employeeId: user.employeeId ?? '',
-        email: emailData.email || '',
+        email: '', // Will be updated by separate effect
         baseRole: baseRole,
-        isCoAdmin: isCoAdmin,
+        isCoAdmin: isCoAdminUser,
         collegeId: collegeId,
         departmentId: user.departmentId || 'none',
         positionId: user.positionId || 'none',
         salaryGrade: user.salaryGrade || undefined,
         positionTitle: user.positionTitle || '',
         isActive: user.isActive,
+      };
+
+      console.log('[Form Population] Resetting form with data:', formData);
+      console.log('[Form Population] Available college options:', collegeOptions.map(c => ({ value: c.value, label: c.label })));
+      console.log('[Form Population] Available position options:', positionOptions.map(p => ({ value: p.value, label: p.label })));
+
+      // Check if form values exist in options (only check collegeOptions and positionOptions here)
+      const collegeExists = collegeOptions.some(opt => opt.value === formData.collegeId);
+      const posExists = positionOptions.some(opt => opt.value === formData.positionId);
+
+      console.log('[Form Population] Value existence check:', {
+        collegeId: formData.collegeId,
+        collegeExists,
+        positionId: formData.positionId,
+        posExists,
+      });
+
+      // Defer the form reset to the next render cycle to ensure all computed options are available
+      // This solves the race condition where Select components try to match values before options are ready
+      requestAnimationFrame(() => {
+        form.reset(formData, {
+          keepDefaultValues: false,
+        });
+
+        // Mark form as initialized after first successful reset
+        if (!formInitialized) {
+          setFormInitialized(true);
+        }
+
+        console.log('[Form Population] Form reset complete. Current values:', form.getValues());
       });
     }
-  }, [user, emailData, organizationsData, reset]);
+  }, [user, organizationsData, collegeOptions, positionOptions, form, formInitialized]);
+
+  // Update email field separately when email data loads (Effect 2: Email update)
+  useEffect(() => {
+    if (emailData?.email) {
+      form.setValue('email', emailData.email, { shouldDirty: false });
+    }
+  }, [emailData, form]);
 
   const roleRequiresDepartment = useMemo(() => {
     return (
@@ -355,6 +474,11 @@ export default function EditUserPage() {
     return selectedCollegeIsHR || selectedDepartmentIsHR;
   }, [selectedCollegeIsHR, selectedDepartmentIsHR]);
 
+  // Check if user can be a Co-Admin (must be in HR department)
+  const canBeCoAdmin = useMemo(() => {
+    return isInHROffice;
+  }, [isInHROffice]);
+
   // Filter departments based on college and co-admin status
   const filteredDepartmentOptions = useMemo(() => {
     if (!organizationsData) return [{ value: 'none', label: 'None' }];
@@ -379,14 +503,49 @@ export default function EditUserPage() {
     // If co-admin is enabled AND the college IS an HR office,
     // show all departments under that HR office (no filtering needed)
 
+    const departmentList = filteredDepartments.map((dept) => ({
+      value: dept.id,
+      label: `${dept.name} (${dept.code})${!dept.isActive ? ' [Inactive]' : ''}`,
+    }));
+
+    // CRITICAL: Include user's current department if not already in list
+    // This ensures the current value can always be found in the options
+    if (user?.departmentId) {
+      const userDept = allDepartments.find((d) => d.id === user.departmentId);
+
+      // If user's department exists but isn't in the filtered list, add it
+      if (userDept && !departmentList.some((d) => d.value === userDept.id)) {
+        console.log('[filteredDepartmentOptions] Adding user current department:', {
+          id: userDept.id,
+          name: userDept.name,
+          code: userDept.code,
+          isActive: userDept.isActive,
+        });
+        departmentList.unshift({
+          value: userDept.id,
+          label: `${userDept.name} (${userDept.code})${!userDept.isActive ? ' [Inactive - Current]' : ' [Current]'}`,
+        });
+      }
+
+      // Also check if user's department is in the original API response
+      if (user.department && !allDepartments.some(d => d.id === user.departmentId)) {
+        console.log('[filteredDepartmentOptions] User department NOT in organizations data, using embedded department:', {
+          id: user.department.id,
+          name: user.department.name,
+          code: user.department.code,
+        });
+        departmentList.unshift({
+          value: user.department.id,
+          label: `${user.department.name} (${user.department.code}) [Current]`,
+        });
+      }
+    }
+
     return [
       { value: 'none', label: 'None' },
-      ...filteredDepartments.map((dept) => ({
-        value: dept.id,
-        label: `${dept.name} (${dept.code})`,
-      })),
+      ...departmentList,
     ];
-  }, [organizationsData, watchCollegeId, watchIsCoAdmin, selectedCollegeIsHR]);
+  }, [organizationsData, watchCollegeId, watchIsCoAdmin, selectedCollegeIsHR, user]);
 
   // Reset department when college changes or when co-admin is toggled
   useEffect(() => {
@@ -434,6 +593,50 @@ export default function EditUserPage() {
             // Reset department if it's not an HR department
             form.setValue('departmentId', 'none');
           }
+        }
+      }
+
+      // Auto-disable Co-Admin when department changes away from HR
+      if ((name === 'departmentId' || name === 'collegeId') && value.isCoAdmin) {
+        const currentCollegeId = value.collegeId;
+        const currentDeptId = value.departmentId;
+
+        // Check if college is HR
+        let collegeIsHR = false;
+        if (
+          currentCollegeId &&
+          currentCollegeId !== 'none' &&
+          organizationsData
+        ) {
+          const college =
+            organizationsData.colleges.find((c) => c.id === currentCollegeId) ||
+            organizationsData.offices.find((o) => o.id === currentCollegeId);
+          collegeIsHR = college
+            ? isHRCode(college.code) || isHRName(college.name)
+            : false;
+        }
+
+        // Check if department is HR
+        let deptIsHR = false;
+        if (
+          currentDeptId &&
+          currentDeptId !== 'none' &&
+          organizationsData
+        ) {
+          const department = organizationsData.departments.find(
+            (d) => d.id === currentDeptId
+          );
+          deptIsHR = department
+            ? isHRCode(department.code) || isHRName(department.name)
+            : false;
+        }
+
+        // If neither college nor department is HR, disable Co-Admin
+        if (!collegeIsHR && !deptIsHR) {
+          form.setValue('isCoAdmin', false);
+          toast.info('Co-Admin access disabled', {
+            description: 'Co-Admin requires assignment to an HR department.',
+          });
         }
       }
     });
@@ -792,97 +995,120 @@ export default function EditUserPage() {
                         <Shield className="h-4 w-4 text-primary" />
                         Admin Portal Access
                       </FormLabel>
-                      <div
-                        className={`
-                          rounded-lg border transition-all duration-200
-                          ${
-                            field.value
-                              ? 'border-primary/50 bg-primary/5 dark:bg-primary/10'
-                              : 'border-border bg-muted/20 hover:bg-muted/40'
-                          }
-                        `}>
-                        <div className="flex items-center gap-3 p-4">
-                          {/* Icon */}
-                          <div
-                            className={`
-                              flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors
-                              ${
-                                field.value
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'bg-muted text-muted-foreground'
-                              }
-                            `}>
-                            {field.value ? (
-                              <ShieldCheck className="h-5 w-5" />
-                            ) : (
-                              <ShieldOff className="h-5 w-5" />
-                            )}
-                          </div>
-
-                          {/* Text */}
-                          <div className="flex-1 min-w-0 space-y-0.5">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-semibold">
-                                Co-Admin
-                              </span>
-                              <Badge
-                                variant={field.value ? 'default' : 'secondary'}
-                                className={`text-[10px] px-1.5 py-0 ${
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div
+                              className={`
+                                rounded-lg border transition-all duration-200
+                                ${
                                   field.value
-                                    ? 'bg-primary'
-                                    : 'bg-muted-foreground/20 text-muted-foreground'
-                                }`}>
-                                {field.value ? 'Active' : 'Inactive'}
-                              </Badge>
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                              Full admin portal access
-                            </p>
-                          </div>
-
-                          {/* Switch - wrapped for visibility */}
-                          <div className="flex items-center">
-                            <FormControl>
-                              <button
-                                type="button"
-                                role="switch"
-                                aria-checked={field.value}
-                                onClick={() => field.onChange(!field.value)}
-                                className={`
-                                  relative inline-flex h-7 w-14 shrink-0 cursor-pointer items-center 
-                                  rounded-full border-2 transition-colors duration-200
-                                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2
-                                  ${
-                                    field.value
-                                      ? 'bg-primary border-primary'
-                                      : 'bg-zinc-200 border-zinc-300 dark:bg-zinc-700 dark:border-zinc-600'
-                                  }
-                                `}>
-                                <span
+                                    ? 'border-primary/50 bg-primary/5 dark:bg-primary/10'
+                                    : canBeCoAdmin
+                                    ? 'border-border bg-muted/20 hover:bg-muted/40'
+                                    : 'border-border bg-muted/20 opacity-60'
+                                }
+                              `}>
+                              <div className="flex items-center gap-3 p-4">
+                                {/* Icon */}
+                                <div
                                   className={`
-                                    pointer-events-none inline-block h-5 w-5 transform rounded-full 
-                                    bg-white shadow-lg ring-0 transition-transform duration-200
+                                    flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors
                                     ${
                                       field.value
-                                        ? 'translate-x-7'
-                                        : 'translate-x-1'
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-muted text-muted-foreground'
                                     }
-                                  `}
-                                />
-                              </button>
-                            </FormControl>
-                          </div>
-                        </div>
+                                  `}>
+                                  {field.value ? (
+                                    <ShieldCheck className="h-5 w-5" />
+                                  ) : (
+                                    <ShieldOff className="h-5 w-5" />
+                                  )}
+                                </div>
 
-                        {field.value && (
-                          <div className="border-t border-primary/20 bg-primary/5 px-4 py-2">
-                            <p className="text-xs text-primary dark:text-primary/90">
-                              <span className="font-medium">Note:</span>{' '}
-                              Requires HR department assignment
-                            </p>
-                          </div>
-                        )}
-                      </div>
+                                {/* Text */}
+                                <div className="flex-1 min-w-0 space-y-0.5">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-semibold">
+                                      Co-Admin
+                                    </span>
+                                    <Badge
+                                      variant={field.value ? 'default' : 'secondary'}
+                                      className={`text-[10px] px-1.5 py-0 ${
+                                        field.value
+                                          ? 'bg-primary'
+                                          : 'bg-muted-foreground/20 text-muted-foreground'
+                                      }`}>
+                                      {field.value ? 'Active' : 'Inactive'}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground">
+                                    Full admin portal access
+                                  </p>
+                                </div>
+
+                                {/* Switch - wrapped for visibility */}
+                                <div className="flex items-center">
+                                  <FormControl>
+                                    <button
+                                      type="button"
+                                      role="switch"
+                                      aria-checked={field.value}
+                                      disabled={!canBeCoAdmin && !field.value}
+                                      onClick={() => {
+                                        if (canBeCoAdmin || field.value) {
+                                          field.onChange(!field.value);
+                                        }
+                                      }}
+                                      className={`
+                                        relative inline-flex h-7 w-14 shrink-0 items-center
+                                        rounded-full border-2 transition-colors duration-200
+                                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2
+                                        ${
+                                          !canBeCoAdmin && !field.value
+                                            ? 'cursor-not-allowed opacity-50'
+                                            : 'cursor-pointer'
+                                        }
+                                        ${
+                                          field.value
+                                            ? 'bg-primary border-primary'
+                                            : 'bg-zinc-200 border-zinc-300 dark:bg-zinc-700 dark:border-zinc-600'
+                                        }
+                                      `}>
+                                      <span
+                                        className={`
+                                          pointer-events-none inline-block h-5 w-5 transform rounded-full
+                                          bg-white shadow-lg ring-0 transition-transform duration-200
+                                          ${
+                                            field.value
+                                              ? 'translate-x-7'
+                                              : 'translate-x-1'
+                                          }
+                                        `}
+                                      />
+                                    </button>
+                                  </FormControl>
+                                </div>
+                              </div>
+
+                              {field.value && (
+                                <div className="border-t border-primary/20 bg-primary/5 px-4 py-2">
+                                  <p className="text-xs text-primary dark:text-primary/90">
+                                    <span className="font-medium">Note:</span>{' '}
+                                    Requires HR department assignment
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </TooltipTrigger>
+                          {!canBeCoAdmin && !field.value && (
+                            <TooltipContent>
+                              <p>Co-Admin requires assignment to an HR department</p>
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
+                      </TooltipProvider>
                       <FormMessage />
                     </FormItem>
                   )}

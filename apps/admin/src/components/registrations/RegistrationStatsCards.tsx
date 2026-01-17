@@ -49,7 +49,7 @@ export function RegistrationStatsCards({ stats, isLoading }: RegistrationStatsCa
       description: isPendingUrgent ? 'Requires immediate attention' : 'Awaiting review',
       icon: FileText,
       iconColor: 'text-blue-600',
-      iconBgColor: 'bg-blue-100',
+      iconBgColor: 'bg-blue-200',
       urgent: isPendingUrgent,
     },
     {
@@ -58,7 +58,7 @@ export function RegistrationStatsCards({ stats, isLoading }: RegistrationStatsCa
       description: `${stats.approved.total} total approved`,
       icon: CheckCircle,
       iconColor: 'text-green-600',
-      iconBgColor: 'bg-green-100',
+      iconBgColor: 'bg-green-200',
       trend: stats.approved.thisWeek > 0 ? 'up' : undefined,
     },
     {
@@ -67,7 +67,7 @@ export function RegistrationStatsCards({ stats, isLoading }: RegistrationStatsCa
       description: `${stats.rejected.total} total rejected`,
       icon: XCircle,
       iconColor: 'text-red-600',
-      iconBgColor: 'bg-red-100',
+      iconBgColor: 'bg-red-200',
     },
     {
       title: 'Avg Approval Time',
@@ -75,7 +75,7 @@ export function RegistrationStatsCards({ stats, isLoading }: RegistrationStatsCa
       description: `${stats.averageApprovalTimeHours.toFixed(1)} hours average`,
       icon: Clock,
       iconColor: 'text-purple-600',
-      iconBgColor: 'bg-purple-100',
+      iconBgColor: 'bg-purple-200',
     },
   ];
 

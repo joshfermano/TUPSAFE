@@ -191,7 +191,7 @@ export default function UsersPage() {
         <div className="flex items-center gap-3 rounded-lg border bg-card p-3">
           <div className="rounded-md bg-blue-100 p-2 dark:bg-blue-600/30">
             <Users
-              className="h-4 w-4 text-blue-600 dark:text-blue-400"
+              className="h-4 w-4 text-blue-600 dark:text-blue-500"
               strokeWidth={3}
             />
           </div>
@@ -203,7 +203,7 @@ export default function UsersPage() {
         <div className="flex items-center gap-3 rounded-lg border bg-card p-3">
           <div className="rounded-md bg-green-100 p-2 dark:bg-green-600/30">
             <UserCheck
-              className="h-4 w-4 text-green-600 dark:text-green-400"
+              className="h-4 w-4 text-green-600 dark:text-green-500"
               strokeWidth={3}
             />
           </div>
@@ -215,7 +215,7 @@ export default function UsersPage() {
         <div className="flex items-center gap-3 rounded-lg border bg-card p-3">
           <div className="rounded-md bg-yellow-100 p-2 dark:bg-yellow-600/30">
             <Clock
-              className="h-4 w-4 text-yellow-600 dark:text-yellow-400"
+              className="h-4 w-4 text-yellow-600 dark:text-yellow-500"
               strokeWidth={3}
             />
           </div>
@@ -227,7 +227,7 @@ export default function UsersPage() {
         <div className="flex items-center gap-3 rounded-lg border bg-card p-3">
           <div className="rounded-md bg-red-100 p-2 dark:bg-red-600/30">
             <UserX
-              className="h-4 w-4 text-red-600 dark:text-red-400"
+              className="h-4 w-4 text-red-600 dark:text-red-500"
               strokeWidth={3}
             />
           </div>

@@ -417,7 +417,7 @@ export default function PdsSubmissionViewPage() {
         return (
           <Badge
             variant="outline"
-            className="gap-1 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400 dark:border-emerald-800">
+            className="gap-1 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-800 dark:text-emerald-300 dark:border-emerald-800">
             <Check className="h-3 w-3" />
             Complete
           </Badge>
@@ -426,7 +426,7 @@ export default function PdsSubmissionViewPage() {
         return (
           <Badge
             variant="outline"
-            className="gap-1 bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-800">
+            className="gap-1 bg-red-50 text-red-700 border-red-200 dark:bg-red-800 dark:text-red-300 dark:border-red-800">
             <AlertCircle className="h-3 w-3" />
             Incomplete
           </Badge>

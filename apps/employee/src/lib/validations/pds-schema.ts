@@ -273,6 +273,7 @@ export const personalInfoSchema = personalInfoBasicSchema
     z.object({
       residentialAddress: residentialAddressSchema,
       permanentAddress: permanentAddressSchema,
+      permanentAddressSameAsResidential: z.boolean().default(false),
     })
   )
   .merge(contactInfoSchema)
@@ -1507,6 +1508,7 @@ export function createEmptyPds(): Partial<CompletePdsData> {
         zipCode: '',
         region: '',
       },
+      permanentAddressSameAsResidential: false,
       telephoneNo: null,
       mobileNo: null,
       emailAddress: null,

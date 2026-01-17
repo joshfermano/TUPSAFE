@@ -69,11 +69,18 @@ packages/*/dist/**/*.map
 
 # Environment Variables
 .env
-.env.production
-.env.development
-.env.test
-.env.local
-# NOTE: .env.example should be committed, so not included here
+.env.*
+!.env.example
+env
+**/env
+**/.env
+**/.env.*
+!**/.env.example
+# Specific service env files
+services/*/env
+services/*/.env
+services/*/.env.*
+!services/*/.env.example
 
 # Vercel
 .vercel/
