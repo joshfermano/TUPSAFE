@@ -10,23 +10,28 @@ import {
 import { eq, and, gte, lte, sql } from 'drizzle-orm';
 import { exportQuerySchema } from '@tupsafe/types';
 import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
+import { generateExcelReport } from '@/lib/excel/report-excel';
+import { pdf } from '@react-pdf/renderer';
+import { ReportDocument, ensureReportFontsRegistered } from '@tupsafe/shared-ui';
+import React from 'react';
 
 /**
  * GET /api/dashboard/export
  *
- * Export dashboard data to CSV or JSON
+ * Export dashboard data to CSV, JSON, Excel (XLSX), or PDF
  *
  * Query Parameters:
  * - reportType: 'users' | 'registrations' | 'submissions' | 'compliance'
  * - startDate: Start date for data range
  * - endDate: End date for data range
- * - format: 'csv' | 'json' (default: 'csv')
+ * - format: 'csv' | 'json' | 'xlsx' | 'pdf' (default: 'csv')
  * - departmentId: Optional filter by department
  *
  * Features:
- * - Generate CSV reports
+ * - Generate CSV, JSON, Excel, and PDF reports
  * - Support multiple report types
  * - Include filters and date ranges
+ * - Professional formatting with TUP branding (Excel/PDF)
  * - Secure download links
  *
  * Rate Limiting: Apply strict rate limits on this endpoint
@@ -92,7 +97,109 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Convert to CSV
+    // Handle CSV format
+    if (format === 'csv') {
+      const csv = convertToCSV(data, headers);
+
+      return new NextResponse(csv, {
+        headers: {
+          'Content-Type': 'text/csv',
+          'Content-Disposition': `attachment; filename="${reportType}-${Date.now()}.csv"`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
+      });
+    }
+
+    // Handle Excel (XLSX) format
+    if (format === 'xlsx') {
+      // Fetch department name if departmentId is provided
+      let departmentName: string | undefined;
+      if (departmentId) {
+        const dept = await db
+          .select({ name: departments.name })
+          .from(departments)
+          .where(eq(departments.id, departmentId))
+          .limit(1);
+        departmentName = dept[0]?.name;
+      }
+
+      // Generate Excel report
+      const buffer = await generateExcelReport(
+        reportType,
+        headers,
+        data,
+        {
+          startDate,
+          endDate,
+          departmentName,
+        }
+      );
+
+      return new NextResponse(Buffer.from(buffer), {
+        headers: {
+          'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'Content-Disposition': `attachment; filename="${reportType}-${Date.now()}.xlsx"`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
+      });
+    }
+
+    // Handle PDF format
+    if (format === 'pdf') {
+      // Ensure fonts are registered
+      ensureReportFontsRegistered();
+
+      // Fetch department name if departmentId is provided
+      let departmentName: string | undefined;
+      if (departmentId) {
+        const dept = await db
+          .select({ name: departments.name })
+          .from(departments)
+          .where(eq(departments.id, departmentId))
+          .limit(1);
+        departmentName = dept[0]?.name;
+      }
+
+      // Get report title based on type
+      const reportTitles: Record<typeof reportType, string> = {
+        users: 'USERS REPORT',
+        registrations: 'REGISTRATIONS REPORT',
+        submissions: 'SUBMISSIONS REPORT',
+        compliance: 'COMPLIANCE REPORT',
+      };
+
+      // Create PDF document with proper structure
+      const pdfDocument = React.createElement(ReportDocument, {
+        data: {
+          reportType,
+          headers,
+          data,
+          metadata: {
+            startDate,
+            endDate,
+            departmentName,
+            generatedAt: new Date(),
+            reportTitle: reportTitles[reportType],
+          },
+        },
+      });
+
+      // Generate PDF and convert to buffer
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const blob = await pdf(pdfDocument as any).toBlob();
+      const arrayBuffer = await blob.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      return new NextResponse(buffer, {
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="${reportType}-${Date.now()}.pdf"`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
+      });
+    }
+
+    // Fallback to CSV if format is somehow invalid (shouldn't happen due to validation)
     const csv = convertToCSV(data, headers);
 
     return new NextResponse(csv, {
@@ -355,32 +462,56 @@ async function exportComplianceReport(
     conditions.push(eq(profiles.departmentId, departmentId));
   }
 
+  // Subquery to get latest PDS submission per employee
+  const latestPdsSubquery = db
+    .select({
+      userId: pdsSubmissions.userId,
+      status: pdsSubmissions.status,
+      submittedAt: pdsSubmissions.submittedAt,
+      version: pdsSubmissions.version,
+      rowNum: sql<number>`ROW_NUMBER() OVER (PARTITION BY ${pdsSubmissions.userId} ORDER BY ${pdsSubmissions.version} DESC)`.as('row_num'),
+    })
+    .from(pdsSubmissions)
+    .as('latest_pds');
+
+  // Subquery to get latest SALN submission per employee for current year
+  const latestSalnSubquery = db
+    .select({
+      userId: salnSubmissions.userId,
+      status: salnSubmissions.status,
+      submittedAt: salnSubmissions.submittedAt,
+      year: salnSubmissions.year,
+      rowNum: sql<number>`ROW_NUMBER() OVER (PARTITION BY ${salnSubmissions.userId} ORDER BY ${salnSubmissions.createdAt} DESC)`.as('row_num'),
+    })
+    .from(salnSubmissions)
+    .where(eq(salnSubmissions.year, currentYear))
+    .as('latest_saln');
+
   const complianceData = await db
     .select({
       employeeId: profiles.employeeId,
       employeeName: sql<string>`CONCAT(${profiles.firstName}, ' ', ${profiles.lastName})`,
       department: departments.name,
-      pdsStatus: sql<string>`COALESCE(${pdsSubmissions.status}, 'not_submitted')`,
-      pdsSubmittedAt: pdsSubmissions.submittedAt,
-      salnStatus: sql<string>`COALESCE(${salnSubmissions.status}, 'not_submitted')`,
-      salnYear: salnSubmissions.year,
-      salnSubmittedAt: salnSubmissions.submittedAt,
+      pdsStatus: sql<string>`COALESCE(latest_pds.status::text, 'Not Submitted')`,
+      pdsSubmittedAt: sql<Date | null>`latest_pds.submitted_at`,
+      salnStatus: sql<string>`COALESCE(latest_saln.status::text, 'Not Submitted')`,
+      salnYear: sql<number | null>`latest_saln.year`,
+      salnSubmittedAt: sql<Date | null>`latest_saln.submitted_at`,
     })
     .from(profiles)
     .leftJoin(departments, eq(profiles.departmentId, departments.id))
     .leftJoin(
-      pdsSubmissions,
+      latestPdsSubquery,
       and(
-        eq(pdsSubmissions.userId, profiles.id),
-        eq(pdsSubmissions.status, 'approved')
+        eq(sql`latest_pds.user_id`, profiles.id),
+        eq(sql`latest_pds.row_num`, 1)
       )
     )
     .leftJoin(
-      salnSubmissions,
+      latestSalnSubquery,
       and(
-        eq(salnSubmissions.userId, profiles.id),
-        eq(salnSubmissions.year, currentYear),
-        eq(salnSubmissions.status, 'approved')
+        eq(sql`latest_saln.user_id`, profiles.id),
+        eq(sql`latest_saln.row_num`, 1)
       )
     )
     .where(and(...conditions))
@@ -398,6 +529,13 @@ async function exportComplianceReport(
     'Overall Compliance',
   ];
 
+  // Helper to format date (handles both Date objects and strings)
+  const formatDate = (date: Date | string | null | undefined): string => {
+    if (!date) return 'N/A';
+    if (typeof date === 'string') return date;
+    return date.toISOString();
+  };
+
   const data = complianceData.map((record) => {
     const pdsCompliant = record.pdsStatus === 'approved';
     const salnCompliant = record.salnStatus === 'approved';
@@ -408,10 +546,10 @@ async function exportComplianceReport(
       employeeName: record.employeeName,
       department: record.department || 'N/A',
       pdsStatus: record.pdsStatus,
-      pdsSubmittedAt: record.pdsSubmittedAt?.toISOString() || 'N/A',
+      pdsSubmittedAt: formatDate(record.pdsSubmittedAt),
       salnStatus: record.salnStatus,
       salnYear: record.salnYear?.toString() || 'N/A',
-      salnSubmittedAt: record.salnSubmittedAt?.toISOString() || 'N/A',
+      salnSubmittedAt: formatDate(record.salnSubmittedAt),
       overallCompliance,
     };
   });

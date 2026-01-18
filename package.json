@@ -45,7 +45,13 @@
     "docker:dev:logs": "docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.local logs -f",
     "docker:dev:status": "docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.local ps",
     "docker:dev:build": "docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.local build",
-    "docker:dev:rebuild": "docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.local down && docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.local build --no-cache && docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.local up -d"
+    "docker:dev:rebuild": "docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.local down && docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.local build --no-cache && docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.local up -d",
+    "redis:start": "docker run -d --name tupsafe-redis -p 6379:6379 redis:alpine",
+    "redis:stop": "docker stop tupsafe-redis && docker rm tupsafe-redis",
+    "redis:restart": "npm run redis:stop && npm run redis:start",
+    "redis:logs": "docker logs -f tupsafe-redis",
+    "redis:cli": "docker exec -it tupsafe-redis redis-cli",
+    "redis:status": "docker ps -f name=tupsafe-redis"
   },
   "devDependencies": {
     "drizzle-kit": "^0.12.8",

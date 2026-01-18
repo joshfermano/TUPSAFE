@@ -536,8 +536,8 @@ export default function ReportsPage() {
   }, []);
 
   // Handle export actions - defined before early returns
-  const handleExportCSV = useCallback(() => {
-    exportMutation.mutate({ format: 'csv', reportType: 'compliance' });
+  const handleExportExcel = useCallback(() => {
+    exportMutation.mutate({ format: 'xlsx', reportType: 'compliance' });
   }, [exportMutation]);
 
   const handleExportPDF = useCallback(() => {
@@ -692,10 +692,11 @@ export default function ReportsPage() {
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              onClick={handleExportCSV}
+              className="bg-emerald-500 text-white hover:bg-emerald-600 hover:text-white"
+              onClick={handleExportExcel}
               disabled={exportMutation.isPending}>
               <Download className="mr-2 h-4 w-4" />
-              Export CSV
+              Export Excel
             </Button>
             <Button
               onClick={handleExportPDF}

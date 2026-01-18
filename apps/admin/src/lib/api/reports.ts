@@ -40,12 +40,12 @@ export async function fetchReportsOverview(): Promise<ReportsOverviewResponse> {
  *
  * Triggers a file download with the specified format
  *
- * @param format - Export format ('csv' | 'pdf')
+ * @param format - Export format ('csv' | 'xlsx' | 'pdf')
  * @param reportType - Report type identifier ('users' | 'registrations' | 'submissions' | 'compliance')
  * @returns Blob containing the exported file
  */
 export async function exportReport(
-  format: 'csv' | 'pdf',
+  format: 'csv' | 'xlsx' | 'pdf',
   reportType: 'users' | 'registrations' | 'submissions' | 'compliance'
 ): Promise<Blob> {
   // Build query params with required fields

@@ -61,3 +61,38 @@ export * from './saln-pdf';
 
 // Export PDS PDF components and utilities
 export * from './pds-pdf';
+
+// Export Report PDF components and utilities (with explicit re-exports to avoid conflicts)
+export type {
+  ReportType,
+  ReportData,
+  ReportMetadata,
+  ReportDocumentProps,
+  ReportHeaderProps,
+  ReportTableProps,
+  ReportFooterProps,
+} from './report-pdf/types';
+
+export {
+  reportStyles,
+  REPORT_COLORS,
+  REPORT_DIMENSIONS,
+  REPORT_FONT_SIZES,
+  registerReportFonts,
+  ensureReportFontsRegistered,
+  formatReportDate,
+  formatReportDateTime,
+  displayOrNA,
+} from './report-pdf/ReportStyles';
+
+export {
+  ReportHeader,
+  TableHeader,
+  ReportFooter,
+} from './report-pdf/ReportComponents';
+
+export {
+  ReportDocument,
+  calculateColumnWidths,
+  validateReportData,
+} from './report-pdf/ReportDocument';

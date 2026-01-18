@@ -48,21 +48,26 @@ export function useExportReport() {
       format,
       reportType,
     }: {
-      format: 'csv' | 'pdf';
+      format: 'csv' | 'xlsx' | 'pdf';
       reportType: 'users' | 'registrations' | 'submissions' | 'compliance';
     }) => exportReport(format, reportType),
     onSuccess: (blob, { format, reportType }) => {
+      // Map format to file extension
+      const extension = format === 'xlsx' ? 'xlsx' : format;
+
       // Create download link
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `tupsafe-${reportType}-report-${Date.now()}.${format}`;
+      a.download = `tupsafe-${reportType}-report-${Date.now()}.${extension}`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      toast.success(`Report exported as ${format.toUpperCase()}`, {
+      // Map format to friendly name for toast
+      const formatName = format === 'xlsx' ? 'Excel' : format.toUpperCase();
+      toast.success(`Report exported as ${formatName}`, {
         description: 'Download started successfully.',
       });
     },

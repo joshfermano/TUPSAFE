@@ -26,7 +26,7 @@ export const exportQuerySchema = z.object({
   reportType: z.enum(['users', 'registrations', 'submissions', 'compliance']),
   startDate: z.coerce.date(),
   endDate: z.coerce.date(),
-  format: z.enum(['csv', 'json']).default('csv'),
+  format: z.enum(['csv', 'json', 'xlsx', 'pdf']).default('csv'),
   departmentId: z.string().uuid().optional(),
 });
 

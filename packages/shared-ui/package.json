@@ -26,6 +26,14 @@
     "./pds-pdf/*": {
       "types": "./dist/pds-pdf/*.d.ts",
       "default": "./dist/pds-pdf/*.js"
+    },
+    "./report-pdf": {
+      "types": "./dist/report-pdf/index.d.ts",
+      "default": "./dist/report-pdf/index.js"
+    },
+    "./report-pdf/*": {
+      "types": "./dist/report-pdf/*.d.ts",
+      "default": "./dist/report-pdf/*.js"
     }
   },
   "scripts": {
