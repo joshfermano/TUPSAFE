@@ -17,6 +17,8 @@ Tool Categories:
     - Jobs: Job application and open position queries
     - Dashboard: Aggregated dashboard metrics and system overview
     - Audit: Audit log queries and compliance monitoring
+    - List: Employee and applicant listing tools
+    - Age: Age and tenure analytics tools
 
 Usage:
     >>> from src.tools import TUPSAFE_TOOLS
@@ -59,6 +61,19 @@ from src.tools.users import (
     get_employee_count,
     get_employees_with_submissions,
 )
+from src.tools.list_tools import (
+    list_employees,
+    list_applicants,
+    list_applicants_by_position,
+    list_employees_by_department,
+)
+from src.tools.age_tools import (
+    get_oldest_employees,
+    get_youngest_employees,
+    get_oldest_applicants,
+    get_longest_tenure_employees,
+    get_employee_age_distribution,
+)
 
 # Export database utilities and tools
 __all__ = [
@@ -95,6 +110,17 @@ __all__ = [
     "get_user_activity",
     "get_audit_summary",
     "get_security_events",
+    # List Tools
+    "list_employees",
+    "list_applicants",
+    "list_applicants_by_position",
+    "list_employees_by_department",
+    # Age Tools
+    "get_oldest_employees",
+    "get_youngest_employees",
+    "get_oldest_applicants",
+    "get_longest_tenure_employees",
+    "get_employee_age_distribution",
     # Tool List
     "TUPSAFE_TOOLS",
 ]
@@ -131,4 +157,15 @@ TUPSAFE_TOOLS = [
     get_user_activity,
     get_audit_summary,
     get_security_events,
+    # List tools
+    list_employees,
+    list_applicants,
+    list_applicants_by_position,
+    list_employees_by_department,
+    # Age tools
+    get_oldest_employees,
+    get_youngest_employees,
+    get_oldest_applicants,
+    get_longest_tenure_employees,
+    get_employee_age_distribution,
 ]

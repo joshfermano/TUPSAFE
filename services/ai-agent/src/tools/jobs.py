@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 
 from src.db.validators import sanitize_string, validate_uuid
 from src.tools.base import TUPSAFETool
+from src.utils.formatters import format_full_name
 
 
 class JobApplicationStatsInput(BaseModel):
@@ -61,7 +62,12 @@ class ApplicationFunnelInput(BaseModel):
 class PositionApplicationSummaryInput(BaseModel):
     """Input schema for getting position application summary."""
 
-    pass
+    include_applicant_names: bool = Field(
+        False, description="If True, include applicant names for each position"
+    )
+    applicant_names_limit: int = Field(
+        10, ge=1, le=50, description="Maximum number of applicant names to show per position"
+    )
 
 
 class GetJobApplicationStatsTool(TUPSAFETool):
@@ -488,6 +494,10 @@ class GetPositionApplicationSummaryTool(TUPSAFETool):
     description: str = """
     Get a summary of open positions and their application metrics.
 
+    Args:
+        include_applicant_names: If True, include applicant names for each position (default: False)
+        applicant_names_limit: Maximum number of applicant names to show per position (default: 10, max: 50)
+
     Returns:
         Dictionary containing:
         - total_open_positions: Count of positions with 'open' status
@@ -495,14 +505,21 @@ class GetPositionApplicationSummaryTool(TUPSAFETool):
         - total_applications: Total applications across all open positions
         - average_applications_per_position: Mean applications per position
 
+        When include_applicant_names=True, each position also includes:
+        - applicants: List of applicants with full_name, applicant_id, application_status, applied_at
+
     Example:
         >>> result = get_position_application_summary()
         >>> print(f"Open Positions: {result['total_open_positions']}")
         >>> print(f"Total Applications: {result['total_applications']}")
+
+        >>> result = get_position_application_summary(include_applicant_names=True, applicant_names_limit=5)
+        >>> for position in result['data']:
+        ...     print(f"{position['title']}: {len(position.get('applicants', []))} applicants")
     """
     args_schema: type[BaseModel] = PositionApplicationSummaryInput
 
-    def _run(self) -> str:
+    def _run(self, include_applicant_names: bool = False, applicant_names_limit: int = 10) -> str:
         """Execute the position application summary query."""
         try:
             # Get all open positions
@@ -542,15 +559,21 @@ class GetPositionApplicationSummaryTool(TUPSAFETool):
             position_ids = [p["id"] for p in positions]
 
             # Get all applications for these positions
+            app_fields = "id,position_id,status,created_at"
+            if include_applicant_names:
+                app_fields += ",user_id"
+
             applications_response = self._query(
                 "job_applications",
-                "id,position_id,status"
+                app_fields
             ).in_("position_id", position_ids).execute()
 
             applications = applications_response.data if applications_response.data else []
 
             # Count applications by position and status
             position_app_stats = {}
+            position_applications = {}  # Store applications grouped by position
+
             for app in applications:
                 pos_id = app["position_id"]
                 if pos_id not in position_app_stats:
@@ -559,14 +582,43 @@ class GetPositionApplicationSummaryTool(TUPSAFETool):
                         "active": 0,
                         "accepted": 0,
                     }
+                    position_applications[pos_id] = []
 
                 position_app_stats[pos_id]["total"] += 1
+                position_applications[pos_id].append(app)
 
                 app_status = app.get("status")
                 if app_status not in ["rejected", "withdrawn", "hired"]:
                     position_app_stats[pos_id]["active"] += 1
                 if app_status == "accepted":
                     position_app_stats[pos_id]["accepted"] += 1
+
+            # Get applicant profile data if requested
+            applicants_data = {}
+            if include_applicant_names and applications:
+                # Get unique user IDs from all applications
+                user_ids = list(set(app["user_id"] for app in applications if app.get("user_id")))
+
+                if user_ids:
+                    # Query profiles table for applicant information
+                    profiles_response = self._query(
+                        "profiles",
+                        "user_id,first_name,middle_name,last_name,name_extension,applicant_id"
+                    ).in_("user_id", user_ids).execute()
+
+                    profiles = profiles_response.data if profiles_response.data else []
+
+                    # Build lookup map
+                    for profile in profiles:
+                        user_id = profile.get("user_id")
+                        if user_id:
+                            applicants_data[user_id] = {
+                                "first_name": profile.get("first_name"),
+                                "middle_name": profile.get("middle_name"),
+                                "last_name": profile.get("last_name"),
+                                "name_extension": profile.get("name_extension"),
+                                "applicant_id": profile.get("applicant_id"),
+                            }
 
             # Build result
             positions_list = []
@@ -575,7 +627,7 @@ class GetPositionApplicationSummaryTool(TUPSAFETool):
                 dept = departments_data.get(pos.get("department_id"), {})
                 stats = position_app_stats.get(pos_id, {"total": 0, "active": 0, "accepted": 0})
 
-                positions_list.append({
+                position_obj = {
                     "id": pos_id,
                     "title": pos.get("position_title"),
                     "employment_category": pos.get("employment_category"),
@@ -586,7 +638,34 @@ class GetPositionApplicationSummaryTool(TUPSAFETool):
                     "accepted_applications": stats["accepted"],
                     "created_at": pos.get("created_at"),
                     "application_deadline": pos.get("application_deadline"),
-                })
+                }
+
+                # Add applicant names if requested
+                if include_applicant_names and pos_id in position_applications:
+                    applicants_list = []
+                    apps = position_applications[pos_id][:applicant_names_limit]
+
+                    for app in apps:
+                        user_id = app.get("user_id")
+                        profile_data = applicants_data.get(user_id, {})
+
+                        if profile_data:
+                            full_name = format_full_name(
+                                profile_data.get("first_name"),
+                                profile_data.get("last_name"),
+                                profile_data.get("middle_name")
+                            )
+
+                            applicants_list.append({
+                                "full_name": full_name,
+                                "applicant_id": profile_data.get("applicant_id"),
+                                "application_status": app.get("status"),
+                                "applied_at": app.get("created_at"),
+                            })
+
+                    position_obj["applicants"] = applicants_list
+
+                positions_list.append(position_obj)
 
             # Sort by application count descending
             positions_list.sort(key=lambda x: x["application_count"], reverse=True)

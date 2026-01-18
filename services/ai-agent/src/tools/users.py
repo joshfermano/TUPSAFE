@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 
 from src.db.validators import sanitize_string
 from src.tools.base import TUPSAFETool
+from src.utils.formatters import calculate_age, format_full_name
 
 
 # ============================================================================
@@ -29,6 +30,12 @@ class EmployeeCountInput(BaseModel):
     include_inactive: bool = Field(
         False, description="Whether to include inactive employees in the count"
     )
+    include_details: bool = Field(
+        False, description="If True, include a list of employee names with the count"
+    )
+    details_limit: int = Field(
+        20, ge=1, le=100, description="Maximum number of employee names to return when include_details is True"
+    )
 
 
 class ApplicantCountInput(BaseModel):
@@ -36,6 +43,12 @@ class ApplicantCountInput(BaseModel):
 
     account_status: Optional[Literal["pending", "active", "suspended", "rejected"]] = Field(
         None, description="Filter by account status. If None, counts all applicants."
+    )
+    include_details: bool = Field(
+        False, description="If True, include a list of applicant names with the count"
+    )
+    details_limit: int = Field(
+        20, ge=1, le=100, description="Maximum number of applicant names to return when include_details is True"
     )
 
 
@@ -60,6 +73,7 @@ class GetEmployeeCountTool(TUPSAFETool):
 
     This tool provides workforce statistics, helping understand the size and composition
     of the employee base that needs to maintain PDS/SALN compliance.
+    Optionally includes detailed employee information with names, IDs, and ages.
     """
 
     name: str = "get_employee_count"
@@ -70,37 +84,53 @@ Returns:
 - employment_category: Category filter applied (or 'all')
 - include_inactive: Whether inactive employees are included
 - breakdown: Count by employment category
+- employees: List of employee details (when include_details=True)
 
-Example: get_employee_count(employment_category="faculty", include_inactive=False)"""
+Example: get_employee_count(employment_category="faculty", include_inactive=False, include_details=True)"""
     args_schema: type[BaseModel] = EmployeeCountInput
 
     def _run(
         self,
         employment_category: Optional[str] = None,
         include_inactive: bool = False,
+        include_details: bool = False,
+        details_limit: int = 20,
     ) -> str:
         """Execute the employee count query.
 
         Args:
             employment_category: Optional filter for 'faculty', 'administrative', or 'contractual'
             include_inactive: Whether to include employees with is_active=false (default: False)
+            include_details: Whether to include employee names and details (default: False)
+            details_limit: Maximum number of employees to return in details (default: 20)
 
         Returns:
-            JSON string with employee count and breakdown by category
+            JSON string with employee count, breakdown by category, and optional employee details
         """
         try:
             # Sanitize employment_category if provided
             if employment_category:
                 employment_category = sanitize_string(employment_category)
 
+            # Determine which columns to select
+            select_columns = (
+                "id,first_name,last_name,middle_name,employee_id,department_id,position_title,date_of_birth"
+                if include_details
+                else "id"
+            )
+
             # Build base query for total count
-            query = self._query("profiles", "id").eq("user_type", "employee")
+            query = self._query("profiles", select_columns).eq("user_type", "employee")
 
             if not include_inactive:
                 query = query.eq("is_active", True)
 
             if employment_category:
                 query = query.eq("employment_category", employment_category)
+
+            # Limit if we're getting details
+            if include_details:
+                query = query.limit(details_limit)
 
             # Execute total count query
             total_response = query.execute()
@@ -132,6 +162,28 @@ Example: get_employee_count(employment_category="faculty", include_inactive=Fals
                 "breakdown": breakdown,
             }
 
+            # Add employee details if requested
+            if include_details and total_response.data:
+                employees = []
+                for emp in total_response.data:
+                    full_name = format_full_name(
+                        emp.get("first_name"),
+                        emp.get("last_name"),
+                        emp.get("middle_name")
+                    )
+                    age = calculate_age(emp.get("date_of_birth")) if emp.get("date_of_birth") else None
+
+                    employees.append({
+                        "id": emp.get("id"),
+                        "name": full_name,
+                        "employee_id": emp.get("employee_id"),
+                        "department_id": emp.get("department_id"),
+                        "position_title": emp.get("position_title"),
+                        "age": age
+                    })
+
+                result_data["employees"] = employees
+
             message = (
                 f"Found {total_count} employees"
                 + (f" in {employment_category} category" if employment_category else "")
@@ -145,6 +197,7 @@ Example: get_employee_count(employment_category="faculty", include_inactive=Fals
                 {
                     "employment_category": employment_category or "all",
                     "include_inactive": include_inactive,
+                    "include_details": include_details,
                 },
             )
 
@@ -154,6 +207,7 @@ class GetApplicantCountTool(TUPSAFETool):
 
     This tool helps track recruitment pipeline metrics by counting applicants at various
     stages of the account approval process.
+    Optionally includes detailed applicant information with names, IDs, and ages.
     """
 
     name: str = "get_applicant_count"
@@ -163,29 +217,48 @@ Returns:
 - total_applicants: Total count of applicants
 - account_status: Status filter applied (or 'all')
 - breakdown: Count by account status
+- applicants: List of applicant details (when include_details=True)
 
-Example: get_applicant_count(account_status="pending")"""
+Example: get_applicant_count(account_status="pending", include_details=True)"""
     args_schema: type[BaseModel] = ApplicantCountInput
 
-    def _run(self, account_status: Optional[str] = None) -> str:
+    def _run(
+        self,
+        account_status: Optional[str] = None,
+        include_details: bool = False,
+        details_limit: int = 20,
+    ) -> str:
         """Execute the applicant count query.
 
         Args:
             account_status: Optional filter for 'pending', 'active', 'suspended', or 'rejected'
+            include_details: Whether to include applicant names and details (default: False)
+            details_limit: Maximum number of applicants to return in details (default: 20)
 
         Returns:
-            JSON string with applicant count and breakdown by status
+            JSON string with applicant count, breakdown by status, and optional applicant details
         """
         try:
             # Sanitize account_status if provided
             if account_status:
                 account_status = sanitize_string(account_status)
 
+            # Determine which columns to select
+            select_columns = (
+                "id,first_name,last_name,middle_name,applicant_id,date_of_birth,email"
+                if include_details
+                else "id"
+            )
+
             # Build query for total count
-            query = self._query("profiles", "id").eq("user_type", "applicant")
+            query = self._query("profiles", select_columns).eq("user_type", "applicant")
 
             if account_status:
                 query = query.eq("account_status", account_status)
+
+            # Limit if we're getting details
+            if include_details:
+                query = query.limit(details_limit)
 
             # Execute total count query
             total_response = query.execute()
@@ -212,6 +285,27 @@ Example: get_applicant_count(account_status="pending")"""
                 "breakdown": breakdown,
             }
 
+            # Add applicant details if requested
+            if include_details and total_response.data:
+                applicants = []
+                for app in total_response.data:
+                    full_name = format_full_name(
+                        app.get("first_name"),
+                        app.get("last_name"),
+                        app.get("middle_name")
+                    )
+                    age = calculate_age(app.get("date_of_birth")) if app.get("date_of_birth") else None
+
+                    applicants.append({
+                        "id": app.get("id"),
+                        "name": full_name,
+                        "applicant_id": app.get("applicant_id"),
+                        "email": app.get("email"),
+                        "age": age
+                    })
+
+                result_data["applicants"] = applicants
+
             message = (
                 f"Found {total_count} applicants"
                 + (f" with {account_status} status" if account_status else "")
@@ -220,7 +314,13 @@ Example: get_applicant_count(account_status="pending")"""
             return self._format_single_response(result_data, message)
 
         except Exception as e:
-            return self._handle_error(e, {"account_status": account_status or "all"})
+            return self._handle_error(
+                e,
+                {
+                    "account_status": account_status or "all",
+                    "include_details": include_details,
+                },
+            )
 
 
 class GetEmployeesWithSubmissionsTool(TUPSAFETool):

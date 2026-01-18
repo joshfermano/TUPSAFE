@@ -163,3 +163,128 @@ def validate_column_name(column: str) -> bool:
     """
     pattern = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_.]*$")
     return bool(pattern.match(column))
+
+
+def validate_positive_integer(
+    value: int,
+    field_name: str,
+    allow_zero: bool = True,
+    max_value: int | None = None,
+) -> int:
+    """Validate that a value is a positive integer within bounds.
+
+    Args:
+        value: Integer value to validate
+        field_name: Name of the field (for error messages)
+        allow_zero: Whether zero is allowed (default: True)
+        max_value: Optional maximum allowed value
+
+    Returns:
+        The validated integer value
+
+    Raises:
+        ValueError: If value is not valid
+
+    Example:
+        >>> validate_positive_integer(10, "limit")
+        10
+        >>> validate_positive_integer(0, "offset", allow_zero=True)
+        0
+        >>> validate_positive_integer(-1, "limit")
+        ValueError: limit must be a non-negative integer
+    """
+    if not isinstance(value, int):
+        raise ValueError(f"{field_name} must be an integer, got {type(value).__name__}")
+
+    if allow_zero:
+        if value < 0:
+            raise ValueError(f"{field_name} must be a non-negative integer")
+    else:
+        if value <= 0:
+            raise ValueError(f"{field_name} must be a positive integer")
+
+    if max_value is not None and value > max_value:
+        raise ValueError(f"{field_name} must not exceed {max_value}")
+
+    return value
+
+
+def validate_limit(limit: int, default: int = 50, max_limit: int = 200) -> int:
+    """Validate and constrain a limit parameter for pagination.
+
+    Args:
+        limit: Requested limit value
+        default: Default value if limit is None or 0
+        max_limit: Maximum allowed limit
+
+    Returns:
+        Validated limit value within bounds (1 to max_limit)
+
+    Example:
+        >>> validate_limit(10)
+        10
+        >>> validate_limit(500)  # Exceeds max_limit
+        200
+        >>> validate_limit(0)  # Returns default
+        50
+    """
+    if limit is None or limit <= 0:
+        return default
+
+    return min(limit, max_limit)
+
+
+def validate_offset(offset: int) -> int:
+    """Validate an offset parameter for pagination.
+
+    Args:
+        offset: Requested offset value
+
+    Returns:
+        Validated offset value (minimum 0)
+
+    Example:
+        >>> validate_offset(10)
+        10
+        >>> validate_offset(-5)  # Negative becomes 0
+        0
+    """
+    if offset is None or offset < 0:
+        return 0
+
+    return offset
+
+
+def validate_year(year: int | None, allow_none: bool = True) -> int | None:
+    """Validate a year value is within reasonable bounds.
+
+    Args:
+        year: Year value to validate
+        allow_none: Whether None is acceptable
+
+    Returns:
+        Validated year or None
+
+    Raises:
+        ValueError: If year is invalid
+
+    Example:
+        >>> validate_year(2025)
+        2025
+        >>> validate_year(None)
+        None
+        >>> validate_year(1899)
+        ValueError: Year must be between 1900 and 2100
+    """
+    if year is None:
+        if allow_none:
+            return None
+        raise ValueError("Year is required")
+
+    if not isinstance(year, int):
+        raise ValueError(f"Year must be an integer, got {type(year).__name__}")
+
+    if year < 1900 or year > 2100:
+        raise ValueError("Year must be between 1900 and 2100")
+
+    return year
