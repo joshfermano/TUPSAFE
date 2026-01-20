@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Menu,
@@ -132,7 +133,13 @@ const MobileNavigation: React.FC<{
         className="w-80 bg-background/95 backdrop-blur-xl border-border/50 shadow-2xl">
         <SheetHeader className="text-left pb-6">
           <SheetTitle className="flex items-center gap-2">
-            <Shield className="h-6 w-6 text-primary" />
+            <Image
+              src="/tup-logo.png"
+              alt="TUP Logo"
+              width={28}
+              height={28}
+              className="object-contain"
+            />
             <span className="text-tup font-bold">TUPSAFE</span>
           </SheetTitle>
         </SheetHeader>
@@ -469,7 +476,13 @@ export const Header: React.FC = () => {
               href={user ? '/dashboard/profile' : '/'}
               className="group flex items-center gap-2 transition-all duration-300 hover:scale-105 focus-tup rounded-full p-1">
               <div className="relative">
-                <Shield className="h-6 w-6 sm:h-7 sm:w-7 text-primary transition-all duration-300 group-hover:rotate-12" />
+                <Image
+                  src="/tup-logo.png"
+                  alt="TUP Logo"
+                  width={28}
+                  height={28}
+                  className="h-6 w-6 sm:h-7 sm:w-7 object-contain transition-all duration-300 group-hover:scale-110"
+                />
                 <div className="absolute inset-0 bg-primary/20 rounded-full blur-sm -z-10 transition-all duration-300 group-hover:bg-primary/30 group-hover:scale-110" />
               </div>
               <span className="text-base sm:text-lg font-bold text-tup transition-all duration-300 group-hover:text-primary hidden xs:inline">

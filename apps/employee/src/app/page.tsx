@@ -26,7 +26,7 @@ const HowItWorksSection = dynamic(
   () => import('../components/sections/HowItWorksSection'),
   { ssr: false }
 );
-const TestimonialsSection = dynamic(
+const ResearchOverviewSection = dynamic(
   () => import('../components/sections/TestimonialsSection'),
   { ssr: false }
 );
@@ -75,8 +75,8 @@ export default function Home() {
       {/* 5. How It Works Section - Timeline with animated steps */}
       <HowItWorksSection />
 
-      {/* 6. Testimonials Section - User feedback */}
-      <TestimonialsSection />
+      {/* 6. Research Overview Section - About the project */}
+      <ResearchOverviewSection />
 
       {/* 7. FAQ Section - Collapsible questions */}
       <FAQSection />

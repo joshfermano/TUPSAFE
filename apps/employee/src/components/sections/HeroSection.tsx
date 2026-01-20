@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { GridPattern } from '../ui/grid-pattern';
@@ -53,6 +54,20 @@ export default function HeroSection() {
                 ? 'opacity-100 translate-y-0'
                 : 'opacity-0 translate-y-8'
             )}>
+            {/* TUP Manila Logo */}
+            <div className="flex justify-center mb-6">
+              <div className="relative">
+                <Image
+                  src="/tup-logo.png"
+                  alt="TUP Manila Logo"
+                  width={100}
+                  height={100}
+                  className="object-contain drop-shadow-lg"
+                  priority
+                />
+              </div>
+            </div>
+
             {/* Research Project Badge */}
             <div className="flex justify-center mb-6">
               <Badge
@@ -120,8 +135,8 @@ export default function HeroSection() {
                 }}
                 size="lg"
                 className="bg-[#8B1538] hover:bg-[#6B0F2A] text-white text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300 group min-w-[200px]"
-                aria-label="View TUPSAFE prototype dashboard">
-                View Prototype
+                aria-label="Access TUPSAFE system dashboard">
+                Access System
                 <ArrowRight
                   className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1"
                   aria-hidden="true"

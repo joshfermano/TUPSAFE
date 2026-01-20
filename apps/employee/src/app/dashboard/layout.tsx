@@ -9,8 +9,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../../components/u
 import { cn } from '../../lib/utils';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
-  LayoutDashboard,
   FileText,
   Landmark,
   Settings,
@@ -424,7 +424,7 @@ const DashboardSidebar = memo(function DashboardSidebar({
       <div className="relative z-10 flex h-full flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
         {/* Sidebar Header - Clean and Simple */}
         <div className="flex flex-col gap-4 p-6 border-b border-slate-200 dark:border-slate-800">
-          {/* Logo - Minimalistic with single accent color */}
+          {/* Logo - TUP Logo with clean styling */}
           <motion.div
             className="flex items-center gap-3"
             {...getAnimationProps(prefersReducedMotion, {
@@ -432,8 +432,14 @@ const DashboardSidebar = memo(function DashboardSidebar({
               animate: { opacity: 1, y: 0 },
               transition: { duration: 0.5, ease: 'easeOut' },
             })}>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-sm">
-              <LayoutDashboard className="h-5 w-5 text-white" />
+            <div className="flex items-center justify-center shrink-0">
+              <Image
+                src="/tup-logo.png"
+                alt="TUP Manila Logo"
+                width={isCollapsed ? 32 : 40}
+                height={isCollapsed ? 32 : 40}
+                className="object-contain transition-all duration-300"
+              />
             </div>
             {!isCollapsed && (
               <div className="flex flex-col">
@@ -741,9 +747,13 @@ export default function DashboardLayout({
           <Menu className="h-5 w-5" />
         </Button>
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white">
-            <LayoutDashboard className="h-4 w-4" />
-          </div>
+          <Image
+            src="/tup-logo.png"
+            alt="TUP Logo"
+            width={32}
+            height={32}
+            className="object-contain"
+          />
           <span className="text-sm font-semibold">TUPSAFE</span>
         </div>
       </div>

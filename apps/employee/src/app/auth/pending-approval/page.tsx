@@ -16,6 +16,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import { createBrowserClient } from '@supabase/ssr';
 import {
   ClockIcon,
@@ -546,6 +547,17 @@ function PendingApprovalContent() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="text-center space-y-2 sm:space-y-3">
+          {/* TUP Logo */}
+          <div className="flex justify-center mb-4">
+            <Image
+              src="/tup-logo.png"
+              alt="Technological University of the Philippines"
+              width={80}
+              height={80}
+              className="object-contain"
+              priority
+            />
+          </div>
           <AnimatedGradientText className="text-3xl sm:text-4xl lg:text-5xl font-bold">
             <span className="bg-gradient-to-r from-[#8B1538] via-[#6B0F2A] to-[#B8264D] bg-clip-text text-transparent dark:from-red-400 dark:via-red-300 dark:to-pink-400">
               TUPSAFE

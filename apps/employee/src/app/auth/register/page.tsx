@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   CheckCircle2,
   ArrowRight,
@@ -389,6 +390,15 @@ export default function RegisterPage() {
 
             <div className="p-7 sm:p-9 space-y-6">
               <div className="flex flex-col items-center text-center space-y-6">
+                {/* TUP Logo */}
+                <Image
+                  src="/tup-logo.png"
+                  alt="TUP Manila Logo"
+                  width={60}
+                  height={60}
+                  className="object-contain"
+                />
+
                 <div className="w-20 h-20 rounded-full bg-[#8B1538]/10 dark:bg-[#8B1538]/20 flex items-center justify-center backdrop-blur-sm">
                   <CheckCircle2
                     className="h-10 w-10 text-[#8B1538] dark:text-red-400"
@@ -462,6 +472,18 @@ export default function RegisterPage() {
       <div className="relative z-10 w-full max-w-6xl mx-auto grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
         {/* Hero Section - Left Side */}
         <div className="space-y-6 sm:space-y-8 text-center lg:text-left order-2 lg:order-1">
+          {/* TUP Logo */}
+          <div className="flex justify-center lg:justify-start">
+            <Image
+              src="/tup-logo.png"
+              alt="Technological University of the Philippines"
+              width={80}
+              height={80}
+              className="object-contain"
+              priority
+            />
+          </div>
+
           {/* Badge */}
           <div className="flex justify-center lg:justify-start">
             <Badge
@@ -541,6 +563,16 @@ export default function RegisterPage() {
               <div className="p-7 sm:p-9 space-y-6">
                 {/* Form Header */}
                 <div className="text-center space-y-1.5">
+                  {/* TUP Logo in Form */}
+                  <div className="flex justify-center mb-4">
+                    <Image
+                      src="/tup-logo.png"
+                      alt="TUP Manila Logo"
+                      width={60}
+                      height={60}
+                      className="object-contain"
+                    />
+                  </div>
                   <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                     {showContinueForm ? 'Continue Registration' : steps[currentStep].title}
                   </h3>
