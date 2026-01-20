@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { MagicCard } from '../../../components/ui/magic-card';
 import { BorderBeam } from '../../../components/ui/border-beam';
 import { AnimatedGradientText } from '../../../components/ui/animated-gradient-text';
@@ -188,6 +189,17 @@ function ResetPasswordContent() {
           <div className="p-7 sm:p-9 space-y-6">
             {/* Header */}
             <div className="text-center space-y-2">
+              {/* TUP Logo */}
+              <div className="flex justify-center mb-4">
+                <Image
+                  src="/tup-logo.png"
+                  alt="TUP Manila Logo"
+                  width={60}
+                  height={60}
+                  className="object-contain"
+                  priority
+                />
+              </div>
               <div className="flex justify-center mb-4">
                 <div className="w-16 h-16 rounded-full bg-[#8B1538]/10 dark:bg-[#8B1538]/20 flex items-center justify-center">
                   <KeyRound className="w-8 h-8 text-[#8B1538] dark:text-red-400" />

@@ -2,7 +2,8 @@
 
 import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Mail, Lock, Eye, EyeOff, LogIn, Shield, AlertCircle, KeyRound } from 'lucide-react';
+import Image from 'next/image';
+import { Mail, Lock, Eye, EyeOff, LogIn, AlertCircle, KeyRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -156,9 +157,14 @@ function LoginPageContent() {
           <div className="space-y-4">
             {/* Logo/Brand Section */}
             <div className="flex items-center space-x-3">
-              <div className="w-16 h-16 gradient-primary-header rounded-2xl flex items-center justify-center shadow-lg">
-                <Shield className="w-8 h-8 text-primary-foreground" />
-              </div>
+              <Image
+                src="/tup-logo.png"
+                alt="Technological University of the Philippines"
+                width={64}
+                height={64}
+                className="object-contain"
+                priority
+              />
               <div>
                 <h1 className="text-3xl font-bold text-foreground">TUPSAFE</h1>
                 <div className="flex items-center space-x-2 mt-1">
@@ -215,6 +221,15 @@ function LoginPageContent() {
         <div className="flex items-center justify-center">
           <Card className="w-full max-w-md border bg-card shadow-2xl backdrop-blur-sm">
             <CardHeader className="space-y-1 pb-6">
+              <div className="flex justify-center mb-4">
+                <Image
+                  src="/tup-logo.png"
+                  alt="TUP Manila Logo"
+                  width={48}
+                  height={48}
+                  className="object-contain"
+                />
+              </div>
               <CardTitle className="text-2xl font-bold text-center">
                 {showOTPInput ? 'Device Verification' : 'Admin Sign In'}
               </CardTitle>

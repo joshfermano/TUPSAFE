@@ -1,6 +1,7 @@
 'use client';
 
 import React, { memo, useState, useCallback, useEffect } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -197,9 +198,13 @@ const SidebarNav = memo(
           <Link
             href="/dashboard"
             className="group flex items-center gap-3 transition-opacity hover:opacity-80">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#8B1538] text-white shadow-sm ring-1 ring-[#8B1538]/10">
-              <span className="text-sm font-bold">TS</span>
-            </div>
+            <Image
+              src="/tup-logo.png"
+              alt="TUP Manila Logo"
+              width={isCollapsed ? 32 : 40}
+              height={isCollapsed ? 32 : 40}
+              className="object-contain transition-all duration-300"
+            />
             {!isCollapsed && (
               <div className="flex flex-col">
                 <span className="text-sm font-semibold tracking-tight">
@@ -456,9 +461,13 @@ export default function DashboardLayout({
           <span className="sr-only">Toggle menu</span>
         </Button>
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#8B1538] text-white">
-            <span className="text-xs font-bold">TS</span>
-          </div>
+          <Image
+            src="/tup-logo.png"
+            alt="TUP Logo"
+            width={32}
+            height={32}
+            className="object-contain"
+          />
           <span className="text-sm font-semibold">TUPSAFE Admin</span>
         </div>
       </div>

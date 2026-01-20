@@ -24,7 +24,7 @@ export default function BenefitsSection() {
         <BlurFade delay={0.1} inView>
           <div className="mx-auto max-w-3xl text-center mb-16">
             <Badge className="mb-4 bg-[#8B1538]/10 text-[#8B1538] dark:bg-[#8B1538]/20 dark:text-[#E63946]">
-              Key Advantages
+              Core Features
             </Badge>
             <motion.h2
               className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl mb-6"
@@ -33,11 +33,10 @@ export default function BenefitsSection() {
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}>
               <AnimatedShinyText className="inline">
-                Why Choose{' '}
+                System{' '}
                 <span className="bg-gradient-to-r from-[#8B1538] to-[#c73436] bg-clip-text text-transparent">
-                  TUPSAFE
+                  Capabilities
                 </span>
-                ?
               </AnimatedShinyText>
             </motion.h2>
             <motion.p
@@ -46,8 +45,8 @@ export default function BenefitsSection() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
               viewport={{ once: true }}>
-              Discover how our comprehensive digital platform transforms
-              compliance management for TUP Manila
+              Core functionalities designed to modernize compliance document
+              management at TUP Manila
             </motion.p>
           </div>
         </BlurFade>
@@ -138,58 +137,58 @@ export default function BenefitsSection() {
             transition={{ duration: 0.6, delay: 0.9 }}
             viewport={{ once: true }}>
             <div className="grid gap-6 md:grid-cols-2">
-              {/* Old Way */}
+              {/* Manual Process */}
               <div className="rounded-lg border border-red-200 bg-red-50/50 p-6 dark:border-red-900 dark:bg-red-950/30">
                 <div className="mb-4 text-center">
                   <span className="text-2xl">📄</span>
                   <h4 className="mt-2 text-lg font-semibold text-red-900 dark:text-red-300">
-                    Traditional Process
+                    Manual Process Challenges
                   </h4>
                 </div>
                 <ul className="space-y-2 text-sm text-red-800 dark:text-red-400">
                   <li className="flex items-start gap-2">
-                    <span className="mt-1">✗</span>
-                    <span>Manual paperwork and printing</span>
+                    <span className="mt-1">-</span>
+                    <span>Paper-based document handling</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="mt-1">✗</span>
-                    <span>Multiple office visits required</span>
+                    <span className="mt-1">-</span>
+                    <span>Physical submission requirements</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="mt-1">✗</span>
-                    <span>Delayed approval notifications</span>
+                    <span className="mt-1">-</span>
+                    <span>Manual status tracking</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="mt-1">✗</span>
-                    <span>Lost or misplaced documents</span>
+                    <span className="mt-1">-</span>
+                    <span>Physical document storage limitations</span>
                   </li>
                 </ul>
               </div>
 
-              {/* New Way */}
+              {/* Proposed Solution */}
               <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-6 dark:border-emerald-900 dark:bg-emerald-950/30">
                 <div className="mb-4 text-center">
-                  <span className="text-2xl">✨</span>
+                  <span className="text-2xl">💻</span>
                   <h4 className="mt-2 text-lg font-semibold text-emerald-900 dark:text-emerald-300">
-                    With TUPSAFE
+                    Proposed System Solution
                   </h4>
                 </div>
                 <ul className="space-y-2 text-sm text-emerald-800 dark:text-emerald-400">
                   <li className="flex items-start gap-2">
-                    <span className="mt-1">✓</span>
-                    <span>100% digital submission process</span>
+                    <span className="mt-1">+</span>
+                    <span>Digital document submission workflow</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="mt-1">✓</span>
-                    <span>Submit from anywhere, anytime</span>
+                    <span className="mt-1">+</span>
+                    <span>Remote access capability</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="mt-1">✓</span>
-                    <span>Real-time status notifications</span>
+                    <span className="mt-1">+</span>
+                    <span>Automated status notifications</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="mt-1">✓</span>
-                    <span>Secure cloud storage & retrieval</span>
+                    <span className="mt-1">+</span>
+                    <span>Centralized digital storage system</span>
                   </li>
                 </ul>
               </div>

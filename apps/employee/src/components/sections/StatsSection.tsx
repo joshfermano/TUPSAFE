@@ -27,9 +27,9 @@ export default function StatsSection() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}>
-              Impact by the{' '}
+              System{' '}
               <span className="bg-gradient-to-r from-[#8B1538] to-[#c73436] bg-clip-text text-transparent">
-                Numbers
+                Overview
               </span>
             </motion.h2>
             <motion.p
@@ -38,8 +38,8 @@ export default function StatsSection() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
               viewport={{ once: true }}>
-              Measurable improvements in compliance efficiency and user
-              satisfaction
+              Research metrics demonstrating the system&apos;s capacity for
+              compliance document management
             </motion.p>
           </div>
         </BlurFade>
@@ -108,11 +108,12 @@ export default function StatsSection() {
             transition={{ duration: 0.6, delay: 0.7 }}
             viewport={{ once: true }}>
             <p className="text-base text-gray-600 dark:text-gray-400">
-              Trusted by{' '}
+              Developed for{' '}
               <span className="font-semibold text-[#8B1538] dark:text-[#E63946]">
                 TUP Manila
               </span>{' '}
-              faculty, staff, and administrators
+              faculty, staff, and administrators as a thesis research
+              implementation
             </p>
           </motion.div>
         </BlurFade>

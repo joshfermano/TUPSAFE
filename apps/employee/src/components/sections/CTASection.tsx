@@ -158,17 +158,17 @@ export default function CTASection() {
                   {
                     icon: '🔒',
                     title: 'Secure & Compliant',
-                    description: 'CSC-approved data protection',
+                    description: 'CSC standards implementation',
                   },
                   {
-                    icon: '⚡',
-                    title: 'Fast & Reliable',
-                    description: '99.9% uptime guarantee',
+                    icon: '📋',
+                    title: 'Thesis Research Project',
+                    description: 'Academic prototype for TUP Manila',
                   },
                   {
                     icon: '🎓',
                     title: 'TUP Manila Focused',
-                    description: 'Built specifically for our university',
+                    description: 'Designed for university compliance needs',
                   },
                 ].map((indicator, index) => (
                   <motion.div

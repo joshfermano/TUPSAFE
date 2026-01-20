@@ -2,6 +2,7 @@
 
 import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import { useAuth } from '../../../providers/AuthProvider';
 import { LoginForm } from '../../../components/auth/LoginForm';
 import { Badge } from '../../../components/ui/badge';
@@ -74,6 +75,18 @@ function LoginContent() {
       <div className="relative z-10 w-full max-w-6xl mx-auto grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
         {/* Hero Section - Left Side */}
         <div className="space-y-6 sm:space-y-8 text-center lg:text-left order-2 lg:order-1">
+          {/* TUP Logo */}
+          <div className="flex justify-center lg:justify-start">
+            <Image
+              src="/tup-logo.png"
+              alt="Technological University of the Philippines"
+              width={80}
+              height={80}
+              className="object-contain"
+              priority
+            />
+          </div>
+
           {/* Badge */}
           <div className="flex justify-center lg:justify-start">
             <Badge
@@ -138,6 +151,16 @@ function LoginContent() {
               <div className="p-7 sm:p-9 space-y-6">
                 {/* Form Header */}
                 <div className="text-center space-y-1.5">
+                  {/* TUP Logo in Form */}
+                  <div className="flex justify-center mb-4">
+                    <Image
+                      src="/tup-logo.png"
+                      alt="TUP Manila Logo"
+                      width={60}
+                      height={60}
+                      className="object-contain"
+                    />
+                  </div>
                   <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                     Welcome Back
                   </h3>

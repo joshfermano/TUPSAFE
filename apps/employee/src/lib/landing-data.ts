@@ -38,7 +38,7 @@ export const stats: Stat[] = [
     value: '100',
     suffix: '%',
     label: 'CSC Compliance',
-    description: 'Fully aligned with Civil Service Commission standards',
+    description: 'Designed per Civil Service Commission standards and guidelines',
   },
   {
     id: 'time-saved',
@@ -46,14 +46,14 @@ export const stats: Stat[] = [
     value: '75',
     suffix: '%',
     label: 'Time Saved',
-    description: 'Average reduction in form completion time',
+    description: 'Projected efficiency improvement based on research analysis',
   },
   {
     id: 'modules',
     icon: FileText,
     value: '6',
     label: 'Core Modules',
-    description: 'Integrated system components',
+    description: 'e-PDS, e-SALN, Workflows, Security, Analytics, AI Assistant',
   },
   {
     id: 'availability',
@@ -61,7 +61,7 @@ export const stats: Stat[] = [
     value: '24',
     suffix: '/7',
     label: 'Availability',
-    description: 'Always accessible from anywhere',
+    description: 'Web-based system accessible from any device',
   },
 ];
 
@@ -211,48 +211,66 @@ export const steps: Step[] = [
   },
 ];
 
-// Testimonials Section Data
-export interface Testimonial {
+// Research Overview Section Data
+export interface ResearchInfo {
   id: string;
-  name: string;
-  role: string;
-  department: string;
-  avatar: string;
-  quote: string;
-  rating: number;
+  title: string;
+  subtitle: string;
+  description: string;
+  icon: LucideIcon;
+  highlights: string[];
 }
 
-export const testimonials: Testimonial[] = [
+export const researchOverview: ResearchInfo[] = [
   {
-    id: 'faculty-1',
-    name: 'Dr. Maria Santos',
-    role: 'Associate Professor',
-    department: 'College of Engineering',
-    avatar: '/avatars/faculty-1.jpg',
-    quote:
-      'TUPSAFE has transformed how we handle compliance. What used to take hours now takes minutes. The auto-save feature and real-time validation give me peace of mind.',
-    rating: 5,
+    id: 'research-objective',
+    title: 'Research Objective',
+    subtitle: 'Project Goals',
+    description:
+      'To design and develop a secure, efficient, and user-friendly web-based system for managing Personal Data Sheet (PDS) and Statement of Assets, Liabilities, and Net Worth (SALN) submissions for TUP Manila employees, ensuring compliance with Civil Service Commission standards.',
+    icon: FileCheck,
+    highlights: [
+      'Digitize PDS and SALN submission process',
+      'Streamline HR compliance workflows',
+      'Implement role-based access control',
+      'Ensure CSC regulatory compliance',
+    ],
   },
   {
-    id: 'dept-head-1',
-    name: 'Prof. Juan Dela Cruz',
-    role: 'Department Head',
-    department: 'Department of Computer Science',
-    avatar: '/avatars/dept-head-1.jpg',
-    quote:
-      'As a department head, reviewing submissions has never been easier. The approval workflow is intuitive, and I can track compliance rates at a glance. Excellent system!',
-    rating: 5,
+    id: 'system-scope',
+    title: 'System Scope',
+    subtitle: 'Coverage & Features',
+    description:
+      'TUPSAFE covers the complete lifecycle of employee compliance documentation, from initial PDS submission during recruitment to annual SALN declarations, including approval workflows, deadline management, and comprehensive audit trails.',
+    icon: Users,
+    highlights: [
+      'Employee and applicant portals',
+      'Multi-level approval workflows',
+      'Automated deadline reminders',
+      'Department and college-level oversight',
+    ],
   },
   {
-    id: 'hr-admin-1',
-    name: 'Ms. Anna Reyes',
-    role: 'HR Administrator',
-    department: 'Human Resources Office',
-    avatar: '/avatars/hr-admin-1.jpg',
-    quote:
-      'The analytics dashboard provides invaluable insights. We can now identify compliance gaps early and send targeted reminders. This system is a game-changer for our office.',
-    rating: 5,
+    id: 'technology-stack',
+    title: 'Technology Stack',
+    subtitle: 'Modern Architecture',
+    description:
+      'Built with modern web technologies following industry best practices for security, performance, and maintainability. The system utilizes a full-stack TypeScript architecture with real-time capabilities and enterprise-grade security.',
+    icon: Zap,
+    highlights: [
+      'Next.js 15 with React 19',
+      'PostgreSQL with Drizzle ORM',
+      'Supabase for authentication',
+      'Turbo monorepo architecture',
+    ],
   },
+];
+
+// Research highlights for bottom section
+export const researchHighlights = [
+  { label: 'Developed for', value: 'TUP Manila' },
+  { label: 'Compliance', value: 'CSC Standards' },
+  { label: 'Architecture', value: 'Full-Stack' },
 ];
 
 // FAQ Section Data
@@ -328,21 +346,21 @@ export interface CTAData {
 }
 
 export const ctaData: CTAData = {
-  title: 'Ready to Streamline Your Compliance?',
-  subtitle: 'Join TUP Manila faculty and staff using TUPSAFE',
+  title: 'Explore the Research Implementation',
+  subtitle: 'TUP Manila Thesis Project',
   description:
-    'Experience the future of digital compliance management. Save time, ensure accuracy, and stay organized with our comprehensive e-PDS and e-SALN system.',
+    'This thesis prototype demonstrates a digital compliance management system designed for TUP Manila. Explore the e-PDS and e-SALN modules built per CSC standards.',
   primaryButton: {
-    text: 'Get Started Today',
+    text: 'Access the System',
     href: '/dashboard',
   },
   secondaryButton: {
-    text: 'Schedule a Demo',
-    href: '/contact',
+    text: 'Learn More',
+    href: '#features',
   },
   features: [
-    { icon: Zap, text: 'Quick Setup' },
-    { icon: Lock, text: 'Secure & Private' },
-    { icon: Calendar, text: 'Automated Reminders' },
+    { icon: Zap, text: 'Modern Stack' },
+    { icon: Lock, text: 'Secure Design' },
+    { icon: Calendar, text: 'CSC Compliant' },
   ],
 };
