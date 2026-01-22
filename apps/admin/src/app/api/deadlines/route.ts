@@ -260,9 +260,12 @@ export async function POST(request: NextRequest) {
 
     const { formType, year, deadlineDate, reminderDaysBefore } = validationResult.data;
 
-    // Check for duplicate deadline (same formType + year combination)
+    // Check for existing deadline (same formType + year combination)
     const [existingDeadline] = await db
-      .select({ id: submissionDeadlines.id })
+      .select({
+        id: submissionDeadlines.id,
+        isActive: submissionDeadlines.isActive,
+      })
       .from(submissionDeadlines)
       .where(
         and(
@@ -272,59 +275,92 @@ export async function POST(request: NextRequest) {
       )
       .limit(1);
 
-    if (existingDeadline) {
+    // If an active deadline already exists, return conflict
+    if (existingDeadline && existingDeadline.isActive) {
       return NextResponse.json(
         {
           success: false,
           error: `A deadline for ${formType.toUpperCase()} ${year} already exists`,
-          details: {
-            existingId: existingDeadline.id,
-          },
+          details: `Existing deadline ID: ${existingDeadline.id}`,
         },
         { status: 409 }
       );
     }
 
-    // Create the new deadline
-    const [newDeadline] = await db
-      .insert(submissionDeadlines)
-      .values({
-        formType,
-        year,
-        deadlineDate,
-        reminderDaysBefore,
-        isActive: true,
-      })
-      .returning({
-        id: submissionDeadlines.id,
-        formType: submissionDeadlines.formType,
-        year: submissionDeadlines.year,
-        deadlineDate: submissionDeadlines.deadlineDate,
-        reminderDaysBefore: submissionDeadlines.reminderDaysBefore,
-        isActive: submissionDeadlines.isActive,
-        createdAt: submissionDeadlines.createdAt,
-      });
+    let resultDeadline;
+    let wasReactivated = false;
 
-    if (!newDeadline) {
-      throw new Error('Failed to create deadline');
+    // If an inactive deadline exists, reactivate it with the new data
+    if (existingDeadline && !existingDeadline.isActive) {
+      const [reactivatedDeadline] = await db
+        .update(submissionDeadlines)
+        .set({
+          deadlineDate,
+          reminderDaysBefore,
+          isActive: true,
+        })
+        .where(eq(submissionDeadlines.id, existingDeadline.id))
+        .returning({
+          id: submissionDeadlines.id,
+          formType: submissionDeadlines.formType,
+          year: submissionDeadlines.year,
+          deadlineDate: submissionDeadlines.deadlineDate,
+          reminderDaysBefore: submissionDeadlines.reminderDaysBefore,
+          isActive: submissionDeadlines.isActive,
+          createdAt: submissionDeadlines.createdAt,
+        });
+
+      if (!reactivatedDeadline) {
+        throw new Error('Failed to reactivate deadline');
+      }
+
+      resultDeadline = reactivatedDeadline;
+      wasReactivated = true;
+    } else {
+      // Create a new deadline
+      const [newDeadline] = await db
+        .insert(submissionDeadlines)
+        .values({
+          formType,
+          year,
+          deadlineDate,
+          reminderDaysBefore,
+          isActive: true,
+        })
+        .returning({
+          id: submissionDeadlines.id,
+          formType: submissionDeadlines.formType,
+          year: submissionDeadlines.year,
+          deadlineDate: submissionDeadlines.deadlineDate,
+          reminderDaysBefore: submissionDeadlines.reminderDaysBefore,
+          isActive: submissionDeadlines.isActive,
+          createdAt: submissionDeadlines.createdAt,
+        });
+
+      if (!newDeadline) {
+        throw new Error('Failed to create deadline');
+      }
+
+      resultDeadline = newDeadline;
     }
 
-    const daysRemaining = calculateDaysRemaining(newDeadline.deadlineDate);
+    const daysRemaining = calculateDaysRemaining(resultDeadline.deadlineDate);
 
     const deadlineResponse: DeadlineListItem = {
-      id: newDeadline.id,
-      formType: newDeadline.formType as 'pds' | 'saln',
-      year: newDeadline.year,
-      deadlineDate: new Date(newDeadline.deadlineDate),
-      reminderDaysBefore: newDeadline.reminderDaysBefore || [30, 15, 7, 3, 1],
-      isActive: newDeadline.isActive,
-      createdAt: newDeadline.createdAt,
+      id: resultDeadline.id,
+      formType: resultDeadline.formType as 'pds' | 'saln',
+      year: resultDeadline.year,
+      deadlineDate: new Date(resultDeadline.deadlineDate),
+      reminderDaysBefore: resultDeadline.reminderDaysBefore || [30, 15, 7, 3, 1],
+      isActive: resultDeadline.isActive,
+      createdAt: resultDeadline.createdAt,
       daysRemaining,
     };
 
+    const actionVerb = wasReactivated ? 'reactivated' : 'created';
     const response: CreateDeadlineResponse = {
       success: true,
-      message: `Deadline for ${formType.toUpperCase()} ${year} created successfully`,
+      message: `Deadline for ${formType.toUpperCase()} ${year} ${actionVerb} successfully`,
       deadline: deadlineResponse,
     };
 

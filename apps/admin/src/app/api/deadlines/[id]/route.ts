@@ -477,9 +477,12 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       .set({ isActive: false })
       .where(eq(submissionDeadlines.id, id));
 
-    const response: DeleteDeadlineResponse = {
+    const response = {
       success: true,
       message: `Deadline for ${existingDeadline.formType.toUpperCase()} ${existingDeadline.year} has been deactivated`,
+      deadlineId: id,
+      formType: existingDeadline.formType as 'pds' | 'saln',
+      year: existingDeadline.year,
     };
 
     return NextResponse.json(response, { status: 200 });

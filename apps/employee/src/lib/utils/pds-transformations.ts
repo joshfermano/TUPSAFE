@@ -27,21 +27,67 @@ import type { CompletePdsData } from '../validations/pds-schema';
 import type { PDSData } from '@tupsafe/shared-ui/pds-pdf';
 
 /**
+ * Helper function to convert Date object to a date-only string (YYYY-MM-DD)
+ * Uses LOCAL timezone components to prevent date shifts when serializing.
+ * 
+ * This is critical for date-only fields like dateOfBirth where we don't want
+ * timezone conversion to change the date.
+ * 
+ * @param value - Date object, date string, or null/undefined
+ * @returns String in 'YYYY-MM-DD' format using local date components, or null
+ */
+function toDateOnlyString(value: any): string | null {
+  if (!value) return null;
+  
+  let date: Date;
+  
+  if (value instanceof Date) {
+    date = value;
+  } else if (typeof value === 'string') {
+    // If already a date-only string, return as-is
+    const dateOnlyRegex = /^(\d{4})-(\d{2})-(\d{2})$/;
+    if (dateOnlyRegex.test(value)) {
+      return value;
+    }
+    // Parse the string to a Date first
+    date = stringToDate(value) as Date;
+    if (!date) return null;
+  } else {
+    return null;
+  }
+  
+  // Check for invalid date
+  if (isNaN(date.getTime())) return null;
+  
+  // Format using LOCAL timezone components
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
+}
+
+/**
  * Helper function to convert string to Date
- * Handles ISO date strings (YYYY-MM-DD) using LOCAL timezone to prevent -1 day shift
+ * Handles ISO date strings (YYYY-MM-DD) and ISO datetime strings using LOCAL timezone
+ * to prevent -1 day shift from UTC conversion.
+ * 
+ * IMPORTANT: For ISO datetime strings like '2004-05-13T00:00:00.000Z', we extract
+ * the date portion and parse it as local time, NOT as UTC. This prevents the date
+ * from shifting backwards when the user is in a timezone ahead of UTC.
  */
 function stringToDate(value: any): Date | null {
   if (!value) return null;
   if (value instanceof Date) return value;
   if (typeof value === 'string') {
-    // Check if it's an ISO date string (YYYY-MM-DD) - parse as LOCAL time
+    // Check if it's an ISO date-only string (YYYY-MM-DD) - parse as LOCAL time
     const dateOnlyRegex = /^(\d{4})-(\d{2})-(\d{2})$/;
-    const match = value.match(dateOnlyRegex);
-    if (match) {
+    const dateOnlyMatch = value.match(dateOnlyRegex);
+    if (dateOnlyMatch) {
       // Parse as local timezone to prevent -1 day shift from UTC conversion
-      const year = parseInt(match[1], 10);
-      const month = parseInt(match[2], 10) - 1; // JS months are 0-indexed
-      const day = parseInt(match[3], 10);
+      const year = parseInt(dateOnlyMatch[1], 10);
+      const month = parseInt(dateOnlyMatch[2], 10) - 1; // JS months are 0-indexed
+      const day = parseInt(dateOnlyMatch[3], 10);
       const date = new Date(year, month, day);
       // Validate the date components match (handles invalid dates like Feb 30)
       if (date.getFullYear() === year && date.getMonth() === month && date.getDate() === day) {
@@ -49,7 +95,25 @@ function stringToDate(value: any): Date | null {
       }
       return null;
     }
-    // For other date formats (e.g., ISO datetime), use standard parsing
+    
+    // Check if it's an ISO datetime string (e.g., '2004-05-13T00:00:00.000Z')
+    // Extract the YYYY-MM-DD portion and parse as LOCAL time
+    const isoDatetimeRegex = /^(\d{4})-(\d{2})-(\d{2})T/;
+    const isoDatetimeMatch = value.match(isoDatetimeRegex);
+    if (isoDatetimeMatch) {
+      // Extract date components and parse as LOCAL timezone
+      const year = parseInt(isoDatetimeMatch[1], 10);
+      const month = parseInt(isoDatetimeMatch[2], 10) - 1; // JS months are 0-indexed
+      const day = parseInt(isoDatetimeMatch[3], 10);
+      const date = new Date(year, month, day);
+      // Validate the date components match
+      if (date.getFullYear() === year && date.getMonth() === month && date.getDate() === day) {
+        return date;
+      }
+      return null;
+    }
+    
+    // For other date formats, use standard parsing (but this may cause timezone issues)
     const date = new Date(value);
     return isNaN(date.getTime()) ? null : date;
   }
@@ -80,33 +144,38 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
   // STEP 0: Type conversions for serialized data
   // ========================================================================
   // Handle cases where data may have been serialized/deserialized (e.g., from localStorage)
+  // IMPORTANT: Convert all date-only fields to YYYY-MM-DD strings using toDateOnlyString()
+  // to prevent timezone shifts when the backend stores/retrieves these dates.
   const transformedData = { ...data };
 
   // Convert Personal Info date/number fields
+  // NOTE: dateOfBirth is converted to YYYY-MM-DD string to prevent timezone issues
   if (transformedData.personalInfo) {
     transformedData.personalInfo = {
       ...transformedData.personalInfo,
-      dateOfBirth: stringToDate(transformedData.personalInfo.dateOfBirth),
+      dateOfBirth: toDateOnlyString(transformedData.personalInfo.dateOfBirth),
       heightM: stringToNumber(transformedData.personalInfo.heightM),
       weightKg: stringToNumber(transformedData.personalInfo.weightKg),
     } as any;
   }
 
   // Convert Family Background - Children dateOfBirth
+  // NOTE: dateOfBirth is converted to YYYY-MM-DD string to prevent timezone issues
   if (transformedData.family?.children) {
     transformedData.family.children = transformedData.family.children.map((child: any) => ({
       ...child,
-      dateOfBirth: stringToDate(child.dateOfBirth),
+      dateOfBirth: toDateOnlyString(child.dateOfBirth),
     }));
   }
 
   // Convert Civil Service Eligibility dates and rating
+  // NOTE: All date fields converted to YYYY-MM-DD strings
   if (transformedData.eligibility) {
     transformedData.eligibility = transformedData.eligibility.map((item: any) => ({
       ...item,
       id: item.id, // CRITICAL: Preserve ID for attachment linking (upsert-by-id logic)
-      dateOfExam: stringToDate(item.dateOfExam),
-      licenseValidityDate: stringToDate(item.licenseValidityDate),
+      dateOfExam: toDateOnlyString(item.dateOfExam),
+      licenseValidityDate: toDateOnlyString(item.licenseValidityDate),
       rating: stringToNumber(item.rating),
       _attachmentIds: item._attachmentIds || [], // Preserve for draft metadata
     }));
@@ -135,11 +204,12 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
   }
 
   // Convert Work Experience dates and filter empty entries
+  // NOTE: All date fields converted to YYYY-MM-DD strings
   if (transformedData.workExperience) {
     transformedData.workExperience = transformedData.workExperience.map((item: any) => ({
       ...item,
-      dateFrom: stringToDate(item.dateFrom),
-      dateTo: stringToDate(item.dateTo),
+      dateFrom: toDateOnlyString(item.dateFrom),
+      dateTo: toDateOnlyString(item.dateTo),
       monthlySalary: stringToNumber(item.monthlySalary),
     }));
     // Filter out empty/incomplete work experience entries
@@ -150,11 +220,12 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
   }
 
   // Convert Voluntary Work dates and filter empty entries
+  // NOTE: All date fields converted to YYYY-MM-DD strings
   if (transformedData.voluntaryWork) {
     transformedData.voluntaryWork = transformedData.voluntaryWork.map((item: any) => ({
       ...item,
-      dateFrom: stringToDate(item.dateFrom),
-      dateTo: stringToDate(item.dateTo),
+      dateFrom: toDateOnlyString(item.dateFrom),
+      dateTo: toDateOnlyString(item.dateTo),
       numberOfHours: stringToNumber(item.numberOfHours),
     }));
     // Filter out empty/incomplete voluntary work entries
@@ -165,12 +236,13 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
   }
 
   // Convert Learning Development dates and filter empty entries
+  // NOTE: All date fields converted to YYYY-MM-DD strings
   if (transformedData.learningDevelopment) {
     transformedData.learningDevelopment = transformedData.learningDevelopment.map((item: any) => ({
       ...item,
       id: item.id, // CRITICAL: Preserve ID for attachment linking (upsert-by-id logic)
-      dateFrom: stringToDate(item.dateFrom),
-      dateTo: stringToDate(item.dateTo),
+      dateFrom: toDateOnlyString(item.dateFrom),
+      dateTo: toDateOnlyString(item.dateTo),
       hours: stringToNumber(item.hours),
       _attachmentIds: item._attachmentIds || [], // Preserve for draft metadata
     }));

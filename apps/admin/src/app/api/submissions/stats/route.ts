@@ -254,37 +254,37 @@ export async function GET(_request: NextRequest) {
           pdsPending: sql<number>`
             COUNT(DISTINCT CASE
               WHEN ${pdsSubmissions.status} IN ('submitted', 'reviewing')
-              THEN ${pdsSubmissions.id}
+              THEN ${pdsSubmissions.userId}
             END)
           `,
           pdsApproved: sql<number>`
             COUNT(DISTINCT CASE
               WHEN ${pdsSubmissions.status} = 'approved'
-              THEN ${pdsSubmissions.id}
+              THEN ${pdsSubmissions.userId}
             END)
           `,
           pdsRejected: sql<number>`
             COUNT(DISTINCT CASE
               WHEN ${pdsSubmissions.status} = 'rejected'
-              THEN ${pdsSubmissions.id}
+              THEN ${pdsSubmissions.userId}
             END)
           `,
           salnPending: sql<number>`
             COUNT(DISTINCT CASE
               WHEN ${salnSubmissions.status} IN ('submitted', 'reviewing')
-              THEN ${salnSubmissions.id}
+              THEN ${salnSubmissions.userId}
             END)
           `,
           salnApproved: sql<number>`
             COUNT(DISTINCT CASE
               WHEN ${salnSubmissions.status} = 'approved'
-              THEN ${salnSubmissions.id}
+              THEN ${salnSubmissions.userId}
             END)
           `,
           salnRejected: sql<number>`
             COUNT(DISTINCT CASE
               WHEN ${salnSubmissions.status} = 'rejected'
-              THEN ${salnSubmissions.id}
+              THEN ${salnSubmissions.userId}
             END)
           `,
         })
@@ -314,7 +314,11 @@ export async function GET(_request: NextRequest) {
         .select({ count: count() })
         .from(profiles)
         .where(
-          and(eq(profiles.userType, 'employee'), eq(profiles.isActive, true))
+          and(
+            eq(profiles.userType, 'employee'),
+            eq(profiles.isActive, true),
+            eq(profiles.accountStatus, 'active')
+          )
         )
         .then((r) => r[0]?.count || 0),
     ]);

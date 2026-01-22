@@ -201,6 +201,10 @@ function serializeDates<T>(data: T): T {
  * Deserialize ISO strings back to Date objects
  * Recursively processes nested objects and arrays
  * Only converts strings that match ISO date format
+ * 
+ * IMPORTANT: For date-only fields, we always parse using LOCAL timezone components
+ * to prevent the -1 day shift that occurs when UTC midnight is converted to local time
+ * in timezones ahead of UTC.
  *
  * @param data - Data to deserialize
  * @returns Data with ISO strings converted to Date objects
@@ -229,8 +233,18 @@ function deserializeDates<T>(data: T): T {
           const day = parseInt(dateOnlyMatch[3], 10);
           deserialized[key] = new Date(year, month, day);
         } else {
-          // Full ISO datetime - parse normally
-          deserialized[key] = new Date(value);
+          // Full ISO datetime (e.g., '2024-01-15T00:00:00.000Z') 
+          // Extract YYYY-MM-DD and parse as LOCAL timezone to prevent -1 day shift
+          const isoDatetimeMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})T/);
+          if (isoDatetimeMatch) {
+            const year = parseInt(isoDatetimeMatch[1], 10);
+            const month = parseInt(isoDatetimeMatch[2], 10) - 1; // JS months are 0-indexed
+            const day = parseInt(isoDatetimeMatch[3], 10);
+            deserialized[key] = new Date(year, month, day);
+          } else {
+            // Fallback for other formats
+            deserialized[key] = new Date(value);
+          }
         }
       } else {
         deserialized[key] = deserializeDates(value);

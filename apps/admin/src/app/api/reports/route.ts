@@ -136,6 +136,8 @@ export async function GET(_request: NextRequest) {
         .where(
           and(
             eq(profiles.userType, 'employee'),
+            eq(profiles.isActive, true),
+            eq(profiles.accountStatus, 'active'),
             eq(pdsSubmissions.status, 'approved')
           )
         ),
@@ -148,6 +150,8 @@ export async function GET(_request: NextRequest) {
         .where(
           and(
             eq(profiles.userType, 'employee'),
+            eq(profiles.isActive, true),
+            eq(profiles.accountStatus, 'active'),
             eq(salnSubmissions.year, currentYear),
             eq(salnSubmissions.status, 'approved')
           )
@@ -252,8 +256,8 @@ export async function GET(_request: NextRequest) {
           departmentName: departments.name,
           departmentCode: departments.code,
           totalEmployees: sql<number>`cast(count(distinct ${profiles.id}) as int)`,
-          pdsCount: sql<number>`cast(count(distinct ${pdsSubmissions.id}) as int)`,
-          salnCount: sql<number>`cast(count(distinct ${salnSubmissions.id}) as int)`,
+          pdsCount: sql<number>`cast(count(distinct ${pdsSubmissions.userId}) as int)`,
+          salnCount: sql<number>`cast(count(distinct ${salnSubmissions.userId}) as int)`,
         })
         .from(profiles)
         .leftJoin(departments, eq(profiles.departmentId, departments.id))
@@ -276,12 +280,13 @@ export async function GET(_request: NextRequest) {
           and(
             eq(profiles.userType, 'employee'),
             eq(profiles.accountStatus, 'active'),
+            eq(profiles.isActive, true),
             sql`${profiles.departmentId} IS NOT NULL`
           )
         )
         .groupBy(profiles.departmentId, departments.name, departments.code)
         .orderBy(
-          sql`cast(count(distinct ${pdsSubmissions.id}) + count(distinct ${salnSubmissions.id}) as float) / cast(count(distinct ${profiles.id}) as float) DESC`
+          sql`cast(count(distinct ${pdsSubmissions.userId}) + count(distinct ${salnSubmissions.userId}) as float) / cast(count(distinct ${profiles.id}) as float) DESC`
         ),
 
       // PDS status distribution
