@@ -354,15 +354,27 @@ export function useDeleteDeadline() {
       });
     },
 
-    onSuccess: (response) => {
+    onSuccess: (response, id) => {
       toast.success('Deadline deleted successfully', {
-        description: 'The deadline has been permanently removed.',
+        description: 'The deadline has been deactivated.',
       });
 
       // Invalidate all lists to refetch with updated data
       queryClient.invalidateQueries({ queryKey: deadlineKeys.lists() });
-      // Remove the detail from cache
-      queryClient.removeQueries({ queryKey: deadlineKeys.detail(response.deadlineId) });
+
+      // Remove the detail from cache using the mutation variable id
+      queryClient.removeQueries({ queryKey: deadlineKeys.detail(id) });
+
+      // Invalidate lookup queries for this formType+year combination
+      // The response now includes formType and year from the API
+      if (response.formType && response.year) {
+        queryClient.invalidateQueries({
+          queryKey: deadlineKeys.byFormTypeAndYear(response.formType, response.year),
+        });
+      }
+
+      // Also invalidate all lookup queries to be safe
+      queryClient.invalidateQueries({ queryKey: deadlineKeys.lookup() });
     },
   });
 }

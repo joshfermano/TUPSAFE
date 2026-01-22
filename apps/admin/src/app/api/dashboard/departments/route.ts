@@ -50,14 +50,15 @@ export async function GET(_request: NextRequest) {
         activeUsers: sql<number>`COUNT(DISTINCT CASE WHEN ${profiles.accountStatus} = 'active' THEN ${profiles.id} END)`,
         pdsSubmitted: sql<number>`COUNT(DISTINCT CASE WHEN ${pdsSubmissions.status} = 'approved' THEN ${pdsSubmissions.userId} END)`,
         salnSubmitted: sql<number>`COUNT(DISTINCT CASE WHEN ${salnSubmissions.status} = 'approved' AND ${salnSubmissions.year} = ${currentYear} THEN ${salnSubmissions.userId} END)`,
-        pdsPending: sql<number>`COUNT(DISTINCT CASE WHEN ${pdsSubmissions.status} = 'submitted' THEN ${pdsSubmissions.id} END)`,
-        salnPending: sql<number>`COUNT(DISTINCT CASE WHEN ${salnSubmissions.status} = 'submitted' THEN ${salnSubmissions.id} END)`,
+        pdsPending: sql<number>`COUNT(DISTINCT CASE WHEN ${pdsSubmissions.status} IN ('submitted', 'reviewing') THEN ${pdsSubmissions.userId} END)`,
+        salnPending: sql<number>`COUNT(DISTINCT CASE WHEN ${salnSubmissions.status} IN ('submitted', 'reviewing') THEN ${salnSubmissions.userId} END)`,
       })
       .from(departments)
       .leftJoin(profiles, and(
         eq(profiles.departmentId, departments.id),
         eq(profiles.userType, 'employee'),
-        eq(profiles.accountStatus, 'active')
+        eq(profiles.accountStatus, 'active'),
+        eq(profiles.isActive, true)
       ))
       .leftJoin(pdsSubmissions, eq(pdsSubmissions.userId, profiles.id))
       .leftJoin(salnSubmissions, eq(salnSubmissions.userId, profiles.id))
@@ -76,7 +77,9 @@ export async function GET(_request: NextRequest) {
       .from(departments)
       .leftJoin(profiles, and(
         eq(profiles.departmentId, departments.id),
-        eq(profiles.userType, 'employee')
+        eq(profiles.userType, 'employee'),
+        eq(profiles.accountStatus, 'active'),
+        eq(profiles.isActive, true)
       ))
       .leftJoin(pdsSubmissions, eq(pdsSubmissions.userId, profiles.id))
       .leftJoin(salnSubmissions, eq(salnSubmissions.userId, profiles.id))

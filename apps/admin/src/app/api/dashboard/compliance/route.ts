@@ -98,7 +98,8 @@ export async function GET() {
         .where(
           and(
             eq(profiles.userType, 'employee'),
-            eq(profiles.accountStatus, 'active')
+            eq(profiles.accountStatus, 'active'),
+            eq(profiles.isActive, true)
           )
         ),
 
@@ -111,6 +112,7 @@ export async function GET() {
           and(
             eq(profiles.userType, 'employee'),
             eq(profiles.accountStatus, 'active'),
+            eq(profiles.isActive, true),
             eq(pdsSubmissions.status, 'approved')
           )
         ),
@@ -124,6 +126,7 @@ export async function GET() {
           and(
             eq(profiles.userType, 'employee'),
             eq(profiles.accountStatus, 'active'),
+            eq(profiles.isActive, true),
             eq(salnSubmissions.status, 'approved'),
             eq(salnSubmissions.year, currentYear)
           )
@@ -141,7 +144,8 @@ export async function GET() {
         .leftJoin(profiles, and(
           eq(profiles.departmentId, departments.id),
           eq(profiles.userType, 'employee'),
-          eq(profiles.accountStatus, 'active')
+          eq(profiles.accountStatus, 'active'),
+          eq(profiles.isActive, true)
         ))
         .leftJoin(pdsSubmissions, and(
           eq(pdsSubmissions.userId, profiles.id),
@@ -172,6 +176,7 @@ export async function GET() {
           and(
             eq(profiles.userType, 'employee'),
             eq(profiles.accountStatus, 'active'),
+            eq(profiles.isActive, true),
             isNull(pdsSubmissions.id) // No approved PDS
           )
         )
@@ -195,6 +200,7 @@ export async function GET() {
           and(
             eq(profiles.userType, 'employee'),
             eq(profiles.accountStatus, 'active'),
+            eq(profiles.isActive, true),
             isNull(salnSubmissions.id) // No approved SALN for current year
           )
         )
@@ -209,6 +215,8 @@ export async function GET() {
           .where(
             and(
               eq(profiles.userType, 'employee'),
+              eq(profiles.accountStatus, 'active'),
+              eq(profiles.isActive, true),
               eq(pdsSubmissions.status, 'approved'),
               lt(pdsSubmissions.approvedAt, oneMonthAgo)
             )
@@ -220,6 +228,8 @@ export async function GET() {
           .where(
             and(
               eq(profiles.userType, 'employee'),
+              eq(profiles.accountStatus, 'active'),
+              eq(profiles.isActive, true),
               eq(salnSubmissions.status, 'approved'),
               eq(salnSubmissions.year, currentYear),
               lt(salnSubmissions.approvedAt, oneMonthAgo)

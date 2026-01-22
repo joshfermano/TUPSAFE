@@ -88,12 +88,49 @@ export interface DeleteDeadlineResponse {
   success: true;
   deadlineId: string;
   message: string;
+  formType?: FormType;
+  year?: number;
 }
 
 /**
  * Base API URL for deadline endpoints
  */
 const API_BASE = '/api/deadlines';
+
+/**
+ * Safely format error details for display
+ * Handles objects, arrays, and primitives to avoid "[object Object]" in error messages
+ */
+function formatErrorDetails(details: unknown): string {
+  if (details === null || details === undefined) {
+    return '';
+  }
+  if (typeof details === 'string') {
+    return details;
+  }
+  if (typeof details === 'object') {
+    try {
+      // For validation errors with field-level details
+      if (Array.isArray(details)) {
+        return details.map((d) => (typeof d === 'string' ? d : JSON.stringify(d))).join(', ');
+      }
+      // For objects, extract meaningful error messages
+      const detailsObj = details as Record<string, unknown>;
+      const messages: string[] = [];
+      for (const [key, value] of Object.entries(detailsObj)) {
+        if (Array.isArray(value)) {
+          messages.push(`${key}: ${value.join(', ')}`);
+        } else if (typeof value === 'string') {
+          messages.push(`${key}: ${value}`);
+        }
+      }
+      return messages.length > 0 ? messages.join('; ') : JSON.stringify(details);
+    } catch {
+      return String(details);
+    }
+  }
+  return String(details);
+}
 
 /**
  * Fetch paginated list of deadlines with filters
@@ -129,7 +166,8 @@ export async function fetchDeadlines(
 
   if (!response.ok) {
     const errorMessage = responseData.error || 'Failed to fetch deadlines';
-    const errorDetails = responseData.details ? ` (${responseData.details})` : '';
+    const formattedDetails = formatErrorDetails(responseData.details);
+    const errorDetails = formattedDetails ? ` (${formattedDetails})` : '';
 
     console.error('[fetchDeadlines] API Error:', {
       status: response.status,
@@ -163,7 +201,8 @@ export async function fetchDeadlineById(id: string): Promise<DeadlineDetailRespo
 
   if (!response.ok) {
     const errorMessage = responseData.error || 'Failed to fetch deadline details';
-    const errorDetails = responseData.details ? ` (${responseData.details})` : '';
+    const formattedDetails = formatErrorDetails(responseData.details);
+    const errorDetails = formattedDetails ? ` (${formattedDetails})` : '';
 
     console.error('[fetchDeadlineById] API Error:', {
       status: response.status,
@@ -263,16 +302,16 @@ export async function fetchDeadlineByFormTypeAndYear(
       });
 
       const errorMessage = responseData.error || 'Invalid request parameters';
-      const errorDetails = responseData.details
-        ? `: ${JSON.stringify(responseData.details)}`
-        : '';
+      const formattedDetails = formatErrorDetails(responseData.details);
+      const errorDetails = formattedDetails ? `: ${formattedDetails}` : '';
       throw new Error(`${errorMessage}${errorDetails}`);
     }
 
     // Handle other errors
     if (!response.ok) {
       const errorMessage = responseData.error || 'Failed to fetch deadline';
-      const errorDetails = responseData.details ? ` (${responseData.details})` : '';
+      const formattedDetails = formatErrorDetails(responseData.details);
+      const errorDetails = formattedDetails ? ` (${formattedDetails})` : '';
 
       console.error('[fetchDeadlineByFormTypeAndYear] API Error:', {
         requestId,
@@ -338,7 +377,8 @@ export async function createDeadline(data: CreateDeadlineData): Promise<CreateDe
   // Check both HTTP status AND data.success
   if (!response.ok || !responseData.success) {
     const errorMessage = responseData.error || 'Failed to create deadline';
-    const errorDetails = responseData.details ? ` (${responseData.details})` : '';
+    const formattedDetails = formatErrorDetails(responseData.details);
+    const errorDetails = formattedDetails ? ` (${formattedDetails})` : '';
 
     console.error('[createDeadline] API Error:', {
       status: response.status,
@@ -377,7 +417,8 @@ export async function updateDeadline(
   // Check both HTTP status AND data.success
   if (!response.ok || !responseData.success) {
     const errorMessage = responseData.error || 'Failed to update deadline';
-    const errorDetails = responseData.details ? ` (${responseData.details})` : '';
+    const formattedDetails = formatErrorDetails(responseData.details);
+    const errorDetails = formattedDetails ? ` (${formattedDetails})` : '';
 
     console.error('[updateDeadline] API Error:', {
       status: response.status,
@@ -412,7 +453,8 @@ export async function deleteDeadline(id: string): Promise<DeleteDeadlineResponse
   // Check both HTTP status AND data.success
   if (!response.ok || !responseData.success) {
     const errorMessage = responseData.error || 'Failed to delete deadline';
-    const errorDetails = responseData.details ? ` (${responseData.details})` : '';
+    const formattedDetails = formatErrorDetails(responseData.details);
+    const errorDetails = formattedDetails ? ` (${formattedDetails})` : '';
 
     console.error('[deleteDeadline] API Error:', {
       status: response.status,

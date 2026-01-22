@@ -157,17 +157,17 @@ export async function GET(_request: NextRequest) {
           )
         ),
 
-      // Pending PDS submissions
+      // Pending PDS submissions (includes both 'submitted' and 'reviewing' statuses)
       db
         .select({ count: count() })
         .from(pdsSubmissions)
-        .where(eq(pdsSubmissions.status, 'submitted')),
+        .where(sql`${pdsSubmissions.status} IN ('submitted', 'reviewing')`),
 
-      // Pending SALN submissions
+      // Pending SALN submissions (includes both 'submitted' and 'reviewing' statuses)
       db
         .select({ count: count() })
         .from(salnSubmissions)
-        .where(eq(salnSubmissions.status, 'submitted')),
+        .where(sql`${salnSubmissions.status} IN ('submitted', 'reviewing')`),
 
       // Approved submissions this week (PDS + SALN)
       Promise.all([
@@ -213,12 +213,18 @@ export async function GET(_request: NextRequest) {
           ),
       ]),
 
-      // PDS compliance (employees only)
+      // PDS compliance (active employees only)
       Promise.all([
         db
           .select({ count: count() })
           .from(profiles)
-          .where(eq(profiles.userType, 'employee')),
+          .where(
+            and(
+              eq(profiles.userType, 'employee'),
+              eq(profiles.isActive, true),
+              eq(profiles.accountStatus, 'active')
+            )
+          ),
         db
           .select({ count: count() })
           .from(pdsSubmissions)
@@ -226,17 +232,25 @@ export async function GET(_request: NextRequest) {
           .where(
             and(
               eq(profiles.userType, 'employee'),
+              eq(profiles.isActive, true),
+              eq(profiles.accountStatus, 'active'),
               eq(pdsSubmissions.status, 'approved')
             )
           ),
       ]),
 
-      // SALN compliance (employees only, current fiscal year)
+      // SALN compliance (active employees only, current fiscal year)
       Promise.all([
         db
           .select({ count: count() })
           .from(profiles)
-          .where(eq(profiles.userType, 'employee')),
+          .where(
+            and(
+              eq(profiles.userType, 'employee'),
+              eq(profiles.isActive, true),
+              eq(profiles.accountStatus, 'active')
+            )
+          ),
         db
           .select({ count: count() })
           .from(salnSubmissions)
@@ -244,6 +258,8 @@ export async function GET(_request: NextRequest) {
           .where(
             and(
               eq(profiles.userType, 'employee'),
+              eq(profiles.isActive, true),
+              eq(profiles.accountStatus, 'active'),
               eq(salnSubmissions.year, now.getFullYear()),
               eq(salnSubmissions.status, 'approved')
             )
