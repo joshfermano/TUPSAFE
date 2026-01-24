@@ -69,9 +69,9 @@ USER aiagent
 # Expose port (Railway uses dynamic PORT)
 EXPOSE 8000
 
-# Health check (uses PORT env var, defaults to 8000)
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD /bin/sh -c 'curl -f http://localhost:${PORT:-8000}/health || exit 1'
+  CMD curl -f http://localhost:8000/health || exit 1
 
-# Run using entrypoint script (handles Railway's dynamic PORT)
-ENTRYPOINT ["./entrypoint.sh"]
+# Run uvicorn - let Python handle PORT via settings.py
+CMD ["python", "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
