@@ -4,6 +4,9 @@
 # Stage 1: Builder
 FROM python:3.12-slim AS builder
 
+# Cache buster - change this to force rebuild
+ARG CACHEBUST=1
+
 # Set working directory
 WORKDIR /app
 
