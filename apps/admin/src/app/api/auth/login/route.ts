@@ -28,6 +28,8 @@ import {
   createServerClient,
   generateDeviceFingerprint,
   createSession,
+  checkRateLimitAsync,
+  formatRateLimitError,
 } from '@tupsafe/auth/server';
 import { parseUserAgent, formatUserAgent } from '@/lib/user-agent-parser';
 import { isHRDepartment } from '@tupsafe/types';
@@ -58,6 +60,27 @@ export async function POST(request: NextRequest) {
     }
 
     const { email, password } = validationResult.data;
+
+    // Rate limiting check - use email as identifier to prevent brute force attacks
+    const rateLimit = await checkRateLimitAsync('login_attempt', email);
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: 'Rate limit exceeded',
+          message: formatRateLimitError('login_attempt', rateLimit.resetAt),
+          retryAfter: rateLimit.retryAfter,
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(rateLimit.retryAfter || 60),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': rateLimit.resetAt.toISOString(),
+          },
+        }
+      );
+    }
 
     // Initialize Supabase client with portal-specific cookie isolation
     // CRITICAL: Pass 'admin' portal to ensure session isolation from employee portal

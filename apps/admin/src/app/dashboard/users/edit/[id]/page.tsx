@@ -15,6 +15,8 @@ import {
   Shield,
   ShieldCheck,
   ShieldOff,
+  Lock,
+  LockOpen,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -201,6 +203,8 @@ export default function EditUserPage() {
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   // State to track form initialization
   const [formInitialized, setFormInitialized] = useState(false);
+  // State for email field lock
+  const [isEmailLocked, setIsEmailLocked] = useState(true);
 
   const form = useForm<EditUserFormValues>({
     resolver: zodResolver(editUserSchema),
@@ -419,6 +423,9 @@ export default function EditUserPage() {
         if (!formInitialized) {
           setFormInitialized(true);
         }
+
+        // Reset email lock state when user data loads
+        setIsEmailLocked(true);
 
         console.log('[Form Population] Form reset complete. Current values:', form.getValues());
       });
@@ -934,14 +941,42 @@ export default function EditUserPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email Address *</FormLabel>
+                    <div className="flex items-center justify-between">
+                      <FormLabel>Email Address *</FormLabel>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsEmailLocked(!isEmailLocked)}
+                        className="h-6 px-2 text-xs"
+                      >
+                        {isEmailLocked ? (
+                          <>
+                            <Lock className="h-3 w-3 mr-1" />
+                            Unlock
+                          </>
+                        ) : (
+                          <>
+                            <LockOpen className="h-3 w-3 mr-1" />
+                            Lock
+                          </>
+                        )}
+                      </Button>
+                    </div>
                     <FormControl>
                       <Input
                         type="email"
                         placeholder="juan.delacruz@tup.edu.ph"
+                        disabled={isEmailLocked}
+                        className={isEmailLocked ? 'bg-muted cursor-not-allowed' : ''}
                         {...field}
                       />
                     </FormControl>
+                    {isEmailLocked && (
+                      <FormDescription className="text-xs text-muted-foreground">
+                        Email is locked to prevent accidental changes. Click Unlock to edit.
+                      </FormDescription>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}

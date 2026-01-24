@@ -276,7 +276,7 @@ export default function ProfilePage() {
                     icon={Hash}
                     label="Salary Grade"
                     value={
-                      position?.gradeLevel ? `SG-${position.gradeLevel}` : '—'
+                      profile.salaryGrade ? `SG-${profile.salaryGrade}` : '—'
                     }
                   />
                   {profile.hireDate && (

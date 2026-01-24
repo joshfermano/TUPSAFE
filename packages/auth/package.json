@@ -34,6 +34,8 @@
     "@supabase/supabase-js": "^2.45.0",
     "@tupsafe/database": "*",
     "@tupsafe/types": "*",
+    "@upstash/ratelimit": "^2.0.4",
+    "@upstash/redis": "^1.34.3",
     "lucide-react": "^0.544.0",
     "react-hook-form": "^7.63.0",
     "uuid": "^11.1.0",
