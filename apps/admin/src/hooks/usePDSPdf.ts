@@ -13,7 +13,7 @@
 
 import { useState, useCallback } from 'react';
 import { pdf } from '@react-pdf/renderer';
-import { PDSDocument, ensurePDSFontsRegistered, type PDSData } from '@tupsafe/shared-ui/pds-pdf';
+import { PDSDocument, ensurePDSFontsRegistered, type PDSData } from '@tupsafe/shared-ui';
 
 // Re-export the transformation utility from employee portal
 // This stays in employee app as it's specific to form data transformation
