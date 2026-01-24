@@ -21,4 +21,5 @@ export {
   type Liability,
   type BusinessInterest,
   type RelativeInGov,
+  type ValidationResult,
 } from '@tupsafe/shared-ui';

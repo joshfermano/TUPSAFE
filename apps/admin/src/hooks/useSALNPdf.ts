@@ -173,7 +173,7 @@ export function useSALNPdf(): UseSALNPdfReturn {
 
       if (!validation.isValid) {
         const errorMessages = validation.errors
-          .map((e) => `${e}`)
+          .map((e: string) => `${e}`)
           .join('; ');
         throw new Error(`Cannot generate PDF - ${errorMessages}`);
       }
