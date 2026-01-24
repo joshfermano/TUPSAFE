@@ -18,8 +18,7 @@ export {
   type SALNData,
   type RealProperty,
   type PersonalProperty,
-  type CashAccount,
   type Liability,
   type BusinessInterest,
-  type RelativeInGovernment,
+  type RelativeInGov,
 } from '@tupsafe/shared-ui';
