@@ -21,7 +21,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserFromSupabase, createServerClient } from '@tupsafe/auth/server';
+import {
+  getUserFromSupabase,
+  createServerClient,
+  checkRateLimitAsync,
+  formatRateLimitError,
+} from '@tupsafe/auth/server';
 import { db, auditLogs } from '@tupsafe/database/server';
 import {
   changePasswordRequestSchema,
@@ -49,6 +54,28 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`[Password Change API] Password change request for user: ${user.userId}`);
+
+    // Rate limiting check - use userId as identifier to prevent brute force attacks
+    const rateLimit = await checkRateLimitAsync('password_reset_request', user.userId);
+
+    if (!rateLimit.allowed) {
+      console.log('[Password Change API] Rate limit exceeded for user:', user.userId);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Rate limit exceeded',
+          message: formatRateLimitError('password_reset_request', rateLimit.resetAt),
+        } as ChangePasswordResponse,
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(rateLimit.retryAfter || 60),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': rateLimit.resetAt.toISOString(),
+          },
+        }
+      );
+    }
 
     // Parse and validate request body
     const body = await request.json();

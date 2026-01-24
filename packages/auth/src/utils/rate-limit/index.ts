@@ -1,8 +1,15 @@
 /**
  * Rate Limiting
- * In-memory rate limiter for authentication attempts
- * In production, use Redis for distributed rate limiting
+ * Distributed rate limiter with Redis (@upstash/ratelimit) as primary
+ * Falls back to in-memory rate limiting if Redis is unavailable
  */
+
+import {
+  checkRedisRateLimit,
+  resetRedisRateLimit,
+  getRedisRateLimitStatus,
+  isRedisAvailable,
+} from './redis';
 
 interface RateLimitEntry {
   count: number;
@@ -10,7 +17,7 @@ interface RateLimitEntry {
 }
 
 /**
- * In-memory store for rate limit tracking
+ * In-memory store for rate limit tracking (fallback)
  * Key format: `${action}:${identifier}`
  */
 const rateLimitStore = new Map<string, RateLimitEntry>();
@@ -47,12 +54,72 @@ export type RateLimitAction =
   | 'password_reset_request';
 
 /**
- * Check and increment rate limit
+ * Check and increment rate limit (synchronous version - in-memory only)
+ * @deprecated Use checkRateLimitAsync for Redis-backed distributed rate limiting
  * @param action - Type of action being rate limited
  * @param identifier - Unique identifier (userId, IP, email, etc.)
  * @param customLimits - Optional custom limits
  */
 export function checkRateLimit(
+  action: RateLimitAction,
+  identifier: string,
+  customLimits?: { maxAttempts: number; windowMinutes: number }
+): {
+  allowed: boolean;
+  remaining: number;
+  resetAt: Date;
+  retryAfter?: number;
+} {
+  return checkRateLimitInMemory(action, identifier, customLimits);
+}
+
+/**
+ * Check and increment rate limit (async version with Redis fallback)
+ * Uses Redis for distributed rate limiting, falls back to in-memory
+ * @param action - Type of action being rate limited
+ * @param identifier - Unique identifier (userId, IP, email, etc.)
+ * @param customLimits - Optional custom limits (only applies to in-memory fallback)
+ */
+export async function checkRateLimitAsync(
+  action: RateLimitAction,
+  identifier: string,
+  customLimits?: { maxAttempts: number; windowMinutes: number }
+): Promise<{
+  allowed: boolean;
+  remaining: number;
+  resetAt: Date;
+  retryAfter?: number;
+  source: 'redis' | 'memory';
+}> {
+  // Try Redis first
+  try {
+    const redisResult = await checkRedisRateLimit(action, identifier);
+
+    if (redisResult) {
+      return {
+        allowed: redisResult.allowed,
+        remaining: redisResult.remaining,
+        resetAt: redisResult.resetAt,
+        retryAfter: redisResult.retryAfter,
+        source: 'redis',
+      };
+    }
+  } catch (error) {
+    console.warn('[Rate Limit] Redis check failed, falling back to in-memory:', error);
+  }
+
+  // Fallback to in-memory
+  const memoryResult = checkRateLimitInMemory(action, identifier, customLimits);
+  return {
+    ...memoryResult,
+    source: 'memory',
+  };
+}
+
+/**
+ * In-memory rate limit check (internal)
+ */
+function checkRateLimitInMemory(
   action: RateLimitAction,
   identifier: string,
   customLimits?: { maxAttempts: number; windowMinutes: number }
@@ -104,7 +171,8 @@ export function checkRateLimit(
 }
 
 /**
- * Reset rate limit for an identifier
+ * Reset rate limit for an identifier (synchronous - in-memory only)
+ * @deprecated Use resetRateLimitAsync for Redis-backed distributed rate limiting
  * @param action - Type of action
  * @param identifier - Unique identifier
  */
@@ -117,7 +185,30 @@ export function resetRateLimit(
 }
 
 /**
- * Get current rate limit status without incrementing
+ * Reset rate limit for an identifier (async version with Redis support)
+ * Resets both Redis and in-memory stores
+ * @param action - Type of action
+ * @param identifier - Unique identifier
+ */
+export async function resetRateLimitAsync(
+  action: RateLimitAction,
+  identifier: string
+): Promise<void> {
+  // Reset Redis
+  try {
+    await resetRedisRateLimit(action, identifier);
+  } catch (error) {
+    console.warn('[Rate Limit] Redis reset failed:', error);
+  }
+
+  // Reset in-memory
+  const key = `${action}:${identifier}`;
+  rateLimitStore.delete(key);
+}
+
+/**
+ * Get current rate limit status without incrementing (synchronous - in-memory only)
+ * @deprecated Use getRateLimitStatusAsync for Redis-backed distributed rate limiting
  * @param action - Type of action
  * @param identifier - Unique identifier
  */
@@ -145,6 +236,42 @@ export function getRateLimitStatus(
     attempts: entry.count,
     remaining: Math.max(0, limits.maxAttempts - entry.count),
     resetAt: new Date(entry.resetAt),
+  };
+}
+
+/**
+ * Get current rate limit status without incrementing (async with Redis support)
+ * @param action - Type of action
+ * @param identifier - Unique identifier
+ */
+export async function getRateLimitStatusAsync(
+  action: RateLimitAction,
+  identifier: string
+): Promise<{
+  attempts: number;
+  remaining: number;
+  resetAt: Date | null;
+  source: 'redis' | 'memory';
+}> {
+  // Try Redis first
+  try {
+    const redisStatus = await getRedisRateLimitStatus(action, identifier);
+
+    if (redisStatus) {
+      return {
+        ...redisStatus,
+        source: 'redis',
+      };
+    }
+  } catch (error) {
+    console.warn('[Rate Limit] Redis status check failed, falling back to in-memory:', error);
+  }
+
+  // Fallback to in-memory
+  const memoryStatus = getRateLimitStatus(action, identifier);
+  return {
+    ...memoryStatus,
+    source: 'memory',
   };
 }
 
@@ -235,6 +362,27 @@ export function getRequestIdentifier(req: {
   const ip = forwardedFor?.split(',')[0] || realIp || req.ip || 'unknown';
 
   return ip;
+}
+
+/**
+ * Check if distributed rate limiting (Redis) is available
+ */
+export function isDistributedRateLimitingEnabled(): boolean {
+  return isRedisAvailable();
+}
+
+/**
+ * Get rate limiting backend status
+ */
+export function getRateLimitingBackend(): {
+  backend: 'redis' | 'memory';
+  available: boolean;
+} {
+  const redisEnabled = isRedisAvailable();
+  return {
+    backend: redisEnabled ? 'redis' : 'memory',
+    available: true, // In-memory is always available as fallback
+  };
 }
 
 // Setup periodic cleanup (every 5 minutes)

@@ -16,6 +16,9 @@ import {
   generateOTP,
   sendOTPEmail,
   createAdminClient,
+  checkRateLimitAsync,
+  getRequestIdentifier,
+  formatRateLimitError,
 } from '@tupsafe/auth/server';
 import {
   db,
@@ -198,6 +201,29 @@ export async function POST(
 
     const data: PersonalInfoData = validationResult.data;
     const supabase = createAdminClient();
+
+    // Rate limiting check - use IP address as identifier to prevent spam registrations
+    const identifier = getRequestIdentifier(request);
+    const rateLimit = await checkRateLimitAsync('registration_attempt', identifier);
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Rate limit exceeded',
+          message: formatRateLimitError('registration_attempt', rateLimit.resetAt),
+          retryAfter: rateLimit.retryAfter,
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(rateLimit.retryAfter || 60),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': rateLimit.resetAt.toISOString(),
+          },
+        }
+      );
+    }
 
     // ENHANCED: Check for incomplete registration before creating user using admin API
     // If a previous registration failed during OTP sending, we can retry
