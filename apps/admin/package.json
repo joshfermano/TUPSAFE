@@ -37,6 +37,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@tupsafe/auth": "*",
     "@tupsafe/database": "*",
+    "@tupsafe/shared-ui": "*",
     "@tupsafe/types": "*",
     "@types/node": "^20",
     "@types/react": "^19",

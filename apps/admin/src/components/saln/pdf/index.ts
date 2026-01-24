@@ -10,4 +10,16 @@
  */
 
 // Re-export all SALN PDF components and utilities from shared package
-export * from '@tupsafe/shared-ui/saln-pdf';
+export {
+  // SALN Document
+  SALNDocument,
+  registerSALNFonts,
+  // Types
+  type SALNData,
+  type RealProperty,
+  type PersonalProperty,
+  type CashAccount,
+  type Liability,
+  type BusinessInterest,
+  type RelativeInGovernment,
+} from '@tupsafe/shared-ui';
