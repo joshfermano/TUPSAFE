@@ -67,8 +67,8 @@ EXPOSE 8000
 
 # Health check (uses PORT env var, defaults to 8000)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
+  CMD /bin/sh -c 'curl -f http://localhost:${PORT:-8000}/health || exit 1'
 
 # Run uvicorn with dynamic PORT (Railway sets PORT env var)
-# Using shell form to allow environment variable substitution
-CMD uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8000}
+# Explicitly use /bin/sh -c to ensure environment variable expansion
+CMD ["/bin/sh", "-c", "uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
