@@ -22,6 +22,7 @@ interface PendingCardProps {
   submission: {
     id: string;
     version: number;
+    year: number;
     status: 'draft' | 'submitted' | 'reviewing' | 'rejected';
     createdAt: string;
     updatedAt: string;
@@ -102,7 +103,7 @@ export const PendingCard = memo(
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1.5">
                   <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                    PDS Version {submission.version}
+                    PDS {submission.year}
                   </h3>
                 </div>
                 <p className="text-xs text-slate-600 dark:text-slate-400">
@@ -141,7 +142,7 @@ export const PendingCard = memo(
             <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
               <span className="flex items-center gap-1">
                 <FileText className="h-3 w-3" />
-                Version {submission.version}
+                Year {submission.year}
               </span>
               {submission.reviewedBy && (
                 <span className="flex items-center gap-1">

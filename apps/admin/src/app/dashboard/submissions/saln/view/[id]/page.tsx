@@ -14,7 +14,6 @@ import {
   Building2,
   Users,
   TrendingUp,
-  TrendingDown,
   Printer,
   Loader2,
 } from 'lucide-react';
@@ -31,21 +30,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  TableFooter,
-} from '@/components/ui/table';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
 
 import { StatusBadge } from '@/components/admin/StatusBadge';
 import { UserAvatar } from '@/components/admin/UserAvatar';
@@ -53,6 +37,8 @@ import { ReviewDialog } from '@/components/admin/ReviewDialog';
 import { LoadingCard } from '@/components/admin/LoadingCard';
 import { ErrorAlert } from '@/components/admin/ErrorAlert';
 import { EmptyState } from '@/components/admin/EmptyState';
+
+import { DataSection, PropertyCard, FinancialSummaryCards } from '@/components/saln';
 
 import { useSalnSubmissionsQuery } from '@/hooks/useSalnSubmissionsQuery';
 import { useAuth } from '@/context/AuthContext';
@@ -74,7 +60,7 @@ import type { SALNData } from '@/components/saln/pdf';
  * - Review actions (Approve, Reject, Request Changes)
  * - Breadcrumb navigation
  * - PDF export capability
- * - Responsive layout with financial card gradients
+ * - Responsive layout with card-based sections
  * - Professional shadcn/ui styling with TUP Crimson accents
  */
 export default function SalnSubmissionViewPage() {
@@ -530,593 +516,247 @@ export default function SalnSubmissionViewPage() {
           </div>
 
           {/* Financial Summary Cards */}
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card className="gradient-emerald-card border-emerald-200 dark:border-emerald-800">
-              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                <CardTitle className="text-sm font-medium text-emerald-800 dark:text-emerald-300">
-                  Total Assets
-                </CardTitle>
-                <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
-                  {formatCurrency(totalAssets)}
-                </div>
-                <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-1">
-                  Real & Personal Properties
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="gradient-amber-card border-amber-200 dark:border-amber-800">
-              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                <CardTitle className="text-sm font-medium text-amber-800 dark:text-amber-300">
-                  Total Liabilities
-                </CardTitle>
-                <TrendingDown className="h-4 w-4 text-amber-600 dark:text-amber-300" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">
-                  {formatCurrency(totalLiabilities)}
-                </div>
-                <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                  Outstanding Debts
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="gradient-blue-card border-blue-200 dark:border-blue-800">
-              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                <CardTitle className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                  Net Worth
-                </CardTitle>
-                <Wallet className="h-4 w-4 text-blue-600 dark:text-blue-200" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                  {formatCurrency(netWorth)}
-                </div>
-                <p className="text-xs text-blue-700 dark:text-blue-200 mt-1">
-                  Assets - Liabilities
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+          <FinancialSummaryCards
+            totalAssets={totalAssets}
+            totalLiabilities={totalLiabilities}
+            netWorth={netWorth}
+          />
         </div>
 
         {/* Main Layout - Two Column Grid */}
         <div className="grid gap-6 lg:grid-cols-[1fr_350px]">
           {/* Main Content */}
-          <div className="space-y-6">
-            {/* Collapsible Sections for All SALN Data */}
-            <Accordion
-              type="multiple"
-              defaultValue={[
-                'assets-real',
-                'assets-personal',
-                'liabilities',
-                'net-worth',
-              ]}
-              className="space-y-4">
-              {/* Real Properties Section */}
-              <AccordionItem
-                value="assets-real"
-                className="border rounded-lg bg-card">
-                <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                  <div className="flex items-center gap-3">
-                    <Home className="h-5 w-5 text-tup-primary" />
-                    <span className="text-lg font-semibold">
-                      Assets - Real Properties
-                    </span>
-                    <Badge variant="secondary" className="ml-2">
-                      {realProperties.length} item
-                      {realProperties.length !== 1 ? 's' : ''}
-                    </Badge>
+          <div className="space-y-4">
+            {/* Real Properties Section */}
+            <DataSection
+              icon={Home}
+              title="Assets - Real Properties"
+              badge={realProperties.length}
+              defaultOpen>
+              {realProperties.length > 0 ? (
+                <div className="space-y-3">
+                  {realProperties.map((property: Record<string, unknown>, index: number) => (
+                    <PropertyCard key={index} type="real" data={property} index={index} />
+                  ))}
+                  {/* Total Row */}
+                  <div className="flex justify-between items-center pt-3 border-t">
+                    <span className="font-semibold">Total Real Properties</span>
+                    <span className="font-bold tabular-nums">{formatCurrency(totalRealProperties)}</span>
                   </div>
-                </AccordionTrigger>
-                <AccordionContent className="px-6 pb-6">
-                  {realProperties.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Description</TableHead>
-                            <TableHead>Kind</TableHead>
-                            <TableHead>Location</TableHead>
-                            <TableHead className="text-right">
-                              Assessed Value
-                            </TableHead>
-                            <TableHead className="text-right">
-                              Market Value
-                            </TableHead>
-                            <TableHead className="text-right">
-                              Acquisition Cost
-                            </TableHead>
-                            <TableHead>Year</TableHead>
-                            <TableHead>Mode</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {realProperties.map(
-                            (
-                              property: {
-                                description: string;
-                                kind: string;
-                                exactLocation: string;
-                                assessedValue: string | null;
-                                currentFairMarketValue: string | null;
-                                acquisitionCost: string | null;
-                                acquisitionYear: number;
-                                acquisitionMode: string;
-                              },
-                              index: number
-                            ) => (
-                              <TableRow key={index}>
-                                <TableCell className="font-medium">
-                                  {property.description}
-                                </TableCell>
-                                <TableCell className="capitalize">
-                                  {property.kind}
-                                </TableCell>
-                                <TableCell className="max-w-xs truncate">
-                                  {property.exactLocation}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  {formatCurrency(property.assessedValue)}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  {formatCurrency(
-                                    property.currentFairMarketValue
-                                  )}
-                                </TableCell>
-                                <TableCell className="text-right font-semibold text-emerald-700 dark:text-emerald-500">
-                                  {formatCurrency(property.acquisitionCost)}
-                                </TableCell>
-                                <TableCell>{property.acquisitionYear}</TableCell>
-                                <TableCell className="capitalize">
-                                  {property.acquisitionMode}
-                                </TableCell>
-                              </TableRow>
-                            )
-                          )}
-                        </TableBody>
-                        <TableFooter>
-                          <TableRow>
-                            <TableCell
-                              colSpan={5}
-                              className="text-right font-semibold">
-                              Total Real Properties:
-                            </TableCell>
-                            <TableCell className="text-right font-bold text-emerald-700 dark:text-emerald-500">
-                              {formatCurrency(totalRealProperties)}
-                            </TableCell>
-                            <TableCell colSpan={2} />
-                          </TableRow>
-                        </TableFooter>
-                      </Table>
-                    </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <Home className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-                      <p className="text-sm text-muted-foreground italic">
-                        No real properties declared
+                </div>
+              ) : (
+                <EmptyState
+                  icon={Home}
+                  title="No Real Properties"
+                  description="No real properties declared"
+                  className="py-8"
+                />
+              )}
+            </DataSection>
+
+            {/* Personal Properties Section */}
+            <DataSection
+              icon={Car}
+              title="Assets - Personal Properties"
+              badge={personalProperties.length}
+              defaultOpen>
+              {personalProperties.length > 0 ? (
+                <div className="space-y-3">
+                  {personalProperties.map((property: Record<string, unknown>, index: number) => (
+                    <PropertyCard key={index} type="personal" data={property} index={index} />
+                  ))}
+                  {/* Total Row */}
+                  <div className="flex justify-between items-center pt-3 border-t">
+                    <span className="font-semibold">Total Personal Properties</span>
+                    <span className="font-bold tabular-nums">{formatCurrency(totalPersonalProperties)}</span>
+                  </div>
+                </div>
+              ) : (
+                <EmptyState
+                  icon={Car}
+                  title="No Personal Properties"
+                  description="No personal properties declared"
+                  className="py-8"
+                />
+              )}
+            </DataSection>
+
+            {/* Assets Summary Section */}
+            <DataSection
+              icon={TrendingUp}
+              title="Total Assets Summary"
+              defaultOpen={false}>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg border">
+                  <span className="text-sm font-medium text-foreground">
+                    Real Properties
+                  </span>
+                  <span className="text-base font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
+                    {formatCurrency(totalRealProperties)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg border">
+                  <span className="text-sm font-medium text-foreground">
+                    Personal Properties
+                  </span>
+                  <span className="text-base font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
+                    {formatCurrency(totalPersonalProperties)}
+                  </span>
+                </div>
+                <Separator />
+                <div className="flex justify-between items-center p-4 bg-card rounded-lg border-2 border-emerald-200 dark:border-emerald-800">
+                  <span className="text-base font-bold text-foreground">
+                    Total Assets
+                  </span>
+                  <span className="text-xl font-bold tabular-nums text-emerald-700 dark:text-emerald-400">
+                    {formatCurrency(totalAssets)}
+                  </span>
+                </div>
+              </div>
+            </DataSection>
+
+            {/* Liabilities Section */}
+            <DataSection
+              icon={CreditCard}
+              title="Liabilities"
+              badge={liabilities.length}
+              defaultOpen>
+              {liabilities.length > 0 ? (
+                <div className="space-y-3">
+                  {liabilities.map((liability: Record<string, unknown>, index: number) => (
+                    <PropertyCard key={index} type="liability" data={liability} index={index} />
+                  ))}
+                  {/* Total Row */}
+                  <div className="flex justify-between items-center pt-3 border-t">
+                    <span className="font-semibold">Total Liabilities</span>
+                    <span className="font-bold tabular-nums">{formatCurrency(totalLiabilities)}</span>
+                  </div>
+                </div>
+              ) : (
+                <EmptyState
+                  icon={CreditCard}
+                  title="No Liabilities"
+                  description="No liabilities declared"
+                  className="py-8"
+                />
+              )}
+            </DataSection>
+
+            {/* Net Worth Calculation Section */}
+            <DataSection
+              icon={Wallet}
+              title="Net Worth Calculation"
+              defaultOpen>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg border">
+                  <span className="text-base font-medium text-foreground">
+                    Total Assets
+                  </span>
+                  <span className="text-lg font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
+                    {formatCurrency(totalAssets)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg border">
+                  <span className="text-base font-medium text-foreground">
+                    Less: Total Liabilities
+                  </span>
+                  <span className="text-lg font-semibold tabular-nums text-amber-700 dark:text-amber-400">
+                    ({formatCurrency(totalLiabilities)})
+                  </span>
+                </div>
+                <Separator />
+                <div className="flex justify-between items-center p-4 bg-card rounded-lg border-2 border-blue-200 dark:border-blue-800">
+                  <span className="text-xl font-bold text-foreground">
+                    Net Worth
+                  </span>
+                  <span className="text-2xl font-bold tabular-nums text-blue-700 dark:text-blue-400">
+                    {formatCurrency(netWorth)}
+                  </span>
+                </div>
+                {previousYear && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2 p-3 bg-muted/30 rounded-lg border">
+                      <p className="text-sm font-medium text-foreground">
+                        Year-over-Year Comparison
                       </p>
-                    </div>
-                  )}
-                </AccordionContent>
-              </AccordionItem>
-
-              {/* Personal Properties Section */}
-              <AccordionItem
-                value="assets-personal"
-                className="border rounded-lg bg-card">
-                <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                  <div className="flex items-center gap-3">
-                    <Car className="h-5 w-5 text-tup-primary" />
-                    <span className="text-lg font-semibold">
-                      Assets - Personal Properties
-                    </span>
-                    <Badge variant="secondary" className="ml-2">
-                      {personalProperties.length} item
-                      {personalProperties.length !== 1 ? 's' : ''}
-                    </Badge>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="px-6 pb-6">
-                  {personalProperties.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Description</TableHead>
-                            <TableHead>Year Acquired</TableHead>
-                            <TableHead className="text-right">
-                              Acquisition Cost
-                            </TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {personalProperties.map(
-                            (
-                              property: {
-                                description: string;
-                                yearAcquired: number;
-                                acquisitionCost: string | null;
-                              },
-                              index: number
-                            ) => (
-                              <TableRow key={index}>
-                                <TableCell className="font-medium">
-                                  {property.description}
-                                </TableCell>
-                                <TableCell>{property.yearAcquired}</TableCell>
-                                <TableCell className="text-right font-semibold text-emerald-700 dark:text-emerald-500">
-                                  {formatCurrency(property.acquisitionCost)}
-                                </TableCell>
-                              </TableRow>
-                            )
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          {previousYear.fiscalYear} Net Worth:
+                        </span>
+                        <span className="font-semibold tabular-nums">
+                          {formatCurrency(
+                            parseFloat(previousYear.netWorth)
                           )}
-                        </TableBody>
-                        <TableFooter>
-                          <TableRow>
-                            <TableCell className="text-right font-semibold">
-                              Total Personal Properties:
-                            </TableCell>
-                            <TableCell />
-                            <TableCell className="text-right font-bold text-emerald-700 dark:text-emerald-500">
-                              {formatCurrency(totalPersonalProperties)}
-                            </TableCell>
-                          </TableRow>
-                        </TableFooter>
-                      </Table>
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Change:</span>
+                        <span
+                          className={`font-semibold tabular-nums ${
+                            parseFloat(previousYear.netWorthChange) >= 0
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-red-600 dark:text-red-400'
+                          }`}>
+                          {parseFloat(previousYear.netWorthChange) >= 0
+                            ? '+'
+                            : ''}
+                          {formatCurrency(
+                            parseFloat(previousYear.netWorthChange)
+                          )}{' '}
+                          ({previousYear.netWorthChangePercent >= 0 ? '+' : ''}
+                          {previousYear.netWorthChangePercent.toFixed(2)}%)
+                        </span>
+                      </div>
                     </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <Car className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-                      <p className="text-sm text-muted-foreground italic">
-                        No personal properties declared
-                      </p>
-                    </div>
-                  )}
-                </AccordionContent>
-              </AccordionItem>
+                  </>
+                )}
+              </div>
+            </DataSection>
 
-              {/* Assets Summary Section */}
-              <AccordionItem
-                value="assets-summary"
-                className="border rounded-lg bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900 dark:to-teal-900">
-                <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                  <div className="flex items-center gap-3">
-                    <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-500" />
-                    <span className="text-lg font-semibold text-emerald-800 dark:text-emerald-400">
-                      Total Assets Summary
-                    </span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="px-6 pb-6">
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center p-3 bg-white/50 dark:bg-black/20 rounded-lg">
-                      <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
-                        Real Properties
-                      </span>
-                      <span className="text-base font-semibold text-emerald-900 dark:text-emerald-400">
-                        {formatCurrency(totalRealProperties)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 bg-white/50 dark:bg-black/20 rounded-lg">
-                      <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
-                        Personal Properties
-                      </span>
-                      <span className="text-base font-semibold text-emerald-900 dark:text-emerald-400">
-                        {formatCurrency(totalPersonalProperties)}
-                      </span>
-                    </div>
-                    <Separator className="bg-emerald-300 dark:bg-emerald-700" />
-                    <div className="flex justify-between items-center p-4 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg">
-                      <span className="text-base font-bold text-emerald-800 dark:text-emerald-400">
-                        Total Assets
-                      </span>
-                      <span className="text-xl font-bold text-emerald-900 dark:text-emerald-400">
-                        {formatCurrency(totalAssets)}
-                      </span>
-                    </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
+            {/* Business Interests Section */}
+            <DataSection
+              icon={Building2}
+              title="Business Interests & Financial Connections"
+              badge={businessInterests.length}
+              defaultOpen={false}>
+              {businessInterests.length > 0 ? (
+                <div className="space-y-3">
+                  {businessInterests.map((business: Record<string, unknown>, index: number) => (
+                    <PropertyCard key={index} type="business" data={business} index={index} />
+                  ))}
+                </div>
+              ) : (
+                <EmptyState
+                  icon={Building2}
+                  title="No Business Interests"
+                  description="No business interests declared"
+                  className="py-8"
+                />
+              )}
+            </DataSection>
 
-              {/* Liabilities Section */}
-              <AccordionItem
-                value="liabilities"
-                className="border rounded-lg bg-card">
-                <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                  <div className="flex items-center gap-3">
-                    <CreditCard className="h-5 w-5 text-tup-primary" />
-                    <span className="text-lg font-semibold">Liabilities</span>
-                    <Badge variant="secondary" className="ml-2">
-                      {liabilities.length} item{liabilities.length !== 1 ? 's' : ''}
-                    </Badge>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="px-6 pb-6">
-                  {liabilities.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Nature of Liability</TableHead>
-                            <TableHead>Name of Creditors</TableHead>
-                            <TableHead className="text-right">
-                              Outstanding Balance
-                            </TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {liabilities.map(
-                            (
-                              liability: {
-                                nature: string;
-                                creditorName: string;
-                                outstandingBalance: string | null;
-                              },
-                              index: number
-                            ) => (
-                              <TableRow key={index}>
-                                <TableCell className="font-medium">
-                                  {liability.nature}
-                                </TableCell>
-                                <TableCell>{liability.creditorName}</TableCell>
-                                <TableCell className="text-right font-semibold text-amber-700 dark:text-amber-400">
-                                  {formatCurrency(liability.outstandingBalance)}
-                                </TableCell>
-                              </TableRow>
-                            )
-                          )}
-                        </TableBody>
-                        <TableFooter>
-                          <TableRow>
-                            <TableCell
-                              colSpan={2}
-                              className="text-right font-semibold">
-                              Total Liabilities:
-                            </TableCell>
-                            <TableCell className="text-right font-bold text-amber-700 dark:text-amber-400">
-                              {formatCurrency(totalLiabilities)}
-                            </TableCell>
-                          </TableRow>
-                        </TableFooter>
-                      </Table>
-                    </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <CreditCard className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-                      <p className="text-sm text-muted-foreground italic">
-                        No liabilities declared
-                      </p>
-                    </div>
-                  )}
-                </AccordionContent>
-              </AccordionItem>
-
-              {/* Net Worth Calculation Section */}
-              <AccordionItem
-                value="net-worth"
-                className="border rounded-lg bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950">
-                <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                  <div className="flex items-center gap-3">
-                    <Wallet className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                    <span className="text-lg font-semibold text-blue-800 dark:text-blue-200">
-                      Net Worth Calculation
-                    </span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="px-6 pb-6">
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center p-3 bg-white/50 dark:bg-black/20 rounded-lg">
-                      <span className="text-base font-medium text-blue-700 dark:text-blue-200">
-                        Total Assets
-                      </span>
-                      <span className="text-lg font-semibold text-blue-900 dark:text-blue-200">
-                        {formatCurrency(totalAssets)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 bg-white/50 dark:bg-black/20 rounded-lg">
-                      <span className="text-base font-medium text-blue-700 dark:text-blue-200">
-                        Less: Total Liabilities
-                      </span>
-                      <span className="text-lg font-semibold text-blue-900 dark:text-blue-200">
-                        ({formatCurrency(totalLiabilities)})
-                      </span>
-                    </div>
-                    <Separator className="bg-blue-300 dark:bg-blue-700" />
-                    <div className="flex justify-between items-center p-4 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
-                      <span className="text-xl font-bold text-blue-800 dark:text-blue-200">
-                        Net Worth
-                      </span>
-                      <span className="text-2xl font-bold text-blue-900 dark:text-blue-200">
-                        {formatCurrency(netWorth)}
-                      </span>
-                    </div>
-                    {previousYear && (
-                      <>
-                        <Separator className="bg-blue-200 dark:bg-blue-800" />
-                        <div className="space-y-2 p-3 bg-white/50 dark:bg-black/20 rounded-lg">
-                          <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                            Year-over-Year Comparison
-                          </p>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">
-                              {previousYear.fiscalYear} Net Worth:
-                            </span>
-                            <span className="font-semibold">
-                              {formatCurrency(
-                                parseFloat(previousYear.netWorth)
-                              )}
-                            </span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Change:</span>
-                            <span
-                              className={`font-semibold ${
-                                parseFloat(previousYear.netWorthChange) >= 0
-                                  ? 'text-emerald-600 dark:text-emerald-400'
-                                  : 'text-red-600 dark:text-red-400'
-                              }`}>
-                              {parseFloat(previousYear.netWorthChange) >= 0
-                                ? '+'
-                                : ''}
-                              {formatCurrency(
-                                parseFloat(previousYear.netWorthChange)
-                              )}{' '}
-                              ({previousYear.netWorthChangePercent >= 0 ? '+' : ''}
-                              {previousYear.netWorthChangePercent.toFixed(2)}%)
-                            </span>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-
-              {/* Business Interests Section */}
-              <AccordionItem
-                value="business-interests"
-                className="border rounded-lg bg-card">
-                <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                  <div className="flex items-center gap-3">
-                    <Building2 className="h-5 w-5 text-tup-primary" />
-                    <span className="text-lg font-semibold">
-                      Business Interests & Financial Connections
-                    </span>
-                    <Badge variant="secondary" className="ml-2">
-                      {businessInterests.length} item
-                      {businessInterests.length !== 1 ? 's' : ''}
-                    </Badge>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="px-6 pb-6">
-                  {businessInterests.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Entity Name</TableHead>
-                            <TableHead>Business Address</TableHead>
-                            <TableHead>Nature of Business</TableHead>
-                            <TableHead>Date Acquired</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {businessInterests.map(
-                            (
-                              business: {
-                                entityName: string;
-                                businessAddress: string;
-                                natureOfBusiness: string;
-                                dateOfAcquisition: string | null;
-                              },
-                              index: number
-                            ) => (
-                              <TableRow key={index}>
-                                <TableCell className="font-medium">
-                                  {business.entityName}
-                                </TableCell>
-                                <TableCell className="max-w-xs truncate">
-                                  {business.businessAddress}
-                                </TableCell>
-                                <TableCell>{business.natureOfBusiness}</TableCell>
-                                <TableCell>
-                                  {business.dateOfAcquisition
-                                    ? format(
-                                        new Date(business.dateOfAcquisition),
-                                        'MMM d, yyyy'
-                                      )
-                                    : '-'}
-                                </TableCell>
-                              </TableRow>
-                            )
-                          )}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <Building2 className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-                      <p className="text-sm text-muted-foreground italic">
-                        No business interests declared
-                      </p>
-                    </div>
-                  )}
-                </AccordionContent>
-              </AccordionItem>
-
-              {/* Relatives in Government Section */}
-              <AccordionItem
-                value="relatives-in-gov"
-                className="border rounded-lg bg-card">
-                <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                  <div className="flex items-center gap-3">
-                    <Users className="h-5 w-5 text-tup-primary" />
-                    <span className="text-lg font-semibold">
-                      Relatives in Government Service
-                    </span>
-                    <Badge variant="secondary" className="ml-2">
-                      {relativesInGov.length} relative
-                      {relativesInGov.length !== 1 ? 's' : ''}
-                    </Badge>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="px-6 pb-6">
-                  {relativesInGov.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Relationship</TableHead>
-                            <TableHead>Position</TableHead>
-                            <TableHead>Agency/Office Address</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {relativesInGov.map(
-                            (
-                              relative: {
-                                name: string;
-                                relationship: string;
-                                position: string;
-                                agencyAddress: string;
-                              },
-                              index: number
-                            ) => (
-                              <TableRow key={index}>
-                                <TableCell className="font-medium">
-                                  {relative.name}
-                                </TableCell>
-                                <TableCell className="capitalize">
-                                  {relative.relationship}
-                                </TableCell>
-                                <TableCell>{relative.position}</TableCell>
-                                <TableCell className="max-w-xs truncate">
-                                  {relative.agencyAddress}
-                                </TableCell>
-                              </TableRow>
-                            )
-                          )}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <Users className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-                      <p className="text-sm text-muted-foreground italic">
-                        No relatives in government service declared
-                      </p>
-                    </div>
-                  )}
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+            {/* Relatives in Government Section */}
+            <DataSection
+              icon={Users}
+              title="Relatives in Government Service"
+              badge={relativesInGov.length}
+              defaultOpen={false}>
+              {relativesInGov.length > 0 ? (
+                <div className="space-y-3">
+                  {relativesInGov.map((relative: Record<string, unknown>, index: number) => (
+                    <PropertyCard key={index} type="relative" data={relative} index={index} />
+                  ))}
+                </div>
+              ) : (
+                <EmptyState
+                  icon={Users}
+                  title="No Relatives in Government"
+                  description="No relatives in government service declared"
+                  className="py-8"
+                />
+              )}
+            </DataSection>
           </div>
 
           {/* Sidebar - Employee Info */}
@@ -1227,20 +867,20 @@ export default function SalnSubmissionViewPage() {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Assets</span>
-                      <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                      <span className="font-medium tabular-nums text-emerald-700 dark:text-emerald-400">
                         {formatCurrency(totalAssets)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Liabilities</span>
-                      <span className="font-medium text-amber-700 dark:text-amber-400">
+                      <span className="font-medium tabular-nums text-amber-700 dark:text-amber-400">
                         {formatCurrency(totalLiabilities)}
                       </span>
                     </div>
                     <Separator />
                     <div className="flex justify-between">
                       <span className="font-semibold">Net Worth</span>
-                      <span className="font-bold text-blue-700 dark:text-blue-400">
+                      <span className="font-bold tabular-nums text-blue-700 dark:text-blue-400">
                         {formatCurrency(netWorth)}
                       </span>
                     </div>

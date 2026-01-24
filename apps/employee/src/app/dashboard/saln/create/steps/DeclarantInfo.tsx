@@ -9,13 +9,13 @@
  * - Consistent spacing and styling
  *
  * Features:
- * - Native HTML select with proper React Hook Form integration
+ * - Year auto-set to current year (read-only display)
  * - EnhancedInput for all text fields
  * - BlurFade entrance animations
  * - React.memo for performance
  */
 
-import { memo, useMemo } from 'react';
+import { memo, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { PersonIcon } from '@radix-ui/react-icons';
 import { Label } from '../../../../../components/ui/label';
@@ -41,20 +41,26 @@ interface FormErrors {
 }
 
 export const DeclarantInfo = memo(function DeclarantInfo() {
+  const form = useFormContext<any>();
   const {
     register,
     watch,
     formState: { errors },
-  } = useFormContext<any>();
+  } = form;
 
   const filingType = watch('submission.filingType');
   const isJointFiling = filingType === 'joint';
 
-  // Memoize year options to prevent recreation on every render
-  const yearOptions = useMemo(() => {
-    const currentYear = new Date().getFullYear();
-    return Array.from({ length: 5 }, (_, i) => currentYear - i);
-  }, []);
+  // Current year for SALN filing (always the current year)
+  const currentYear = new Date().getFullYear();
+
+  // Auto-set the year value to current year
+  useEffect(() => {
+    const currentValue = form.getValues('submission.year');
+    if (currentValue !== currentYear) {
+      form.setValue('submission.year', currentYear, { shouldDirty: false });
+    }
+  }, [form, currentYear]);
 
   return (
     <div className="space-y-8">
@@ -90,26 +96,17 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
                   className="text-base font-medium">
                   As of December 31 of Year <span className="text-destructive">*</span>
                 </Label>
-                <select
-                  id="submission.year"
-                  {...register('submission.year', {
-                    setValueAs: (v) => (v ? parseInt(v, 10) : undefined),
-                  })}
-                  className="flex h-10 w-full rounded-md border bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors px-3 py-2 text-sm ring-offset-background focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50">
-                  <option value="">Select year</option>
-                  {yearOptions.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex h-10 w-full items-center rounded-md border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 px-3 py-2">
+                  <span className="text-base font-semibold text-foreground">{currentYear}</span>
+                </div>
+                <input type="hidden" {...register('submission.year')} />
                 {errors?.submission && 'year' in errors.submission && (
                   <p className="text-sm text-destructive">
                     {(errors as FormErrors).submission?.year?.message}
                   </p>
                 )}
                 <p className="text-sm text-muted-foreground">
-                  Year for which this SALN is being filed
+                  SALN submissions are filed for the current year only
                 </p>
               </div>
             </div>

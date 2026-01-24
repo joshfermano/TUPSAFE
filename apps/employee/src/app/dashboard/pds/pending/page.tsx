@@ -348,6 +348,7 @@ export default function PDSPendingPage() {
                   submission={{
                     id: submission.id,
                     version: submission.version,
+                    year: submission.year,
                     status: submission.status as
                       | 'submitted'
                       | 'reviewing',

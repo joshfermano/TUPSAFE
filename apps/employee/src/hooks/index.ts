@@ -371,6 +371,7 @@ export {
 export {
   useSALNSubmissions,
   useSALNSubmission,
+  useLatestSALN,
   useArchivedSALN,
   useCompareSALN,
   useCreateSALN,

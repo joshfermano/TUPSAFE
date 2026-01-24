@@ -531,7 +531,7 @@ export function showAutoSaveToast(type: DocumentType, success: boolean = true) {
  * showDeleteDraftToast('pds', async () => {
  *   await deletePDS(draftId);
  * }, {
- *   version: 1
+ *   year: 2025
  * });
  * ```
  */
@@ -539,11 +539,11 @@ export function showDeleteDraftToast(
   type: DocumentType,
   onConfirm: () => Promise<void>,
   options?: {
-    version?: number;
+    year?: number;
   }
 ) {
   const typeLabel = type.toUpperCase();
-  const versionText = options?.version ? ` (Version ${options.version})` : '';
+  const yearText = options?.year ? ` (Year ${options.year})` : '';
 
   const deleteOptions: {
     description: string;
@@ -555,7 +555,7 @@ export function showDeleteDraftToast(
       onClick: () => void;
     };
   } = {
-    description: `This will permanently delete your ${typeLabel} draft${versionText}. This action cannot be undone.`,
+    description: `This will permanently delete your ${typeLabel} draft${yearText}. This action cannot be undone.`,
     duration: 10000, // Longer duration for important actions
     icon: AlertTriangle ? <AlertTriangle className="h-5 w-5" /> : undefined,
     className: 'border-amber-500/50 bg-amber-50 dark:bg-amber-950/30',
@@ -583,17 +583,17 @@ export function showDeleteDraftToast(
  *
  * @example
  * ```typescript
- * showDeleteSuccessToast('pds', { version: 1 });
+ * showDeleteSuccessToast('pds', { year: 2025 });
  * ```
  */
 export function showDeleteSuccessToast(
   type: DocumentType,
   options?: {
-    version?: number;
+    year?: number;
   }
 ) {
   const typeLabel = type.toUpperCase();
-  const versionText = options?.version ? ` (Version ${options.version})` : '';
+  const yearText = options?.year ? ` (Year ${options.year})` : '';
 
   const successOptions: {
     description: string;
@@ -601,7 +601,7 @@ export function showDeleteSuccessToast(
     icon?: React.ReactNode;
     className?: string;
   } = {
-    description: `Your ${typeLabel} draft${versionText} has been permanently deleted.`,
+    description: `Your ${typeLabel} draft${yearText} has been permanently deleted.`,
     duration: 4000,
     icon: CheckCircle2 ? <CheckCircle2 className="h-5 w-5" /> : undefined,
     className: 'border-green-500/50 bg-green-50 dark:bg-green-950/30',

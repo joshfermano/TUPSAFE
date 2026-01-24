@@ -18,6 +18,7 @@ import {
 } from '../../hooks/useDeadlines';
 import { useLatestPDS } from '../../hooks';
 import { DeadlineCountdown } from './DeadlineCountdown';
+import { DeadlineMinimal } from './DeadlineMinimal';
 
 interface DeadlineSectionProps {
   /**
@@ -181,16 +182,16 @@ export const DeadlineSection = memo(function DeadlineSection({
     });
   }
 
-  // Check if user has an approved PDS for this deadline's year
-  // If approved, don't show the deadline section
-  const hasApprovedSubmission =
-    latestSubmission?.status === 'approved' &&
-    latestSubmission?.year === deadline?.year;
+  // Check if user has an active submission (submitted, reviewing, or approved) for this deadline's year
+  // If so, show minimal version instead of the full deadline section
+  const hasActiveSubmission =
+    latestSubmission?.year === deadline?.year &&
+    ['submitted', 'reviewing', 'approved'].includes(latestSubmission?.status || '');
 
-  // Hide deadline if user has approved submission for this year
-  if (hasApprovedSubmission) {
-    console.log(`[DeadlineSection ${formType}] Hiding deadline - approved submission exists for year ${deadline?.year}`);
-    return null;
+  // Show minimal version instead of hiding completely
+  if (hasActiveSubmission) {
+    console.log(`[DeadlineSection ${formType}] Showing minimal - active submission (${latestSubmission?.status}) exists for year ${deadline?.year}`);
+    return <DeadlineMinimal formType={formType} className={className} />;
   }
 
   // Loading state - wait for both deadline and latest submission data

@@ -121,6 +121,11 @@ import { DotPattern } from '../../../../components/ui/dot-pattern';
 // Hooks
 import { useAutoSave, getSavedDraft } from '../../../../hooks/useAutoSave';
 import { useAuth } from '../../../../providers/AuthProvider';
+import { useDeadlineForForm } from '../../../../hooks/useDeadlines';
+import { useLatestPDS } from '../../../../hooks/usePDS';
+
+// Components
+import { DeadlineNotice } from '../../../../components/dashboard/DeadlineNotice';
 
 // Transformations
 import {
@@ -246,6 +251,21 @@ export default function PDSCreatePage() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const userId = user?.id || 'guest';
+
+  // Deadline and submission hooks
+  const { deadline } = useDeadlineForForm('pds');
+  const { data: latestPDS } = useLatestPDS();
+
+  // Redirect if user has approved submission for current year
+  useEffect(() => {
+    const currentYear = deadline?.year ?? new Date().getFullYear();
+    if (latestPDS?.status === 'approved' && latestPDS?.year === currentYear) {
+      toast.info('Already Submitted', {
+        description: `You already have an approved PDS for ${currentYear}. Only one submission per year is allowed.`,
+      });
+      router.replace('/dashboard/pds');
+    }
+  }, [latestPDS, deadline, router]);
 
   // Check if loading from existing draft
   const draftIdFromUrl = searchParams.get('draftId');
@@ -757,6 +777,246 @@ export default function PDSCreatePage() {
     [currentSection, completedSections]
   );
 
+  // ============================================================================
+  // FIELD NAME MAPPING FOR USER-FRIENDLY ERROR MESSAGES
+  // ============================================================================
+
+  const PDS_FIELD_NAME_MAP: Record<string, string> = {
+    // Personal Information
+    'personalInfo.surname': 'Surname',
+    'personalInfo.firstName': 'First Name',
+    'personalInfo.middleName': 'Middle Name',
+    'personalInfo.nameExtension': 'Name Extension/Suffix',
+    'personalInfo.dateOfBirth': 'Date of Birth',
+    'personalInfo.placeOfBirth': 'Place of Birth',
+    'personalInfo.sex': 'Sex',
+    'personalInfo.civilStatus': 'Civil Status',
+    'personalInfo.heightM': 'Height (meters)',
+    'personalInfo.weightKg': 'Weight (kg)',
+    'personalInfo.bloodType': 'Blood Type',
+
+    // Government IDs
+    'personalInfo.gsisNo': 'GSIS ID No.',
+    'personalInfo.pagibigNo': 'PAG-IBIG ID No.',
+    'personalInfo.philhealthNo': 'PhilHealth No.',
+    'personalInfo.sssNo': 'SSS No.',
+    'personalInfo.tinNo': 'TIN',
+    'personalInfo.agencyEmployeeNo': 'Agency Employee No.',
+
+    // Citizenship
+    'personalInfo.citizenship': 'Citizenship',
+    'personalInfo.citizenshipType': 'Citizenship Type',
+    'personalInfo.citizenshipCountry': 'Citizenship Country',
+
+    // Residential Address
+    'personalInfo.residentialAddress': 'Residential Address',
+    'personalInfo.residentialAddress.houseNumber':
+      'Residential Address - House/Block/Lot No.',
+    'personalInfo.residentialAddress.streetName':
+      'Residential Address - Street',
+    'personalInfo.residentialAddress.subdivision':
+      'Residential Address - Subdivision',
+    'personalInfo.residentialAddress.barangay':
+      'Residential Address - Barangay',
+    'personalInfo.residentialAddress.cityMunicipality':
+      'Residential Address - City/Municipality',
+    'personalInfo.residentialAddress.province':
+      'Residential Address - Province',
+    'personalInfo.residentialAddress.zipCode': 'Residential Address - ZIP Code',
+    'personalInfo.residentialAddress.region': 'Residential Address - Region',
+
+    // Permanent Address
+    'personalInfo.permanentAddress': 'Permanent Address',
+    'personalInfo.permanentAddress.houseNumber':
+      'Permanent Address - House/Block/Lot No.',
+    'personalInfo.permanentAddress.streetName': 'Permanent Address - Street',
+    'personalInfo.permanentAddress.subdivision':
+      'Permanent Address - Subdivision',
+    'personalInfo.permanentAddress.barangay': 'Permanent Address - Barangay',
+    'personalInfo.permanentAddress.cityMunicipality':
+      'Permanent Address - City/Municipality',
+    'personalInfo.permanentAddress.province': 'Permanent Address - Province',
+    'personalInfo.permanentAddress.zipCode': 'Permanent Address - ZIP Code',
+    'personalInfo.permanentAddress.region': 'Permanent Address - Region',
+
+    // Contact
+    'personalInfo.telephoneNo': 'Telephone No.',
+    'personalInfo.mobileNo': 'Mobile No.',
+    'personalInfo.emailAddress': 'Email Address',
+
+    // Family - Spouse
+    family: 'Family Background',
+    'family.spouseSurname': 'Spouse - Surname',
+    'family.spouseFirstName': 'Spouse - First Name',
+    'family.spouseMiddleName': 'Spouse - Middle Name',
+    'family.spouseNameExtension': 'Spouse - Name Extension',
+    'family.spouseOccupation': 'Spouse - Occupation',
+    'family.spouseEmployer': 'Spouse - Employer',
+    'family.spouseBusinessAddress': 'Spouse - Business Address',
+    'family.spouseTelephoneNo': 'Spouse - Telephone No.',
+
+    // Family - Parents
+    'family.fatherSurname': 'Father - Surname',
+    'family.fatherFirstName': 'Father - First Name',
+    'family.fatherMiddleName': 'Father - Middle Name',
+    'family.fatherNameExtension': 'Father - Name Extension',
+    'family.motherMaidenSurname': 'Mother - Maiden Surname',
+    'family.motherFirstName': 'Mother - First Name',
+    'family.motherMiddleName': 'Mother - Middle Name',
+    'family.children': 'Children',
+
+    // Education
+    education: 'Educational Background',
+    'education.elementary': 'Elementary Education',
+    'education.elementary.schoolName': 'Elementary - School Name',
+    'education.elementary.degreeCourse': 'Elementary - Degree/Course',
+    'education.elementary.periodFrom': 'Elementary - From Year',
+    'education.elementary.periodTo': 'Elementary - To Year',
+    'education.elementary.unitsEarned': 'Elementary - Units Earned',
+    'education.elementary.yearGraduated': 'Elementary - Year Graduated',
+    'education.elementary.honors': 'Elementary - Honors',
+    'education.secondary': 'Secondary Education',
+    'education.secondary.schoolName': 'Secondary - School Name',
+    'education.secondary.degreeCourse': 'Secondary - Degree/Course',
+    'education.secondary.periodFrom': 'Secondary - From Year',
+    'education.secondary.periodTo': 'Secondary - To Year',
+    'education.secondary.unitsEarned': 'Secondary - Units Earned',
+    'education.secondary.yearGraduated': 'Secondary - Year Graduated',
+    'education.secondary.honors': 'Secondary - Honors',
+    'education.vocational': 'Vocational/Trade Course',
+    'education.vocational.schoolName': 'Vocational - School Name',
+    'education.vocational.degreeCourse': 'Vocational - Course',
+    'education.vocational.periodFrom': 'Vocational - From Year',
+    'education.vocational.periodTo': 'Vocational - To Year',
+    'education.vocational.unitsEarned': 'Vocational - Units Earned',
+    'education.vocational.yearGraduated': 'Vocational - Year Graduated',
+    'education.vocational.honors': 'Vocational - Honors',
+    'education.college': 'College Education',
+    'education.college.schoolName': 'College - School Name',
+    'education.college.degreeCourse': 'College - Degree/Course',
+    'education.college.periodFrom': 'College - From Year',
+    'education.college.periodTo': 'College - To Year',
+    'education.college.unitsEarned': 'College - Units Earned',
+    'education.college.yearGraduated': 'College - Year Graduated',
+    'education.college.honors': 'College - Honors',
+    'education.graduate': 'Graduate Studies',
+    'education.graduate.schoolName': 'Graduate Studies - School Name',
+    'education.graduate.degreeCourse': 'Graduate Studies - Degree',
+    'education.graduate.periodFrom': 'Graduate Studies - From Year',
+    'education.graduate.periodTo': 'Graduate Studies - To Year',
+    'education.graduate.unitsEarned': 'Graduate Studies - Units Earned',
+    'education.graduate.yearGraduated': 'Graduate Studies - Year Graduated',
+    'education.graduate.honors': 'Graduate Studies - Honors',
+
+    // Civil Service Eligibility
+    eligibility: 'Civil Service Eligibility',
+
+    // Work Experience
+    workExperience: 'Work Experience',
+
+    // Voluntary Work
+    voluntaryWork: 'Voluntary Work',
+
+    // Learning & Development
+    learningDevelopment: 'Learning and Development',
+
+    // Other Info
+    otherInfo: 'Other Information',
+    'otherInfo.skills': 'Special Skills and Hobbies',
+    'otherInfo.recognitions': 'Non-Academic Distinctions/Recognition',
+    'otherInfo.associations': 'Membership in Associations/Organizations',
+    'otherInfo.references': 'Character References',
+  };
+
+  const ARRAY_FIELD_PATTERNS: Record<string, Record<string, string>> = {
+    'family.children': {
+      fullName: 'Full Name',
+      dateOfBirth: 'Date of Birth',
+    },
+    eligibility: {
+      eligibilityName: 'Career Service/RA 1080',
+      rating: 'Rating',
+      dateOfExam: 'Date of Examination',
+      placeOfExam: 'Place of Examination',
+      licenseNo: 'License Number',
+      licenseValidityDate: 'License Validity Date',
+    },
+    workExperience: {
+      positionTitle: 'Position Title',
+      departmentAgency: 'Department/Agency/Office',
+      monthlySalary: 'Monthly Salary',
+      salaryGrade: 'Salary Grade',
+      statusOfAppointment: 'Status of Appointment',
+      isGovernment: 'Government Service',
+      dateFrom: 'From Date',
+      dateTo: 'To Date',
+    },
+    voluntaryWork: {
+      organizationName: 'Organization Name',
+      organizationAddress: 'Organization Address',
+      dateFrom: 'From Date',
+      dateTo: 'To Date',
+      numberOfHours: 'Number of Hours',
+      positionNature: 'Position/Nature of Work',
+    },
+    learningDevelopment: {
+      title: 'Title of Program',
+      dateFrom: 'From Date',
+      dateTo: 'To Date',
+      hours: 'Number of Hours',
+      typeOfLd: 'Type of LD',
+      conductedBy: 'Conducted/Sponsored By',
+    },
+    'otherInfo.skills': {
+      skill: 'Skill',
+    },
+    'otherInfo.recognitions': {
+      recognition: 'Recognition',
+    },
+    'otherInfo.associations': {
+      association: 'Association',
+    },
+    'otherInfo.references': {
+      name: 'Name',
+      address: 'Address',
+      telephoneNo: 'Telephone No.',
+    },
+  };
+
+  /**
+   * Converts a database field path to a user-friendly display name
+   */
+  const formatFieldPath = (fieldPath: string): string => {
+    // Check for exact match in the mapping
+    if (PDS_FIELD_NAME_MAP[fieldPath]) {
+      return PDS_FIELD_NAME_MAP[fieldPath];
+    }
+
+    // Check for array item patterns (e.g., "family.children.0.fullName", "eligibility.0.rating")
+    const arrayMatch = fieldPath.match(/^(.+?)\.(\d+)\.(.+)$/);
+    if (arrayMatch) {
+      const [, arrayPath, index, fieldName] = arrayMatch;
+      const itemIndex = parseInt(index, 10) + 1; // Convert to 1-based for display
+
+      // Check if we have a pattern for this array
+      if (
+        ARRAY_FIELD_PATTERNS[arrayPath] &&
+        ARRAY_FIELD_PATTERNS[arrayPath][fieldName]
+      ) {
+        const arrayDisplayName = PDS_FIELD_NAME_MAP[arrayPath] || arrayPath;
+        const fieldDisplayName = ARRAY_FIELD_PATTERNS[arrayPath][fieldName];
+        return `${arrayDisplayName} #${itemIndex} - ${fieldDisplayName}`;
+      }
+    }
+
+    // Fallback: Convert camelCase to Title Case with spaces
+    const fallbackName = fieldPath.split('.').pop() || fieldPath;
+    return fallbackName
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, (str) => str.toUpperCase())
+      .trim();
+  };
+
   // Form submission with sequential mutations
   const handleSubmit = useCallback(
     async (data: Partial<CompletePdsData>) => {
@@ -988,43 +1248,13 @@ export default function PDSCreatePage() {
           // Format all validation errors to be user-friendly
           const formatValidationErrors = (errors: z.ZodError): string => {
             const errorMessages = errors.errors.map((err) => {
-              // Extract field path like "education.secondary.level"
               const path = err.path.join('.');
-
-              // Convert to human-readable format
-              const friendlyPath = path
-                .replace('personalInfo.', 'Personal Information - ')
-                .replace('family.', 'Family Background - ')
-                .replace('education.', 'Education - ')
-                .replace('eligibility.', 'Civil Service Eligibility - ')
-                .replace('workExperience.', 'Work Experience - ')
-                .replace('voluntaryWork.', 'Voluntary Work - ')
-                .replace('learningDevelopment.', 'Learning & Development - ')
-                .replace('otherInfo.', 'Other Information - ')
-                .replace('.level', '')
-                .replace('.schoolName', ' - School Name')
-                .replace('.degreeCourse', ' - Degree/Course')
-                .replace('.unitsEarned', ' - Units Earned')
-                .replace('.periodFrom', ' - Period From')
-                .replace('.periodTo', ' - Period To')
-                .replace('.yearGraduated', ' - Year Graduated')
-                .replace('.honors', ' - Honors')
-                .replace('elementary', 'Elementary')
-                .replace('secondary', 'Secondary')
-                .replace('vocational', 'Vocational')
-                .replace('college', 'College')
-                .replace('graduate', 'Graduate Studies')
-                .replace('surname', 'Surname')
-                .replace('firstName', 'First Name')
-                .replace('dateOfBirth', 'Date of Birth')
-                .replace('placeOfBirth', 'Place of Birth')
-                .replace('emailAddress', 'Email Address')
-                .replace('references', 'Character References');
-
+              const friendlyPath = formatFieldPath(path);
               return `${friendlyPath}: ${err.message}`;
             });
 
-            return errorMessages.slice(0, 5).join('\n'); // Show max 5 errors
+            // Return max 5 errors, each on a new line
+            return errorMessages.slice(0, 5).join('\n');
           };
 
           // Log formatted errors to console for debugging
@@ -1264,6 +1494,9 @@ export default function PDSCreatePage() {
             onSectionClick={handleSectionClick}
           />
         </div>
+
+        {/* Deadline notice banner */}
+        <DeadlineNotice formType="pds" variant="banner" className="mb-6" />
 
         {/* Auto-save info banner */}
         {!hasSeenAutoSaveInfo && (

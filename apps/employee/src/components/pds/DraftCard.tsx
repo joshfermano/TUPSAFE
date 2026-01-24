@@ -70,7 +70,7 @@ export const DraftCard = memo(
     const handleDelete = async () => {
       try {
         await deletePDS(submission.id);
-        showDeleteSuccessToast('pds', { version: submission.version });
+        showDeleteSuccessToast('pds', { year: submission.year });
         setShowDeleteDialog(false);
       } catch (error) {
         showDeleteErrorToast('pds', error instanceof Error ? error.message : 'Failed to delete draft');
@@ -86,7 +86,7 @@ export const DraftCard = memo(
               isPending && 'opacity-60 pointer-events-none'
             )}>
             <CardContent className="p-5 space-y-3.5">
-              {/* Header with Year, Version and Status Badge */}
+              {/* Header with Year and Status Badge */}
               <div className="flex justify-between items-start gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1.5">

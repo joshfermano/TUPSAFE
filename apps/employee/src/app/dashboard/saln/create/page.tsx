@@ -83,7 +83,11 @@ import { DotPattern } from '../../../../components/ui/dot-pattern';
 import { useAutoSave, getSavedDraft } from '../../../../hooks/useAutoSave';
 import { useAuth } from '../../../../providers/AuthProvider';
 import { useProfile } from '../../../../hooks/useProfile';
-import { useCreateSALN, useUpdateSALN, useSubmitSALN } from '../../../../hooks/useSALN';
+import { useCreateSALN, useUpdateSALN, useSubmitSALN, useLatestSALN } from '../../../../hooks/useSALN';
+import { useDeadlineForForm } from '../../../../hooks/useDeadlines';
+
+// Components
+import { DeadlineNotice } from '../../../../components/dashboard/DeadlineNotice';
 
 // Transformations
 import {
@@ -176,8 +180,8 @@ const getSectionFields = (step: number): string[] => {
   switch (step) {
     case 0: // Step 0: Declarant Info
       return [
-        'submission.year',
         'submission.filingType',
+        // Year is auto-set to current year
         // Spouse name is conditionally required based on filingType
         // This is handled by the schema's refine() method
       ];
@@ -204,7 +208,7 @@ const getSectionFields = (step: number): string[] => {
 const getSectionRequiredFieldsDescription = (step: number): string => {
   switch (step) {
     case 0:
-      return 'year and filing type';
+      return 'filing type';
     case 1:
     case 2:
     case 3:
@@ -232,6 +236,10 @@ export default function SALNCreatePage() {
 
   // Get profile data for backfilling declarant info
   const { data: profileData } = useProfile();
+
+  // Get deadline info for the banner and redirect check
+  const { deadline } = useDeadlineForForm('saln');
+  const { data: latestSALN } = useLatestSALN();
 
   // Check if loading from existing draft
   const draftIdFromUrl = searchParams.get('draftId');
@@ -303,6 +311,17 @@ export default function SALNCreatePage() {
       }
     }
   }, [profileData, draftIdFromUrl, form]);
+
+  // Redirect if user has approved submission for current year
+  useEffect(() => {
+    const currentYear = deadline?.year ?? new Date().getFullYear();
+    if (latestSALN?.status === 'approved' && latestSALN?.year === currentYear) {
+      toast.info('Already Submitted', {
+        description: `You already have an approved SALN for ${currentYear}. Only one submission per year is allowed.`,
+      });
+      router.replace('/dashboard/saln');
+    }
+  }, [latestSALN, deadline, router]);
 
   // Use useWatch for reactive updates to nested field arrays
   // This properly tracks changes to individual fields within arrays
@@ -810,6 +829,9 @@ export default function SALNCreatePage() {
             progressPercentage={formProgress}
           />
         </div>
+
+        {/* Deadline Notice Banner */}
+        <DeadlineNotice formType="saln" variant="banner" className="mb-6" />
 
         {/* Auto-save info banner */}
         {!hasSeenAutoSaveInfo && (

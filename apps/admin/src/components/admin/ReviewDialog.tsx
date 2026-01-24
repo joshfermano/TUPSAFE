@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { toast } from 'sonner';
-import { CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { CheckCircle2, XCircle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -19,6 +19,81 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+// Prebuilt comment templates for approval actions
+const APPROVAL_TEMPLATES = [
+  {
+    id: 'custom',
+    label: 'Custom Comment',
+    text: '',
+  },
+  {
+    id: 'approved-complete',
+    label: 'Complete & Compliant',
+    text: 'Submission reviewed and approved. All information is complete and compliant with requirements.',
+  },
+  {
+    id: 'approved-timely',
+    label: 'Timely Submission',
+    text: 'Approved. Thank you for your timely and accurate submission.',
+  },
+  {
+    id: 'approved-minor',
+    label: 'Minor Details Noted',
+    text: 'Submission approved. Minor details noted but acceptable for this filing period.',
+  },
+  {
+    id: 'approved-no-corrections',
+    label: 'No Corrections Required',
+    text: 'Reviewed and approved as submitted. No corrections required.',
+  },
+] as const;
+
+// Prebuilt comment templates for rejection actions
+const REJECTION_TEMPLATES = [
+  {
+    id: 'custom',
+    label: 'Custom Comment',
+    text: '',
+  },
+  {
+    id: 'reject-incomplete',
+    label: 'Incomplete Information',
+    text: 'Incomplete information: Please review and complete all required fields before resubmitting.',
+  },
+  {
+    id: 'reject-missing-docs',
+    label: 'Missing Documents',
+    text: 'Missing required documents: Please attach the necessary supporting documents.',
+  },
+  {
+    id: 'reject-inconsistent',
+    label: 'Inconsistent Data',
+    text: 'Inconsistent data: Information provided contains discrepancies that need to be corrected.',
+  },
+  {
+    id: 'reject-invalid',
+    label: 'Invalid Entries',
+    text: 'Invalid entries: Some fields contain invalid or improperly formatted data.',
+  },
+  {
+    id: 'reject-outdated',
+    label: 'Outdated Information',
+    text: 'Outdated information: Please update the submission with current information.',
+  },
+  {
+    id: 'reject-signature',
+    label: 'Signature/Certification Issues',
+    text: 'Signature/certification issues: Please ensure proper signatures and certifications are complete.',
+  },
+] as const;
 
 // Validation schema
 const reviewSchema = z.object({
@@ -116,6 +191,21 @@ export function ReviewDialog({
   const selectedAction = watch('action');
   const notes = watch('notes');
 
+  // State for selected template
+  const [selectedTemplate, setSelectedTemplate] = React.useState<string>('custom');
+
+  // Get the appropriate templates based on selected action
+  const currentTemplates = selectedAction === 'approve' ? APPROVAL_TEMPLATES : REJECTION_TEMPLATES;
+
+  // Handle template selection
+  const handleTemplateChange = (templateId: string) => {
+    setSelectedTemplate(templateId);
+    const template = currentTemplates.find((t) => t.id === templateId);
+    if (template) {
+      setValue('notes', template.text);
+    }
+  };
+
   // Determine if notes are required based on action
   const notesRequired = selectedAction === 'reject';
 
@@ -125,10 +215,17 @@ export function ReviewDialog({
   // Reset form when dialog opens/closes or defaultAction changes
   React.useEffect(() => {
     if (open) {
-      // When dialog opens, set to the defaultAction
+      // When dialog opens, set to the defaultAction and reset template
       reset({ action: defaultAction, notes: '' });
+      setSelectedTemplate('custom');
     }
   }, [open, defaultAction, reset]);
+
+  // Reset template selection when action changes
+  React.useEffect(() => {
+    setSelectedTemplate('custom');
+    setValue('notes', '');
+  }, [selectedAction, setValue]);
 
   const onSubmit = async (data: ReviewFormData) => {
     // Validate notes if required
@@ -238,6 +335,32 @@ export function ReviewDialog({
             {errors.action && (
               <p className="text-sm text-destructive">{errors.action.message}</p>
             )}
+          </div>
+
+          {/* Comment Template Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="template" className="text-sm font-medium">
+              Comment Template
+            </Label>
+            <Select
+              value={selectedTemplate}
+              onValueChange={handleTemplateChange}
+              disabled={isSubmitting}
+            >
+              <SelectTrigger id="template" className="w-full">
+                <SelectValue placeholder="Select a template or write custom..." />
+              </SelectTrigger>
+              <SelectContent>
+                {currentTemplates.map((template) => (
+                  <SelectItem key={template.id} value={template.id}>
+                    {template.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Select a prebuilt template or choose &quot;Custom Comment&quot; to write your own
+            </p>
           </div>
 
           {/* Review Notes */}

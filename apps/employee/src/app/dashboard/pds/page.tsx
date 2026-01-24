@@ -36,6 +36,7 @@ import { Progress } from '../../../components/ui/progress';
 
 // Local Components
 import { DeadlineSection } from '../../../components/dashboard/DeadlineSection';
+import { DeadlineNotice } from '../../../components/dashboard/DeadlineNotice';
 
 // Utils
 import { cn } from '../../../lib/utils';
@@ -140,7 +141,13 @@ const PDS_SECTIONS: PDSSection[] = [
 ];
 
 // Memoized Components
-const EmptyState = memo(function EmptyState() {
+const EmptyState = memo(function EmptyState({
+  hasApprovedForCurrentYear,
+  currentYear,
+}: {
+  hasApprovedForCurrentYear: boolean;
+  currentYear: number;
+}) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-6 px-4">
       <BlurFade delay={0.1}>
@@ -165,13 +172,29 @@ const EmptyState = memo(function EmptyState() {
         </div>
       </BlurFade>
 
+      <BlurFade delay={0.25}>
+        <DeadlineNotice formType="pds" variant="inline" />
+      </BlurFade>
+
       <BlurFade delay={0.3}>
-        <Link href="/dashboard/pds/create">
-          <ShimmerButton className="gap-2">
-            <Plus className="h-4 w-4" />
-            Create Your First PDS
-          </ShimmerButton>
-        </Link>
+        {hasApprovedForCurrentYear ? (
+          <div className="w-full">
+            <button
+              disabled
+              className="w-full h-10 text-sm gap-2 flex items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 cursor-not-allowed"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              <span>Approved for {currentYear}</span>
+            </button>
+          </div>
+        ) : (
+          <Link href="/dashboard/pds/create">
+            <ShimmerButton className="gap-2">
+              <Plus className="h-4 w-4" />
+              Create Your First PDS
+            </ShimmerButton>
+          </Link>
+        )}
       </BlurFade>
     </div>
   );
@@ -421,6 +444,15 @@ export default function PDSPage() {
       rejected,
     };
   }, [hasExistingPDS, submissions]);
+
+  // Check if user has approved submission for current year (block creation)
+  const currentYear = deadline?.year ?? new Date().getFullYear();
+
+  const hasApprovedForCurrentYear = useMemo(() => {
+    return submissions?.some(
+      (s: any) => s.year === currentYear && s.status === 'approved'
+    ) ?? false;
+  }, [submissions, currentYear]);
 
   // Check if PDF download/print is allowed (only when approved)
   const canDownloadPDF = latest?.status === 'approved';
@@ -691,7 +723,10 @@ export default function PDSPage() {
 
       {/* Empty State */}
       {!hasExistingPDS ? (
-        <EmptyState />
+        <EmptyState
+          hasApprovedForCurrentYear={hasApprovedForCurrentYear}
+          currentYear={currentYear}
+        />
       ) : (
         <>
           {/* Deadline Section */}
@@ -778,13 +813,25 @@ export default function PDSPage() {
                 )}
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                  <Link href="/dashboard/pds/create" className="w-full">
-                    <ShimmerButton className="w-full h-10 text-sm gap-2">
-                      <Plus className="h-4 w-4" />
-                      <span className="hidden sm:inline">Create New</span>
-                      <span className="sm:hidden">New</span>
-                    </ShimmerButton>
-                  </Link>
+                  {hasApprovedForCurrentYear ? (
+                    <div className="w-full">
+                      <button
+                        disabled
+                        className="w-full h-10 text-sm gap-2 flex items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 cursor-not-allowed"
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                        <span>Approved for {currentYear}</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <Link href="/dashboard/pds/create" className="w-full">
+                      <ShimmerButton className="w-full h-10 text-sm gap-2">
+                        <Plus className="h-4 w-4" />
+                        <span className="hidden sm:inline">Create New</span>
+                        <span className="sm:hidden">New</span>
+                      </ShimmerButton>
+                    </Link>
+                  )}
 
                   <Link href="/dashboard/pds/submissions" className="w-full">
                     <Button

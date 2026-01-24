@@ -116,7 +116,7 @@ export const AddressInput = memo(function AddressInput({
   const sourceAddressForSync = useWatch({
     control,
     name: sameAsField || '',
-    disabled: !sameAs || !sameAsField,
+    disabled: !sameAsField,
   });
 
   // Reactive sync: when source address changes and sameAs is true, sync to this address
@@ -246,6 +246,9 @@ export const AddressInput = memo(function AddressInput({
   }, [selectedProvince, isCityValid, selectedCity, name, setValue]);
 
   useEffect(() => {
+    // Skip barangay validation when sameAs is active - we're copying a valid value
+    if (sameAs) return;
+
     if (!selectedCity || selectedCity === prevCity) {
       setPrevCity(selectedCity);
       return;
@@ -261,7 +264,7 @@ export const AddressInput = memo(function AddressInput({
     }
 
     setPrevCity(selectedCity);
-  }, [selectedCity, barangays, name, setValue, getValues]);
+  }, [selectedCity, barangays, name, setValue, getValues, sameAs]);
 
   // Memoize error lookup to avoid recalculating on every render
   const errorLookup = useMemo(() => {
@@ -357,9 +360,10 @@ export const AddressInput = memo(function AddressInput({
             className="text-sm cursor-pointer select-none">
             Same as{' '}
             {sameAsField
-              .replace(/([A-Z])/g, ' $1')
-              .trim()
-              .toLowerCase()}
+              .split('.')
+              .pop()
+              ?.replace(/([A-Z])/g, ' $1')
+              .trim() || 'Source Address'}
           </Label>
         </div>
       )}

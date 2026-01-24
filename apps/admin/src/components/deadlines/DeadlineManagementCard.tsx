@@ -54,41 +54,43 @@ function getUrgencyLevel(daysRemaining: number | null | undefined): UrgencyLevel
 
 /**
  * Get urgency-based styling classes
+ * Uses subtle left border accent with neutral backgrounds for clean, modern look
+ * Perfect theme support with minimal color usage
  */
 function getUrgencyStyles(urgency: UrgencyLevel): {
-  card: string;
+  border: string;
   badge: string;
   icon: string;
-  text: string;
+  progress: string;
 } {
   switch (urgency) {
     case 'overdue':
       return {
-        card: 'border-red-300 bg-red-50/50 dark:border-red-800 dark:bg-red-950/30',
-        badge: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+        border: 'border-l-red-500 dark:border-l-red-400',
+        badge: 'bg-red-500/10 text-red-700 dark:bg-red-500/20 dark:text-red-400 border-red-500/20',
         icon: 'text-red-600 dark:text-red-400',
-        text: 'text-red-700 dark:text-red-300',
+        progress: 'bg-red-500',
       };
     case 'urgent':
       return {
-        card: 'border-amber-300 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/30',
-        badge: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
+        border: 'border-l-amber-500 dark:border-l-amber-400',
+        badge: 'bg-amber-500/10 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border-amber-500/20',
         icon: 'text-amber-600 dark:text-amber-400',
-        text: 'text-amber-700 dark:text-amber-300',
+        progress: 'bg-amber-500',
       };
     case 'upcoming':
       return {
-        card: 'border-emerald-300 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-950/30',
-        badge: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200',
+        border: 'border-l-emerald-500 dark:border-l-emerald-400',
+        badge: 'bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-500/20',
         icon: 'text-emerald-600 dark:text-emerald-400',
-        text: 'text-emerald-700 dark:text-emerald-300',
+        progress: 'bg-emerald-500',
       };
     default:
       return {
-        card: '',
-        badge: 'bg-muted text-muted-foreground',
+        border: 'border-l-muted-foreground/20',
+        badge: 'bg-muted text-muted-foreground border-muted-foreground/20',
         icon: 'text-muted-foreground',
-        text: 'text-muted-foreground',
+        progress: 'bg-muted-foreground',
       };
   }
 }
@@ -140,23 +142,26 @@ export function DeadlineManagementCard({
   // Loading state
   if (isLoading) {
     return (
-      <Card className={cn('', className)}>
+      <Card className={cn('border-l-4 border-l-muted-foreground/20', className)}>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <Skeleton className="h-5 w-32" />
-              <Skeleton className="h-4 w-48" />
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-5 w-40" />
+              <Skeleton className="h-4 w-32" />
             </div>
-            <Skeleton className="h-9 w-24" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-8 w-8 rounded-md" />
+              <Skeleton className="h-8 w-8 rounded-md" />
+            </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-10 w-10 rounded-full" />
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-36" />
-              <Skeleton className="h-3 w-24" />
+        <CardContent className="pt-0">
+          <div className="flex items-center justify-between">
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-3 w-36" />
             </div>
+            <Skeleton className="h-12 w-16" />
           </div>
         </CardContent>
       </Card>
@@ -188,74 +193,58 @@ export function DeadlineManagementCard({
     }
 
     return (
-      <Card className={cn('border-destructive/50', className)}>
+      <Card className={cn('border-l-4 border-l-destructive', className)}>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <CardTitle className="text-base font-semibold text-destructive flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4" />
-                {errorTitle}
-              </CardTitle>
-              <CardDescription className="mt-1.5 text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+                <CardTitle className="text-base font-semibold">
+                  {errorTitle}
+                </CardTitle>
+              </div>
+              <CardDescription className="mt-1.5">
                 {formTypeLabel} Submission Deadline for {year}
               </CardDescription>
-              <p className="text-sm mt-2 text-destructive/90">
-                {errorDescription}
-              </p>
-              {isAuthError && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  Contact your administrator to request HR or Admin access.
-                </p>
-              )}
-              {!isAuthError && !isValidationError && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  Error details: {error.message}
-                </p>
-              )}
             </div>
-            <div className="flex items-center gap-2">
-              {canRetry && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    console.log('[DeadlineManagementCard] Retry button clicked');
-                    refetch();
-                  }}
-                  disabled={isRefetching}
-                  className="gap-1.5"
-                >
-                  {isRefetching ? (
-                    <>
-                      <Clock className="h-4 w-4 animate-spin" />
-                      Retrying...
-                    </>
-                  ) : (
-                    'Retry'
-                  )}
-                </Button>
-              )}
-            </div>
+            {canRetry && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  console.log('[DeadlineManagementCard] Retry button clicked');
+                  refetch();
+                }}
+                disabled={isRefetching}
+                className="gap-1.5"
+              >
+                {isRefetching ? (
+                  <>
+                    <Clock className="h-4 w-4 animate-spin" />
+                    Retrying...
+                  </>
+                ) : (
+                  'Retry'
+                )}
+              </Button>
+            )}
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3">
-            <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/20">
-                <AlertTriangle className="h-4 w-4 text-destructive" />
-              </div>
-              <div className="flex-1 space-y-1">
-                <p className="text-sm font-medium text-destructive">
-                  Unable to load deadline
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {isAuthError && 'Authorization required'}
-                  {isValidationError && 'Invalid parameters provided'}
-                  {isNetworkError && 'Check your connection and try again'}
-                  {!isAuthError && !isValidationError && !isNetworkError && 'An unexpected error occurred'}
-                </p>
-              </div>
-            </div>
+        <CardContent className="pt-0">
+          <div className="rounded-lg bg-destructive/5 border border-destructive/10 p-4">
+            <p className="text-sm text-foreground">
+              {errorDescription}
+            </p>
+            {isAuthError && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Contact your administrator to request HR or Admin access.
+              </p>
+            )}
+            {!isAuthError && !isValidationError && (
+              <p className="text-xs text-muted-foreground mt-2">
+                {error.message}
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -266,30 +255,30 @@ export function DeadlineManagementCard({
   if (!deadline) {
     return (
       <>
-        <Card className={cn('border-dashed', className)}>
+        <Card className={cn('border-dashed border-l-4 border-l-muted-foreground/20', className)}>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-base font-semibold">
                   {formTypeLabel} Submission Deadline
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="mt-1">
                   No deadline set for {year}
                 </CardDescription>
               </div>
               <Button
                 onClick={() => setIsSetDialogOpen(true)}
                 size="sm"
-                className="gap-1.5 border-2 border-primary/50 hover:border-primary/70 hover:shadow-md transition-all duration-200 hover:scale-105"
+                className="gap-1.5"
               >
                 <Plus className="h-4 w-4" />
                 Set Deadline
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             <div className="flex items-center gap-3 text-muted-foreground">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
                 <CalendarDays className="h-5 w-5" />
               </div>
               <p className="text-sm">
@@ -313,42 +302,48 @@ export function DeadlineManagementCard({
   const deadlineDate = parseISO(deadline.deadlineDate);
   const isOverdue = isPast(deadlineDate) && urgency === 'overdue';
 
+  // Calculate compliance percentage
+  const compliancePercentage = deadline.complianceStats
+    ? Math.round(
+        ((deadline.complianceStats.submitted || 0) /
+          (deadline.complianceStats.totalEmployees || 1)) *
+          100
+      )
+    : 0;
+
   return (
     <>
-      <Card className={cn(urgencyStyles.card, className)}>
+      <Card className={cn('border-l-4', urgencyStyles.border, className)}>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex-1">
               <div className="flex items-center gap-2">
                 <CardTitle className="text-base font-semibold">
                   {formTypeLabel} Submission Deadline
                 </CardTitle>
-                <Badge
-                  variant="secondary"
-                  className={cn('text-xs', urgencyStyles.badge)}
-                >
+                <Badge variant="outline" className={cn('text-xs font-medium', urgencyStyles.badge)}>
                   {year}
                 </Badge>
               </div>
-              <CardDescription className={cn('mt-1', urgencyStyles.text)}>
+              <CardDescription className="mt-1.5">
                 {formatDaysRemaining(daysRemaining)}
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
-                size="icon-sm"
+                size="sm"
                 onClick={() => setIsSetDialogOpen(true)}
-                className="h-8 w-8"
+                className="h-8 w-8 p-0"
                 title="Edit deadline"
               >
                 <Edit className="h-4 w-4" />
               </Button>
               <Button
                 variant="ghost"
-                size="icon-sm"
+                size="sm"
                 onClick={() => setIsDeleteDialogOpen(true)}
-                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                 title="Remove deadline"
               >
                 <Trash2 className="h-4 w-4" />
@@ -356,58 +351,60 @@ export function DeadlineManagementCard({
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4">
-            <div
-              className={cn(
-                'flex h-12 w-12 items-center justify-center rounded-full',
-                isOverdue
-                  ? 'bg-red-100 dark:bg-red-900/50'
-                  : urgency === 'urgent'
-                  ? 'bg-amber-100 dark:bg-amber-900/50'
-                  : 'bg-emerald-100 dark:bg-emerald-900/50'
-              )}
-            >
-              {isOverdue ? (
-                <AlertTriangle className={cn('h-6 w-6', urgencyStyles.icon)} />
-              ) : urgency === 'urgent' ? (
-                <Clock className={cn('h-6 w-6', urgencyStyles.icon)} />
-              ) : (
-                <CheckCircle2 className={cn('h-6 w-6', urgencyStyles.icon)} />
-              )}
-            </div>
-            <div className="flex-1 space-y-1">
+        <CardContent className="pt-0">
+          <div className="flex items-center justify-between gap-6">
+            {/* Left section - Date and Reminders */}
+            <div className="flex-1 space-y-3">
               <div className="flex items-center gap-2">
-                <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">
+                <CalendarDays className={cn('h-4 w-4', urgencyStyles.icon)} />
+                <span className="text-sm font-medium">
                   {format(deadlineDate, 'MMMM d, yyyy')}
                 </span>
               </div>
               {deadline.reminderDaysBefore && deadline.reminderDaysBefore.length > 0 && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span>Reminders:</span>
-                  {deadline.reminderDaysBefore
-                    .sort((a, b) => b - a)
-                    .map((days) => (
-                      <Badge key={days} variant="outline" className="text-xs px-1.5 py-0">
-                        {days}d
-                      </Badge>
-                    ))}
+                <div className="flex items-center gap-2">
+                  {isOverdue ? (
+                    <AlertTriangle className={cn('h-4 w-4', urgencyStyles.icon)} />
+                  ) : urgency === 'urgent' ? (
+                    <Clock className={cn('h-4 w-4', urgencyStyles.icon)} />
+                  ) : (
+                    <CheckCircle2 className={cn('h-4 w-4', urgencyStyles.icon)} />
+                  )}
+                  <div className="flex items-center gap-1.5">
+                    {deadline.reminderDaysBefore
+                      .sort((a, b) => b - a)
+                      .map((days) => (
+                        <Badge
+                          key={days}
+                          variant="outline"
+                          className="text-xs px-2 py-0.5 font-normal"
+                        >
+                          {days}d
+                        </Badge>
+                      ))}
+                  </div>
                 </div>
               )}
             </div>
+
+            {/* Right section - Compliance Stats */}
             {deadline.complianceStats && (
-              <div className="text-right">
-                <div className="text-2xl font-bold">
-                  {Math.round(
-                    ((deadline.complianceStats.submitted || 0) /
-                      (deadline.complianceStats.totalEmployees || 1)) *
-                      100
-                  )}
-                  %
+              <div className="flex flex-col items-end gap-1">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-bold tabular-nums">
+                    {compliancePercentage}
+                  </span>
+                  <span className="text-sm text-muted-foreground">%</span>
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-muted-foreground tabular-nums">
                   {deadline.complianceStats.submitted} / {deadline.complianceStats.totalEmployees} submitted
+                </div>
+                {/* Progress bar */}
+                <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden mt-1">
+                  <div
+                    className={cn('h-full rounded-full transition-all', urgencyStyles.progress)}
+                    style={{ width: `${compliancePercentage}%` }}
+                  />
                 </div>
               </div>
             )}
