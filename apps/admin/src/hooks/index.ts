@@ -134,3 +134,13 @@ export {
   useIsSmall,
   useIsLarge,
 } from './useMediaQuery';
+
+// Organization Options Hook (for user edit form)
+export {
+  useOrganizationOptions,
+} from './useOrganizationOptions';
+export type {
+  OrganizationOption,
+  UseOrganizationOptionsParams,
+  UseOrganizationOptionsResult,
+} from './useOrganizationOptions';

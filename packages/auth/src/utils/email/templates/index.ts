@@ -323,6 +323,37 @@ export function credentialsTemplate(
 }
 
 /**
+ * Password Reset Email Template
+ */
+export function passwordResetTemplate(
+  firstName: string,
+  temporaryPassword: string
+): { subject: string; html: string } {
+  const subject = 'Your TUPSAFE Password Has Been Reset';
+  const content = `
+    <p>Dear ${escapeHtml(firstName)},</p>
+    <p>Your TUPSAFE account password has been reset by an administrator. Below is your new temporary password:</p>
+    <div class="code-box">
+      <div class="code" style="font-size: 20px; letter-spacing: 2px;">${escapeHtml(temporaryPassword)}</div>
+    </div>
+    <div class="warning-box">
+      <strong>⚠️ Important Security Notice:</strong>
+      <ul style="margin: 10px 0 0 0;">
+        <li>You will be required to change your password upon next login</li>
+        <li>Never share your password with anyone</li>
+        <li>If you did not request this reset, please contact your administrator immediately</li>
+      </ul>
+    </div>
+    <p>Please log in to the Employee Portal with your new temporary password.</p>
+  `;
+
+  return {
+    subject,
+    html: wrapInTemplate('Password Reset', 'Your New Temporary Password', content),
+  };
+}
+
+/**
  * Application Status Email Template
  */
 export function applicationStatusTemplate(

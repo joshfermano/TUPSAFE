@@ -16,6 +16,7 @@ import {
   welcomeTemplate,
   rejectionTemplate,
   credentialsTemplate,
+  passwordResetTemplate,
   applicationStatusTemplate,
   pdsStatusTemplate,
   salnStatusTemplate,
@@ -226,6 +227,41 @@ export async function sendCredentialsEmail(
     return result;
   } catch (error) {
     console.error('Error sending credentials email:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to send email',
+    };
+  }
+}
+
+/**
+ * Send password reset email
+ * @param to - Recipient email address
+ * @param temporaryPassword - New temporary password
+ * @param firstName - User's first name
+ */
+export async function sendPasswordResetEmail(
+  to: string,
+  temporaryPassword: string,
+  firstName: string
+): Promise<EmailResult> {
+  try {
+    const { subject, html } = passwordResetTemplate(firstName, temporaryPassword);
+
+    const result = await sendWithProvider({
+      to,
+      toName: firstName,
+      subject,
+      html,
+    });
+
+    if (result.success) {
+      console.log(`✓ Password reset email sent successfully to ${to}`);
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Error sending password reset email:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to send email',

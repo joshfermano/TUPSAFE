@@ -223,6 +223,8 @@ export async function GET(
       salaryGrade: userProfile.salaryGrade,
       positionTitle: userProfile.positionTitle,
       departmentId: userProfile.departmentId,
+      // collegeId: For users in departments, use parentCollegeId; for users in top-level offices, use departmentId
+      collegeId: userProfile.departmentParentCollegeId || userProfile.departmentId || null,
       department: userProfile.departmentId
         ? {
             id: userProfile.departmentId,
@@ -420,24 +422,29 @@ export async function PATCH(
       }
     }
 
-    // Validate department and position exist if provided
+    // Validate department exists if provided
+    // Note: We don't check isActive here because:
+    // 1. For admin portal roles, HR office validation already succeeded above
+    // 2. Offices without sub-departments use the office ID as departmentId
+    // 3. Users may need to keep their existing department assignment even if it becomes inactive
     if (validatedData.departmentId) {
       const [dept] = await db
-        .select({ id: departments.id })
+        .select({ id: departments.id, isActive: departments.isActive })
         .from(departments)
-        .where(
-          and(
-            eq(departments.id, validatedData.departmentId),
-            eq(departments.isActive, true)
-          )
-        )
+        .where(eq(departments.id, validatedData.departmentId))
         .limit(1);
 
       if (!dept) {
+        console.log('[PATCH /api/users/[id]] Department not found:', validatedData.departmentId);
         return NextResponse.json(
-          { error: 'Invalid or inactive department' },
+          { error: 'Department or office not found. The specified department ID does not exist.' },
           { status: 400 }
         );
+      }
+
+      // Log if department is inactive (but still allow the update)
+      if (!dept.isActive) {
+        console.log('[PATCH /api/users/[id]] Warning: Assigning user to inactive department:', validatedData.departmentId);
       }
     }
 

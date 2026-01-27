@@ -18,7 +18,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkUserRoleFromSupabase, getUserFromSupabase } from '@tupsafe/auth/server';
+import { checkUserRoleFromSupabase, getUserFromSupabase, sendPasswordResetEmail } from '@tupsafe/auth/server';
 import { db, profiles, createAuditLogFromRequest } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
 import { passwordResetSchema, ROLE_HIERARCHY } from '@tupsafe/types';
@@ -171,10 +171,18 @@ export async function POST(
       // Send password reset email if requested
       if (validatedData.sendEmail && userEmail) {
         try {
-          // Option 1: Use Supabase password reset flow
-          await adminClient.auth.resetPasswordForEmail(userEmail, {
-            redirectTo: `${process.env.NEXT_PUBLIC_ADMIN_URL || 'http://localhost:3001'}/reset-password`,
-          });
+          // Get user's first name for the email
+          const firstName = targetUser.firstName || 'User';
+
+          const emailResult = await sendPasswordResetEmail(
+            userEmail,
+            temporaryPassword,
+            firstName
+          );
+
+          if (!emailResult.success) {
+            console.error('Error sending password reset email:', emailResult.error);
+          }
         } catch (emailError) {
           console.error('Error sending password reset email:', emailError);
           // Don't fail the entire operation if email fails

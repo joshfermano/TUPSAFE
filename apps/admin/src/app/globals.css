@@ -100,6 +100,15 @@
     color: hsl(var(--foreground));
   }
 
+  /* Prevent double scrollbars when dashboard layout is active
+   * The dashboard layout uses h-dvh overflow-hidden and manages its own scrolling.
+   * This prevents the browser from adding a second scrollbar on the body. */
+  html:has(.dashboard-layout),
+  html:has(.dashboard-layout) body {
+    overflow: hidden;
+    height: 100dvh;
+  }
+
   /* Disable transitions during theme change to prevent flash */
   .theme-transitioning,
   .theme-transitioning *,
