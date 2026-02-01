@@ -516,7 +516,7 @@ export default function AuditLogsPage() {
       </div>
 
       {/* Filters Card */}
-      <Card className="glass-card">
+      <Card className="">
         <CardHeader>
           <CardTitle>Filters</CardTitle>
           <CardDescription>Search and filter audit logs</CardDescription>
@@ -550,7 +550,7 @@ export default function AuditLogsPage() {
                 <SelectTrigger>
                   <SelectValue placeholder="Select user" />
                 </SelectTrigger>
-                <SelectContent className="glass-dropdown">
+                <SelectContent className="">
                   {availableUsers.map((user) => (
                     <SelectItem key={user.value} value={user.value}>
                       {user.label}
@@ -564,7 +564,7 @@ export default function AuditLogsPage() {
                 <SelectTrigger>
                   <SelectValue placeholder="Select action" />
                 </SelectTrigger>
-                <SelectContent className="glass-dropdown">
+                <SelectContent className="">
                   {ACTIONS.map((action) => (
                     <SelectItem key={action.value} value={action.value}>
                       {action.label}
@@ -578,7 +578,7 @@ export default function AuditLogsPage() {
                 <SelectTrigger>
                   <SelectValue placeholder="Select resource" />
                 </SelectTrigger>
-                <SelectContent className="glass-dropdown">
+                <SelectContent className="">
                   {RESOURCES.map((resource) => (
                     <SelectItem key={resource.value} value={resource.value}>
                       {resource.label}

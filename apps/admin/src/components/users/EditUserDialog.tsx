@@ -42,6 +42,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useUserDetails, useUpdateUser } from '@/hooks/useUsers';
 
 interface EditUserDialogProps {
@@ -120,7 +121,7 @@ export function EditUserDialog({ userId, open, onOpenChange }: EditUserDialogPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent size="lg" className="overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Edit User</DialogTitle>
           <DialogDescription>
@@ -132,7 +133,9 @@ export function EditUserDialog({ userId, open, onOpenChange }: EditUserDialogPro
 
         {user && (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
+              <ScrollArea className="flex-1 -mx-6 px-6">
+              <div className="space-y-6 pb-4">
               {/* Basic Information */}
               <div className="space-y-4">
                 <h4 className="font-semibold">Basic Information</h4>
@@ -364,8 +367,10 @@ export function EditUserDialog({ userId, open, onOpenChange }: EditUserDialogPro
                   />
                 </div>
               </div>
+              </div>
+              </ScrollArea>
 
-              <DialogFooter>
+              <DialogFooter className="pt-4 border-t">
                 <Button
                   type="button"
                   variant="outline"

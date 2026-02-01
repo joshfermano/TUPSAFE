@@ -136,8 +136,8 @@ export function ApproveRegistrationDialog({
                 variant={isEmployee ? 'default' : 'secondary'}
                 className={
                   isEmployee
-                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
-                    : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100'
+                    ? 'bg-blue-500/15 text-blue-700 dark:bg-blue-500/25 dark:text-blue-300 border-blue-500/30'
+                    : 'bg-orange-500/15 text-orange-700 dark:bg-orange-500/25 dark:text-orange-300 border-orange-500/30'
                 }
               >
                 {isEmployee ? 'Employee' : 'Applicant'}
@@ -146,9 +146,9 @@ export function ApproveRegistrationDialog({
           </div>
 
           {/* Warning */}
-          <div className="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-900 p-3 rounded-md flex gap-3">
-            <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
-            <div className="text-sm text-yellow-800 dark:text-yellow-200">
+          <div className="bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/30 p-3 rounded-md flex gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+            <div className="text-sm text-amber-700 dark:text-amber-300">
               <strong>Important:</strong> Approving this registration will:
               <ul className="list-disc list-inside mt-2 space-y-1">
                 <li>Create an active user account</li>
@@ -253,7 +253,7 @@ export function ApproveRegistrationDialog({
           <AlertDialogAction
             onClick={handleApprove}
             disabled={approveMutation.isPending}
-            className="bg-green-600 hover:bg-green-700"
+            variant="success"
           >
             {approveMutation.isPending ? (
               <>

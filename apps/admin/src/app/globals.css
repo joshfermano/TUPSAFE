@@ -7,27 +7,44 @@
     --primary: 345 83% 27%;
     --primary-foreground: 0 0% 100%;
 
-    /* Neutral Base Colors (Zinc - Premium/Modern) */
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    /* Premium Light Mode Colors - Refined Neutrals with Depth */
+    /* Subtle warm gray background for reduced eye strain */
+    --background: 240 5% 98%;
+    /* High contrast foreground for excellent readability */
+    --foreground: 240 10% 8%;
+
+    /* Card colors - Pure white for maximum elevation against subtle background */
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    /* Darker text for better contrast on white cards */
+    --card-foreground: 240 10% 8%;
+
+    /* Solid popover/dialog backgrounds - 100% opaque for premium feel */
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
+    --popover-foreground: 240 10% 8%;
+
+    /* Refined secondary with better contrast */
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 6% 10%;
+
+    /* Subtle muted areas with visible distinction */
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 40%;
+
+    /* Accent areas for hover states */
+    --accent: 240 5% 96%;
+    --accent-foreground: 240 6% 10%;
+
+    /* Refined destructive with better visibility */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* More visible borders for better separation - darkened for clarity */
+    --border: 240 6% 85%;
+    --input: 240 6% 85%;
     --ring: 345 83% 27%;
     /* Match primary for focus rings */
 
-    /* Chart Colors */
+    /* Chart Colors - Vibrant and Accessible */
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
@@ -39,31 +56,49 @@
   }
 
   .dark {
-    /* TUP Crimson Primary Theme (lighter in dark mode) */
-    --primary: 345 83% 40%;
+    /* TUP Crimson Primary Theme (adjusted for dark mode visibility) */
+    --primary: 345 83% 45%;
     --primary-foreground: 0 0% 100%;
 
-    /* Dark Mode Neutral Colors (Zinc) */
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
+    /* Premium Dark Mode Colors - Rich Depths with Strong Contrast */
+    /* Rich dark background with slight blue tint for modern feel */
+    --background: 240 8% 6%;
+    /* High contrast foreground for crisp text */
+    --foreground: 0 0% 96%;
+
+    /* Card colors - Lighter than background for clear elevation */
+    /* 12% lightness provides visible separation from 6% background */
+    --card: 240 6% 12%;
+    /* High contrast white text for excellent readability */
     --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
+
+    /* Solid popover/dialog backgrounds - 100% opaque for premium feel */
+    --popover: 240 6% 12%;
     --popover-foreground: 0 0% 98%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 345 83% 40%;
+
+    /* Secondary areas with subtle elevation */
+    --secondary: 240 5% 16%;
+    --secondary-foreground: 0 0% 96%;
+
+    /* Muted areas with clear distinction */
+    --muted: 240 5% 16%;
+    --muted-foreground: 240 5% 60%;
+
+    /* Accent for interactive states */
+    --accent: 240 5% 16%;
+    --accent-foreground: 0 0% 96%;
+
+    /* Refined destructive for dark mode */
+    --destructive: 0 63% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* More visible borders for better component separation - lightened for clarity */
+    --border: 240 5% 22%;
+    --input: 240 5% 22%;
+    --ring: 345 83% 45%;
     /* Match primary for focus rings */
 
-    /* Chart Colors (Dark Mode) */
+    /* Chart Colors (Dark Mode) - Vibrant and Accessible */
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;

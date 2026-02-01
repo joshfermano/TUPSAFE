@@ -1316,10 +1316,10 @@ export default function CreateJobPage() {
   if (isCreated && createdPositionId) {
     return (
       <div className="container max-w-3xl mx-auto py-8 space-y-6">
-        <Card className="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/20">
+        <Card className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <CheckCircle2 className="h-8 w-8 text-green-600" />
+              <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
               <div>
                 <CardTitle className="text-green-900 dark:text-green-100">
                   Position Created Successfully
@@ -1332,7 +1332,7 @@ export default function CreateJobPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-lg bg-white dark:bg-green-950 p-4">
+            <div className="rounded-lg bg-card p-4">
               <dl className="grid gap-2 text-sm">
                 <div className="grid grid-cols-2 gap-1">
                   <dt className="text-muted-foreground">Position Title:</dt>

@@ -67,7 +67,7 @@ export function BulkApproveDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh]">
+      <DialogContent size="lg">
         <DialogHeader>
           <DialogTitle>
             {showResults ? 'Bulk Approval Results' : 'Bulk Approve Submissions'}
@@ -266,7 +266,7 @@ export function BulkApproveDialog({
               <Button
                 onClick={handleConfirm}
                 disabled={isProcessing || totalCount === 0}
-                className="bg-green-600 hover:bg-green-700">
+                variant="success">
                 {isProcessing
                   ? 'Approving...'
                   : `Approve ${totalCount} Submission${

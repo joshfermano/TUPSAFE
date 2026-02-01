@@ -284,7 +284,7 @@ export function ReviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] backdrop-blur-sm">
+      <DialogContent size="default">
         <DialogHeader>
           <DialogTitle className="text-xl">
             Review {submissionType.toUpperCase()} Submission
@@ -409,11 +409,7 @@ export function ReviewDialog({
             <Button
               type="submit"
               disabled={isSubmitting || !isNotesValid}
-              className={
-                selectedAction === 'approve'
-                  ? 'bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-800'
-                  : 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800'
-              }
+              variant={selectedAction === 'approve' ? 'success' : 'destructive'}
             >
               {isSubmitting ? (
                 <>

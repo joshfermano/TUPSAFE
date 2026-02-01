@@ -130,9 +130,9 @@ export function PasswordResetDialog({
             </div>
 
             {!sendEmail && (
-              <Alert variant="default" className="border-yellow-500/50 bg-yellow-50 dark:bg-yellow-950/20">
+              <Alert variant="default" className="border-amber-500/30 bg-amber-500/10 dark:bg-amber-500/20">
                 <Mail className="h-4 w-4" />
-                <AlertDescription className="text-yellow-800 dark:text-yellow-200">
+                <AlertDescription className="text-amber-700 dark:text-amber-300">
                   The temporary password will be displayed here. Make sure to copy it before closing this dialog.
                 </AlertDescription>
               </Alert>
@@ -141,9 +141,9 @@ export function PasswordResetDialog({
         ) : (
           // Password display
           <div className="space-y-4 py-4">
-            <Alert className="border-green-500/50 bg-green-50 dark:bg-green-950/20">
-              <Check className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-800 dark:text-green-200">
+            <Alert className="border-green-500/30 bg-green-500/10 dark:bg-green-500/20">
+              <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <AlertDescription className="text-green-700 dark:text-green-300">
                 Password reset successfully! Copy the temporary password below.
               </AlertDescription>
             </Alert>

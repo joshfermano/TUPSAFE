@@ -387,11 +387,7 @@ export function DeleteConfirmDialog({
             <AlertDialogAction
               onClick={handleDelete}
               disabled={deleteOrg.isPending || isLoading || isDependenciesLoading}
-              className={
-                hardDelete
-                  ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
-                  : ''
-              }
+              variant={hardDelete ? 'destructive' : undefined}
             >
               {deleteOrg.isPending ? (
                 <>

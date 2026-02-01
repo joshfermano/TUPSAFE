@@ -110,8 +110,8 @@ export function RejectRegistrationDialog({
                 }
                 className={
                   registration.userType === 'employee'
-                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
-                    : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100'
+                    ? 'bg-blue-500/15 text-blue-700 dark:bg-blue-500/25 dark:text-blue-300 border-blue-500/30'
+                    : 'bg-orange-500/15 text-orange-700 dark:bg-orange-500/25 dark:text-orange-300 border-orange-500/30'
                 }
               >
                 {registration.userType === 'employee' ? 'Employee' : 'Applicant'}
@@ -120,9 +120,9 @@ export function RejectRegistrationDialog({
           </div>
 
           {/* Warning */}
-          <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 p-3 rounded-md flex gap-3">
+          <div className="bg-red-500/10 dark:bg-red-500/20 border border-red-500/30 p-3 rounded-md flex gap-3">
             <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
-            <div className="text-sm text-red-800 dark:text-red-200">
+            <div className="text-sm text-red-700 dark:text-red-300">
               <strong>Warning:</strong> Rejecting this registration will permanently
               deny access. The applicant will be notified via email with the reason
               you provide below.
@@ -195,7 +195,7 @@ export function RejectRegistrationDialog({
 
           {/* Email Preview */}
           {sendEmail && (
-            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 p-3 rounded-md text-sm">
+            <div className="bg-blue-500/10 dark:bg-blue-500/20 border border-blue-500/30 p-3 rounded-md text-sm">
               <strong>Email Preview:</strong>
               <p className="mt-2 text-muted-foreground">
                 The applicant will receive an email notification with the rejection
@@ -213,7 +213,7 @@ export function RejectRegistrationDialog({
           <AlertDialogAction
             onClick={handleReject}
             disabled={!isFormValid || rejectMutation.isPending}
-            className="bg-red-600 hover:bg-red-700"
+            variant="destructive"
           >
             {rejectMutation.isPending ? (
               <>

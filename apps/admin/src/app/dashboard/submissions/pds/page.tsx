@@ -186,7 +186,7 @@ const PdsSubmissionRow = memo(
                   <span className="sr-only">Actions</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="glass-dropdown">
+              <DropdownMenuContent align="end" className="">
                 {(submission.status === 'submitted' || submission.status === 'reviewing') && (
                   <DropdownMenuItem onClick={() => setReviewDialogOpen(true)}>
                     <Eye className="mr-2 h-4 w-4" />
@@ -568,7 +568,7 @@ export default function PdsSubmissionsPage() {
                 <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Select department" />
                 </SelectTrigger>
-                <SelectContent className="glass-dropdown">
+                <SelectContent className="">
                   {departmentsLoading ? (
                     <SelectItem value="loading" disabled>
                       Loading departments...
@@ -588,7 +588,7 @@ export default function PdsSubmissionsPage() {
                 <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Select year" />
                 </SelectTrigger>
-                <SelectContent className="glass-dropdown">
+                <SelectContent className="">
                   <SelectItem value="all">All Years</SelectItem>
                   {fiscalYears.map((year) => (
                     <SelectItem key={year} value={year.toString()}>

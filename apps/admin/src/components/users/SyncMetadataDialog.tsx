@@ -114,11 +114,11 @@ export function SyncMetadataDialog({ userId, open, onOpenChange }: SyncMetadataD
           )}
 
           {/* Info Box */}
-          <div className="flex items-start gap-2 rounded-lg bg-blue-500/10 border border-blue-500/20 p-3">
-            <AlertTriangle className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
-            <div className="text-sm text-blue-900 dark:text-blue-100">
+          <div className="flex items-start gap-2 rounded-lg bg-blue-500/10 dark:bg-blue-500/20 border border-blue-500/30 p-3">
+            <AlertTriangle className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+            <div className="text-sm text-blue-800 dark:text-blue-200">
               <p className="font-medium">What this action does:</p>
-              <ul className="list-disc list-inside mt-1 text-blue-800 dark:text-blue-200 space-y-1">
+              <ul className="list-disc list-inside mt-1 text-blue-700 dark:text-blue-300 space-y-1">
                 <li>Updates Supabase authentication metadata</li>
                 <li>Syncs account status, user type, and active status</li>
                 <li>Fixes users stuck on pending-approval page</li>

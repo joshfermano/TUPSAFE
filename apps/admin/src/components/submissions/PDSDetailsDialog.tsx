@@ -46,7 +46,7 @@ export function PDSDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] p-0">
+      <DialogContent size="full" className="overflow-hidden flex flex-col">
         {isLoading ? (
           <div className="p-6 space-y-4">
             <Skeleton className="h-8 w-[300px]" />

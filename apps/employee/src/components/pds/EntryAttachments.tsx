@@ -166,8 +166,9 @@ export function EntryAttachments({
 
           if (!saveResult.success) {
             toast.error('Cannot upload attachment', {
-              description: 
-                'Failed to save draft. Please ensure all required fields are filled and try "Save Draft" first.',
+              description: entryType === 'training'
+                ? 'Please enter a training title before uploading attachments.'
+                : 'Please enter an eligibility name before uploading attachments.',
               duration: 5000,
             });
             return;

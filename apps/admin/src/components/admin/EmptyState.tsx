@@ -96,7 +96,7 @@ export const EmptyState = memo(function EmptyState({
         initial="initial"
         animate="animate"
         whileHover="hover"
-        className="mb-8 p-6 rounded-full bg-muted/50 backdrop-blur-sm"
+        className="mb-8 p-6 rounded-full bg-muted/50"
       >
         <Icon className="h-16 w-16 text-muted-foreground" />
       </motion.div>

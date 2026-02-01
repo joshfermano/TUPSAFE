@@ -322,7 +322,7 @@ export function SetDeadlineDialog({
               variant="outline"
               onClick={handleClose}
               disabled={isSubmitting}
-              className="border-2 hover:border-gray-400 transition-all duration-200"
+              className="border-2 border-border hover:border-muted-foreground/50 transition-all duration-200"
             >
               Cancel
             </Button>

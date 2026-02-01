@@ -133,7 +133,7 @@ function AttachmentChip({ attachment }: { attachment: PdsAttachment }) {
             <Button
               variant="ghost"
               size="icon"
-              className="absolute -top-12 right-0 text-white hover:bg-white/20"
+              className="absolute -top-12 right-0 text-white dark:text-white hover:bg-white/20 dark:hover:bg-white/20"
               onClick={() => setShowPreview(false)}
             >
               ✕

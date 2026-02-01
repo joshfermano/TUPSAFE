@@ -21,10 +21,8 @@ function Switch({
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         // Disabled styles
         "disabled:cursor-not-allowed disabled:opacity-50",
-        // Unchecked state - light mode
-        "data-[state=unchecked]:bg-gray-200",
-        // Unchecked state - dark mode (visible gray)
-        "dark:data-[state=unchecked]:bg-gray-600",
+        // Unchecked state - using input token for theme-aware styling
+        "data-[state=unchecked]:bg-input",
         // Checked state - primary color
         "data-[state=checked]:bg-primary",
         className
@@ -38,8 +36,8 @@ function Switch({
           "pointer-events-none block rounded-full shadow-lg ring-0 transition-transform",
           // Sizing
           "h-5 w-5",
-          // Thumb color - white in both modes for contrast
-          "bg-white",
+          // Thumb color - white in both modes for contrast against track
+          "bg-white dark:bg-white",
           // Position based on state
           "data-[state=checked]:translate-x-5",
           "data-[state=unchecked]:translate-x-0"

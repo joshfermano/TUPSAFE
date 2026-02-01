@@ -71,7 +71,7 @@ export function DeleteDeadlineDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={handleClose}>
-      <AlertDialogContent className="sm:max-w-[450px] border-destructive/50">
+      <AlertDialogContent size="sm">
         <AlertDialogHeader>
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
             <AlertTriangle className="h-6 w-6" />
@@ -119,12 +119,12 @@ export function DeleteDeadlineDialog({
         </div>
 
         {/* Warning Message */}
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30">
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 dark:bg-amber-500/20 p-3">
           <div className="flex gap-2">
             <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
-            <div className="text-sm text-amber-800 dark:text-amber-200">
+            <div className="text-sm text-amber-700 dark:text-amber-300">
               <p className="font-medium">Impact Warning</p>
-              <p className="text-amber-700 dark:text-amber-300 mt-1">
+              <p className="text-amber-600 dark:text-amber-400 mt-1">
                 Deleting this deadline will stop all automated reminders for {formTypeLabel} {deadline.year}.
                 Existing submissions will not be affected.
               </p>
@@ -137,7 +137,7 @@ export function DeleteDeadlineDialog({
           <AlertDialogAction
             onClick={handleDelete}
             disabled={isDeleting}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 focus:ring-destructive"
+            variant="destructive"
           >
             {isDeleting ? (
               <>
