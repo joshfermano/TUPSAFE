@@ -219,7 +219,7 @@ function LoginPageContent() {
 
         {/* Right Side - Login/OTP Form */}
         <div className="flex items-center justify-center">
-          <Card className="w-full max-w-md border bg-card shadow-2xl backdrop-blur-sm">
+          <Card className="w-full max-w-md border bg-card shadow-2xl">
             <CardHeader className="space-y-1 pb-6">
               <div className="flex justify-center mb-4">
                 <Image

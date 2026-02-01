@@ -22,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useRegistrationDetails } from '@/hooks/useRegistrations';
 import type { Registration } from '@/lib/api/registrations';
 import { capitalize } from '@/lib/formatting-helpers';
@@ -51,7 +52,7 @@ export function RegistrationDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent size="xl" className="overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Registration Details</DialogTitle>
           <DialogDescription>
@@ -66,6 +67,7 @@ export function RegistrationDetailsDialog({
             <Skeleton className="h-32 w-full" />
           </div>
         ) : details ? (
+          <ScrollArea className="flex-1 -mx-6 px-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="profile">
@@ -95,10 +97,10 @@ export function RegistrationDetailsDialog({
                     <div
                       className={`rounded-lg p-4 border ${
                         isPending
-                          ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900'
+                          ? 'bg-blue-500/10 dark:bg-blue-500/20 border-blue-500/30'
                           : isApproved
-                          ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900'
-                          : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900'
+                          ? 'bg-green-500/10 dark:bg-green-500/20 border-green-500/30'
+                          : 'bg-red-500/10 dark:bg-red-500/20 border-red-500/30'
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -123,8 +125,8 @@ export function RegistrationDetailsDialog({
                           variant={details?.userType === 'employee' ? 'default' : 'secondary'}
                           className={
                             details?.userType === 'employee'
-                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
-                              : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100'
+                              ? 'bg-blue-500/15 text-blue-700 dark:bg-blue-500/25 dark:text-blue-300 border-blue-500/30'
+                              : 'bg-orange-500/15 text-orange-700 dark:bg-orange-500/25 dark:text-orange-300 border-orange-500/30'
                           }
                         >
                           {details?.userType === 'employee' ? 'Employee' : 'Applicant'}
@@ -252,6 +254,7 @@ export function RegistrationDetailsDialog({
               </div>
             </TabsContent>
           </Tabs>
+          </ScrollArea>
         ) : null}
 
         {/* Action Buttons */}

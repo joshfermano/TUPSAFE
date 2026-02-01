@@ -25,19 +25,19 @@ const statusConfig = {
     label: 'Submitted',
     icon: Clock,
     className:
-      'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 border-blue-200 dark:border-blue-800',
+      'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20 dark:border-blue-500/30',
   },
   reviewing: {
     label: 'Reviewing',
     icon: Eye,
     className:
-      'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 border-yellow-200 dark:border-yellow-800 animate-pulse',
+      'bg-yellow-500/10 text-yellow-700 dark:text-yellow-300 border-yellow-500/20 dark:border-yellow-500/30 animate-pulse',
   },
   approved: {
     label: 'Approved',
     icon: CheckCircle2,
     className:
-      'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-200 dark:border-green-800',
+      'bg-green-500/10 text-green-700 dark:text-green-300 border-green-500/20 dark:border-green-500/30',
   },
   rejected: {
     label: 'Rejected',
@@ -48,7 +48,7 @@ const statusConfig = {
     label: 'Active',
     icon: UserCheck,
     className:
-      'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-200 dark:border-green-800',
+      'bg-green-500/10 text-green-700 dark:text-green-300 border-green-500/20 dark:border-green-500/30',
   },
   inactive: {
     label: 'Inactive',

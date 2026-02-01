@@ -139,8 +139,8 @@ export function ApproveSubmissionDialog({
           </div>
 
           {/* Warning */}
-          <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-3">
-            <p className="text-sm text-green-800 dark:text-green-300">
+          <div className="bg-green-500/10 dark:bg-green-500/20 border border-green-500/30 rounded-lg p-3">
+            <p className="text-sm text-green-700 dark:text-green-300">
               The employee will be notified via email that their submission has been approved.
             </p>
           </div>
@@ -151,7 +151,7 @@ export function ApproveSubmissionDialog({
           <AlertDialogAction
             onClick={handleConfirm}
             disabled={!canApprove || isLoading}
-            className="bg-green-600 hover:bg-green-700"
+            variant="success"
           >
             {isLoading ? 'Approving...' : 'Approve Submission'}
           </AlertDialogAction>

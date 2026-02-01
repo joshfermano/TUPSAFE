@@ -191,14 +191,29 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
     });
 
     // Filter out completely empty entries (but preserve entries with IDs for upsert)
+    // IMPORTANT: Preserve entries that have IDs AND at least one meaningful field
+    // This allows users to upload attachments even if other fields aren't filled yet
     transformedData.eligibility = transformedData.eligibility.filter(
       (cs: any) => {
-        // Always keep entries with IDs (already in database, may have attachments)
-        if (cs.id) {
+        // Check if entry has any meaningful data filled in
+        const hasEligibilityName = cs.eligibilityName && cs.eligibilityName.trim() !== '';
+        const hasRating = cs.rating !== null && cs.rating !== undefined;
+        const hasDateOfExam = cs.dateOfExam !== null && cs.dateOfExam !== undefined;
+        const hasPlaceOfExam = cs.placeOfExam && cs.placeOfExam.trim() !== '';
+        const hasLicenseNo = cs.licenseNo && cs.licenseNo.trim() !== '';
+
+        // Keep if entry has an ID AND at least one meaningful field filled
+        if (cs.id && (hasEligibilityName || hasRating || hasDateOfExam || hasPlaceOfExam || hasLicenseNo)) {
           return true;
         }
-        // For new entries, require at least eligibilityName
-        return cs.eligibilityName && cs.eligibilityName.trim() !== '';
+
+        // For entries without IDs, require at least eligibilityName
+        if (!cs.id) {
+          return hasEligibilityName;
+        }
+
+        // Filter out completely empty entries (only have ID, no data)
+        return false;
       }
     );
   }
@@ -261,17 +276,30 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
     });
 
     // Filter out empty/incomplete training entries
-    // IMPORTANT: Preserve entries that have IDs (already saved in DB) even if dates are incomplete
-    // This prevents deletion of training entries with attachments during auto-save
+    // IMPORTANT: Preserve entries that have IDs AND at least one meaningful field
+    // This allows users to upload attachments even if dates aren't filled yet
     transformedData.learningDevelopment = transformedData.learningDevelopment.filter(
       (training: any) => {
-        // Always keep entries with IDs (already in database, may have attachments)
-        if (training.id) {
+        // Check if entry has any meaningful data filled in
+        const hasTitle = training.title && training.title.trim() !== '';
+        const hasDateFrom = training.dateFrom !== null && training.dateFrom !== undefined;
+        const hasDateTo = training.dateTo !== null && training.dateTo !== undefined;
+        const hasConductedBy = training.conductedBy && training.conductedBy.trim() !== '';
+        const hasHours = training.hours !== null && training.hours !== undefined;
+
+        // Keep if entry has an ID AND at least one meaningful field filled
+        // This allows users to upload attachments even if dates aren't filled yet
+        if (training.id && (hasTitle || hasDateFrom || hasDateTo || hasConductedBy || hasHours)) {
           return true;
         }
-        // For new entries without IDs, require both dates to be valid
-        return training.dateFrom !== null && training.dateFrom !== undefined &&
-               training.dateTo !== null && training.dateTo !== undefined;
+
+        // For entries without IDs (shouldn't happen with current code), require both dates
+        if (!training.id) {
+          return hasDateFrom && hasDateTo;
+        }
+
+        // Filter out completely empty entries (only have ID, no data)
+        return false;
       }
     );
 

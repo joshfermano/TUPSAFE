@@ -39,6 +39,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { CalendarIcon, AlertCircle, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -120,7 +121,7 @@ export function UpdateStatusDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent size="lg" className="overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Update Application Status</DialogTitle>
           <DialogDescription>
@@ -142,7 +143,9 @@ export function UpdateStatusDialog({
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col flex-1 overflow-hidden">
+            <ScrollArea className="flex-1 -mx-6 px-6">
+            <div className="space-y-4 pb-4">
             {/* Status Selection */}
             <FormField
               control={form.control}
@@ -195,10 +198,10 @@ export function UpdateStatusDialog({
             {/* Interview Fields (conditional) */}
             {showInterviewFields && (
               <>
-                <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                <div className="bg-blue-500/10 dark:bg-blue-500/20 border border-blue-500/30 rounded-lg p-3">
                   <div className="flex items-start gap-2">
                     <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5" />
-                    <p className="text-sm text-blue-800 dark:text-blue-300">
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
                       Interview scheduling information is required for this status
                     </p>
                   </div>
@@ -286,10 +289,10 @@ export function UpdateStatusDialog({
             {/* Rejection Reason (conditional) */}
             {showRejectionField && (
               <>
-                <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                <div className="bg-red-500/10 dark:bg-red-500/20 border border-red-500/30 rounded-lg p-3">
                   <div className="flex items-start gap-2">
                     <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5" />
-                    <p className="text-sm text-red-800 dark:text-red-300">
+                    <p className="text-sm text-red-700 dark:text-red-300">
                       A rejection reason is required and will be communicated to the applicant
                     </p>
                   </div>
@@ -322,10 +325,10 @@ export function UpdateStatusDialog({
             {/* Final Decision (conditional) */}
             {showFinalDecisionField && (
               <>
-                <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-3">
+                <div className="bg-green-500/10 dark:bg-green-500/20 border border-green-500/30 rounded-lg p-3">
                   <div className="flex items-start gap-2">
                     <AlertCircle className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5" />
-                    <p className="text-sm text-green-800 dark:text-green-300">
+                    <p className="text-sm text-green-700 dark:text-green-300">
                       {selectedStatus === 'hired'
                         ? 'Applicant will be marked for employee conversion'
                         : 'Offer details will be communicated to the applicant'}
@@ -356,10 +359,10 @@ export function UpdateStatusDialog({
 
             {/* Show any top-level form errors */}
             {Object.keys(form.formState.errors).length > 0 && (
-              <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
+              <div className="bg-red-500/10 dark:bg-red-500/20 border border-red-500/30 rounded-lg p-3 mb-4">
                 <div className="flex items-start gap-2">
                   <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
-                  <div className="text-sm text-red-800 dark:text-red-300">
+                  <div className="text-sm text-red-700 dark:text-red-300">
                     <p className="font-medium">Please fix the following errors:</p>
                     <ul className="list-disc list-inside mt-1 space-y-1">
                       {Object.entries(form.formState.errors).map(([field, error]) => (
@@ -372,14 +375,16 @@ export function UpdateStatusDialog({
                 </div>
               </div>
             )}
+            </div>
+            </ScrollArea>
 
-            <DialogFooter className="gap-2 sm:gap-2">
+            <DialogFooter className="gap-2 sm:gap-2 pt-4 border-t">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={isLoading}
-                className="border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500 active:scale-[0.98] transition-all duration-150"
+                className="border-2 border-border hover:bg-muted hover:border-muted-foreground/30 active:scale-[0.98] transition-all duration-150"
               >
                 Cancel
               </Button>

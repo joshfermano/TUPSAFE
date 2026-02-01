@@ -194,7 +194,7 @@ const SidebarNav = memo(
     return (
       <div className="flex h-full flex-col bg-muted/30 transition-all duration-300 overflow-hidden">
         {/* Logo Section - Clean header with proper spacing */}
-        <div className="flex h-16 shrink-0 items-center justify-between border-b bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="flex h-16 shrink-0 items-center justify-between border-b bg-background px-6">
           <Link
             href="/dashboard"
             className="group flex items-center gap-3 transition-opacity hover:opacity-80">
@@ -299,7 +299,7 @@ const SidebarNav = memo(
         </ScrollArea>
 
         {/* User Profile Section - Modern card layout */}
-        <div className="shrink-0 border-t bg-background/95 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="shrink-0 border-t bg-background p-4">
           {/* User Info Card */}
           <div className={cn(
             "mb-3 flex items-center rounded-lg border bg-card p-3 shadow-sm transition-shadow hover:shadow-md",

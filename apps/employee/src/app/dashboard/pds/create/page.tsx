@@ -489,6 +489,52 @@ export default function PDSCreatePage() {
             })) || [],
         });
 
+        // STEP 0: Pre-flight validation - check if entry has minimum required data
+        if (entryContext.entryId) {
+          if (entryContext.entryType === 'training') {
+            const trainingIndex = formData.learningDevelopment?.findIndex(
+              (t) => t.id === entryContext.entryId
+            );
+
+            if (trainingIndex !== undefined && trainingIndex >= 0) {
+              const training = formData.learningDevelopment![trainingIndex];
+
+              // Check minimum requirements for upload
+              if (!training.title || training.title.trim() === '') {
+                toast.error('Cannot upload attachment', {
+                  description: 'Please enter a training title first.',
+                  duration: 5000,
+                });
+                return { success: false };
+              }
+
+              // Optional: Log missing dates (but allow upload)
+              if (!training.dateFrom || !training.dateTo) {
+                console.log('[AUTO-SAVE] Training entry missing dates, but allowing upload');
+              }
+            }
+          }
+
+          if (entryContext.entryType === 'civil_service') {
+            const csIndex = formData.eligibility?.findIndex(
+              (cs) => cs.id === entryContext.entryId
+            );
+
+            if (csIndex !== undefined && csIndex >= 0) {
+              const cs = formData.eligibility![csIndex];
+
+              // Check minimum requirements for upload
+              if (!cs.eligibilityName || cs.eligibilityName.trim() === '') {
+                toast.error('Cannot upload attachment', {
+                  description: 'Please enter an eligibility name first.',
+                  duration: 5000,
+                });
+                return { success: false };
+              }
+            }
+          }
+        }
+
         // STEP 1: Always save to localStorage first (offline backup, no validation)
         await saveNow();
 

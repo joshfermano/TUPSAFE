@@ -399,7 +399,7 @@ export default function CreateUserPage() {
     <PageTransition className="space-y-6">
       {/* Loading Screen Overlay */}
       {isCreating && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95">
           <Card className="w-[400px] border-2 shadow-lg">
             <CardContent className="pt-6">
               <div className="flex flex-col items-center justify-center space-y-4">
@@ -480,7 +480,7 @@ export default function CreateUserPage() {
 
       {/* Success State - Show after user is created */}
       {isUserCreated && createdUser && (
-        <Card className="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/20">
+        <Card className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
           <CardHeader>
             <div className="flex items-center gap-3">
               <CheckCircle2 className="h-6 w-6 text-green-600" />
@@ -500,7 +500,7 @@ export default function CreateUserPage() {
                 <Input
                   value={createdUser.employeeId}
                   readOnly
-                  className="bg-white dark:bg-green-950 font-mono"
+                  className="bg-card font-mono"
                 />
                 <Button
                   type="button"
@@ -521,7 +521,7 @@ export default function CreateUserPage() {
                   <Input
                     value={createdUser.temporaryPassword}
                     readOnly
-                    className="bg-white dark:bg-green-950 font-mono"
+                    className="bg-card font-mono"
                   />
                   <Button
                     type="button"
@@ -556,7 +556,7 @@ export default function CreateUserPage() {
 
             {/* Linked Application Status */}
             {createdUser.linkedApplication && (
-              <div className="space-y-2 rounded-lg bg-white dark:bg-green-950 p-3">
+              <div className="space-y-2 rounded-lg bg-card p-3">
                 <div className="flex items-center gap-2 text-sm">
                   <LinkIcon className="h-4 w-4 text-green-600" />
                   <span className="text-green-700 dark:text-green-300 font-medium">
@@ -926,7 +926,7 @@ export default function CreateUserPage() {
                     </AlertDescription>
                   </Alert>
 
-                  <div className="rounded-lg border bg-blue-50 dark:bg-blue-950/20 p-4">
+                  <div className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-4">
                     <div className="flex gap-3">
                       <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
                       <div className="flex-1 space-y-2">
@@ -958,7 +958,7 @@ export default function CreateUserPage() {
                   </div>
 
                   {/* Link to Hired Application */}
-                  <div className="rounded-lg border bg-amber-50 dark:bg-amber-950/20 p-4">
+                  <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4">
                     <div className="flex gap-3">
                       <LinkIcon className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                       <div className="flex-1 space-y-3">
@@ -977,7 +977,7 @@ export default function CreateUserPage() {
                                 <Input
                                   placeholder="APP-YYYYMMDD-XXXX"
                                   {...field}
-                                  className="font-mono bg-white dark:bg-amber-950"
+                                  className="font-mono bg-card"
                                 />
                               </FormControl>
                               <FormMessage />

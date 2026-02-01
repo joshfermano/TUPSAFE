@@ -184,7 +184,7 @@ export function ChatContainer({ className }: ChatContainerProps) {
       </ScrollArea>
 
       {/* Input Area - fixed at bottom */}
-      <div className="shrink-0 border-t border-border/30 bg-background/80 backdrop-blur-md px-4 py-4 md:px-8 lg:px-12 md:py-5">
+      <div className="shrink-0 border-t border-border/30 bg-background px-4 py-4 md:px-8 lg:px-12 md:py-5">
         <div className="max-w-4xl mx-auto">
           <ChatInput
             onSend={handleSendMessage}

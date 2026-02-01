@@ -197,24 +197,27 @@ export function CreateOrganizationDialog({
       icon: Building2,
       label: 'College',
       description: 'Top-level academic unit with multiple departments',
-      bgColor: 'bg-blue-100 dark:bg-blue-700/30',
-      iconColor: 'text-blue-600 dark:text-blue-500',
+      bgColor: 'bg-blue-500/10 dark:bg-blue-500/20',
+      iconColor: 'text-blue-600 dark:text-blue-400',
+      selectedBorder: 'border-blue-500',
     },
     {
       type: 'department' as const,
       icon: FolderTree,
       label: 'Department',
       description: 'Academic unit within a college',
-      bgColor: 'bg-green-100 dark:bg-green-700/30',
-      iconColor: 'text-green-600 dark:text-green-500',
+      bgColor: 'bg-emerald-500/10 dark:bg-emerald-500/20',
+      iconColor: 'text-emerald-600 dark:text-emerald-400',
+      selectedBorder: 'border-emerald-500',
     },
     {
       type: 'office' as const,
       icon: Users,
       label: 'Office',
       description: 'Administrative or support unit',
-      bgColor: 'bg-purple-100 dark:bg-purple-900/30',
+      bgColor: 'bg-purple-500/10 dark:bg-purple-500/20',
       iconColor: 'text-purple-600 dark:text-purple-400',
+      selectedBorder: 'border-purple-500',
     },
   ];
 
@@ -246,6 +249,7 @@ export function CreateOrganizationDialog({
                       >
                         {organizationTypes.map((orgType) => {
                           const Icon = orgType.icon;
+                          const isSelected = field.value === orgType.type;
                           return (
                             <FormItem key={orgType.type}>
                               <FormControl>
@@ -257,16 +261,20 @@ export function CreateOrganizationDialog({
                               </FormControl>
                               <FormLabel htmlFor={orgType.type} className="cursor-pointer">
                                 <Card
-                                  className={`transition-all hover:border-primary ${
-                                    field.value === orgType.type ? 'border-primary ring-2 ring-primary/20' : ''
-                                  }`}
+                                  className={`
+                                    transition-all duration-200
+                                    ${isSelected 
+                                      ? `${orgType.selectedBorder} border-2 bg-muted/30 shadow-sm` 
+                                      : 'border-border hover:border-muted-foreground/30 hover:bg-muted/20'
+                                    }
+                                  `}
                                 >
                                   <CardContent className="flex items-center gap-4 p-4">
-                                    <div className={`rounded-md ${orgType.bgColor} p-3`}>
-                                      <Icon className={`h-6 w-6 ${orgType.iconColor}`} />
+                                    <div className={`rounded-lg ${orgType.bgColor} p-2.5`}>
+                                      <Icon className={`h-5 w-5 ${orgType.iconColor}`} />
                                     </div>
                                     <div className="flex-1">
-                                      <div className="font-semibold">{orgType.label}</div>
+                                      <div className="font-medium text-foreground">{orgType.label}</div>
                                       <div className="text-sm text-muted-foreground">
                                         {orgType.description}
                                       </div>

@@ -270,15 +270,15 @@ export function ReassignAndDeleteDialog({
                   </div>
 
                   {dependencies.blockingReasons.length > 0 && (
-                    <Card className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20">
+                    <Card className="border-amber-500/50 bg-amber-500/10 dark:bg-amber-500/20">
                       <CardContent className="pt-6">
                         <div className="flex gap-2">
-                          <AlertCircle className="h-5 w-5 shrink-0 text-yellow-600 dark:text-yellow-400" />
+                          <AlertCircle className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
                           <div className="space-y-1">
-                            <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100">
+                            <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
                               Blocking Reasons
                             </p>
-                            <ul className="list-inside list-disc space-y-1 text-sm text-yellow-800 dark:text-yellow-200">
+                            <ul className="list-inside list-disc space-y-1 text-sm text-amber-700 dark:text-amber-300">
                               {dependencies.blockingReasons.map((reason, index) => (
                                 <li key={index}>{reason}</li>
                               ))}
@@ -454,7 +454,7 @@ export function ReassignAndDeleteDialog({
                 </CardContent>
               </Card>
 
-              <Card className="border-destructive bg-destructive/5">
+              <Card className="border-destructive/50 bg-destructive/10 dark:bg-destructive/20">
                 <CardContent className="pt-6">
                   <div className="flex items-start gap-3">
                     <Checkbox

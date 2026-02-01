@@ -47,7 +47,7 @@ export function SALNDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] p-0">
+      <DialogContent size="full" className="overflow-hidden flex flex-col">
         {isLoading ? (
           <div className="p-6 space-y-4">
             <Skeleton className="h-8 w-[300px]" />
@@ -220,11 +220,11 @@ function SummarySection({
 
       {/* Year-over-Year Comparison */}
       {hasComparison && (
-        <div className={`border rounded-lg p-4 ${isSignificant ? 'border-orange-300 bg-orange-50 dark:bg-orange-950' : ''}`}>
+        <div className={`border rounded-lg p-4 ${isSignificant ? 'border-orange-500/40 bg-orange-500/10 dark:bg-orange-500/20' : ''}`}>
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold">Year-over-Year Comparison</h3>
             {isSignificant && (
-              <Badge variant="secondary" className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100">
+              <Badge variant="secondary" className="bg-orange-500/15 text-orange-700 dark:bg-orange-500/25 dark:text-orange-300 border-orange-500/30">
                 Significant Change
               </Badge>
             )}

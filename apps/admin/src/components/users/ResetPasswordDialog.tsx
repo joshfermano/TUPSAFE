@@ -109,11 +109,11 @@ export function ResetPasswordDialog({ userId, open, onOpenChange }: ResetPasswor
               </div>
             </div>
 
-            <div className="flex items-start gap-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3">
-              <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 shrink-0" />
-              <div className="text-sm text-yellow-900 dark:text-yellow-100">
+            <div className="flex items-start gap-2 rounded-lg bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/30 p-3">
+              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+              <div className="text-sm text-amber-800 dark:text-amber-200">
                 <p className="font-medium">Important Security Notice</p>
-                <p className="text-yellow-800 dark:text-yellow-200 mt-1">
+                <p className="text-amber-700 dark:text-amber-300 mt-1">
                   The user must change this password upon first login. Store it securely and
                   delete after sharing.
                 </p>

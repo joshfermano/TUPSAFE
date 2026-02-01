@@ -136,13 +136,13 @@ export function RejectSubmissionDialog({
           </div>
 
           {/* Warning */}
-          <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-3 flex gap-3">
-            <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <div className="bg-red-500/10 dark:bg-red-500/20 border border-red-500/30 rounded-lg p-3 flex gap-3">
+            <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
             <div className="space-y-1">
-              <p className="text-sm font-medium text-red-800 dark:text-red-300">
+              <p className="text-sm font-medium text-red-700 dark:text-red-300">
                 Important: Employee Notification
               </p>
-              <p className="text-sm text-red-700 dark:text-red-400">
+              <p className="text-sm text-red-600 dark:text-red-400">
                 The employee will be notified via email with the rejection reason you provide
                 above. Please ensure your reason is professional and constructive.
               </p>
@@ -155,7 +155,7 @@ export function RejectSubmissionDialog({
           <AlertDialogAction
             onClick={handleConfirm}
             disabled={!canReject || isLoading}
-            className="bg-red-600 hover:bg-red-700"
+            variant="destructive"
           >
             {isLoading ? 'Rejecting...' : 'Reject Submission'}
           </AlertDialogAction>

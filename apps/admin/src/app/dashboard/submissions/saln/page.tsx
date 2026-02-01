@@ -228,7 +228,7 @@ const SalnSubmissionRow = memo(
                   <span className="sr-only">Actions</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="glass-dropdown">
+              <DropdownMenuContent align="end" className="">
                 <DropdownMenuItem onClick={() => setReviewDialogOpen(true)}>
                   <Eye className="mr-2 h-4 w-4" />
                   Quick Review
@@ -776,7 +776,7 @@ export default function SalnSubmissionsPage() {
                 <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Select year" />
                 </SelectTrigger>
-                <SelectContent className="glass-dropdown">
+                <SelectContent className="">
                   {YEARS.map((year) => (
                     <SelectItem key={year.value} value={year.value}>
                       {year.label}
@@ -794,7 +794,7 @@ export default function SalnSubmissionsPage() {
                 <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Select department" />
                 </SelectTrigger>
-                <SelectContent className="glass-dropdown">
+                <SelectContent className="">
                   {departmentsLoading ? (
                     <SelectItem value="loading" disabled>
                       Loading departments...

@@ -39,7 +39,7 @@ export function ChatHeader({
   return (
     <div
       className={cn(
-        'flex items-center justify-between gap-3 border-b border-border/30 bg-background/80 backdrop-blur-md px-4 md:px-8 lg:px-12 py-4 shrink-0',
+        'flex items-center justify-between gap-3 border-b border-border/30 bg-background px-4 md:px-8 lg:px-12 py-4 shrink-0',
         className
       )}
     >

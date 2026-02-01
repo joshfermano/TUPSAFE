@@ -761,7 +761,7 @@ export default function SalnSubmissionViewPage() {
 
           {/* Sidebar - Employee Info */}
           <div className="space-y-6">
-            <Card className="sticky top-6 gradient-card-subtle backdrop-blur-sm border-primary-subtle">
+            <Card className="sticky top-6 gradient-card-subtle border-primary-subtle">
               <CardHeader>
                 <CardTitle className="text-lg">Employee Information</CardTitle>
               </CardHeader>

@@ -91,7 +91,7 @@ export function BulkApproveDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-3xl max-h-[90vh]">
+      <AlertDialogContent size="xl" className="overflow-hidden flex flex-col">
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
             <CheckCircle className="h-5 w-5 text-green-600" />
@@ -118,7 +118,7 @@ export function BulkApproveDialog({
                   {employeeRegistrations.length > 0 && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">Employees:</span>
-                      <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
+                      <Badge className="bg-blue-500/15 text-blue-700 dark:bg-blue-500/25 dark:text-blue-300 border-blue-500/30">
                         {employeeRegistrations.length}
                       </Badge>
                     </div>
@@ -126,7 +126,7 @@ export function BulkApproveDialog({
                   {applicantRegistrations.length > 0 && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">Applicants:</span>
-                      <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100">
+                      <Badge className="bg-orange-500/15 text-orange-700 dark:bg-orange-500/25 dark:text-orange-300 border-orange-500/30">
                         {applicantRegistrations.length}
                       </Badge>
                     </div>
@@ -134,9 +134,9 @@ export function BulkApproveDialog({
                 </div>
 
                 {/* Warning */}
-                <div className="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-900 p-3 rounded-md flex gap-3">
-                  <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
-                  <div className="text-sm text-yellow-800 dark:text-yellow-200">
+                <div className="bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/30 p-3 rounded-md flex gap-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                  <div className="text-sm text-amber-700 dark:text-amber-300">
                     <strong>Bulk Action:</strong> All selected registrations will be
                     processed simultaneously. Each will receive a welcome email with
                     login credentials.
@@ -168,8 +168,8 @@ export function BulkApproveDialog({
                               }
                               className={
                                 reg.userType === 'employee'
-                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
-                                  : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100'
+                                  ? 'bg-blue-500/15 text-blue-700 dark:bg-blue-500/25 dark:text-blue-300 border-blue-500/30'
+                                  : 'bg-orange-500/15 text-orange-700 dark:bg-orange-500/25 dark:text-orange-300 border-orange-500/30'
                               }
                             >
                               {reg.userType === 'employee' ? 'Employee' : 'Applicant'}
@@ -236,14 +236,14 @@ export function BulkApproveDialog({
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">Successful:</span>
-                        <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                        <Badge className="bg-green-500/15 text-green-700 dark:bg-green-500/25 dark:text-green-300 border-green-500/30">
                           {summary.successful}
                         </Badge>
                       </div>
                       {summary.failed > 0 && (
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium">Failed:</span>
-                          <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100">
+                          <Badge className="bg-red-500/15 text-red-700 dark:bg-red-500/25 dark:text-red-300 border-red-500/30">
                             {summary.failed}
                           </Badge>
                         </div>
@@ -261,8 +261,8 @@ export function BulkApproveDialog({
                             key={index}
                             className={`flex items-center justify-between text-sm p-3 rounded ${
                               result.status === 'approved'
-                                ? 'bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900'
-                                : 'bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900'
+                                ? 'bg-green-500/10 dark:bg-green-500/20 border border-green-500/30'
+                                : 'bg-red-500/10 dark:bg-red-500/20 border border-red-500/30'
                             }`}
                           >
                             <div className="flex-1">
@@ -277,8 +277,8 @@ export function BulkApproveDialog({
                               variant="secondary"
                               className={
                                 result.status === 'approved'
-                                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
-                                  : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+                                  ? 'bg-green-500/15 text-green-700 dark:bg-green-500/25 dark:text-green-300 border-green-500/30'
+                                  : 'bg-red-500/15 text-red-700 dark:bg-red-500/25 dark:text-red-300 border-red-500/30'
                               }
                             >
                               {result.status === 'approved' ? (
@@ -315,7 +315,7 @@ export function BulkApproveDialog({
                 disabled={
                   bulkApproveMutation.isPending || registrations.length === 0
                 }
-                className="bg-green-600 hover:bg-green-700"
+                variant="success"
               >
                 {bulkApproveMutation.isPending ? (
                   <>
