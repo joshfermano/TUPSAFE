@@ -205,9 +205,9 @@ export function OrganizationTable({
         cell: ({ row }) => {
           const type = getUnitType(row.original);
           const typeConfig = {
-            college: { label: 'College', variant: 'default' as const, className: 'bg-blue-100 text-blue-700 dark:bg-blue-700/40 dark:text-blue-600' },
-            department: { label: 'Department', variant: 'secondary' as const, className: 'bg-green-100 text-green-700 dark:bg-green-600/30 dark:text-green-600' },
-            office: { label: 'Office', variant: 'secondary' as const, className: 'bg-purple-100 text-purple-700 dark:bg-purple-700/30 dark:text-purple-600' },
+            college: { label: 'College', variant: 'default' as const, className: 'bg-blue-100 text-blue-700 dark:bg-blue-700/90 dark:text-blue-200' },
+            department: { label: 'Department', variant: 'secondary' as const, className: 'bg-green-100 text-green-700 dark:bg-green-700/90 dark:text-green-300' },
+            office: { label: 'Office', variant: 'secondary' as const, className: 'bg-purple-100 text-purple-700 dark:bg-purple-700/90 dark:text-purple-200' },
           };
           const config = typeConfig[type];
           return (
@@ -241,7 +241,7 @@ export function OrganizationTable({
         cell: ({ row }) => {
           const isActive = row.original.isActive;
           return (
-            <Badge variant={isActive ? 'default' : 'secondary'} className={isActive ? 'bg-green-100 text-green-700 dark:bg-green-500/30 dark:text-green-500' : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'}>
+            <Badge variant={isActive ? 'default' : 'secondary'} className={isActive ? 'bg-green-100 text-green-700 dark:bg-green-700/90 dark:text-green-300' : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'}>
               {isActive ? 'Active' : 'Inactive'}
             </Badge>
           );

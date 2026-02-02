@@ -45,12 +45,12 @@ function getActivityIcon(type: string) {
 function getActivityColor(type: string) {
   switch (type) {
     case 'user_created':
-      return 'text-blue-600 dark:text-blue-400';
+      return 'text-blue-600 dark:text-blue-600';
     case 'registration_approved':
     case 'submission_approved':
-      return 'text-green-600 dark:text-green-400';
+      return 'text-green-600 dark:text-green-600';
     case 'submission_rejected':
-      return 'text-red-600 dark:text-red-400';
+      return 'text-red-600 dark:text-red-600';
     default:
       return 'text-muted-foreground';
   }

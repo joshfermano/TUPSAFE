@@ -178,8 +178,8 @@ export function RegistrationsDataTable({
               variant={userType === 'employee' ? 'default' : 'secondary'}
               className={
                 userType === 'employee'
-                  ? 'bg-blue-100 text-blue-800'
-                  : 'bg-orange-100 text-orange-800'
+                  ? 'bg-blue-800 text-blue-100'
+                  : 'bg-orange-800 text-orange-100'
               }>
               {userType === 'employee' ? 'Employee' : 'Applicant'}
             </Badge>
@@ -237,15 +237,15 @@ export function RegistrationsDataTable({
           const variants = {
             pending: {
               variant: 'secondary',
-              className: 'bg-blue-100 text-blue-800',
+              className: 'bg-blue-800 text-blue-100',
             },
             approved: {
               variant: 'secondary',
-              className: 'bg-green-100 text-green-800',
+              className: 'bg-green-800 text-green-300',
             },
             rejected: {
               variant: 'secondary',
-              className: 'bg-red-100 text-red-800',
+              className: 'bg-red-800 text-red-100',
             },
           } as const;
 

@@ -48,8 +48,8 @@ export function RegistrationStatsCards({ stats, isLoading }: RegistrationStatsCa
       value: stats.pending,
       description: isPendingUrgent ? 'Requires immediate attention' : 'Awaiting review',
       icon: FileText,
-      iconColor: 'text-blue-600',
-      iconBgColor: 'bg-blue-200',
+      iconColor: 'text-blue-200',
+      iconBgColor: 'bg-blue-800',
       urgent: isPendingUrgent,
     },
     {
@@ -57,8 +57,8 @@ export function RegistrationStatsCards({ stats, isLoading }: RegistrationStatsCa
       value: stats.approved.thisWeek,
       description: `${stats.approved.total} total approved`,
       icon: CheckCircle,
-      iconColor: 'text-green-600',
-      iconBgColor: 'bg-green-200',
+      iconColor: 'text-green-200',
+      iconBgColor: 'bg-green-800',
       trend: stats.approved.thisWeek > 0 ? 'up' : undefined,
     },
     {
@@ -66,16 +66,16 @@ export function RegistrationStatsCards({ stats, isLoading }: RegistrationStatsCa
       value: stats.rejected.thisMonth,
       description: `${stats.rejected.total} total rejected`,
       icon: XCircle,
-      iconColor: 'text-red-600',
-      iconBgColor: 'bg-red-200',
+      iconColor: 'text-red-200',
+      iconBgColor: 'bg-red-800',
     },
     {
       title: 'Avg Approval Time',
       value: stats.averageApprovalTime,
       description: `${stats.averageApprovalTimeHours.toFixed(1)} hours average`,
       icon: Clock,
-      iconColor: 'text-purple-600',
-      iconBgColor: 'bg-purple-200',
+      iconColor: 'text-purple-200',
+      iconBgColor: 'bg-purple-800',
     },
   ];
 
