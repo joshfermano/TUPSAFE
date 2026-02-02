@@ -189,8 +189,8 @@ const SubmissionStatsCard = memo(
             {/* PDS Submissions */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-blue-100 p-2 dark:bg-blue-900/20">
-                  <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <div className="rounded-lg bg-blue-100 p-2 dark:bg-blue-700/70">
+                  <FileText className="h-4 w-4 text-blue-600 dark:text-blue-200" />
                 </div>
                 <div>
                   <p className="text-sm font-medium">PDS Submissions</p>
@@ -199,7 +199,7 @@ const SubmissionStatsCard = memo(
               </div>
               <Badge
                 variant="outline"
-                className="text-blue-600 dark:text-blue-400">
+                className="text-blue-600 dark:text-blue-600">
                 {pdsRecent} recent
               </Badge>
             </div>
@@ -209,8 +209,8 @@ const SubmissionStatsCard = memo(
             {/* SALN Submissions */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-purple-100 p-2 dark:bg-purple-900/20">
-                  <Landmark className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                <div className="rounded-lg bg-purple-100 p-2 dark:bg-purple-700/60">
+                  <Landmark className="h-4 w-4 text-purple-600 dark:text-purple-100" />
                 </div>
                 <div>
                   <p className="text-sm font-medium">SALN Submissions</p>
@@ -219,7 +219,7 @@ const SubmissionStatsCard = memo(
               </div>
               <Badge
                 variant="outline"
-                className="text-purple-600 dark:text-purple-400">
+                className="text-purple-600 dark:text-purple-600">
                 {salnRecent} recent
               </Badge>
             </div>
@@ -268,7 +268,7 @@ const DepartmentPerformanceCard = memo(
     const chartConfig = {
       compliance: {
         label: 'Compliance',
-        color: '#8B1538',
+        color: '#b92828',
       },
     };
 
@@ -305,10 +305,10 @@ const DepartmentPerformanceCard = memo(
                     key={`cell-${index}`}
                     fill={
                       entry.rate >= 95
-                        ? '#10b981'
+                        ? '#0e9769'
                         : entry.rate >= 85
                         ? '#f59e0b'
-                        : '#ef4444'
+                        : '#b92828'
                     }
                   />
                 ))}
@@ -358,13 +358,13 @@ const RecentActivityCard = memo(({ activities }: RecentActivityCardProps) => {
   const getActivityColor = (type: 'pds' | 'saln' | 'user' | 'system') => {
     switch (type) {
       case 'pds':
-        return 'text-blue-600 dark:text-blue-400';
+        return 'text-blue-600 dark:text-blue-600';
       case 'saln':
-        return 'text-purple-600 dark:text-purple-400';
+        return 'text-purple-600 dark:text-purple-600';
       case 'user':
-        return 'text-green-600 dark:text-green-400';
+        return 'text-green-600 dark:text-green-600';
       case 'system':
-        return 'text-yellow-600 dark:text-yellow-400';
+        return 'text-yellow-600 dark:text-yellow-600';
       default:
         return 'text-muted-foreground';
     }
@@ -571,7 +571,7 @@ export default function ReportsPage() {
             {
               name: 'Approved',
               value: reports.statusDistribution.approved,
-              color: '#10b981',
+              color: '#22ac7e',
             },
             {
               name: 'Pending',
@@ -581,12 +581,12 @@ export default function ReportsPage() {
             {
               name: 'In Review',
               value: reports.statusDistribution.inReview,
-              color: '#3b82f6',
+              color: '#336dcc',
             },
             {
               name: 'Rejected',
               value: reports.statusDistribution.rejected,
-              color: '#ef4444',
+              color: '#e43f3f',
             },
           ]
         : [],
