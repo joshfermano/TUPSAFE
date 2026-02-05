@@ -93,7 +93,7 @@ export const SALN_COLORS = {
 };
 
 /**
- * Font sizes (in points) matching CSC SALN Form 2019 layout
+ * Font sizes (in points) matching CSC SALN Form 2019/2025 layout
  * All sizes are calibrated to fit standard letter-size paper (8.5" x 11")
  */
 export const SALN_FONT_SIZES = {
@@ -108,6 +108,7 @@ export const SALN_FONT_SIZES = {
   legalText: 6, // Legal/certification text
   footerText: 6, // Footer information
   noteText: 5, // Italic footnotes
+  checkboxText: 7, // Checkbox label text (2025 format)
 };
 
 /**
@@ -486,6 +487,57 @@ export const styles = StyleSheet.create({
     fontStyle: 'italic',
     color: SALN_COLORS.mediumGray,
     marginTop: 3,
+  },
+
+  // 2025 Format Checkbox Styles
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  checkboxText: {
+    fontSize: SALN_FONT_SIZES.checkboxText,
+    marginLeft: 3,
+  },
+  checkboxContainer: {
+    padding: 8,
+    borderWidth: 0.5,
+    borderColor: SALN_COLORS.borderColor,
+    marginBottom: 5,
+  },
+
+  // 2025 Format Section Styles
+  complianceSection: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 8,
+  },
+  multipleMarriagesSection: {
+    borderWidth: 0.5,
+    borderColor: SALN_COLORS.borderColor,
+    padding: 5,
+    marginTop: 5,
+    marginBottom: 5,
+  },
+  spousePublicOfficialSection: {
+    borderWidth: 0.5,
+    borderColor: SALN_COLORS.borderColor,
+    padding: 5,
+    marginTop: 5,
+    marginBottom: 5,
+  },
+  footerNotesSection: {
+    marginTop: 10,
+    paddingTop: 5,
+    borderTopWidth: 0.5,
+    borderTopColor: SALN_COLORS.borderColor,
+  },
+  secondSignatureSection: {
+    marginTop: 15,
+    paddingTop: 10,
+    borderTopWidth: 0.5,
+    borderTopColor: SALN_COLORS.borderColor,
   },
 });
 

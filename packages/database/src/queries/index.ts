@@ -30,6 +30,14 @@ export {
   getArchivedSALN,
   getSALNStatistics,
   compareSALNYears,
+  // 2025 SALN Format helper functions
+  filterByOwner,
+  groupByOwner,
+  calculateTotalsByOwner,
+  getChildItems,
+  is2025Format,
+  getComplianceTypeLabel,
+  getOwnerLabel,
 } from './saln';
 
 // Export PDS queries with specific named exports to avoid conflicts
@@ -78,6 +86,10 @@ export type {
   SalnStatistics,
   SalnComparison,
 } from './saln';
+
+// 2025 SALN Format types - re-exported from saln.ts (which imports from types.ts)
+// Note: These are also available directly from '@tupsafe/database' via types.ts
+export type { PropertyOwner, ComplianceType, UnmarriedChild } from './saln';
 export type {
   CompletePDSSubmission,
   CreatePDSData,

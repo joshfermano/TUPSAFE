@@ -150,6 +150,10 @@ export type PropertyKind =
   | 'mixed';
 export type FormType = 'pds' | 'saln';
 export type FilingType = 'joint' | 'separate' | 'not_applicable';
+
+// 2025 SALN Format Types
+export type ComplianceType = 'assumption' | 'annual' | 'exit';
+export type PropertyOwner = 'declarant' | 'spouse' | 'child' | 'joint';
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
 export type NotificationType =
   | 'deadline_reminder'
@@ -201,6 +205,108 @@ export interface CharacterReference {
   name: string;
   address: string;
   telephoneNo?: string;
+}
+
+// ============================================================================
+// 2025 SALN FORMAT - EXTENDED INTERFACES
+// ============================================================================
+
+/**
+ * Unmarried child information for 2025 SALN format
+ * Matches the JSONB schema definition in salnSubmissions table
+ */
+export interface UnmarriedChild {
+  name: string;
+  dateOfBirth: string;
+  age: number;
+}
+
+/**
+ * Extended SALN Submission interface with 2025 format fields
+ * These fields extend the base SalnSubmission inferred from the database schema
+ */
+export interface SalnSubmission2025Fields {
+  // Compliance type and date
+  complianceType?: ComplianceType;
+  complianceDate?: Date | null;
+
+  // Multiple marriages disclosure
+  hasMultipleMarriages?: boolean;
+  previousSpouseNames?: string | null;
+
+  // Spouse public official status (for joint filing)
+  spouseIsPublicOfficial?: boolean;
+  spousePosition?: string | null;
+  spouseAgency?: string | null;
+  spouseOfficeAddress?: string | null;
+
+  // Unmarried children below 18
+  unmarriedChildren?: UnmarriedChild[];
+
+  // Declaration checkboxes
+  hasNoBusinessInterests?: boolean;
+  hasNoRelativesInGov?: boolean;
+
+  // First/Primary Government ID
+  governmentIdType?: string | null;
+  governmentIdNumber?: string | null;
+  governmentIdDateIssued?: string | null;
+
+  // TIN fields
+  declarantTin?: string | null;
+  spouseTin?: string | null;
+
+  // Spouse date of birth
+  spouseDateOfBirth?: string | null;
+
+  // Secondary government ID
+  governmentIdType2?: string | null;
+  governmentIdNumber2?: string | null;
+  governmentIdDateIssued2?: Date | null;
+
+  // SALN format version
+  salnFormatVersion?: 2025;
+}
+
+/**
+ * Extended property fields for 2025 SALN format
+ * Adds owner information to track who owns each asset/liability
+ */
+export interface PropertyOwnerFields {
+  owner?: PropertyOwner;
+  childName?: string | null;
+}
+
+/**
+ * Extended Real Property with 2025 format fields
+ */
+export type SalnRealProperty2025 = SalnRealProperty & PropertyOwnerFields;
+
+/**
+ * Extended Personal Property with 2025 format fields
+ */
+export type SalnPersonalProperty2025 = SalnPersonalProperty & PropertyOwnerFields;
+
+/**
+ * Extended Liability with 2025 format fields
+ */
+export type SalnLiability2025 = SalnLiability & PropertyOwnerFields;
+
+/**
+ * Extended Business Interest with 2025 format fields
+ */
+export type SalnBusinessInterest2025 = SalnBusinessInterest & PropertyOwnerFields;
+
+/**
+ * Complete SALN Data Structure with 2025 format support
+ */
+export interface CompleteSalnData2025 {
+  submission: SalnSubmission & SalnSubmission2025Fields;
+  realProperties: SalnRealProperty2025[];
+  personalProperties: SalnPersonalProperty2025[];
+  liabilities: SalnLiability2025[];
+  businessInterests: SalnBusinessInterest2025[];
+  relativesInGov: SalnRelativeInGov[];
 }
 
 // Complete PDS Data Structure

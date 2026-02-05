@@ -48,6 +48,22 @@ function capitalizeKind(kind: string): string {
   return kind.charAt(0).toUpperCase() + kind.slice(1);
 }
 
+/**
+ * Filter properties for ANNEX A display (2025 format)
+ * Only includes declarant and joint properties for main page
+ */
+function filterAnnexAProperties<T extends { owner?: string }>(
+  properties: T[],
+  is2025Format: boolean
+): T[] {
+  if (!is2025Format) {
+    return properties;
+  }
+  return properties.filter(
+    (p) => !p.owner || p.owner === 'declarant' || p.owner === 'joint'
+  );
+}
+
 export function SALNPage1({ data }: SALNPage1Props) {
   const {
     year,
@@ -56,14 +72,34 @@ export function SALNPage1({ data }: SALNPage1Props) {
     spouseInfo,
     realProperties = [],
     personalProperties = [],
+    salnFormatVersion,
+    complianceType,
+    complianceDate,
+    hasMultipleMarriages,
+    previousSpouseNames,
+    spouseIsPublicOfficial,
+    spousePosition,
+    spouseAgency,
+    spouseOfficeAddress,
+    unmarriedChildren,
+    declarantTin,
+    spouseTin,
+    spouseDateOfBirth,
   } = data;
+
+  // Check if using 2025 format
+  const is2025Format = salnFormatVersion === 2025;
 
   // Ensure children is always an array (handle null/undefined)
   const children = data.children || [];
 
+  // Filter properties for ANNEX A (2025 format: only declarant/joint)
+  const annexARealProperties = filterAnnexAProperties(realProperties, is2025Format);
+  const annexAPersonalProperties = filterAnnexAProperties(personalProperties, is2025Format);
+
   // Limit real properties to first 10 items for page 1
-  const displayedRealProperties = realProperties.slice(0, 10);
-  const hasMoreRealProperties = realProperties.length > 10;
+  const displayedRealProperties = annexARealProperties.slice(0, 10);
+  const hasMoreRealProperties = annexARealProperties.length > 10;
 
   // Calculate subtotal for displayed real properties
   const realPropertiesSubtotal = displayedRealProperties.reduce(
@@ -72,8 +108,8 @@ export function SALNPage1({ data }: SALNPage1Props) {
   );
 
   // Limit personal properties to first 8 items for page 1
-  const displayedPersonalProperties = personalProperties.slice(0, 8);
-  const hasMorePersonalProperties = personalProperties.length > 8;
+  const displayedPersonalProperties = annexAPersonalProperties.slice(0, 8);
+  const hasMorePersonalProperties = annexAPersonalProperties.length > 8;
 
   // Calculate subtotal for displayed personal properties
   const personalPropertiesSubtotal = displayedPersonalProperties.reduce(
@@ -83,20 +119,36 @@ export function SALNPage1({ data }: SALNPage1Props) {
 
   return (
     <Page size="LETTER" style={styles.page}>
-      {/* CSC Header - Top Right */}
-      <Text
-        style={{
-          position: 'absolute',
-          top: 10,
-          right: 20,
-          fontSize: 6,
-          fontStyle: 'italic',
-          textAlign: 'right',
-        }}>
-        Revised as of January 2015{'\n'}
-        Per CSC Resolution No. 1500088{'\n'}
-        Promulgated on January 23, 2015
-      </Text>
+      {/* CSC Header - Top Right (Version-specific) */}
+      {is2025Format ? (
+        <Text
+          style={{
+            position: 'absolute',
+            top: 10,
+            right: 20,
+            fontSize: 6,
+            fontStyle: 'italic',
+            textAlign: 'right',
+          }}>
+          2025 SALN Form{'\n'}
+          Per CSC Resolution No. __________{'\n'}
+          Promulgated on __________
+        </Text>
+      ) : (
+        <Text
+          style={{
+            position: 'absolute',
+            top: 10,
+            right: 20,
+            fontSize: 6,
+            fontStyle: 'italic',
+            textAlign: 'right',
+          }}>
+          Revised as of January 2015{'\n'}
+          Per CSC Resolution No. 1500088{'\n'}
+          Promulgated on January 23, 2015
+        </Text>
+      )}
 
       {/* Form Header */}
       <View style={styles.formHeader}>
@@ -114,6 +166,30 @@ export function SALNPage1({ data }: SALNPage1Props) {
           PURSUANT TO REPUBLIC ACT NO. 6713 AND REPUBLIC ACT NO. 3019
         </Text>
       </View>
+
+      {/* Compliance Type Checkboxes (2025 Format) */}
+      {is2025Format && (
+        <View style={[styles.row, { marginBottom: 8, flexWrap: 'wrap', gap: 10 }]}>
+          <View style={[styles.row, { alignItems: 'center', marginRight: 10 }]}>
+            <Checkbox checked={complianceType === 'assumption'} />
+            <Text style={{ fontSize: SALN_FONT_SIZES.fieldLabel }}>
+              Assumption of office as of {complianceDate ? formatDate(complianceDate) : '__________'}
+            </Text>
+          </View>
+          <View style={[styles.row, { alignItems: 'center', marginRight: 10 }]}>
+            <Checkbox checked={complianceType === 'annual'} />
+            <Text style={{ fontSize: SALN_FONT_SIZES.fieldLabel }}>
+              Annual filing as of December 31, {year || '____'}
+            </Text>
+          </View>
+          <View style={[styles.row, { alignItems: 'center' }]}>
+            <Checkbox checked={complianceType === 'exit'} />
+            <Text style={{ fontSize: SALN_FONT_SIZES.fieldLabel }}>
+              Exit as of {complianceDate ? formatDate(complianceDate) : '__________'}
+            </Text>
+          </View>
+        </View>
+      )}
 
       {/* Filing Type */}
       <View style={[styles.row, { marginBottom: 8, alignItems: 'center' }]}>
@@ -190,6 +266,24 @@ export function SALNPage1({ data }: SALNPage1Props) {
             </Text>
           </View>
         </View>
+
+        {/* TIN Row */}
+        {is2025Format && (
+          <View style={styles.declarantRow}>
+            <View style={{ width: '50%', paddingRight: 5 }}>
+              <Text style={styles.labelSmall}>TIN</Text>
+              <Text style={styles.declarantValue}>
+                {displayOrEmpty(declarantTin)}
+              </Text>
+            </View>
+            <View style={{ width: '50%' }}>
+              <Text style={styles.labelSmall}>Spouse TIN</Text>
+              <Text style={styles.declarantValue}>
+                {displayOrEmpty(spouseTin)}
+              </Text>
+            </View>
+          </View>
+        )}
       </View>
 
       {/* Spouse Information (if joint filing) */}
@@ -246,6 +340,70 @@ export function SALNPage1({ data }: SALNPage1Props) {
               </Text>
             </View>
           </View>
+
+          {/* Spouse Date of Birth (2025 Format) */}
+          {is2025Format && spouseDateOfBirth && (
+            <View style={styles.declarantRow}>
+              <View style={{ width: '50%' }}>
+                <Text style={styles.labelSmall}>Date of Birth</Text>
+                <Text style={styles.declarantValue}>
+                  {formatDate(spouseDateOfBirth)}
+                </Text>
+              </View>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* Multiple Marriages Section (2025 Format) */}
+      {is2025Format && (
+        <View style={[styles.declarantInfo, { marginTop: 5 }]}>
+          <Text style={[styles.labelSmall, styles.bold, { marginBottom: 5 }]}>
+            IF WITH MULTIPLE MARRIAGES, INDICATE THE NAME/S OF FORMER SPOUSE/S:
+          </Text>
+          {hasMultipleMarriages ? (
+            <Text style={styles.declarantValue}>
+              {displayOrEmpty(previousSpouseNames)}
+            </Text>
+          ) : (
+            <View style={[styles.row, { alignItems: 'center' }]}>
+              <Checkbox checked={true} />
+              <Text style={{ fontSize: SALN_FONT_SIZES.fieldLabel }}>
+                Not Applicable
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* Spouse Public Official Fields (2025 Format) */}
+      {is2025Format && spouseIsPublicOfficial && (
+        <View style={[styles.declarantInfo, { marginTop: 5 }]}>
+          <Text style={[styles.labelSmall, styles.bold, { marginBottom: 5 }]}>
+            IF SPOUSE IS A PUBLIC OFFICIAL/EMPLOYEE:
+          </Text>
+          <View style={styles.declarantRow}>
+            <View style={{ width: '50%', paddingRight: 5 }}>
+              <Text style={styles.labelSmall}>Position</Text>
+              <Text style={styles.declarantValue}>
+                {displayOrEmpty(spousePosition)}
+              </Text>
+            </View>
+            <View style={{ width: '50%' }}>
+              <Text style={styles.labelSmall}>Agency/Office</Text>
+              <Text style={styles.declarantValue}>
+                {displayOrEmpty(spouseAgency)}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.declarantRow}>
+            <View style={{ width: '100%' }}>
+              <Text style={styles.labelSmall}>Office Address</Text>
+              <Text style={styles.declarantValue}>
+                {displayOrEmpty(spouseOfficeAddress)}
+              </Text>
+            </View>
+          </View>
         </View>
       )}
 
@@ -254,43 +412,82 @@ export function SALNPage1({ data }: SALNPage1Props) {
         <Text>UNMARRIED CHILDREN BELOW EIGHTEEN (18) YEARS OF AGE</Text>
       </View>
 
-      {/* Children Table */}
-      <View style={styles.table}>
-        <View style={styles.tableHeader}>
-          <View style={[styles.tableHeaderCell, { width: '50%' }]}>
-            <Text>NAME</Text>
+      {/* Children Table - 2025 Format (simplified with name and age only) */}
+      {is2025Format && unmarriedChildren && unmarriedChildren.length > 0 ? (
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <View style={[styles.tableHeaderCell, { width: '70%' }]}>
+              <Text>NAME OF CHILD</Text>
+            </View>
+            <View style={[styles.tableHeaderCell, { width: '30%' }]}>
+              <Text style={styles.center}>AGE</Text>
+            </View>
           </View>
-          <View style={[styles.tableHeaderCell, { width: '30%' }]}>
-            <Text>DATE OF BIRTH</Text>
+          {unmarriedChildren.map((child, index) => (
+            <View key={index} style={styles.tableRow}>
+              <View style={[styles.tableCell, { width: '70%' }]}>
+                <Text>{displayOrEmpty(child.name)}</Text>
+              </View>
+              <View style={[styles.tableCell, { width: '30%' }]}>
+                <Text style={styles.center}>{child.age}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : is2025Format ? (
+        /* 2025 format with no children */
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <View style={[styles.tableHeaderCell, { width: '70%' }]}>
+              <Text>NAME OF CHILD</Text>
+            </View>
+            <View style={[styles.tableHeaderCell, { width: '30%' }]}>
+              <Text style={styles.center}>AGE</Text>
+            </View>
           </View>
-          <View style={[styles.tableHeaderCell, { width: '20%' }]}>
-            <Text style={styles.center}>AGE</Text>
+          <View style={styles.emptyRow}>
+            <Text style={styles.emptyText}>No unmarried children below 18 years old</Text>
           </View>
         </View>
-
-        {children.length > 0 ? (
-          children.map((child, index) => {
-            const age = calculateAge(child.dateOfBirth);
-            return (
-              <View key={index} style={styles.tableRow}>
-                <View style={[styles.tableCell, { width: '50%' }]}>
-                  <Text>{displayOrEmpty(child.name)}</Text>
-                </View>
-                <View style={[styles.tableCell, { width: '30%' }]}>
-                  <Text>{formatDate(child.dateOfBirth)}</Text>
-                </View>
-                <View style={[styles.tableCell, { width: '20%' }]}>
-                  <Text style={styles.center}>{age}</Text>
-                </View>
-              </View>
-            );
-          })
-        ) : (
-          <View style={styles.emptyRow}>
-            <Text style={styles.emptyText}>No children below 18 years old</Text>
+      ) : (
+        /* 2019 format with date of birth */
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <View style={[styles.tableHeaderCell, { width: '50%' }]}>
+              <Text>NAME</Text>
+            </View>
+            <View style={[styles.tableHeaderCell, { width: '30%' }]}>
+              <Text>DATE OF BIRTH</Text>
+            </View>
+            <View style={[styles.tableHeaderCell, { width: '20%' }]}>
+              <Text style={styles.center}>AGE</Text>
+            </View>
           </View>
-        )}
-      </View>
+
+          {children.length > 0 ? (
+            children.map((child, index) => {
+              const age = calculateAge(child.dateOfBirth);
+              return (
+                <View key={index} style={styles.tableRow}>
+                  <View style={[styles.tableCell, { width: '50%' }]}>
+                    <Text>{displayOrEmpty(child.name)}</Text>
+                  </View>
+                  <View style={[styles.tableCell, { width: '30%' }]}>
+                    <Text>{formatDate(child.dateOfBirth)}</Text>
+                  </View>
+                  <View style={[styles.tableCell, { width: '20%' }]}>
+                    <Text style={styles.center}>{age}</Text>
+                  </View>
+                </View>
+              );
+            })
+          ) : (
+            <View style={styles.emptyRow}>
+              <Text style={styles.emptyText}>No children below 18 years old</Text>
+            </View>
+          )}
+        </View>
+      )}
 
       {/* Assets Section Header */}
       <View style={styles.sectionHeader}>
@@ -449,6 +646,24 @@ export function SALNPage1({ data }: SALNPage1Props) {
       {/* Note if more personal properties exist */}
       {hasMorePersonalProperties && (
         <Text style={styles.noteText}>(Continued on Page 3)</Text>
+      )}
+
+      {/* Footer Notes for 2025 Format */}
+      {is2025Format && (
+        <View style={{ marginTop: 10, paddingTop: 5, borderTopWidth: 0.5, borderTopColor: SALN_COLORS.borderColor }}>
+          <Text style={[styles.noteText, { marginBottom: 2 }]}>
+            i. Properties owned by spouse and/or unmarried children below 18 years of age living in the household should be declared in ANNEX B.
+          </Text>
+          <Text style={[styles.noteText, { marginBottom: 2 }]}>
+            ii. Liabilities of spouse and/or unmarried children below 18 years of age living in the household should be declared in ANNEX B.
+          </Text>
+          <Text style={[styles.noteText, { marginBottom: 2 }]}>
+            iii. Business interests of spouse and/or unmarried children below 18 years of age living in the household should be declared in ANNEX C.
+          </Text>
+          <Text style={[styles.noteText, { marginBottom: 2 }]}>
+            iv. Relatives in government service of spouse and/or declarant should be declared in ANNEX C.
+          </Text>
+        </View>
       )}
 
       {/* Page Footer */}

@@ -15,7 +15,6 @@
 import { memo, useState } from 'react';
 import { useFormContext, Controller } from 'react-hook-form';
 import {
-  CheckCircle2,
   ChevronDown,
   ChevronUp,
   User,
@@ -26,6 +25,7 @@ import {
   Users,
   Calculator,
   AlertTriangle,
+  IdCard,
 } from 'lucide-react';
 import { Checkbox } from '../../../../../components/ui/checkbox';
 import { Label } from '../../../../../components/ui/label';
@@ -44,7 +44,24 @@ import type {
 } from '../../../../../lib/validations/saln-schema';
 
 // Import Enhanced Components
-import { EnhancedFormSection, BlurFade } from '@tupsafe/shared-ui';
+import { EnhancedFormSection, EnhancedInput, BlurFade } from '@tupsafe/shared-ui';
+
+// Government ID types for selection
+const GOVERNMENT_ID_TYPES = [
+  "Driver's License",
+  'Passport',
+  'SSS ID',
+  'GSIS ID',
+  'PhilHealth ID',
+  "Voter's ID",
+  'PRC ID',
+  'Postal ID',
+  'Senior Citizen ID',
+  'PWD ID',
+  'UMID',
+  'TIN ID',
+  'Other',
+] as const;
 
 interface ReviewSubmitProps {
   data: Partial<CompleteSalnData>;
@@ -454,8 +471,201 @@ export const ReviewSubmit = memo(function ReviewSubmit({
         </EnhancedFormSection>
       </BlurFade>
 
-      {/* Declaration */}
+      {/* First Government ID Section (2025 SALN Format) */}
       <BlurFade delay={0.36}>
+        <EnhancedFormSection
+          title="First Government Issued ID"
+          subtitle="Provide your primary government-issued ID for verification (2025 SALN requirement)"
+          variant="default">
+          <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid gap-2">
+              <Label
+                htmlFor="submission.governmentIdType"
+                className="text-base font-medium">
+                ID Type
+              </Label>
+              <Controller
+                name="submission.governmentIdType"
+                control={control}
+                render={({ field: { onChange, value } }) => (
+                  <select
+                    value={value || ''}
+                    onChange={(e) => onChange(e.target.value)}
+                    className="flex h-10 w-full rounded-lg border bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all px-3 py-2 text-sm shadow-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>option]:bg-white [&>option]:dark:bg-slate-800">
+                    <option value="">Select ID type</option>
+                    {GOVERNMENT_ID_TYPES.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label
+                htmlFor="submission.governmentIdNumber"
+                className="text-base font-medium">
+                ID Number
+              </Label>
+              <Controller
+                name="submission.governmentIdNumber"
+                control={control}
+                render={({ field }) => (
+                  <EnhancedInput
+                    {...field}
+                    value={field.value || ''}
+                    placeholder="Enter ID number"
+                  />
+                )}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label
+                htmlFor="submission.governmentIdDateIssued"
+                className="text-base font-medium">
+                Date Issued
+              </Label>
+              <Controller
+                name="submission.governmentIdDateIssued"
+                control={control}
+                render={({ field }) => {
+                  // Normalize value to YYYY-MM-DD string format
+                  let displayValue = '';
+                  if (field.value instanceof Date) {
+                    displayValue = field.value.toISOString().split('T')[0];
+                  } else if (typeof field.value === 'string' && field.value) {
+                    try {
+                      displayValue = new Date(field.value).toISOString().split('T')[0];
+                    } catch {
+                      displayValue = field.value;
+                    }
+                  }
+
+                  return (
+                    <input
+                      type="date"
+                      value={displayValue}
+                      onChange={(e) => {
+                        const dateStr = e.target.value;
+                        field.onChange(dateStr ? new Date(dateStr) : null);
+                      }}
+                      max={new Date().toISOString().split('T')[0]}
+                      className="flex h-10 w-full rounded-lg border bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all px-3 py-2 text-sm shadow-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  );
+                }}
+              />
+            </div>
+          </div>
+        </EnhancedFormSection>
+      </BlurFade>
+
+      {/* Second Government ID Section (2025 SALN Format) */}
+      <BlurFade delay={0.39}>
+        <EnhancedFormSection
+          title="Second Government Issued ID"
+          subtitle="Provide a different government-issued ID for the second signature"
+          variant="default">
+          <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid gap-2">
+              <Label
+                htmlFor="submission.governmentIdType2"
+                className="text-base font-medium">
+                ID Type
+              </Label>
+              <Controller
+                name="submission.governmentIdType2"
+                control={control}
+                render={({ field: { onChange, value } }) => (
+                  <select
+                    value={value || ''}
+                    onChange={(e) => onChange(e.target.value)}
+                    className="flex h-10 w-full rounded-lg border bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all px-3 py-2 text-sm shadow-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>option]:bg-white [&>option]:dark:bg-slate-800">
+                    <option value="">Select ID type</option>
+                    {GOVERNMENT_ID_TYPES.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label
+                htmlFor="submission.governmentIdNumber2"
+                className="text-base font-medium">
+                ID Number
+              </Label>
+              <Controller
+                name="submission.governmentIdNumber2"
+                control={control}
+                render={({ field }) => (
+                  <EnhancedInput
+                    {...field}
+                    value={field.value || ''}
+                    placeholder="Enter ID number"
+                  />
+                )}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label
+                htmlFor="submission.governmentIdDateIssued2"
+                className="text-base font-medium">
+                Date Issued
+              </Label>
+              <Controller
+                name="submission.governmentIdDateIssued2"
+                control={control}
+                render={({ field }) => {
+                  // Normalize value to YYYY-MM-DD string format
+                  let displayValue = '';
+                  if (field.value instanceof Date) {
+                    displayValue = field.value.toISOString().split('T')[0];
+                  } else if (typeof field.value === 'string' && field.value) {
+                    try {
+                      displayValue = new Date(field.value).toISOString().split('T')[0];
+                    } catch {
+                      displayValue = field.value;
+                    }
+                  }
+
+                  return (
+                    <input
+                      type="date"
+                      value={displayValue}
+                      onChange={(e) => {
+                        const dateStr = e.target.value;
+                        field.onChange(dateStr ? new Date(dateStr) : null);
+                      }}
+                      max={new Date().toISOString().split('T')[0]}
+                      className="flex h-10 w-full rounded-lg border bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all px-3 py-2 text-sm shadow-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  );
+                }}
+              />
+            </div>
+          </div>
+
+          <Alert className="mt-6 border-slate-200/50 dark:border-slate-800/50">
+            <IdCard className="h-4 w-4" />
+            <AlertDescription className="text-sm text-slate-600 dark:text-slate-400">
+              The 2025 SALN format requires two government-issued IDs for
+              verification. Please ensure the first and second IDs are different
+              from each other.
+            </AlertDescription>
+          </Alert>
+        </EnhancedFormSection>
+      </BlurFade>
+
+      {/* Declaration */}
+      <BlurFade delay={0.42}>
         <EnhancedFormSection
           title="Declaration"
           subtitle="Required declaration under penalty of perjury"

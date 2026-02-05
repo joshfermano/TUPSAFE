@@ -26,6 +26,17 @@ interface SALNPage2Props {
   data: SALNData;
 }
 
+/**
+ * Checkbox component for 2025 format selections
+ */
+function Checkbox({ checked }: { checked: boolean }) {
+  return (
+    <Text style={{ fontSize: 7, marginRight: 3 }}>
+      {checked ? '☑' : '☐'}
+    </Text>
+  );
+}
+
 // CSC Legal Declaration Text
 const DECLARATION_PARAGRAPH_1 =
   'I declare under oath that this Statement of Assets, Liabilities and Net Worth including the related disclosure required by R.A. No. 6713 and R.A. No. 3019, is a true, correct and complete statement of my assets, liabilities, net worth, business interests and financial connections, including those of my spouse and unmarried children below eighteen (18) years of age living in my household, as of the date indicated above; that I have diligently, accurately and in good faith, accomplished and submitted the same, and that the statement is subscribed and sworn to before an authority pursuant to the aforesaid laws.';
@@ -162,80 +173,100 @@ function NetWorthBox({ data }: { data: SALNData }) {
 /**
  * Business Interests Section Component
  * Displays first 8 business interests
+ * Supports 2025 format "I/We do not have" checkbox
  */
 function BusinessInterestsSection({ data }: { data: SALNData }) {
   const businessInterests = data.businessInterests || [];
   const displayBusinessInterests = businessInterests.slice(0, 8);
   const hasMore = businessInterests.length > 8;
+  const is2025Format = data.salnFormatVersion === 2025;
 
   return (
     <View>
       <Text style={styles.sectionHeader}>
         BUSINESS INTERESTS AND FINANCIAL CONNECTIONS
       </Text>
-      <View style={styles.table}>
-        {/* Header */}
-        <View style={styles.tableHeader}>
-          <View style={[styles.tableHeaderCell, styles.w25]}>
-            <Text>NAME OF ENTITY / BUSINESS ENTERPRISE</Text>
-          </View>
-          <View style={[styles.tableHeaderCell, styles.w30]}>
-            <Text>BUSINESS ADDRESS</Text>
-          </View>
-          <View style={[styles.tableHeaderCell, styles.w25]}>
-            <Text>NATURE OF BUSINESS INTEREST / CONNECTION</Text>
-          </View>
-          <View style={[styles.tableHeaderCell, styles.w20]}>
-            <Text>DATE OF ACQUISITION OF INTEREST / CONNECTION</Text>
+
+      {/* 2025 Format: "I/We do not have" checkbox */}
+      {is2025Format && data.hasNoBusinessInterests ? (
+        <View style={{
+          padding: 8,
+          borderWidth: 0.5,
+          borderColor: SALN_COLORS.borderColor,
+          marginBottom: 5
+        }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Checkbox checked={true} />
+            <Text style={{ fontSize: 7 }}>
+              I/We do not have any business interest or financial connection
+            </Text>
           </View>
         </View>
-
-        {/* Business Interest Rows */}
-        {displayBusinessInterests.map((business, index) => (
-          <View key={index} style={styles.tableRow}>
-            <View style={[styles.tableCell, styles.w25]}>
-              <Text>{displayOrEmpty(business.entityName)}</Text>
+      ) : (
+        <View style={styles.table}>
+          {/* Header */}
+          <View style={styles.tableHeader}>
+            <View style={[styles.tableHeaderCell, styles.w25]}>
+              <Text>NAME OF ENTITY / BUSINESS ENTERPRISE</Text>
             </View>
-            <View style={[styles.tableCell, styles.w30]}>
-              <Text>{displayOrEmpty(business.businessAddress)}</Text>
+            <View style={[styles.tableHeaderCell, styles.w30]}>
+              <Text>BUSINESS ADDRESS</Text>
             </View>
-            <View style={[styles.tableCell, styles.w25]}>
-              <Text>{displayOrEmpty(business.natureOfBusiness)}</Text>
+            <View style={[styles.tableHeaderCell, styles.w25]}>
+              <Text>NATURE OF BUSINESS INTEREST / CONNECTION</Text>
             </View>
-            <View style={[styles.tableCell, styles.w20]}>
-              <Text style={styles.center}>
-                {business.dateOfAcquisition
-                  ? formatDate(business.dateOfAcquisition)
-                  : 'N/A'}
-              </Text>
+            <View style={[styles.tableHeaderCell, styles.w20]}>
+              <Text>DATE OF ACQUISITION OF INTEREST / CONNECTION</Text>
             </View>
           </View>
-        ))}
 
-        {/* Empty rows if less than 8 */}
-        {displayBusinessInterests.length < 8 &&
-          Array.from({ length: 8 - displayBusinessInterests.length }).map(
-            (_, index) => (
-              <View key={`empty-${index}`} style={styles.tableRow}>
-                <View style={[styles.tableCell, styles.w25]}>
-                  <Text> </Text>
-                </View>
-                <View style={[styles.tableCell, styles.w30]}>
-                  <Text> </Text>
-                </View>
-                <View style={[styles.tableCell, styles.w25]}>
-                  <Text> </Text>
-                </View>
-                <View style={[styles.tableCell, styles.w20]}>
-                  <Text> </Text>
-                </View>
+          {/* Business Interest Rows */}
+          {displayBusinessInterests.map((business, index) => (
+            <View key={index} style={styles.tableRow}>
+              <View style={[styles.tableCell, styles.w25]}>
+                <Text>{displayOrEmpty(business.entityName)}</Text>
               </View>
-            )
-          )}
-      </View>
+              <View style={[styles.tableCell, styles.w30]}>
+                <Text>{displayOrEmpty(business.businessAddress)}</Text>
+              </View>
+              <View style={[styles.tableCell, styles.w25]}>
+                <Text>{displayOrEmpty(business.natureOfBusiness)}</Text>
+              </View>
+              <View style={[styles.tableCell, styles.w20]}>
+                <Text style={styles.center}>
+                  {business.dateOfAcquisition
+                    ? formatDate(business.dateOfAcquisition)
+                    : 'N/A'}
+                </Text>
+              </View>
+            </View>
+          ))}
+
+          {/* Empty rows if less than 8 */}
+          {displayBusinessInterests.length < 8 &&
+            Array.from({ length: 8 - displayBusinessInterests.length }).map(
+              (_, index) => (
+                <View key={`empty-${index}`} style={styles.tableRow}>
+                  <View style={[styles.tableCell, styles.w25]}>
+                    <Text> </Text>
+                  </View>
+                  <View style={[styles.tableCell, styles.w30]}>
+                    <Text> </Text>
+                  </View>
+                  <View style={[styles.tableCell, styles.w25]}>
+                    <Text> </Text>
+                  </View>
+                  <View style={[styles.tableCell, styles.w20]}>
+                    <Text> </Text>
+                  </View>
+                </View>
+              )
+            )}
+        </View>
+      )}
 
       {/* Continuation Note */}
-      {hasMore && (
+      {hasMore && !data.hasNoBusinessInterests && (
         <View style={{ padding: 3 }}>
           <Text style={styles.noteText}>(Continued on Page 4)</Text>
         </View>
@@ -247,11 +278,13 @@ function BusinessInterestsSection({ data }: { data: SALNData }) {
 /**
  * Relatives in Government Section Component
  * Displays first 8 relatives
+ * Supports 2025 format "I/We do not have" checkbox
  */
 function RelativesInGovSection({ data }: { data: SALNData }) {
   const relatives = data.relativesInGov || [];
   const displayRelatives = relatives.slice(0, 8);
   const hasMore = relatives.length > 8;
+  const is2025Format = data.salnFormatVersion === 2025;
 
   return (
     <View>
@@ -259,63 +292,81 @@ function RelativesInGovSection({ data }: { data: SALNData }) {
         RELATIVES IN THE GOVERNMENT SERVICE (Within the Fourth Civil Degree of
         Consanguinity or Affinity)
       </Text>
-      <View style={styles.table}>
-        {/* Header */}
-        <View style={styles.tableHeader}>
-          <View style={[styles.tableHeaderCell, styles.w25]}>
-            <Text>NAME</Text>
-          </View>
-          <View style={[styles.tableHeaderCell, styles.w15]}>
-            <Text>RELATIONSHIP</Text>
-          </View>
-          <View style={[styles.tableHeaderCell, styles.w25]}>
-            <Text>POSITION</Text>
-          </View>
-          <View style={[styles.tableHeaderCell, styles.w35]}>
-            <Text>NAME OF AGENCY / OFFICE AND ADDRESS</Text>
+
+      {/* 2025 Format: "I/We do not have" checkbox */}
+      {is2025Format && data.hasNoRelativesInGov ? (
+        <View style={{
+          padding: 8,
+          borderWidth: 0.5,
+          borderColor: SALN_COLORS.borderColor,
+          marginBottom: 5
+        }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Checkbox checked={true} />
+            <Text style={{ fontSize: 7 }}>
+              I/We do not know of any relative/s in the government service
+            </Text>
           </View>
         </View>
-
-        {/* Relative Rows */}
-        {displayRelatives.map((relative, index) => (
-          <View key={index} style={styles.tableRow}>
-            <View style={[styles.tableCell, styles.w25]}>
-              <Text>{displayOrEmpty(relative.name)}</Text>
+      ) : (
+        <View style={styles.table}>
+          {/* Header */}
+          <View style={styles.tableHeader}>
+            <View style={[styles.tableHeaderCell, styles.w25]}>
+              <Text>NAME</Text>
             </View>
-            <View style={[styles.tableCell, styles.w15]}>
-              <Text>{displayOrEmpty(relative.relationship)}</Text>
+            <View style={[styles.tableHeaderCell, styles.w15]}>
+              <Text>RELATIONSHIP</Text>
             </View>
-            <View style={[styles.tableCell, styles.w25]}>
-              <Text>{displayOrEmpty(relative.position)}</Text>
+            <View style={[styles.tableHeaderCell, styles.w25]}>
+              <Text>POSITION</Text>
             </View>
-            <View style={[styles.tableCell, styles.w35]}>
-              <Text>{displayOrEmpty(relative.agencyAddress)}</Text>
+            <View style={[styles.tableHeaderCell, styles.w35]}>
+              <Text>NAME OF AGENCY / OFFICE AND ADDRESS</Text>
             </View>
           </View>
-        ))}
 
-        {/* Empty rows if less than 8 */}
-        {displayRelatives.length < 8 &&
-          Array.from({ length: 8 - displayRelatives.length }).map((_, index) => (
-            <View key={`empty-${index}`} style={styles.tableRow}>
+          {/* Relative Rows */}
+          {displayRelatives.map((relative, index) => (
+            <View key={index} style={styles.tableRow}>
               <View style={[styles.tableCell, styles.w25]}>
-                <Text> </Text>
+                <Text>{displayOrEmpty(relative.name)}</Text>
               </View>
               <View style={[styles.tableCell, styles.w15]}>
-                <Text> </Text>
+                <Text>{displayOrEmpty(relative.relationship)}</Text>
               </View>
               <View style={[styles.tableCell, styles.w25]}>
-                <Text> </Text>
+                <Text>{displayOrEmpty(relative.position)}</Text>
               </View>
               <View style={[styles.tableCell, styles.w35]}>
-                <Text> </Text>
+                <Text>{displayOrEmpty(relative.agencyAddress)}</Text>
               </View>
             </View>
           ))}
-      </View>
+
+          {/* Empty rows if less than 8 */}
+          {displayRelatives.length < 8 &&
+            Array.from({ length: 8 - displayRelatives.length }).map((_, index) => (
+              <View key={`empty-${index}`} style={styles.tableRow}>
+                <View style={[styles.tableCell, styles.w25]}>
+                  <Text> </Text>
+                </View>
+                <View style={[styles.tableCell, styles.w15]}>
+                  <Text> </Text>
+                </View>
+                <View style={[styles.tableCell, styles.w25]}>
+                  <Text> </Text>
+                </View>
+                <View style={[styles.tableCell, styles.w35]}>
+                  <Text> </Text>
+                </View>
+              </View>
+            ))}
+        </View>
+      )}
 
       {/* Continuation Note */}
-      {hasMore && (
+      {hasMore && !data.hasNoRelativesInGov && (
         <View style={{ padding: 3 }}>
           <Text style={styles.noteText}>(Continued on Page 4)</Text>
         </View>
@@ -341,9 +392,19 @@ function DeclarationSection() {
  * Signature Section Component
  * Two columns: Declarant and Spouse
  * Each with signature, Community Tax Cert, and Government ID fields
+ * Supports 2025 format second signature section
  */
 function SignatureSection({ data }: { data: SALNData }) {
-  const { declarantInfo, spouseInfo } = data;
+  const {
+    declarantInfo,
+    spouseInfo,
+    salnFormatVersion,
+    governmentIdType,
+    governmentIdNumber,
+    governmentIdDateIssued,
+    governmentId2,
+  } = data;
+  const is2025Format = salnFormatVersion === 2025;
 
   return (
     <View style={styles.signatureSection}>
@@ -455,6 +516,69 @@ function SignatureSection({ data }: { data: SALNData }) {
           </View>
         </View>
       </View>
+
+      {/* Second Signature Section (2025 Format) */}
+      {is2025Format && (
+        <View style={{ marginTop: 15, paddingTop: 10, borderTopWidth: 0.5, borderTopColor: SALN_COLORS.borderColor }}>
+          <View style={styles.signatureRow}>
+            {/* First Government ID */}
+            <View style={styles.signatureBox}>
+              <View style={styles.signatureLine} />
+              <Text style={styles.signatureLabel}>Signature of Declarant</Text>
+
+              <View style={{ marginTop: 8 }}>
+                <Text style={[styles.signatureLabel, { textAlign: 'left', fontSize: 6 }]}>
+                  Government Issued ID: {governmentIdType ? displayOrEmpty(governmentIdType) : '_________________'}
+                </Text>
+                <Text
+                  style={[
+                    styles.signatureLabel,
+                    { textAlign: 'left', fontSize: 6, marginTop: 2 },
+                  ]}
+                >
+                  ID No.: {governmentIdNumber ? displayOrEmpty(governmentIdNumber) : '_________________'}
+                </Text>
+                <Text
+                  style={[
+                    styles.signatureLabel,
+                    { textAlign: 'left', fontSize: 6, marginTop: 2 },
+                  ]}
+                >
+                  Date Issued: {governmentIdDateIssued ? formatDate(governmentIdDateIssued) : '_________________'}
+                </Text>
+              </View>
+            </View>
+
+            {/* Second Government ID */}
+            <View style={styles.signatureBox}>
+              <View style={styles.signatureLine} />
+              <Text style={styles.signatureLabel}>Signature of Declarant</Text>
+
+              <View style={{ marginTop: 8 }}>
+                <Text style={[styles.signatureLabel, { textAlign: 'left', fontSize: 6 }]}>
+                  Government Issued ID: {governmentId2 ? displayOrEmpty(governmentId2.type) : '_________________'}
+                </Text>
+                <Text
+                  style={[
+                    styles.signatureLabel,
+                    { textAlign: 'left', fontSize: 6, marginTop: 2 },
+                  ]}
+                >
+                  ID No.: {governmentId2 ? displayOrEmpty(governmentId2.number) : '_________________'}
+                </Text>
+                <Text
+                  style={[
+                    styles.signatureLabel,
+                    { textAlign: 'left', fontSize: 6, marginTop: 2 },
+                  ]}
+                >
+                  Date Issued: {governmentId2?.dateIssued ? formatDate(governmentId2.dateIssued) : '_________________'}
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 }

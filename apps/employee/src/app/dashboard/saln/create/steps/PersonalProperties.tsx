@@ -16,7 +16,7 @@
  */
 
 import { memo, useMemo } from 'react';
-import { useFormContext, useFieldArray, Controller } from 'react-hook-form';
+import { useFormContext, useFieldArray, Controller, useWatch } from 'react-hook-form';
 import { BackpackIcon } from '@radix-ui/react-icons';
 import { Plus, Trash2 } from 'lucide-react';
 import { CurrencyInput } from '../../../../../components/forms/shared/CurrencyInput';
@@ -25,10 +25,13 @@ import { Button } from '../../../../../components/ui/button';
 import { Textarea } from '../../../../../components/ui/textarea';
 import { Badge } from '../../../../../components/ui/badge';
 import { formatCurrency } from '../../../../../lib/utils/currency';
+import {
+  PROPERTY_OWNER,
+  type UnmarriedChild,
+} from '../../../../../lib/validations/saln-schema';
 
 // Import Enhanced Components
 import {
-  EnhancedFormSection,
   EnhancedCard,
   EnhancedCardContent,
   BlurFade,
@@ -36,10 +39,92 @@ import {
 
 interface PropertyItem {
   acquisitionCost?: number;
+  owner?: string;
 }
 
 interface PropertyError {
   description?: { message?: string };
+}
+
+// Helper component to watch individual property owner
+function PersonalPropertyOwnerSelect({ index, control }: { index: number; control: unknown }) {
+  const watchedOwner = useWatch({
+    control: control as ReturnType<typeof useFormContext>['control'],
+    name: `personalProperties.${index}.owner`,
+  });
+
+  const unmarriedChildren = useWatch({
+    control: control as ReturnType<typeof useFormContext>['control'],
+    name: 'submission.unmarriedChildren',
+  }) as UnmarriedChild[] || [];
+
+  return (
+    <>
+      {/* Owner Selection */}
+      <div className="grid gap-2">
+        <Label
+          htmlFor={`personalProperties.${index}.owner`}
+          className="text-base font-medium">
+          Property Owner
+        </Label>
+        <Controller
+          name={`personalProperties.${index}.owner`}
+          control={control as ReturnType<typeof useFormContext>['control']}
+          render={({ field: { onChange, value } }) => (
+            <select
+              value={value || 'declarant'}
+              onChange={(e) => onChange(e.target.value)}
+              className="flex h-10 w-full rounded-lg border bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all px-3 py-2 text-sm shadow-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>option]:bg-white [&>option]:dark:bg-slate-800">
+              {PROPERTY_OWNER.map((owner) => (
+                <option key={owner} value={owner}>
+                  {owner === 'declarant' && 'Declarant'}
+                  {owner === 'joint' && 'Joint (Declarant & Spouse)'}
+                  {owner === 'spouse' && 'Spouse Exclusive'}
+                  {owner === 'child' && 'Child Exclusive'}
+                </option>
+              ))}
+            </select>
+          )}
+        />
+        <p className="text-xs text-muted-foreground">
+          Declarant & Joint go to ANNEX A/B. Spouse/Child go to ANNEX C.
+        </p>
+      </div>
+
+      {/* Conditional Child Name - only when owner is 'child' */}
+      {watchedOwner === 'child' && (
+        <div className="grid gap-2">
+          <Label
+            htmlFor={`personalProperties.${index}.childName`}
+            className="text-base font-medium after:content-['*'] after:ml-0.5 after:text-destructive">
+            Which Child?
+          </Label>
+          <Controller
+            name={`personalProperties.${index}.childName`}
+            control={control as ReturnType<typeof useFormContext>['control']}
+            render={({ field: { onChange, value } }) => (
+              <select
+                value={value || ''}
+                onChange={(e) => onChange(e.target.value)}
+                className="flex h-10 w-full rounded-lg border bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all px-3 py-2 text-sm shadow-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>option]:bg-white [&>option]:dark:bg-slate-800">
+                <option value="">Select child</option>
+                {unmarriedChildren.map((child) => (
+                  <option key={child.name} value={child.name}>
+                    {child.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          />
+          {unmarriedChildren.length === 0 && (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              No unmarried children listed. Add children in Step 1 (Declarant Info).
+            </p>
+          )}
+        </div>
+      )}
+    </>
+  );
 }
 
 export const PersonalProperties = memo(function PersonalProperties() {
@@ -74,6 +159,8 @@ export const PersonalProperties = memo(function PersonalProperties() {
       description: '',
       yearAcquired: new Date().getFullYear(),
       acquisitionCost: 0,
+      owner: 'declarant',
+      childName: null,
     });
   };
 
@@ -239,6 +326,9 @@ export const PersonalProperties = memo(function PersonalProperties() {
                             helperText="Original cost or current market value"
                           />
                         </div>
+
+                        {/* Owner Selection (2025 SALN Format) */}
+                        <PersonalPropertyOwnerSelect index={index} control={control} />
                       </div>
                     </EnhancedCardContent>
                   </EnhancedCard>
