@@ -21,6 +21,7 @@ import {
   SALN_COLORS,
 } from './SALNStyles';
 import type { SALNData } from './types';
+import { calculateAnnexBSubtotals, shouldRenderAnnexB } from './SALNAnnexB';
 
 interface SALNPage2Props {
   data: SALNData;
@@ -130,11 +131,42 @@ function LiabilitiesSection({ data }: { data: SALNData }) {
 /**
  * Net Worth Calculation Box Component
  * Shows Total Assets - Total Liabilities = Net Worth
+ * Calculates values dynamically including ANNEX B overflow items
  */
 function NetWorthBox({ data }: { data: SALNData }) {
-  const totalAssets = data.totalAssets || 0;
-  const totalLiabilities = data.totalLiabilities || 0;
-  const netWorth = data.netWorth || 0;
+  // Calculate Real Properties Total (Declarant/Joint only) - USE CURRENT FAIR MARKET VALUE
+  const declarantRealProps = data.realProperties.filter(
+    (p) => p.owner === 'declarant' || p.owner === 'joint' || !p.owner
+  );
+  const realPropertiesTotal = declarantRealProps.reduce(
+    (sum, prop) => sum + (prop.currentFairMarketValue || 0),
+    0
+  );
+
+  // Calculate Personal Properties Total (Declarant/Joint only) - USE ACQUISITION COST
+  const declarantPersonalProps = data.personalProperties.filter(
+    (p) => p.owner === 'declarant' || p.owner === 'joint' || !p.owner
+  );
+  const personalPropertiesTotal = declarantPersonalProps.reduce(
+    (sum, prop) => sum + (prop.acquisitionCost || 0),
+    0
+  );
+
+  // Add ANNEX B subtotals if applicable (already included in above calculations for 2025)
+  // The calculateAnnexBSubtotals only returns overflow items, which are already in the arrays above
+  // So we don't need to add them again - they're already counted
+
+  // Calculate Total Assets
+  const totalAssets = realPropertiesTotal + personalPropertiesTotal;
+
+  // Calculate Total Liabilities
+  const totalLiabilities = (data.liabilities || []).reduce(
+    (sum, liability) => sum + (liability.outstandingBalance || 0),
+    0
+  );
+
+  // Calculate Net Worth
+  const netWorth = totalAssets - totalLiabilities;
 
   return (
     <View style={styles.netWorthBox}>

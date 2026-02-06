@@ -54,6 +54,47 @@ function getOwnerDisplay(property: RealProperty | PersonalProperty): string {
 }
 
 /**
+ * Calculate subtotals for ANNEX B continuation items
+ * These should be added to the main SALN totals
+ */
+export function calculateAnnexBSubtotals(data: SALNData): {
+  realPropertiesSubtotal: number;
+  personalPropertiesSubtotal: number;
+  totalAssetsSubtotal: number;
+} {
+  // Filter properties by declarant/joint ownership
+  const declarantRealProps = data.realProperties.filter(
+    isDeclarantOrJointProperty
+  );
+  const declarantPersonalProps = data.personalProperties.filter(
+    isDeclarantOrJointProperty
+  );
+
+  // Get overflow items (items 11+ for real, 9+ for personal)
+  const overflowRealProps = declarantRealProps.slice(10);
+  const overflowPersonalProps = declarantPersonalProps.slice(8);
+
+  // Calculate subtotals - USE CURRENT FAIR MARKET VALUE for real properties
+  const realPropertiesSubtotal = overflowRealProps.reduce(
+    (sum, prop) => sum + (prop.currentFairMarketValue || 0),
+    0
+  );
+
+  const personalPropertiesSubtotal = overflowPersonalProps.reduce(
+    (sum, prop) => sum + (prop.acquisitionCost || 0),
+    0
+  );
+
+  const totalAssetsSubtotal = realPropertiesSubtotal + personalPropertiesSubtotal;
+
+  return {
+    realPropertiesSubtotal,
+    personalPropertiesSubtotal,
+    totalAssetsSubtotal,
+  };
+}
+
+/**
  * SALN ANNEX B - Declarant Continuation Sheet (AS-1)
  *
  * Displays additional real and personal properties for the declarant
@@ -76,6 +117,11 @@ function getOwnerDisplay(property: RealProperty | PersonalProperty): string {
  * @returns PDF page component for ANNEX B (AS-1) continuation sheet
  */
 export function SALNAnnexB({ data }: SALNAnnexBProps): React.ReactElement {
+  // Use the exported calculation function for consistency
+  const subtotals = calculateAnnexBSubtotals(data);
+  const realPropertiesSubtotal = subtotals.realPropertiesSubtotal;
+  const personalPropertiesSubtotal = subtotals.personalPropertiesSubtotal;
+
   // Filter properties by declarant/joint ownership
   const declarantRealProps = data.realProperties.filter(
     isDeclarantOrJointProperty
@@ -87,17 +133,6 @@ export function SALNAnnexB({ data }: SALNAnnexBProps): React.ReactElement {
   // Get overflow items (items 11+ for real, 9+ for personal)
   const overflowRealProps = declarantRealProps.slice(10);
   const overflowPersonalProps = declarantPersonalProps.slice(8);
-
-  // Calculate subtotals for overflow items only
-  const realPropertiesSubtotal = overflowRealProps.reduce(
-    (sum, prop) => sum + (prop.acquisitionCost || 0),
-    0
-  );
-
-  const personalPropertiesSubtotal = overflowPersonalProps.reduce(
-    (sum, prop) => sum + (prop.acquisitionCost || 0),
-    0
-  );
 
   // Determine which sections should be shown
   const showRealProperties = overflowRealProps.length > 0;
@@ -311,13 +346,13 @@ export function SALNAnnexB({ data }: SALNAnnexBProps): React.ReactElement {
               </View>
             ))}
 
-            {/* Subtotal Row */}
+            {/* Subtotal Row - Update label to indicate Market Value */}
             <View style={styles.subtotalRow}>
               <View
                 style={[styles.tableCell, { width: '84%', borderRightWidth: 0 }]}
               >
                 <Text style={styles.subtotalLabel}>
-                  Subtotal (Real Properties - Continuation):
+                  Subtotal (Real Properties - Current Fair Market Value):
                 </Text>
               </View>
               <View
