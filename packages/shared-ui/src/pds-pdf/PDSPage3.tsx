@@ -19,7 +19,7 @@ interface PDSPage3Props {
 
 // Minimum rows to display for each section
 const MIN_VOLUNTARY_WORK_ROWS = 7;
-const MIN_TRAINING_ROWS = 21;
+const MIN_TRAINING_ROWS = 18;
 const MIN_OTHER_INFO_ROWS = 7;
 
 /**
@@ -57,7 +57,7 @@ export function PDSPage3({ data }: PDSPage3Props) {
       <View style={styles.borderedSection}>
         <View style={styles.sectionHeader}>
           <Text>
-            29. VI. VOLUNTARY WORK OR INVOLVEMENT IN CIVIC / NON-GOVERNMENT / PEOPLE /
+            VI. VOLUNTARY WORK OR INVOLVEMENT IN CIVIC / NON-GOVERNMENT / PEOPLE /
             VOLUNTARY ORGANIZATION/S
           </Text>
         </View>
@@ -66,7 +66,7 @@ export function PDSPage3({ data }: PDSPage3Props) {
         <View style={styles.fieldRow}>
           <View style={[styles.tableCellHeader, styles.w40]}>
             <Text style={[styles.labelSmall, styles.center]}>
-              NAME &amp; ADDRESS OF ORGANIZATION
+              29. NAME &amp; ADDRESS OF ORGANIZATION
             </Text>
             <Text style={[styles.labelSmall, styles.center, styles.italic]}>
               (Write in full)
@@ -153,7 +153,7 @@ export function PDSPage3({ data }: PDSPage3Props) {
       <View style={[styles.borderedSection, styles.marginTop5]}>
         <View style={styles.sectionHeader}>
           <Text>
-            30. VII. LEARNING AND DEVELOPMENT (L&amp;D) INTERVENTIONS/TRAINING PROGRAMS
+            VII. LEARNING AND DEVELOPMENT (L&amp;D) INTERVENTIONS/TRAINING PROGRAMS
             ATTENDED
           </Text>
         </View>
@@ -169,7 +169,7 @@ export function PDSPage3({ data }: PDSPage3Props) {
         <View style={styles.fieldRow}>
           <View style={[styles.tableCellHeader, styles.w33]}>
             <Text style={[styles.labelSmall, styles.center]}>
-              TITLE OF LEARNING AND DEVELOPMENT INTERVENTIONS/TRAINING PROGRAMS
+              30. TITLE OF LEARNING AND DEVELOPMENT INTERVENTIONS/TRAINING PROGRAMS
             </Text>
             <Text style={[styles.labelSmall, styles.center, styles.italic]}>
               (Write in full)
@@ -265,7 +265,7 @@ export function PDSPage3({ data }: PDSPage3Props) {
       {/* Section VIII: Other Information */}
       <View style={[styles.borderedSection, styles.marginTop5]}>
         <View style={styles.sectionHeader}>
-          <Text>31-33. VIII. OTHER INFORMATION</Text>
+          <Text>VIII. OTHER INFORMATION</Text>
         </View>
 
         {/* Other Information Table Header */}

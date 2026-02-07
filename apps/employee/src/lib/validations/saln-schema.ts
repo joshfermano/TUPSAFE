@@ -327,14 +327,14 @@ export const declarantInfoSchema = z
   })
   .refine(
     (data) => {
-      // If filing type is 'joint', spouse name must be provided
-      if (data.filingType === 'joint') {
+      // If filing type is 'joint' or 'separate', spouse name must be provided
+      if (data.filingType === 'joint' || data.filingType === 'separate') {
         return !!data.spouseName && data.spouseName.trim().length > 0;
       }
       return true;
     },
     {
-      message: 'Spouse name is required for joint filing',
+      message: 'Spouse name is required for joint or separate filing',
       path: ['spouseName'],
     }
   )
@@ -356,9 +356,9 @@ export const declarantInfoSchema = z
   )
   .refine(
     (data) => {
-      // If spouse is public official and joint filing, require spouse details
+      // If spouse is public official and filing is joint or separate, require spouse details
       if (
-        data.filingType === 'joint' &&
+        (data.filingType === 'joint' || data.filingType === 'separate') &&
         data.spouseIsPublicOfficial === true
       ) {
         return (

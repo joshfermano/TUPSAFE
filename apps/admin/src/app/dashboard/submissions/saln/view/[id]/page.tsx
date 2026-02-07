@@ -180,17 +180,17 @@ export default function SalnSubmissionViewPage() {
       return null;
     }
 
-    // Parse spouse name if filing type is joint
+    // Parse spouse info - always shown in 2025 format
     let spouseInfo = undefined;
-    if (submission.filingType === 'joint' && salnData?.spouseName) {
+    if (salnData?.spouseName) {
       const nameParts = salnData.spouseName.trim().split(/\s+/);
       spouseInfo = {
         surname: nameParts[nameParts.length - 1] || '',
         firstName: nameParts[0] || '',
         middleInitial: nameParts.length > 2 ? nameParts[1]?.charAt(0) : null,
-        position: submission.position || '',
-        agency: submission.agency || 'Technological University of the Philippines - Manila',
-        officeAddress: submission.officeAddress || employee.officeAddress || '',
+        position: (salnData as any)?.spousePosition || '',
+        agency: (salnData as any)?.spouseAgency || '',
+        officeAddress: (salnData as any)?.spouseOfficeAddress || employee.officeAddress || '',
       };
     }
 
@@ -208,8 +208,7 @@ export default function SalnSubmissionViewPage() {
         officeAddress: submission.officeAddress || employee.officeAddress || '',
       },
       spouseInfo,
-      children: [], // Children data not currently stored in DB
-      // Real properties - API returns numbers, pass through with defaults
+      children: [],
       realProperties: (salnData?.realProperties || []).map((prop: Record<string, unknown>) => ({
         description: (prop.description as string) || '',
         kind: (prop.kind as string) || 'residential',
@@ -219,27 +218,27 @@ export default function SalnSubmissionViewPage() {
         acquisitionYear: (prop.acquisitionYear as number) || new Date().getFullYear(),
         acquisitionMode: (prop.acquisitionMode as string) || 'Purchase',
         acquisitionCost: (prop.acquisitionCost as number) || 0,
+        owner: (prop.owner as string) || undefined,
       })),
-      // Personal properties - API returns numbers
       personalProperties: (salnData?.personalProperties || []).map((prop: Record<string, unknown>) => ({
         description: (prop.description as string) || '',
         yearAcquired: (prop.yearAcquired as number) || new Date().getFullYear(),
         acquisitionCost: (prop.acquisitionCost as number) || 0,
+        owner: (prop.owner as string) || undefined,
       })),
-      // Liabilities - API returns numbers
       liabilities: (salnData?.liabilities || []).map((liability: Record<string, unknown>) => ({
         nature: (liability.nature as string) || '',
         creditorName: (liability.creditorName as string) || '',
         outstandingBalance: (liability.outstandingBalance as number) || 0,
+        owner: (liability.owner as string) || undefined,
       })),
-      // Business interests - pass through
       businessInterests: (salnData?.businessInterests || []).map((business: Record<string, unknown>) => ({
         entityName: (business.entityName as string) || '',
         businessAddress: (business.businessAddress as string) || '',
         natureOfBusiness: (business.natureOfBusiness as string) || '',
         dateOfAcquisition: (business.dateOfAcquisition as string) || new Date().toISOString(),
+        owner: (business.owner as string) || undefined,
       })),
-      // Relatives in government - pass through
       relativesInGov: (salnData?.relativesInGov || []).map((relative: Record<string, unknown>) => ({
         name: (relative.name as string) || '',
         relationship: (relative.relationship as string) || '',
@@ -250,6 +249,28 @@ export default function SalnSubmissionViewPage() {
       totalLiabilities,
       netWorth,
       submittedAt: submission.submittedAt,
+      // 2025 SALN Format fields
+      salnFormatVersion: (salnData as any)?.salnFormatVersion || 2025,
+      complianceType: (salnData as any)?.complianceType,
+      complianceDate: (salnData as any)?.complianceDate,
+      hasMultipleMarriages: (salnData as any)?.hasMultipleMarriages,
+      previousSpouseNames: (salnData as any)?.previousSpouseNames,
+      spouseIsPublicOfficial: (salnData as any)?.spouseIsPublicOfficial,
+      spousePosition: (salnData as any)?.spousePosition,
+      spouseAgency: (salnData as any)?.spouseAgency,
+      spouseOfficeAddress: (salnData as any)?.spouseOfficeAddress,
+      unmarriedChildren: (salnData as any)?.unmarriedChildren,
+      hasNoBusinessInterests: (salnData as any)?.hasNoBusinessInterests,
+      hasNoRelativesInGov: (salnData as any)?.hasNoRelativesInGov,
+      governmentIdType: (salnData as any)?.governmentIdType,
+      governmentIdNumber: (salnData as any)?.governmentIdNumber,
+      governmentIdDateIssued: (salnData as any)?.governmentIdDateIssued,
+      governmentIdType2: (salnData as any)?.governmentIdType2,
+      governmentIdNumber2: (salnData as any)?.governmentIdNumber2,
+      governmentIdDateIssued2: (salnData as any)?.governmentIdDateIssued2,
+      declarantTin: (salnData as any)?.declarantTin,
+      spouseTin: (salnData as any)?.spouseTin,
+      spouseDateOfBirth: (salnData as any)?.spouseDateOfBirth,
     };
 
     console.log('[SALN PDF] Data transformed successfully:', {

@@ -83,9 +83,9 @@ export const PDS_DIMENSIONS = {
   pagePadding: 20,
   headerHeight: 18,
   subHeaderHeight: 16,
-  rowHeight: 16,
-  emptyRowHeight: 18,
-  minRowHeight: 14,
+  rowHeight: 20,
+  emptyRowHeight: 22,
+  minRowHeight: 16,
   cellPadding: 3,
   cellPaddingSmall: 2,
   borderWidth: 0.5,
@@ -262,6 +262,7 @@ export const styles = StyleSheet.create({
   // Field containers
   fieldRow: {
     flexDirection: 'row',
+    minHeight: PDS_DIMENSIONS.rowHeight,
     borderBottomWidth: PDS_DIMENSIONS.borderWidth,
     borderBottomColor: PDS_COLORS.borderColor,
   },
@@ -460,7 +461,7 @@ export const styles = StyleSheet.create({
 
   // Bordered section wrapper
   borderedSection: {
-    borderWidth: PDS_DIMENSIONS.borderWidth,
+    borderWidth: PDS_DIMENSIONS.thickBorderWidth,
     borderColor: PDS_COLORS.borderColor,
   },
 

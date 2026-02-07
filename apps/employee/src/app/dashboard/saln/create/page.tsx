@@ -2,7 +2,7 @@
 
 /**
  * SALN (Statement of Assets, Liabilities, and Net Worth) Create Page
- * CSC Form No. SALN 2019 Revised
+ * CSC Form No. SALN 2025 Revised
  *
  * Comprehensive 7-step multi-step form with:
  * - Auto-save functionality (every 30 seconds)
@@ -823,7 +823,7 @@ export default function SALNCreatePage() {
                 <Badge
                   variant="outline"
                   className="text-xs font-normal border-slate-300 dark:border-slate-700 w-fit">
-                  CSC Form No. SALN 2019
+                  CSC Form No. SALN 2025
                 </Badge>
               </div>
 

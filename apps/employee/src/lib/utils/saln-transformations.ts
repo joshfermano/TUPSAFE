@@ -894,8 +894,8 @@ export function validate2025RequiredFields(submission: any): {
     missingFields.push('complianceDate');
   }
 
-  // If joint filing and spouse is public official, spouse details required
-  if (submission.filingType === 'joint' && submission.spouseIsPublicOfficial) {
+  // If joint or separate filing and spouse is public official, spouse details required
+  if ((submission.filingType === 'joint' || submission.filingType === 'separate') && submission.spouseIsPublicOfficial) {
     if (!submission.spousePosition) missingFields.push('spousePosition');
     if (!submission.spouseAgency) missingFields.push('spouseAgency');
     if (!submission.spouseOfficeAddress) missingFields.push('spouseOfficeAddress');

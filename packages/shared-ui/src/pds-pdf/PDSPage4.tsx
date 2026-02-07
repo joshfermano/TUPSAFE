@@ -232,8 +232,9 @@ export function PDSPage4({ data }: PDSPage4Props) {
           <View style={[styles.labelCell, { flex: 1 }]}>
             <Text style={styles.labelSmall}>
               40. Pursuant to: (a) Indigenous People&apos;s Act (RA 8371); (b)
-              Magna Carta for Disabled Persons (RA 7277); and (c) Solo Parents
-              Welfare Act of 2000 (RA 8972), please answer the following items:
+              Magna Carta for Disabled Persons (RA 7277, as amended); and (c)
+              Expanded Solo Parents Welfare Act (RA 11861), please answer the
+              following items:
             </Text>
           </View>
         </View>
@@ -420,32 +421,22 @@ export function PDSPage4({ data }: PDSPage4Props) {
           {/* Right side - Photo and Thumbmark */}
           <View style={[styles.column, styles.w40, { alignItems: 'center' }]}>
             {/* Photo Box */}
+            <Text style={[styles.labelSmall, styles.center, styles.bold, { marginBottom: 3, fontSize: 7 }]}>PHOTO</Text>
             <PhotoBox imageUrl={data.photoUrl ?? undefined} />
             <Text style={[styles.labelSmall, styles.center, { marginTop: 5 }]}>
-              ID picture taken within
+              Passport-sized unfiltered digital
             </Text>
             <Text style={[styles.labelSmall, styles.center]}>
-              the last 6 months
+              picture taken within the last 6 months
             </Text>
             <Text style={[styles.labelSmall, styles.center]}>
               4.5 cm. X 3.5 cm
-            </Text>
-            <Text
-              style={[
-                styles.labelSmall,
-                styles.center,
-                { marginTop: 3, fontSize: 7 },
-              ]}
-            >
-              (passport size, with white
-            </Text>
-            <Text style={[styles.labelSmall, styles.center, { fontSize: 7 }]}>
-              background, high-resolution)
             </Text>
 
             {/* Right Thumb Mark Box */}
             <View style={{ marginTop: 10 }}>
               <ThumbmarkBox />
+              <Text style={[styles.labelSmall, styles.center, styles.bold, { marginTop: 3 }]}>RIGHT THUMBMARK</Text>
             </View>
           </View>
         </View>

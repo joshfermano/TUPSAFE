@@ -844,6 +844,7 @@ export function transformPdsForPdf(data: any): PDSData {
       sssNo: personalInfo.sssNo ?? null,
       tinNo: personalInfo.tinNo ?? null,
       agencyEmployeeNo: personalInfo.agencyEmployeeNo ?? null,
+      philsysNo: personalInfo.philsysNo ?? null,
       citizenship: personalInfo.citizenship || { type: 'Filipino' },
       residentialAddress: transformAddress(personalInfo.residentialAddress),
       permanentAddress: transformAddress(personalInfo.permanentAddress),

@@ -80,6 +80,7 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
   const spouseIsPublicOfficial = useWatch({ control, name: 'submission.spouseIsPublicOfficial' });
 
   const isJointFiling = filingType === 'joint';
+  const hasSpouse = filingType === 'joint' || filingType === 'separate';
   const requiresComplianceDate = complianceType === 'assumption' || complianceType === 'exit';
 
   // useFieldArray for unmarried children
@@ -222,21 +223,6 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
               )}
             </div>
 
-            <div className="grid gap-2">
-              <Label
-                htmlFor="submission.declarantTin"
-                className="text-base font-medium">
-                Tax Identification Number (TIN)
-              </Label>
-              <EnhancedInput
-                id="submission.declarantTin"
-                placeholder="e.g., 123-456-789-000"
-                {...register('submission.declarantTin')}
-              />
-              <p className="text-sm text-muted-foreground">
-                Your Tax Identification Number for SALN compliance
-              </p>
-            </div>
           </div>
         </div>
       </BlurFade>
@@ -315,8 +301,8 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
               </p>
             )}
 
-            {/* Spouse Name - shown only for joint filing */}
-              {isJointFiling && (
+            {/* Spouse Name - shown for joint or separate filing (married declarants) */}
+              {hasSpouse && (
                 <BlurFade delay={0.25}>
                   <div className="grid gap-2 pt-4">
                     <Label
@@ -340,42 +326,6 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
                     </p>
                   </div>
 
-                  <div className="grid gap-2 pt-4">
-                    <Label htmlFor="submission.spouseTin" className="text-base font-medium">
-                      Spouse TIN
-                    </Label>
-                    <EnhancedInput
-                      id="submission.spouseTin"
-                      placeholder="e.g., 123-456-789-000"
-                      {...register('submission.spouseTin')}
-                    />
-                    <p className="text-sm text-muted-foreground">
-                      Spouse's Tax Identification Number
-                    </p>
-                  </div>
-
-                  <div className="grid gap-2 pt-4">
-                    <Label htmlFor="submission.spouseDateOfBirth" className="text-base font-medium">
-                      Spouse Date of Birth
-                    </Label>
-                    <Controller
-                      name="submission.spouseDateOfBirth"
-                      control={control}
-                      render={({ field }) => (
-                        <EnhancedInput
-                          type="date"
-                          id="submission.spouseDateOfBirth"
-                          value={formatDateForInput(field.value)}
-                          onChange={(e) => {
-                            const date = parseDateFromInput(e.target.value);
-                            field.onChange(date);
-                          }}
-                          max={formatDateForInput(new Date())}
-                          className="max-w-xs"
-                        />
-                      )}
-                    />
-                  </div>
                 </BlurFade>
               )}
             </div>
@@ -573,8 +523,8 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
         </div>
       </BlurFade>
 
-      {/* Spouse as Public Official Section (2025 SALN Format) - Only for Joint Filing */}
-      {isJointFiling && (
+      {/* Spouse as Public Official Section (2025 SALN Format) - For Joint or Separate Filing */}
+      {hasSpouse && (
         <BlurFade delay={0.35}>
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm hover:shadow-md transition-shadow duration-200">
             <div className="p-6 sm:p-8 space-y-6">

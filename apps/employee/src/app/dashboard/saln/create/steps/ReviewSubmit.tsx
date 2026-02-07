@@ -59,7 +59,6 @@ const GOVERNMENT_ID_TYPES = [
   'Senior Citizen ID',
   'PWD ID',
   'UMID',
-  'TIN ID',
   'Other',
 ] as const;
 

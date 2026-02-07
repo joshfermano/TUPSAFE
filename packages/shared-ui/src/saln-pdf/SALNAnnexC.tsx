@@ -11,6 +11,9 @@
  * Based on CSC SALN Form 2025 (AS-2 Additional Sheet for Spouse & Children)
  * Only renders for 2025 format SALNs when spouse/children have exclusive properties.
  *
+ * The official AS-2 form does NOT include an OWNER column in any table.
+ * Ownership is implied by being on ANNEX C (spouse/children exclusive).
+ *
  * @module SALNAnnexC
  */
 
@@ -50,22 +53,6 @@ function isSpouseOrChildProperty(
 }
 
 /**
- * Get owner display text for table
- * Shows "Spouse" or "Child: [name]" based on owner type
- */
-function getOwnerDisplay(
-  property: RealProperty | PersonalProperty | Liability | BusinessInterest
-): string {
-  if (property.owner === 'spouse') {
-    return 'Spouse';
-  }
-  if (property.owner === 'child') {
-    return property.childName ? `Child: ${property.childName}` : 'Child';
-  }
-  return 'N/A';
-}
-
-/**
  * SALN ANNEX C - Spouse & Children Sheet (AS-2)
  *
  * Displays exclusive/separate properties of the declarant's spouse
@@ -79,6 +66,7 @@ function getOwnerDisplay(
  * - Liabilities (spouse/child items)
  * - Business Interests (spouse/child items)
  * - Subtotals for each section
+ * - Net Worth summary
  * - Signature/Initial line at footer
  *
  * This page contains properties that are EXCLUSIVELY owned by spouse or children,
@@ -216,67 +204,64 @@ export function SALNAnnexC({ data }: SALNAnnexCProps): React.ReactElement {
 
       {/* Section Header */}
       <Text style={styles.sectionHeader}>
-        ASSETS, LIABILITIES AND NET WORTH (SPOUSE & CHILDREN - EXCLUSIVE)
+        ASSETS, LIABILITIES AND NET WORTH
       </Text>
 
       {/* 1. ASSETS */}
       <Text style={[styles.bold, { fontSize: 8, marginTop: 5, marginBottom: 3 }]}>
-        1. ASSETS (Spouse/Children Exclusive)
+        1. ASSETS
       </Text>
 
-      {/* a. Real Properties - Spouse/Children */}
+      {/* a. Real Properties */}
       {spouseChildRealProps.length > 0 && (
         <>
           <Text
             style={[styles.bold, { fontSize: 7, marginTop: 3, marginBottom: 2 }]}
           >
-            a. Real Properties (Spouse/Children)
+            a. Real Properties
           </Text>
 
           {/* Real Properties Table */}
           <View style={styles.table}>
             {/* Table Header */}
             <View style={styles.tableHeader}>
-              <View style={[styles.tableHeaderCell, { width: '12%' }]}>
-                <Text style={styles.bold}>OWNER</Text>
-              </View>
-              <View style={[styles.tableHeaderCell, { width: '12%' }]}>
+              <View style={[styles.tableHeaderCell, { width: '14%' }]}>
                 <Text style={styles.bold}>DESCRIPTION</Text>
                 <Text style={[styles.italic, { fontSize: 5 }]}>
                   (e.g. lot, house and lot, condominium)
                 </Text>
               </View>
-              <View style={[styles.tableHeaderCell, { width: '10%' }]}>
+              <View style={[styles.tableHeaderCell, { width: '12%' }]}>
                 <Text style={styles.bold}>KIND</Text>
                 <Text style={[styles.italic, { fontSize: 5 }]}>
                   (e.g. residential, commercial)
                 </Text>
               </View>
-              <View style={[styles.tableHeaderCell, { width: '14%' }]}>
+              <View style={[styles.tableHeaderCell, { width: '16%' }]}>
                 <Text style={styles.bold}>EXACT</Text>
                 <Text style={styles.bold}>LOCATION</Text>
               </View>
-              <View style={[styles.tableHeaderCell, { width: '10%' }]}>
+              <View style={[styles.tableHeaderCell, { width: '12%' }]}>
                 <Text style={styles.bold}>ASSESSED</Text>
                 <Text style={styles.bold}>VALUE</Text>
               </View>
-              <View style={[styles.tableHeaderCell, { width: '10%' }]}>
+              <View style={[styles.tableHeaderCell, { width: '12%' }]}>
                 <Text style={styles.bold}>CURRENT FAIR</Text>
                 <Text style={styles.bold}>MARKET VALUE</Text>
               </View>
               <View style={[styles.tableHeaderCell, { width: '16%' }]}>
                 <Text style={styles.bold}>ACQUISITION</Text>
                 <View style={styles.row}>
-                  <View style={[{ width: '40%', borderRightWidth: 0.5, borderRightColor: SALN_COLORS.borderColor }]}>
+                  <View style={[{ width: '37.5%', borderRightWidth: 0.5, borderRightColor: SALN_COLORS.borderColor }]}>
                     <Text style={styles.bold}>YEAR</Text>
                   </View>
-                  <View style={{ width: '60%' }}>
+                  <View style={{ width: '62.5%' }}>
                     <Text style={styles.bold}>MODE</Text>
                   </View>
                 </View>
               </View>
               <View
-                style={[styles.tableHeaderCell, { width: '16%', borderRightWidth: 0 }]}
+                style={[styles.tableHeaderCell, { width: '18%', borderRightWidth: 0 }]}
               >
                 <Text style={styles.bold}>ACQUISITION</Text>
                 <Text style={styles.bold}>COST</Text>
@@ -286,28 +271,25 @@ export function SALNAnnexC({ data }: SALNAnnexCProps): React.ReactElement {
             {/* Real Properties Rows */}
             {spouseChildRealProps.map((property, index) => (
               <View key={`real-${index}`} style={styles.tableRow}>
-                <View style={[styles.tableCell, { width: '12%' }]}>
-                  <Text style={{ fontSize: 5 }}>{getOwnerDisplay(property)}</Text>
-                </View>
-                <View style={[styles.tableCell, { width: '12%' }]}>
+                <View style={[styles.tableCell, { width: '14%' }]}>
                   <Text>{property.description || 'N/A'}</Text>
                 </View>
-                <View style={[styles.tableCell, { width: '10%' }]}>
+                <View style={[styles.tableCell, { width: '12%' }]}>
                   <Text style={{ textTransform: 'capitalize' }}>
                     {property.kind || 'N/A'}
                   </Text>
                 </View>
-                <View style={[styles.tableCell, { width: '14%' }]}>
+                <View style={[styles.tableCell, { width: '16%' }]}>
                   <Text>{property.exactLocation || 'N/A'}</Text>
                 </View>
-                <View style={[styles.currencyCell, { width: '10%' }]}>
+                <View style={[styles.currencyCell, { width: '12%' }]}>
                   <Text>
                     {property.assessedValue
                       ? formatCurrency(property.assessedValue)
                       : 'N/A'}
                   </Text>
                 </View>
-                <View style={[styles.currencyCell, { width: '10%' }]}>
+                <View style={[styles.currencyCell, { width: '12%' }]}>
                   <Text>
                     {property.currentFairMarketValue
                       ? formatCurrency(property.currentFairMarketValue)
@@ -319,18 +301,18 @@ export function SALNAnnexC({ data }: SALNAnnexCProps): React.ReactElement {
                     <View
                       style={[
                         styles.tableCell,
-                        { width: '40%', borderRightWidth: 0.5, borderRightColor: SALN_COLORS.borderColor, padding: 2 },
+                        { width: '37.5%', borderRightWidth: 0.5, borderRightColor: SALN_COLORS.borderColor, padding: 2 },
                       ]}
                     >
                       <Text>{property.acquisitionYear || 'N/A'}</Text>
                     </View>
-                    <View style={[styles.tableCell, { width: '60%', padding: 2 }]}>
+                    <View style={[styles.tableCell, { width: '62.5%', padding: 2 }]}>
                       <Text>{property.acquisitionMode || 'N/A'}</Text>
                     </View>
                   </View>
                 </View>
                 <View
-                  style={[styles.currencyCell, { width: '16%', borderRightWidth: 0 }]}
+                  style={[styles.currencyCell, { width: '18%', borderRightWidth: 0 }]}
                 >
                   <Text>
                     {property.acquisitionCost
@@ -344,14 +326,14 @@ export function SALNAnnexC({ data }: SALNAnnexCProps): React.ReactElement {
             {/* Subtotal Row */}
             <View style={styles.subtotalRow}>
               <View
-                style={[styles.tableCell, { width: '84%', borderRightWidth: 0 }]}
+                style={[styles.tableCell, { width: '82%', borderRightWidth: 0 }]}
               >
                 <Text style={styles.subtotalLabel}>
-                  Subtotal (Real Properties - Spouse/Children):
+                  Subtotal:
                 </Text>
               </View>
               <View
-                style={[styles.currencyCell, { width: '16%', borderRightWidth: 0 }]}
+                style={[styles.currencyCell, { width: '18%', borderRightWidth: 0 }]}
               >
                 <Text style={styles.subtotalValue}>
                   {formatCurrency(realPropertiesSubtotal)}
@@ -362,30 +344,27 @@ export function SALNAnnexC({ data }: SALNAnnexCProps): React.ReactElement {
         </>
       )}
 
-      {/* b. Personal Properties - Spouse/Children */}
+      {/* b. Personal Properties */}
       {spouseChildPersonalProps.length > 0 && (
         <>
           <Text
             style={[styles.bold, { fontSize: 7, marginTop: 5, marginBottom: 2 }]}
           >
-            b. Personal Properties (Spouse/Children)
+            b. Personal Properties
           </Text>
 
           {/* Personal Properties Table */}
           <View style={styles.table}>
             {/* Table Header */}
             <View style={styles.tableHeader}>
-              <View style={[styles.tableHeaderCell, { width: '18%' }]}>
-                <Text style={styles.bold}>OWNER</Text>
-              </View>
-              <View style={[styles.tableHeaderCell, { width: '37%' }]}>
+              <View style={[styles.tableHeaderCell, { width: '45%' }]}>
                 <Text style={styles.bold}>DESCRIPTION</Text>
               </View>
-              <View style={[styles.tableHeaderCell, { width: '20%' }]}>
+              <View style={[styles.tableHeaderCell, { width: '25%' }]}>
                 <Text style={styles.bold}>YEAR ACQUIRED</Text>
               </View>
               <View
-                style={[styles.tableHeaderCell, { width: '25%', borderRightWidth: 0 }]}
+                style={[styles.tableHeaderCell, { width: '30%', borderRightWidth: 0 }]}
               >
                 <Text style={styles.bold}>ACQUISITION</Text>
                 <Text style={styles.bold}>COST/AMOUNT</Text>
@@ -395,17 +374,14 @@ export function SALNAnnexC({ data }: SALNAnnexCProps): React.ReactElement {
             {/* Personal Properties Rows */}
             {spouseChildPersonalProps.map((property, index) => (
               <View key={`personal-${index}`} style={styles.tableRow}>
-                <View style={[styles.tableCell, { width: '18%' }]}>
-                  <Text style={{ fontSize: 5 }}>{getOwnerDisplay(property)}</Text>
-                </View>
-                <View style={[styles.tableCell, { width: '37%' }]}>
+                <View style={[styles.tableCell, { width: '45%' }]}>
                   <Text>{property.description || 'N/A'}</Text>
                 </View>
-                <View style={[styles.tableCell, { width: '20%' }]}>
+                <View style={[styles.tableCell, { width: '25%' }]}>
                   <Text>{property.yearAcquired || 'N/A'}</Text>
                 </View>
                 <View
-                  style={[styles.currencyCell, { width: '25%', borderRightWidth: 0 }]}
+                  style={[styles.currencyCell, { width: '30%', borderRightWidth: 0 }]}
                 >
                   <Text>
                     {property.acquisitionCost
@@ -419,14 +395,14 @@ export function SALNAnnexC({ data }: SALNAnnexCProps): React.ReactElement {
             {/* Subtotal Row */}
             <View style={styles.subtotalRow}>
               <View
-                style={[styles.tableCell, { width: '75%', borderRightWidth: 0 }]}
+                style={[styles.tableCell, { width: '70%', borderRightWidth: 0 }]}
               >
                 <Text style={styles.subtotalLabel}>
-                  Subtotal (Personal Properties - Spouse/Children):
+                  Subtotal:
                 </Text>
               </View>
               <View
-                style={[styles.currencyCell, { width: '25%', borderRightWidth: 0 }]}
+                style={[styles.currencyCell, { width: '30%', borderRightWidth: 0 }]}
               >
                 <Text style={styles.subtotalValue}>
                   {formatCurrency(personalPropertiesSubtotal)}
@@ -437,39 +413,36 @@ export function SALNAnnexC({ data }: SALNAnnexCProps): React.ReactElement {
         </>
       )}
 
-      {/* Total Assets for Spouse/Children */}
+      {/* Total Assets */}
       {(spouseChildRealProps.length > 0 ||
         spouseChildPersonalProps.length > 0) && (
         <View style={{ marginTop: 5, alignItems: 'flex-end' }}>
           <Text style={[styles.bold, { fontSize: 7 }]}>
-            TOTAL ASSETS (Spouse/Children): {formatCurrency(totalSpouseChildAssets)}
+            TOTAL ASSETS: {formatCurrency(totalSpouseChildAssets)}
           </Text>
         </View>
       )}
 
-      {/* 2. LIABILITIES - Spouse/Children */}
+      {/* 2. LIABILITIES */}
       {spouseChildLiabilities.length > 0 && (
         <>
           <Text
             style={[styles.bold, { fontSize: 8, marginTop: 8, marginBottom: 3 }]}
           >
-            2. LIABILITIES (Spouse/Children)
+            2. LIABILITIES
           </Text>
 
           <View style={styles.table}>
             {/* Table Header */}
             <View style={styles.tableHeader}>
-              <View style={[styles.tableHeaderCell, { width: '15%' }]}>
-                <Text style={styles.bold}>OWNER</Text>
-              </View>
-              <View style={[styles.tableHeaderCell, { width: '35%' }]}>
+              <View style={[styles.tableHeaderCell, { width: '40%' }]}>
                 <Text style={styles.bold}>NATURE</Text>
               </View>
-              <View style={[styles.tableHeaderCell, { width: '30%' }]}>
+              <View style={[styles.tableHeaderCell, { width: '35%' }]}>
                 <Text style={styles.bold}>NAME OF CREDITORS</Text>
               </View>
               <View
-                style={[styles.tableHeaderCell, { width: '20%', borderRightWidth: 0 }]}
+                style={[styles.tableHeaderCell, { width: '25%', borderRightWidth: 0 }]}
               >
                 <Text style={styles.bold}>OUTSTANDING</Text>
                 <Text style={styles.bold}>BALANCE</Text>
@@ -479,17 +452,14 @@ export function SALNAnnexC({ data }: SALNAnnexCProps): React.ReactElement {
             {/* Liabilities Rows */}
             {spouseChildLiabilities.map((liability, index) => (
               <View key={`liability-${index}`} style={styles.tableRow}>
-                <View style={[styles.tableCell, { width: '15%' }]}>
-                  <Text style={{ fontSize: 5 }}>{getOwnerDisplay(liability)}</Text>
-                </View>
-                <View style={[styles.tableCell, { width: '35%' }]}>
+                <View style={[styles.tableCell, { width: '40%' }]}>
                   <Text>{liability.nature || 'N/A'}</Text>
                 </View>
-                <View style={[styles.tableCell, { width: '30%' }]}>
+                <View style={[styles.tableCell, { width: '35%' }]}>
                   <Text>{liability.creditorName || 'N/A'}</Text>
                 </View>
                 <View
-                  style={[styles.currencyCell, { width: '20%', borderRightWidth: 0 }]}
+                  style={[styles.currencyCell, { width: '25%', borderRightWidth: 0 }]}
                 >
                   <Text>
                     {formatCurrency(liability.outstandingBalance || 0)}
@@ -501,14 +471,14 @@ export function SALNAnnexC({ data }: SALNAnnexCProps): React.ReactElement {
             {/* Subtotal Row */}
             <View style={styles.subtotalRow}>
               <View
-                style={[styles.tableCell, { width: '80%', borderRightWidth: 0 }]}
+                style={[styles.tableCell, { width: '75%', borderRightWidth: 0 }]}
               >
                 <Text style={styles.subtotalLabel}>
-                  TOTAL LIABILITIES (Spouse/Children):
+                  Subtotal:
                 </Text>
               </View>
               <View
-                style={[styles.currencyCell, { width: '20%', borderRightWidth: 0 }]}
+                style={[styles.currencyCell, { width: '25%', borderRightWidth: 0 }]}
               >
                 <Text style={styles.subtotalValue}>
                   {formatCurrency(liabilitiesSubtotal)}
@@ -519,46 +489,42 @@ export function SALNAnnexC({ data }: SALNAnnexCProps): React.ReactElement {
         </>
       )}
 
-      {/* Net Worth for Spouse/Children */}
+      {/* Net Worth */}
       {(spouseChildRealProps.length > 0 ||
         spouseChildPersonalProps.length > 0 ||
         spouseChildLiabilities.length > 0) && (
         <View style={[styles.netWorthBox, { marginTop: 8 }]}>
           <View style={styles.netWorthRow}>
             <Text style={styles.netWorthLabel}>
-              NET WORTH (Spouse/Children):
+              NET WORTH:
             </Text>
             <Text style={styles.netWorthValue}>
               {formatCurrency(spouseChildNetWorth)}
             </Text>
           </View>
           <Text style={[styles.noteText, { textAlign: 'center' }]}>
-            (Total Assets - Total Liabilities for Spouse/Children Exclusive
-            Properties)
+            (Total Assets minus Total Liabilities)
           </Text>
         </View>
       )}
 
-      {/* Business Interests - Spouse/Children */}
+      {/* Business Interests and Financial Connections */}
       {spouseChildBusiness.length > 0 && (
         <>
           <Text
             style={[styles.bold, { fontSize: 8, marginTop: 8, marginBottom: 3 }]}
           >
-            BUSINESS INTERESTS AND FINANCIAL CONNECTIONS (Spouse/Children)
+            BUSINESS INTERESTS AND FINANCIAL CONNECTIONS
           </Text>
 
           <View style={styles.table}>
             {/* Table Header */}
             <View style={styles.tableHeader}>
-              <View style={[styles.tableHeaderCell, { width: '12%' }]}>
-                <Text style={styles.bold}>OWNER</Text>
-              </View>
-              <View style={[styles.tableHeaderCell, { width: '23%' }]}>
+              <View style={[styles.tableHeaderCell, { width: '25%' }]}>
                 <Text style={styles.bold}>NAME OF ENTITY/</Text>
                 <Text style={styles.bold}>BUSINESS ENTERPRISE</Text>
               </View>
-              <View style={[styles.tableHeaderCell, { width: '25%' }]}>
+              <View style={[styles.tableHeaderCell, { width: '30%' }]}>
                 <Text style={styles.bold}>BUSINESS ADDRESS</Text>
               </View>
               <View style={[styles.tableHeaderCell, { width: '25%' }]}>
@@ -567,7 +533,7 @@ export function SALNAnnexC({ data }: SALNAnnexCProps): React.ReactElement {
                 <Text style={styles.bold}>FINANCIAL CONNECTION</Text>
               </View>
               <View
-                style={[styles.tableHeaderCell, { width: '15%', borderRightWidth: 0 }]}
+                style={[styles.tableHeaderCell, { width: '20%', borderRightWidth: 0 }]}
               >
                 <Text style={styles.bold}>DATE OF</Text>
                 <Text style={styles.bold}>ACQUISITION</Text>
@@ -577,20 +543,17 @@ export function SALNAnnexC({ data }: SALNAnnexCProps): React.ReactElement {
             {/* Business Interests Rows */}
             {spouseChildBusiness.map((business, index) => (
               <View key={`business-${index}`} style={styles.tableRow}>
-                <View style={[styles.tableCell, { width: '12%' }]}>
-                  <Text style={{ fontSize: 5 }}>{getOwnerDisplay(business)}</Text>
-                </View>
-                <View style={[styles.tableCell, { width: '23%' }]}>
+                <View style={[styles.tableCell, { width: '25%' }]}>
                   <Text>{business.entityName || 'N/A'}</Text>
                 </View>
-                <View style={[styles.tableCell, { width: '25%' }]}>
+                <View style={[styles.tableCell, { width: '30%' }]}>
                   <Text>{business.businessAddress || 'N/A'}</Text>
                 </View>
                 <View style={[styles.tableCell, { width: '25%' }]}>
                   <Text>{business.natureOfBusiness || 'N/A'}</Text>
                 </View>
                 <View
-                  style={[styles.tableCell, { width: '15%', borderRightWidth: 0 }]}
+                  style={[styles.tableCell, { width: '20%', borderRightWidth: 0 }]}
                 >
                   <Text>
                     {business.dateOfAcquisition
@@ -609,15 +572,9 @@ export function SALNAnnexC({ data }: SALNAnnexCProps): React.ReactElement {
       {/* Footer Note */}
       <View style={{ marginTop: 10 }}>
         <Text style={styles.noteText}>
-          * This sheet contains EXCLUSIVE/SEPARATE properties of the
-          declarant&apos;s spouse and unmarried children below 18 years old.
-        </Text>
-        <Text style={styles.noteText}>
-          Joint properties are reported on ANNEX A and ANNEX B (if overflow).
-        </Text>
-        <Text style={styles.noteText}>
-          All values on this sheet are SEPARATE from the main SALN totals and
-          should be considered independently.
+          This sheet contains the exclusive properties of the declarant&apos;s
+          spouse and unmarried children below eighteen (18) years of age living
+          in the declarant&apos;s household.
         </Text>
       </View>
 
@@ -676,9 +633,6 @@ export function SALNAnnexC({ data }: SALNAnnexCProps): React.ReactElement {
  * }
  */
 export function shouldRenderAnnexC(data: SALNData): boolean {
-  // Only render for 2025 format
-  if (data.salnFormatVersion !== 2025) return false;
-
   // Check if any spouse/child exclusive properties exist
   const hasSpouseChildProps = [
     ...data.realProperties.filter(isSpouseOrChildProperty),

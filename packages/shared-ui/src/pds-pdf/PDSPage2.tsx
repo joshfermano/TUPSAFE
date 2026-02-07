@@ -15,7 +15,18 @@ import {
   displayOrEmpty,
 } from './PDSStyles';
 import { SectionHeader, ContinueText, PDSPageFooter } from './PDSComponents';
-import type { PDSData } from './types';
+import type { PDSData, WorkExperience } from './types';
+
+/**
+ * Sort work experiences by date (latest first)
+ */
+function sortWorkExperienceDesc(items: WorkExperience[]): WorkExperience[] {
+  return [...items].sort((a, b) => {
+    const dateA = a.dateFrom ? new Date(a.dateFrom).getTime() : 0;
+    const dateB = b.dateFrom ? new Date(b.dateFrom).getTime() : 0;
+    return dateB - dateA;
+  });
+}
 
 interface PDSPage2Props {
   data: PDSData;
@@ -24,13 +35,11 @@ interface PDSPage2Props {
 export function PDSPage2({ data }: PDSPage2Props) {
   const { civilServiceEligibilities, workExperiences } = data;
 
-  // Work experiences should already be sorted, display in order received
-  // (latest date on top - sorted by dateTo DESC, then dateFrom DESC)
-  const sortedWorkExperiences = workExperiences;
+  const sortedWorkExperiences = sortWorkExperienceDesc(workExperiences);
 
   // Minimum rows to display for each section
   const minEligibilityRows = 7;
-  const minWorkExperienceRows = 28;
+  const minWorkExperienceRows = 25;
 
   return (
     <Page size="LEGAL" style={styles.page}>
@@ -230,7 +239,7 @@ export function PDSPage2({ data }: PDSPage2Props) {
         }).map((_, index) => {
           const work = sortedWorkExperiences[index];
           return (
-            <View key={index} style={[styles.fieldRow, { minHeight: 18 }]}>
+            <View key={index} style={[styles.fieldRow, { minHeight: 20 }]}>
               {/* Inclusive Dates - From */}
               <View style={[styles.tableCell, { width: '7%' }]}>
                 <Text style={[styles.valueSmall, styles.center]}>
