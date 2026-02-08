@@ -59,6 +59,7 @@ interface EntryAttachmentsProps {
     success: boolean;
     pdsSubmissionId?: string;
     entryId?: string;
+    errorMessage?: string;
   }>;
   /** Additional class names */
   className?: string;
@@ -166,9 +167,7 @@ export function EntryAttachments({
 
           if (!saveResult.success) {
             toast.error('Cannot upload attachment', {
-              description: entryType === 'training'
-                ? 'Please enter a training title before uploading attachments.'
-                : 'Please enter an eligibility name before uploading attachments.',
+              description: saveResult.errorMessage || 'An unexpected error occurred. Please try again.',
               duration: 5000,
             });
             return;

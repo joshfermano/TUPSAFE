@@ -222,14 +222,14 @@ export function SubmissionsDataTable({
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => onApprove(submission.id, submission.type)}
-                      className="gap-2 text-green-600"
+                      className="gap-2 text-green-700"
                     >
                       <CheckCircle className="h-4 w-4" />
                       Approve
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => onReject(submission.id, submission.type)}
-                      className="gap-2 text-red-600"
+                      className="gap-2 text-red-700"
                     >
                       <XCircle className="h-4 w-4" />
                       Reject

@@ -17,26 +17,114 @@
  */
 
 import { memo } from 'react';
-import { useFormContext, useFieldArray, Controller } from 'react-hook-form';
+import { useFormContext, useFieldArray, Controller, useWatch } from 'react-hook-form';
 import { BackpackIcon, PersonIcon } from '@radix-ui/react-icons';
 import { Plus, Trash2, Info } from 'lucide-react';
 import { Label } from '../../../../../components/ui/label';
 import { Button } from '../../../../../components/ui/button';
 import { Badge } from '../../../../../components/ui/badge';
 import { Alert, AlertDescription } from '../../../../../components/ui/alert';
-import { RELATIONSHIP_TYPE } from '../../../../../lib/validations/saln-schema';
+import {
+  RELATIONSHIP_TYPE,
+  PROPERTY_OWNER,
+  type UnmarriedChild,
+} from '../../../../../lib/validations/saln-schema';
 
 // Import Enhanced Components
 import {
-  EnhancedFormSection,
   EnhancedCard,
   EnhancedCardContent,
   EnhancedInput,
   BlurFade,
 } from '@tupsafe/shared-ui';
 
+// Helper component to watch individual business interest owner
+function BusinessOwnerSelect({ index, control }: { index: number; control: unknown }) {
+  const watchedOwner = useWatch({
+    control: control as ReturnType<typeof useFormContext>['control'],
+    name: `businessInterests.${index}.owner`,
+  });
+
+  const unmarriedChildren = useWatch({
+    control: control as ReturnType<typeof useFormContext>['control'],
+    name: 'submission.unmarriedChildren',
+  }) as UnmarriedChild[] || [];
+
+  return (
+    <>
+      {/* Owner Selection */}
+      <div className="grid gap-2">
+        <Label
+          htmlFor={`businessInterests.${index}.owner`}
+          className="text-base font-medium">
+          Business Owner
+        </Label>
+        <Controller
+          name={`businessInterests.${index}.owner`}
+          control={control as ReturnType<typeof useFormContext>['control']}
+          render={({ field: { onChange, value } }) => (
+            <select
+              value={value || 'declarant'}
+              onChange={(e) => onChange(e.target.value)}
+              className="flex h-10 w-full rounded-lg border bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all px-3 py-2 text-sm shadow-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>option]:bg-white [&>option]:dark:bg-slate-800">
+              {PROPERTY_OWNER.map((owner) => (
+                <option key={owner} value={owner}>
+                  {owner === 'declarant' && 'Declarant'}
+                  {owner === 'joint' && 'Joint (Declarant & Spouse)'}
+                  {owner === 'spouse' && 'Spouse Exclusive'}
+                  {owner === 'child' && 'Child Exclusive'}
+                </option>
+              ))}
+            </select>
+          )}
+        />
+        <p className="text-xs text-muted-foreground">
+          Declarant & Joint go to ANNEX A/B. Spouse/Child go to ANNEX C.
+        </p>
+      </div>
+
+      {/* Conditional Child Name - only when owner is 'child' */}
+      {watchedOwner === 'child' && (
+        <div className="grid gap-2">
+          <Label
+            htmlFor={`businessInterests.${index}.childName`}
+            className="text-base font-medium after:content-['*'] after:ml-0.5 after:text-destructive">
+            Which Child?
+          </Label>
+          <Controller
+            name={`businessInterests.${index}.childName`}
+            control={control as ReturnType<typeof useFormContext>['control']}
+            render={({ field: { onChange, value } }) => (
+              <select
+                value={value || ''}
+                onChange={(e) => onChange(e.target.value)}
+                className="flex h-10 w-full rounded-lg border bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all px-3 py-2 text-sm shadow-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>option]:bg-white [&>option]:dark:bg-slate-800">
+                <option value="">Select child</option>
+                {unmarriedChildren.map((child) => (
+                  <option key={child.name} value={child.name}>
+                    {child.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          />
+          {unmarriedChildren.length === 0 && (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              No unmarried children listed. Add children in Step 1 (Declarant Info).
+            </p>
+          )}
+        </div>
+      )}
+    </>
+  );
+}
+
 export const BusinessRelatives = memo(function BusinessRelatives() {
-  const { control } = useFormContext();
+  const { control, watch } = useFormContext();
+
+  // Watch for the "I/We do not have" checkboxes
+  const hasNoBusinessInterests = watch('submission.hasNoBusinessInterests') || false;
+  const hasNoRelativesInGov = watch('submission.hasNoRelativesInGov') || false;
 
   const {
     fields: businessFields,
@@ -62,6 +150,8 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
       businessAddress: '',
       natureOfBusiness: '',
       dateOfAcquisition: new Date(),
+      owner: 'declarant',
+      childName: null,
     });
   };
 
@@ -111,19 +201,45 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
             <Info className="h-4 w-4" />
             <AlertDescription className="text-sm text-muted-foreground">
               Include any business where you or your spouse have an interest
-              (stockholder, partner, officer, director, etc.). If none, you may
-              skip this section.
+              (stockholder, partner, officer, director, etc.). If none, check
+              the box below.
             </AlertDescription>
           </Alert>
 
-          {businessFields.length === 0 ? (
+          {/* I/We do not have business interests checkbox */}
+          <Controller
+            name="submission.hasNoBusinessInterests"
+            control={control}
+            render={({ field }) => (
+              <label className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg border border-slate-200/50 dark:border-slate-800/50 cursor-pointer mb-6 hover:bg-muted/70 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={field.value || false}
+                  onChange={(e) => field.onChange(e.target.checked)}
+                  className="w-5 h-5 rounded border-slate-300 dark:border-slate-600 text-primary focus:ring-primary/20"
+                />
+                <span className="text-sm font-medium">
+                  I/We do not have any business interest or financial connection
+                </span>
+              </label>
+            )}
+          />
+
+          {hasNoBusinessInterests ? (
+            <div className="text-center py-8 border-2 border-dashed rounded-lg border-slate-200/50 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-900/50">
+              <BackpackIcon className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+              <p className="text-sm text-muted-foreground">
+                No business interests to declare
+              </p>
+            </div>
+          ) : businessFields.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed rounded-lg border-slate-200/50 dark:border-slate-800/50">
               <BackpackIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-foreground mb-2">
                 No business interests added
               </p>
               <p className="text-sm text-muted-foreground mb-4">
-                If you have no business interests, you can skip this section
+                Add your business interests or check the box above if you have none
               </p>
               <Button
                 type="button"
@@ -244,6 +360,9 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
                               }}
                             />
                           </div>
+
+                          {/* Owner Selection (2025 SALN Format) */}
+                          <BusinessOwnerSelect index={index} control={control} />
                         </div>
                       </div>
                     </EnhancedCardContent>
@@ -282,20 +401,45 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
             <Info className="h-4 w-4" />
             <AlertDescription className="text-sm text-muted-foreground">
               Disclose relatives within the 4th civil degree (by consanguinity
-              or affinity) currently employed in government. If none, you may
-              skip this section.
+              or affinity) currently employed in government. If none, check
+              the box below.
             </AlertDescription>
           </Alert>
 
-          {relativeFields.length === 0 ? (
+          {/* I/We do not know of any relatives checkbox */}
+          <Controller
+            name="submission.hasNoRelativesInGov"
+            control={control}
+            render={({ field }) => (
+              <label className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg border border-slate-200/50 dark:border-slate-800/50 cursor-pointer mb-6 hover:bg-muted/70 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={field.value || false}
+                  onChange={(e) => field.onChange(e.target.checked)}
+                  className="w-5 h-5 rounded border-slate-300 dark:border-slate-600 text-primary focus:ring-primary/20"
+                />
+                <span className="text-sm font-medium">
+                  I/We do not know of any relative/s in the government service
+                </span>
+              </label>
+            )}
+          />
+
+          {hasNoRelativesInGov ? (
+            <div className="text-center py-8 border-2 border-dashed rounded-lg border-slate-200/50 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-900/50">
+              <PersonIcon className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+              <p className="text-sm text-muted-foreground">
+                No relatives in government to declare
+              </p>
+            </div>
+          ) : relativeFields.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed rounded-lg border-slate-200/50 dark:border-slate-800/50">
               <PersonIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-foreground mb-2">
                 No relatives in government added
               </p>
               <p className="text-sm text-muted-foreground mb-4">
-                If you have no relatives in government service, you can skip
-                this section
+                Add your relatives or check the box above if you have none
               </p>
               <Button type="button" onClick={addRelative} variant="outline">
                 <Plus className="h-4 w-4 mr-2" />

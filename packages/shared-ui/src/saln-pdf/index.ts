@@ -25,6 +25,10 @@ export { SALNPage2 } from './SALNPage2';
 export { SALNPage3, shouldRenderSALNPage3 } from './SALNPage3';
 export { SALNPage4, shouldRenderSALNPage4 } from './SALNPage4';
 
+// 2025 Format ANNEX components
+export { SALNAnnexB, shouldRenderAnnexB } from './SALNAnnexB';
+export { SALNAnnexC, shouldRenderAnnexC } from './SALNAnnexC';
+
 // Styles and utilities
 export {
   styles,
@@ -65,4 +69,8 @@ export type {
   PDFGenerationOptions,
   YearOverYearComparison,
   SectionSummary,
+  // 2025 Format types
+  ComplianceType,
+  PropertyOwner,
+  UnmarriedChild,
 } from './types';

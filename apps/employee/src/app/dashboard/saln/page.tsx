@@ -484,6 +484,20 @@ export default function SalnPage() {
   // Transform submission data to SALNData format for PDF
   const transformSALNToData = useCallback(
     (submission: any): SALNData => {
+      // Parse spouse info - always shown in 2025 format
+      let spouseInfo = undefined;
+      if (submission.spouseName) {
+        const nameParts = submission.spouseName.trim().split(/\s+/);
+        spouseInfo = {
+          surname: nameParts[nameParts.length - 1] || '',
+          firstName: nameParts[0] || '',
+          middleInitial: nameParts.length > 2 ? nameParts[1]?.charAt(0) : null,
+          position: submission.spousePosition || '',
+          agency: submission.spouseAgency || '',
+          officeAddress: submission.spouseOfficeAddress || '',
+        };
+      }
+
       return {
         id: submission.id,
         year: submission.year,
@@ -498,17 +512,7 @@ export default function SalnPage() {
             'Technological University of the Philippines - Manila',
           officeAddress: submission.officeAddress || '',
         },
-        spouseInfo:
-          submission.filingType === 'joint' && submission.spouseName
-            ? {
-                surname: submission.spouseName?.split(' ').pop() || '',
-                firstName: submission.spouseName?.split(' ')[0] || '',
-                middleInitial: submission.spouseName?.split(' ')[1]?.charAt(0) || null,
-                position: '',
-                agency: '',
-                officeAddress: '',
-              }
-            : undefined,
+        spouseInfo,
         children: [],
         realProperties: submission.realProperties || [],
         personalProperties: submission.personalProperties || [],
@@ -519,6 +523,7 @@ export default function SalnPage() {
             businessAddress: bi.businessAddress || '',
             natureOfBusiness: bi.nature || bi.natureOfBusiness || '',
             dateOfAcquisition: bi.dateAcquired || bi.dateOfAcquisition || '',
+            owner: bi.owner,
           })) || [],
         relativesInGov:
           submission.relativesInGov?.map((rel: any) => ({
@@ -530,6 +535,28 @@ export default function SalnPage() {
         totalAssets: parseFloat(submission.totalAssets || '0'),
         totalLiabilities: parseFloat(submission.totalLiabilities || '0'),
         netWorth: parseFloat(submission.netWorth || '0'),
+        // 2025 SALN Format fields
+        salnFormatVersion: submission.salnFormatVersion || 2025,
+        complianceType: submission.complianceType,
+        complianceDate: submission.complianceDate,
+        hasMultipleMarriages: submission.hasMultipleMarriages,
+        previousSpouseNames: submission.previousSpouseNames,
+        spouseIsPublicOfficial: submission.spouseIsPublicOfficial,
+        spousePosition: submission.spousePosition,
+        spouseAgency: submission.spouseAgency,
+        spouseOfficeAddress: submission.spouseOfficeAddress,
+        unmarriedChildren: submission.unmarriedChildren,
+        hasNoBusinessInterests: submission.hasNoBusinessInterests,
+        hasNoRelativesInGov: submission.hasNoRelativesInGov,
+        governmentIdType: submission.governmentIdType,
+        governmentIdNumber: submission.governmentIdNumber,
+        governmentIdDateIssued: submission.governmentIdDateIssued,
+        governmentIdType2: submission.governmentIdType2,
+        governmentIdNumber2: submission.governmentIdNumber2,
+        governmentIdDateIssued2: submission.governmentIdDateIssued2,
+        declarantTin: submission.declarantTin,
+        spouseTin: submission.spouseTin,
+        spouseDateOfBirth: submission.spouseDateOfBirth,
       };
     },
     [profile]

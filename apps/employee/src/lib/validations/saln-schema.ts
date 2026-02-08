@@ -102,6 +102,18 @@ export const ACQUISITION_MODE = [
 export const FILING_TYPE = ['joint', 'separate', 'not_applicable'] as const;
 
 /**
+ * Compliance Type (2025 SALN Format)
+ * Indicates the reason for filing the SALN
+ */
+export const COMPLIANCE_TYPE = ['assumption', 'annual', 'exit'] as const;
+
+/**
+ * Property Owner (2025 SALN Format)
+ * Indicates who owns the property/asset/liability
+ */
+export const PROPERTY_OWNER = ['declarant', 'spouse', 'child', 'joint'] as const;
+
+/**
  * Submission Status
  * @see database schema: submissionStatusEnum (line 25-31)
  */
@@ -148,10 +160,34 @@ export const RELATIONSHIP_TYPE = [
 // ============================================================================
 
 /**
+ * Unmarried Child Schema (2025 SALN Format)
+ * For listing unmarried children below 18
+ */
+export const unmarriedChildSchema = z.object({
+  name: z
+    .string()
+    .min(1, 'Child name is required')
+    .max(150, 'Child name must not exceed 150 characters'),
+  age: z
+    .number()
+    .int('Age must be a whole number')
+    .min(0, 'Age cannot be negative')
+    .max(17, 'Age must be below 18 for unmarried children'),
+});
+
+/**
  * Declarant Basic Information
  * Stored in salnSubmissions table
  * @see database schema: salnSubmissions (line 267-288)
  * @see mock-data: SalnSubmission type (saln.ts line 5-18)
+ *
+ * Updated for 2025 SALN Format with additional fields:
+ * - Compliance type (assumption/annual/exit)
+ * - Multiple marriages disclosure
+ * - Spouse public official status
+ * - Unmarried children listing
+ * - Declaration checkboxes for business interests and relatives
+ * - Secondary government ID
  */
 export const declarantInfoSchema = z
   .object({
@@ -190,6 +226,95 @@ export const declarantInfoSchema = z
       .max(300, 'Office address must not exceed 300 characters')
       .optional(),
 
+    // ============================================================================
+    // 2025 SALN FORMAT - NEW FIELDS
+    // ============================================================================
+
+    // Compliance type and date
+    complianceType: z.enum(COMPLIANCE_TYPE).optional(),
+    complianceDate: z.date().optional(),
+
+    // Multiple marriages disclosure
+    hasMultipleMarriages: z.boolean().default(false),
+    previousSpouseNames: z
+      .string()
+      .max(500, 'Previous spouse names must not exceed 500 characters')
+      .optional()
+      .nullable(),
+
+    // Spouse public official status (for joint filing)
+    spouseIsPublicOfficial: z.boolean().default(false),
+    spousePosition: z
+      .string()
+      .max(150, 'Spouse position must not exceed 150 characters')
+      .optional()
+      .nullable(),
+    spouseAgency: z
+      .string()
+      .max(200, 'Spouse agency must not exceed 200 characters')
+      .optional()
+      .nullable(),
+    spouseOfficeAddress: z
+      .string()
+      .max(300, 'Spouse office address must not exceed 300 characters')
+      .optional()
+      .nullable(),
+
+    // Unmarried children below 18
+    unmarriedChildren: z.array(unmarriedChildSchema).default([]),
+
+    // Declaration checkboxes
+    hasNoBusinessInterests: z.boolean().default(false),
+    hasNoRelativesInGov: z.boolean().default(false),
+
+    // Primary/First government ID (2025 requirement - for first signature)
+    governmentIdType: z
+      .string()
+      .max(100, 'Government ID type must not exceed 100 characters')
+      .optional()
+      .nullable(),
+    governmentIdNumber: z
+      .string()
+      .max(100, 'Government ID number must not exceed 100 characters')
+      .optional()
+      .nullable(),
+    governmentIdDateIssued: z.date().optional().nullable(),
+
+    // Secondary government ID (2025 requirement - for second signature)
+    governmentIdType2: z
+      .string()
+      .max(100, 'Government ID type must not exceed 100 characters')
+      .optional()
+      .nullable(),
+    governmentIdNumber2: z
+      .string()
+      .max(100, 'Government ID number must not exceed 100 characters')
+      .optional()
+      .nullable(),
+    governmentIdDateIssued2: z.date().optional().nullable(),
+
+    // TIN fields (2025 requirement)
+    declarantTin: z
+      .string()
+      .max(20, 'TIN must not exceed 20 characters')
+      .optional()
+      .nullable(),
+    spouseTin: z
+      .string()
+      .max(20, 'Spouse TIN must not exceed 20 characters')
+      .optional()
+      .nullable(),
+
+    // Spouse date of birth (for joint filing)
+    spouseDateOfBirth: z.date().optional().nullable(),
+
+    // SALN format version
+    salnFormatVersion: z.literal(2025).default(2025),
+
+    // ============================================================================
+    // END 2025 SALN FORMAT - NEW FIELDS
+    // ============================================================================
+
     // Submission status
     status: z.enum(SUBMISSION_STATUS).default('draft'),
 
@@ -202,15 +327,55 @@ export const declarantInfoSchema = z
   })
   .refine(
     (data) => {
-      // If filing type is 'joint', spouse name must be provided
-      if (data.filingType === 'joint') {
+      // If filing type is 'joint' or 'separate', spouse name must be provided
+      if (data.filingType === 'joint' || data.filingType === 'separate') {
         return !!data.spouseName && data.spouseName.trim().length > 0;
       }
       return true;
     },
     {
-      message: 'Spouse name is required for joint filing',
+      message: 'Spouse name is required for joint or separate filing',
       path: ['spouseName'],
+    }
+  )
+  .refine(
+    (data) => {
+      // Compliance date required for assumption or exit
+      if (
+        data.complianceType === 'assumption' ||
+        data.complianceType === 'exit'
+      ) {
+        return !!data.complianceDate;
+      }
+      return true;
+    },
+    {
+      message: 'Compliance date is required for assumption or exit filing',
+      path: ['complianceDate'],
+    }
+  )
+  .refine(
+    (data) => {
+      // If spouse is public official and filing is joint or separate, require spouse details
+      if (
+        (data.filingType === 'joint' || data.filingType === 'separate') &&
+        data.spouseIsPublicOfficial === true
+      ) {
+        return (
+          !!data.spousePosition &&
+          data.spousePosition.trim().length > 0 &&
+          !!data.spouseAgency &&
+          data.spouseAgency.trim().length > 0 &&
+          !!data.spouseOfficeAddress &&
+          data.spouseOfficeAddress.trim().length > 0
+        );
+      }
+      return true;
+    },
+    {
+      message:
+        'Spouse position, agency, and office address are required when spouse is a public official',
+      path: ['spousePosition'],
     }
   );
 
@@ -222,6 +387,8 @@ export const declarantInfoSchema = z
  * Real Property Entry Schema
  * Matches database schema: salnRealProperties (line 290-312)
  * Matches mock-data: SalnRealProperty interface (saln.ts line 19-30)
+ *
+ * Updated for 2025 SALN Format with owner field
  */
 export const realPropertySchema = z
   .object({
@@ -266,6 +433,20 @@ export const realPropertySchema = z
     acquisitionCost: currencySchema.describe(
       'Original acquisition cost (PHP). Use 0 for inheritance/donation.'
     ),
+
+    // 2025 SALN Format - Owner field
+    owner: z
+      .enum(PROPERTY_OWNER)
+      .default('declarant')
+      .describe('Who owns the property (declarant, spouse, child, or joint)'),
+
+    // Child name (required if owner is 'child')
+    childName: z
+      .string()
+      .max(150, 'Child name must not exceed 150 characters')
+      .optional()
+      .nullable()
+      .describe('Name of the child who owns this property'),
   })
   .refine(
     (data) => {
@@ -277,6 +458,19 @@ export const realPropertySchema = z
       message:
         'Current fair market value seems unusually low compared to assessed value',
       path: ['currentFairMarketValue'],
+    }
+  )
+  .refine(
+    (data) => {
+      // If owner is 'child', childName must be provided
+      if (data.owner === 'child') {
+        return !!data.childName && data.childName.trim().length > 0;
+      }
+      return true;
+    },
+    {
+      message: 'Child name is required when owner is a child',
+      path: ['childName'],
     }
   );
 
@@ -290,25 +484,55 @@ export const realPropertySchema = z
  * Matches mock-data: SalnPersonalProperty interface (saln.ts line 32-38)
  *
  * Includes: Vehicles, Jewelry, Electronics, Furniture, Cash, Investments, etc.
+ *
+ * Updated for 2025 SALN Format with owner field
  */
-export const personalPropertySchema = z.object({
-  id: z.string().uuid().optional(), // UUID v7, optional for new entries
-  salnSubmissionId: z.string().uuid().optional(), // Set when saving
+export const personalPropertySchema = z
+  .object({
+    id: z.string().uuid().optional(), // UUID v7, optional for new entries
+    salnSubmissionId: z.string().uuid().optional(), // Set when saving
 
-  description: z
-    .string()
-    .min(1, 'Property description is required')
-    .max(500, 'Description must not exceed 500 characters')
-    .describe(
-      'e.g., "2022 Toyota Camry", "Jewelry and Watches Collection", "Cash in Bank", "Stocks and Bonds"'
+    description: z
+      .string()
+      .min(1, 'Property description is required')
+      .max(500, 'Description must not exceed 500 characters')
+      .describe(
+        'e.g., "2022 Toyota Camry", "Jewelry and Watches Collection", "Cash in Bank", "Stocks and Bonds"'
+      ),
+
+    yearAcquired: pastYearSchema.describe('Year the property was acquired'),
+
+    acquisitionCost: currencySchema.describe(
+      'Acquisition cost or current value (PHP)'
     ),
 
-  yearAcquired: pastYearSchema.describe('Year the property was acquired'),
+    // 2025 SALN Format - Owner field
+    owner: z
+      .enum(PROPERTY_OWNER)
+      .default('declarant')
+      .describe('Who owns the property (declarant, spouse, child, or joint)'),
 
-  acquisitionCost: currencySchema.describe(
-    'Acquisition cost or current value (PHP)'
-  ),
-});
+    // Child name (required if owner is 'child')
+    childName: z
+      .string()
+      .max(150, 'Child name must not exceed 150 characters')
+      .optional()
+      .nullable()
+      .describe('Name of the child who owns this property'),
+  })
+  .refine(
+    (data) => {
+      // If owner is 'child', childName must be provided
+      if (data.owner === 'child') {
+        return !!data.childName && data.childName.trim().length > 0;
+      }
+      return true;
+    },
+    {
+      message: 'Child name is required when owner is a child',
+      path: ['childName'],
+    }
+  );
 
 // ============================================================================
 // SECTION IV: LIABILITIES
@@ -320,29 +544,61 @@ export const personalPropertySchema = z.object({
  * Matches mock-data: SalnLiability interface (saln.ts line 40-46)
  *
  * Includes: Mortgages, Loans, Credit Card Debt, etc.
+ *
+ * Updated for 2025 SALN Format with owner field
  */
-export const liabilitySchema = z.object({
-  id: z.string().uuid().optional(), // UUID v7, optional for new entries
-  salnSubmissionId: z.string().uuid().optional(), // Set when saving
+export const liabilitySchema = z
+  .object({
+    id: z.string().uuid().optional(), // UUID v7, optional for new entries
+    salnSubmissionId: z.string().uuid().optional(), // Set when saving
 
-  nature: z
-    .string()
-    .min(1, 'Nature of liability is required')
-    .max(200, 'Nature must not exceed 200 characters')
-    .describe(
-      'e.g., "Home Mortgage Loan", "Car Loan", "Personal Loan", "Credit Card"'
+    nature: z
+      .string()
+      .min(1, 'Nature of liability is required')
+      .max(200, 'Nature must not exceed 200 characters')
+      .describe(
+        'e.g., "Home Mortgage Loan", "Car Loan", "Personal Loan", "Credit Card"'
+      ),
+
+    creditorName: z
+      .string()
+      .min(1, 'Creditor name is required')
+      .max(200, 'Creditor name must not exceed 200 characters')
+      .describe('Name of bank, lending institution, or creditor'),
+
+    outstandingBalance: currencySchema.describe(
+      'Current outstanding balance (PHP)'
     ),
 
-  creditorName: z
-    .string()
-    .min(1, 'Creditor name is required')
-    .max(200, 'Creditor name must not exceed 200 characters')
-    .describe('Name of bank, lending institution, or creditor'),
+    // 2025 SALN Format - Owner field
+    owner: z
+      .enum(PROPERTY_OWNER)
+      .default('declarant')
+      .describe(
+        'Who is responsible for the liability (declarant, spouse, child, or joint)'
+      ),
 
-  outstandingBalance: currencySchema.describe(
-    'Current outstanding balance (PHP)'
-  ),
-});
+    // Child name (required if owner is 'child')
+    childName: z
+      .string()
+      .max(150, 'Child name must not exceed 150 characters')
+      .optional()
+      .nullable()
+      .describe('Name of the child responsible for this liability'),
+  })
+  .refine(
+    (data) => {
+      // If owner is 'child', childName must be provided
+      if (data.owner === 'child') {
+        return !!data.childName && data.childName.trim().length > 0;
+      }
+      return true;
+    },
+    {
+      message: 'Child name is required when owner is a child',
+      path: ['childName'],
+    }
+  );
 
 // ============================================================================
 // SECTION V: BUSINESS INTERESTS
@@ -352,31 +608,65 @@ export const liabilitySchema = z.object({
  * Business Interest Entry Schema
  * Matches database schema: salnBusinessInterests (line 340-349)
  * Matches mock-data: SalnBusinessInterest interface (saln.ts line 48-55)
+ *
+ * Updated for 2025 SALN Format with owner field
  */
-export const businessInterestSchema = z.object({
-  id: z.string().uuid().optional(), // UUID v7, optional for new entries
-  salnSubmissionId: z.string().uuid().optional(), // Set when saving
+export const businessInterestSchema = z
+  .object({
+    id: z.string().uuid().optional(), // UUID v7, optional for new entries
+    salnSubmissionId: z.string().uuid().optional(), // Set when saving
 
-  entityName: z
-    .string()
-    .min(1, 'Entity name is required')
-    .max(200, 'Entity name must not exceed 200 characters')
-    .describe('Name of business, corporation, partnership, or entity'),
+    entityName: z
+      .string()
+      .min(1, 'Entity name is required')
+      .max(200, 'Entity name must not exceed 200 characters')
+      .describe('Name of business, corporation, partnership, or entity'),
 
-  businessAddress: z
-    .string()
-    .min(1, 'Business address is required')
-    .max(300, 'Business address must not exceed 300 characters')
-    .describe('Complete business address'),
+    businessAddress: z
+      .string()
+      .min(1, 'Business address is required')
+      .max(300, 'Business address must not exceed 300 characters')
+      .describe('Complete business address'),
 
-  natureOfBusiness: z
-    .string()
-    .min(1, 'Nature of business is required')
-    .max(200, 'Nature of business must not exceed 200 characters')
-    .describe('Type of business or industry'),
+    natureOfBusiness: z
+      .string()
+      .min(1, 'Nature of business is required')
+      .max(200, 'Nature of business must not exceed 200 characters')
+      .describe('Type of business or industry'),
 
-  dateOfAcquisition: pastDateSchema.describe('Date when interest was acquired'),
-});
+    dateOfAcquisition: pastDateSchema.describe(
+      'Date when interest was acquired'
+    ),
+
+    // 2025 SALN Format - Owner field
+    owner: z
+      .enum(PROPERTY_OWNER)
+      .default('declarant')
+      .describe(
+        'Who owns the business interest (declarant, spouse, child, or joint)'
+      ),
+
+    // Child name (required if owner is 'child')
+    childName: z
+      .string()
+      .max(150, 'Child name must not exceed 150 characters')
+      .optional()
+      .nullable()
+      .describe('Name of the child who owns this business interest'),
+  })
+  .refine(
+    (data) => {
+      // If owner is 'child', childName must be provided
+      if (data.owner === 'child') {
+        return !!data.childName && data.childName.trim().length > 0;
+      }
+      return true;
+    },
+    {
+      message: 'Child name is required when owner is a child',
+      path: ['childName'],
+    }
+  );
 
 // ============================================================================
 // SECTION VI: RELATIVES IN GOVERNMENT
@@ -581,6 +871,13 @@ export type FilingType = (typeof FILING_TYPE)[number];
 export type SubmissionStatus = (typeof SUBMISSION_STATUS)[number];
 export type RelationshipType = (typeof RELATIONSHIP_TYPE)[number];
 
+// 2025 SALN Format enum types
+export type ComplianceType = (typeof COMPLIANCE_TYPE)[number];
+export type PropertyOwner = (typeof PROPERTY_OWNER)[number];
+
+// 2025 SALN Format additional types
+export type UnmarriedChild = z.infer<typeof unmarriedChildSchema>;
+
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
@@ -588,6 +885,8 @@ export type RelationshipType = (typeof RELATIONSHIP_TYPE)[number];
 /**
  * Create an empty SALN submission for a given year
  * Compatible with both mock-data and database structures
+ * Updated for 2025 SALN Format with new default fields
+ *
  * @param year - The year for the SALN submission
  * @param userId - The user's UUID (optional, can be added server-side)
  * @returns Empty SALN data object with default values
@@ -606,6 +905,38 @@ export function createEmptySaln(
       position: undefined,
       agency: undefined,
       officeAddress: undefined,
+
+      // 2025 SALN Format defaults
+      complianceType: 'annual',
+      complianceDate: undefined,
+      hasMultipleMarriages: false,
+      previousSpouseNames: null,
+      spouseIsPublicOfficial: false,
+      spousePosition: null,
+      spouseAgency: null,
+      spouseOfficeAddress: null,
+      unmarriedChildren: [],
+      hasNoBusinessInterests: false,
+      hasNoRelativesInGov: false,
+
+      // TIN fields
+      declarantTin: null,
+      spouseTin: null,
+
+      // Spouse date of birth
+      spouseDateOfBirth: null,
+
+      // First/Primary Government ID (for first signature)
+      governmentIdType: null,
+      governmentIdNumber: null,
+      governmentIdDateIssued: null,
+
+      // Second Government ID (for second signature)
+      governmentIdType2: null,
+      governmentIdNumber2: null,
+      governmentIdDateIssued2: null,
+      salnFormatVersion: 2025,
+
       submittedAt: null,
       approvedAt: null,
       approvedBy: null,

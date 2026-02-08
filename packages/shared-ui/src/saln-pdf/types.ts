@@ -1,8 +1,29 @@
 /**
  * Type definitions for SALN PDF generation
- * Matches the CSC SALN Form 2019 structure
+ * Supports CSC SALN Form 2019 and 2025 structures
  * Used with @react-pdf/renderer library
  */
+
+/**
+ * Compliance type for 2025 SALN format
+ * Determines the reason for filing
+ */
+export type ComplianceType = 'assumption' | 'annual' | 'exit';
+
+/**
+ * Property owner designation for 2025 SALN format
+ * Indicates who owns the asset/liability
+ */
+export type PropertyOwner = 'declarant' | 'spouse' | 'child' | 'joint';
+
+/**
+ * Unmarried child information for 2025 SALN format
+ * Simplified structure for children table
+ */
+export interface UnmarriedChild {
+  name: string;
+  age: number;
+}
 
 /**
  * Government ID information for signature section
@@ -103,6 +124,10 @@ export interface RealProperty {
   acquisitionYear: number;
   acquisitionMode: string;
   acquisitionCost: number;
+  /** Property owner designation (2025 format) */
+  owner?: PropertyOwner;
+  /** Child name if owner is 'child' (2025 format) */
+  childName?: string | null;
 }
 
 /**
@@ -130,6 +155,10 @@ export interface PersonalProperty {
   description: string;
   yearAcquired: number;
   acquisitionCost: number;
+  /** Property owner designation (2025 format) */
+  owner?: PropertyOwner;
+  /** Child name if owner is 'child' (2025 format) */
+  childName?: string | null;
 }
 
 /**
@@ -156,6 +185,10 @@ export interface Liability {
   nature: string;
   creditorName: string;
   outstandingBalance: number;
+  /** Liability owner designation (2025 format) */
+  owner?: PropertyOwner;
+  /** Child name if owner is 'child' (2025 format) */
+  childName?: string | null;
 }
 
 /**
@@ -183,6 +216,10 @@ export interface BusinessInterest {
   businessAddress: string;
   natureOfBusiness: string;
   dateOfAcquisition: string | Date;
+  /** Business interest owner designation (2025 format) */
+  owner?: PropertyOwner;
+  /** Child name if owner is 'child' (2025 format) */
+  childName?: string | null;
 }
 
 /**
@@ -282,6 +319,52 @@ export interface SALNData {
 
   // Metadata
   submittedAt?: Date | string | null;
+
+  // 2025 SALN Format Fields
+  /** SALN format version (2019 or 2025) */
+  salnFormatVersion?: number;
+  /** Compliance type for filing (2025 format) */
+  complianceType?: ComplianceType | null;
+  /** Date for assumption or exit compliance (2025 format) */
+  complianceDate?: string | Date | null;
+  /** Whether declarant has multiple marriages (2025 format) */
+  hasMultipleMarriages?: boolean;
+  /** Previous spouse names if multiple marriages (2025 format) */
+  previousSpouseNames?: string | null;
+  /** Whether spouse is a public official (2025 format) */
+  spouseIsPublicOfficial?: boolean;
+  /** Spouse position if public official (2025 format) */
+  spousePosition?: string | null;
+  /** Spouse agency if public official (2025 format) */
+  spouseAgency?: string | null;
+  /** Spouse office address if public official (2025 format) */
+  spouseOfficeAddress?: string | null;
+  /** Unmarried children below 18 years (2025 format simplified) */
+  unmarriedChildren?: UnmarriedChild[] | null;
+  /** Checkbox: No business interests or financial connections (2025 format) */
+  hasNoBusinessInterests?: boolean;
+  /** Checkbox: No relatives in government service (2025 format) */
+  hasNoRelativesInGov?: boolean;
+  /** First government ID type (2025 format) */
+  governmentIdType?: string;
+  /** First government ID number (2025 format) */
+  governmentIdNumber?: string;
+  /** First government ID date issued (2025 format) */
+  governmentIdDateIssued?: Date | string;
+  /** Second government ID for additional signature (2025 format) */
+  governmentIdType2?: string;
+  /** Second government ID number (2025 format) */
+  governmentIdNumber2?: string;
+  /** Second government ID date issued (2025 format) */
+  governmentIdDateIssued2?: Date | string;
+  /** Legacy second government ID object format (2025 format) */
+  governmentId2?: { type: string; number: string; dateIssued: string } | null;
+  /** Declarant TIN (2025 format) */
+  declarantTin?: string;
+  /** Spouse TIN (2025 format) */
+  spouseTin?: string;
+  /** Spouse date of birth (2025 format) */
+  spouseDateOfBirth?: Date | string;
 }
 
 /**

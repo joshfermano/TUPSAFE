@@ -59,6 +59,17 @@ export const filingTypeEnum = pgEnum('filing_type', [
   'separate',
   'not_applicable',
 ]);
+export const propertyOwnerEnum = pgEnum('property_owner', [
+  'declarant',
+  'spouse',
+  'child',
+  'joint',
+]);
+export const complianceTypeEnum = pgEnum('compliance_type', [
+  'assumption',
+  'annual',
+  'exit',
+]);
 export const approvalStatusEnum = pgEnum('approval_status', [
   'pending',
   'approved',
@@ -830,6 +841,31 @@ export const salnSubmissions = pgTable(
     position: text('position'), // Employee position/rank
     agency: text('agency'), // Office/Agency name
     officeAddress: text('office_address'), // Office address
+    // 2025 Format fields
+    complianceType: complianceTypeEnum('compliance_type'),
+    complianceDate: date('compliance_date'),
+    hasMultipleMarriages: boolean('has_multiple_marriages').default(false).notNull(),
+    previousSpouseNames: text('previous_spouse_names'),
+    spouseIsPublicOfficial: boolean('spouse_is_public_official').default(false).notNull(),
+    spousePosition: text('spouse_position'),
+    spouseAgency: text('spouse_agency'),
+    spouseOfficeAddress: text('spouse_office_address'),
+    unmarriedChildren: jsonb('unmarried_children').$type<Array<{name: string; dateOfBirth: string; age: number}>>(),
+    hasNoBusinessInterests: boolean('has_no_business_interests').default(false).notNull(),
+    hasNoRelativesInGov: boolean('has_no_relatives_in_gov').default(false).notNull(),
+    // First/Primary Government ID (2025 format)
+    governmentIdType: text('government_id_type'),
+    governmentIdNumber: text('government_id_number'),
+    governmentIdDateIssued: date('government_id_date_issued'),
+    // TIN fields (2025 format)
+    declarantTin: text('declarant_tin'),
+    spouseTin: text('spouse_tin'),
+    // Spouse date of birth (2025 format)
+    spouseDateOfBirth: date('spouse_date_of_birth'),
+    governmentIdType2: text('government_id_type_2'),
+    governmentIdNumber2: text('government_id_number_2'),
+    governmentIdDateIssued2: date('government_id_date_issued_2'),
+    salnFormatVersion: integer('saln_format_version').default(2019).notNull(),
     completion: integer('completion').default(0).notNull(), // Completion percentage (0-100) based on submission readiness
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -862,6 +898,21 @@ export const salnSubmissions = pgTable(
       table.year,
       table.status
     ),
+    // 2025 Format indexes
+    formatVersionIdx: index('saln_submissions_format_version_idx').on(
+      table.salnFormatVersion
+    ),
+    complianceTypeIdx: index('saln_submissions_compliance_type_idx').on(
+      table.complianceType
+    ),
+    formatYearIdx: index('saln_submissions_format_year_idx').on(
+      table.salnFormatVersion,
+      table.year
+    ),
+    formatStatusIdx: index('saln_submissions_format_status_idx').on(
+      table.salnFormatVersion,
+      table.status
+    ),
   })
 );
 
@@ -889,12 +940,21 @@ export const salnRealProperties = pgTable(
       precision: 15,
       scale: 2,
     }).notNull(),
+    // 2025 Format fields - property ownership tracking
+    owner: propertyOwnerEnum('owner').default('declarant').notNull(),
+    childName: text('child_name'),
   },
   (table) => ({
     salnSubmissionIdIdx: index('saln_real_properties_submission_id_idx').on(
       table.salnSubmissionId
     ),
     kindIdx: index('saln_real_properties_kind_idx').on(table.kind),
+    // 2025 Format indexes
+    ownerIdx: index('saln_real_properties_owner_idx').on(table.owner),
+    submissionOwnerIdx: index('saln_real_properties_submission_owner_idx').on(
+      table.salnSubmissionId,
+      table.owner
+    ),
   })
 );
 
@@ -911,10 +971,19 @@ export const salnPersonalProperties = pgTable(
       precision: 15,
       scale: 2,
     }).notNull(),
+    // 2025 Format fields - property ownership tracking
+    owner: propertyOwnerEnum('owner').default('declarant').notNull(),
+    childName: text('child_name'),
   },
   (table) => ({
     salnSubmissionIdIdx: index('saln_personal_properties_submission_id_idx').on(
       table.salnSubmissionId
+    ),
+    // 2025 Format indexes
+    ownerIdx: index('saln_personal_properties_owner_idx').on(table.owner),
+    submissionOwnerIdx: index('saln_personal_properties_submission_owner_idx').on(
+      table.salnSubmissionId,
+      table.owner
     ),
   })
 );
@@ -932,10 +1001,19 @@ export const salnLiabilities = pgTable(
       precision: 15,
       scale: 2,
     }).notNull(),
+    // 2025 Format fields - liability ownership tracking
+    owner: propertyOwnerEnum('owner').default('declarant').notNull(),
+    childName: text('child_name'),
   },
   (table) => ({
     salnSubmissionIdIdx: index('saln_liabilities_submission_id_idx').on(
       table.salnSubmissionId
+    ),
+    // 2025 Format indexes
+    ownerIdx: index('saln_liabilities_owner_idx').on(table.owner),
+    submissionOwnerIdx: index('saln_liabilities_submission_owner_idx').on(
+      table.salnSubmissionId,
+      table.owner
     ),
   })
 );
@@ -951,10 +1029,19 @@ export const salnBusinessInterests = pgTable(
     businessAddress: text('business_address').notNull(),
     natureOfBusiness: text('nature_of_business').notNull(),
     dateOfAcquisition: date('date_of_acquisition').notNull(),
+    // 2025 Format fields - business ownership tracking
+    owner: propertyOwnerEnum('owner').default('declarant').notNull(),
+    childName: text('child_name'),
   },
   (table) => ({
     salnSubmissionIdIdx: index('saln_business_interests_submission_id_idx').on(
       table.salnSubmissionId
+    ),
+    // 2025 Format indexes
+    ownerIdx: index('saln_business_interests_owner_idx').on(table.owner),
+    submissionOwnerIdx: index('saln_business_interests_submission_owner_idx').on(
+      table.salnSubmissionId,
+      table.owner
     ),
   })
 );

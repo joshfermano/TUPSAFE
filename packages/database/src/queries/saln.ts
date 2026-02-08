@@ -43,8 +43,15 @@ export interface CompleteSaln extends SalnSubmission {
   relativesInGov: SalnRelativeInGov[];
 }
 
+// Import 2025 SALN format types from the types module
+import type { ComplianceType, PropertyOwner, UnmarriedChild } from '../types';
+
+// Re-export for convenience
+export type { ComplianceType, PropertyOwner, UnmarriedChild };
+
 /**
  * Input data for creating a new SALN submission
+ * Supports both 2019 and 2025 SALN format fields
  */
 export interface CreateSalnInput {
   year: number;
@@ -53,6 +60,29 @@ export interface CreateSalnInput {
   position?: string;
   agency?: string;
   officeAddress?: string;
+  // 2025 SALN Format fields
+  complianceType?: ComplianceType;
+  complianceDate?: string | Date;
+  hasMultipleMarriages?: boolean;
+  previousSpouseNames?: string;
+  spouseIsPublicOfficial?: boolean;
+  spousePosition?: string;
+  spouseAgency?: string;
+  spouseOfficeAddress?: string;
+  unmarriedChildren?: UnmarriedChild[];
+  hasNoBusinessInterests?: boolean;
+  hasNoRelativesInGov?: boolean;
+  governmentIdType?: string;
+  governmentIdNumber?: string;
+  governmentIdDateIssued?: string | Date;
+  declarantTin?: string;
+  spouseTin?: string;
+  spouseDateOfBirth?: string | Date;
+  governmentIdType2?: string;
+  governmentIdNumber2?: string;
+  governmentIdDateIssued2?: string | Date;
+  salnFormatVersion?: number;
+  // Section arrays
   realProperties?: Omit<NewSalnRealProperty, 'salnSubmissionId'>[];
   personalProperties?: Omit<NewSalnPersonalProperty, 'salnSubmissionId'>[];
   liabilities?: Omit<NewSalnLiability, 'salnSubmissionId'>[];
@@ -62,6 +92,7 @@ export interface CreateSalnInput {
 
 /**
  * Input data for updating an existing SALN submission
+ * Supports both 2019 and 2025 SALN format fields
  */
 export interface UpdateSalnInput {
   year?: number;
@@ -70,6 +101,29 @@ export interface UpdateSalnInput {
   position?: string;
   agency?: string;
   officeAddress?: string;
+  // 2025 SALN Format fields
+  complianceType?: ComplianceType;
+  complianceDate?: string | Date;
+  hasMultipleMarriages?: boolean;
+  previousSpouseNames?: string;
+  spouseIsPublicOfficial?: boolean;
+  spousePosition?: string;
+  spouseAgency?: string;
+  spouseOfficeAddress?: string;
+  unmarriedChildren?: UnmarriedChild[];
+  hasNoBusinessInterests?: boolean;
+  hasNoRelativesInGov?: boolean;
+  governmentIdType?: string;
+  governmentIdNumber?: string;
+  governmentIdDateIssued?: string | Date;
+  declarantTin?: string;
+  spouseTin?: string;
+  spouseDateOfBirth?: string | Date;
+  governmentIdType2?: string;
+  governmentIdNumber2?: string;
+  governmentIdDateIssued2?: string | Date;
+  salnFormatVersion?: number;
+  // Section arrays
   realProperties?: Omit<NewSalnRealProperty, 'salnSubmissionId'>[];
   personalProperties?: Omit<NewSalnPersonalProperty, 'salnSubmissionId'>[];
   liabilities?: Omit<NewSalnLiability, 'salnSubmissionId'>[];
@@ -378,7 +432,35 @@ export async function createSALNSubmission(
   }
 
   return await db.transaction(async (tx) => {
-    // Create main submission
+    // Prepare compliance date if provided
+    const complianceDateValue = data.complianceDate
+      ? (data.complianceDate instanceof Date
+          ? data.complianceDate.toISOString().split('T')[0]
+          : data.complianceDate)
+      : undefined;
+
+    // Prepare government ID date (declarant) if provided
+    const govIdDateValue = data.governmentIdDateIssued
+      ? (data.governmentIdDateIssued instanceof Date
+          ? data.governmentIdDateIssued.toISOString().split('T')[0]
+          : data.governmentIdDateIssued)
+      : undefined;
+
+    // Prepare spouse date of birth if provided
+    const spouseDobValue = data.spouseDateOfBirth
+      ? (data.spouseDateOfBirth instanceof Date
+          ? data.spouseDateOfBirth.toISOString().split('T')[0]
+          : data.spouseDateOfBirth)
+      : undefined;
+
+    // Prepare government ID date (spouse) if provided
+    const govIdDate2Value = data.governmentIdDateIssued2
+      ? (data.governmentIdDateIssued2 instanceof Date
+          ? data.governmentIdDateIssued2.toISOString().split('T')[0]
+          : data.governmentIdDateIssued2)
+      : undefined;
+
+    // Create main submission with 2025 format fields
     const [submission] = await tx
       .insert(salnSubmissions)
       .values({
@@ -389,6 +471,28 @@ export async function createSALNSubmission(
         position: data.position,
         agency: data.agency,
         officeAddress: data.officeAddress,
+        // 2025 SALN Format fields
+        complianceType: data.complianceType,
+        complianceDate: complianceDateValue,
+        hasMultipleMarriages: data.hasMultipleMarriages ?? false,
+        previousSpouseNames: data.previousSpouseNames,
+        spouseIsPublicOfficial: data.spouseIsPublicOfficial ?? false,
+        spousePosition: data.spousePosition,
+        spouseAgency: data.spouseAgency,
+        spouseOfficeAddress: data.spouseOfficeAddress,
+        unmarriedChildren: data.unmarriedChildren,
+        hasNoBusinessInterests: data.hasNoBusinessInterests ?? false,
+        hasNoRelativesInGov: data.hasNoRelativesInGov ?? false,
+        governmentIdType: data.governmentIdType,
+        governmentIdNumber: data.governmentIdNumber,
+        governmentIdDateIssued: govIdDateValue,
+        declarantTin: data.declarantTin,
+        spouseTin: data.spouseTin,
+        spouseDateOfBirth: spouseDobValue,
+        governmentIdType2: data.governmentIdType2,
+        governmentIdNumber2: data.governmentIdNumber2,
+        governmentIdDateIssued2: govIdDate2Value,
+        salnFormatVersion: data.salnFormatVersion ?? 2025,
         status: 'draft',
         totalAssets: '0',
         totalLiabilities: '0',
@@ -534,16 +638,63 @@ export async function updateSALNSubmission(
         .where(eq(salnSubmissions.id, id));
     }
 
-    // Update main submission metadata fields
+    // Check for metadata updates (basic + 2025 format fields)
     const hasMetadataUpdates =
       data.year !== undefined ||
       data.filingType !== undefined ||
       data.spouseName !== undefined ||
       data.position !== undefined ||
       data.agency !== undefined ||
-      data.officeAddress !== undefined;
+      data.officeAddress !== undefined ||
+      // 2025 format fields
+      data.complianceType !== undefined ||
+      data.complianceDate !== undefined ||
+      data.hasMultipleMarriages !== undefined ||
+      data.previousSpouseNames !== undefined ||
+      data.spouseIsPublicOfficial !== undefined ||
+      data.spousePosition !== undefined ||
+      data.spouseAgency !== undefined ||
+      data.spouseOfficeAddress !== undefined ||
+      data.unmarriedChildren !== undefined ||
+      data.hasNoBusinessInterests !== undefined ||
+      data.hasNoRelativesInGov !== undefined ||
+      data.governmentIdType !== undefined ||
+      data.governmentIdNumber !== undefined ||
+      data.governmentIdDateIssued !== undefined ||
+      data.declarantTin !== undefined ||
+      data.spouseTin !== undefined ||
+      data.spouseDateOfBirth !== undefined ||
+      data.governmentIdType2 !== undefined ||
+      data.governmentIdNumber2 !== undefined ||
+      data.governmentIdDateIssued2 !== undefined ||
+      data.salnFormatVersion !== undefined;
 
     if (hasMetadataUpdates) {
+      // Prepare date values
+      const complianceDateValue = data.complianceDate !== undefined
+        ? (data.complianceDate instanceof Date
+            ? data.complianceDate.toISOString().split('T')[0]
+            : data.complianceDate)
+        : undefined;
+
+      const govIdDateValue = data.governmentIdDateIssued !== undefined
+        ? (data.governmentIdDateIssued instanceof Date
+            ? data.governmentIdDateIssued.toISOString().split('T')[0]
+            : data.governmentIdDateIssued)
+        : undefined;
+
+      const spouseDobValue = data.spouseDateOfBirth !== undefined
+        ? (data.spouseDateOfBirth instanceof Date
+            ? data.spouseDateOfBirth.toISOString().split('T')[0]
+            : data.spouseDateOfBirth)
+        : undefined;
+
+      const govIdDate2Value = data.governmentIdDateIssued2 !== undefined
+        ? (data.governmentIdDateIssued2 instanceof Date
+            ? data.governmentIdDateIssued2.toISOString().split('T')[0]
+            : data.governmentIdDateIssued2)
+        : undefined;
+
       await tx
         .update(salnSubmissions)
         .set({
@@ -553,6 +704,28 @@ export async function updateSALNSubmission(
           ...(data.position !== undefined && { position: data.position }),
           ...(data.agency !== undefined && { agency: data.agency }),
           ...(data.officeAddress !== undefined && { officeAddress: data.officeAddress }),
+          // 2025 SALN Format fields
+          ...(data.complianceType !== undefined && { complianceType: data.complianceType }),
+          ...(complianceDateValue !== undefined && { complianceDate: complianceDateValue }),
+          ...(data.hasMultipleMarriages !== undefined && { hasMultipleMarriages: data.hasMultipleMarriages }),
+          ...(data.previousSpouseNames !== undefined && { previousSpouseNames: data.previousSpouseNames }),
+          ...(data.spouseIsPublicOfficial !== undefined && { spouseIsPublicOfficial: data.spouseIsPublicOfficial }),
+          ...(data.spousePosition !== undefined && { spousePosition: data.spousePosition }),
+          ...(data.spouseAgency !== undefined && { spouseAgency: data.spouseAgency }),
+          ...(data.spouseOfficeAddress !== undefined && { spouseOfficeAddress: data.spouseOfficeAddress }),
+          ...(data.unmarriedChildren !== undefined && { unmarriedChildren: data.unmarriedChildren }),
+          ...(data.hasNoBusinessInterests !== undefined && { hasNoBusinessInterests: data.hasNoBusinessInterests }),
+          ...(data.hasNoRelativesInGov !== undefined && { hasNoRelativesInGov: data.hasNoRelativesInGov }),
+          ...(data.governmentIdType !== undefined && { governmentIdType: data.governmentIdType }),
+          ...(data.governmentIdNumber !== undefined && { governmentIdNumber: data.governmentIdNumber }),
+          ...(govIdDateValue !== undefined && { governmentIdDateIssued: govIdDateValue }),
+          ...(data.declarantTin !== undefined && { declarantTin: data.declarantTin }),
+          ...(data.spouseTin !== undefined && { spouseTin: data.spouseTin }),
+          ...(spouseDobValue !== undefined && { spouseDateOfBirth: spouseDobValue }),
+          ...(data.governmentIdType2 !== undefined && { governmentIdType2: data.governmentIdType2 }),
+          ...(data.governmentIdNumber2 !== undefined && { governmentIdNumber2: data.governmentIdNumber2 }),
+          ...(govIdDate2Value !== undefined && { governmentIdDateIssued2: govIdDate2Value }),
+          ...(data.salnFormatVersion !== undefined && { salnFormatVersion: data.salnFormatVersion }),
           updatedAt: new Date(),
         })
         .where(eq(salnSubmissions.id, id));
@@ -1162,4 +1335,204 @@ export async function compareSALNYears(
       percentageChange: Math.round(percentageChange * 100) / 100,
     },
   };
+}
+
+// ============================================================================
+// 2025 SALN FORMAT - OWNER-BASED FILTERING HELPERS
+// ============================================================================
+
+/**
+ * Filter properties/liabilities by owner type
+ * Useful for generating owner-specific summaries in 2025 SALN format
+ *
+ * @param items - Array of items with 'owner' field
+ * @param owner - Owner type to filter by
+ * @returns Filtered array of items
+ */
+export function filterByOwner<T extends { owner?: string | null }>(
+  items: T[],
+  owner: PropertyOwner
+): T[] {
+  return items.filter((item) => item.owner === owner);
+}
+
+/**
+ * Group properties/liabilities by owner type
+ * Returns an object with arrays for each owner type
+ *
+ * @param items - Array of items with 'owner' field
+ * @returns Object with items grouped by owner
+ */
+export function groupByOwner<T extends { owner?: string | null }>(
+  items: T[]
+): Record<PropertyOwner, T[]> {
+  return {
+    declarant: items.filter((item) => item.owner === 'declarant' || !item.owner),
+    spouse: items.filter((item) => item.owner === 'spouse'),
+    child: items.filter((item) => item.owner === 'child'),
+    joint: items.filter((item) => item.owner === 'joint'),
+  };
+}
+
+/**
+ * Calculate totals for each owner from a complete SALN
+ * Used for 2025 SALN format reporting
+ *
+ * @param saln - Complete SALN with all sections
+ * @returns Totals broken down by owner
+ */
+export function calculateTotalsByOwner(saln: CompleteSaln): {
+  declarant: { assets: number; liabilities: number; netWorth: number };
+  spouse: { assets: number; liabilities: number; netWorth: number };
+  child: { assets: number; liabilities: number; netWorth: number };
+  joint: { assets: number; liabilities: number; netWorth: number };
+  combined: { assets: number; liabilities: number; netWorth: number };
+} {
+  // Group all items by owner
+  const realPropertiesByOwner = groupByOwner(saln.realProperties || []);
+  const personalPropertiesByOwner = groupByOwner(saln.personalProperties || []);
+  const liabilitiesByOwner = groupByOwner(saln.liabilities || []);
+
+  // Helper to calculate totals for a specific owner
+  const calculateOwnerTotals = (owner: PropertyOwner) => {
+    const realPropsTotal = realPropertiesByOwner[owner].reduce(
+      (sum, p) => sum + Number(p.currentFairMarketValue || 0),
+      0
+    );
+    const personalPropsTotal = personalPropertiesByOwner[owner].reduce(
+      (sum, p) => sum + Number(p.acquisitionCost || 0),
+      0
+    );
+    const assets = realPropsTotal + personalPropsTotal;
+
+    const liabilitiesTotal = liabilitiesByOwner[owner].reduce(
+      (sum, l) => sum + Number(l.outstandingBalance || 0),
+      0
+    );
+
+    return {
+      assets: Math.round(assets * 100) / 100,
+      liabilities: Math.round(liabilitiesTotal * 100) / 100,
+      netWorth: Math.round((assets - liabilitiesTotal) * 100) / 100,
+    };
+  };
+
+  const declarantTotals = calculateOwnerTotals('declarant');
+  const spouseTotals = calculateOwnerTotals('spouse');
+  const childTotals = calculateOwnerTotals('child');
+  const jointTotals = calculateOwnerTotals('joint');
+
+  // Combined totals
+  const combinedAssets =
+    declarantTotals.assets +
+    spouseTotals.assets +
+    childTotals.assets +
+    jointTotals.assets;
+  const combinedLiabilities =
+    declarantTotals.liabilities +
+    spouseTotals.liabilities +
+    childTotals.liabilities +
+    jointTotals.liabilities;
+
+  return {
+    declarant: declarantTotals,
+    spouse: spouseTotals,
+    child: childTotals,
+    joint: jointTotals,
+    combined: {
+      assets: Math.round(combinedAssets * 100) / 100,
+      liabilities: Math.round(combinedLiabilities * 100) / 100,
+      netWorth: Math.round((combinedAssets - combinedLiabilities) * 100) / 100,
+    },
+  };
+}
+
+/**
+ * Get child-specific items with their names
+ * Used for 2025 SALN format to list items belonging to unmarried children
+ *
+ * @param saln - Complete SALN with all sections
+ * @returns Object with child items grouped by child name
+ */
+export function getChildItems(saln: CompleteSaln): {
+  realProperties: Map<string, SalnRealProperty[]>;
+  personalProperties: Map<string, SalnPersonalProperty[]>;
+  liabilities: Map<string, SalnLiability[]>;
+  businessInterests: Map<string, SalnBusinessInterest[]>;
+} {
+  const groupByChildName = <T extends { owner?: string | null; childName?: string | null }>(
+    items: T[]
+  ): Map<string, T[]> => {
+    const result = new Map<string, T[]>();
+    items
+      .filter((item) => item.owner === 'child' && item.childName)
+      .forEach((item) => {
+        const name = item.childName!;
+        if (!result.has(name)) {
+          result.set(name, []);
+        }
+        result.get(name)!.push(item);
+      });
+    return result;
+  };
+
+  return {
+    realProperties: groupByChildName(saln.realProperties || []),
+    personalProperties: groupByChildName(saln.personalProperties || []),
+    liabilities: groupByChildName(saln.liabilities || []),
+    businessInterests: groupByChildName(saln.businessInterests || []),
+  };
+}
+
+/**
+ * Check if a SALN uses the 2025 format
+ * Based on salnFormatVersion field
+ *
+ * @param saln - SALN submission
+ * @returns true if using 2025 format
+ */
+export function is2025Format(saln: SalnSubmission): boolean {
+  return saln.salnFormatVersion === 2025;
+}
+
+/**
+ * Get compliance type label for display
+ *
+ * @param complianceType - The compliance type value
+ * @returns Human-readable label
+ */
+export function getComplianceTypeLabel(
+  complianceType?: ComplianceType | null
+): string {
+  switch (complianceType) {
+    case 'assumption':
+      return 'Assumption of Office';
+    case 'annual':
+      return 'Annual Declaration';
+    case 'exit':
+      return 'Separation from Service';
+    default:
+      return 'Annual Declaration';
+  }
+}
+
+/**
+ * Get owner label for display
+ *
+ * @param owner - The owner type value
+ * @returns Human-readable label
+ */
+export function getOwnerLabel(owner?: PropertyOwner | null): string {
+  switch (owner) {
+    case 'declarant':
+      return 'Declarant';
+    case 'spouse':
+      return 'Spouse';
+    case 'child':
+      return 'Unmarried Child';
+    case 'joint':
+      return 'Joint (Declarant & Spouse)';
+    default:
+      return 'Declarant';
+  }
 }

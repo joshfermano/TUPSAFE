@@ -1,6 +1,6 @@
 import { db } from '../db';
 import { salnSubmissions, profiles, positions } from '../schema';
-import { eq, isNull, or, and, sql } from 'drizzle-orm';
+import { eq, isNull, or } from 'drizzle-orm';
 
 const DEFAULT_AGENCY = 'Technological University of the Philippines - Manila';
 

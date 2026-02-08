@@ -547,6 +547,123 @@ export default function PDSEditPage({
     }
   }, [getDraftData, saveDraftToDatabase, saveNow]);
 
+  // Auto-save for upload: saves the current form to DB so attachments can reference valid entries
+  const handleAutoSaveForUpload = useCallback(
+    async (entryContext: {
+      entryType: 'training' | 'civil_service';
+      entryId: string | null;
+    }): Promise<{
+      success: boolean;
+      pdsSubmissionId?: string;
+      entryId?: string;
+      errorMessage?: string;
+    }> => {
+      try {
+        const formData = form.getValues();
+
+        // Pre-flight validation: check minimum required data before saving
+        if (entryContext.entryId) {
+          if (entryContext.entryType === 'training') {
+            const trainingIndex = formData.learningDevelopment?.findIndex(
+              (t) => t.id === entryContext.entryId
+            );
+
+            if (trainingIndex !== undefined && trainingIndex >= 0) {
+              const training = formData.learningDevelopment![trainingIndex];
+
+              if (!training.title || training.title.trim() === '') {
+                return {
+                  success: false,
+                  errorMessage:
+                    'Please enter a training title before uploading attachments.',
+                };
+              }
+            }
+          }
+
+          if (entryContext.entryType === 'civil_service') {
+            const csIndex = formData.eligibility?.findIndex(
+              (cs) => cs.id === entryContext.entryId
+            );
+
+            if (csIndex !== undefined && csIndex >= 0) {
+              const cs = formData.eligibility![csIndex];
+
+              if (!cs.eligibilityName || cs.eligibilityName.trim() === '') {
+                return {
+                  success: false,
+                  errorMessage:
+                    'Please enter an eligibility name before uploading attachments.',
+                };
+              }
+            }
+          }
+        }
+
+        // Transform data using the same pipeline as submit
+        const transformedData = transformPdsForSubmission(formData);
+
+        // Verify the entry exists in the transformed payload
+        // (the transformation may filter out incomplete entries)
+        if (entryContext.entryId) {
+          if (entryContext.entryType === 'training') {
+            const entryInPayload = transformedData.training?.find(
+              (t: any) => t.id === entryContext.entryId
+            );
+            if (!entryInPayload) {
+              return {
+                success: false,
+                errorMessage:
+                  'Please fill in the required date fields (From and To) before uploading attachments.',
+              };
+            }
+          } else if (entryContext.entryType === 'civil_service') {
+            const entryInPayload = transformedData.civilService?.find(
+              (cs: any) => cs.id === entryContext.entryId
+            );
+            if (!entryInPayload) {
+              return {
+                success: false,
+                errorMessage:
+                  'Please fill in the required fields before uploading attachments.',
+              };
+            }
+          }
+        }
+
+        // PATCH the existing PDS (edit page always has a pdsId)
+        const response = await fetch(`/api/pds/${pdsId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(transformedData),
+        });
+
+        if (!response.ok) {
+          const errorData = await response
+            .json()
+            .catch(() => ({ error: 'Unknown error' }));
+          throw new Error(errorData.error || 'Failed to update draft');
+        }
+
+        return {
+          success: true,
+          pdsSubmissionId: pdsId,
+          entryId: entryContext.entryId || undefined,
+        };
+      } catch (error) {
+        console.error('[PDS Edit] Auto-save for upload failed:', error);
+        return {
+          success: false,
+          errorMessage:
+            error instanceof Error
+              ? error.message
+              : 'Failed to save draft. Please try again.',
+        };
+      }
+    },
+    [form, pdsId]
+  );
+
   // Navigation handlers
   const handleNext = useCallback(async () => {
     const sectionFields = getSectionFields(currentSection);
@@ -1026,6 +1143,7 @@ export default function PDSEditPage({
             pdsSubmissionId={pdsId}
             canEdit={canEdit}
             initialAttachments={attachments}
+            onBeforeUpload={handleAutoSaveForUpload}
           >
             <form onSubmit={form.handleSubmit(handleSubmit)}>
               {/* Section content - No key prop to prevent remounting */}

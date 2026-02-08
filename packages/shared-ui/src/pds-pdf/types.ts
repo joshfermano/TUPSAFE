@@ -33,6 +33,7 @@ export interface PersonalInfo {
   sssNo?: string | null;
   tinNo?: string | null;
   agencyEmployeeNo?: string | null;
+  philsysNo?: string | null; // PhilSys Number (PSN) - CS Form 212 Item 13
   citizenship: {
     type: 'Filipino' | 'Dual';
     details?: string;

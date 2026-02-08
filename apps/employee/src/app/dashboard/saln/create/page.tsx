@@ -2,7 +2,7 @@
 
 /**
  * SALN (Statement of Assets, Liabilities, and Net Worth) Create Page
- * CSC Form No. SALN 2019 Revised
+ * CSC Form No. SALN 2025 Revised
  *
  * Comprehensive 7-step multi-step form with:
  * - Auto-save functionality (every 30 seconds)
@@ -17,7 +17,14 @@
  * - Mobile-responsive design
  */
 
-import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+  Suspense,
+} from 'react';
 import { useForm, FormProvider, useWatch } from 'react-hook-form';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
@@ -83,16 +90,19 @@ import { DotPattern } from '../../../../components/ui/dot-pattern';
 import { useAutoSave, getSavedDraft } from '../../../../hooks/useAutoSave';
 import { useAuth } from '../../../../providers/AuthProvider';
 import { useProfile } from '../../../../hooks/useProfile';
-import { useCreateSALN, useUpdateSALN, useSubmitSALN, useLatestSALN } from '../../../../hooks/useSALN';
+import {
+  useCreateSALN,
+  useUpdateSALN,
+  useSubmitSALN,
+  useLatestSALN,
+} from '../../../../hooks/useSALN';
 import { useDeadlineForForm } from '../../../../hooks/useDeadlines';
 
 // Components
 import { DeadlineNotice } from '../../../../components/dashboard/DeadlineNotice';
 
 // Transformations
-import {
-  transformSalnFromBackend,
-} from '../../../../lib/utils/saln-transformations';
+import { transformSalnFromBackend } from '../../../../lib/utils/saln-transformations';
 
 // Step components
 import {
@@ -287,26 +297,27 @@ export default function SALNCreatePage() {
     // 2. No draft ID from URL (i.e., not editing existing)
     // 3. Haven't already backfilled
     // 4. Current form values are empty
-    if (
-      profileData &&
-      !draftIdFromUrl &&
-      !hasBackfilledRef.current
-    ) {
+    if (profileData && !draftIdFromUrl && !hasBackfilledRef.current) {
       const currentPosition = form.getValues('submission.position');
       const currentAgency = form.getValues('submission.agency');
 
       // Only backfill if fields are empty (don't overwrite user input)
       if (!currentPosition && !currentAgency) {
         // profileData is ProfileData directly (not wrapped)
-        const positionValue = profileData.position?.title || profileData.positionTitle || '';
+        const positionValue =
+          profileData.position?.title || profileData.positionTitle || '';
 
         console.log('[SALN Create] Backfilling from profile:', {
           position: positionValue,
           agency: DEFAULT_AGENCY,
         });
 
-        form.setValue('submission.position', positionValue, { shouldDirty: false });
-        form.setValue('submission.agency', DEFAULT_AGENCY, { shouldDirty: false });
+        form.setValue('submission.position', positionValue, {
+          shouldDirty: false,
+        });
+        form.setValue('submission.agency', DEFAULT_AGENCY, {
+          shouldDirty: false,
+        });
         hasBackfilledRef.current = true;
       }
     }
@@ -359,7 +370,9 @@ export default function SALNCreatePage() {
   // The server handles all DB formatting via saln-transformations.ts.
   // This prevents double-transformation bugs where declarant metadata gets lost.
   const saveDraftToDatabase = useCallback(
-    async (data: SalnDraftData): Promise<{ success: boolean; draftId?: string }> => {
+    async (
+      data: SalnDraftData
+    ): Promise<{ success: boolean; draftId?: string }> => {
       try {
         // Send raw form data directly - server handles transformation
         // The form already has the nested shape: { submission: {...}, realProperties: [...], ... }
@@ -372,7 +385,10 @@ export default function SALNCreatePage() {
           // Update existing draft
           console.log('[SALN Create] Updating draft:', currentDraftId);
           await updateSALNMutation.mutateAsync(formData as any);
-          console.log('[SALN Create] Draft updated successfully:', currentDraftId);
+          console.log(
+            '[SALN Create] Draft updated successfully:',
+            currentDraftId
+          );
           return { success: true, draftId: currentDraftId };
         } else {
           // Create new draft
@@ -382,7 +398,10 @@ export default function SALNCreatePage() {
           if (result?.data?.id) {
             // Update both ref and state together
             updateDraftId(result.data.id);
-            console.log('[SALN Create] Draft created successfully:', result.data.id);
+            console.log(
+              '[SALN Create] Draft created successfully:',
+              result.data.id
+            );
             return { success: true, draftId: result.data.id };
           } else {
             throw new Error('No draft ID returned from server');
@@ -397,20 +416,21 @@ export default function SALNCreatePage() {
   );
 
   // Auto-save setup with database persistence (60-second intervals)
-  const { saveStatus, lastSaved, saveNow, clearSaved } = useAutoSave<SalnDraftData>({
-    key: `saln-draft-${userId}-${selectedYear}`,
-    getData: getDraftData,
-    debounceMs: 60000,
-    autoSaveIntervalMs: 60000,
-    enabled: !isSubmitting,
-    showToast: false,
-    onSave: async (data: SalnDraftData) => {
-      await saveDraftToDatabase(data);
-    },
-    onError: (error) => {
-      console.error('Draft save error:', error);
-    },
-  });
+  const { saveStatus, lastSaved, saveNow, clearSaved } =
+    useAutoSave<SalnDraftData>({
+      key: `saln-draft-${userId}-${selectedYear}`,
+      getData: getDraftData,
+      debounceMs: 60000,
+      autoSaveIntervalMs: 60000,
+      enabled: !isSubmitting,
+      showToast: false,
+      onSave: async (data: SalnDraftData) => {
+        await saveDraftToDatabase(data);
+      },
+      onError: (error) => {
+        console.error('Draft save error:', error);
+      },
+    });
 
   // Real-time financial calculations based on watched arrays
   // Using useWatch ensures proper reactivity to nested field changes
@@ -768,7 +788,9 @@ export default function SALNCreatePage() {
       case 5:
         return <NetWorthSummary summary={financialSummary} />;
       case 6:
-        return <ReviewSubmit data={form.getValues()} summary={financialSummary} />;
+        return (
+          <ReviewSubmit data={form.getValues()} summary={financialSummary} />
+        );
       default:
         return null;
     }
@@ -778,266 +800,266 @@ export default function SALNCreatePage() {
 
   return (
     <EmployeeOnlyGuard>
-    <div className="relative">
-      {/* Subtle background pattern */}
-      <DotPattern
-        className="fixed inset-0 -z-10 opacity-[0.03] dark:opacity-[0.05]"
-        width={20}
-        height={20}
-        cx={1}
-        cy={1}
-        cr={1}
-      />
+      <div className="relative">
+        {/* Subtle background pattern */}
+        <DotPattern
+          className="fixed inset-0 -z-10 opacity-[0.03] dark:opacity-[0.05]"
+          width={20}
+          height={20}
+          cx={1}
+          cy={1}
+          cr={1}
+        />
 
-      {/* Main content */}
-      <div className="max-w-5xl mx-auto space-y-8 pb-8">
-        {/* Header - Clean, Professional */}
-        <div className="pb-8 mb-8 border-b border-slate-200 dark:border-slate-800">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-                Create SALN Statement
-              </h1>
-              <Badge
-                variant="outline"
-                className="text-xs font-normal border-slate-300 dark:border-slate-700 w-fit">
-                CSC Form No. SALN 2019
-              </Badge>
-            </div>
-
-            {/* Save status - Always visible, mobile responsive */}
-            <div className="flex items-center gap-2 sm:gap-4">
-              {saveStatusDisplay}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSaveAndNavigate}
-                disabled={isSubmitting}
-                className="border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900">
-                <Save className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Save Draft</span>
-              </Button>
-            </div>
-          </div>
-
-          {/* Progress indicator */}
-          <SALNStepIndicator
-            steps={FORM_STEPS}
-            currentStep={currentStep}
-            completedSteps={completedSteps}
-            onStepClick={handleStepClick}
-            progressPercentage={formProgress}
-          />
-        </div>
-
-        {/* Deadline Notice Banner */}
-        <DeadlineNotice formType="saln" variant="banner" className="mb-6" />
-
-        {/* Auto-save info banner */}
-        {!hasSeenAutoSaveInfo && (
-          <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800 p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                    Auto-save Enabled
-                  </p>
-                  <p className="text-sm text-blue-700 dark:text-blue-300">
-                    Your progress is automatically saved every minute. You can
-                    safely navigate away and resume later, or manually save your
-                    work using the &ldquo;Save Draft&rdquo; button.
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setHasSeenAutoSaveInfo(true);
-                  localStorage.setItem(
-                    `saln-autosave-info-seen-${userId}`,
-                    'true'
-                  );
-                }}
-                className="flex-shrink-0 h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-100 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900">
-                <XCircle className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Form */}
-        <FormProvider {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)}>
-            <BlurFade delay={0.2}>
-              <Suspense fallback={<FormStepSkeleton fieldCount={7} />}>
-                {/* Step content - No key prop to prevent remounting */}
-                <div className="mb-10">{renderStep}</div>
-              </Suspense>
-            </BlurFade>
-
-            {/* Navigation buttons */}
-            <BlurFade delay={0.3}>
-              <div className="flex items-center justify-between gap-4 pt-10 border-t border-slate-200 dark:border-slate-800">
-                <Button
-                  type="button"
+        {/* Main content */}
+        <div className="max-w-5xl mx-auto space-y-8 pb-8">
+          {/* Header - Clean, Professional */}
+          <div className="pb-8 mb-8 border-b border-slate-200 dark:border-slate-800">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+                  Create SALN Statement
+                </h1>
+                <Badge
                   variant="outline"
-                  onClick={handlePrevious}
-                  disabled={currentStep === 0 || isSubmitting}>
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Previous
-                </Button>
-
-                <div className="flex items-center gap-3">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={handleSaveAndNavigate}
-                    disabled={isSubmitting}>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Draft
-                  </Button>
-
-                  {isLastStep ? (
-                    <Button
-                      type="button"
-                      onClick={() => setShowSubmitDialog(true)}
-                      disabled={isSubmitting}
-                      size="lg"
-                      className="min-w-[180px] bg-amber-600 hover:bg-amber-700 text-white font-semibold border-2 border-amber-400 animate-pulse-border dark:bg-amber-500 dark:hover:bg-amber-600 dark:border-amber-300">
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Submitting...
-                        </>
-                      ) : (
-                        <>
-                          <FileCheck className="h-4 w-4 mr-2" />
-                          Submit for Review
-                        </>
-                      )}
-                    </Button>
-                  ) : (
-                    <ShimmerButton
-                      type="button"
-                      onClick={handleNext}
-                      disabled={isSubmitting}>
-                      Next Section
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </ShimmerButton>
-                  )}
-                </div>
+                  className="text-xs font-normal border-slate-300 dark:border-slate-700 w-fit">
+                  CSC Form No. SALN 2025
+                </Badge>
               </div>
-            </BlurFade>
-          </form>
-        </FormProvider>
-      </div>
 
-      {/* Draft restoration dialog */}
-      <AlertDialog open={showDraftDialog} onOpenChange={setShowDraftDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-primary" />
-              Resume Previous Draft?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              We found a saved draft of your SALN form for {selectedYear}. Would
-              you like to continue where you left off, or start fresh?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleDiscardDraft}>
-              Start Fresh
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleRestoreDraft}>
-              Resume Draft
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              {/* Save status - Always visible, mobile responsive */}
+              <div className="flex items-center gap-2 sm:gap-4">
+                {saveStatusDisplay}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSaveAndNavigate}
+                  disabled={isSubmitting}
+                  className="border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900">
+                  <Save className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Save Draft</span>
+                </Button>
+              </div>
+            </div>
 
-      {/* Submission confirmation dialog */}
-      <AlertDialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
-        <AlertDialogContent className="max-w-lg">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-xl">
-              <AlertCircle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
-              Ready to Submit Your SALN?
-            </AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-4">
-                <p className="text-base">
-                  Please review your submission before proceeding. Once
-                  submitted, you won&apos;t be able to edit your SALN until it
-                  has been reviewed by an administrator.
-                </p>
+            {/* Progress indicator */}
+            <SALNStepIndicator
+              steps={FORM_STEPS}
+              currentStep={currentStep}
+              completedSteps={completedSteps}
+              onStepClick={handleStepClick}
+              progressPercentage={formProgress}
+            />
+          </div>
 
-                {/* Warning checklist */}
-                <div className="rounded-lg border-2 border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-4 space-y-3">
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-                    <div className="space-y-2 text-sm text-amber-900 dark:text-amber-100">
-                      <p className="font-semibold">
-                        Before submitting, please confirm:
-                      </p>
-                      <ul className="space-y-1.5 ml-1">
-                        <li className="flex items-start gap-2">
-                          <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
-                          <span>
-                            Have you reviewed all sections for accuracy?
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
-                          <span>
-                            Are all assets, liabilities, and properties listed?
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
-                          <span>
-                            Did you include all business interests and government relatives?
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
-                          <span>
-                            Is the net worth calculation accurate?
-                          </span>
-                        </li>
-                      </ul>
-                    </div>
+          {/* Deadline Notice Banner */}
+          <DeadlineNotice formType="saln" variant="banner" className="mb-6" />
+
+          {/* Auto-save info banner */}
+          {!hasSeenAutoSaveInfo && (
+            <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800 p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                      Auto-save Enabled
+                    </p>
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      Your progress is automatically saved every minute. You can
+                      safely navigate away and resume later, or manually save
+                      your work using the &ldquo;Save Draft&rdquo; button.
+                    </p>
                   </div>
                 </div>
-
-                <p className="text-sm text-muted-foreground">
-                  After submission, you won&apos;t be able to edit until
-                  reviewed by HR.
-                </p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setHasSeenAutoSaveInfo(true);
+                    localStorage.setItem(
+                      `saln-autosave-info-seen-${userId}`,
+                      'true'
+                    );
+                  }}
+                  className="flex-shrink-0 h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-100 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900">
+                  <XCircle className="h-4 w-4" />
+                </Button>
               </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2 sm:gap-0">
-            <AlertDialogCancel
-              onClick={() => setShowSubmitDialog(false)}
-              className="sm:mr-2">
-              Cancel - Continue Editing
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                setShowSubmitDialog(false);
-                form.handleSubmit(handleSubmit)();
-              }}
-              className="bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600">
-              <FileCheck className="h-4 w-4 mr-2" />
-              Yes, Submit for Review
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+            </div>
+          )}
+
+          {/* Form */}
+          <FormProvider {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)}>
+              <BlurFade delay={0.2}>
+                <Suspense fallback={<FormStepSkeleton fieldCount={7} />}>
+                  {/* Step content - No key prop to prevent remounting */}
+                  <div className="mb-10">{renderStep}</div>
+                </Suspense>
+              </BlurFade>
+
+              {/* Navigation buttons */}
+              <BlurFade delay={0.3}>
+                <div className="flex items-center justify-between gap-4 pt-10 border-t border-slate-200 dark:border-slate-800">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handlePrevious}
+                    disabled={currentStep === 0 || isSubmitting}>
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Previous
+                  </Button>
+
+                  <div className="flex items-center gap-3">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={handleSaveAndNavigate}
+                      disabled={isSubmitting}>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Draft
+                    </Button>
+
+                    {isLastStep ? (
+                      <Button
+                        type="button"
+                        onClick={() => setShowSubmitDialog(true)}
+                        disabled={isSubmitting}
+                        size="lg"
+                        className="min-w-[180px] bg-amber-600 hover:bg-amber-700 text-white font-semibold border-2 border-amber-400 animate-pulse-border dark:bg-amber-500 dark:hover:bg-amber-600 dark:border-amber-300">
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Submitting...
+                          </>
+                        ) : (
+                          <>
+                            <FileCheck className="h-4 w-4 mr-2" />
+                            Submit for Review
+                          </>
+                        )}
+                      </Button>
+                    ) : (
+                      <ShimmerButton
+                        type="button"
+                        onClick={handleNext}
+                        disabled={isSubmitting}>
+                        Next Section
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </ShimmerButton>
+                    )}
+                  </div>
+                </div>
+              </BlurFade>
+            </form>
+          </FormProvider>
+        </div>
+
+        {/* Draft restoration dialog */}
+        <AlertDialog open={showDraftDialog} onOpenChange={setShowDraftDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-primary" />
+                Resume Previous Draft?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                We found a saved draft of your SALN form for {selectedYear}.
+                Would you like to continue where you left off, or start fresh?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={handleDiscardDraft}>
+                Start Fresh
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={handleRestoreDraft}>
+                Resume Draft
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Submission confirmation dialog */}
+        <AlertDialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
+          <AlertDialogContent className="max-w-lg">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2 text-xl">
+                <AlertCircle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                Ready to Submit Your SALN?
+              </AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-4">
+                  <p className="text-base">
+                    Please review your submission before proceeding. Once
+                    submitted, you won&apos;t be able to edit your SALN until it
+                    has been reviewed by an administrator.
+                  </p>
+
+                  {/* Warning checklist */}
+                  <div className="rounded-lg border-2 border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-4 space-y-3">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                      <div className="space-y-2 text-sm text-amber-900 dark:text-amber-100">
+                        <p className="font-semibold">
+                          Before submitting, please confirm:
+                        </p>
+                        <ul className="space-y-1.5 ml-1">
+                          <li className="flex items-start gap-2">
+                            <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+                            <span>
+                              Have you reviewed all sections for accuracy?
+                            </span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+                            <span>
+                              Are all assets, liabilities, and properties
+                              listed?
+                            </span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+                            <span>
+                              Did you include all business interests and
+                              government relatives?
+                            </span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+                            <span>Is the net worth calculation accurate?</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-sm text-muted-foreground">
+                    After submission, you won&apos;t be able to edit until
+                    reviewed by HR.
+                  </p>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="gap-2 sm:gap-0">
+              <AlertDialogCancel
+                onClick={() => setShowSubmitDialog(false)}
+                className="sm:mr-2">
+                Cancel - Continue Editing
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  setShowSubmitDialog(false);
+                  form.handleSubmit(handleSubmit)();
+                }}
+                className="bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600">
+                <FileCheck className="h-4 w-4 mr-2" />
+                Yes, Submit for Review
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </EmployeeOnlyGuard>
   );
 }

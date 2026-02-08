@@ -51,7 +51,7 @@ interface JobsDataTableProps {
 const statusConfig = {
   open: {
     label: 'Open',
-    className: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-200',
+    className: 'bg-green-100 text-green-800 dark:bg-green-600 dark:text-green-200 border-green-200',
   },
   closed: {
     label: 'Closed',

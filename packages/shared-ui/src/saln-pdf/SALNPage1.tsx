@@ -1,16 +1,19 @@
 /**
  * SALN Page 1 - Main Page
- * CSC SALN Form 2019
+ * CSC SALN Form 2025
  *
  * Contains:
- * - CSC header (Revised as of January 2015)
- * - Form header and title
- * - Filing type checkboxes
+ * - CSC header
+ * - Form title and subtitle
+ * - Compliance checkboxes
  * - Declarant information
- * - Spouse information (if joint filing)
- * - Unmarried children below 18 years
- * - Real properties (first 10 items)
- * - Personal properties (first 8 items)
+ * - Spouse information (always shown, empty if no spouse)
+ * - Filing type checkboxes
+ * - Multiple marriages section
+ * - Unmarried children below 18 years table
+ * - Assets section with real and personal properties
+ * - Total assets row
+ * - Signature/Initial line
  */
 
 import { Page, View, Text } from '@react-pdf/renderer';
@@ -21,7 +24,6 @@ import {
   formatCurrency,
   formatDate,
   displayOrEmpty,
-  calculateAge,
 } from './SALNStyles';
 import type { SALNData } from './types';
 
@@ -31,12 +33,12 @@ interface SALNPage1Props {
 
 /**
  * Checkbox component for filing type selection
- * Shows filled checkbox (☑) or empty checkbox (☐)
+ * Shows filled checkbox or empty checkbox
  */
 function Checkbox({ checked }: { checked: boolean }) {
   return (
     <Text style={{ fontSize: SALN_FONT_SIZES.fieldValue, marginRight: 3 }}>
-      {checked ? '☑' : '☐'}
+      {checked ? '[\u2713]' : '[  ]'}
     </Text>
   );
 }
@@ -48,6 +50,18 @@ function capitalizeKind(kind: string): string {
   return kind.charAt(0).toUpperCase() + kind.slice(1);
 }
 
+/**
+ * Filter properties for ANNEX A display
+ * Only includes declarant and joint properties for main page
+ */
+function filterAnnexAProperties<T extends { owner?: string }>(
+  properties: T[]
+): T[] {
+  return properties.filter(
+    (p) => !p.owner || p.owner === 'declarant' || p.owner === 'joint'
+  );
+}
+
 export function SALNPage1({ data }: SALNPage1Props) {
   const {
     year,
@@ -56,14 +70,26 @@ export function SALNPage1({ data }: SALNPage1Props) {
     spouseInfo,
     realProperties = [],
     personalProperties = [],
+    complianceType,
+    complianceDate,
+    hasMultipleMarriages,
+    previousSpouseNames,
+    spousePosition,
+    spouseAgency,
+    spouseOfficeAddress,
+    unmarriedChildren,
   } = data;
 
   // Ensure children is always an array (handle null/undefined)
   const children = data.children || [];
 
+  // Filter properties for ANNEX A (only declarant/joint)
+  const annexARealProperties = filterAnnexAProperties(realProperties);
+  const annexAPersonalProperties = filterAnnexAProperties(personalProperties);
+
   // Limit real properties to first 10 items for page 1
-  const displayedRealProperties = realProperties.slice(0, 10);
-  const hasMoreRealProperties = realProperties.length > 10;
+  const displayedRealProperties = annexARealProperties.slice(0, 10);
+  const hasMoreRealProperties = annexARealProperties.length > 10;
 
   // Calculate subtotal for displayed real properties
   const realPropertiesSubtotal = displayedRealProperties.reduce(
@@ -72,8 +98,8 @@ export function SALNPage1({ data }: SALNPage1Props) {
   );
 
   // Limit personal properties to first 8 items for page 1
-  const displayedPersonalProperties = personalProperties.slice(0, 8);
-  const hasMorePersonalProperties = personalProperties.length > 8;
+  const displayedPersonalProperties = annexAPersonalProperties.slice(0, 8);
+  const hasMorePersonalProperties = annexAPersonalProperties.length > 8;
 
   // Calculate subtotal for displayed personal properties
   const personalPropertiesSubtotal = displayedPersonalProperties.reduce(
@@ -81,9 +107,19 @@ export function SALNPage1({ data }: SALNPage1Props) {
     0
   );
 
+  // Total assets (real + personal subtotals)
+  const totalAssetsPage1 = realPropertiesSubtotal + personalPropertiesSubtotal;
+
+  // Children data may come from either unmarriedChildren or children
+  const childrenData = (unmarriedChildren && unmarriedChildren.length > 0)
+    ? unmarriedChildren
+    : children;
+
   return (
     <Page size="LETTER" style={styles.page}>
-      {/* CSC Header - Top Right */}
+      {/* ============================================================ */}
+      {/* 1. CSC Header - Top Right                                    */}
+      {/* ============================================================ */}
       <Text
         style={{
           position: 'absolute',
@@ -93,60 +129,62 @@ export function SALNPage1({ data }: SALNPage1Props) {
           fontStyle: 'italic',
           textAlign: 'right',
         }}>
-        Revised as of January 2015{'\n'}
-        Per CSC Resolution No. 1500088{'\n'}
-        Promulgated on January 23, 2015
+        2025 SALN Form{'\n'}
+        Per CSC Resolution No. __________{'\n'}
+        Promulgated on __________
       </Text>
 
-      {/* Form Header */}
+      {/* ============================================================ */}
+      {/* 2. Form Title + Subtitle                                     */}
+      {/* ============================================================ */}
       <View style={styles.formHeader}>
         <Text style={styles.formTitle}>
-          STATEMENT OF ASSETS, LIABILITIES AND NET WORTH
+          SWORN STATEMENT OF ASSETS, LIABILITIES, AND NET WORTH
         </Text>
         <Text style={styles.formSubtitle}>
-          (As of {year ? year.toString() : '_____________'})
-        </Text>
-        <Text
-          style={[
-            styles.formSubtitle,
-            { fontSize: SALN_FONT_SIZES.legalText },
-          ]}>
-          PURSUANT TO REPUBLIC ACT NO. 6713 AND REPUBLIC ACT NO. 3019
+          (As required by R.A. No. 6713)
         </Text>
       </View>
 
-      {/* Filing Type */}
-      <View style={[styles.row, { marginBottom: 8, alignItems: 'center' }]}>
-        <View style={[styles.row, { alignItems: 'center', marginRight: 15 }]}>
-          <Checkbox checked={filingType === 'joint'} />
-          <Text style={{ fontSize: SALN_FONT_SIZES.fieldLabel }}>
-            Joint Filing
-          </Text>
-        </View>
-        <View style={[styles.row, { alignItems: 'center', marginRight: 15 }]}>
-          <Checkbox checked={filingType === 'separate'} />
-          <Text style={{ fontSize: SALN_FONT_SIZES.fieldLabel }}>
-            Separate Filing
-          </Text>
-        </View>
-        <View style={[styles.row, { alignItems: 'center' }]}>
-          <Checkbox checked={filingType === 'not_applicable'} />
-          <Text style={{ fontSize: SALN_FONT_SIZES.fieldLabel }}>
-            Not Applicable
-          </Text>
+      {/* ============================================================ */}
+      {/* 3. COMPLIANCE FOR: Checkboxes                                */}
+      {/* ============================================================ */}
+      <View style={{ marginBottom: 8 }}>
+        <Text style={styles.complianceLabel}>COMPLIANCE FOR:</Text>
+        <View style={[styles.row, { flexWrap: 'wrap', gap: 10 }]}>
+          <View style={[styles.row, { alignItems: 'center', marginRight: 10 }]}>
+            <Checkbox checked={complianceType === 'assumption'} />
+            <Text style={{ fontSize: SALN_FONT_SIZES.fieldLabel }}>
+              Assumption of office as of {complianceDate ? formatDate(complianceDate) : '__________'}
+            </Text>
+          </View>
+          <View style={[styles.row, { alignItems: 'center', marginRight: 10 }]}>
+            <Checkbox checked={complianceType === 'annual'} />
+            <Text style={{ fontSize: SALN_FONT_SIZES.fieldLabel }}>
+              Annual filing as of December 31, {year || '____'}
+            </Text>
+          </View>
+          <View style={[styles.row, { alignItems: 'center' }]}>
+            <Checkbox checked={complianceType === 'exit'} />
+            <Text style={{ fontSize: SALN_FONT_SIZES.fieldLabel }}>
+              Exit as of {complianceDate ? formatDate(complianceDate) : '__________'}
+            </Text>
+          </View>
         </View>
       </View>
 
-      {/* Declarant Information */}
+      {/* ============================================================ */}
+      {/* 4. DECLARANT Info Section                                     */}
+      {/* ============================================================ */}
       <View style={styles.declarantInfo}>
         <Text style={[styles.labelSmall, styles.bold, { marginBottom: 5 }]}>
           DECLARANT:
         </Text>
 
-        {/* Name Row */}
+        {/* Name Row: Family Name / First Name / M.I. */}
         <View style={styles.declarantRow}>
           <View style={{ width: '30%', paddingRight: 5 }}>
-            <Text style={styles.labelSmall}>Surname</Text>
+            <Text style={styles.labelSmall}>Family Name</Text>
             <Text style={styles.declarantValue}>
               {displayOrEmpty(declarantInfo.surname)}
             </Text>
@@ -158,7 +196,7 @@ export function SALNPage1({ data }: SALNPage1Props) {
             </Text>
           </View>
           <View style={{ width: '40%' }}>
-            <Text style={styles.labelSmall}>Middle Initial</Text>
+            <Text style={styles.labelSmall}>M.I.</Text>
             <Text style={styles.declarantValue}>
               {displayOrEmpty(declarantInfo.middleInitial)}
             </Text>
@@ -192,114 +230,187 @@ export function SALNPage1({ data }: SALNPage1Props) {
         </View>
       </View>
 
-      {/* Spouse Information (if joint filing) */}
-      {filingType === 'joint' && spouseInfo && (
-        <View style={styles.declarantInfo}>
-          <Text style={[styles.labelSmall, styles.bold, { marginBottom: 5 }]}>
-            SPOUSE:
-          </Text>
+      {/* ============================================================ */}
+      {/* 5. SPOUSE Info Section (always shown, empty if no spouse)     */}
+      {/* ============================================================ */}
+      <View style={styles.declarantInfo}>
+        <Text style={[styles.labelSmall, styles.bold, { marginBottom: 5 }]}>
+          SPOUSE:
+        </Text>
 
-          {/* Name Row */}
-          <View style={styles.declarantRow}>
-            <View style={{ width: '30%', paddingRight: 5 }}>
-              <Text style={styles.labelSmall}>Surname</Text>
-              <Text style={styles.declarantValue}>
-                {displayOrEmpty(spouseInfo.surname)}
-              </Text>
-            </View>
-            <View style={{ width: '30%', paddingRight: 5 }}>
-              <Text style={styles.labelSmall}>First Name</Text>
-              <Text style={styles.declarantValue}>
-                {displayOrEmpty(spouseInfo.firstName)}
-              </Text>
-            </View>
-            <View style={{ width: '40%' }}>
-              <Text style={styles.labelSmall}>Middle Initial</Text>
-              <Text style={styles.declarantValue}>
-                {displayOrEmpty(spouseInfo.middleInitial)}
-              </Text>
-            </View>
+        {/* Name Row */}
+        <View style={styles.declarantRow}>
+          <View style={{ width: '30%', paddingRight: 5 }}>
+            <Text style={styles.labelSmall}>Family Name</Text>
+            <Text style={styles.declarantValue}>
+              {spouseInfo ? displayOrEmpty(spouseInfo.surname) : 'N/A'}
+            </Text>
           </View>
-
-          {/* Position and Agency Row */}
-          <View style={styles.declarantRow}>
-            <View style={{ width: '50%', paddingRight: 5 }}>
-              <Text style={styles.labelSmall}>Position</Text>
-              <Text style={styles.declarantValue}>
-                {displayOrEmpty(spouseInfo.position)}
-              </Text>
-            </View>
-            <View style={{ width: '50%' }}>
-              <Text style={styles.labelSmall}>Agency/Office</Text>
-              <Text style={styles.declarantValue}>
-                {displayOrEmpty(spouseInfo.agency)}
-              </Text>
-            </View>
+          <View style={{ width: '30%', paddingRight: 5 }}>
+            <Text style={styles.labelSmall}>First Name</Text>
+            <Text style={styles.declarantValue}>
+              {spouseInfo ? displayOrEmpty(spouseInfo.firstName) : 'N/A'}
+            </Text>
           </View>
-
-          {/* Office Address Row */}
-          <View style={styles.declarantRow}>
-            <View style={{ width: '100%' }}>
-              <Text style={styles.labelSmall}>Office Address</Text>
-              <Text style={styles.declarantValue}>
-                {displayOrEmpty(spouseInfo.officeAddress)}
-              </Text>
-            </View>
+          <View style={{ width: '40%' }}>
+            <Text style={styles.labelSmall}>M.I.</Text>
+            <Text style={styles.declarantValue}>
+              {spouseInfo ? displayOrEmpty(spouseInfo.middleInitial) : 'N/A'}
+            </Text>
           </View>
         </View>
-      )}
 
-      {/* Unmarried Children Below 18 Years Section */}
-      <View style={[styles.subSectionHeader, { marginTop: 5 }]}>
-        <Text>UNMARRIED CHILDREN BELOW EIGHTEEN (18) YEARS OF AGE</Text>
+        {/* Position and Agency Row (footnote i: only declared if spouse is public official) */}
+        <View style={styles.declarantRow}>
+          <View style={{ width: '50%', paddingRight: 5 }}>
+            <Text style={styles.labelSmall}>Position</Text>
+            <Text style={styles.declarantValue}>
+              {displayOrEmpty(spousePosition || spouseInfo?.position)}
+            </Text>
+          </View>
+          <View style={{ width: '50%' }}>
+            <Text style={styles.labelSmall}>Agency/Office</Text>
+            <Text style={styles.declarantValue}>
+              {displayOrEmpty(spouseAgency || spouseInfo?.agency)}
+            </Text>
+          </View>
+        </View>
+
+        {/* Office Address Row */}
+        <View style={styles.declarantRow}>
+          <View style={{ width: '100%' }}>
+            <Text style={styles.labelSmall}>Office Address</Text>
+            <Text style={styles.declarantValue}>
+              {displayOrEmpty(spouseOfficeAddress || spouseInfo?.officeAddress)}
+            </Text>
+          </View>
+        </View>
       </View>
 
-      {/* Children Table */}
-      <View style={styles.table}>
-        <View style={styles.tableHeader}>
-          <View style={[styles.tableHeaderCell, { width: '50%' }]}>
-            <Text>NAME</Text>
-          </View>
-          <View style={[styles.tableHeaderCell, { width: '30%' }]}>
-            <Text>DATE OF BIRTH</Text>
-          </View>
-          <View style={[styles.tableHeaderCell, { width: '20%' }]}>
-            <Text style={styles.center}>AGE</Text>
-          </View>
-        </View>
+      {/* ============================================================ */}
+      {/* 6 & 7. Filing Notice Text + Filing Type Checkboxes            */}
+      {/* ============================================================ */}
+      <Text style={styles.filingNoticeText}>
+        SPOUSES, WHO ARE BOTH PUBLIC OFFICIALS OR EMPLOYEES, MAY FILE THE SALN JOINTLY OR SEPARATELY.
+      </Text>
+      <Text style={[styles.filingNoticeText, { marginTop: 0 }]}>
+        THE DECLARANT SHALL CHECK THE APPROPRIATE BOX
+      </Text>
 
-        {children.length > 0 ? (
-          children.map((child, index) => {
-            const age = calculateAge(child.dateOfBirth);
-            return (
-              <View key={index} style={styles.tableRow}>
-                <View style={[styles.tableCell, { width: '50%' }]}>
-                  <Text>{displayOrEmpty(child.name)}</Text>
-                </View>
-                <View style={[styles.tableCell, { width: '30%' }]}>
-                  <Text>{formatDate(child.dateOfBirth)}</Text>
-                </View>
-                <View style={[styles.tableCell, { width: '20%' }]}>
-                  <Text style={styles.center}>{age}</Text>
-                </View>
-              </View>
-            );
-          })
+      {/* 8. Filing Type Checkboxes */}
+      <View style={[styles.row, { marginBottom: 8, alignItems: 'center', justifyContent: 'center' }]}>
+        <View style={[styles.row, { alignItems: 'center', marginRight: 15 }]}>
+          <Checkbox checked={filingType === 'joint'} />
+          <Text style={{ fontSize: SALN_FONT_SIZES.fieldLabel }}>
+            Joint Filing
+          </Text>
+        </View>
+        <View style={[styles.row, { alignItems: 'center', marginRight: 15 }]}>
+          <Checkbox checked={filingType === 'separate'} />
+          <Text style={{ fontSize: SALN_FONT_SIZES.fieldLabel }}>
+            Separate Filing
+          </Text>
+        </View>
+        <View style={[styles.row, { alignItems: 'center' }]}>
+          <Checkbox checked={filingType === 'not_applicable'} />
+          <Text style={{ fontSize: SALN_FONT_SIZES.fieldLabel }}>
+            Not Applicable
+          </Text>
+        </View>
+      </View>
+
+      {/* ============================================================ */}
+      {/* 9. Multiple Marriages Section                                 */}
+      {/* ============================================================ */}
+      <View style={[styles.declarantInfo, { marginTop: 5 }]}>
+        <Text style={[styles.labelSmall, styles.bold, { marginBottom: 5 }]}>
+          IF WITH MULTIPLE MARRIAGES, INDICATE THE NAME/S OF FORMER SPOUSE/S:
+        </Text>
+        {hasMultipleMarriages ? (
+          <Text style={styles.declarantValue}>
+            {displayOrEmpty(previousSpouseNames)}
+          </Text>
         ) : (
-          <View style={styles.emptyRow}>
-            <Text style={styles.emptyText}>No children below 18 years old</Text>
+          <View style={[styles.row, { alignItems: 'center' }]}>
+            <Checkbox checked={true} />
+            <Text style={{ fontSize: SALN_FONT_SIZES.fieldLabel }}>
+              Not Applicable
+            </Text>
           </View>
         )}
       </View>
 
-      {/* Assets Section Header */}
-      <View style={styles.sectionHeader}>
-        <Text>ASSETS</Text>
+      {/* ============================================================ */}
+      {/* 10. Unmarried Children Below 18 Years Section                 */}
+      {/* ============================================================ */}
+      <View style={[styles.subSectionHeader, { marginTop: 5 }]}>
+        <Text>
+          UNMARRIED CHILDREN BELOW EIGHTEEN (18) YEARS OF AGE LIVING IN DECLARANT&apos;S HOUSEHOLD
+        </Text>
       </View>
 
-      {/* Real Properties Section */}
+      {/* Children Table */}
+      {childrenData.length > 0 ? (
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <View style={[styles.tableHeaderCell, { width: '70%' }]}>
+              <Text>NAME OF CHILD</Text>
+            </View>
+            <View style={[styles.tableHeaderCell, { width: '30%' }]}>
+              <Text style={styles.center}>AGE</Text>
+            </View>
+          </View>
+          {childrenData.map((child, index) => (
+            <View key={index} style={styles.tableRow}>
+              <View style={[styles.tableCell, { width: '70%' }]}>
+                <Text>{displayOrEmpty(child.name)}</Text>
+              </View>
+              <View style={[styles.tableCell, { width: '30%' }]}>
+                <Text style={styles.center}>{child.age}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : (
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <View style={[styles.tableHeaderCell, { width: '70%' }]}>
+              <Text>NAME OF CHILD</Text>
+            </View>
+            <View style={[styles.tableHeaderCell, { width: '30%' }]}>
+              <Text style={styles.center}>AGE</Text>
+            </View>
+          </View>
+          <View style={styles.emptyRow}>
+            <Text style={styles.emptyText}>No unmarried children below 18 years old</Text>
+          </View>
+        </View>
+      )}
+
+      {/* ============================================================ */}
+      {/* 11. Assets Section Header                                     */}
+      {/* ============================================================ */}
+      <View style={styles.sectionHeader}>
+        <Text>ASSETS, LIABILITIES AND NET WORTH</Text>
+      </View>
+      <View style={{ paddingHorizontal: 4, marginBottom: 3 }}>
+        <Text style={{ fontSize: SALN_FONT_SIZES.noteText, fontStyle: 'italic', textAlign: 'center' }}>
+          (Including those of the spouse and unmarried children below eighteen (18) years of age living in declarant&apos;s household)
+        </Text>
+      </View>
+
+      {/* Numbered heading: 1. ASSETS */}
+      <View style={{ marginBottom: 3, marginTop: 3 }}>
+        <Text style={{ fontSize: SALN_FONT_SIZES.sectionHeader, fontWeight: 'bold' }}>
+          1. ASSETS
+        </Text>
+      </View>
+
+      {/* ============================================================ */}
+      {/* Real Properties Section                                       */}
+      {/* ============================================================ */}
       <View style={styles.subSectionHeader}>
-        <Text>A. REAL PROPERTIES</Text>
+        <Text>a. Real Properties</Text>
       </View>
 
       <View style={styles.table}>
@@ -371,9 +482,7 @@ export function SALNPage1({ data }: SALNPage1Props) {
         {displayedRealProperties.length > 0 && (
           <View style={styles.subtotalRow}>
             <View style={[styles.tableCell, { width: '85%' }]}>
-              <Text style={styles.subtotalLabel}>
-                SUBTOTAL (Real Properties - Page 1)
-              </Text>
+              <Text style={styles.subtotalLabel}>Subtotal:</Text>
             </View>
             <View style={[styles.currencyCellNoBorder, { width: '15%' }]}>
               <Text style={styles.subtotalValue}>
@@ -389,9 +498,11 @@ export function SALNPage1({ data }: SALNPage1Props) {
         <Text style={styles.noteText}>(Continued on Page 3)</Text>
       )}
 
-      {/* Personal Properties Section */}
+      {/* ============================================================ */}
+      {/* Personal Properties Section                                   */}
+      {/* ============================================================ */}
       <View style={[styles.subSectionHeader, { marginTop: 5 }]}>
-        <Text>B. PERSONAL PROPERTIES</Text>
+        <Text>b. Personal Properties</Text>
       </View>
 
       <View style={styles.table}>
@@ -433,9 +544,7 @@ export function SALNPage1({ data }: SALNPage1Props) {
         {displayedPersonalProperties.length > 0 && (
           <View style={styles.subtotalRow}>
             <View style={[styles.tableCell, { width: '75%' }]}>
-              <Text style={styles.subtotalLabel}>
-                SUBTOTAL (Personal Properties - Page 1)
-              </Text>
+              <Text style={styles.subtotalLabel}>Subtotal:</Text>
             </View>
             <View style={[styles.currencyCellNoBorder, { width: '25%' }]}>
               <Text style={styles.subtotalValue}>
@@ -451,15 +560,41 @@ export function SALNPage1({ data }: SALNPage1Props) {
         <Text style={styles.noteText}>(Continued on Page 3)</Text>
       )}
 
-      {/* Page Footer */}
+      {/* ============================================================ */}
+      {/* 12. TOTAL ASSETS Row                                          */}
+      {/* ============================================================ */}
+      <View style={styles.totalAssetsRow}>
+        <Text style={{ fontSize: SALN_FONT_SIZES.sectionHeader, fontWeight: 'bold', marginRight: 10 }}>
+          TOTAL ASSETS:
+        </Text>
+        <Text style={{ fontSize: SALN_FONT_SIZES.currencyValue, fontWeight: 'bold', color: SALN_COLORS.currencyBlack }}>
+          {formatCurrency(totalAssetsPage1)}
+        </Text>
+      </View>
+
+      {/* ============================================================ */}
+      {/* 13. Signature/Initial Line at Bottom                          */}
+      {/* ============================================================ */}
+      <View style={styles.signatureInitialRight}>
+        <View style={{ width: 180 }}>
+          <View style={{ borderBottomWidth: 1, borderBottomColor: SALN_COLORS.borderColor, height: 25, marginBottom: 3 }} />
+          <Text style={{ fontSize: SALN_FONT_SIZES.fieldLabel, textAlign: 'center', fontStyle: 'italic' }}>
+            Signature/Initial of Declarant
+          </Text>
+        </View>
+      </View>
+
+      {/* ============================================================ */}
+      {/* 14. Page Footer                                               */}
+      {/* ============================================================ */}
       <Text
         style={[
           styles.pageNumber,
           { position: 'absolute', bottom: 10, textAlign: 'center' },
         ]}
-        render={({ pageNumber }) => `Page ${pageNumber}`}
-        fixed
-      />
+        fixed>
+        Page 1 of ___
+      </Text>
     </Page>
   );
 }

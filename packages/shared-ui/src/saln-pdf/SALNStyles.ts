@@ -75,7 +75,7 @@ export function ensureSALNFontsRegistered(baseUrl: string = ''): void {
 }
 
 /**
- * Color constants matching CSC SALN Form 2019 specifications
+ * Color constants matching CSC SALN Form 2019/2025 specifications
  * These colors ensure consistency with the official form layout
  */
 export const SALN_COLORS = {
@@ -93,7 +93,7 @@ export const SALN_COLORS = {
 };
 
 /**
- * Font sizes (in points) matching CSC SALN Form 2019 layout
+ * Font sizes (in points) matching CSC SALN Form 2019/2025 layout
  * All sizes are calibrated to fit standard letter-size paper (8.5" x 11")
  */
 export const SALN_FONT_SIZES = {
@@ -108,6 +108,7 @@ export const SALN_FONT_SIZES = {
   legalText: 6, // Legal/certification text
   footerText: 6, // Footer information
   noteText: 5, // Italic footnotes
+  checkboxText: 7, // Checkbox label text (2025 format)
 };
 
 /**
@@ -486,6 +487,119 @@ export const styles = StyleSheet.create({
     fontStyle: 'italic',
     color: SALN_COLORS.mediumGray,
     marginTop: 3,
+  },
+
+  // 2025 Format Checkbox Styles
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  checkboxText: {
+    fontSize: SALN_FONT_SIZES.checkboxText,
+    marginLeft: 3,
+  },
+  checkboxContainer: {
+    padding: 8,
+    borderWidth: 0.5,
+    borderColor: SALN_COLORS.borderColor,
+    marginBottom: 5,
+  },
+
+  // 2025 Format Section Styles
+  complianceSection: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 8,
+  },
+  multipleMarriagesSection: {
+    borderWidth: 0.5,
+    borderColor: SALN_COLORS.borderColor,
+    padding: 5,
+    marginTop: 5,
+    marginBottom: 5,
+  },
+  spousePublicOfficialSection: {
+    borderWidth: 0.5,
+    borderColor: SALN_COLORS.borderColor,
+    padding: 5,
+    marginTop: 5,
+    marginBottom: 5,
+  },
+  footerNotesSection: {
+    marginTop: 10,
+    paddingTop: 5,
+    borderTopWidth: 0.5,
+    borderTopColor: SALN_COLORS.borderColor,
+  },
+  secondSignatureSection: {
+    marginTop: 15,
+    paddingTop: 10,
+    borderTopWidth: 0.5,
+    borderTopColor: SALN_COLORS.borderColor,
+  },
+
+  // 2025 Format: Net Worth single-line display (replaces box)
+  netWorthLine: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 6,
+    marginTop: 8,
+    marginBottom: 8,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#000000',
+  },
+
+  // Total Assets row on page 1
+  totalAssetsRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    padding: 4,
+    marginTop: 3,
+    marginBottom: 3,
+  },
+
+  // Signature/Initial line (right-aligned, for page 1 bottom)
+  signatureInitialRight: {
+    marginTop: 15,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+
+  // Footnotes section at bottom of page
+  footnoteSection: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+  },
+  footnoteText: {
+    fontSize: 5,
+    fontStyle: 'italic',
+    color: '#333333',
+    marginBottom: 2,
+    lineHeight: 1.3,
+  },
+
+  // "COMPLIANCE FOR:" label
+  complianceLabel: {
+    fontSize: 7,
+    fontWeight: 'bold',
+    marginBottom: 3,
+  },
+
+  // Filing notice text (for the "SPOUSES WHO ARE BOTH..." note)
+  filingNoticeText: {
+    fontSize: 6,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginTop: 3,
+    marginBottom: 3,
+    color: '#333333',
   },
 });
 

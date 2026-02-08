@@ -27,7 +27,7 @@ import { Input } from '../../../../../components/ui/input';
 import { Button } from '../../../../../components/ui/button';
 import { WorkExperienceItem } from '../../../../../components/pds/array-items';
 import { type CompletePdsData } from '../../../../../lib/validations/pds-schema';
-import { autoSortWithNotification } from '../../../../../lib/utils/pds-sort';
+import { autoSortWithNotification, sortBySingleDate } from '../../../../../lib/utils/pds-sort';
 import { formatDateForInput, parseDateFromInput } from '../../../../../lib/utils/date-utils';
 import { usePdsContextSafe } from '../../../../../context/PdsContext';
 import { EntryAttachments } from '../../../../../components/pds/EntryAttachments';
@@ -43,10 +43,35 @@ export const SectionIV = memo(function SectionIV() {
     fields: eligibilityFields,
     append: appendEligibility,
     remove: removeEligibility,
+    replace: replaceEligibility,
   } = useFieldArray({
     control: form.control,
     name: 'eligibility',
   });
+
+  /**
+   * Auto-sort civil service eligibilities by exam date (latest first)
+   */
+  const sortEligibilityEntries = useCallback(() => {
+    const currentEligibility = form.getValues('eligibility');
+    if (currentEligibility.length <= 1) return;
+
+    const sorted = sortBySingleDate(currentEligibility, 'dateOfExam');
+    const wasReordered = currentEligibility.some(
+      (item, index) => item !== sorted[index]
+    );
+    if (wasReordered) {
+      replaceEligibility(sorted);
+      toast.info('Civil service eligibilities sorted by date (latest first)');
+    }
+  }, [form.getValues, replaceEligibility]);
+
+  /**
+   * Handle blur event on eligibility date fields to trigger auto-sort
+   */
+  const handleEligibilityDateBlur = useCallback(() => {
+    sortEligibilityEntries();
+  }, [sortEligibilityEntries]);
 
   // Generate stable IDs for new eligibility entries
   const handleAddEligibility = useCallback(() => {
@@ -59,7 +84,10 @@ export const SectionIV = memo(function SectionIV() {
       licenseNo: '',
       licenseValidityDate: null,
     });
-  }, [appendEligibility]);
+    startTransition(() => {
+      sortEligibilityEntries();
+    });
+  }, [appendEligibility, sortEligibilityEntries]);
 
   // Handle removing eligibility with attachment cleanup
   const handleRemoveEligibility = useCallback((index: number) => {
@@ -296,6 +324,7 @@ export const SectionIV = memo(function SectionIV() {
                               onChange={(e) => {
                                 field.onChange(parseDateFromInput(e.target.value));
                               }}
+                              onBlur={handleEligibilityDateBlur}
                               className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
                             />
                           </FormControl>
