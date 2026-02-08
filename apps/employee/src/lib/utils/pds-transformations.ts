@@ -216,6 +216,13 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
         return false;
       }
     );
+
+    // Sort eligibility by exam date (latest first)
+    transformedData.eligibility = [...transformedData.eligibility].sort((a: any, b: any) => {
+      const dateA = a.dateOfExam ? new Date(a.dateOfExam).getTime() : 0;
+      const dateB = b.dateOfExam ? new Date(b.dateOfExam).getTime() : 0;
+      return dateB - dateA;
+    });
   }
 
   // Convert Work Experience dates and filter empty entries
@@ -232,6 +239,16 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
     transformedData.workExperience = transformedData.workExperience.filter(
       (work: any) => work.dateFrom !== null && work.dateFrom !== undefined
     );
+
+    // Sort work experience by date (latest first)
+    transformedData.workExperience = [...transformedData.workExperience].sort((a: any, b: any) => {
+      const dateToA = a.dateTo ? new Date(a.dateTo).getTime() : Infinity;
+      const dateToB = b.dateTo ? new Date(b.dateTo).getTime() : Infinity;
+      if (dateToB !== dateToA) return dateToB - dateToA;
+      const dateFromA = a.dateFrom ? new Date(a.dateFrom).getTime() : Infinity;
+      const dateFromB = b.dateFrom ? new Date(b.dateFrom).getTime() : Infinity;
+      return dateFromB - dateFromA;
+    });
   }
 
   // Convert Voluntary Work dates and filter empty entries
@@ -248,6 +265,16 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
     transformedData.voluntaryWork = transformedData.voluntaryWork.filter(
       (vol: any) => vol.dateFrom !== null && vol.dateFrom !== undefined
     );
+
+    // Sort voluntary work by date (latest first)
+    transformedData.voluntaryWork = [...transformedData.voluntaryWork].sort((a: any, b: any) => {
+      const dateToA = a.dateTo ? new Date(a.dateTo).getTime() : Infinity;
+      const dateToB = b.dateTo ? new Date(b.dateTo).getTime() : Infinity;
+      if (dateToB !== dateToA) return dateToB - dateToA;
+      const dateFromA = a.dateFrom ? new Date(a.dateFrom).getTime() : Infinity;
+      const dateFromB = b.dateFrom ? new Date(b.dateFrom).getTime() : Infinity;
+      return dateFromB - dateFromA;
+    });
   }
 
   // Convert Learning Development dates and filter empty entries
@@ -302,6 +329,16 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
         return false;
       }
     );
+
+    // Sort learning/development by date (latest first)
+    transformedData.learningDevelopment = [...transformedData.learningDevelopment].sort((a: any, b: any) => {
+      const dateToA = a.dateTo ? new Date(a.dateTo).getTime() : Infinity;
+      const dateToB = b.dateTo ? new Date(b.dateTo).getTime() : Infinity;
+      if (dateToB !== dateToA) return dateToB - dateToA;
+      const dateFromA = a.dateFrom ? new Date(a.dateFrom).getTime() : Infinity;
+      const dateFromB = b.dateFrom ? new Date(b.dateFrom).getTime() : Infinity;
+      return dateFromB - dateFromA;
+    });
 
     // Log training data AFTER filtering
     console.log('[transformPdsForSubmission] Training entries AFTER filter:', {

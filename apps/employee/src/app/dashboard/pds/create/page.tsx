@@ -464,6 +464,7 @@ export default function PDSCreatePage() {
       success: boolean;
       pdsSubmissionId?: string;
       entryId?: string;
+      errorMessage?: string;
     }> => {
       try {
         const formData = form.getValues();
@@ -501,11 +502,10 @@ export default function PDSCreatePage() {
 
               // Check minimum requirements for upload
               if (!training.title || training.title.trim() === '') {
-                toast.error('Cannot upload attachment', {
-                  description: 'Please enter a training title first.',
-                  duration: 5000,
-                });
-                return { success: false };
+                return {
+                  success: false,
+                  errorMessage: 'Please enter a training title before uploading attachments.',
+                };
               }
 
               // Optional: Log missing dates (but allow upload)
@@ -525,11 +525,10 @@ export default function PDSCreatePage() {
 
               // Check minimum requirements for upload
               if (!cs.eligibilityName || cs.eligibilityName.trim() === '') {
-                toast.error('Cannot upload attachment', {
-                  description: 'Please enter an eligibility name first.',
-                  duration: 5000,
-                });
-                return { success: false };
+                return {
+                  success: false,
+                  errorMessage: 'Please enter an eligibility name before uploading attachments.',
+                };
               }
             }
           }
@@ -574,12 +573,10 @@ export default function PDSCreatePage() {
                   hint: 'Entry may have been filtered out due to missing required fields (dateFrom, dateTo)',
                 }
               );
-              toast.error('Cannot save entry', {
-                description:
-                  'Please fill in the required date fields (From and To) before uploading attachments.',
-                duration: 5000,
-              });
-              return { success: false };
+              return {
+                success: false,
+                errorMessage: 'Please fill in the required date fields (From and To) before uploading attachments.',
+              };
             }
           } else if (entryContext.entryType === 'civil_service') {
             const entryInPayload = transformedData.civilService?.find(
@@ -595,12 +592,10 @@ export default function PDSCreatePage() {
                   hint: 'Entry may have been filtered out due to missing required fields',
                 }
               );
-              toast.error('Cannot save entry', {
-                description:
-                  'Please fill in the required fields before uploading attachments.',
-                duration: 5000,
-              });
-              return { success: false };
+              return {
+                success: false,
+                errorMessage: 'Please fill in the required fields before uploading attachments.',
+              };
             }
           }
         }
@@ -676,7 +671,12 @@ export default function PDSCreatePage() {
         }
       } catch (error) {
         console.error('[PDS Create] Auto-save for upload failed:', error);
-        return { success: false };
+        return {
+          success: false,
+          errorMessage: error instanceof Error
+            ? error.message
+            : 'Failed to save draft. Please try again.',
+        };
       }
     },
     [form, saveNow, updateDraftId]

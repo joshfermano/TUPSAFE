@@ -15,15 +15,41 @@ import {
   displayOrEmpty,
 } from './PDSStyles';
 import { SectionHeader, ContinueText, PDSPageFooter } from './PDSComponents';
-import type { PDSData, WorkExperience } from './types';
+import type { PDSData, WorkExperience, CivilServiceEligibility } from './types';
 
 /**
- * Sort work experiences by date (latest first)
+ * Convert a date value to a numeric timestamp for sorting.
+ * null/undefined = present (ongoing) = Infinity so it sorts to the top.
+ */
+function toTimestamp(date: Date | string | null | undefined): number {
+  if (date === null || date === undefined) return Infinity;
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.getTime();
+}
+
+/**
+ * Sort work experiences by date (latest first).
+ * Primary: dateTo descending (null = present = top).
+ * Secondary: dateFrom descending.
  */
 function sortWorkExperienceDesc(items: WorkExperience[]): WorkExperience[] {
   return [...items].sort((a, b) => {
-    const dateA = a.dateFrom ? new Date(a.dateFrom).getTime() : 0;
-    const dateB = b.dateFrom ? new Date(b.dateFrom).getTime() : 0;
+    const dateToA = toTimestamp(a.dateTo);
+    const dateToB = toTimestamp(b.dateTo);
+    if (dateToB !== dateToA) return dateToB - dateToA;
+    const dateFromA = toTimestamp(a.dateFrom);
+    const dateFromB = toTimestamp(b.dateFrom);
+    return dateFromB - dateFromA;
+  });
+}
+
+/**
+ * Sort civil service eligibilities by dateOfExam descending.
+ */
+function sortEligibilityDesc(items: CivilServiceEligibility[]): CivilServiceEligibility[] {
+  return [...items].sort((a, b) => {
+    const dateA = a.dateOfExam ? new Date(a.dateOfExam).getTime() : 0;
+    const dateB = b.dateOfExam ? new Date(b.dateOfExam).getTime() : 0;
     return dateB - dateA;
   });
 }
@@ -35,6 +61,7 @@ interface PDSPage2Props {
 export function PDSPage2({ data }: PDSPage2Props) {
   const { civilServiceEligibilities, workExperiences } = data;
 
+  const sortedEligibilities = sortEligibilityDesc(civilServiceEligibilities);
   const sortedWorkExperiences = sortWorkExperienceDesc(workExperiences);
 
   // Minimum rows to display for each section
@@ -113,9 +140,9 @@ export function PDSPage2({ data }: PDSPage2Props) {
 
         {/* Eligibility Rows */}
         {Array.from({
-          length: Math.max(minEligibilityRows, civilServiceEligibilities.length),
+          length: Math.max(minEligibilityRows, sortedEligibilities.length),
         }).map((_, index) => {
-          const eligibility = civilServiceEligibilities[index];
+          const eligibility = sortedEligibilities[index];
           return (
             <View key={index} style={styles.fieldRow}>
               <View style={[styles.tableCell, styles.w25]}>

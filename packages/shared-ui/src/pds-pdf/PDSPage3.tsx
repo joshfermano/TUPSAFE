@@ -23,14 +23,30 @@ const MIN_TRAINING_ROWS = 18;
 const MIN_OTHER_INFO_ROWS = 7;
 
 /**
- * Sort array by date (latest first)
- * Uses dateFrom for sorting
+ * Convert a date value to a numeric timestamp for sorting.
+ * null/undefined = present (ongoing) = Infinity so it sorts to the top.
  */
-function sortByDateDesc<T extends { dateFrom: Date | string }>(items: T[]): T[] {
+function toTimestamp(date: Date | string | null | undefined): number {
+  if (date === null || date === undefined) return Infinity;
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.getTime();
+}
+
+/**
+ * Sort array by date (latest first).
+ * Primary: dateTo descending (null = present = top).
+ * Secondary: dateFrom descending.
+ */
+function sortByDateDesc<T extends { dateFrom: Date | string; dateTo?: Date | string | null }>(
+  items: T[]
+): T[] {
   return [...items].sort((a, b) => {
-    const dateA = new Date(a.dateFrom);
-    const dateB = new Date(b.dateFrom);
-    return dateB.getTime() - dateA.getTime();
+    const dateToA = toTimestamp(a.dateTo);
+    const dateToB = toTimestamp(b.dateTo);
+    if (dateToB !== dateToA) return dateToB - dateToA;
+    const dateFromA = toTimestamp(a.dateFrom);
+    const dateFromB = toTimestamp(b.dateFrom);
+    return dateFromB - dateFromA;
   });
 }
 

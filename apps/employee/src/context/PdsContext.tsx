@@ -49,6 +49,7 @@ interface PdsContextValue {
     success: boolean;
     pdsSubmissionId?: string;
     entryId?: string;
+    errorMessage?: string;
   }>;
 }
 
@@ -67,6 +68,7 @@ interface PdsProviderProps {
     success: boolean;
     pdsSubmissionId?: string;
     entryId?: string;
+    errorMessage?: string;
   }>;
 }
 
