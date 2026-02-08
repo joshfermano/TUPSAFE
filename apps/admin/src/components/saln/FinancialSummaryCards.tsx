@@ -34,8 +34,8 @@ export function FinancialSummaryCards({
           <CardTitle className="text-sm font-medium text-muted-foreground">
             Total Assets
           </CardTitle>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10">
-            <TrendingUp className="h-4 w-4 text-emerald-500" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/90">
+            <TrendingUp className="h-4 w-4 text-emerald-100" />
           </div>
         </CardHeader>
         <CardContent>
@@ -51,8 +51,8 @@ export function FinancialSummaryCards({
           <CardTitle className="text-sm font-medium text-muted-foreground">
             Total Liabilities
           </CardTitle>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-500/10">
-            <TrendingDown className="h-4 w-4 text-rose-500" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-500/90">
+            <TrendingDown className="h-4 w-4 text-rose-100" />
           </div>
         </CardHeader>
         <CardContent>
@@ -68,8 +68,8 @@ export function FinancialSummaryCards({
           <CardTitle className="text-sm font-medium text-muted-foreground">
             Net Worth
           </CardTitle>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10">
-            <Wallet className="h-4 w-4 text-blue-500" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/90">
+            <Wallet className="h-4 w-4 text-blue-100" />
           </div>
         </CardHeader>
         <CardContent>
