@@ -362,6 +362,17 @@ export default function PDSCreatePage() {
             // Transform backend data to frontend format
             const formData = transformPdsFromBackend(pdsData);
 
+            // Ensure children.dateOfBirth is a Date object
+            if (formData?.family?.children) {
+              formData.family.children = formData.family.children.map((child: any) => ({
+                ...child,
+                dateOfBirth:
+                  child.dateOfBirth && typeof child.dateOfBirth === 'string'
+                    ? new Date(child.dateOfBirth)
+                    : child.dateOfBirth,
+              }));
+            }
+
             // Reset form with transformed data
             form.reset(formData);
 
@@ -392,6 +403,16 @@ export default function PDSCreatePage() {
         savedDraft.formData &&
         Object.keys(savedDraft.formData).length > 0
       ) {
+        // Ensure children.dateOfBirth is a Date object
+        if (savedDraft.formData?.family?.children) {
+          savedDraft.formData.family.children = savedDraft.formData.family.children.map((child: any) => ({
+            ...child,
+            dateOfBirth:
+              child.dateOfBirth && typeof child.dateOfBirth === 'string'
+                ? new Date(child.dateOfBirth)
+                : child.dateOfBirth,
+          }));
+        }
         setHasSavedDraft(true);
         setShowDraftDialog(true);
       }
