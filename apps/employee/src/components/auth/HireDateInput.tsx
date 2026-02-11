@@ -20,19 +20,18 @@ export function HireDateInput({
   disabled = false,
   className,
 }: HireDateInputProps) {
-  // Convert Date to YYYY-MM-DD format for input
+  // Use inputValue as the source of truth for the input field
   const [inputValue, setInputValue] = useState<string>('');
 
-  // Update input value when prop value changes
+  // Update input value when prop value changes (only for valid Date)
   useEffect(() => {
     if (value instanceof Date && !isNaN(value.getTime())) {
       const year = value.getFullYear();
       const month = String(value.getMonth() + 1).padStart(2, '0');
-      const day = String(value.getDate()).padStart(2, '0');
+      const day = String(value.getDate());
       setInputValue(`${year}-${month}-${day}`);
-    } else {
-      setInputValue('');
     }
+    // Do not reset inputValue if value is undefined/null
   }, [value]);
 
   // Handle input change
@@ -40,12 +39,17 @@ export function HireDateInput({
     const newValue = e.target.value;
     setInputValue(newValue);
 
-    if (newValue) {
-      const date = new Date(newValue + 'T00:00:00');
+    // Only update parent value if input is a valid date string (YYYY-MM-DD)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(newValue)) {
+      const [year, month, day] = newValue.split('-').map(Number);
+      const date = new Date(year, month - 1, day);
       if (!isNaN(date.getTime())) {
         onChange(date);
+      } else {
+        onChange(undefined);
       }
     } else {
+      // Do not update parent value for incomplete input
       onChange(undefined);
     }
   };
@@ -138,7 +142,7 @@ export function HireDateInput({
           role="alert"
           aria-live="polite">
           <svg
-            className="w-4 h-4 flex-shrink-0"
+            className="w-4 h-4 shrink-0"
             fill="none"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -156,7 +160,7 @@ export function HireDateInput({
         <div
           id="hire-date-description"
           className="flex items-start space-x-2 text-xs text-slate-600 dark:text-slate-400">
-          <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
+          <Info className="h-4 w-4 shrink-0 mt-0.5" />
           <div className="space-y-1">
             <p>Enter the date you officially started working at TUP Manila.</p>
             <p className="text-slate-500 dark:text-slate-500">
@@ -169,7 +173,7 @@ export function HireDateInput({
       {/* Info Box for Important Notice */}
       <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
         <div className="flex items-start space-x-2">
-          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
           <div className="space-y-1">
             <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
               Important
