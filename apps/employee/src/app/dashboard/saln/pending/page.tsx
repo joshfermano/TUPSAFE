@@ -111,7 +111,7 @@ const safeDate = (date: string | null | undefined): string | undefined => {
 // Main SALN Pending Page
 function SALNPendingPageContent() {
   const router = useRouter();
-  const { user } = useAuth();
+  useAuth();
 
   // Fetch submissions using real API hook
   const {

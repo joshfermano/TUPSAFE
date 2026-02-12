@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { motion } from 'framer-motion';
 import {
   BarChart3,
@@ -96,7 +95,7 @@ const HeroSection = () => (
             { icon: Activity, label: 'Real-Time', value: 'Metrics' },
             { icon: PieChart, label: 'Custom', value: 'Reports' },
             { icon: TrendingUp, label: 'Performance', value: 'Analytics' },
-          ].map((stat, index) => (
+          ].map((stat) => (
             <MagicCard
               key={stat.label}
               className="p-6 text-center"
@@ -311,7 +310,7 @@ const DashboardPreviewSection = () => (
               icon: Users,
               color: 'blue',
             },
-          ].map((metric, index) => (
+          ].map((metric) => (
             <MagicCard
               key={metric.title}
               className="p-4"

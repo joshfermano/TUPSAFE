@@ -171,15 +171,16 @@ export async function POST(request: NextRequest, context: RouteContext) {
     // Validate against complete schema
     try {
       completeSalnSchema.parse(frontendSaln);
-    } catch (validationError: any) {
+    } catch (validationError: unknown) {
       console.error(
         '[POST /api/saln/[id]/submit] Validation failed:',
         validationError
       );
 
       // Extract validation errors with clear path information
+      const zodError = validationError as { errors?: Array<{ path: string[]; message: string }>; message?: string };
       const errors =
-        validationError.errors?.map((err: any) => ({
+        zodError.errors?.map((err) => ({
           path: err.path.join('.'),
           field: err.path[err.path.length - 1] || 'unknown',
           message: err.message,
@@ -189,13 +190,13 @@ export async function POST(request: NextRequest, context: RouteContext) {
       const firstError = errors[0];
       const errorSummary = firstError
         ? `${firstError.path}: ${firstError.message}`
-        : validationError.message;
+        : zodError.message;
 
       return NextResponse.json(
         {
           success: false,
           error: `SALN validation failed: ${errorSummary}`,
-          details: errors.length > 0 ? errors : validationError.message,
+          details: errors.length > 0 ? errors : zodError.message,
         },
         { status: 400 }
       );

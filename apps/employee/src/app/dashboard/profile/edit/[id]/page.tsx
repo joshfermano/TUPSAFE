@@ -87,7 +87,7 @@ interface EditProfilePageProps {
 
 export default function EditProfilePage({ params }: EditProfilePageProps) {
   // Unwrap params promise using React.use() for Next.js 15 compatibility
-  const { id } = use(params);
+  const { id: _id } = use(params);
 
   const router = useRouter();
   const { user } = useAuth();
@@ -183,7 +183,8 @@ export default function EditProfilePage({ params }: EditProfilePageProps) {
         avatarUrl: '',
       });
     }
-  }, [profile, form]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- form.reset is stable; including `form` causes infinite re-render loop
+  }, [profile]);
 
   // Handle avatar upload
   const handleAvatarUpload = useCallback(
@@ -296,6 +297,7 @@ export default function EditProfilePage({ params }: EditProfilePageProps) {
             profile.middleName ? profile.middleName + ' ' : ''
           }${profile.lastName}`
         : '',
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- accessing profile sub-fields; profile object ref changes but we only depend on name fields
     [profile?.firstName, profile?.middleName, profile?.lastName]
   );
 

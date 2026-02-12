@@ -227,6 +227,7 @@ export const AddressInput = memo(function AddressInput({
     }
 
     setPrevRegion(selectedRegion);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- prevRegion is a tracking ref for previous value comparison, not a reactive dependency
   }, [selectedRegion, showRegion, isProvinceValid, selectedProvince, name, setValue]);
 
   useEffect(() => {
@@ -243,6 +244,7 @@ export const AddressInput = memo(function AddressInput({
     }
 
     setPrevProvince(selectedProvince);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- prevProvince is a tracking ref for previous value comparison, not a reactive dependency
   }, [selectedProvince, isCityValid, selectedCity, name, setValue]);
 
   useEffect(() => {
@@ -264,6 +266,7 @@ export const AddressInput = memo(function AddressInput({
     }
 
     setPrevCity(selectedCity);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- prevCity is a tracking ref for previous value comparison, not a reactive dependency
   }, [selectedCity, barangays, name, setValue, getValues, sameAs]);
 
   // Memoize error lookup to avoid recalculating on every render

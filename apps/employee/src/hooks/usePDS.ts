@@ -43,15 +43,15 @@ export interface PDSFilters {
 
 export interface CreatePDSData {
   version?: number;
-  personalInfo?: Record<string, any>;
-  familyBackground?: Record<string, any>;
-  children?: Array<Record<string, any>>;
-  education?: Array<Record<string, any>>;
-  civilService?: Array<Record<string, any>>;
-  workExperience?: Array<Record<string, any>>;
-  voluntaryWork?: Array<Record<string, any>>;
-  training?: Array<Record<string, any>>;
-  otherInfo?: Record<string, any>;
+  personalInfo?: Record<string, unknown>;
+  familyBackground?: Record<string, unknown>;
+  children?: Array<Record<string, unknown>>;
+  education?: Array<Record<string, unknown>>;
+  civilService?: Array<Record<string, unknown>>;
+  workExperience?: Array<Record<string, unknown>>;
+  voluntaryWork?: Array<Record<string, unknown>>;
+  training?: Array<Record<string, unknown>>;
+  otherInfo?: Record<string, unknown>;
 }
 
 export interface UpdatePDSData extends CreatePDSData {

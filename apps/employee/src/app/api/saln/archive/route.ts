@@ -7,7 +7,7 @@ import { getArchivedSALN } from '@tupsafe/database/server';
  * Get archived SALN submissions
  * Returns: List of archived SALNs for the current user
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const supabase = await createServerClient('employee');
 

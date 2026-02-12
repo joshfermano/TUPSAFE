@@ -20,7 +20,7 @@
 import { useMemo, memo, useCallback, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../../providers/AuthProvider';
-import { useSALNSubmissions } from '../../../hooks/useSALN';
+import { useSALNSubmissions, type SALNSubmission } from '../../../hooks/useSALN';
 import { useSALNPdf } from '../../../hooks/useSALNPdf';
 import { useDeadlineForForm } from '../../../hooks/useDeadlines';
 import type { SALNData } from '../../../components/saln/pdf';
@@ -99,22 +99,22 @@ const CURRENCY_FORMATTER = new Intl.NumberFormat('en-PH', {
 });
 
 // Helper functions to calculate section totals from real data
-const calculateRealPropertyTotal = (properties: any[] | undefined | null): number => {
+const calculateRealPropertyTotal = (properties: { currentFairMarketValue?: number | string }[] | undefined | null): number => {
   if (!properties || !Array.isArray(properties)) return 0;
   return properties.reduce((sum, prop) => sum + (Number(prop.currentFairMarketValue) || 0), 0);
 };
 
-const calculatePersonalPropertyTotal = (properties: any[] | undefined | null): number => {
+const calculatePersonalPropertyTotal = (properties: { acquisitionCost?: number | string }[] | undefined | null): number => {
   if (!properties || !Array.isArray(properties)) return 0;
   return properties.reduce((sum, prop) => sum + (Number(prop.acquisitionCost) || 0), 0);
 };
 
-const calculateLiabilitiesTotal = (liabilities: any[] | undefined | null): number => {
+const calculateLiabilitiesTotal = (liabilities: { outstandingBalance?: number | string }[] | undefined | null): number => {
   if (!liabilities || !Array.isArray(liabilities)) return 0;
   return liabilities.reduce((sum, liab) => sum + (Number(liab.outstandingBalance) || 0), 0);
 };
 
-const calculateBusinessInterestsCount = (interests: any[] | undefined | null): number => {
+const calculateBusinessInterestsCount = (interests: unknown[] | undefined | null): number => {
   if (!interests || !Array.isArray(interests)) return 0;
   return interests.length;
 };
@@ -242,7 +242,7 @@ export default function SalnPage() {
 
   // Filter to only approved submissions for financial calculations
   const approvedSubmissions = useMemo(() => {
-    return submissions.filter((s: any) => s.status === 'approved');
+    return submissions.filter((s: SALNSubmission) => s.status === 'approved');
   }, [submissions]);
 
   // Get latest approved submission for Net Worth Overview
@@ -256,7 +256,7 @@ export default function SalnPage() {
   // Check if user has approved submission for the current year
   const hasApprovedForCurrentYear = useMemo(() => {
     return submissions?.some(
-      (s: any) => s.year === currentYear && s.status === 'approved'
+      (s: SALNSubmission) => s.year === currentYear && s.status === 'approved'
     ) ?? false;
   }, [submissions, currentYear]);
 
@@ -395,7 +395,7 @@ export default function SalnPage() {
   const recentActivity = useMemo((): ActivityItem[] => {
     if (submissions.length === 0) return [];
 
-    return submissions.slice(0, 3).map((s: any, index: number) => {
+    return submissions.slice(0, 3).map((s: SALNSubmission, index: number) => {
       let action = '';
       let section: string | undefined = undefined;
       let type: ActivityItem['type'] = 'update';
@@ -428,9 +428,9 @@ export default function SalnPage() {
   // Calculate year summaries from all submissions
   const yearSummaries = useMemo((): YearSummary[] => {
     return submissions
-      .sort((a: any, b: any) => b.year - a.year)
+      .sort((a: SALNSubmission, b: SALNSubmission) => b.year - a.year)
       .slice(0, 3)
-      .map((s: any) => ({
+      .map((s: SALNSubmission) => ({
         year: s.year,
         netWorth: Number(s.netWorth) || 0,
         status: s.status as 'draft' | 'submitted' | 'approved' | 'rejected',
@@ -449,11 +449,11 @@ export default function SalnPage() {
     }
 
     const totalSubmissions = submissions.length;
-    const approvedCount = submissions.filter((s: any) => s.status === 'approved').length;
+    const approvedCount = submissions.filter((s: SALNSubmission) => s.status === 'approved').length;
     const pendingReviews = submissions.filter(
-      (s: any) => s.status === 'submitted' || s.status === 'reviewing'
+      (s: SALNSubmission) => s.status === 'submitted' || s.status === 'reviewing'
     ).length;
-    const rejected = submissions.filter((s: any) => s.status === 'rejected').length;
+    const rejected = submissions.filter((s: SALNSubmission) => s.status === 'rejected').length;
 
     const approvalRate =
       totalSubmissions > 0
@@ -471,7 +471,7 @@ export default function SalnPage() {
   // Memoize net worth calculation - only compare approved submissions
   const netWorthChange = useMemo(() => {
     if (approvedSubmissions.length < 2) return null;
-    const sorted = [...approvedSubmissions].sort((a: any, b: any) => b.year - a.year);
+    const sorted = [...approvedSubmissions].sort((a: SALNSubmission, b: SALNSubmission) => b.year - a.year);
     const currentYear = sorted[0];
     const previousYear = sorted[1];
     const currentNetWorth = Number(currentYear.netWorth);
@@ -483,6 +483,7 @@ export default function SalnPage() {
 
   // Transform submission data to SALNData format for PDF
   const transformSALNToData = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- SALNSubmission type lacks 2025 fields and sub-types don't match SALNData PDF types
     (submission: any): SALNData => {
       // Parse spouse info - always shown in 2025 format
       let spouseInfo = undefined;
@@ -518,7 +519,7 @@ export default function SalnPage() {
         personalProperties: submission.personalProperties || [],
         liabilities: submission.liabilities || [],
         businessInterests:
-          submission.businessInterests?.map((bi: any) => ({
+          submission.businessInterests?.map((bi: { businessName?: string; entityName?: string; businessAddress?: string; nature?: string; natureOfBusiness?: string; dateAcquired?: string; dateOfAcquisition?: string; owner?: string }) => ({
             entityName: bi.businessName || bi.entityName || '',
             businessAddress: bi.businessAddress || '',
             natureOfBusiness: bi.nature || bi.natureOfBusiness || '',
@@ -526,7 +527,7 @@ export default function SalnPage() {
             owner: bi.owner,
           })) || [],
         relativesInGov:
-          submission.relativesInGov?.map((rel: any) => ({
+          submission.relativesInGov?.map((rel: { name?: string; relationship?: string; position?: string; agency?: string; agencyAddress?: string }) => ({
             name: rel.name || '',
             relationship: rel.relationship || '',
             position: rel.position || '',
@@ -569,7 +570,7 @@ export default function SalnPage() {
 
       try {
         setDownloadingId(id);
-        const submission = submissions.find((s: any) => s.id === id);
+        const submission = submissions.find((s: SALNSubmission) => s.id === id);
         if (!submission) {
           toast.error('Submission not found');
           return;
@@ -594,7 +595,7 @@ export default function SalnPage() {
 
       try {
         setDownloadingId(id);
-        const submission = submissions.find((s: any) => s.id === id);
+        const submission = submissions.find((s: SALNSubmission) => s.id === id);
         if (!submission) {
           toast.error('Submission not found');
           return;

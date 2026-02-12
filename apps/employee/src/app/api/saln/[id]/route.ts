@@ -340,11 +340,11 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     // ========================================================================
     // STEP 6: Transform frontend data to backend format
     // ========================================================================
-    const transformedData = transformSalnForSubmission(body);
+    const transformedData = transformSalnForSubmission(body) as UpdateSalnInput & Record<string, unknown>;
 
     // Validate year if provided
     if (transformedData.year !== undefined) {
-      const year = parseInt(transformedData.year);
+      const year = typeof transformedData.year === 'string' ? parseInt(transformedData.year) : transformedData.year;
       const currentYear = new Date().getFullYear();
       if (year < 2000 || year > currentYear + 1) {
         return NextResponse.json(
@@ -382,7 +382,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const updateInput: UpdateSalnInput = {
       year:
         transformedData.year !== undefined
-          ? parseInt(transformedData.year)
+          ? (typeof transformedData.year === 'string' ? parseInt(transformedData.year) : transformedData.year)
           : undefined,
       filingType: transformedData.filingType,
       spouseName: transformedData.spouseName,

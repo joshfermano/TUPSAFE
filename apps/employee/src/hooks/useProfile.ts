@@ -202,7 +202,7 @@ export function useUpdateProfile() {
         description: error instanceof Error ? error.message : 'An error occurred',
       });
     },
-    onSuccess: (data) => {
+    onSuccess: (_data) => {
       // Invalidate and refetch profile
       queryClient.invalidateQueries({ queryKey: ['profile'] });
 

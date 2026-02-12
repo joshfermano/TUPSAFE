@@ -510,7 +510,7 @@ const EmptyState = ({
 
 export default function PDSViewPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const {
     data: pdsResponse,
     isLoading: loading,

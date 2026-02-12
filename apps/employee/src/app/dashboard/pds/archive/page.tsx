@@ -459,7 +459,7 @@ YearGroup.displayName = 'YearGroup';
 // Main PDS Archive Page
 export default function PDSArchivePage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const {
     data: archivedData,
     isLoading: loading,

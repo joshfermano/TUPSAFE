@@ -10,12 +10,12 @@
  * Features: Auto-save every 30s, change tracking, optimistic updates
  */
 
-import React, { useMemo, useState, useEffect, useCallback, use } from 'react';
+import React, { useState, useEffect, useCallback, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../../providers/AuthProvider';
 import { useSALNSubmission, useUpdateSALN, useSubmitSALN } from '../../../../../hooks/useSALN';
-import { toast } from 'sonner';
+import { toast as _toast } from 'sonner';
 import { EmployeeOnlyGuard } from '../../../../../components/guards/EmployeeOnlyGuard';
 import {
   AlertCircle,
@@ -170,7 +170,7 @@ export default function SALNEditDetailPage({
 }) {
   const { id: salnId } = use(params);
   const router = useRouter();
-  const { user } = useAuth();
+  useAuth();
 
   // Use new React Query hooks
   const { data: salnData, isLoading } = useSALNSubmission(salnId);
@@ -212,9 +212,10 @@ export default function SALNEditDetailPage({
     }, 30000);
 
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- handleSaveDraft is stable via useCallback; including it would cause infinite re-renders
   }, [formData, hasUnsavedChanges]);
 
-  const handleFieldChange = useCallback((field: string, value: any) => {
+  const handleFieldChange = useCallback((field: string, value: unknown) => {
     setFormData((prev) => {
       if (!prev) return prev;
       return {
@@ -261,14 +262,15 @@ export default function SALNEditDetailPage({
       };
 
       // Use mutation to update
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- mutation expects strict type but dataToSave is dynamically constructed
       await updateMutation.mutateAsync(dataToSave as any);
       setHasUnsavedChanges(false);
-    } catch (error) {
+    } catch (_error) {
       // Error handling is done in the mutation
     } finally {
       setIsSaving(false);
     }
-  }, [salnId, formData, updateMutation]);
+  }, [formData, updateMutation]);
 
   const handleSubmit = useCallback(async () => {
     if (!formData) return;
@@ -306,16 +308,17 @@ export default function SALNEditDetailPage({
       };
 
       // Save first using mutation
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- mutation expects strict type but dataToSave is dynamically constructed
       await updateMutation.mutateAsync(dataToSave as any);
       // Then submit for review
       await submitMutation.mutateAsync();
       router.push('/dashboard/saln/view');
-    } catch (error) {
+    } catch (_error) {
       // Error handling is done in the mutations
     } finally {
       setIsSubmitting(false);
     }
-  }, [salnId, formData, updateMutation, submitMutation, router]);
+  }, [formData, updateMutation, submitMutation, router]);
 
   const handleCancel = useCallback(() => {
     if (hasUnsavedChanges) {

@@ -8,24 +8,19 @@ import {
   Shield,
   Clock,
   Users,
-  Download,
   Edit,
-  Eye,
   ArrowRight,
   Star,
   Zap,
   Lock,
   FileCheck,
   AlertCircle,
-  ChevronRight,
 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Badge } from '../../../components/ui/badge';
 import { Card } from '../../../components/ui/card';
 import { MagicCard } from '../../../components/ui/magic-card';
 import { NeonGradientCard } from '../../../components/ui/neon-gradient-card';
-import { Separator } from '../../../components/ui/separator';
-import { cn } from '../../../lib/utils';
 import Link from 'next/link';
 
 const HeroSection = () => (
@@ -94,7 +89,7 @@ const HeroSection = () => (
             { icon: CheckCircle, label: 'CSC Compliant', value: '100%' },
             { icon: Shield, label: 'Secure', value: 'End-to-End' },
             { icon: Clock, label: 'Time Saved', value: '75%' },
-          ].map((stat, index) => (
+          ].map((stat) => (
             <MagicCard
               key={stat.label}
               className="p-6 text-center"

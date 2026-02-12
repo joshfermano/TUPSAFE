@@ -2,15 +2,15 @@
  * SALN Data Transformation Utilities
  *
  * Comprehensive transformations for SALN data across different formats:
- * 1. Frontend ↔ Backend (API submission/retrieval)
+ * 1. Frontend <-> Backend (API submission/retrieval)
  * 2. Type conversions and decimal handling
  * 3. 2025 SALN format support with owner-based filtering
  *
  * Key transformations:
  * 1. Type conversions for serialized data:
- *    - dateOfAcquisition: string → Date (businessInterests)
- *    - All currency fields: number → string with toFixed(2) for database decimal(15,2)
- *    - yearAcquired: string/number → number
+ *    - dateOfAcquisition: string -> Date (businessInterests)
+ *    - All currency fields: number -> string with toFixed(2) for database decimal(15,2)
+ *    - yearAcquired: string/number -> number
  * 2. Nested structure flattening:
  *    - Frontend: { submission: {...}, realProperties: [...], ... }
  *    - Backend: Flat structure with separate sections
@@ -26,10 +26,24 @@
 
 import type { CompleteSalnData } from '../validations/saln-schema';
 
+// ============================================================================
+// Internal type aliases for data flowing across serialization boundaries
+// ============================================================================
+
+/** Values that may represent a date across serialization boundaries */
+type DateLike = Date | string | null | undefined;
+
+/** Values that may represent a number across serialization boundaries */
+type NumberLike = number | string | null | undefined;
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
 /**
  * Helper function to convert string to Date
  */
-function stringToDate(value: any): Date | null {
+function stringToDate(value: DateLike): Date | null {
   if (!value) return null;
   if (value instanceof Date) return value;
   if (typeof value === 'string') {
@@ -42,7 +56,7 @@ function stringToDate(value: any): Date | null {
 /**
  * Helper function to convert number/string to number with precision
  */
-function toCurrency(value: any): number {
+function toCurrency(value: NumberLike): number {
   if (value === null || value === undefined || value === '') return 0;
   if (typeof value === 'number') return Math.round(value * 100) / 100;
   if (typeof value === 'string') {
@@ -68,10 +82,10 @@ function formatForDb(value: number | null | undefined): string {
  * @param data - Flat payload with year, filingType at root level
  * @returns Properly formatted flat payload for DB
  */
-function transformFlatPayload(data: any): any {
-  const result: any = {
+function transformFlatPayload(data: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {
     year: data.year,
-    filingType: data.filingType || 'separate',
+    filingType: (data.filingType as string) || 'separate',
   };
 
   // Pass through optional scalar fields
@@ -163,60 +177,60 @@ function transformFlatPayload(data: any): any {
 
   // Transform arrays if present (ensure proper DB formatting)
   if (data.realProperties !== undefined) {
-    result.realProperties = data.realProperties.map((prop: any) => ({
+    result.realProperties = (data.realProperties as Record<string, unknown>[]).map((prop) => ({
       description: prop.description,
       kind: prop.kind,
       exactLocation: prop.exactLocation,
-      assessedValue: typeof prop.assessedValue === 'string' ? prop.assessedValue : formatForDb(toCurrency(prop.assessedValue)),
-      currentFairMarketValue: typeof prop.currentFairMarketValue === 'string' ? prop.currentFairMarketValue : formatForDb(toCurrency(prop.currentFairMarketValue)),
+      assessedValue: typeof prop.assessedValue === 'string' ? prop.assessedValue : formatForDb(toCurrency(prop.assessedValue as NumberLike)),
+      currentFairMarketValue: typeof prop.currentFairMarketValue === 'string' ? prop.currentFairMarketValue : formatForDb(toCurrency(prop.currentFairMarketValue as NumberLike)),
       acquisitionYear: prop.acquisitionYear,
       acquisitionMode: prop.acquisitionMode,
-      acquisitionCost: typeof prop.acquisitionCost === 'string' ? prop.acquisitionCost : formatForDb(toCurrency(prop.acquisitionCost)),
+      acquisitionCost: typeof prop.acquisitionCost === 'string' ? prop.acquisitionCost : formatForDb(toCurrency(prop.acquisitionCost as NumberLike)),
       // 2025 SALN Format fields
-      owner: prop.owner || 'declarant',
+      owner: (prop.owner as string) || 'declarant',
       childName: prop.childName ?? null,
     }));
   }
 
   if (data.personalProperties !== undefined) {
-    result.personalProperties = data.personalProperties.map((prop: any) => ({
+    result.personalProperties = (data.personalProperties as Record<string, unknown>[]).map((prop) => ({
       description: prop.description,
       yearAcquired: prop.yearAcquired,
-      acquisitionCost: typeof prop.acquisitionCost === 'string' ? prop.acquisitionCost : formatForDb(toCurrency(prop.acquisitionCost)),
+      acquisitionCost: typeof prop.acquisitionCost === 'string' ? prop.acquisitionCost : formatForDb(toCurrency(prop.acquisitionCost as NumberLike)),
       // 2025 SALN Format fields
-      owner: prop.owner || 'declarant',
+      owner: (prop.owner as string) || 'declarant',
       childName: prop.childName ?? null,
     }));
   }
 
   if (data.liabilities !== undefined) {
-    result.liabilities = data.liabilities.map((liability: any) => ({
+    result.liabilities = (data.liabilities as Record<string, unknown>[]).map((liability) => ({
       nature: liability.nature,
       creditorName: liability.creditorName,
-      outstandingBalance: typeof liability.outstandingBalance === 'string' ? liability.outstandingBalance : formatForDb(toCurrency(liability.outstandingBalance)),
+      outstandingBalance: typeof liability.outstandingBalance === 'string' ? liability.outstandingBalance : formatForDb(toCurrency(liability.outstandingBalance as NumberLike)),
       // 2025 SALN Format fields
-      owner: liability.owner || 'declarant',
+      owner: (liability.owner as string) || 'declarant',
       childName: liability.childName ?? null,
     }));
   }
 
   if (data.businessInterests !== undefined) {
-    result.businessInterests = data.businessInterests.map((interest: any) => {
-      const date = stringToDate(interest.dateOfAcquisition);
+    result.businessInterests = (data.businessInterests as Record<string, unknown>[]).map((interest) => {
+      const date = stringToDate(interest.dateOfAcquisition as DateLike);
       return {
         entityName: interest.entityName,
         businessAddress: interest.businessAddress,
         natureOfBusiness: interest.natureOfBusiness,
         dateOfAcquisition: date ? date.toISOString() : (interest.dateOfAcquisition || null),
         // 2025 SALN Format fields
-        owner: interest.owner || 'declarant',
+        owner: (interest.owner as string) || 'declarant',
         childName: interest.childName ?? null,
       };
     });
   }
 
   if (data.relativesInGov !== undefined) {
-    result.relativesInGov = data.relativesInGov.map((relative: any) => ({
+    result.relativesInGov = (data.relativesInGov as Record<string, unknown>[]).map((relative) => ({
       name: relative.name,
       relationship: relative.relationship,
       position: relative.position,
@@ -245,19 +259,21 @@ function transformFlatPayload(data: any): any {
  * @param data - Form data in frontend format (CompleteSalnData) or legacy flat format
  * @returns Transformed data ready for backend API
  */
-export function transformSalnForSubmission(data: Partial<CompleteSalnData> | any): any {
+export function transformSalnForSubmission(data: Partial<CompleteSalnData>): Record<string, unknown> {
   // ========================================================================
   // STEP 0: Detect input format (nested vs flat/legacy)
   // If data.submission exists, it's nested format from the form
   // If data.year exists but data.submission doesn't, it's already flat (legacy)
   // ========================================================================
   const isNestedFormat = data.submission !== undefined;
-  const isLegacyFlatFormat = !isNestedFormat && data.year !== undefined;
+  // Check for legacy flat format by casting to Record to access arbitrary keys
+  const dataRecord = data as Record<string, unknown>;
+  const isLegacyFlatFormat = !isNestedFormat && dataRecord.year !== undefined;
 
   // If already in flat format (legacy), just pass through with minimal processing
   if (isLegacyFlatFormat) {
     console.log('[transformSalnForSubmission] Detected legacy flat format, passing through');
-    return transformFlatPayload(data);
+    return transformFlatPayload(dataRecord);
   }
 
   // ========================================================================
@@ -272,11 +288,14 @@ export function transformSalnForSubmission(data: Partial<CompleteSalnData> | any
     officeAddress: undefined,
   };
 
+  // Access submission as Record for 2025 fields that may not exist on the fallback object
+  const sub = submission as Record<string, unknown>;
+
   // ========================================================================
   // STEP 2: Transform Real Properties (Section II) - preserve undefined
   // ========================================================================
   const realProperties = data.realProperties !== undefined
-    ? data.realProperties.map((prop: any) => ({
+    ? data.realProperties.map((prop) => ({
         description: prop.description,
         kind: prop.kind,
         exactLocation: prop.exactLocation,
@@ -295,7 +314,7 @@ export function transformSalnForSubmission(data: Partial<CompleteSalnData> | any
   // STEP 3: Transform Personal Properties (Section III) - preserve undefined
   // ========================================================================
   const personalProperties = data.personalProperties !== undefined
-    ? data.personalProperties.map((prop: any) => ({
+    ? data.personalProperties.map((prop) => ({
         description: prop.description,
         yearAcquired: prop.yearAcquired,
         acquisitionCost: formatForDb(toCurrency(prop.acquisitionCost)),
@@ -309,7 +328,7 @@ export function transformSalnForSubmission(data: Partial<CompleteSalnData> | any
   // STEP 4: Transform Liabilities (Section IV) - preserve undefined
   // ========================================================================
   const liabilities = data.liabilities !== undefined
-    ? data.liabilities.map((liability: any) => ({
+    ? data.liabilities.map((liability) => ({
         nature: liability.nature,
         creditorName: liability.creditorName,
         outstandingBalance: formatForDb(toCurrency(liability.outstandingBalance)),
@@ -323,9 +342,9 @@ export function transformSalnForSubmission(data: Partial<CompleteSalnData> | any
   // STEP 5: Transform Business Interests (Section V) - preserve undefined
   // ========================================================================
   const businessInterests = data.businessInterests !== undefined
-    ? data.businessInterests.map((interest: any) => {
+    ? data.businessInterests.map((interest) => {
         // Convert date to ISO string for database storage
-        const date = stringToDate(interest.dateOfAcquisition);
+        const date = stringToDate(interest.dateOfAcquisition as DateLike);
         return {
           entityName: interest.entityName,
           businessAddress: interest.businessAddress,
@@ -342,7 +361,7 @@ export function transformSalnForSubmission(data: Partial<CompleteSalnData> | any
   // STEP 6: Transform Relatives in Government (Section VI) - preserve undefined
   // ========================================================================
   const relativesInGov = data.relativesInGov !== undefined
-    ? data.relativesInGov.map((relative: any) => ({
+    ? data.relativesInGov.map((relative) => ({
         name: relative.name,
         relationship: relative.relationship,
         position: relative.position,
@@ -354,7 +373,7 @@ export function transformSalnForSubmission(data: Partial<CompleteSalnData> | any
   // STEP 7: Create backend-compatible data structure
   // Only include defined sections (undefined sections will be omitted)
   // ========================================================================
-  const result: any = {
+  const result: Record<string, unknown> = {
     year: submission.year,
     filingType: submission.filingType || 'separate',
   };
@@ -377,76 +396,82 @@ export function transformSalnForSubmission(data: Partial<CompleteSalnData> | any
   }
 
   // 2025 SALN Format submission fields
-  if (submission.complianceType !== undefined) {
-    result.complianceType = submission.complianceType;
+  // Use the Record<string, unknown> cast (sub) to access 2025 fields
+  // that may not exist on the fallback object type
+  if (sub.complianceType !== undefined) {
+    result.complianceType = sub.complianceType;
   }
-  if (submission.complianceDate !== undefined) {
-    result.complianceDate = submission.complianceDate instanceof Date
-      ? submission.complianceDate.toISOString()
-      : submission.complianceDate;
+  if (sub.complianceDate !== undefined) {
+    const cd = sub.complianceDate;
+    result.complianceDate = cd instanceof Date
+      ? cd.toISOString()
+      : cd;
   }
-  if (submission.hasMultipleMarriages !== undefined) {
-    result.hasMultipleMarriages = submission.hasMultipleMarriages;
+  if (sub.hasMultipleMarriages !== undefined) {
+    result.hasMultipleMarriages = sub.hasMultipleMarriages;
   }
-  if (submission.previousSpouseNames !== undefined) {
-    result.previousSpouseNames = submission.previousSpouseNames;
+  if (sub.previousSpouseNames !== undefined) {
+    result.previousSpouseNames = sub.previousSpouseNames;
   }
-  if (submission.spouseIsPublicOfficial !== undefined) {
-    result.spouseIsPublicOfficial = submission.spouseIsPublicOfficial;
+  if (sub.spouseIsPublicOfficial !== undefined) {
+    result.spouseIsPublicOfficial = sub.spouseIsPublicOfficial;
   }
-  if (submission.spousePosition !== undefined) {
-    result.spousePosition = submission.spousePosition;
+  if (sub.spousePosition !== undefined) {
+    result.spousePosition = sub.spousePosition;
   }
-  if (submission.spouseAgency !== undefined) {
-    result.spouseAgency = submission.spouseAgency;
+  if (sub.spouseAgency !== undefined) {
+    result.spouseAgency = sub.spouseAgency;
   }
-  if (submission.spouseOfficeAddress !== undefined) {
-    result.spouseOfficeAddress = submission.spouseOfficeAddress;
+  if (sub.spouseOfficeAddress !== undefined) {
+    result.spouseOfficeAddress = sub.spouseOfficeAddress;
   }
-  if (submission.unmarriedChildren !== undefined) {
-    result.unmarriedChildren = submission.unmarriedChildren;
+  if (sub.unmarriedChildren !== undefined) {
+    result.unmarriedChildren = sub.unmarriedChildren;
   }
-  if (submission.hasNoBusinessInterests !== undefined) {
-    result.hasNoBusinessInterests = submission.hasNoBusinessInterests;
+  if (sub.hasNoBusinessInterests !== undefined) {
+    result.hasNoBusinessInterests = sub.hasNoBusinessInterests;
   }
-  if (submission.hasNoRelativesInGov !== undefined) {
-    result.hasNoRelativesInGov = submission.hasNoRelativesInGov;
+  if (sub.hasNoRelativesInGov !== undefined) {
+    result.hasNoRelativesInGov = sub.hasNoRelativesInGov;
   }
-  if (submission.governmentIdType !== undefined) {
-    result.governmentIdType = submission.governmentIdType;
+  if (sub.governmentIdType !== undefined) {
+    result.governmentIdType = sub.governmentIdType;
   }
-  if (submission.governmentIdNumber !== undefined) {
-    result.governmentIdNumber = submission.governmentIdNumber;
+  if (sub.governmentIdNumber !== undefined) {
+    result.governmentIdNumber = sub.governmentIdNumber;
   }
-  if (submission.governmentIdDateIssued !== undefined) {
-    result.governmentIdDateIssued = submission.governmentIdDateIssued instanceof Date
-      ? submission.governmentIdDateIssued.toISOString()
-      : submission.governmentIdDateIssued;
+  if (sub.governmentIdDateIssued !== undefined) {
+    const gid = sub.governmentIdDateIssued;
+    result.governmentIdDateIssued = gid instanceof Date
+      ? gid.toISOString()
+      : gid;
   }
-  if (submission.declarantTin !== undefined) {
-    result.declarantTin = submission.declarantTin;
+  if (sub.declarantTin !== undefined) {
+    result.declarantTin = sub.declarantTin;
   }
-  if (submission.spouseTin !== undefined) {
-    result.spouseTin = submission.spouseTin;
+  if (sub.spouseTin !== undefined) {
+    result.spouseTin = sub.spouseTin;
   }
-  if (submission.spouseDateOfBirth !== undefined) {
-    result.spouseDateOfBirth = submission.spouseDateOfBirth instanceof Date
-      ? submission.spouseDateOfBirth.toISOString()
-      : submission.spouseDateOfBirth;
+  if (sub.spouseDateOfBirth !== undefined) {
+    const sdob = sub.spouseDateOfBirth;
+    result.spouseDateOfBirth = sdob instanceof Date
+      ? sdob.toISOString()
+      : sdob;
   }
-  if (submission.governmentIdType2 !== undefined) {
-    result.governmentIdType2 = submission.governmentIdType2;
+  if (sub.governmentIdType2 !== undefined) {
+    result.governmentIdType2 = sub.governmentIdType2;
   }
-  if (submission.governmentIdNumber2 !== undefined) {
-    result.governmentIdNumber2 = submission.governmentIdNumber2;
+  if (sub.governmentIdNumber2 !== undefined) {
+    result.governmentIdNumber2 = sub.governmentIdNumber2;
   }
-  if (submission.governmentIdDateIssued2 !== undefined) {
-    result.governmentIdDateIssued2 = submission.governmentIdDateIssued2 instanceof Date
-      ? submission.governmentIdDateIssued2.toISOString()
-      : submission.governmentIdDateIssued2;
+  if (sub.governmentIdDateIssued2 !== undefined) {
+    const gid2 = sub.governmentIdDateIssued2;
+    result.governmentIdDateIssued2 = gid2 instanceof Date
+      ? gid2.toISOString()
+      : gid2;
   }
-  if (submission.salnFormatVersion !== undefined) {
-    result.salnFormatVersion = submission.salnFormatVersion;
+  if (sub.salnFormatVersion !== undefined) {
+    result.salnFormatVersion = sub.salnFormatVersion;
   }
 
   // Only add section arrays if they were explicitly provided
@@ -466,141 +491,148 @@ export function transformSalnForSubmission(data: Partial<CompleteSalnData> | any
  * @param backendData - Data in backend format (from database)
  * @returns Transformed data ready for frontend form
  */
-export function transformSalnFromBackend(backendData: any): Partial<CompleteSalnData> {
+export function transformSalnFromBackend<T extends object>(backendInput: T): Partial<CompleteSalnData> {
+  // Cast to Record<string, unknown> for property access across serialization boundary
+  const backendData = backendInput as unknown as Record<string, unknown>;
   // ========================================================================
   // STEP 1: Transform submission metadata
   // Use nullish coalescing (??) to preserve empty strings if intentionally cleared
   // ========================================================================
   const submission = {
-    id: backendData.id,
-    userId: backendData.userId,
-    year: backendData.year,
-    filingType: backendData.filingType || 'separate',
-    spouseName: backendData.spouseName ?? null,
-    position: backendData.position ?? undefined,
-    agency: backendData.agency ?? undefined,
-    officeAddress: backendData.officeAddress ?? undefined,
-    status: backendData.status || 'draft',
-    submittedAt: backendData.submittedAt ? new Date(backendData.submittedAt) : null,
-    approvedAt: backendData.approvedAt ? new Date(backendData.approvedAt) : null,
-    approvedBy: backendData.approvedBy || null,
-    createdAt: backendData.createdAt ? new Date(backendData.createdAt) : new Date(),
-    updatedAt: backendData.updatedAt ? new Date(backendData.updatedAt) : new Date(),
+    id: backendData.id as string | undefined,
+    userId: backendData.userId as string | undefined,
+    year: backendData.year as number,
+    filingType: (backendData.filingType as string) || 'separate',
+    spouseName: (backendData.spouseName as string | null) ?? null,
+    position: (backendData.position as string | undefined) ?? undefined,
+    agency: (backendData.agency as string | undefined) ?? undefined,
+    officeAddress: (backendData.officeAddress as string | undefined) ?? undefined,
+    status: (backendData.status as string) || 'draft',
+    submittedAt: backendData.submittedAt ? new Date(backendData.submittedAt as string) : null,
+    approvedAt: backendData.approvedAt ? new Date(backendData.approvedAt as string) : null,
+    approvedBy: (backendData.approvedBy as string | null) || null,
+    createdAt: backendData.createdAt ? new Date(backendData.createdAt as string) : new Date(),
+    updatedAt: backendData.updatedAt ? new Date(backendData.updatedAt as string) : new Date(),
     // 2025 SALN Format fields
-    complianceType: backendData.complianceType || 'annual',
-    complianceDate: backendData.complianceDate ? new Date(backendData.complianceDate) : undefined,
-    hasMultipleMarriages: backendData.hasMultipleMarriages ?? false,
-    previousSpouseNames: backendData.previousSpouseNames ?? null,
-    spouseIsPublicOfficial: backendData.spouseIsPublicOfficial ?? false,
-    spousePosition: backendData.spousePosition ?? null,
-    spouseAgency: backendData.spouseAgency ?? null,
-    spouseOfficeAddress: backendData.spouseOfficeAddress ?? null,
-    unmarriedChildren: backendData.unmarriedChildren ?? [],
-    hasNoBusinessInterests: backendData.hasNoBusinessInterests ?? false,
-    hasNoRelativesInGov: backendData.hasNoRelativesInGov ?? false,
-    governmentIdType: backendData.governmentIdType ?? null,
-    governmentIdNumber: backendData.governmentIdNumber ?? null,
-    governmentIdDateIssued: backendData.governmentIdDateIssued ? new Date(backendData.governmentIdDateIssued) : null,
-    declarantTin: backendData.declarantTin ?? null,
-    spouseTin: backendData.spouseTin ?? null,
-    spouseDateOfBirth: backendData.spouseDateOfBirth ? new Date(backendData.spouseDateOfBirth) : null,
-    governmentIdType2: backendData.governmentIdType2 ?? null,
-    governmentIdNumber2: backendData.governmentIdNumber2 ?? null,
-    governmentIdDateIssued2: backendData.governmentIdDateIssued2 ? new Date(backendData.governmentIdDateIssued2) : null,
-    salnFormatVersion: backendData.salnFormatVersion ?? 2025,
+    complianceType: (backendData.complianceType as string) || 'annual',
+    complianceDate: backendData.complianceDate ? new Date(backendData.complianceDate as string) : undefined,
+    hasMultipleMarriages: (backendData.hasMultipleMarriages as boolean) ?? false,
+    previousSpouseNames: (backendData.previousSpouseNames as string | null) ?? null,
+    spouseIsPublicOfficial: (backendData.spouseIsPublicOfficial as boolean) ?? false,
+    spousePosition: (backendData.spousePosition as string | null) ?? null,
+    spouseAgency: (backendData.spouseAgency as string | null) ?? null,
+    spouseOfficeAddress: (backendData.spouseOfficeAddress as string | null) ?? null,
+    unmarriedChildren: (backendData.unmarriedChildren as Array<{ name: string; age: number }>) ?? [],
+    hasNoBusinessInterests: (backendData.hasNoBusinessInterests as boolean) ?? false,
+    hasNoRelativesInGov: (backendData.hasNoRelativesInGov as boolean) ?? false,
+    governmentIdType: (backendData.governmentIdType as string | null) ?? null,
+    governmentIdNumber: (backendData.governmentIdNumber as string | null) ?? null,
+    governmentIdDateIssued: backendData.governmentIdDateIssued ? new Date(backendData.governmentIdDateIssued as string) : null,
+    declarantTin: (backendData.declarantTin as string | null) ?? null,
+    spouseTin: (backendData.spouseTin as string | null) ?? null,
+    spouseDateOfBirth: backendData.spouseDateOfBirth ? new Date(backendData.spouseDateOfBirth as string) : null,
+    governmentIdType2: (backendData.governmentIdType2 as string | null) ?? null,
+    governmentIdNumber2: (backendData.governmentIdNumber2 as string | null) ?? null,
+    governmentIdDateIssued2: backendData.governmentIdDateIssued2 ? new Date(backendData.governmentIdDateIssued2 as string) : null,
+    salnFormatVersion: (backendData.salnFormatVersion as number) ?? 2025,
   };
 
   // ========================================================================
   // STEP 2: Transform Real Properties (Section II)
   // ========================================================================
-  const realProperties = (backendData.realProperties || []).map((prop: any) => ({
-    id: prop.id,
-    salnSubmissionId: prop.salnSubmissionId,
-    description: prop.description,
-    kind: prop.kind,
-    exactLocation: prop.exactLocation,
-    assessedValue: toCurrency(prop.assessedValue),
-    currentFairMarketValue: toCurrency(prop.currentFairMarketValue),
-    acquisitionYear: prop.acquisitionYear,
-    acquisitionMode: prop.acquisitionMode,
-    acquisitionCost: toCurrency(prop.acquisitionCost),
+  const rawRealProperties = (backendData.realProperties || []) as Record<string, unknown>[];
+  const realProperties = rawRealProperties.map((prop) => ({
+    id: prop.id as string | undefined,
+    salnSubmissionId: prop.salnSubmissionId as string | undefined,
+    description: prop.description as string,
+    kind: prop.kind as string,
+    exactLocation: prop.exactLocation as string,
+    assessedValue: toCurrency(prop.assessedValue as NumberLike),
+    currentFairMarketValue: toCurrency(prop.currentFairMarketValue as NumberLike),
+    acquisitionYear: prop.acquisitionYear as number,
+    acquisitionMode: prop.acquisitionMode as string,
+    acquisitionCost: toCurrency(prop.acquisitionCost as NumberLike),
     // 2025 SALN Format fields
-    owner: prop.owner || 'declarant',
-    childName: prop.childName ?? null,
+    owner: (prop.owner as string) || 'declarant',
+    childName: (prop.childName as string | null) ?? null,
   }));
 
   // ========================================================================
   // STEP 3: Transform Personal Properties (Section III)
   // ========================================================================
-  const personalProperties = (backendData.personalProperties || []).map((prop: any) => ({
-    id: prop.id,
-    salnSubmissionId: prop.salnSubmissionId,
-    description: prop.description,
-    yearAcquired: prop.yearAcquired,
-    acquisitionCost: toCurrency(prop.acquisitionCost),
+  const rawPersonalProperties = (backendData.personalProperties || []) as Record<string, unknown>[];
+  const personalProperties = rawPersonalProperties.map((prop) => ({
+    id: prop.id as string | undefined,
+    salnSubmissionId: prop.salnSubmissionId as string | undefined,
+    description: prop.description as string,
+    yearAcquired: prop.yearAcquired as number,
+    acquisitionCost: toCurrency(prop.acquisitionCost as NumberLike),
     // 2025 SALN Format fields
-    owner: prop.owner || 'declarant',
-    childName: prop.childName ?? null,
+    owner: (prop.owner as string) || 'declarant',
+    childName: (prop.childName as string | null) ?? null,
   }));
 
   // ========================================================================
   // STEP 4: Transform Liabilities (Section IV)
   // ========================================================================
-  const liabilities = (backendData.liabilities || []).map((liability: any) => ({
-    id: liability.id,
-    salnSubmissionId: liability.salnSubmissionId,
-    nature: liability.nature,
-    creditorName: liability.creditorName,
-    outstandingBalance: toCurrency(liability.outstandingBalance),
+  const rawLiabilities = (backendData.liabilities || []) as Record<string, unknown>[];
+  const liabilities = rawLiabilities.map((liability) => ({
+    id: liability.id as string | undefined,
+    salnSubmissionId: liability.salnSubmissionId as string | undefined,
+    nature: liability.nature as string,
+    creditorName: liability.creditorName as string,
+    outstandingBalance: toCurrency(liability.outstandingBalance as NumberLike),
     // 2025 SALN Format fields
-    owner: liability.owner || 'declarant',
-    childName: liability.childName ?? null,
+    owner: (liability.owner as string) || 'declarant',
+    childName: (liability.childName as string | null) ?? null,
   }));
 
   // ========================================================================
   // STEP 5: Transform Business Interests (Section V)
   // ========================================================================
-  const businessInterests = (backendData.businessInterests || []).map((interest: any) => ({
-    id: interest.id,
-    salnSubmissionId: interest.salnSubmissionId,
-    entityName: interest.entityName,
-    businessAddress: interest.businessAddress,
-    natureOfBusiness: interest.natureOfBusiness,
-    dateOfAcquisition: stringToDate(interest.dateOfAcquisition),
+  const rawBusinessInterests = (backendData.businessInterests || []) as Record<string, unknown>[];
+  const businessInterests = rawBusinessInterests.map((interest) => ({
+    id: interest.id as string | undefined,
+    salnSubmissionId: interest.salnSubmissionId as string | undefined,
+    entityName: interest.entityName as string,
+    businessAddress: interest.businessAddress as string,
+    natureOfBusiness: interest.natureOfBusiness as string,
+    dateOfAcquisition: stringToDate(interest.dateOfAcquisition as DateLike),
     // 2025 SALN Format fields
-    owner: interest.owner || 'declarant',
-    childName: interest.childName ?? null,
+    owner: (interest.owner as string) || 'declarant',
+    childName: (interest.childName as string | null) ?? null,
   }));
 
   // ========================================================================
   // STEP 6: Transform Relatives in Government (Section VI)
   // ========================================================================
-  const relativesInGov = (backendData.relativesInGov || []).map((relative: any) => ({
-    id: relative.id,
-    salnSubmissionId: relative.salnSubmissionId,
-    name: relative.name,
-    relationship: relative.relationship,
-    position: relative.position,
-    agencyAddress: relative.agencyAddress,
+  const rawRelatives = (backendData.relativesInGov || []) as Record<string, unknown>[];
+  const relativesInGov = rawRelatives.map((relative) => ({
+    id: relative.id as string | undefined,
+    salnSubmissionId: relative.salnSubmissionId as string | undefined,
+    name: relative.name as string,
+    relationship: relative.relationship as string,
+    position: relative.position as string,
+    agencyAddress: relative.agencyAddress as string,
   }));
 
   // ========================================================================
   // STEP 7: Calculate totals (Section VII - Summary)
   // ========================================================================
   const totalRealPropertyValue = realProperties.reduce(
-    (sum: number, prop: any) => sum + (prop.currentFairMarketValue || 0),
+    (sum: number, prop) => sum + (prop.currentFairMarketValue || 0),
     0
   );
 
   const totalPersonalPropertyValue = personalProperties.reduce(
-    (sum: number, prop: any) => sum + (prop.acquisitionCost || 0),
+    (sum: number, prop) => sum + (prop.acquisitionCost || 0),
     0
   );
 
   const totalAssets = totalRealPropertyValue + totalPersonalPropertyValue;
 
   const totalLiabilities = liabilities.reduce(
-    (sum: number, liability: any) => sum + (liability.outstandingBalance || 0),
+    (sum: number, liability) => sum + (liability.outstandingBalance || 0),
     0
   );
 
@@ -625,7 +657,7 @@ export function transformSalnFromBackend(backendData: any): Partial<CompleteSaln
     businessInterests,
     relativesInGov,
     calculations,
-  };
+  } as unknown as Partial<CompleteSalnData>;
 }
 
 /**
@@ -643,16 +675,16 @@ export function calculateSalnTotals(data: Partial<CompleteSalnData>): {
   netWorth: number;
 } {
   const totalRealPropertyValue = (data.realProperties || []).reduce(
-    (sum: number, prop: any) => {
-      const value = toCurrency(prop.currentFairMarketValue);
+    (sum: number, prop) => {
+      const value = toCurrency(prop.currentFairMarketValue as NumberLike);
       return sum + (isNaN(value) ? 0 : value);
     },
     0
   );
 
   const totalPersonalPropertyValue = (data.personalProperties || []).reduce(
-    (sum: number, prop: any) => {
-      const value = toCurrency(prop.acquisitionCost);
+    (sum: number, prop) => {
+      const value = toCurrency(prop.acquisitionCost as NumberLike);
       return sum + (isNaN(value) ? 0 : value);
     },
     0
@@ -661,8 +693,8 @@ export function calculateSalnTotals(data: Partial<CompleteSalnData>): {
   const totalAssets = totalRealPropertyValue + totalPersonalPropertyValue;
 
   const totalLiabilities = (data.liabilities || []).reduce(
-    (sum: number, liability: any) => {
-      const value = toCurrency(liability.outstandingBalance);
+    (sum: number, liability) => {
+      const value = toCurrency(liability.outstandingBalance as NumberLike);
       return sum + (isNaN(value) ? 0 : value);
     },
     0
@@ -736,24 +768,24 @@ export function calculateTotalsByOwner(data: Partial<CompleteSalnData>): {
 } {
   const realProps = data.realProperties || [];
   const personalProps = data.personalProperties || [];
-  const liabilities = data.liabilities || [];
+  const liabilitiesArr = data.liabilities || [];
 
   const realByOwner = groupByOwner(realProps);
   const personalByOwner = groupByOwner(personalProps);
-  const liabilitiesByOwner = groupByOwner(liabilities);
+  const liabilitiesByOwner = groupByOwner(liabilitiesArr);
 
   const calculateOwnerTotals = (owner: PropertyOwner) => {
     const realTotal = realByOwner[owner].reduce(
-      (sum, p: any) => sum + toCurrency(p.currentFairMarketValue),
+      (sum, p) => sum + toCurrency(p.currentFairMarketValue as NumberLike),
       0
     );
     const personalTotal = personalByOwner[owner].reduce(
-      (sum, p: any) => sum + toCurrency(p.acquisitionCost),
+      (sum, p) => sum + toCurrency(p.acquisitionCost as NumberLike),
       0
     );
     const assets = realTotal + personalTotal;
     const liabTotal = liabilitiesByOwner[owner].reduce(
-      (sum, l: any) => sum + toCurrency(l.outstandingBalance),
+      (sum, l) => sum + toCurrency(l.outstandingBalance as NumberLike),
       0
     );
 
@@ -790,8 +822,8 @@ export function calculateTotalsByOwner(data: Partial<CompleteSalnData>): {
  * @param submission - SALN submission object
  * @returns true if using 2025 format
  */
-export function is2025Format(submission: any): boolean {
-  return submission?.salnFormatVersion === 2025;
+export function is2025Format(submission: object | null | undefined): boolean {
+  return (submission as Record<string, unknown> | null | undefined)?.salnFormatVersion === 2025;
 }
 
 /**
@@ -838,12 +870,12 @@ export function getOwnerLabel(owner?: PropertyOwner | null): string {
  * @param obj - Object with snake_case keys
  * @returns Object with camelCase keys
  */
-export function snakeToCamel<T extends Record<string, any>>(obj: T): Record<string, any> {
-  const result: Record<string, any> = {};
+export function snakeToCamel<T extends Record<string, unknown>>(obj: T): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
 
   for (const key in obj) {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+      const camelKey = key.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
       result[camelKey] = obj[key];
     }
   }
@@ -857,8 +889,8 @@ export function snakeToCamel<T extends Record<string, any>>(obj: T): Record<stri
  * @param obj - Object with camelCase keys
  * @returns Object with snake_case keys
  */
-export function camelToSnake<T extends Record<string, any>>(obj: T): Record<string, any> {
-  const result: Record<string, any> = {};
+export function camelToSnake<T extends Record<string, unknown>>(obj: T): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
 
   for (const key in obj) {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
@@ -875,10 +907,12 @@ export function camelToSnake<T extends Record<string, any>>(obj: T): Record<stri
  * @param submission - SALN submission data
  * @returns Object with validation result and missing fields
  */
-export function validate2025RequiredFields(submission: any): {
+export function validate2025RequiredFields<T extends object>(submissionInput: T): {
   isValid: boolean;
   missingFields: string[];
 } {
+  // Cast to Record<string, unknown> for dynamic property access
+  const submission = submissionInput as unknown as Record<string, unknown>;
   const missingFields: string[] = [];
 
   // Check compliance type (required for 2025)
@@ -916,7 +950,7 @@ export function validate2025RequiredFields(submission: any): {
  * Get default values for a new 2025 SALN submission
  * @returns Default values object
  */
-export function get2025DefaultValues(): Record<string, any> {
+export function get2025DefaultValues(): Record<string, unknown> {
   return {
     salnFormatVersion: 2025,
     complianceType: 'annual',

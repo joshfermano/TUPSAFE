@@ -28,13 +28,13 @@ import {
   useEffect,
   useCallback,
   useMemo,
-  useRef,
   Suspense,
   use,
 } from 'react';
 import {
   useUpdatePDS,
   useSubmitPDS,
+  type UpdatePDSData,
 } from '../../../../../hooks/usePDS';
 import { useForm, FormProvider } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
@@ -276,7 +276,7 @@ const NotFoundState = ({ onBack }: { onBack: () => void }) => (
 
 const UnauthorizedEditState = ({
   status,
-  pdsId,
+  pdsId: _pdsId,
   onBack,
   onViewDetails,
 }: {
@@ -601,14 +601,17 @@ export default function PDSEditPage({
         }
 
         // Transform data using the same pipeline as submit
-        const transformedData = transformPdsForSubmission(formData);
+        const transformedData = transformPdsForSubmission(formData) as Record<string, unknown> & {
+          training?: Record<string, unknown>[];
+          civilService?: Record<string, unknown>[];
+        };
 
         // Verify the entry exists in the transformed payload
         // (the transformation may filter out incomplete entries)
         if (entryContext.entryId) {
           if (entryContext.entryType === 'training') {
             const entryInPayload = transformedData.training?.find(
-              (t: any) => t.id === entryContext.entryId
+              (t: Record<string, unknown>) => t.id === entryContext.entryId
             );
             if (!entryInPayload) {
               return {
@@ -619,7 +622,7 @@ export default function PDSEditPage({
             }
           } else if (entryContext.entryType === 'civil_service') {
             const entryInPayload = transformedData.civilService?.find(
-              (cs: any) => cs.id === entryContext.entryId
+              (cs: Record<string, unknown>) => cs.id === entryContext.entryId
             );
             if (!entryInPayload) {
               return {
@@ -738,7 +741,7 @@ export default function PDSEditPage({
               ? typeof dataWithTypeConversions.personalInfo.heightM === 'number'
                 ? dataWithTypeConversions.personalInfo.heightM
                 : parseFloat(
-                    dataWithTypeConversions.personalInfo.heightM as any
+                    String(dataWithTypeConversions.personalInfo.heightM)
                   )
               : null,
             weightKg: dataWithTypeConversions.personalInfo.weightKg
@@ -746,16 +749,16 @@ export default function PDSEditPage({
                 'number'
                 ? dataWithTypeConversions.personalInfo.weightKg
                 : parseFloat(
-                    dataWithTypeConversions.personalInfo.weightKg as any
+                    String(dataWithTypeConversions.personalInfo.weightKg)
                   )
               : null,
-          } as any;
+          } as CompletePdsData['personalInfo'];
         }
 
         // Convert Family Background - Children dateOfBirth
         if (dataWithTypeConversions.family?.children) {
           dataWithTypeConversions.family.children =
-            dataWithTypeConversions.family.children.map((child: any) => ({
+            dataWithTypeConversions.family.children.map((child) => ({
               ...child,
               dateOfBirth: child.dateOfBirth
                 ? child.dateOfBirth instanceof Date
@@ -768,7 +771,7 @@ export default function PDSEditPage({
         // Convert Civil Service Eligibility dates
         if (dataWithTypeConversions.eligibility) {
           dataWithTypeConversions.eligibility =
-            dataWithTypeConversions.eligibility.map((item: any) => ({
+            dataWithTypeConversions.eligibility.map((item) => ({
               ...item,
               rating: item.rating
                 ? typeof item.rating === 'number'
@@ -791,7 +794,7 @@ export default function PDSEditPage({
         // Convert Work Experience dates and salary
         if (dataWithTypeConversions.workExperience) {
           dataWithTypeConversions.workExperience =
-            dataWithTypeConversions.workExperience.map((item: any) => ({
+            dataWithTypeConversions.workExperience.map((item) => ({
               ...item,
               dateFrom: item.dateFrom
                 ? item.dateFrom instanceof Date
@@ -814,7 +817,7 @@ export default function PDSEditPage({
         // Convert Voluntary Work dates and hours
         if (dataWithTypeConversions.voluntaryWork) {
           dataWithTypeConversions.voluntaryWork =
-            dataWithTypeConversions.voluntaryWork.map((item: any) => ({
+            dataWithTypeConversions.voluntaryWork.map((item) => ({
               ...item,
               dateFrom: item.dateFrom
                 ? item.dateFrom instanceof Date
@@ -837,7 +840,7 @@ export default function PDSEditPage({
         // Convert Learning Development dates and hours
         if (dataWithTypeConversions.learningDevelopment) {
           dataWithTypeConversions.learningDevelopment =
-            dataWithTypeConversions.learningDevelopment.map((item: any) => ({
+            dataWithTypeConversions.learningDevelopment.map((item) => ({
               ...item,
               dateFrom: item.dateFrom
                 ? item.dateFrom instanceof Date
@@ -861,7 +864,7 @@ export default function PDSEditPage({
         if (dataWithTypeConversions.otherInfo?.references) {
           dataWithTypeConversions.otherInfo.references =
             dataWithTypeConversions.otherInfo.references.filter(
-              (ref: any) =>
+              (ref) =>
                 ref.name &&
                 ref.name.trim() !== '' &&
                 ref.address &&
@@ -872,13 +875,13 @@ export default function PDSEditPage({
         }
 
         // STEP 2: Validate using the schema
-        const validatedData = completePdsSchema.parse(dataWithTypeConversions);
+        completePdsSchema.parse(dataWithTypeConversions);
 
         // STEP 3: Transform to backend format
         const backendData = transformPdsForSubmission(dataWithTypeConversions);
 
         // Update existing PDS (PATCH)
-        await updateMutation.mutateAsync(backendData as any);
+        await updateMutation.mutateAsync(backendData as UpdatePDSData);
 
         // Submit for review (status: draft/rejected → submitted)
         await submitMutation.mutateAsync();

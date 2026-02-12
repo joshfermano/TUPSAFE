@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { use } from 'react';
-import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
@@ -11,7 +10,6 @@ import {
   Calendar,
   Building2,
   FileText,
-  MapPin,
   DollarSign,
   Users,
   Clock,
@@ -171,7 +169,7 @@ export default function ApplicationDetailsPage({
       toast.success('Application withdrawn successfully');
       setWithdrawDialogOpen(false);
       router.push('/dashboard/applications');
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to withdraw application');
     }
   };

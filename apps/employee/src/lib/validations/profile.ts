@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { TUP_DEPARTMENTS } from './auth';
 
 // Phone number validation for Philippine format
 const phoneNumberRegex = /^(\+639|09)\d{9}$/;

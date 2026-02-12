@@ -52,7 +52,123 @@ import {
   CollapsibleContent,
 } from '../../../../../components/ui/collapsible';
 import { cn } from '../../../../../lib/utils';
-import type { CompletePdsData } from '../../../../../lib/validations/pds-schema';
+
+// ============================================================================
+// View-specific record types for typed iteration over PDS data arrays
+// ============================================================================
+
+interface PdsChildRecord {
+  fullName?: string;
+  dateOfBirth?: string | Date | null;
+}
+
+interface PdsEligibilityRecord {
+  eligibilityName?: string;
+  rating?: string | number | null;
+  dateOfExam?: string | Date | null;
+  placeOfExam?: string | null;
+  licenseNo?: string | null;
+  licenseValidityDate?: string | Date | null;
+}
+
+interface PdsRecognitionRecord {
+  title?: string;
+  year?: number | string;
+  organization?: string;
+}
+
+interface PdsAssociationRecord {
+  name?: string;
+  position?: string;
+  yearJoined?: number | string;
+}
+
+interface PdsReferenceRecord {
+  name?: string;
+  address?: string;
+  telephoneNo?: string;
+}
+
+/** Education level record when education is stored as an object (keyed by level) */
+interface PdsEducationLevelRecord {
+  schoolName?: string;
+  degreeCourse?: string;
+  periodFrom?: string;
+  periodTo?: string;
+  highestLevelEarned?: string;
+  yearGraduated?: string;
+  honorsReceived?: string;
+}
+
+// ============================================================================
+// JSONB field types for database columns that Drizzle types as '{}'
+// These provide typed access to nested JSONB data from the database
+// ============================================================================
+
+interface PdsAddress {
+  houseNumber?: string | null;
+  streetName?: string | null;
+  street?: string | null;
+  subdivision?: string | null;
+  barangay?: string | null;
+  city?: string | null;
+  cityMunicipality?: string | null;
+  province?: string | null;
+  region?: string | null;
+  zipCode?: string | null;
+}
+
+interface PdsCitizenship {
+  type?: 'Filipino' | 'Dual' | string;
+  details?: string;
+}
+
+interface PdsQuestions {
+  Q34_criminal_charged?: boolean | string;
+  Q34_criminal_charged_details?: string;
+  Q35_criminal_convicted?: boolean | string;
+  Q35_criminal_convicted_details?: string;
+  Q36_separated_from_service?: boolean | string;
+  Q36_separated_from_service_details?: string;
+  Q37_candidate_for_election?: boolean | string;
+  Q37_candidate_for_election_details?: string;
+  Q38_resigned_from_government?: boolean | string;
+  Q38_resigned_from_government_details?: string;
+  Q39_immigrant_or_acquired_residence?: boolean | string;
+  Q39_immigrant_or_acquired_residence_details?: string;
+  Q39_immigrant_country?: string;
+  Q40_indigenous_group?: boolean | string;
+  Q40_indigenous_group_details?: string;
+  Q40_indigenous_group_name?: string;
+  Q41_disabled?: boolean | string;
+  Q41_disabled_details?: string;
+  Q41_disabled_id_number?: string;
+  Q42_solo_parent?: boolean | string;
+  Q42_solo_parent_details?: string;
+  [key: string]: unknown;
+}
+
+/** Type overlay for CompletePDSSubmission JSONB fields */
+interface PdsJsonbOverlay {
+  personalInfo: {
+    citizenship: PdsCitizenship;
+    residentialAddress: PdsAddress;
+    permanentAddress: PdsAddress;
+    [key: string]: unknown;
+  } | null;
+  familyBackground: {
+    [key: string]: unknown;
+  } | null;
+  children: PdsChildRecord[];
+  otherInfo: {
+    skills: string[];
+    questions: PdsQuestions;
+    references: PdsReferenceRecord[];
+    recognitions: PdsRecognitionRecord[];
+    associations: PdsAssociationRecord[];
+    [key: string]: unknown;
+  } | null;
+}
 
 // ============================================================================
 // STATUS CONFIGURATION
@@ -192,7 +308,7 @@ export default function PDSViewDetailPage({
 }) {
   const { id: pdsId } = use(params);
   const router = useRouter();
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
 
   // Fetch complete PDS data by ID
   const { pdsData: rawPdsData, loading } = usePdsSubmissionById(pdsId);
@@ -201,15 +317,21 @@ export default function PDSViewDetailPage({
   const submission = rawPdsData?.submission ?? null;
 
   // Create compatible data structure for view (handles different property naming conventions)
-  const pdsData = rawPdsData
-    ? ({
-        ...rawPdsData,
-        // Add fallback property names for compatibility with view components
-        family: rawPdsData.familyBackground,
-        eligibility: rawPdsData.civilService,
-        learningDevelopment: rawPdsData.training,
-      } as any)
-    : null;
+  // Wrapped in useMemo to ensure stable reference for downstream useMemo dependencies
+  const pdsData = useMemo(() => {
+    if (!rawPdsData) return null;
+    return {
+      ...rawPdsData,
+      // Add fallback property names for compatibility with view components
+      family: rawPdsData.familyBackground,
+      eligibility: rawPdsData.civilService,
+      learningDevelopment: rawPdsData.training,
+    } as typeof rawPdsData & PdsJsonbOverlay & {
+      family: (typeof rawPdsData.familyBackground) & { children?: PdsChildRecord[] } | null;
+      eligibility: typeof rawPdsData.civilService;
+      learningDevelopment: typeof rawPdsData.training;
+    };
+  }, [rawPdsData]);
 
   const canEdit =
     submission?.status === 'draft' || submission?.status === 'rejected';
@@ -852,7 +974,7 @@ export default function PDSViewDetailPage({
                 </h3>
                 <div className="space-y-2">
                   {(pdsData.family?.children || pdsData.children || []).map(
-                    (child: any, index: number) => (
+                    (child: PdsChildRecord, index: number) => (
                       <div
                         key={index}
                         className="flex items-center gap-4 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
@@ -892,8 +1014,8 @@ export default function PDSViewDetailPage({
               'college',
               'graduate',
             ].map((level) => {
-              const edu =
-                pdsData.education?.[level as keyof typeof pdsData.education];
+              const eduObj = pdsData.education as unknown as Record<string, PdsEducationLevelRecord>;
+              const edu = eduObj?.[level];
               if (!edu) return null;
 
               return (
@@ -942,45 +1064,48 @@ export default function PDSViewDetailPage({
             })
           ) : Array.isArray(pdsData.education) &&
             pdsData.education.length > 0 ? (
-            pdsData.education.map((edu: any, index: number) => (
+            pdsData.education.map((edu, index: number) => {
+              const e = edu as Record<string, unknown>;
+              return (
               <div
                 key={index}
                 className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
                 <h3 className="text-sm font-semibold mb-3 capitalize text-slate-900 dark:text-slate-100">
-                  {edu.level}
+                  {e.level as string}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <Field label="School Name" value={edu.schoolName} fullWidth />
-                  <Field label="Degree/Course" value={edu.degreeCourse} />
+                  <Field label="School Name" value={e.schoolName as string | null} fullWidth />
+                  <Field label="Degree/Course" value={e.degreeCourse as string | null} />
                   <Field
                     label="Period From"
                     value={
-                      edu.periodFrom
-                        ? format(new Date(edu.periodFrom), 'yyyy')
+                      e.periodFrom
+                        ? format(new Date(e.periodFrom as string), 'yyyy')
                         : 'N/A'
                     }
                   />
                   <Field
                     label="Period To"
                     value={
-                      edu.periodTo
-                        ? format(new Date(edu.periodTo), 'yyyy')
+                      e.periodTo
+                        ? format(new Date(e.periodTo as string), 'yyyy')
                         : 'N/A'
                     }
                   />
                   <Field
                     label="Highest Level/Units Earned"
-                    value={edu.highestLevelEarned}
+                    value={e.highestLevelEarned as string | null}
                   />
-                  <Field label="Year Graduated" value={edu.yearGraduated} />
+                  <Field label="Year Graduated" value={e.yearGraduated as string | number | null} />
                   <Field
                     label="Scholarship/Honors Received"
-                    value={edu.honorsReceived}
+                    value={e.honorsReceived as string | null}
                     fullWidth
                   />
                 </div>
               </div>
-            ))
+              );
+            })
           ) : (
             <p className="text-sm text-slate-500 dark:text-slate-400">
               No educational background available
@@ -995,7 +1120,7 @@ export default function PDSViewDetailPage({
         <Section title="IV. Civil Service Eligibility" icon={Award} delay={0.3}>
           <div className="space-y-3">
             {(pdsData.eligibility || pdsData.civilService || []).map(
-              (elig: any, index: number) => (
+              (elig: PdsEligibilityRecord, index: number) => (
                 <div
                   key={index}
                   className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
@@ -1043,7 +1168,7 @@ export default function PDSViewDetailPage({
       {pdsData.workExperience && pdsData.workExperience.length > 0 && (
         <Section title="V. Work Experience" icon={Briefcase} delay={0.35}>
           <div className="space-y-3">
-            {pdsData.workExperience.map((work: any, index: number) => (
+            {pdsData.workExperience.map((work, index: number) => (
               <div
                 key={index}
                 className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
@@ -1099,7 +1224,7 @@ export default function PDSViewDetailPage({
       {pdsData.voluntaryWork && pdsData.voluntaryWork.length > 0 && (
         <Section title="VI. Voluntary Work" icon={Heart} delay={0.4}>
           <div className="space-y-3">
-            {pdsData.voluntaryWork.map((vol: any, index: number) => (
+            {pdsData.voluntaryWork.map((vol, index: number) => (
               <div
                 key={index}
                 className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
@@ -1152,7 +1277,7 @@ export default function PDSViewDetailPage({
           delay={0.45}>
           <div className="space-y-3">
             {(pdsData.learningDevelopment || pdsData.training || []).map(
-              (training: any, index: number) => (
+              (training, index: number) => (
                 <div
                   key={index}
                   className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
@@ -1197,13 +1322,13 @@ export default function PDSViewDetailPage({
       <Section title="VIII. Other Information" icon={Star} delay={0.5}>
         <div className="space-y-4">
           {/* Special Skills */}
-          {pdsData.otherInfo?.skills && pdsData.otherInfo.skills.length > 0 && (
+          {pdsData.otherInfo?.skills && (pdsData.otherInfo.skills as string[]).length > 0 && (
             <div>
               <h3 className="text-sm font-semibold mb-3 text-slate-900 dark:text-slate-100">
                 Special Skills and Hobbies
               </h3>
               <div className="flex flex-wrap gap-2">
-                {pdsData.otherInfo.skills.map((skill: any, index: number) => (
+                {(pdsData.otherInfo.skills as string[]).map((skill: string, index: number) => (
                   <Badge key={index} variant="outline" className="text-xs">
                     {skill}
                   </Badge>
@@ -1221,7 +1346,7 @@ export default function PDSViewDetailPage({
                 </h3>
                 <div className="space-y-2">
                   {pdsData.otherInfo.recognitions.map(
-                    (rec: any, index: number) => (
+                    (rec: PdsRecognitionRecord, index: number) => (
                       <div
                         key={index}
                         className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
@@ -1249,7 +1374,7 @@ export default function PDSViewDetailPage({
                 </h3>
                 <div className="space-y-2">
                   {pdsData.otherInfo.associations.map(
-                    (assoc: any, index: number) => (
+                    (assoc: PdsAssociationRecord, index: number) => (
                       <div
                         key={index}
                         className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
@@ -1428,7 +1553,7 @@ export default function PDSViewDetailPage({
                 </h3>
                 <div className="space-y-2">
                   {pdsData.otherInfo.references.map(
-                    (ref: any, index: number) => (
+                    (ref: PdsReferenceRecord, index: number) => (
                       <div
                         key={index}
                         className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">

@@ -91,7 +91,7 @@ const toISOString = (date: Date | string | null | undefined): string | undefined
 // Main PDS Drafts Page
 export default function PDSDraftsPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const {
     data: pdsResponse,
     isLoading: loading,

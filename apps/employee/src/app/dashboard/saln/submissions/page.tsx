@@ -23,7 +23,7 @@
 import React, { useMemo, useCallback, useState, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../providers/AuthProvider';
-import { useSALNSubmissions } from '../../../../hooks/useSALN';
+import { useSALNSubmissions, type SALNSubmission } from '../../../../hooks/useSALN';
 import { useSALNPdf } from '../../../../hooks/useSALNPdf';
 import { usePagination } from '../../../../hooks/usePagination';
 import type { SALNData } from '../../../../components/saln/pdf';
@@ -324,8 +324,8 @@ SkeletonCard.displayName = 'SkeletonCard';
 // Main SALN Submissions Page
 export default function SalnSubmissionsPage() {
   const router = useRouter();
-  const { user, profile } = useAuth();
-  const { downloadPDF, openPDFInNewTab, isGenerating } = useSALNPdf();
+  const { profile } = useAuth();
+  const { downloadPDF, openPDFInNewTab } = useSALNPdf();
 
   // Pagination hook
   const { page, pageSize, setPage, setPageSize } = usePagination(12);
@@ -339,6 +339,7 @@ export default function SalnSubmissionsPage() {
 
   // Transform submission data to SALNData format for PDF
   const transformSALNToData = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- SALNSubmission sub-types don't match SALNData PDF types exactly
     (submission: any): SALNData => {
       return {
         id: submission.id,
@@ -370,14 +371,14 @@ export default function SalnSubmissionsPage() {
         personalProperties: submission.personalProperties || [],
         liabilities: submission.liabilities || [],
         businessInterests:
-          submission.businessInterests?.map((bi: any) => ({
+          submission.businessInterests?.map((bi: { businessName?: string; entityName?: string; businessAddress?: string; nature?: string; natureOfBusiness?: string; dateAcquired?: string; dateOfAcquisition?: string }) => ({
             entityName: bi.businessName || bi.entityName || '',
             businessAddress: bi.businessAddress || '',
             natureOfBusiness: bi.nature || bi.natureOfBusiness || '',
             dateOfAcquisition: bi.dateAcquired || bi.dateOfAcquisition || '',
           })) || [],
         relativesInGov:
-          submission.relativesInGov?.map((rel: any) => ({
+          submission.relativesInGov?.map((rel: { name?: string; relationship?: string; position?: string; agency?: string; agencyAddress?: string }) => ({
             name: rel.name || '',
             relationship: rel.relationship || '',
             position: rel.position || '',
@@ -397,7 +398,7 @@ export default function SalnSubmissionsPage() {
 
   // Filter only approved submissions
   const approvedSubmissions = useMemo(() => {
-    return allSubmissions.filter((s: any) => s.status === 'approved') as ApprovedSalnSubmission[];
+    return allSubmissions.filter((s: SALNSubmission) => s.status === 'approved') as ApprovedSalnSubmission[];
   }, [allSubmissions]);
 
   // Apply search and sort

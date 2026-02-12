@@ -52,6 +52,54 @@ import { formatCurrency } from '../../../../../lib/utils/currency';
 // STATUS CONFIGURATION
 // ============================================================================
 
+// Local interfaces for useSALNSubmission response (different field names than list endpoint)
+interface ViewRealProperty {
+  description: string;
+  kind: string;
+  exactLocation: string;
+  assessedValue: number | string;
+  currentFairMarketValue: number | string;
+  acquisitionYear: number;
+  acquisitionMode: string;
+}
+
+interface ViewPersonalProperty {
+  description: string;
+  yearAcquired: number;
+  acquisitionCost: number | string;
+}
+
+interface ViewLiability {
+  nature: string;
+  creditorName: string;
+  outstandingBalance: number | string;
+}
+
+interface ViewBusinessInterest {
+  businessName?: string;
+  entityName?: string;
+  businessAddress: string;
+  nature?: string;
+  natureOfBusiness?: string;
+  dateAcquired?: string;
+  dateOfAcquisition?: string;
+  owner?: string;
+}
+
+interface ViewRelativeInGov {
+  name: string;
+  relationship: string;
+  position: string;
+  agency?: string;
+  agencyAddress?: string;
+}
+
+interface ProfileData {
+  lastName?: string | null;
+  firstName?: string | null;
+  middleName?: string | null;
+}
+
 const STATUS_CONFIG = {
   draft: {
     color:
@@ -242,8 +290,9 @@ export default function SALNViewDetailPage({
   // salnData: { submission: {...}, realProperties: [...], ... }
   // profile: user profile for declarant name
   const transformSALNToData = (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- useSALNSubmission returns untyped data; sub-types don't match SALNData PDF types
     salnDataInput: any,
-    profile: any
+    profileInput: ProfileData
   ): SALNData => {
     // Validate required fields exist
     if (!salnDataInput) {
@@ -253,7 +302,7 @@ export default function SALNViewDetailPage({
     // salnData has nested structure: { submission: {...}, realProperties: [...], ... }
     const submissionMeta = salnDataInput.submission || salnDataInput;
 
-    if (!profile) {
+    if (!profileInput) {
       throw new Error('Profile data is missing');
     }
 
@@ -264,9 +313,9 @@ export default function SALNViewDetailPage({
       year: submissionMeta.year || new Date().getFullYear(),
       filingType: submissionMeta.filingType || 'not_applicable',
       declarantInfo: {
-        surname: profile?.lastName || '',
-        firstName: profile?.firstName || '',
-        middleInitial: profile?.middleName || null,
+        surname: profileInput?.lastName || '',
+        firstName: profileInput?.firstName || '',
+        middleInitial: profileInput?.middleName || null,
         position: submissionMeta.position || '',
         agency:
           submissionMeta.agency ||
@@ -290,14 +339,14 @@ export default function SALNViewDetailPage({
       personalProperties: salnDataInput.personalProperties || [],
       liabilities: salnDataInput.liabilities || [],
       businessInterests:
-        salnDataInput.businessInterests?.map((bi: any) => ({
+        salnDataInput.businessInterests?.map((bi: ViewBusinessInterest) => ({
           entityName: bi.businessName || bi.entityName || '',
           businessAddress: bi.businessAddress || '',
           natureOfBusiness: bi.nature || bi.natureOfBusiness || '',
           dateOfAcquisition: bi.dateAcquired || bi.dateOfAcquisition || '',
         })) || [],
       relativesInGov:
-        salnDataInput.relativesInGov?.map((rel: any) => ({
+        salnDataInput.relativesInGov?.map((rel: ViewRelativeInGov) => ({
           name: rel.name || '',
           relationship: rel.relationship || '',
           position: rel.position || '',
@@ -402,18 +451,18 @@ export default function SALNViewDetailPage({
   // Calculate totals
   const totalRealProperty =
     salnData.realProperties?.reduce(
-      (sum: number, prop: any) => sum + (Number(prop.currentFairMarketValue) || 0),
+      (sum: number, prop: ViewRealProperty) => sum + (Number(prop.currentFairMarketValue) || 0),
       0
     ) || 0;
   const totalPersonalProperty =
     salnData.personalProperties?.reduce(
-      (sum: number, prop: any) => sum + (Number(prop.acquisitionCost) || 0),
+      (sum: number, prop: ViewPersonalProperty) => sum + (Number(prop.acquisitionCost) || 0),
       0
     ) || 0;
   const totalAssets = totalRealProperty + totalPersonalProperty;
   const totalLiabilities =
     salnData.liabilities?.reduce(
-      (sum: number, liability: any) => sum + (Number(liability.outstandingBalance) || 0),
+      (sum: number, liability: ViewLiability) => sum + (Number(liability.outstandingBalance) || 0),
       0
     ) || 0;
   const netWorth = totalAssets - totalLiabilities;
@@ -599,7 +648,7 @@ export default function SALNViewDetailPage({
                 </tr>
               </thead>
               <tbody>
-                {salnData.realProperties.map((prop: any, index: number) => (
+                {salnData.realProperties.map((prop: ViewRealProperty, index: number) => (
                   <tr
                     key={index}
                     className="border-b border-slate-100 dark:border-slate-900 hover:bg-slate-50 dark:hover:bg-slate-900/50">
@@ -666,7 +715,7 @@ export default function SALNViewDetailPage({
                 </tr>
               </thead>
               <tbody>
-                {salnData.personalProperties.map((prop: any, index: number) => (
+                {salnData.personalProperties.map((prop: ViewPersonalProperty, index: number) => (
                   <tr
                     key={index}
                     className="border-b border-slate-100 dark:border-slate-900 hover:bg-slate-50 dark:hover:bg-slate-900/50">
@@ -722,7 +771,7 @@ export default function SALNViewDetailPage({
                 </tr>
               </thead>
               <tbody>
-                {salnData.liabilities.map((liability: any, index: number) => (
+                {salnData.liabilities.map((liability: ViewLiability, index: number) => (
                   <tr
                     key={index}
                     className="border-b border-slate-100 dark:border-slate-900 hover:bg-slate-50 dark:hover:bg-slate-900/50">
@@ -781,7 +830,7 @@ export default function SALNViewDetailPage({
                 </tr>
               </thead>
               <tbody>
-                {salnData.businessInterests.map((business: any, index: number) => (
+                {salnData.businessInterests.map((business: ViewBusinessInterest, index: number) => (
                   <tr
                     key={index}
                     className="border-b border-slate-100 dark:border-slate-900 hover:bg-slate-50 dark:hover:bg-slate-900/50">
@@ -795,10 +844,9 @@ export default function SALNViewDetailPage({
                       {business.natureOfBusiness}
                     </td>
                     <td className="p-2 text-slate-700 dark:text-slate-300">
-                      {format(
-                        new Date(business.dateOfAcquisition),
-                        'MMM d, yyyy'
-                      )}
+                      {business.dateOfAcquisition
+                        ? format(new Date(business.dateOfAcquisition), 'MMM d, yyyy')
+                        : 'N/A'}
                     </td>
                   </tr>
                 ))}
@@ -830,7 +878,7 @@ export default function SALNViewDetailPage({
                 </tr>
               </thead>
               <tbody>
-                {salnData.relativesInGov.map((relative: any, index: number) => (
+                {salnData.relativesInGov.map((relative: ViewRelativeInGov, index: number) => (
                   <tr
                     key={index}
                     className="border-b border-slate-100 dark:border-slate-900 hover:bg-slate-50 dark:hover:bg-slate-900/50">

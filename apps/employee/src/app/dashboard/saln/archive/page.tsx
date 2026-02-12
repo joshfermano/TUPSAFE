@@ -20,7 +20,7 @@ import { useSALNSubmissions } from '../../../../hooks/useSALN';
 import { useSALNPdf } from '../../../../hooks/useSALNPdf';
 import type { SALNData } from '../../../../components/saln/pdf';
 import { toast } from 'sonner';
-import { differenceInYears, format, formatDistanceToNow } from 'date-fns';
+import { differenceInYears, format } from 'date-fns';
 import { EmployeeOnlyGuard } from '../../../../components/guards/EmployeeOnlyGuard';
 import {
   FileText,
@@ -80,6 +80,38 @@ interface SalnSubmissionWithNumbers {
   filingType: 'joint' | 'separate' | 'not_applicable';
   createdAt: Date;
   updatedAt: Date;
+  // Spread fields from raw submission
+  spouseName?: string | null;
+  position?: string | null;
+  agency?: string | null;
+  officeAddress?: string | null;
+  realProperties?: { currentFairMarketValue?: number | string; [key: string]: unknown }[];
+  personalProperties?: { acquisitionCost?: number | string; [key: string]: unknown }[];
+  liabilities?: { outstandingBalance?: number | string; [key: string]: unknown }[];
+  businessInterests?: { businessName?: string; entityName?: string; businessAddress?: string; nature?: string; natureOfBusiness?: string; dateAcquired?: string; dateOfAcquisition?: string; owner?: string }[];
+  relativesInGov?: { name?: string; relationship?: string; position?: string; agency?: string; agencyAddress?: string }[];
+  // 2025 SALN Format fields
+  salnFormatVersion?: number;
+  complianceType?: string;
+  complianceDate?: string;
+  hasMultipleMarriages?: boolean;
+  previousSpouseNames?: string;
+  spouseIsPublicOfficial?: boolean;
+  spousePosition?: string;
+  spouseAgency?: string;
+  spouseOfficeAddress?: string;
+  unmarriedChildren?: unknown[];
+  hasNoBusinessInterests?: boolean;
+  hasNoRelativesInGov?: boolean;
+  governmentIdType?: string;
+  governmentIdNumber?: string;
+  governmentIdDateIssued?: string;
+  governmentIdType2?: string;
+  governmentIdNumber2?: string;
+  governmentIdDateIssued2?: string;
+  declarantTin?: string;
+  spouseTin?: string;
+  spouseDateOfBirth?: string;
 }
 
 // Status badge color configuration with TUP Manila theme
@@ -574,8 +606,8 @@ YearGroup.displayName = 'YearGroup';
 // Main SALN Archive Page
 export default function SALNArchivePage() {
   const router = useRouter();
-  const { user, profile } = useAuth();
-  const { downloadPDF, openPDFInNewTab, isGenerating } = useSALNPdf();
+  const { profile } = useAuth();
+  const { downloadPDF, openPDFInNewTab } = useSALNPdf();
 
   // Use real hook for SALN submissions
   const {
@@ -595,6 +627,7 @@ export default function SALNArchivePage() {
 
   // Transform submission data to SALNData format for PDF
   const transformSALNToData = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- SalnSubmissionWithNumbers sub-types don't match SALNData PDF types exactly
     (submission: any): SALNData => {
       // Parse spouse info - always shown in 2025 format
       let spouseInfo = undefined;
@@ -630,7 +663,7 @@ export default function SALNArchivePage() {
         personalProperties: submission.personalProperties || [],
         liabilities: submission.liabilities || [],
         businessInterests:
-          submission.businessInterests?.map((bi: any) => ({
+          submission.businessInterests?.map((bi: { businessName?: string; entityName?: string; businessAddress?: string; nature?: string; natureOfBusiness?: string; dateAcquired?: string; dateOfAcquisition?: string; owner?: string }) => ({
             entityName: bi.businessName || bi.entityName || '',
             businessAddress: bi.businessAddress || '',
             natureOfBusiness: bi.nature || bi.natureOfBusiness || '',
@@ -638,7 +671,7 @@ export default function SALNArchivePage() {
             owner: bi.owner,
           })) || [],
         relativesInGov:
-          submission.relativesInGov?.map((rel: any) => ({
+          submission.relativesInGov?.map((rel: { name?: string; relationship?: string; position?: string; agency?: string; agencyAddress?: string }) => ({
             name: rel.name || '',
             relationship: rel.relationship || '',
             position: rel.position || '',

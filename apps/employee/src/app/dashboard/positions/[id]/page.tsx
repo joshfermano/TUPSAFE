@@ -1,7 +1,6 @@
 'use client';
 
 import { use, useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
@@ -114,9 +113,9 @@ function ApplicationForm({
       });
       toast.success('Application submitted successfully!');
       onSuccess();
-    } catch (error) {
+    } catch (err) {
       toast.error(
-        error instanceof Error ? error.message : 'Failed to submit application'
+        err instanceof Error ? err.message : 'Failed to submit application'
       );
     }
   };
@@ -190,7 +189,7 @@ export default function PositionDetailsPage({
   params: Promise<{ id: string }>;
 }) {
   const resolvedParams = use(params);
-  const router = useRouter();
+  const _router = useRouter();
   const [showApplicationForm, setShowApplicationForm] = useState(false);
 
   const {
@@ -204,7 +203,6 @@ export default function PositionDetailsPage({
 
   // Check if user has a valid PDS to apply
   const hasPDS = !!latestPDS;
-  const pdsStatus = latestPDS?.status;
 
   if (isLoading) {
     return (

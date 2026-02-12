@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { motion } from 'framer-motion';
 import {
   FileCheck,
@@ -94,7 +93,7 @@ const HeroSection = () => (
             { icon: Calculator, label: 'Auto-Calculate', value: 'Net Worth' },
             { icon: Bell, label: 'Deadline', value: 'Tracking' },
             { icon: Archive, label: 'Audit-Ready', value: 'Reports' },
-          ].map((stat, index) => (
+          ].map((stat) => (
             <MagicCard
               key={stat.label}
               className="p-6 text-center"

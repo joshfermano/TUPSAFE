@@ -49,7 +49,7 @@ const currencySchema = z
 /**
  * Optional currency field (allows 0 or null)
  */
-const optionalCurrencySchema = currencySchema.nullable().optional();
+const _optionalCurrencySchema = currencySchema.nullable().optional();
 
 /**
  * Year validation helper

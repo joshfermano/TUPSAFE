@@ -11,7 +11,6 @@ import {
   Settings,
   BarChart3,
   CheckCircle,
-  Clock,
   FileCheck,
   Award,
 } from 'lucide-react';

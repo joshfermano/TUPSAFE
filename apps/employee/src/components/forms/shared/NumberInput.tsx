@@ -11,7 +11,7 @@
  * - Shared styling across all sections
  */
 
-import React, { InputHTMLAttributes } from 'react';
+import React from 'react';
 import { Input } from '../../ui/input';
 import {
   FormField,
@@ -20,10 +20,10 @@ import {
   FormControl,
   FormMessage,
 } from '../../ui/form';
-import { UseFormReturn } from 'react-hook-form';
+import { type UseFormReturn, type FieldValues } from 'react-hook-form';
 
 interface NumberInputProps {
-  form: UseFormReturn<any>;
+  form: UseFormReturn<FieldValues>;
   name: string;
   label: string;
   required?: boolean;

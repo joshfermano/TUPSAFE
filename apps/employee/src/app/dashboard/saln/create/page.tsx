@@ -384,6 +384,7 @@ export default function SALNCreatePage() {
         if (currentDraftId) {
           // Update existing draft
           console.log('[SALN Create] Updating draft:', currentDraftId);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- mutation expects strict type but formData is dynamically constructed from form state
           await updateSALNMutation.mutateAsync(formData as any);
           console.log(
             '[SALN Create] Draft updated successfully:',
@@ -393,6 +394,7 @@ export default function SALNCreatePage() {
         } else {
           // Create new draft
           console.log('[SALN Create] Creating new draft submission');
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- mutation expects strict type but formData is dynamically constructed from form state
           const result = await createSALNMutation.mutateAsync(formData as any);
 
           if (result?.data?.id) {

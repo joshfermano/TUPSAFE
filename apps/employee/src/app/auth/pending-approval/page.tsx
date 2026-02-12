@@ -29,14 +29,13 @@ import {
   CheckIcon,
   InfoCircledIcon,
 } from '@radix-ui/react-icons';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { MagicCard } from '../../../components/ui/magic-card';
 import { BorderBeam } from '../../../components/ui/border-beam';
 import { AnimatedGradientText } from '../../../components/ui/animated-gradient-text';
 import AnimatedGridPattern from '../../../components/ui/animated-grid-pattern';
 import { ShimmerButton } from '../../../components/ui/shimmer-button';
-import { SparklesText } from '../../../components/ui/sparkles-text';
 import { NeonGradientCard } from '../../../components/ui/neon-gradient-card';
 import { Meteors } from '../../../components/ui/meteors';
 import { Particles } from '../../../components/ui/particles';
@@ -83,7 +82,7 @@ function PendingApprovalContent() {
     showToast: false, // We'll handle toast manually for better UX
     notifyOnFields: ['isActive'], // Monitor significant changes
     onProfileUpdate: (
-      oldProfile: Partial<Profile>,
+      _oldProfile: Partial<Profile>,
       newProfile: Partial<Profile>,
       changedFields: string[]
     ) => {

@@ -5,7 +5,7 @@
  * Provides utilities for detecting screen sizes in Next.js components.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 
 /**
  * Generic media query hook

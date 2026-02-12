@@ -462,7 +462,7 @@ FilterBar.displayName = 'FilterBar';
  */
 export default function SubmissionsPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const {
     data: pdsResponse,
     isLoading: loading,

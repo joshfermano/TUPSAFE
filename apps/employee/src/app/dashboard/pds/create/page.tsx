@@ -122,7 +122,7 @@ import { DotPattern } from '../../../../components/ui/dot-pattern';
 import { useAutoSave, getSavedDraft } from '../../../../hooks/useAutoSave';
 import { useAuth } from '../../../../providers/AuthProvider';
 import { useDeadlineForForm } from '../../../../hooks/useDeadlines';
-import { useLatestPDS } from '../../../../hooks/usePDS';
+import { useLatestPDS, type CreatePDSData, type UpdatePDSData } from '../../../../hooks/usePDS';
 
 // Components
 import { DeadlineNotice } from '../../../../components/dashboard/DeadlineNotice';
@@ -364,7 +364,7 @@ export default function PDSCreatePage() {
 
             // Ensure children.dateOfBirth is a Date object
             if (formData?.family?.children) {
-              formData.family.children = formData.family.children.map((child: any) => ({
+              formData.family.children = formData.family.children.map((child) => ({
                 ...child,
                 dateOfBirth:
                   child.dateOfBirth && typeof child.dateOfBirth === 'string'
@@ -405,7 +405,7 @@ export default function PDSCreatePage() {
       ) {
         // Ensure children.dateOfBirth is a Date object
         if (savedDraft.formData?.family?.children) {
-          savedDraft.formData.family.children = savedDraft.formData.family.children.map((child: any) => ({
+          savedDraft.formData.family.children = savedDraft.formData.family.children.map((child) => ({
             ...child,
             dateOfBirth:
               child.dateOfBirth && typeof child.dateOfBirth === 'string'
@@ -417,7 +417,7 @@ export default function PDSCreatePage() {
         setShowDraftDialog(true);
       }
     }
-  }, [draftIdFromUrl, userId, form]);
+  }, [draftIdFromUrl, userId, form, updateDraftId]);
 
   // Handle draft restoration
   const handleRestoreDraft = useCallback(() => {
@@ -559,14 +559,17 @@ export default function PDSCreatePage() {
         await saveNow();
 
         // STEP 2: Transform data using the same pipeline as submit
-        const transformedData = transformPdsForSubmission(formData);
+        const transformedData = transformPdsForSubmission(formData) as Record<string, unknown> & {
+          training?: Record<string, unknown>[];
+          civilService?: Record<string, unknown>[];
+        };
 
         // DEBUG: Log transformed data structure
         console.log('[AUTO-SAVE] Transformed data structure:', {
           hasTraining: !!transformedData.training,
           trainingCount: transformedData.training?.length || 0,
           trainingData:
-            transformedData.training?.map((t: any) => ({
+            transformedData.training?.map((t: Record<string, unknown>) => ({
               id: t.id,
               title: t.title,
               dateFrom: t.dateFrom,
@@ -582,7 +585,7 @@ export default function PDSCreatePage() {
         if (entryContext.entryId) {
           if (entryContext.entryType === 'training') {
             const entryInPayload = transformedData.training?.find(
-              (t: any) => t.id === entryContext.entryId
+              (t: Record<string, unknown>) => t.id === entryContext.entryId
             );
             if (!entryInPayload) {
               console.error(
@@ -590,7 +593,7 @@ export default function PDSCreatePage() {
                 {
                   requestedId: entryContext.entryId,
                   availableIds:
-                    transformedData.training?.map((t: any) => t.id) || [],
+                    transformedData.training?.map((t: Record<string, unknown>) => t.id) || [],
                   hint: 'Entry may have been filtered out due to missing required fields (dateFrom, dateTo)',
                 }
               );
@@ -601,7 +604,7 @@ export default function PDSCreatePage() {
             }
           } else if (entryContext.entryType === 'civil_service') {
             const entryInPayload = transformedData.civilService?.find(
-              (cs: any) => cs.id === entryContext.entryId
+              (cs: Record<string, unknown>) => cs.id === entryContext.entryId
             );
             if (!entryInPayload) {
               console.error(
@@ -609,7 +612,7 @@ export default function PDSCreatePage() {
                 {
                   requestedId: entryContext.entryId,
                   availableIds:
-                    transformedData.civilService?.map((cs: any) => cs.id) || [],
+                    transformedData.civilService?.map((cs: Record<string, unknown>) => cs.id) || [],
                   hint: 'Entry may have been filtered out due to missing required fields',
                 }
               );
@@ -643,7 +646,7 @@ export default function PDSCreatePage() {
             throw new Error(errorData.error || 'Failed to update draft');
           }
 
-          const result = await response.json();
+          await response.json();
           console.log(
             '[PDS Create] Auto-save update succeeded:',
             currentDraftId
@@ -1053,7 +1056,7 @@ export default function PDSCreatePage() {
   /**
    * Converts a database field path to a user-friendly display name
    */
-  const formatFieldPath = (fieldPath: string): string => {
+  const formatFieldPath = useCallback((fieldPath: string): string => {
     // Check for exact match in the mapping
     if (PDS_FIELD_NAME_MAP[fieldPath]) {
       return PDS_FIELD_NAME_MAP[fieldPath];
@@ -1082,7 +1085,8 @@ export default function PDSCreatePage() {
       .replace(/([A-Z])/g, ' $1')
       .replace(/^./, (str) => str.toUpperCase())
       .trim();
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- PDS_FIELD_NAME_MAP and ARRAY_FIELD_PATTERNS are static lookup tables that never change between renders
+  }, []);
 
   // Form submission with sequential mutations
   const handleSubmit = useCallback(
@@ -1107,7 +1111,7 @@ export default function PDSCreatePage() {
               ? typeof dataWithTypeConversions.personalInfo.heightM === 'number'
                 ? dataWithTypeConversions.personalInfo.heightM
                 : parseFloat(
-                    dataWithTypeConversions.personalInfo.heightM as any
+                    String(dataWithTypeConversions.personalInfo.heightM)
                   )
               : null,
             weightKg: dataWithTypeConversions.personalInfo.weightKg
@@ -1115,16 +1119,16 @@ export default function PDSCreatePage() {
                 'number'
                 ? dataWithTypeConversions.personalInfo.weightKg
                 : parseFloat(
-                    dataWithTypeConversions.personalInfo.weightKg as any
+                    String(dataWithTypeConversions.personalInfo.weightKg)
                   )
               : null,
-          } as any;
+          } as CompletePdsData['personalInfo'];
         }
 
         // Convert Family Background - Children dateOfBirth
         if (dataWithTypeConversions.family?.children) {
           dataWithTypeConversions.family.children =
-            dataWithTypeConversions.family.children.map((child: any) => ({
+            dataWithTypeConversions.family.children.map((child) => ({
               ...child,
               dateOfBirth: child.dateOfBirth
                 ? child.dateOfBirth instanceof Date
@@ -1137,7 +1141,7 @@ export default function PDSCreatePage() {
         // Convert Civil Service Eligibility dates
         if (dataWithTypeConversions.eligibility) {
           dataWithTypeConversions.eligibility =
-            dataWithTypeConversions.eligibility.map((item: any) => ({
+            dataWithTypeConversions.eligibility.map((item) => ({
               ...item,
               dateOfExam: item.dateOfExam
                 ? item.dateOfExam instanceof Date
@@ -1155,7 +1159,7 @@ export default function PDSCreatePage() {
         // Convert Work Experience dates and salary
         if (dataWithTypeConversions.workExperience) {
           dataWithTypeConversions.workExperience =
-            dataWithTypeConversions.workExperience.map((item: any) => ({
+            dataWithTypeConversions.workExperience.map((item) => ({
               ...item,
               dateFrom: item.dateFrom
                 ? item.dateFrom instanceof Date
@@ -1178,7 +1182,7 @@ export default function PDSCreatePage() {
         // Convert Voluntary Work dates and hours
         if (dataWithTypeConversions.voluntaryWork) {
           dataWithTypeConversions.voluntaryWork =
-            dataWithTypeConversions.voluntaryWork.map((item: any) => ({
+            dataWithTypeConversions.voluntaryWork.map((item) => ({
               ...item,
               dateFrom: item.dateFrom
                 ? item.dateFrom instanceof Date
@@ -1201,7 +1205,7 @@ export default function PDSCreatePage() {
         // Convert Learning Development dates and hours
         if (dataWithTypeConversions.learningDevelopment) {
           dataWithTypeConversions.learningDevelopment =
-            dataWithTypeConversions.learningDevelopment.map((item: any) => ({
+            dataWithTypeConversions.learningDevelopment.map((item) => ({
               ...item,
               dateFrom: item.dateFrom
                 ? item.dateFrom instanceof Date
@@ -1225,7 +1229,7 @@ export default function PDSCreatePage() {
         if (dataWithTypeConversions.otherInfo?.references) {
           dataWithTypeConversions.otherInfo.references =
             dataWithTypeConversions.otherInfo.references.filter(
-              (ref: any) =>
+              (ref) =>
                 ref.name &&
                 ref.name.trim() !== '' &&
                 ref.address &&
@@ -1252,10 +1256,12 @@ export default function PDSCreatePage() {
         });
 
         // STEP 2: Validate using the schema (with frontend structure - education as object)
-        const validatedData = completePdsSchema.parse(dataWithTypeConversions);
+        completePdsSchema.parse(dataWithTypeConversions);
 
         // STEP 3: Transform to backend format (education object → array, family → familyBackground)
-        const backendData = transformPdsForSubmission(dataWithTypeConversions);
+        const backendData = transformPdsForSubmission(dataWithTypeConversions) as Record<string, unknown> & {
+          education?: Record<string, unknown>[];
+        };
 
         console.log('Backend data structure:', {
           hasPersonalInfo: !!backendData.personalInfo,
@@ -1271,11 +1277,11 @@ export default function PDSCreatePage() {
           // Use existing draft ID
           pdsId = draftId;
           // Update draft one final time before submission
-          await updateMutation.mutateAsync(backendData as any);
+          await updateMutation.mutateAsync(backendData as UpdatePDSData);
         } else {
           // Create PDS (status: draft)
           const createResult = await createMutation.mutateAsync(
-            backendData as any
+            backendData as CreatePDSData
           );
 
           if (!createResult?.data?.id) {
@@ -1398,10 +1404,10 @@ export default function PDSCreatePage() {
       submitMutation,
       clearSaved,
       router,
-      currentSection,
       createdPdsId,
       draftId,
       updateMutation,
+      formatFieldPath,
     ]
   );
 

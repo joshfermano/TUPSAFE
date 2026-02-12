@@ -145,7 +145,8 @@ export const Liabilities = memo(function Liabilities() {
   const liabilities = watch('liabilities') || [];
 
   const totalLiabilities = useMemo(() => {
-    return liabilities.reduce(
+    const items = (liabilities || []) as LiabilityItem[];
+    return items.reduce(
       (sum: number, liability: LiabilityItem) => {
         const balance = liability.outstandingBalance;
         const numBalance = typeof balance === 'string' ? parseFloat(balance) : (balance || 0);
@@ -153,7 +154,8 @@ export const Liabilities = memo(function Liabilities() {
       },
       0
     );
-  }, [liabilities]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- liabilities from watch() may create new array ref; computation is cheap
+  }, [JSON.stringify(liabilities)]);
 
   const addLiability = () => {
     append({

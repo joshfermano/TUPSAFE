@@ -2,7 +2,7 @@
 
 import { memo, useMemo } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { User, Calendar, MapPin, Shield } from 'lucide-react';
+import { User, Calendar, Shield } from 'lucide-react';
 import {
   FormField,
   FormItem,

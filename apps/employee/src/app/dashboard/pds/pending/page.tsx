@@ -112,7 +112,7 @@ const toISOString = (date: Date | string | null | undefined): string | undefined
 // Main PDS Pending Page
 export default function PDSPendingPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const {
     data: pdsResponse,
     isLoading: loading,
