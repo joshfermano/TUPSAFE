@@ -1,0 +1,131 @@
+name: Build & Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ap-southeast-1
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-southeast-1.amazonaws.com
+
+jobs:
+  build-and-push:
+    name: Build ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: employee
+            context: .
+            dockerfile: Dockerfile
+          - service: admin
+            context: .
+            dockerfile: Dockerfile
+          - service: ai-agent
+            context: ./services/ai-agent
+            dockerfile: Dockerfile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set build args for Next.js apps
+        id: build-args
+        if: matrix.service != 'ai-agent'
+        run: |
+          cat <<'EOF' >> "$GITHUB_OUTPUT"
+          args<<ARGS
+          APP_NAME=${{ matrix.service }}
+          NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_EMPLOYEE_APP_URL=https://tupsafe.tech
+          NEXT_PUBLIC_ADMIN_APP_URL=http://${{ secrets.EC2_ELASTIC_IP }}:9443
+          NEXT_PUBLIC_APP_PORTAL=${{ matrix.service }}
+          ARGS
+          EOF
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.context }}/${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/tupsafe/${{ matrix.service }}:${{ github.sha }}
+            ${{ env.ECR_REGISTRY }}/tupsafe/${{ matrix.service }}:latest
+          build-args: ${{ matrix.service != 'ai-agent' && steps.build-args.outputs.args || '' }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+          platforms: linux/amd64
+
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: build-and-push
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_ELASTIC_IP }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          port: 22
+          timeout: 300s
+          script: |
+            set -euo pipefail
+            echo "=== Deploying commit ${{ github.sha }} ==="
+            cd /opt/tupsafe
+
+            aws ecr get-login-password --region ap-southeast-1 | \
+              docker login --username AWS --password-stdin \
+              ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-southeast-1.amazonaws.com
+
+            sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${{ github.sha }}/" .env.prod 2>/dev/null || \
+              echo "IMAGE_TAG=${{ github.sha }}" >> .env.prod
+
+            docker compose -f docker-compose.prod.yml --env-file .env.prod pull employee admin ai-agent
+            docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+
+            sleep 30
+            for svc in tupsafe-employee tupsafe-admin tupsafe-ai-agent tupsafe-redis tupsafe-nginx; do
+              STATUS=$(docker inspect --format='{{.State.Health.Status}}' "$svc" 2>/dev/null || echo "n/a")
+              echo "$svc: $STATUS"
+            done
+
+            docker image prune -f
+            echo "=== Deploy complete ==="
+
+      - name: Verify health
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_ELASTIC_IP }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          port: 22
+          timeout: 60s
+          script: |
+            curl -sf --max-time 10 https://tupsafe.tech/api/health > /dev/null 2>&1 && echo "Employee: OK" || echo "Employee: FAILED"
+            curl -sf --max-time 10 http://localhost:9443/api/health > /dev/null 2>&1 && echo "Admin: OK" || echo "Admin: FAILED"
