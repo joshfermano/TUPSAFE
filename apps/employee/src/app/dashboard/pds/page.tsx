@@ -32,7 +32,6 @@ import {
 import { Card, CardContent } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
 import { Tooltip } from '../../../components/ui/tooltip';
-import { Progress } from '../../../components/ui/progress';
 
 // Local Components
 import { DeadlineSection } from '../../../components/dashboard/DeadlineSection';
@@ -59,7 +58,6 @@ import {
   Calendar,
   Plus,
   Send,
-  TrendingUp,
   Archive,
   Loader2,
   Info,
@@ -395,8 +393,8 @@ const SectionCard = memo(function SectionCard({
 
 // Main Component
 export default function PDSPage() {
-  const { user } = useAuth();
-  
+  const { user: _user } = useAuth();
+
   // Use real data hooks instead of mock data
   const { data: pdsResponse, isLoading, error: pdsError } = usePDSSubmissions();
   const { deadline } = useDeadlineForForm('pds');
@@ -426,11 +424,11 @@ export default function PDSPage() {
     }
 
     const totalSubmissions = submissions.length;
-    const approvedCount = submissions.filter((s: any) => s.status === 'approved').length;
+    const approvedCount = submissions.filter((s: PDSSubmission) => s.status === 'approved').length;
     const pendingReviews = submissions.filter(
-      (s: any) => s.status === 'submitted' || s.status === 'reviewing'
+      (s: PDSSubmission) => s.status === 'submitted' || s.status === 'reviewing'
     ).length;
-    const rejected = submissions.filter((s: any) => s.status === 'rejected').length;
+    const rejected = submissions.filter((s: PDSSubmission) => s.status === 'rejected').length;
 
     const approvalRate =
       totalSubmissions > 0
@@ -450,7 +448,7 @@ export default function PDSPage() {
 
   const hasApprovedForCurrentYear = useMemo(() => {
     return submissions?.some(
-      (s: any) => s.year === currentYear && s.status === 'approved'
+      (s: PDSSubmission) => s.year === currentYear && s.status === 'approved'
     ) ?? false;
   }, [submissions, currentYear]);
 
@@ -999,7 +997,7 @@ export default function PDSPage() {
                     </div>
 
                     <div className="space-y-3">
-                      {submissions.slice(0, 5).map((submission: any, index: number) => (
+                      {submissions.slice(0, 5).map((submission: PDSSubmission, index: number) => (
                         <SubmissionCard
                           key={submission.id}
                           submission={submission}

@@ -14,7 +14,7 @@
  */
 
 import { memo } from 'react';
-import { Calculator, TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 import { NumberTicker } from '../../../../../components/ui/number-ticker';
 import { formatCurrency } from '../../../../../lib/utils/currency';
 import type { SalnSummary } from '../../../../../lib/validations/saln-schema';

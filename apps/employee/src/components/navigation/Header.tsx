@@ -405,7 +405,6 @@ export const Header: React.FC = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const { user, signOut } = useAuth();
   const pathname = usePathname();
-  const router = useRouter();
 
   // Hide header on dashboard routes and pending approval page
   const shouldHideHeader =

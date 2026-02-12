@@ -10,7 +10,7 @@
  * - Professional color scheme (TUP Blue primary)
  */
 
-import { memo, useCallback, startTransition, useRef, useMemo } from 'react';
+import { memo, useCallback, startTransition, useRef } from 'react';
 import { Briefcase, Plus, X, Award, Paperclip } from 'lucide-react';
 import { useFormContext, useFieldArray } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -64,7 +64,7 @@ export const SectionIV = memo(function SectionIV() {
       replaceEligibility(sorted);
       toast.info('Civil service eligibilities sorted by date (latest first)');
     }
-  }, [form.getValues, replaceEligibility]);
+  }, [form, replaceEligibility]);
 
   /**
    * Handle blur event on eligibility date fields to trigger auto-sort
@@ -151,7 +151,7 @@ export const SectionIV = memo(function SectionIV() {
       replaceWork(sorted);
       toast.info('Work experiences sorted by date (latest first)');
     }
-  }, [form.getValues, replaceWork]);
+  }, [form, replaceWork]);
 
   /**
    * Handle adding a new work experience entry

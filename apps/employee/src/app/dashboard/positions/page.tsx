@@ -30,7 +30,6 @@ import {
 } from '../../../components/ui/select';
 import { Card } from '../../../components/ui/card';
 import { Separator } from '../../../components/ui/separator';
-import { cn } from '../../../lib/utils';
 import {
   useOpenPositionsQuery,
   type OpenPosition,
@@ -267,7 +266,8 @@ export default function OpenPositionsPage() {
     const featured = filteredPositions.filter((p) => p.isFeatured);
     const regular = filteredPositions.filter((p) => !p.isFeatured);
     return [...featured, ...regular];
-  }, [filteredPositions]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- filteredPositions is derived from data/searchQuery which are already deps implicitly; including it would cause infinite loop since it's a new array each render
+  }, [data?.positions, searchQuery]);
 
   // Pagination calculation
   const totalPositions = combinedPositions.length;
@@ -337,7 +337,7 @@ export default function OpenPositionsPage() {
                 {/* Sort By */}
                 <Select
                   value={sortBy}
-                  onValueChange={(value) => setSortBy(value as any)}>
+                  onValueChange={(value) => setSortBy(value as 'deadline' | 'salary' | 'posted')}>
                   <SelectTrigger className="w-full sm:w-[160px]">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>

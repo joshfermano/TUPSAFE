@@ -296,7 +296,7 @@ export async function POST(request: NextRequest) {
     // ========================================================================
     // STEP 4: Transform frontend data to backend format
     // ========================================================================
-    const transformedData = transformSalnForSubmission(body);
+    const transformedData = transformSalnForSubmission(body) as CreateSalnInput & Record<string, unknown>;
 
     // Validate required fields
     if (!transformedData.year) {
@@ -323,7 +323,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate year
-    const year = parseInt(transformedData.year);
+    const year = typeof transformedData.year === 'string' ? parseInt(transformedData.year) : transformedData.year;
     const currentYear = new Date().getFullYear();
     if (year < 2000 || year > currentYear + 1) {
       return NextResponse.json(

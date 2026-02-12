@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { motion } from 'framer-motion';
 import {
   Brain,
@@ -95,7 +94,7 @@ const HeroSection = () => (
             { icon: Clock, label: 'Available', value: '24/7' },
             { icon: MessageCircle, label: 'Languages', value: 'Multi' },
             { icon: Brain, label: 'AI Powered', value: 'Smart' },
-          ].map((stat, index) => (
+          ].map((stat) => (
             <MagicCard
               key={stat.label}
               className="p-6 text-center"

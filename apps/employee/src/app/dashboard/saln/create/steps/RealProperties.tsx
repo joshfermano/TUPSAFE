@@ -151,12 +151,14 @@ export const RealProperties = memo(function RealProperties() {
   }, []);
 
   const totalRealPropertyValue = useMemo(() => {
-    return realProperties.reduce(
+    const items = (realProperties || []) as PropertyItem[];
+    return items.reduce(
       (sum: number, prop: PropertyItem) =>
         sum + (prop.currentFairMarketValue || 0),
       0
     );
-  }, [realProperties]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- realProperties from watch() may create new array ref; computation is cheap
+  }, [JSON.stringify(realProperties)]);
 
   const addRealProperty = () => {
     append({

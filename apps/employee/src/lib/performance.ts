@@ -29,13 +29,12 @@ import { useEffect, useRef } from 'react';
 export const useRenderCount = (componentName: string): number => {
   const renderCount = useRef(0);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     renderCount.current += 1;
     if (process.env.NODE_ENV === 'development') {
       console.log(`[Render] ${componentName} - Render #${renderCount.current}`);
     }
-  });
+  }); // Intentionally runs on every render to count re-renders
 
   return renderCount.current;
 };
@@ -56,14 +55,14 @@ export const useRenderCount = (componentName: string): number => {
  */
 export const useWhyDidYouUpdate = (
   name: string,
-  props: Record<string, any>
+  props: Record<string, unknown>
 ): void => {
-  const previousProps = useRef<Record<string, any> | undefined>(undefined);
+  const previousProps = useRef<Record<string, unknown> | undefined>(undefined);
 
   useEffect(() => {
     if (previousProps.current && process.env.NODE_ENV === 'development') {
       const allKeys = Object.keys({ ...previousProps.current, ...props });
-      const changedProps: Record<string, { from: any; to: any }> = {};
+      const changedProps: Record<string, { from: unknown; to: unknown }> = {};
 
       allKeys.forEach((key) => {
         if (previousProps.current![key] !== props[key]) {

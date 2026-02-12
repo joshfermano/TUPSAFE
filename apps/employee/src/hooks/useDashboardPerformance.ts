@@ -141,7 +141,8 @@ export function useDashboardPerformance(config: PerformanceConfig = {}) {
 
       previousThemeRef.current = theme;
     }
-  }, [theme, mergedConfig]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mergedConfig is recreated every render; its individual properties are stable primitives/refs
+  }, [theme, mergedConfig.enableLogging, mergedConfig.logThreshold, mergedConfig.onMetrics]);
 
   /**
    * Manually track theme switch start

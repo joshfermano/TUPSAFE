@@ -36,12 +36,12 @@ import {
 
 // Import Enhanced Components from shared-ui
 import {
-  EnhancedFormSection,
   EnhancedInput,
   EnhancedCard,
   EnhancedCardContent,
   BlurFade,
 } from '@tupsafe/shared-ui';
+import type { CompleteSalnData } from '../../../../../lib/validations/saln-schema';
 
 interface SubmissionErrors {
   year?: { message?: string };
@@ -66,7 +66,7 @@ interface FormErrors {
 }
 
 export const DeclarantInfo = memo(function DeclarantInfo() {
-  const form = useFormContext<any>();
+  const form = useFormContext<Partial<CompleteSalnData>>();
   const {
     register,
     control,
@@ -79,7 +79,7 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
   const hasMultipleMarriages = useWatch({ control, name: 'submission.hasMultipleMarriages' });
   const spouseIsPublicOfficial = useWatch({ control, name: 'submission.spouseIsPublicOfficial' });
 
-  const isJointFiling = filingType === 'joint';
+  const _isJointFiling = filingType === 'joint';
   const hasSpouse = filingType === 'joint' || filingType === 'separate';
   const requiresComplianceDate = complianceType === 'assumption' || complianceType === 'exit';
 

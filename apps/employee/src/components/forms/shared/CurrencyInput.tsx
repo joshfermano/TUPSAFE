@@ -115,23 +115,24 @@ export const CurrencyInput = memo(function CurrencyInput({
   const error = useMemo(() => {
     const pathParts = name.split('.');
 
-    // Type assertion needed: Dynamic property access on form errors object
-    let currentError: any = errors;
+    // Dynamic property access on form errors object requires flexible typing
+    let currentError: Record<string, unknown> | undefined = errors as Record<string, unknown>;
 
     for (const part of pathParts) {
       // Handle array notation like "assets[0]"
       const arrayMatch = part.match(/^(.+)\[(\d+)\]$/);
       if (arrayMatch) {
         const [, arrayName, index] = arrayMatch;
-        currentError = currentError?.[arrayName]?.[parseInt(index)];
+        const arrayEntry = currentError?.[arrayName] as Record<string, unknown> | undefined;
+        currentError = arrayEntry?.[parseInt(index)] as Record<string, unknown> | undefined;
       } else {
-        currentError = currentError?.[part];
+        currentError = currentError?.[part] as Record<string, unknown> | undefined;
       }
 
       if (!currentError) break;
     }
 
-    return currentError?.message as string | undefined;
+    return (currentError as Record<string, unknown> | undefined)?.message as string | undefined;
   }, [errors, name]);
 
   /**
@@ -309,7 +310,7 @@ export const CurrencyInput = memo(function CurrencyInput({
               setDisplayValue(formatCurrency(numValue));
             }
           }
-        }, [value, isFocused]);
+        }, [value]);
 
         return (
           <div className={cn('grid gap-2', className)}>

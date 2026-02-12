@@ -72,7 +72,7 @@ export const SectionV = memo(function SectionV() {
       replaceVoluntary(sorted);
       toast.info('Voluntary work sorted by date (latest first)');
     }
-  }, [form.getValues, replaceVoluntary]);
+  }, [form, replaceVoluntary]);
 
   /**
    * Sort training entries by date (latest first)
@@ -86,7 +86,7 @@ export const SectionV = memo(function SectionV() {
       replaceTraining(sorted);
       toast.info('Training programs sorted by date (latest first)');
     }
-  }, [form.getValues, replaceTraining]);
+  }, [form, replaceTraining]);
 
   /**
    * Handle adding new voluntary work with auto-sort

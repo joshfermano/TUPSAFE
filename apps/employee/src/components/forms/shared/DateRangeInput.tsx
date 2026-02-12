@@ -12,9 +12,8 @@
  */
 
 import React from 'react';
-import { UseFormReturn } from 'react-hook-form';
+import { type UseFormReturn, type FieldValues } from 'react-hook-form';
 import { Input } from '../../ui/input';
-import { Label } from '../../ui/label';
 import {
   FormField,
   FormItem,
@@ -24,7 +23,7 @@ import {
 } from '../../ui/form';
 
 interface DateRangeInputProps {
-  form: UseFormReturn<any>;
+  form: UseFormReturn<FieldValues>;
   fromName: string;
   toName: string;
   fromLabel?: string;

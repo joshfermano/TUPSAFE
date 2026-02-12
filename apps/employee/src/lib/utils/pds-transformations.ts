@@ -2,45 +2,56 @@
  * PDS Data Transformation Utilities
  *
  * Comprehensive transformations for PDS data across different formats:
- * 1. Frontend ↔ Backend (API submission/retrieval)
- * 2. Backend → PDF (PDF generation)
+ * 1. Frontend <-> Backend (API submission/retrieval)
+ * 2. Backend -> PDF (PDF generation)
  *
  * Key transformations:
  * 1. Type conversions for serialized data (fixes validation errors):
- *    - dateOfBirth: string → Date (personalInfo, children)
- *    - heightM: string → number (personalInfo)
- *    - weightKg: string → number (personalInfo)
- *    - All date fields: string → Date (eligibility, workExperience, voluntaryWork, learningDevelopment)
- *    - All numeric fields: string → number (monthlySalary, numberOfHours, hours)
- * 2. Field mappings (frontend ↔ backend):
- *    - family ↔ familyBackground
- *    - eligibility ↔ civilService
- *    - learningDevelopment ↔ training
- * 3. education: object ↔ array format
- * 4. unitsEarned ↔ highestLevelEarned (field rename)
- * 5. honors ↔ honorsReceived (field rename)
- * 6. Year numbers ↔ ISO date strings for periodFrom/periodTo
+ *    - dateOfBirth: string -> Date (personalInfo, children)
+ *    - heightM: string -> number (personalInfo)
+ *    - weightKg: string -> number (personalInfo)
+ *    - All date fields: string -> Date (eligibility, workExperience, voluntaryWork, learningDevelopment)
+ *    - All numeric fields: string -> number (monthlySalary, numberOfHours, hours)
+ * 2. Field mappings (frontend <-> backend):
+ *    - family <-> familyBackground
+ *    - eligibility <-> civilService
+ *    - learningDevelopment <-> training
+ * 3. education: object <-> array format
+ * 4. unitsEarned <-> highestLevelEarned (field rename)
+ * 5. honors <-> honorsReceived (field rename)
+ * 6. Year numbers <-> ISO date strings for periodFrom/periodTo
  * 7. Filter out empty references
  */
 
 import type { CompletePdsData } from '../validations/pds-schema';
 import type { PDSData } from '@tupsafe/shared-ui/pds-pdf';
 
+// ============================================================================
+// Internal type aliases for data flowing across serialization boundaries
+// (localStorage, API JSON, database rows) where dates may be strings, etc.
+// ============================================================================
+
+/** A value that could be a Date, an ISO string, or null/undefined */
+type DateLike = Date | string | null | undefined;
+
+/** A value that could be a number, a numeric string, or null/undefined */
+type NumberLike = number | string | null | undefined;
+
 /**
  * Helper function to convert Date object to a date-only string (YYYY-MM-DD)
  * Uses LOCAL timezone components to prevent date shifts when serializing.
- * 
+ *
  * This is critical for date-only fields like dateOfBirth where we don't want
  * timezone conversion to change the date.
- * 
+ *
  * @param value - Date object, date string, or null/undefined
  * @returns String in 'YYYY-MM-DD' format using local date components, or null
  */
-function toDateOnlyString(value: any): string | null {
+function toDateOnlyString(value: DateLike): string | null {
   if (!value) return null;
-  
+
   let date: Date;
-  
+
   if (value instanceof Date) {
     date = value;
   } else if (typeof value === 'string') {
@@ -55,15 +66,15 @@ function toDateOnlyString(value: any): string | null {
   } else {
     return null;
   }
-  
+
   // Check for invalid date
   if (isNaN(date.getTime())) return null;
-  
+
   // Format using LOCAL timezone components
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
-  
+
   return `${year}-${month}-${day}`;
 }
 
@@ -71,12 +82,12 @@ function toDateOnlyString(value: any): string | null {
  * Helper function to convert string to Date
  * Handles ISO date strings (YYYY-MM-DD) and ISO datetime strings using LOCAL timezone
  * to prevent -1 day shift from UTC conversion.
- * 
+ *
  * IMPORTANT: For ISO datetime strings like '2004-05-13T00:00:00.000Z', we extract
  * the date portion and parse it as local time, NOT as UTC. This prevents the date
  * from shifting backwards when the user is in a timezone ahead of UTC.
  */
-function stringToDate(value: any): Date | null {
+function stringToDate(value: DateLike): Date | null {
   if (!value) return null;
   if (value instanceof Date) return value;
   if (typeof value === 'string') {
@@ -95,7 +106,7 @@ function stringToDate(value: any): Date | null {
       }
       return null;
     }
-    
+
     // Check if it's an ISO datetime string (e.g., '2004-05-13T00:00:00.000Z')
     // Extract the YYYY-MM-DD portion and parse as LOCAL time
     const isoDatetimeRegex = /^(\d{4})-(\d{2})-(\d{2})T/;
@@ -112,7 +123,7 @@ function stringToDate(value: any): Date | null {
       }
       return null;
     }
-    
+
     // For other date formats, use standard parsing (but this may cause timezone issues)
     const date = new Date(value);
     return isNaN(date.getTime()) ? null : date;
@@ -123,7 +134,7 @@ function stringToDate(value: any): Date | null {
 /**
  * Helper function to convert string to number
  */
-function stringToNumber(value: any): number | null {
+function stringToNumber(value: NumberLike): number | null {
   if (value === null || value === undefined || value === '') return null;
   if (typeof value === 'number') return value;
   if (typeof value === 'string') {
@@ -139,7 +150,7 @@ function stringToNumber(value: any): number | null {
  * @param data - Form data in frontend format
  * @returns Transformed data ready for backend API
  */
-export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
+export function transformPdsForSubmission(data: Partial<CompletePdsData>): Record<string, unknown> {
   // ========================================================================
   // STEP 0: Type conversions for serialized data
   // ========================================================================
@@ -151,39 +162,40 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
   // Convert Personal Info date/number fields
   // NOTE: dateOfBirth is converted to YYYY-MM-DD string to prevent timezone issues
   if (transformedData.personalInfo) {
+    const pi = transformedData.personalInfo;
     transformedData.personalInfo = {
-      ...transformedData.personalInfo,
-      dateOfBirth: toDateOnlyString(transformedData.personalInfo.dateOfBirth),
-      heightM: stringToNumber(transformedData.personalInfo.heightM),
-      weightKg: stringToNumber(transformedData.personalInfo.weightKg),
-    } as any;
+      ...pi,
+      dateOfBirth: toDateOnlyString(pi.dateOfBirth) as unknown as Date,
+      heightM: stringToNumber(pi.heightM) as unknown as number | null | undefined,
+      weightKg: stringToNumber(pi.weightKg) as unknown as number | null | undefined,
+    };
   }
 
   // Convert Family Background - Children dateOfBirth
   // NOTE: dateOfBirth is converted to YYYY-MM-DD string to prevent timezone issues
   if (transformedData.family?.children) {
-    transformedData.family.children = transformedData.family.children.map((child: any) => ({
+    transformedData.family.children = transformedData.family.children.map((child) => ({
       ...child,
-      dateOfBirth: toDateOnlyString(child.dateOfBirth),
+      dateOfBirth: toDateOnlyString(child.dateOfBirth) as unknown as Date | null | undefined,
     }));
   }
 
   // Convert Civil Service Eligibility dates and rating
   // NOTE: All date fields converted to YYYY-MM-DD strings
   if (transformedData.eligibility) {
-    transformedData.eligibility = transformedData.eligibility.map((item: any) => ({
+    let eligibilityItems = transformedData.eligibility.map((item) => ({
       ...item,
       id: item.id, // CRITICAL: Preserve ID for attachment linking (upsert-by-id logic)
-      dateOfExam: toDateOnlyString(item.dateOfExam),
-      licenseValidityDate: toDateOnlyString(item.licenseValidityDate),
-      rating: stringToNumber(item.rating),
-      _attachmentIds: item._attachmentIds || [], // Preserve for draft metadata
+      dateOfExam: toDateOnlyString(item.dateOfExam) as unknown as Date | null,
+      licenseValidityDate: toDateOnlyString(item.licenseValidityDate) as unknown as Date | null | undefined,
+      rating: stringToNumber(item.rating as NumberLike) as unknown as number | null | undefined,
+      _attachmentIds: ((item as Record<string, unknown>)._attachmentIds as string[] | undefined) || [], // Preserve for draft metadata
     }));
 
     // Log civil service data for debugging
     console.log('[transformPdsForSubmission] Civil Service entries:', {
-      count: transformedData.eligibility.length,
-      entries: transformedData.eligibility.map((cs: any) => ({
+      count: eligibilityItems.length,
+      entries: eligibilityItems.map((cs) => ({
         id: cs.id,
         eligibilityName: cs.eligibilityName,
         hasDateOfExam: !!cs.dateOfExam,
@@ -193,8 +205,8 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
     // Filter out completely empty entries (but preserve entries with IDs for upsert)
     // IMPORTANT: Preserve entries that have IDs AND at least one meaningful field
     // This allows users to upload attachments even if other fields aren't filled yet
-    transformedData.eligibility = transformedData.eligibility.filter(
-      (cs: any) => {
+    eligibilityItems = eligibilityItems.filter(
+      (cs) => {
         // Check if entry has any meaningful data filled in
         const hasEligibilityName = cs.eligibilityName && cs.eligibilityName.trim() !== '';
         const hasRating = cs.rating !== null && cs.rating !== undefined;
@@ -218,81 +230,87 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
     );
 
     // Sort eligibility by exam date (latest first)
-    transformedData.eligibility = [...transformedData.eligibility].sort((a: any, b: any) => {
-      const dateA = a.dateOfExam ? new Date(a.dateOfExam).getTime() : 0;
-      const dateB = b.dateOfExam ? new Date(b.dateOfExam).getTime() : 0;
+    eligibilityItems = [...eligibilityItems].sort((a, b) => {
+      const dateA = a.dateOfExam ? new Date(a.dateOfExam as unknown as string).getTime() : 0;
+      const dateB = b.dateOfExam ? new Date(b.dateOfExam as unknown as string).getTime() : 0;
       return dateB - dateA;
     });
+
+    transformedData.eligibility = eligibilityItems;
   }
 
   // Convert Work Experience dates and filter empty entries
   // NOTE: All date fields converted to YYYY-MM-DD strings
   if (transformedData.workExperience) {
-    transformedData.workExperience = transformedData.workExperience.map((item: any) => ({
+    let workItems = transformedData.workExperience.map((item) => ({
       ...item,
-      dateFrom: toDateOnlyString(item.dateFrom),
-      dateTo: toDateOnlyString(item.dateTo),
-      monthlySalary: stringToNumber(item.monthlySalary),
+      dateFrom: toDateOnlyString(item.dateFrom) as unknown as Date | null | undefined,
+      dateTo: toDateOnlyString(item.dateTo) as unknown as Date | null | undefined,
+      monthlySalary: stringToNumber(item.monthlySalary as NumberLike) as unknown as number | null | undefined,
     }));
     // Filter out empty/incomplete work experience entries
     // dateFrom is NOT NULL in database - only keep entries with valid dateFrom
-    transformedData.workExperience = transformedData.workExperience.filter(
-      (work: any) => work.dateFrom !== null && work.dateFrom !== undefined
+    workItems = workItems.filter(
+      (work) => work.dateFrom !== null && work.dateFrom !== undefined
     );
 
     // Sort work experience by date (latest first)
-    transformedData.workExperience = [...transformedData.workExperience].sort((a: any, b: any) => {
-      const dateToA = a.dateTo ? new Date(a.dateTo).getTime() : Infinity;
-      const dateToB = b.dateTo ? new Date(b.dateTo).getTime() : Infinity;
+    workItems = [...workItems].sort((a, b) => {
+      const dateToA = a.dateTo ? new Date(a.dateTo as unknown as string).getTime() : Infinity;
+      const dateToB = b.dateTo ? new Date(b.dateTo as unknown as string).getTime() : Infinity;
       if (dateToB !== dateToA) return dateToB - dateToA;
-      const dateFromA = a.dateFrom ? new Date(a.dateFrom).getTime() : Infinity;
-      const dateFromB = b.dateFrom ? new Date(b.dateFrom).getTime() : Infinity;
+      const dateFromA = a.dateFrom ? new Date(a.dateFrom as unknown as string).getTime() : Infinity;
+      const dateFromB = b.dateFrom ? new Date(b.dateFrom as unknown as string).getTime() : Infinity;
       return dateFromB - dateFromA;
     });
+
+    transformedData.workExperience = workItems;
   }
 
   // Convert Voluntary Work dates and filter empty entries
   // NOTE: All date fields converted to YYYY-MM-DD strings
   if (transformedData.voluntaryWork) {
-    transformedData.voluntaryWork = transformedData.voluntaryWork.map((item: any) => ({
+    let volItems = transformedData.voluntaryWork.map((item) => ({
       ...item,
-      dateFrom: toDateOnlyString(item.dateFrom),
-      dateTo: toDateOnlyString(item.dateTo),
-      numberOfHours: stringToNumber(item.numberOfHours),
+      dateFrom: toDateOnlyString(item.dateFrom) as unknown as Date | null | undefined,
+      dateTo: toDateOnlyString(item.dateTo) as unknown as Date | null | undefined,
+      numberOfHours: stringToNumber(item.numberOfHours as NumberLike) as unknown as number | null | undefined,
     }));
     // Filter out empty/incomplete voluntary work entries
     // dateFrom is NOT NULL in database - only keep entries with valid dateFrom
-    transformedData.voluntaryWork = transformedData.voluntaryWork.filter(
-      (vol: any) => vol.dateFrom !== null && vol.dateFrom !== undefined
+    volItems = volItems.filter(
+      (vol) => vol.dateFrom !== null && vol.dateFrom !== undefined
     );
 
     // Sort voluntary work by date (latest first)
-    transformedData.voluntaryWork = [...transformedData.voluntaryWork].sort((a: any, b: any) => {
-      const dateToA = a.dateTo ? new Date(a.dateTo).getTime() : Infinity;
-      const dateToB = b.dateTo ? new Date(b.dateTo).getTime() : Infinity;
+    volItems = [...volItems].sort((a, b) => {
+      const dateToA = a.dateTo ? new Date(a.dateTo as unknown as string).getTime() : Infinity;
+      const dateToB = b.dateTo ? new Date(b.dateTo as unknown as string).getTime() : Infinity;
       if (dateToB !== dateToA) return dateToB - dateToA;
-      const dateFromA = a.dateFrom ? new Date(a.dateFrom).getTime() : Infinity;
-      const dateFromB = b.dateFrom ? new Date(b.dateFrom).getTime() : Infinity;
+      const dateFromA = a.dateFrom ? new Date(a.dateFrom as unknown as string).getTime() : Infinity;
+      const dateFromB = b.dateFrom ? new Date(b.dateFrom as unknown as string).getTime() : Infinity;
       return dateFromB - dateFromA;
     });
+
+    transformedData.voluntaryWork = volItems;
   }
 
   // Convert Learning Development dates and filter empty entries
   // NOTE: All date fields converted to YYYY-MM-DD strings
   if (transformedData.learningDevelopment) {
-    transformedData.learningDevelopment = transformedData.learningDevelopment.map((item: any) => ({
+    let ldItems = transformedData.learningDevelopment.map((item) => ({
       ...item,
       id: item.id, // CRITICAL: Preserve ID for attachment linking (upsert-by-id logic)
-      dateFrom: toDateOnlyString(item.dateFrom),
-      dateTo: toDateOnlyString(item.dateTo),
-      hours: stringToNumber(item.hours),
-      _attachmentIds: item._attachmentIds || [], // Preserve for draft metadata
+      dateFrom: toDateOnlyString(item.dateFrom) as unknown as Date | null | undefined,
+      dateTo: toDateOnlyString(item.dateTo) as unknown as Date | null | undefined,
+      hours: stringToNumber(item.hours as NumberLike) as unknown as number | null | undefined,
+      _attachmentIds: ((item as Record<string, unknown>)._attachmentIds as string[] | undefined) || [], // Preserve for draft metadata
     }));
 
     // Log training data BEFORE filtering
     console.log('[transformPdsForSubmission] Training entries BEFORE filter:', {
-      count: transformedData.learningDevelopment.length,
-      entries: transformedData.learningDevelopment.map((t: any) => ({
+      count: ldItems.length,
+      entries: ldItems.map((t) => ({
         id: t.id,
         title: t.title,
         hasDateFrom: !!t.dateFrom,
@@ -305,8 +323,8 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
     // Filter out empty/incomplete training entries
     // IMPORTANT: Preserve entries that have IDs AND at least one meaningful field
     // This allows users to upload attachments even if dates aren't filled yet
-    transformedData.learningDevelopment = transformedData.learningDevelopment.filter(
-      (training: any) => {
+    ldItems = ldItems.filter(
+      (training) => {
         // Check if entry has any meaningful data filled in
         const hasTitle = training.title && training.title.trim() !== '';
         const hasDateFrom = training.dateFrom !== null && training.dateFrom !== undefined;
@@ -331,25 +349,27 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
     );
 
     // Sort learning/development by date (latest first)
-    transformedData.learningDevelopment = [...transformedData.learningDevelopment].sort((a: any, b: any) => {
-      const dateToA = a.dateTo ? new Date(a.dateTo).getTime() : Infinity;
-      const dateToB = b.dateTo ? new Date(b.dateTo).getTime() : Infinity;
+    ldItems = [...ldItems].sort((a, b) => {
+      const dateToA = a.dateTo ? new Date(a.dateTo as unknown as string).getTime() : Infinity;
+      const dateToB = b.dateTo ? new Date(b.dateTo as unknown as string).getTime() : Infinity;
       if (dateToB !== dateToA) return dateToB - dateToA;
-      const dateFromA = a.dateFrom ? new Date(a.dateFrom).getTime() : Infinity;
-      const dateFromB = b.dateFrom ? new Date(b.dateFrom).getTime() : Infinity;
+      const dateFromA = a.dateFrom ? new Date(a.dateFrom as unknown as string).getTime() : Infinity;
+      const dateFromB = b.dateFrom ? new Date(b.dateFrom as unknown as string).getTime() : Infinity;
       return dateFromB - dateFromA;
     });
 
     // Log training data AFTER filtering
     console.log('[transformPdsForSubmission] Training entries AFTER filter:', {
-      count: transformedData.learningDevelopment.length,
-      entries: transformedData.learningDevelopment.map((t: any) => ({
+      count: ldItems.length,
+      entries: ldItems.map((t) => ({
         id: t.id,
         title: t.title,
         hasDateFrom: !!t.dateFrom,
         hasDateTo: !!t.dateTo,
       })),
     });
+
+    transformedData.learningDevelopment = ldItems;
   }
 
   // ========================================================================
@@ -359,7 +379,7 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
   if (transformedData.otherInfo?.references) {
     transformedData.otherInfo.references =
       transformedData.otherInfo.references.filter(
-        (ref: any) =>
+        (ref) =>
           ref.name && ref.name.trim() !== '' &&
           ref.address && ref.address.trim() !== '' &&
           ref.telephoneNo && ref.telephoneNo.trim() !== ''
@@ -399,10 +419,10 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
   // Frontend uses: { elementary: {...}, secondary: {...}, college: {...} }
   // Backend expects: [{ level: 'elementary', ... }, { level: 'secondary', ... }]
 
-  let educationArray: any[] = [];
+  let educationArray: Record<string, unknown>[] = [];
 
   if (transformedData.education) {
-    const educationObj = transformedData.education as any;
+    const educationObj = transformedData.education as Record<string, Record<string, unknown> | null | undefined>;
     const levels = [
       'elementary',
       'secondary',
@@ -420,19 +440,19 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
 
         // Check if any field is filled (excluding level field itself)
         const hasSchoolName =
-          levelData.schoolName && levelData.schoolName.trim() !== '';
+          levelData.schoolName && (levelData.schoolName as string).trim() !== '';
         const hasDegreeCourse =
-          levelData.degreeCourse && levelData.degreeCourse.trim() !== '';
+          levelData.degreeCourse && (levelData.degreeCourse as string).trim() !== '';
         const hasPeriodFrom =
           levelData.periodFrom !== null && levelData.periodFrom !== undefined;
         const hasPeriodTo =
           levelData.periodTo !== null && levelData.periodTo !== undefined;
         const hasUnitsEarned =
-          levelData.unitsEarned && levelData.unitsEarned.trim() !== '';
+          levelData.unitsEarned && (levelData.unitsEarned as string).trim() !== '';
         const hasYearGraduated =
           levelData.yearGraduated !== null &&
           levelData.yearGraduated !== undefined;
-        const hasHonors = levelData.honors && levelData.honors.trim() !== '';
+        const hasHonors = levelData.honors && (levelData.honors as string).trim() !== '';
 
         const hasAnyField =
           hasSchoolName ||
@@ -461,7 +481,7 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
           honorsReceived: levelData.honors || null, // Map honors to honorsReceived
         };
       })
-      .filter(Boolean); // Remove null entries
+      .filter(Boolean) as Record<string, unknown>[]; // Remove null entries
   }
 
   // ========================================================================
@@ -471,7 +491,7 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
   // IMPORTANT: Children must be extracted as a SEPARATE property from family
   // The backend expects: { familyBackground: {...}, children: [...] }
   // NOT: { familyBackground: { ..., children: [...] } }
-  const backendData = {
+  const backendData: Record<string, unknown> = {
     ...transformedData,
     // Extract family background WITHOUT children (children go as separate property)
     familyBackground: transformedData.family ? {
@@ -499,18 +519,19 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
   };
 
   // Remove the frontend keys as backend doesn't expect them
-  delete (backendData as any).family;
-  delete (backendData as any).eligibility;
-  delete (backendData as any).learningDevelopment;
+  delete backendData.family;
+  delete backendData.eligibility;
+  delete backendData.learningDevelopment;
 
   // Log the final backend data structure for debugging
+  const trainingArr = backendData.training as Array<Record<string, unknown>> | undefined;
   console.log('[transformPdsForSubmission] Final backend data:', {
     hasCivilService: !!backendData.civilService,
-    civilServiceCount: backendData.civilService?.length || 0,
-    hasTraining: !!backendData.training,
-    trainingCount: backendData.training?.length || 0,
-    trainingWithIds: backendData.training?.filter((t: any) => t.id).length || 0,
-    trainingWithoutIds: backendData.training?.filter((t: any) => !t.id).length || 0,
+    civilServiceCount: (backendData.civilService as unknown[] | undefined)?.length || 0,
+    hasTraining: !!trainingArr,
+    trainingCount: trainingArr?.length || 0,
+    trainingWithIds: trainingArr?.filter((t) => t.id).length || 0,
+    trainingWithoutIds: trainingArr?.filter((t) => !t.id).length || 0,
   });
 
   return backendData;
@@ -523,14 +544,16 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): any {
  * @param backendData - Data in backend format
  * @returns Transformed data ready for frontend form
  */
-export function transformPdsFromBackend(backendData: any): Partial<CompletePdsData> {
+export function transformPdsFromBackend<T extends object>(backendInput: T): Partial<CompletePdsData> {
+  // Cast to Record<string, unknown> for property access across serialization boundary
+  const backendData = backendInput as unknown as Record<string, unknown>;
   // ========================================================================
   // STEP 1: Transform education from array to object format
   // ========================================================================
   // Backend uses: [{ level: 'elementary', ... }, { level: 'secondary', ... }]
   // Frontend expects: { elementary: {...}, secondary: {...}, college: {...} }
 
-  const educationObj: any = {
+  const educationObj: Record<string, Record<string, unknown> | null> = {
     elementary: null,
     secondary: null,
     vocational: null,
@@ -538,20 +561,21 @@ export function transformPdsFromBackend(backendData: any): Partial<CompletePdsDa
     graduate: null,
   };
 
-  if (backendData.education && Array.isArray(backendData.education)) {
-    backendData.education.forEach((edu: any) => {
+  const backendEducation = backendData.education;
+  if (backendEducation && Array.isArray(backendEducation)) {
+    backendEducation.forEach((edu: Record<string, unknown>) => {
       if (edu.level) {
         // Convert backend field names back to frontend format
-        educationObj[edu.level] = {
+        educationObj[edu.level as string] = {
           level: edu.level,
           schoolName: edu.schoolName || '',
           degreeCourse: edu.degreeCourse || null,
           // Convert ISO date strings back to year numbers
           periodFrom: edu.periodFrom
-            ? parseInt(edu.periodFrom.split('-')[0], 10)
+            ? parseInt((edu.periodFrom as string).split('-')[0], 10)
             : null,
           periodTo: edu.periodTo
-            ? parseInt(edu.periodTo.split('-')[0], 10)
+            ? parseInt((edu.periodTo as string).split('-')[0], 10)
             : null,
           unitsEarned: edu.highestLevelEarned || null, // Map highestLevelEarned back to unitsEarned
           yearGraduated: edu.yearGraduated || null,
@@ -568,70 +592,70 @@ export function transformPdsFromBackend(backendData: any): Partial<CompletePdsDa
   // Frontend form components expect Date objects and proper numbers
 
   // Convert Personal Info date/number fields
-  let personalInfo = backendData.personalInfo;
+  let personalInfo = backendData.personalInfo as Record<string, unknown> | undefined;
   if (personalInfo) {
     personalInfo = {
       ...personalInfo,
-      dateOfBirth: stringToDate(personalInfo.dateOfBirth),
-      heightM: stringToNumber(personalInfo.heightM),
-      weightKg: stringToNumber(personalInfo.weightKg),
+      dateOfBirth: stringToDate(personalInfo.dateOfBirth as DateLike),
+      heightM: stringToNumber(personalInfo.heightM as NumberLike),
+      weightKg: stringToNumber(personalInfo.weightKg as NumberLike),
     };
   }
 
   // Convert children dateOfBirth
-  let children = backendData.children || [];
+  let children = (backendData.children || []) as Record<string, unknown>[];
   if (Array.isArray(children)) {
-    children = children.map((child: any) => ({
+    children = children.map((child: Record<string, unknown>) => ({
       ...child,
-      dateOfBirth: stringToDate(child.dateOfBirth),
+      dateOfBirth: stringToDate(child.dateOfBirth as DateLike),
     }));
   }
 
   // Convert Civil Service dates and rating
-  let eligibility = backendData.civilService || [];
+  let eligibility = (backendData.civilService || []) as Record<string, unknown>[];
   if (Array.isArray(eligibility)) {
-    eligibility = eligibility.map((item: any) => ({
+    eligibility = eligibility.map((item: Record<string, unknown>) => ({
       ...item,
       id: item.id, // CRITICAL: Preserve ID for attachment linking
-      dateOfExam: stringToDate(item.dateOfExam),
-      licenseValidityDate: stringToDate(item.licenseValidityDate),
-      rating: stringToNumber(item.rating),
-      _attachmentIds: item._attachmentIds || [], // Restore for PdsContext sync
+      dateOfExam: stringToDate(item.dateOfExam as DateLike),
+      licenseValidityDate: stringToDate(item.licenseValidityDate as DateLike),
+      rating: stringToNumber(item.rating as NumberLike),
+      _attachmentIds: (item._attachmentIds as string[] | undefined) || [], // Restore for PdsContext sync
     }));
   }
 
   // Convert Work Experience dates and numbers
-  let workExperience = backendData.workExperience || [];
+  let workExperience = (backendData.workExperience || []) as Record<string, unknown>[];
   if (Array.isArray(workExperience)) {
-    workExperience = workExperience.map((item: any) => ({
+    workExperience = workExperience.map((item: Record<string, unknown>) => ({
       ...item,
-      dateFrom: stringToDate(item.dateFrom),
-      dateTo: stringToDate(item.dateTo),
-      monthlySalary: stringToNumber(item.monthlySalary),
+      dateFrom: stringToDate(item.dateFrom as DateLike),
+      dateTo: stringToDate(item.dateTo as DateLike),
+      monthlySalary: stringToNumber(item.monthlySalary as NumberLike),
     }));
   }
 
   // Convert Voluntary Work dates and numbers
-  let voluntaryWork = backendData.voluntaryWork || [];
+  let voluntaryWork = (backendData.voluntaryWork || []) as Record<string, unknown>[];
   if (Array.isArray(voluntaryWork)) {
-    voluntaryWork = voluntaryWork.map((item: any) => ({
+    voluntaryWork = voluntaryWork.map((item: Record<string, unknown>) => ({
       ...item,
-      dateFrom: stringToDate(item.dateFrom),
-      dateTo: stringToDate(item.dateTo),
-      numberOfHours: stringToNumber(item.numberOfHours),
+      dateFrom: stringToDate(item.dateFrom as DateLike),
+      dateTo: stringToDate(item.dateTo as DateLike),
+      numberOfHours: stringToNumber(item.numberOfHours as NumberLike),
     }));
   }
 
   // Convert Training/Learning Development dates and numbers
-  let learningDevelopment = backendData.training || [];
+  let learningDevelopment = (backendData.training || []) as Record<string, unknown>[];
   if (Array.isArray(learningDevelopment)) {
-    learningDevelopment = learningDevelopment.map((item: any) => ({
+    learningDevelopment = learningDevelopment.map((item: Record<string, unknown>) => ({
       ...item,
       id: item.id, // CRITICAL: Preserve ID for attachment linking
-      dateFrom: stringToDate(item.dateFrom),
-      dateTo: stringToDate(item.dateTo),
-      hours: stringToNumber(item.hours),
-      _attachmentIds: item._attachmentIds || [], // Restore for PdsContext sync
+      dateFrom: stringToDate(item.dateFrom as DateLike),
+      dateTo: stringToDate(item.dateTo as DateLike),
+      hours: stringToNumber(item.hours as NumberLike),
+      _attachmentIds: (item._attachmentIds as string[] | undefined) || [], // Restore for PdsContext sync
     }));
   }
 
@@ -641,19 +665,20 @@ export function transformPdsFromBackend(backendData: any): Partial<CompletePdsDa
   // IMPORTANT: Children are stored as a SEPARATE property in backend
   // but frontend expects them nested in family.children
   // We must merge children back into the family object
+  const familyBackground = backendData.familyBackground as Record<string, unknown> | undefined;
   const frontendData: Partial<CompletePdsData> = {
-    personalInfo,
+    personalInfo: personalInfo as unknown as CompletePdsData['personalInfo'],
     // Merge children back into family object - backend stores them separately
-    family: backendData.familyBackground ? {
-      ...backendData.familyBackground,
+    family: familyBackground ? {
+      ...familyBackground,
       children,
-    } : { children },
-    education: educationObj,
-    eligibility,
-    workExperience,
-    voluntaryWork,
-    learningDevelopment,
-    otherInfo: backendData.otherInfo,
+    } as unknown as CompletePdsData['family'] : { children } as unknown as CompletePdsData['family'],
+    education: educationObj as unknown as CompletePdsData['education'],
+    eligibility: eligibility as unknown as CompletePdsData['eligibility'],
+    workExperience: workExperience as unknown as CompletePdsData['workExperience'],
+    voluntaryWork: voluntaryWork as unknown as CompletePdsData['voluntaryWork'],
+    learningDevelopment: learningDevelopment as unknown as CompletePdsData['learningDevelopment'],
+    otherInfo: backendData.otherInfo as unknown as CompletePdsData['otherInfo'],
   };
 
   return frontendData;
@@ -669,22 +694,24 @@ export function transformPdsFromBackend(backendData: any): Partial<CompletePdsDa
  * @returns PDSData formatted for PDF generation
  * @throws Error if required fields are missing
  */
-export function transformPdsForPdf(data: any): PDSData {
+export function transformPdsForPdf<T extends object>(dataInput: T): PDSData {
+  // Cast to Record<string, unknown> for property access across serialization boundary
+  const data = dataInput as unknown as Record<string, unknown>;
   // STEP 1: Validate input data
   if (!data) {
     throw new Error('Cannot transform PDS for PDF: Data is null or undefined');
   }
 
   // STEP 2: Handle both direct structure and nested submission structure
-  const personalInfo = data.personalInfo || {};
-  const familyBackground = data.familyBackground || data.family || {};
-  const children = data.children || familyBackground.children || [];
+  const personalInfo = (data.personalInfo || {}) as Record<string, unknown>;
+  const familyBackground = (data.familyBackground || data.family || {}) as Record<string, unknown>;
+  const children = (data.children || familyBackground.children || []) as Record<string, unknown>[];
   const education = data.education || {};
-  const civilService = data.civilService || data.eligibility || [];
-  const workExperience = data.workExperience || [];
-  const voluntaryWork = data.voluntaryWork || [];
-  const training = data.training || data.learningDevelopment || [];
-  const otherInfo = data.otherInfo || {};
+  const civilService = (data.civilService || data.eligibility || []) as Record<string, unknown>[];
+  const workExperience = (data.workExperience || []) as Record<string, unknown>[];
+  const voluntaryWork = (data.voluntaryWork || []) as Record<string, unknown>[];
+  const training = (data.training || data.learningDevelopment || []) as Record<string, unknown>[];
+  const otherInfo = (data.otherInfo || {}) as Record<string, unknown>;
 
   // STEP 3: Validate critical fields early
   if (!personalInfo.surname || !personalInfo.firstName) {
@@ -706,16 +733,16 @@ export function transformPdsForPdf(data: any): PDSData {
   });
 
   // Transform address format
-  const transformAddress = (addr: any) => {
+  const transformAddress = (addr: Record<string, unknown> | null | undefined) => {
     if (!addr) return {};
     return {
-      houseNumber: addr.houseNumber || addr.house_number || null,
-      street: addr.street || addr.streetName || null,
-      subdivision: addr.subdivision || null,
-      barangay: addr.barangay || null,
-      city: addr.city || addr.cityMunicipality || null,
-      province: addr.province || null,
-      zipCode: addr.zipCode || addr.zip_code || null,
+      houseNumber: (addr.houseNumber as string | null) || (addr.house_number as string | null) || null,
+      street: (addr.street as string | null) || (addr.streetName as string | null) || null,
+      subdivision: (addr.subdivision as string | null) || null,
+      barangay: (addr.barangay as string | null) || null,
+      city: (addr.city as string | null) || (addr.cityMunicipality as string | null) || null,
+      province: (addr.province as string | null) || null,
+      zipCode: (addr.zipCode as string | null) || (addr.zip_code as string | null) || null,
     };
   };
 
@@ -727,79 +754,36 @@ export function transformPdsForPdf(data: any): PDSData {
       typeof education === 'object' &&
       !Array.isArray(education)
     ) {
+      const eduObj = education as Record<string, Record<string, unknown> | null | undefined>;
+      const buildLevel = (level: string) => {
+        const ed = eduObj[level];
+        if (!ed) return null;
+        return {
+          level: level as 'elementary' | 'secondary' | 'vocational' | 'college' | 'graduate',
+          schoolName: (ed.schoolName as string) || '',
+          degreeCourse: ed.degreeCourse || null,
+          periodFrom: ed.periodFrom || null,
+          periodTo: ed.periodTo || null,
+          highestLevelEarned: ed.highestLevelEarned || null,
+          yearGraduated: ed.yearGraduated || null,
+          honorsReceived: ed.honorsReceived || null,
+        };
+      };
       return {
-        elementary: education.elementary
-          ? {
-              level: 'elementary' as const,
-              schoolName: education.elementary.schoolName || '',
-              degreeCourse: education.elementary.degreeCourse || null,
-              periodFrom: education.elementary.periodFrom || null,
-              periodTo: education.elementary.periodTo || null,
-              highestLevelEarned:
-                education.elementary.highestLevelEarned || null,
-              yearGraduated: education.elementary.yearGraduated || null,
-              honorsReceived: education.elementary.honorsReceived || null,
-            }
-          : null,
-        secondary: education.secondary
-          ? {
-              level: 'secondary' as const,
-              schoolName: education.secondary.schoolName || '',
-              degreeCourse: education.secondary.degreeCourse || null,
-              periodFrom: education.secondary.periodFrom || null,
-              periodTo: education.secondary.periodTo || null,
-              highestLevelEarned:
-                education.secondary.highestLevelEarned || null,
-              yearGraduated: education.secondary.yearGraduated || null,
-              honorsReceived: education.secondary.honorsReceived || null,
-            }
-          : null,
-        vocational: education.vocational
-          ? {
-              level: 'vocational' as const,
-              schoolName: education.vocational.schoolName || '',
-              degreeCourse: education.vocational.degreeCourse || null,
-              periodFrom: education.vocational.periodFrom || null,
-              periodTo: education.vocational.periodTo || null,
-              highestLevelEarned:
-                education.vocational.highestLevelEarned || null,
-              yearGraduated: education.vocational.yearGraduated || null,
-              honorsReceived: education.vocational.honorsReceived || null,
-            }
-          : null,
-        college: education.college
-          ? {
-              level: 'college' as const,
-              schoolName: education.college.schoolName || '',
-              degreeCourse: education.college.degreeCourse || null,
-              periodFrom: education.college.periodFrom || null,
-              periodTo: education.college.periodTo || null,
-              highestLevelEarned: education.college.highestLevelEarned || null,
-              yearGraduated: education.college.yearGraduated || null,
-              honorsReceived: education.college.honorsReceived || null,
-            }
-          : null,
-        graduate: education.graduate
-          ? {
-              level: 'graduate' as const,
-              schoolName: education.graduate.schoolName || '',
-              degreeCourse: education.graduate.degreeCourse || null,
-              periodFrom: education.graduate.periodFrom || null,
-              periodTo: education.graduate.periodTo || null,
-              highestLevelEarned: education.graduate.highestLevelEarned || null,
-              yearGraduated: education.graduate.yearGraduated || null,
-              honorsReceived: education.graduate.honorsReceived || null,
-            }
-          : null,
+        elementary: buildLevel('elementary'),
+        secondary: buildLevel('secondary'),
+        vocational: buildLevel('vocational'),
+        college: buildLevel('college'),
+        graduate: buildLevel('graduate'),
       };
     }
 
     // Handle array format (from database)
     if (Array.isArray(education)) {
-      const result: Record<string, any> = {};
-      education.forEach((edu: any) => {
+      const result: Record<string, unknown> = {};
+      (education as Record<string, unknown>[]).forEach((edu) => {
         if (edu.level) {
-          result[edu.level] = {
+          result[edu.level as string] = {
             level: edu.level,
             schoolName: edu.schoolName || '',
             degreeCourse: edu.degreeCourse || null,
@@ -825,171 +809,173 @@ export function transformPdsForPdf(data: any): PDSData {
 
   // Transform questions to the PDF format
   const transformQuestions = () => {
-    const questions = otherInfo.questions || {};
+    const questions = (otherInfo.questions || {}) as Record<string, boolean | string | undefined>;
     return {
-      Q34_criminal_charged: questions.Q34_criminal_charged || false,
+      Q34_criminal_charged: (questions.Q34_criminal_charged as boolean) || false,
       Q34_criminal_charged_details:
-        questions.Q34_criminal_charged_details || undefined,
-      Q35_criminal_convicted: questions.Q35_criminal_convicted || false,
+        (questions.Q34_criminal_charged_details as string) || undefined,
+      Q35_criminal_convicted: (questions.Q35_criminal_convicted as boolean) || false,
       Q35_criminal_convicted_details:
-        questions.Q35_criminal_convicted_details || undefined,
-      Q36_separated_from_service: questions.Q36_separated_from_service || false,
+        (questions.Q35_criminal_convicted_details as string) || undefined,
+      Q36_separated_from_service: (questions.Q36_separated_from_service as boolean) || false,
       Q36_separated_from_service_details:
-        questions.Q36_separated_from_service_details || undefined,
-      Q37_candidate_for_election: questions.Q37_candidate_for_election || false,
+        (questions.Q36_separated_from_service_details as string) || undefined,
+      Q37_candidate_for_election: (questions.Q37_candidate_for_election as boolean) || false,
       Q37_candidate_for_election_details:
-        questions.Q37_candidate_for_election_details || undefined,
+        (questions.Q37_candidate_for_election_details as string) || undefined,
       Q38_resigned_from_government:
-        questions.Q38_resigned_from_government || false,
+        (questions.Q38_resigned_from_government as boolean) || false,
       Q38_resigned_from_government_details:
-        questions.Q38_resigned_from_government_details || undefined,
+        (questions.Q38_resigned_from_government_details as string) || undefined,
       Q39_immigrant_or_acquired_residence:
-        questions.Q39_immigrant_or_acquired_residence || false,
+        (questions.Q39_immigrant_or_acquired_residence as boolean) || false,
       Q39_immigrant_or_acquired_residence_details:
-        questions.Q39_immigrant_or_acquired_residence_details || undefined,
-      Q40_indigenous_group: questions.Q40_indigenous_group || false,
+        (questions.Q39_immigrant_or_acquired_residence_details as string) || undefined,
+      Q40_indigenous_group: (questions.Q40_indigenous_group as boolean) || false,
       Q40_indigenous_group_details:
-        questions.Q40_indigenous_group_details || undefined,
-      Q41_disabled: questions.Q41_disabled || false,
-      Q41_disabled_details: questions.Q41_disabled_details || undefined,
-      Q42_solo_parent: questions.Q42_solo_parent || false,
-      Q42_solo_parent_details: questions.Q42_solo_parent_details || undefined,
+        (questions.Q40_indigenous_group_details as string) || undefined,
+      Q41_disabled: (questions.Q41_disabled as boolean) || false,
+      Q41_disabled_details: (questions.Q41_disabled_details as string) || undefined,
+      Q42_solo_parent: (questions.Q42_solo_parent as boolean) || false,
+      Q42_solo_parent_details: (questions.Q42_solo_parent_details as string) || undefined,
     };
   };
 
+  const submission = data.submission as Record<string, unknown> | undefined;
+
   // Build the transformed data with safe defaults
   const transformedData: PDSData = {
-    id: data.id || data.submission?.id || '',
-    submittedAt: data.submittedAt || data.submission?.submittedAt || null,
-    version: data.version || data.submission?.version || 1,
+    id: (data.id || submission?.id || '') as string,
+    submittedAt: (data.submittedAt || submission?.submittedAt || null) as Date | string | null,
+    version: (data.version || submission?.version || 1) as number,
 
     personalInfo: {
-      surname: personalInfo.surname,
-      firstName: personalInfo.firstName,
-      middleName: personalInfo.middleName ?? null,
-      nameExtension: personalInfo.nameExtension ?? null,
-      dateOfBirth: personalInfo.dateOfBirth ?? null,
-      placeOfBirth: personalInfo.placeOfBirth || '',
-      sex: personalInfo.sex || 'male',
-      civilStatus: personalInfo.civilStatus || 'single',
-      heightM: stringToNumber(personalInfo.heightM),
-      weightKg: stringToNumber(personalInfo.weightKg),
-      bloodType: personalInfo.bloodType ?? null,
-      gsisNo: personalInfo.gsisNo ?? null,
-      pagibigNo: personalInfo.pagibigNo ?? null,
-      philhealthNo: personalInfo.philhealthNo ?? null,
-      sssNo: personalInfo.sssNo ?? null,
-      tinNo: personalInfo.tinNo ?? null,
-      agencyEmployeeNo: personalInfo.agencyEmployeeNo ?? null,
-      philsysNo: personalInfo.philsysNo ?? null,
-      citizenship: personalInfo.citizenship || { type: 'Filipino' },
-      residentialAddress: transformAddress(personalInfo.residentialAddress),
-      permanentAddress: transformAddress(personalInfo.permanentAddress),
-      telephoneNo: personalInfo.telephoneNo ?? null,
-      mobileNo: personalInfo.mobileNo ?? null,
-      emailAddress: personalInfo.emailAddress ?? null,
+      surname: personalInfo.surname as string,
+      firstName: personalInfo.firstName as string,
+      middleName: (personalInfo.middleName as string | null) ?? null,
+      nameExtension: (personalInfo.nameExtension as string | null) ?? null,
+      dateOfBirth: ((personalInfo.dateOfBirth as DateLike) ?? '') as Date | string,
+      placeOfBirth: (personalInfo.placeOfBirth as string) || '',
+      sex: (personalInfo.sex as 'male' | 'female') || 'male',
+      civilStatus: (personalInfo.civilStatus as 'single' | 'married' | 'widowed' | 'separated' | 'divorced') || 'single',
+      heightM: stringToNumber(personalInfo.heightM as NumberLike),
+      weightKg: stringToNumber(personalInfo.weightKg as NumberLike),
+      bloodType: (personalInfo.bloodType as string | null) ?? null,
+      gsisNo: (personalInfo.gsisNo as string | null) ?? null,
+      pagibigNo: (personalInfo.pagibigNo as string | null) ?? null,
+      philhealthNo: (personalInfo.philhealthNo as string | null) ?? null,
+      sssNo: (personalInfo.sssNo as string | null) ?? null,
+      tinNo: (personalInfo.tinNo as string | null) ?? null,
+      agencyEmployeeNo: (personalInfo.agencyEmployeeNo as string | null) ?? null,
+      philsysNo: (personalInfo.philsysNo as string | null) ?? null,
+      citizenship: (personalInfo.citizenship as { type: 'Filipino' | 'Dual'; details?: string }) || { type: 'Filipino' },
+      residentialAddress: transformAddress(personalInfo.residentialAddress as Record<string, unknown> | null | undefined),
+      permanentAddress: transformAddress(personalInfo.permanentAddress as Record<string, unknown> | null | undefined),
+      telephoneNo: (personalInfo.telephoneNo as string | null) ?? null,
+      mobileNo: (personalInfo.mobileNo as string | null) ?? null,
+      emailAddress: (personalInfo.emailAddress as string | null) ?? null,
     },
 
     familyBackground: {
-      spouseSurname: familyBackground.spouseSurname ?? null,
-      spouseFirstName: familyBackground.spouseFirstName ?? null,
-      spouseMiddleName: familyBackground.spouseMiddleName ?? null,
-      spouseNameExtension: familyBackground.spouseNameExtension ?? null,
-      spouseOccupation: familyBackground.spouseOccupation ?? null,
-      spouseEmployer: familyBackground.spouseEmployer ?? null,
-      spouseBusinessAddress: familyBackground.spouseBusinessAddress ?? null,
-      spouseTelephoneNo: familyBackground.spouseTelephoneNo ?? null,
-      fatherSurname: familyBackground.fatherSurname ?? null,
-      fatherFirstName: familyBackground.fatherFirstName ?? null,
-      fatherMiddleName: familyBackground.fatherMiddleName ?? null,
-      fatherNameExtension: familyBackground.fatherNameExtension ?? null,
-      motherMaidenSurname: familyBackground.motherMaidenSurname ?? null,
-      motherFirstName: familyBackground.motherFirstName ?? null,
-      motherMiddleName: familyBackground.motherMiddleName ?? null,
+      spouseSurname: (familyBackground.spouseSurname as string | null) ?? null,
+      spouseFirstName: (familyBackground.spouseFirstName as string | null) ?? null,
+      spouseMiddleName: (familyBackground.spouseMiddleName as string | null) ?? null,
+      spouseNameExtension: (familyBackground.spouseNameExtension as string | null) ?? null,
+      spouseOccupation: (familyBackground.spouseOccupation as string | null) ?? null,
+      spouseEmployer: (familyBackground.spouseEmployer as string | null) ?? null,
+      spouseBusinessAddress: (familyBackground.spouseBusinessAddress as string | null) ?? null,
+      spouseTelephoneNo: (familyBackground.spouseTelephoneNo as string | null) ?? null,
+      fatherSurname: (familyBackground.fatherSurname as string | null) ?? null,
+      fatherFirstName: (familyBackground.fatherFirstName as string | null) ?? null,
+      fatherMiddleName: (familyBackground.fatherMiddleName as string | null) ?? null,
+      fatherNameExtension: (familyBackground.fatherNameExtension as string | null) ?? null,
+      motherMaidenSurname: (familyBackground.motherMaidenSurname as string | null) ?? null,
+      motherFirstName: (familyBackground.motherFirstName as string | null) ?? null,
+      motherMiddleName: (familyBackground.motherMiddleName as string | null) ?? null,
       children: Array.isArray(children)
-        ? children.map((child: any) => ({
-            fullName: child.fullName || '',
-            dateOfBirth: child.dateOfBirth ?? null,
+        ? children.map((child: Record<string, unknown>) => ({
+            fullName: (child.fullName as string) || '',
+            dateOfBirth: ((child.dateOfBirth as DateLike) ?? '') as Date | string,
           }))
         : [],
     },
 
-    education: transformEducation(),
+    education: transformEducation() as PDSData['education'],
 
     civilServiceEligibilities: Array.isArray(civilService)
-      ? civilService.map((cs: any) => ({
-          eligibilityName: cs.eligibilityName || '',
-          rating: cs.rating ?? null,
-          dateOfExam: cs.dateOfExam ?? null,
-          placeOfExam: cs.placeOfExam ?? null,
-          licenseNo: cs.licenseNo ?? null,
-          licenseValidityDate: cs.licenseValidityDate ?? null,
+      ? civilService.map((cs: Record<string, unknown>) => ({
+          eligibilityName: (cs.eligibilityName as string) || '',
+          rating: (cs.rating as number | null) ?? null,
+          dateOfExam: (cs.dateOfExam ?? null) as Date | string | null,
+          placeOfExam: (cs.placeOfExam as string | null) ?? null,
+          licenseNo: (cs.licenseNo as string | null) ?? null,
+          licenseValidityDate: (cs.licenseValidityDate ?? null) as Date | string | null,
         }))
       : [],
 
     workExperiences: Array.isArray(workExperience)
-      ? workExperience.map((work: any) => ({
-          dateFrom: work.dateFrom ?? null,
-          dateTo: work.dateTo ?? null,
-          positionTitle: work.positionTitle || '',
-          departmentAgency: work.departmentAgency || '',
-          monthlySalary: work.monthlySalary ?? null,
-          salaryGrade: work.salaryGrade ?? null,
-          statusOfAppointment: work.statusOfAppointment ?? null,
-          isGovernment: work.isGovernment ?? false,
+      ? workExperience.map((work: Record<string, unknown>) => ({
+          dateFrom: ((work.dateFrom as DateLike) ?? '') as Date | string,
+          dateTo: (work.dateTo ?? null) as Date | string | null,
+          positionTitle: (work.positionTitle as string) || '',
+          departmentAgency: (work.departmentAgency as string) || '',
+          monthlySalary: (work.monthlySalary as number | null) ?? null,
+          salaryGrade: (work.salaryGrade as string | null) ?? null,
+          statusOfAppointment: (work.statusOfAppointment as string | null) ?? null,
+          isGovernment: (work.isGovernment as boolean) ?? false,
         }))
       : [],
 
     voluntaryWorks: Array.isArray(voluntaryWork)
-      ? voluntaryWork.map((vol: any) => ({
-          organizationName: vol.organizationName || '',
-          organizationAddress: vol.organizationAddress ?? null,
-          dateFrom: vol.dateFrom ?? null,
-          dateTo: vol.dateTo ?? null,
-          numberOfHours: vol.numberOfHours ?? null,
-          positionNature: vol.positionNature ?? null,
+      ? voluntaryWork.map((vol: Record<string, unknown>) => ({
+          organizationName: (vol.organizationName as string) || '',
+          organizationAddress: (vol.organizationAddress as string | null) ?? null,
+          dateFrom: ((vol.dateFrom as DateLike) ?? '') as Date | string,
+          dateTo: (vol.dateTo ?? null) as Date | string | null,
+          numberOfHours: (vol.numberOfHours as number | null) ?? null,
+          positionNature: (vol.positionNature as string | null) ?? null,
         }))
       : [],
 
     trainings: Array.isArray(training)
-      ? training.map((t: any) => ({
-          title: t.title || '',
-          dateFrom: t.dateFrom ?? null,
-          dateTo: t.dateTo ?? null,
-          hours: t.hours ?? null,
-          typeOfLd: t.typeOfLd ?? null,
-          conductedBy: t.conductedBy ?? null,
+      ? training.map((t: Record<string, unknown>) => ({
+          title: (t.title as string) || '',
+          dateFrom: ((t.dateFrom as DateLike) ?? '') as Date | string,
+          dateTo: ((t.dateTo as DateLike) ?? '') as Date | string,
+          hours: (t.hours as number | null) ?? null,
+          typeOfLd: (t.typeOfLd as string | null) ?? null,
+          conductedBy: (t.conductedBy as string | null) ?? null,
         }))
       : [],
 
-    skills: otherInfo.skills || [],
+    skills: (otherInfo.skills as string[]) || [],
     recognitions: Array.isArray(otherInfo.recognitions)
-      ? otherInfo.recognitions.map((r: any) => ({
-          title: r.title || '',
-          year: r.year || 0,
-          organization: r.organization || '',
+      ? (otherInfo.recognitions as Record<string, unknown>[]).map((r) => ({
+          title: (r.title as string) || '',
+          year: (r.year as number) || 0,
+          organization: (r.organization as string) || '',
         }))
       : [],
     associations: Array.isArray(otherInfo.associations)
-      ? otherInfo.associations.map((a: any) => ({
-          name: a.name || '',
-          position: a.position ?? undefined,
-          yearJoined: a.yearJoined ?? undefined,
+      ? (otherInfo.associations as Record<string, unknown>[]).map((a) => ({
+          name: (a.name as string) || '',
+          position: (a.position as string) ?? undefined,
+          yearJoined: (a.yearJoined as number) ?? undefined,
         }))
       : [],
 
     questions: transformQuestions(),
 
     references: Array.isArray(otherInfo.references)
-      ? otherInfo.references.map((ref: any) => ({
-          name: ref.name || '',
-          address: ref.address || '',
-          telephoneNo: ref.telephoneNo ?? undefined,
+      ? (otherInfo.references as Record<string, unknown>[]).map((ref) => ({
+          name: (ref.name as string) || '',
+          address: (ref.address as string) || '',
+          telephoneNo: (ref.telephoneNo as string) ?? undefined,
         }))
       : [],
 
-    governmentId: data.governmentId ?? undefined,
-    photoUrl: data.photoUrl ?? null,
+    governmentId: (data.governmentId as PDSData['governmentId']) ?? undefined,
+    photoUrl: (data.photoUrl as string | null) ?? null,
   };
 
   return transformedData;

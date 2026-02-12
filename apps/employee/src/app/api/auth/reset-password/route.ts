@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { userId, email } = resolvedUser;
+    const { userId } = resolvedUser;
 
     // Verify OTP code
     const otpVerification = await verifyOTP(userId, code, 'password_reset');

@@ -130,7 +130,7 @@ const AutoLevelSetter = memo(
         if (!currentLevel) {
           form.setValue(
             `education.${levelKey}.level` as FieldPath<CompletePdsData>,
-            levelKey as any,
+            levelKey as 'elementary' | 'secondary' | 'vocational' | 'college' | 'graduate',
             { shouldDirty: true, shouldTouch: true, shouldValidate: false }
           );
         }

@@ -148,11 +148,13 @@ export const PersonalProperties = memo(function PersonalProperties() {
   }, []);
 
   const totalPersonalPropertyValue = useMemo(() => {
-    return personalProperties.reduce(
+    const items = (personalProperties || []) as PropertyItem[];
+    return items.reduce(
       (sum: number, prop: PropertyItem) => sum + (prop.acquisitionCost || 0),
       0
     );
-  }, [personalProperties]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- personalProperties from watch() may create new array ref; computation is cheap
+  }, [JSON.stringify(personalProperties)]);
 
   const addPersonalProperty = () => {
     append({

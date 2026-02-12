@@ -26,7 +26,7 @@ export function DeleteConfirmDialog({
   open,
   onOpenChange,
   onConfirm,
-  version,
+  version: _version,
   year,
   isDeleting = false,
 }: DeleteConfirmDialogProps) {

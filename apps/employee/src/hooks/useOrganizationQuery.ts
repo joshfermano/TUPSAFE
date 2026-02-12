@@ -15,7 +15,7 @@ import type {
   PositionsQueryParams,
   ApiErrorResponse,
 } from '../types/api';
-import { buildQueryString, isApiError } from '../types/api';
+import { buildQueryString } from '../types/api';
 
 // ============================================================================
 // Departments Hooks

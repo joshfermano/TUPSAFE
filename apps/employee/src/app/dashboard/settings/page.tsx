@@ -20,7 +20,6 @@ import {
   Lock,
   Bell,
   Shield,
-  Mail,
   Smartphone,
   Eye,
   EyeOff,

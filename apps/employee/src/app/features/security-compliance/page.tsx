@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { motion } from 'framer-motion';
 import {
   Shield,
@@ -98,7 +97,7 @@ const HeroSection = () => (
             { icon: Lock, label: 'Encryption', value: '256-bit AES' },
             { icon: History, label: 'Audit Logs', value: 'Complete' },
             { icon: ShieldCheck, label: 'Compliance', value: '100%' },
-          ].map((stat, index) => (
+          ].map((stat) => (
             <MagicCard
               key={stat.label}
               className="p-6 text-center"
