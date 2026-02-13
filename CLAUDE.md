@@ -30,6 +30,16 @@ npx drizzle-kit studio     # Visual database browser
 
 No test framework is configured yet. Verify changes via `npm run build:employee && npm run lint`.
 
+```bash
+# Docker (local development)
+npm run docker:up              # Start all containers (uses .env.local)
+npm run docker:down            # Stop all containers
+npm run docker:logs            # Tail container logs
+npm run docker:build           # Build images
+npm run docker:rebuild         # Force rebuild (no cache)
+npm run docker:clean           # Remove containers, volumes, images
+```
+
 ## Monorepo Architecture
 
 Turbo-managed workspace. Package names use `@tupsafe/*` imports but are registered as `@smartgov/*` in package.json.
@@ -150,6 +160,76 @@ Account flow: `pending → active (verified+approved) → hired (applicant→emp
 | SALN PDF rendering | `packages/shared-ui/src/saln-pdf/` |
 | Auth middleware | `packages/auth/src/middleware.ts` |
 | MCP server config | `.mcp.json` |
+
+## Production Deployment (AWS EC2)
+
+Single EC2 instance (t2.micro, 1 vCPU, 1GB RAM + 4GB swap) running all services via Docker.
+
+**Live URLs:**
+- Employee: `https://tupsafe.tech` (Nginx HTTPS, Let's Encrypt SSL)
+- Admin: `http://18.142.250.161:9443` (Nginx HTTP, IP-restricted via Security Group)
+- AI Agent: internal Docker network only (`http://ai-agent:8000`)
+
+**Infrastructure:**
+- **Region:** ap-southeast-1 (Singapore)
+- **OS:** Ubuntu 24.04
+- **Registry:** AWS ECR (3 repos: `tupsafe/employee`, `tupsafe/admin`, `tupsafe/ai-agent`)
+- **DNS:** get.tech registrar, A records for `tupsafe.tech` + `www.tupsafe.tech` → `18.142.250.161`
+- **SSL:** Let's Encrypt via certbot (auto-renewal), certs at `/etc/letsencrypt/live/www.tupsafe.tech/`
+- **Database/Auth:** Supabase Cloud (not self-hosted)
+
+**Docker services (docker-compose.prod.yml):**
+
+| Service | Image | Memory Limit | Ports |
+|---------|-------|-------------|-------|
+| nginx | nginx:1.27-alpine | 64M | 80, 443, 9443 |
+| redis | redis:7-alpine | 96M | internal |
+| employee | ECR tupsafe/employee | 256M | internal (3000) |
+| admin | ECR tupsafe/admin | 256M | internal (3001) |
+| ai-agent | ECR tupsafe/ai-agent | 350M | internal (8000) |
+
+**CI/CD (`.github/workflows/deploy.yml`):**
+1. Triggered on push to `main` (or manual dispatch)
+2. Builds 3 Docker images in parallel matrix → pushes to ECR with SHA + latest tags
+3. SSHs into EC2 → pulls images → `docker compose up -d` → health check
+4. `NEXT_PUBLIC_*` vars are baked at Docker build time (passed as build args from GitHub Secrets)
+
+**Key deployment files:**
+
+| Purpose | Path |
+|---------|------|
+| Local dev compose | `docker-compose.yml` |
+| EC2 prod compose | `docker-compose.prod.yml` |
+| Nginx config | `nginx/nginx.conf` |
+| CI/CD workflow | `.github/workflows/deploy.yml` |
+| EC2 env template | `.env.ec2.example` |
+| EC2 env (gitignored) | `.env.prod` (on EC2 at `/opt/tupsafe/.env.prod`) |
+
+**Nginx notes:**
+- Proxy buffers set to 128k/256k for large Supabase auth cookies (default 4k/8k causes 502)
+- Rate limiting: 10r/s general, 5r/s API, 1r/s auth
+- HSTS, security headers, gzip compression enabled
+- Static assets (`/_next/static/`) cached 365 days
+
+**EC2 commands (via SSH):**
+```bash
+ssh -i tupsafe-aws.pem ubuntu@18.142.250.161
+cd /opt/tupsafe
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d      # Start all
+docker compose -f docker-compose.prod.yml --env-file .env.prod restart     # Restart all
+docker compose -f docker-compose.prod.yml --env-file .env.prod logs -f     # Tail logs
+docker ps --format 'table {{.Names}}\t{{.Status}}'                        # Check health
+```
+
+## Local Development (Docker)
+
+```bash
+docker compose --env-file .env.local up -d    # Start all services with hot reload
+docker compose down                            # Stop all
+docker compose logs -f                         # Tail logs
+```
+
+4 services: Redis (:6379), Employee (:3000), Admin (:3001), AI Agent (:8000). All ports exposed to host. Uses `Dockerfile.dev` with volume mounts for hot reload.
 
 ## Claude Code Workflow
 
