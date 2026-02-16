@@ -25,8 +25,22 @@
  * formatDateForInput(new Date(2024, 11, 25)) // "2024-12-25" (local)
  * formatDateForInput(null) // ""
  */
-export function formatDateForInput(date: Date | null | undefined): string {
-  if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+export function formatDateForInput(date: Date | string | null | undefined): string {
+  if (!date) return '';
+
+  // Handle ISO date strings (e.g. from JSON serialization)
+  if (typeof date === 'string') {
+    // Already in YYYY-MM-DD format
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) return date;
+    // ISO string like "2025-01-15T00:00:00.000Z" — extract date part
+    const parsed = new Date(date);
+    if (!isNaN(parsed.getTime())) {
+      return `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, '0')}-${String(parsed.getDate()).padStart(2, '0')}`;
+    }
+    return '';
+  }
+
+  if (!(date instanceof Date) || isNaN(date.getTime())) {
     return '';
   }
 

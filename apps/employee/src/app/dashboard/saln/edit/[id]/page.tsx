@@ -29,6 +29,9 @@ import {
   CreditCard,
   Briefcase,
   Users,
+  Plus,
+  Trash2,
+  Info,
 } from 'lucide-react';
 
 // UI Components
@@ -44,6 +47,8 @@ import { Progress } from '../../../../../components/ui/progress';
 import { Input } from '../../../../../components/ui/input';
 import { Label } from '../../../../../components/ui/label';
 import { Separator } from '../../../../../components/ui/separator';
+import { Badge } from '../../../../../components/ui/badge';
+import { Textarea } from '../../../../../components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -54,6 +59,12 @@ import {
 import { cn } from '../../../../../lib/utils';
 import { formatCurrency } from '../../../../../lib/utils/currency';
 import type { CompleteSalnData } from '../../../../../lib/validations/saln-schema';
+import {
+  PROPERTY_KIND,
+  ACQUISITION_MODE,
+  PROPERTY_OWNER,
+  RELATIONSHIP_TYPE,
+} from '../../../../../lib/validations/saln-schema';
 
 // ============================================================================
 // TYPES
@@ -64,6 +75,51 @@ interface EditableSectionProps {
   icon: React.ElementType;
   children: React.ReactNode;
   delay?: number;
+}
+
+interface RealPropertyItem {
+  description: string;
+  kind: string;
+  exactLocation: string;
+  assessedValue: number;
+  currentFairMarketValue: number;
+  acquisitionYear: number;
+  acquisitionMode: string;
+  acquisitionCost: number;
+  owner: string;
+  childName: string | null;
+}
+
+interface PersonalPropertyItem {
+  description: string;
+  yearAcquired: number;
+  acquisitionCost: number;
+  owner: string;
+  childName: string | null;
+}
+
+interface LiabilityItem {
+  nature: string;
+  creditorName: string;
+  outstandingBalance: number;
+  owner: string;
+  childName: string | null;
+}
+
+interface BusinessInterestItem {
+  entityName: string;
+  businessAddress: string;
+  natureOfBusiness: string;
+  dateOfAcquisition: string | Date;
+  owner: string;
+  childName: string | null;
+}
+
+interface RelativeInGovItem {
+  name: string;
+  relationship: string;
+  position: string;
+  agencyAddress: string;
 }
 
 // ============================================================================
@@ -144,6 +200,63 @@ const FormField = React.memo(
 FormField.displayName = 'FormField';
 
 // ============================================================================
+// CURRENCY INPUT FOR EDIT PAGE (standalone, no react-hook-form)
+// ============================================================================
+
+interface EditCurrencyInputProps {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+  required?: boolean;
+  helperText?: string;
+}
+
+const EditCurrencyInput = React.memo(
+  ({ label, value, onChange, required = false, helperText }: EditCurrencyInputProps) => {
+    const [displayValue, setDisplayValue] = useState(value?.toString() || '0');
+
+    useEffect(() => {
+      setDisplayValue(value?.toString() || '0');
+    }, [value]);
+
+    return (
+      <div className="space-y-1.5">
+        <Label className="text-xs font-medium">
+          {label} {required && <span className="text-rose-500">*</span>}
+        </Label>
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">₱</span>
+          <Input
+            type="number"
+            value={displayValue}
+            onChange={(e) => {
+              setDisplayValue(e.target.value);
+              const numVal = parseFloat(e.target.value);
+              onChange(isNaN(numVal) ? 0 : numVal);
+            }}
+            onBlur={() => {
+              const numVal = parseFloat(displayValue);
+              const finalVal = isNaN(numVal) ? 0 : numVal;
+              setDisplayValue(finalVal.toString());
+              onChange(finalVal);
+            }}
+            min={0}
+            step="0.01"
+            className="pl-8"
+            placeholder="0.00"
+          />
+        </div>
+        {helperText && (
+          <p className="text-xs text-slate-500 dark:text-slate-400">{helperText}</p>
+        )}
+      </div>
+    );
+  }
+);
+
+EditCurrencyInput.displayName = 'EditCurrencyInput';
+
+// ============================================================================
 // LOADING STATE
 // ============================================================================
 
@@ -158,6 +271,12 @@ const LoadingState = () => (
     </p>
   </div>
 );
+
+// ============================================================================
+// YEAR OPTIONS (memoized outside component)
+// ============================================================================
+
+const YEAR_OPTIONS = Array.from({ length: 75 }, (_, i) => new Date().getFullYear() - i);
 
 // ============================================================================
 // MAIN PAGE COMPONENT
@@ -332,6 +451,215 @@ export default function SALNEditDetailPage({
     }
   }, [hasUnsavedChanges, router]);
 
+  // ========================================================================
+  // ARRAY MANIPULATION HELPERS
+  // ========================================================================
+
+  const addRealProperty = useCallback(() => {
+    setFormData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        realProperties: [
+          ...(prev.realProperties || []),
+          {
+            description: '',
+            kind: 'residential',
+            exactLocation: '',
+            assessedValue: 0,
+            currentFairMarketValue: 0,
+            acquisitionYear: new Date().getFullYear(),
+            acquisitionMode: 'Purchase',
+            acquisitionCost: 0,
+            owner: 'declarant',
+            childName: null,
+          },
+        ],
+      };
+    });
+    setHasUnsavedChanges(true);
+  }, []);
+
+  const removeRealProperty = useCallback((index: number) => {
+    setFormData((prev) => {
+      if (!prev) return prev;
+      const updated = [...(prev.realProperties || [])];
+      updated.splice(index, 1);
+      return { ...prev, realProperties: updated };
+    });
+    setHasUnsavedChanges(true);
+  }, []);
+
+  const updateRealProperty = useCallback((index: number, field: string, value: unknown) => {
+    setFormData((prev) => {
+      if (!prev) return prev;
+      const updated = [...(prev.realProperties || [])];
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...prev, realProperties: updated };
+    });
+    setHasUnsavedChanges(true);
+  }, []);
+
+  const addPersonalProperty = useCallback(() => {
+    setFormData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        personalProperties: [
+          ...(prev.personalProperties || []),
+          {
+            description: '',
+            yearAcquired: new Date().getFullYear(),
+            acquisitionCost: 0,
+            owner: 'declarant',
+            childName: null,
+          },
+        ],
+      };
+    });
+    setHasUnsavedChanges(true);
+  }, []);
+
+  const removePersonalProperty = useCallback((index: number) => {
+    setFormData((prev) => {
+      if (!prev) return prev;
+      const updated = [...(prev.personalProperties || [])];
+      updated.splice(index, 1);
+      return { ...prev, personalProperties: updated };
+    });
+    setHasUnsavedChanges(true);
+  }, []);
+
+  const updatePersonalProperty = useCallback((index: number, field: string, value: unknown) => {
+    setFormData((prev) => {
+      if (!prev) return prev;
+      const updated = [...(prev.personalProperties || [])];
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...prev, personalProperties: updated };
+    });
+    setHasUnsavedChanges(true);
+  }, []);
+
+  const addLiability = useCallback(() => {
+    setFormData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        liabilities: [
+          ...(prev.liabilities || []),
+          {
+            nature: '',
+            creditorName: '',
+            outstandingBalance: 0,
+            owner: 'declarant',
+            childName: null,
+          },
+        ],
+      };
+    });
+    setHasUnsavedChanges(true);
+  }, []);
+
+  const removeLiability = useCallback((index: number) => {
+    setFormData((prev) => {
+      if (!prev) return prev;
+      const updated = [...(prev.liabilities || [])];
+      updated.splice(index, 1);
+      return { ...prev, liabilities: updated };
+    });
+    setHasUnsavedChanges(true);
+  }, []);
+
+  const updateLiability = useCallback((index: number, field: string, value: unknown) => {
+    setFormData((prev) => {
+      if (!prev) return prev;
+      const updated = [...(prev.liabilities || [])];
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...prev, liabilities: updated };
+    });
+    setHasUnsavedChanges(true);
+  }, []);
+
+  const addBusinessInterest = useCallback(() => {
+    setFormData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        businessInterests: [
+          ...(prev.businessInterests || []),
+          {
+            entityName: '',
+            businessAddress: '',
+            natureOfBusiness: '',
+            dateOfAcquisition: new Date(),
+            owner: 'declarant' as const,
+            childName: null,
+          },
+        ],
+      };
+    });
+    setHasUnsavedChanges(true);
+  }, []);
+
+  const removeBusinessInterest = useCallback((index: number) => {
+    setFormData((prev) => {
+      if (!prev) return prev;
+      const updated = [...(prev.businessInterests || [])];
+      updated.splice(index, 1);
+      return { ...prev, businessInterests: updated };
+    });
+    setHasUnsavedChanges(true);
+  }, []);
+
+  const updateBusinessInterest = useCallback((index: number, field: string, value: unknown) => {
+    setFormData((prev) => {
+      if (!prev) return prev;
+      const updated = [...(prev.businessInterests || [])];
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...prev, businessInterests: updated };
+    });
+    setHasUnsavedChanges(true);
+  }, []);
+
+  const addRelativeInGov = useCallback(() => {
+    setFormData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        relativesInGov: [
+          ...(prev.relativesInGov || []),
+          {
+            name: '',
+            relationship: 'Spouse',
+            position: '',
+            agencyAddress: '',
+          },
+        ],
+      };
+    });
+    setHasUnsavedChanges(true);
+  }, []);
+
+  const removeRelativeInGov = useCallback((index: number) => {
+    setFormData((prev) => {
+      if (!prev) return prev;
+      const updated = [...(prev.relativesInGov || [])];
+      updated.splice(index, 1);
+      return { ...prev, relativesInGov: updated };
+    });
+    setHasUnsavedChanges(true);
+  }, []);
+
+  const updateRelativeInGov = useCallback((index: number, field: string, value: unknown) => {
+    setFormData((prev) => {
+      if (!prev) return prev;
+      const updated = [...(prev.relativesInGov || [])];
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...prev, relativesInGov: updated };
+    });
+    setHasUnsavedChanges(true);
+  }, []);
+
   // Calculate totals for display
   const totalRealProperty =
     formData?.realProperties?.reduce(
@@ -448,7 +776,8 @@ export default function SALNEditDetailPage({
         title="I. Declarant & Spouse Information"
         icon={User}
         delay={0.25}>
-        <div className="space-y-4">
+        <div className="space-y-6">
+          {/* Basic Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium">
@@ -479,7 +808,7 @@ export default function SALNEditDetailPage({
               onChange={() => {}}
               required
             />
-            {formData.submission?.filingType === 'joint' && (
+            {(formData.submission?.filingType === 'joint' || formData.submission?.filingType === 'separate') && (
               <FormField
                 label="Spouse Name"
                 name="spouseName"
@@ -529,6 +858,454 @@ export default function SALNEditDetailPage({
               fullWidth
             />
           </div>
+
+          <Separator />
+
+          {/* Compliance Type */}
+          <div className="space-y-3">
+            <Label className="text-xs font-medium">
+              Compliance Type <span className="text-rose-500">*</span>
+            </Label>
+            <div className="grid gap-2">
+              {[
+                { value: 'annual', label: 'Annual Filing', desc: 'Regular annual SALN submission' },
+                { value: 'assumption', label: 'Assumption of Office', desc: 'Filing upon assuming a new position' },
+                { value: 'exit', label: 'Exit from Office', desc: 'Filing upon separation from service' },
+              ].map((opt) => (
+                <label key={opt.value} className="flex items-center space-x-3 rounded-lg border border-slate-200 dark:border-slate-800 p-3 hover:bg-accent/50 transition-all cursor-pointer">
+                  <input
+                    type="radio"
+                    name="complianceType"
+                    value={opt.value}
+                    checked={(formData.submission as Record<string, unknown>)?.complianceType === opt.value}
+                    onChange={() =>
+                      handleFieldChange('submission', {
+                        ...formData.submission,
+                        complianceType: opt.value,
+                        // Clear complianceDate when switching type so assumption/exit dates don't carry over
+                        complianceDate: (formData.submission as Record<string, unknown>)?.complianceType !== opt.value
+                          ? null
+                          : (formData.submission as Record<string, unknown>)?.complianceDate,
+                      })
+                    }
+                    className="w-4 h-4 text-primary border-2 border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-primary cursor-pointer"
+                  />
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{opt.label}</div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{opt.desc}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+
+            {/* Compliance Date - shown for assumption or exit */}
+            {((formData.submission as Record<string, unknown>)?.complianceType === 'assumption' ||
+              (formData.submission as Record<string, unknown>)?.complianceType === 'exit') && (
+              <div className="space-y-1.5 pt-2">
+                <Label className="text-xs font-medium">
+                  Date of {(formData.submission as Record<string, unknown>)?.complianceType === 'assumption' ? 'Assumption' : 'Exit'}{' '}
+                  <span className="text-rose-500">*</span>
+                </Label>
+                <Input
+                  type="date"
+                  value={
+                    (formData.submission as Record<string, unknown>)?.complianceDate
+                      ? (() => {
+                          const cd = (formData.submission as Record<string, unknown>).complianceDate;
+                          if (cd instanceof Date) return cd.toISOString().split('T')[0];
+                          if (typeof cd === 'string') {
+                            try { return new Date(cd).toISOString().split('T')[0]; } catch { return cd; }
+                          }
+                          return '';
+                        })()
+                      : ''
+                  }
+                  onChange={(e) => {
+                    const dateStr = e.target.value;
+                    handleFieldChange('submission', {
+                      ...formData.submission,
+                      complianceDate: dateStr ? new Date(dateStr) : null,
+                    });
+                  }}
+                  max={new Date().toISOString().split('T')[0]}
+                  className="max-w-xs"
+                />
+              </div>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* Multiple Marriages */}
+          <div className="space-y-3">
+            <Label className="text-xs font-medium">Multiple Marriages Disclosure</Label>
+            <label className="flex items-start space-x-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={!!(formData.submission as Record<string, unknown>)?.hasMultipleMarriages}
+                onChange={(e) =>
+                  handleFieldChange('submission', {
+                    ...formData.submission,
+                    hasMultipleMarriages: e.target.checked,
+                  })
+                }
+                className="mt-1 w-4 h-4 text-primary border-2 border-slate-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-primary cursor-pointer"
+              />
+              <div className="flex-1">
+                <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                  I have had multiple marriages
+                </span>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Check this box if you have been married more than once
+                </p>
+              </div>
+            </label>
+            {(formData.submission as Record<string, unknown>)?.hasMultipleMarriages ? (
+              <div className="space-y-1.5 pl-7">
+                <Label className="text-xs font-medium">
+                  Previous Spouse Names <span className="text-rose-500">*</span>
+                </Label>
+                <Textarea
+                  value={((formData.submission as Record<string, unknown>)?.previousSpouseNames as string) || ''}
+                  onChange={(e) =>
+                    handleFieldChange('submission', {
+                      ...formData.submission,
+                      previousSpouseNames: e.target.value,
+                    })
+                  }
+                  placeholder="Enter the full names of your previous spouse(s), one per line"
+                  rows={3}
+                />
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                <Info className="h-4 w-4 text-slate-400" />
+                <span className="text-xs text-slate-500">Not Applicable - No previous marriages to disclose</span>
+              </div>
+            )}
+          </div>
+
+          {/* Spouse as Public Official - shown for joint or separate filing */}
+          {(formData.submission?.filingType === 'joint' || formData.submission?.filingType === 'separate') && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <Label className="text-xs font-medium">Spouse Employment Status</Label>
+                <label className="flex items-start space-x-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!!(formData.submission as Record<string, unknown>)?.spouseIsPublicOfficial}
+                    onChange={(e) =>
+                      handleFieldChange('submission', {
+                        ...formData.submission,
+                        spouseIsPublicOfficial: e.target.checked,
+                      })
+                    }
+                    className="mt-1 w-4 h-4 text-primary border-2 border-slate-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-primary cursor-pointer"
+                  />
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                      My spouse is a public official or employee
+                    </span>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Check this if your spouse is employed in government service
+                    </p>
+                  </div>
+                </label>
+                {Boolean((formData.submission as Record<string, unknown>)?.spouseIsPublicOfficial) && (
+                  <div className="space-y-3 pl-7">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        label="Spouse Position/Designation"
+                        name="spousePosition"
+                        value={(formData.submission as Record<string, unknown>)?.spousePosition as string}
+                        onChange={(val) =>
+                          handleFieldChange('submission', {
+                            ...formData.submission,
+                            spousePosition: val,
+                          })
+                        }
+                        required
+                      />
+                      <FormField
+                        label="Spouse Agency/Office"
+                        name="spouseAgency"
+                        value={(formData.submission as Record<string, unknown>)?.spouseAgency as string}
+                        onChange={(val) =>
+                          handleFieldChange('submission', {
+                            ...formData.submission,
+                            spouseAgency: val,
+                          })
+                        }
+                        required
+                      />
+                    </div>
+                    <FormField
+                      label="Spouse Office Address"
+                      name="spouseOfficeAddress"
+                      value={(formData.submission as Record<string, unknown>)?.spouseOfficeAddress as string}
+                      onChange={(val) =>
+                        handleFieldChange('submission', {
+                          ...formData.submission,
+                          spouseOfficeAddress: val,
+                        })
+                      }
+                      fullWidth
+                      required
+                    />
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          <Separator />
+
+          {/* Unmarried Children Below 18 */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-[oklch(0.55_0.22_15)]" />
+              <Label className="text-xs font-medium">Unmarried Children Below 18 Years Old</Label>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              List all unmarried children who are below 18 years of age
+            </p>
+            {(() => {
+              const children = ((formData.submission as Record<string, unknown>)?.unmarriedChildren as Array<{ name: string; age: number }>) || [];
+              if (children.length === 0) {
+                return (
+                  <div className="text-center py-6 border-2 border-dashed rounded-lg border-slate-200/50 dark:border-slate-800/50">
+                    <Users className="h-8 w-8 mx-auto text-slate-400 mb-2" />
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">No unmarried children added</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const currentChildren = ((formData.submission as Record<string, unknown>)?.unmarriedChildren as Array<{ name: string; age: number }>) || [];
+                        handleFieldChange('submission', {
+                          ...formData.submission,
+                          unmarriedChildren: [...currentChildren, { name: '', age: 0 }],
+                        });
+                      }}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Child
+                    </Button>
+                  </div>
+                );
+              }
+              return (
+                <div className="space-y-3">
+                  {children.map((child, index) => (
+                    <Card key={index} className="p-3 border-slate-200 dark:border-slate-800">
+                      <div className="flex items-center justify-between mb-2">
+                        <Badge variant="outline" className="text-xs">Child {index + 1}</Badge>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const currentChildren = [...children];
+                            currentChildren.splice(index, 1);
+                            handleFieldChange('submission', {
+                              ...formData.submission,
+                              unmarriedChildren: currentChildren,
+                            });
+                          }}>
+                          <Trash2 className="h-4 w-4 text-rose-500" />
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <FormField
+                          label="Child Name"
+                          name={`childName-${index}`}
+                          value={child.name}
+                          onChange={(val) => {
+                            const currentChildren = [...children];
+                            currentChildren[index] = { ...currentChildren[index], name: val };
+                            handleFieldChange('submission', {
+                              ...formData.submission,
+                              unmarriedChildren: currentChildren,
+                            });
+                          }}
+                          required
+                        />
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-medium">
+                            Age <span className="text-rose-500">*</span>
+                          </Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={17}
+                            value={child.age || 0}
+                            onChange={(e) => {
+                              const currentChildren = [...children];
+                              currentChildren[index] = { ...currentChildren[index], age: parseInt(e.target.value, 10) || 0 };
+                              handleFieldChange('submission', {
+                                ...formData.submission,
+                                unmarriedChildren: currentChildren,
+                              });
+                            }}
+                            placeholder="Age (0-17)"
+                          />
+                          <p className="text-[10px] text-slate-500">Must be below 18 years old</p>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => {
+                      handleFieldChange('submission', {
+                        ...formData.submission,
+                        unmarriedChildren: [...children, { name: '', age: 0 }],
+                      });
+                    }}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Another Child
+                  </Button>
+                </div>
+              );
+            })()}
+          </div>
+
+          <Separator />
+
+          {/* First Government Issued ID */}
+          <div className="space-y-3">
+            <Label className="text-xs font-medium">First Government Issued ID</Label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">ID Type</Label>
+                <Select
+                  value={((formData.submission as Record<string, unknown>)?.governmentIdType as string) || ''}
+                  onValueChange={(val) =>
+                    handleFieldChange('submission', {
+                      ...formData.submission,
+                      governmentIdType: val,
+                    })
+                  }>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select ID type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["Driver's License", 'Passport', 'SSS ID', 'GSIS ID', 'PhilHealth ID', "Voter's ID", 'PRC ID', 'Postal ID', 'Senior Citizen ID', 'PWD ID', 'UMID', 'Other'].map((type) => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <FormField
+                label="ID Number"
+                name="governmentIdNumber"
+                value={(formData.submission as Record<string, unknown>)?.governmentIdNumber as string}
+                onChange={(val) =>
+                  handleFieldChange('submission', {
+                    ...formData.submission,
+                    governmentIdNumber: val,
+                  })
+                }
+              />
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Date Issued</Label>
+                <Input
+                  type="date"
+                  value={
+                    (formData.submission as Record<string, unknown>)?.governmentIdDateIssued
+                      ? (() => {
+                          const d = (formData.submission as Record<string, unknown>).governmentIdDateIssued;
+                          if (d instanceof Date) return d.toISOString().split('T')[0];
+                          if (typeof d === 'string') {
+                            try { return new Date(d).toISOString().split('T')[0]; } catch { return d; }
+                          }
+                          return '';
+                        })()
+                      : ''
+                  }
+                  onChange={(e) => {
+                    const dateStr = e.target.value;
+                    handleFieldChange('submission', {
+                      ...formData.submission,
+                      governmentIdDateIssued: dateStr ? new Date(dateStr) : null,
+                    });
+                  }}
+                  max={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Second Government Issued ID */}
+          <div className="space-y-3">
+            <Label className="text-xs font-medium">Second Government Issued ID</Label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">ID Type</Label>
+                <Select
+                  value={((formData.submission as Record<string, unknown>)?.governmentIdType2 as string) || ''}
+                  onValueChange={(val) =>
+                    handleFieldChange('submission', {
+                      ...formData.submission,
+                      governmentIdType2: val,
+                    })
+                  }>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select ID type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["Driver's License", 'Passport', 'SSS ID', 'GSIS ID', 'PhilHealth ID', "Voter's ID", 'PRC ID', 'Postal ID', 'Senior Citizen ID', 'PWD ID', 'UMID', 'Other'].map((type) => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <FormField
+                label="ID Number"
+                name="governmentIdNumber2"
+                value={(formData.submission as Record<string, unknown>)?.governmentIdNumber2 as string}
+                onChange={(val) =>
+                  handleFieldChange('submission', {
+                    ...formData.submission,
+                    governmentIdNumber2: val,
+                  })
+                }
+              />
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Date Issued</Label>
+                <Input
+                  type="date"
+                  value={
+                    (formData.submission as Record<string, unknown>)?.governmentIdDateIssued2
+                      ? (() => {
+                          const d = (formData.submission as Record<string, unknown>).governmentIdDateIssued2;
+                          if (d instanceof Date) return d.toISOString().split('T')[0];
+                          if (typeof d === 'string') {
+                            try { return new Date(d).toISOString().split('T')[0]; } catch { return d; }
+                          }
+                          return '';
+                        })()
+                      : ''
+                  }
+                  onChange={(e) => {
+                    const dateStr = e.target.value;
+                    handleFieldChange('submission', {
+                      ...formData.submission,
+                      governmentIdDateIssued2: dateStr ? new Date(dateStr) : null,
+                    });
+                  }}
+                  max={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+              <Info className="h-4 w-4 text-slate-400" />
+              <span className="text-xs text-slate-500">The 2025 SALN format requires two government-issued IDs for verification.</span>
+            </div>
+          </div>
         </div>
       </EditableSection>
 
@@ -568,72 +1345,612 @@ export default function SALNEditDetailPage({
 
       {/* III. REAL PROPERTIES */}
       <EditableSection title="III. Real Properties" icon={Home} delay={0.35}>
-        <div className="text-sm text-slate-600 dark:text-slate-400">
-          <p className="font-medium mb-2">
-            Note: This is a simplified edit form for demonstration purposes.
-          </p>
-          <p>In production, this section would include:</p>
-          <ul className="list-disc list-inside space-y-1 mt-2 text-xs">
-            <li>
-              Dynamic array of real property entries with add/remove
-              functionality
-            </li>
-            <li>
-              Fields: Description, Kind (dropdown), Exact Location, Assessed
-              Value, Fair Market Value
-            </li>
-            <li>Acquisition details: Year, Mode (dropdown), Cost</li>
-            <li>Currency input fields with proper formatting</li>
-            <li>Real-time validation feedback</li>
-            <li>Auto-calculation of totals</li>
-          </ul>
+        <div className="space-y-4">
+          {(!formData.realProperties || formData.realProperties.length === 0) ? (
+            <div className="text-center py-8 border-2 border-dashed rounded-lg border-slate-200/50 dark:border-slate-800/50">
+              <Home className="h-10 w-10 mx-auto text-slate-400 mb-3" />
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">No real properties added yet</p>
+              <Button type="button" onClick={addRealProperty} variant="outline" size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Real Property
+              </Button>
+            </div>
+          ) : (
+            <>
+              {(formData.realProperties as RealPropertyItem[]).map((prop, index) => (
+                <Card key={index} className="p-4 border-slate-200 dark:border-slate-800">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline" className="text-xs">Property {index + 1}</Badge>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => removeRealProperty(index)}>
+                        <Trash2 className="h-4 w-4 text-rose-500" />
+                      </Button>
+                    </div>
+
+                    {/* Description */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium">Description <span className="text-rose-500">*</span></Label>
+                      <Textarea
+                        value={prop.description || ''}
+                        onChange={(e) => updateRealProperty(index, 'description', e.target.value)}
+                        placeholder="e.g., 3-bedroom house and lot"
+                        rows={2}
+                      />
+                    </div>
+
+                    {/* Kind & Year */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium">Property Kind <span className="text-rose-500">*</span></Label>
+                        <select
+                          value={prop.kind || ''}
+                          onChange={(e) => updateRealProperty(index, 'kind', e.target.value)}
+                          className="flex h-9 w-full rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-[oklch(0.55_0.22_15)]"
+                        >
+                          <option value="">Select kind</option>
+                          {PROPERTY_KIND.map((kind) => (
+                            <option key={kind} value={kind}>
+                              {kind.charAt(0).toUpperCase() + kind.slice(1)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium">Year Acquired <span className="text-rose-500">*</span></Label>
+                        <select
+                          value={prop.acquisitionYear?.toString() || ''}
+                          onChange={(e) => updateRealProperty(index, 'acquisitionYear', parseInt(e.target.value, 10))}
+                          className="flex h-9 w-full rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-[oklch(0.55_0.22_15)]"
+                        >
+                          <option value="">Select year</option>
+                          {YEAR_OPTIONS.map((year) => (
+                            <option key={year} value={year.toString()}>{year}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Exact Location */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium">Exact Location/Address <span className="text-rose-500">*</span></Label>
+                      <Textarea
+                        value={prop.exactLocation || ''}
+                        onChange={(e) => updateRealProperty(index, 'exactLocation', e.target.value)}
+                        placeholder="Street, Barangay, City/Municipality, Province"
+                        rows={2}
+                      />
+                    </div>
+
+                    {/* Financial Values */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <EditCurrencyInput
+                        label="Assessed Value"
+                        value={Number(prop.assessedValue) || 0}
+                        onChange={(val) => updateRealProperty(index, 'assessedValue', val)}
+                        required
+                        helperText="From tax declaration"
+                      />
+                      <EditCurrencyInput
+                        label="Current Fair Market Value"
+                        value={Number(prop.currentFairMarketValue) || 0}
+                        onChange={(val) => updateRealProperty(index, 'currentFairMarketValue', val)}
+                        required
+                        helperText="Current market value"
+                      />
+                    </div>
+
+                    {/* Acquisition Details */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium">Mode of Acquisition <span className="text-rose-500">*</span></Label>
+                        <select
+                          value={prop.acquisitionMode || ''}
+                          onChange={(e) => updateRealProperty(index, 'acquisitionMode', e.target.value)}
+                          className="flex h-9 w-full rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-[oklch(0.55_0.22_15)]"
+                        >
+                          <option value="">Select mode</option>
+                          {ACQUISITION_MODE.map((mode) => (
+                            <option key={mode} value={mode}>{mode}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <EditCurrencyInput
+                        label="Acquisition Cost"
+                        value={Number(prop.acquisitionCost) || 0}
+                        onChange={(val) => updateRealProperty(index, 'acquisitionCost', val)}
+                        required
+                        helperText="Use 0 for inheritance/donation"
+                      />
+                    </div>
+
+                    {/* Owner Selection */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium">Property Owner</Label>
+                      <select
+                        value={prop.owner || 'declarant'}
+                        onChange={(e) => updateRealProperty(index, 'owner', e.target.value)}
+                        className="flex h-9 w-full rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-[oklch(0.55_0.22_15)]"
+                      >
+                        {PROPERTY_OWNER.map((owner) => (
+                          <option key={owner} value={owner}>
+                            {owner === 'declarant' ? 'Declarant' :
+                             owner === 'joint' ? 'Joint (Declarant & Spouse)' :
+                             owner === 'spouse' ? 'Spouse Exclusive' :
+                             'Child Exclusive'}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Child Name (conditional) */}
+                    {prop.owner === 'child' && (
+                      <FormField
+                        label="Child Name"
+                        name={`realProp-${index}-childName`}
+                        value={prop.childName}
+                        onChange={(val) => updateRealProperty(index, 'childName', val)}
+                        placeholder="Name of the child"
+                        required
+                      />
+                    )}
+                  </div>
+                </Card>
+              ))}
+
+              <Button type="button" onClick={addRealProperty} variant="outline" size="sm" className="w-full">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Another Real Property
+              </Button>
+
+              {/* Total */}
+              <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg flex items-center justify-between">
+                <span className="text-sm font-medium">Total Real Property Value:</span>
+                <span className="text-lg font-bold text-[oklch(0.55_0.22_15)]">
+                  {formatCurrency(totalRealProperty)}
+                </span>
+              </div>
+            </>
+          )}
         </div>
       </EditableSection>
 
       {/* IV. PERSONAL PROPERTIES */}
-      <EditableSection
-        title="IV. Personal Properties"
-        icon={Package}
-        delay={0.4}>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          Dynamic personal property entries (vehicles, jewelry, cash,
-          investments, etc.) with add/remove functionality would be implemented
-          here. Each entry would have: Description, Year Acquired, and
-          Acquisition Cost fields.
-        </p>
+      <EditableSection title="IV. Personal Properties" icon={Package} delay={0.4}>
+        <div className="space-y-4">
+          {(!formData.personalProperties || formData.personalProperties.length === 0) ? (
+            <div className="text-center py-8 border-2 border-dashed rounded-lg border-slate-200/50 dark:border-slate-800/50">
+              <Package className="h-10 w-10 mx-auto text-slate-400 mb-3" />
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">No personal properties added yet</p>
+              <Button type="button" onClick={addPersonalProperty} variant="outline" size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Personal Property
+              </Button>
+            </div>
+          ) : (
+            <>
+              {(formData.personalProperties as PersonalPropertyItem[]).map((prop, index) => (
+                <Card key={index} className="p-4 border-slate-200 dark:border-slate-800">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline" className="text-xs">Property {index + 1}</Badge>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => removePersonalProperty(index)}>
+                        <Trash2 className="h-4 w-4 text-rose-500" />
+                      </Button>
+                    </div>
+
+                    {/* Description */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium">Description <span className="text-rose-500">*</span></Label>
+                      <Textarea
+                        value={prop.description || ''}
+                        onChange={(e) => updatePersonalProperty(index, 'description', e.target.value)}
+                        placeholder="e.g., 2020 Toyota Corolla, Jewelry Collection, Cash in Bank"
+                        rows={2}
+                      />
+                    </div>
+
+                    {/* Year and Cost */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium">Year Acquired <span className="text-rose-500">*</span></Label>
+                        <select
+                          value={prop.yearAcquired?.toString() || ''}
+                          onChange={(e) => updatePersonalProperty(index, 'yearAcquired', parseInt(e.target.value, 10))}
+                          className="flex h-9 w-full rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-[oklch(0.55_0.22_15)]"
+                        >
+                          <option value="">Select year</option>
+                          {YEAR_OPTIONS.map((year) => (
+                            <option key={year} value={year.toString()}>{year}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <EditCurrencyInput
+                        label="Acquisition Cost / Current Value"
+                        value={Number(prop.acquisitionCost) || 0}
+                        onChange={(val) => updatePersonalProperty(index, 'acquisitionCost', val)}
+                        required
+                        helperText="Original cost or current market value"
+                      />
+                    </div>
+
+                    {/* Owner Selection */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium">Property Owner</Label>
+                      <select
+                        value={prop.owner || 'declarant'}
+                        onChange={(e) => updatePersonalProperty(index, 'owner', e.target.value)}
+                        className="flex h-9 w-full rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-[oklch(0.55_0.22_15)]"
+                      >
+                        {PROPERTY_OWNER.map((owner) => (
+                          <option key={owner} value={owner}>
+                            {owner === 'declarant' ? 'Declarant' :
+                             owner === 'joint' ? 'Joint (Declarant & Spouse)' :
+                             owner === 'spouse' ? 'Spouse Exclusive' :
+                             'Child Exclusive'}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Child Name (conditional) */}
+                    {prop.owner === 'child' && (
+                      <FormField
+                        label="Child Name"
+                        name={`personalProp-${index}-childName`}
+                        value={prop.childName}
+                        onChange={(val) => updatePersonalProperty(index, 'childName', val)}
+                        placeholder="Name of the child"
+                        required
+                      />
+                    )}
+                  </div>
+                </Card>
+              ))}
+
+              <Button type="button" onClick={addPersonalProperty} variant="outline" size="sm" className="w-full">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Another Personal Property
+              </Button>
+
+              {/* Total */}
+              <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg flex items-center justify-between">
+                <span className="text-sm font-medium">Total Personal Property Value:</span>
+                <span className="text-lg font-bold text-[oklch(0.55_0.22_15)]">
+                  {formatCurrency(totalPersonalProperty)}
+                </span>
+              </div>
+            </>
+          )}
+        </div>
       </EditableSection>
 
       {/* V. LIABILITIES */}
       <EditableSection title="V. Liabilities" icon={CreditCard} delay={0.45}>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          Dynamic liability entries with add/remove functionality would be
-          implemented here. Each entry would have: Nature, Creditor Name, and
-          Outstanding Balance fields.
-        </p>
+        <div className="space-y-4">
+          <Alert className="border-slate-200/50 dark:border-slate-800/50">
+            <Info className="h-4 w-4" />
+            <AlertDescription className="text-xs text-slate-600 dark:text-slate-400">
+              Include all outstanding debts such as home mortgages, car loans,
+              personal loans, credit card balances, and business loans. If you
+              have no debts, you may leave this section empty.
+            </AlertDescription>
+          </Alert>
+
+          {(!formData.liabilities || formData.liabilities.length === 0) ? (
+            <div className="text-center py-8 border-2 border-dashed rounded-lg border-slate-200/50 dark:border-slate-800/50">
+              <CreditCard className="h-10 w-10 mx-auto text-slate-400 mb-3" />
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">No liabilities added</p>
+              <p className="text-xs text-slate-400 mb-3">If you have no debts, you can leave this empty</p>
+              <Button type="button" onClick={addLiability} variant="outline" size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Liability
+              </Button>
+            </div>
+          ) : (
+            <>
+              {(formData.liabilities as LiabilityItem[]).map((liability, index) => (
+                <Card key={index} className="p-4 border-slate-200 dark:border-slate-800">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline" className="text-xs">Liability {index + 1}</Badge>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => removeLiability(index)}>
+                        <Trash2 className="h-4 w-4 text-rose-500" />
+                      </Button>
+                    </div>
+
+                    {/* Nature */}
+                    <FormField
+                      label="Nature of Liability"
+                      name={`liability-${index}-nature`}
+                      value={liability.nature}
+                      onChange={(val) => updateLiability(index, 'nature', val)}
+                      placeholder="e.g., Home Mortgage Loan, Car Loan, Personal Loan"
+                      required
+                    />
+
+                    {/* Creditor */}
+                    <FormField
+                      label="Creditor Name and Address"
+                      name={`liability-${index}-creditorName`}
+                      value={liability.creditorName}
+                      onChange={(val) => updateLiability(index, 'creditorName', val)}
+                      placeholder="e.g., BPI Family Savings Bank, Makati City"
+                      required
+                    />
+
+                    {/* Outstanding Balance */}
+                    <EditCurrencyInput
+                      label="Outstanding Balance"
+                      value={Number(liability.outstandingBalance) || 0}
+                      onChange={(val) => updateLiability(index, 'outstandingBalance', val)}
+                      required
+                      helperText="Current amount owed as of reporting date"
+                    />
+
+                    {/* Owner Selection */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium">Liability Owner</Label>
+                      <select
+                        value={liability.owner || 'declarant'}
+                        onChange={(e) => updateLiability(index, 'owner', e.target.value)}
+                        className="flex h-9 w-full rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-[oklch(0.55_0.22_15)]"
+                      >
+                        {PROPERTY_OWNER.map((owner) => (
+                          <option key={owner} value={owner}>
+                            {owner === 'declarant' ? 'Declarant' :
+                             owner === 'joint' ? 'Joint (Declarant & Spouse)' :
+                             owner === 'spouse' ? 'Spouse Exclusive' :
+                             'Child Exclusive'}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Child Name (conditional) */}
+                    {liability.owner === 'child' && (
+                      <FormField
+                        label="Child Name"
+                        name={`liability-${index}-childName`}
+                        value={liability.childName}
+                        onChange={(val) => updateLiability(index, 'childName', val)}
+                        placeholder="Name of the child"
+                        required
+                      />
+                    )}
+                  </div>
+                </Card>
+              ))}
+
+              <Button type="button" onClick={addLiability} variant="outline" size="sm" className="w-full">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Another Liability
+              </Button>
+
+              {/* Total */}
+              <div className="p-3 bg-rose-50 dark:bg-rose-950/20 rounded-lg flex items-center justify-between">
+                <span className="text-sm font-medium">Total Liabilities:</span>
+                <span className="text-lg font-bold text-rose-600 dark:text-rose-400">
+                  {formatCurrency(totalLiabilities)}
+                </span>
+              </div>
+            </>
+          )}
+        </div>
       </EditableSection>
 
       {/* VI. BUSINESS INTERESTS */}
-      <EditableSection
-        title="VI. Business Interests"
-        icon={Briefcase}
-        delay={0.5}>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          Dynamic business interest entries with add/remove functionality would
-          be implemented here. Each entry would have: Entity Name, Business
-          Address, Nature of Business, and Date of Acquisition fields.
-        </p>
+      <EditableSection title="VI. Business Interests" icon={Briefcase} delay={0.5}>
+        <div className="space-y-4">
+          <Alert className="border-slate-200/50 dark:border-slate-800/50">
+            <Info className="h-4 w-4" />
+            <AlertDescription className="text-xs text-slate-600 dark:text-slate-400">
+              Include any business where you or your spouse have an interest
+              (stockholder, partner, officer, director, etc.). If none, leave this section empty.
+            </AlertDescription>
+          </Alert>
+
+          {(!formData.businessInterests || formData.businessInterests.length === 0) ? (
+            <div className="text-center py-8 border-2 border-dashed rounded-lg border-slate-200/50 dark:border-slate-800/50">
+              <Briefcase className="h-10 w-10 mx-auto text-slate-400 mb-3" />
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">No business interests added</p>
+              <p className="text-xs text-slate-400 mb-3">Add business interests or leave empty if none</p>
+              <Button type="button" onClick={addBusinessInterest} variant="outline" size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Business Interest
+              </Button>
+            </div>
+          ) : (
+            <>
+              {(formData.businessInterests as BusinessInterestItem[]).map((biz, index) => (
+                <Card key={index} className="p-4 border-slate-200 dark:border-slate-800">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline" className="text-xs">Business {index + 1}</Badge>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => removeBusinessInterest(index)}>
+                        <Trash2 className="h-4 w-4 text-rose-500" />
+                      </Button>
+                    </div>
+
+                    {/* Business Name */}
+                    <FormField
+                      label="Business Name"
+                      name={`biz-${index}-entityName`}
+                      value={biz.entityName}
+                      onChange={(val) => updateBusinessInterest(index, 'entityName', val)}
+                      placeholder="Name of business/corporation"
+                      required
+                    />
+
+                    {/* Business Address */}
+                    <FormField
+                      label="Business Address"
+                      name={`biz-${index}-businessAddress`}
+                      value={biz.businessAddress}
+                      onChange={(val) => updateBusinessInterest(index, 'businessAddress', val)}
+                      placeholder="Complete business address"
+                      required
+                      fullWidth
+                    />
+
+                    {/* Nature of Business */}
+                    <FormField
+                      label="Nature of Business Interest"
+                      name={`biz-${index}-natureOfBusiness`}
+                      value={biz.natureOfBusiness}
+                      onChange={(val) => updateBusinessInterest(index, 'natureOfBusiness', val)}
+                      placeholder="e.g., Stockholder, Partner, Director"
+                      required
+                    />
+
+                    {/* Date of Acquisition */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium">Date of Acquisition <span className="text-rose-500">*</span></Label>
+                      <Input
+                        type="date"
+                        value={
+                          biz.dateOfAcquisition instanceof Date
+                            ? biz.dateOfAcquisition.toISOString().split('T')[0]
+                            : typeof biz.dateOfAcquisition === 'string' && biz.dateOfAcquisition
+                              ? (() => { try { return new Date(biz.dateOfAcquisition).toISOString().split('T')[0]; } catch { return biz.dateOfAcquisition; } })()
+                              : ''
+                        }
+                        onChange={(e) => updateBusinessInterest(index, 'dateOfAcquisition', e.target.value)}
+                        max={new Date().toISOString().split('T')[0]}
+                      />
+                    </div>
+
+                    {/* Owner Selection */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium">Business Owner</Label>
+                      <select
+                        value={biz.owner || 'declarant'}
+                        onChange={(e) => updateBusinessInterest(index, 'owner', e.target.value)}
+                        className="flex h-9 w-full rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-[oklch(0.55_0.22_15)]"
+                      >
+                        {PROPERTY_OWNER.map((owner) => (
+                          <option key={owner} value={owner}>
+                            {owner === 'declarant' ? 'Declarant' :
+                             owner === 'joint' ? 'Joint (Declarant & Spouse)' :
+                             owner === 'spouse' ? 'Spouse Exclusive' :
+                             'Child Exclusive'}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Child Name (conditional) */}
+                    {biz.owner === 'child' && (
+                      <FormField
+                        label="Child Name"
+                        name={`biz-${index}-childName`}
+                        value={biz.childName}
+                        onChange={(val) => updateBusinessInterest(index, 'childName', val)}
+                        placeholder="Name of the child"
+                        required
+                      />
+                    )}
+                  </div>
+                </Card>
+              ))}
+
+              <Button type="button" onClick={addBusinessInterest} variant="outline" size="sm" className="w-full">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Another Business Interest
+              </Button>
+            </>
+          )}
+        </div>
       </EditableSection>
 
       {/* VII. RELATIVES IN GOVERNMENT */}
-      <EditableSection
-        title="VII. Relatives in Government"
-        icon={Users}
-        delay={0.55}>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          Dynamic relative entries (within 4th civil degree) with add/remove
-          functionality would be implemented here. Each entry would have: Name,
-          Relationship (dropdown), Position, and Agency/Office Address fields.
-        </p>
+      <EditableSection title="VII. Relatives in Government" icon={Users} delay={0.55}>
+        <div className="space-y-4">
+          <Alert className="border-slate-200/50 dark:border-slate-800/50">
+            <Info className="h-4 w-4" />
+            <AlertDescription className="text-xs text-slate-600 dark:text-slate-400">
+              Disclose relatives within the 4th civil degree (by consanguinity
+              or affinity) currently employed in government. If none, leave this section empty.
+            </AlertDescription>
+          </Alert>
+
+          {(!formData.relativesInGov || formData.relativesInGov.length === 0) ? (
+            <div className="text-center py-8 border-2 border-dashed rounded-lg border-slate-200/50 dark:border-slate-800/50">
+              <Users className="h-10 w-10 mx-auto text-slate-400 mb-3" />
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">No relatives in government added</p>
+              <p className="text-xs text-slate-400 mb-3">Add relatives or leave empty if none</p>
+              <Button type="button" onClick={addRelativeInGov} variant="outline" size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Relative
+              </Button>
+            </div>
+          ) : (
+            <>
+              {(formData.relativesInGov as RelativeInGovItem[]).map((relative, index) => (
+                <Card key={index} className="p-4 border-slate-200 dark:border-slate-800">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline" className="text-xs">Relative {index + 1}</Badge>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => removeRelativeInGov(index)}>
+                        <Trash2 className="h-4 w-4 text-rose-500" />
+                      </Button>
+                    </div>
+
+                    {/* Name & Relationship */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        label="Full Name"
+                        name={`relative-${index}-name`}
+                        value={relative.name}
+                        onChange={(val) => updateRelativeInGov(index, 'name', val)}
+                        placeholder="Full name of relative"
+                        required
+                      />
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium">Relationship <span className="text-rose-500">*</span></Label>
+                        <select
+                          value={relative.relationship || ''}
+                          onChange={(e) => updateRelativeInGov(index, 'relationship', e.target.value)}
+                          className="flex h-9 w-full rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-[oklch(0.55_0.22_15)]"
+                        >
+                          <option value="">Select relationship</option>
+                          {RELATIONSHIP_TYPE.map((rel) => (
+                            <option key={rel} value={rel}>{rel}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Position */}
+                    <FormField
+                      label="Position/Title"
+                      name={`relative-${index}-position`}
+                      value={relative.position}
+                      onChange={(val) => updateRelativeInGov(index, 'position', val)}
+                      placeholder="Position in government"
+                      required
+                    />
+
+                    {/* Agency/Office */}
+                    <FormField
+                      label="Agency/Office and Address"
+                      name={`relative-${index}-agencyAddress`}
+                      value={relative.agencyAddress}
+                      onChange={(val) => updateRelativeInGov(index, 'agencyAddress', val)}
+                      placeholder="Complete agency name and address"
+                      required
+                      fullWidth
+                    />
+                  </div>
+                </Card>
+              ))}
+
+              <Button type="button" onClick={addRelativeInGov} variant="outline" size="sm" className="w-full">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Another Relative
+              </Button>
+            </>
+          )}
+        </div>
       </EditableSection>
 
       {/* Bottom Actions */}

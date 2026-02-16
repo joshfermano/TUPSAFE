@@ -479,8 +479,30 @@ export default function SALNCreatePage() {
             // Set draft ID for future updates
             updateDraftId(draftIdFromUrl);
 
-            // Transform backend data to frontend format
-            const formData = transformSalnFromBackend(salnData);
+            // The API already calls transformSalnFromBackend(), so result.data
+            // is already in nested frontend format: { submission: {...}, realProperties: [...], ... }
+            // Detect if data is already nested (has .submission) or still flat (has .year at root)
+            const formData = salnData.submission
+              ? salnData  // Already transformed by API
+              : transformSalnFromBackend(salnData); // Flat format, needs transformation
+
+            // Convert date strings back to Date objects
+            // JSON serialization over the network turns Date→string, but
+            // formatDateForInput() requires actual Date instances
+            if (formData.submission) {
+              const sub = formData.submission as Record<string, unknown>;
+              const dateFields = [
+                'complianceDate',
+                'spouseDateOfBirth',
+                'governmentIdDateIssued',
+                'governmentIdDateIssued2',
+              ] as const;
+              for (const field of dateFields) {
+                if (typeof sub[field] === 'string' && sub[field]) {
+                  sub[field] = new Date(sub[field] as string);
+                }
+              }
+            }
 
             // Reset form with transformed data
             form.reset(formData);

@@ -308,6 +308,30 @@ export default function SALNViewDetailPage({
 
     const spouseParsedName = parseSpouseName(submissionMeta.spouseName);
 
+    // Build spouse info for joint or separate filing (both imply marriage)
+    let spouseInfo = undefined;
+    if ((submissionMeta.filingType === 'joint' || submissionMeta.filingType === 'separate') && submissionMeta.spouseName) {
+      spouseInfo = {
+        surname: spouseParsedName.surname,
+        firstName: spouseParsedName.firstName,
+        middleInitial: spouseParsedName.middleInitial,
+        position: submissionMeta.spousePosition || '',
+        agency: submissionMeta.spouseAgency || '',
+        officeAddress: submissionMeta.spouseOfficeAddress || '',
+      };
+    }
+
+    // Calculate totals
+    const realProps = salnDataInput.realProperties || [];
+    const personalProps = salnDataInput.personalProperties || [];
+    const liabilitiesArr = salnDataInput.liabilities || [];
+
+    const totalRealProperty = realProps.reduce((sum: number, p: Record<string, unknown>) => sum + (Number(p.currentFairMarketValue) || 0), 0);
+    const totalPersonalProperty = personalProps.reduce((sum: number, p: Record<string, unknown>) => sum + (Number(p.acquisitionCost) || 0), 0);
+    const calcTotalAssets = totalRealProperty + totalPersonalProperty;
+    const calcTotalLiabilities = liabilitiesArr.reduce((sum: number, l: Record<string, unknown>) => sum + (Number(l.outstandingBalance) || 0), 0);
+    const calcNetWorth = calcTotalAssets - calcTotalLiabilities;
+
     return {
       id: submissionMeta.id || '',
       year: submissionMeta.year || new Date().getFullYear(),
@@ -322,22 +346,12 @@ export default function SALNViewDetailPage({
           'Technological University of the Philippines - Manila',
         officeAddress: submissionMeta.officeAddress || '',
       },
-      spouseInfo:
-        submissionMeta.filingType === 'joint' && submissionMeta.spouseName
-          ? {
-              surname: spouseParsedName.surname,
-              firstName: spouseParsedName.firstName,
-              middleInitial: spouseParsedName.middleInitial,
-              position: '',
-              agency: '',
-              officeAddress: '',
-            }
-          : undefined,
+      spouseInfo,
       children: [],
       // Arrays are at the root of salnData, not inside submission
-      realProperties: salnDataInput.realProperties || [],
-      personalProperties: salnDataInput.personalProperties || [],
-      liabilities: salnDataInput.liabilities || [],
+      realProperties: realProps,
+      personalProperties: personalProps,
+      liabilities: liabilitiesArr,
       businessInterests:
         salnDataInput.businessInterests?.map((bi: ViewBusinessInterest) => ({
           entityName: bi.businessName || bi.entityName || '',
@@ -352,10 +366,32 @@ export default function SALNViewDetailPage({
           position: rel.position || '',
           agencyAddress: rel.agency || rel.agencyAddress || '',
         })) || [],
-      // Calculate totals from arrays
-      totalAssets: 0, // Will be recalculated
-      totalLiabilities: 0, // Will be recalculated
-      netWorth: 0, // Will be recalculated
+      // Calculated totals
+      totalAssets: calcTotalAssets,
+      totalLiabilities: calcTotalLiabilities,
+      netWorth: calcNetWorth,
+      // 2025 SALN Format fields
+      salnFormatVersion: submissionMeta.salnFormatVersion || 2025,
+      complianceType: submissionMeta.complianceType,
+      complianceDate: submissionMeta.complianceDate,
+      hasMultipleMarriages: submissionMeta.hasMultipleMarriages,
+      previousSpouseNames: submissionMeta.previousSpouseNames,
+      spouseIsPublicOfficial: submissionMeta.spouseIsPublicOfficial,
+      spousePosition: submissionMeta.spousePosition,
+      spouseAgency: submissionMeta.spouseAgency,
+      spouseOfficeAddress: submissionMeta.spouseOfficeAddress,
+      unmarriedChildren: submissionMeta.unmarriedChildren,
+      hasNoBusinessInterests: submissionMeta.hasNoBusinessInterests,
+      hasNoRelativesInGov: submissionMeta.hasNoRelativesInGov,
+      governmentIdType: submissionMeta.governmentIdType,
+      governmentIdNumber: submissionMeta.governmentIdNumber,
+      governmentIdDateIssued: submissionMeta.governmentIdDateIssued,
+      governmentIdType2: submissionMeta.governmentIdType2,
+      governmentIdNumber2: submissionMeta.governmentIdNumber2,
+      governmentIdDateIssued2: submissionMeta.governmentIdDateIssued2,
+      declarantTin: submissionMeta.declarantTin,
+      spouseTin: submissionMeta.spouseTin,
+      spouseDateOfBirth: submissionMeta.spouseDateOfBirth,
     };
   };
 

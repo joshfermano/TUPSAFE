@@ -155,7 +155,7 @@ export function SALNPage1({ data }: SALNPage1Props) {
           <View style={[styles.row, { alignItems: 'center', marginRight: 10 }]}>
             <Checkbox checked={complianceType === 'assumption'} />
             <Text style={{ fontSize: SALN_FONT_SIZES.fieldLabel }}>
-              Assumption of office as of {complianceDate ? formatDate(complianceDate) : '__________'}
+              Assumption of office as of {complianceType === 'assumption' && complianceDate ? formatDate(complianceDate) : '__________'}
             </Text>
           </View>
           <View style={[styles.row, { alignItems: 'center', marginRight: 10 }]}>
@@ -167,7 +167,7 @@ export function SALNPage1({ data }: SALNPage1Props) {
           <View style={[styles.row, { alignItems: 'center' }]}>
             <Checkbox checked={complianceType === 'exit'} />
             <Text style={{ fontSize: SALN_FONT_SIZES.fieldLabel }}>
-              Exit as of {complianceDate ? formatDate(complianceDate) : '__________'}
+              Exit as of {complianceType === 'exit' && complianceDate ? formatDate(complianceDate) : '__________'}
             </Text>
           </View>
         </View>

@@ -20,7 +20,7 @@
  * - React.memo for performance
  */
 
-import { memo, useEffect } from 'react';
+import { memo, useEffect, useRef } from 'react';
 import { useFormContext, useWatch, useFieldArray, Controller } from 'react-hook-form';
 import { PersonIcon } from '@radix-ui/react-icons';
 import { Plus, Trash2, Info, Users, Calendar, Briefcase } from 'lucide-react';
@@ -82,6 +82,19 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
   const _isJointFiling = filingType === 'joint';
   const hasSpouse = filingType === 'joint' || filingType === 'separate';
   const requiresComplianceDate = complianceType === 'assumption' || complianceType === 'exit';
+
+  // Clear complianceDate when compliance type changes (so assumption/exit dates don't carry over)
+  const prevComplianceTypeRef = useRef(complianceType);
+  useEffect(() => {
+    if (
+      prevComplianceTypeRef.current !== undefined &&
+      prevComplianceTypeRef.current !== complianceType &&
+      complianceType !== undefined
+    ) {
+      form.setValue('submission.complianceDate', undefined);
+    }
+    prevComplianceTypeRef.current = complianceType;
+  }, [complianceType, form]);
 
   // useFieldArray for unmarried children
   const {
