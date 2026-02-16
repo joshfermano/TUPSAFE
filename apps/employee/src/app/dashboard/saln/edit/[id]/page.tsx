@@ -883,7 +883,8 @@ export default function SALNEditDetailPage({
                         ...formData.submission,
                         complianceType: opt.value,
                         // Clear complianceDate when switching type so assumption/exit dates don't carry over
-                        complianceDate: (formData.submission as Record<string, unknown>)?.complianceType !== opt.value
+                        // For 'annual', always clear it; for assumption/exit, only clear when switching between them
+                        complianceDate: opt.value === 'annual' || (formData.submission as Record<string, unknown>)?.complianceType !== opt.value
                           ? null
                           : (formData.submission as Record<string, unknown>)?.complianceDate,
                       })
