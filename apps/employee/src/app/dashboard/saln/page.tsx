@@ -445,6 +445,7 @@ export default function SalnPage() {
         pendingReviews: 0,
         approvalRate: 0,
         rejected: 0,
+        approvedCount: 0,
       };
     }
 
@@ -465,6 +466,7 @@ export default function SalnPage() {
       pendingReviews,
       approvalRate,
       rejected,
+      approvedCount,
     };
   }, [hasExistingSALN, submissions]);
 
@@ -706,7 +708,7 @@ export default function SalnPage() {
         />
         <StatsCard
           title="Approved"
-          value={stats.totalSubmissions - stats.rejected - stats.pendingReviews}
+          value={stats.approvedCount}
           icon={CheckCircle2}
           delay={0.25}
         />
