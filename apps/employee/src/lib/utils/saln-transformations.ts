@@ -400,8 +400,14 @@ export function transformSalnForSubmission(data: Partial<CompleteSalnData>): Rec
   // that may not exist on the fallback object type
   if (sub.complianceType !== undefined) {
     result.complianceType = sub.complianceType;
+    // When compliance type is 'annual', clear complianceDate since annual
+    // uses a fixed "December 31" date and doesn't need a user-supplied date.
+    // This ensures assumption/exit dates don't persist in the DB when switching to annual.
+    if (sub.complianceType === 'annual') {
+      result.complianceDate = null;
+    }
   }
-  if (sub.complianceDate !== undefined) {
+  if (sub.complianceDate !== undefined && sub.complianceType !== 'annual') {
     const cd = sub.complianceDate;
     result.complianceDate = cd instanceof Date
       ? cd.toISOString()

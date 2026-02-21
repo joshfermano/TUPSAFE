@@ -211,13 +211,33 @@ interface EditCurrencyInputProps {
   helperText?: string;
 }
 
+// Format number with commas (e.g., 1,000,000.00)
+const formatNumberWithCommas = (value: number | string): string => {
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(num) || num === 0) return '0';
+  return num.toLocaleString('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+};
+
+// Remove commas and non-numeric chars (except dot and minus) for parsing
+const parseFormattedNumber = (value: string): number => {
+  const cleaned = value.replace(/[^0-9.\-]/g, '');
+  const num = parseFloat(cleaned);
+  return isNaN(num) ? 0 : num;
+};
+
 const EditCurrencyInput = React.memo(
   ({ label, value, onChange, required = false, helperText }: EditCurrencyInputProps) => {
-    const [displayValue, setDisplayValue] = useState(value?.toString() || '0');
+    const [displayValue, setDisplayValue] = useState(formatNumberWithCommas(value || 0));
+    const [isFocused, setIsFocused] = useState(false);
 
     useEffect(() => {
-      setDisplayValue(value?.toString() || '0');
-    }, [value]);
+      if (!isFocused) {
+        setDisplayValue(formatNumberWithCommas(value || 0));
+      }
+    }, [value, isFocused]);
 
     return (
       <div className="space-y-1.5">
@@ -227,21 +247,31 @@ const EditCurrencyInput = React.memo(
         <div className="relative">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">₱</span>
           <Input
-            type="number"
+            type="text"
+            inputMode="decimal"
             value={displayValue}
             onChange={(e) => {
-              setDisplayValue(e.target.value);
-              const numVal = parseFloat(e.target.value);
-              onChange(isNaN(numVal) ? 0 : numVal);
+              const raw = e.target.value;
+              // Allow typing: only digits, commas, dots, minus
+              if (raw === '' || /^[0-9,\.\-]*$/.test(raw)) {
+                setDisplayValue(raw);
+                const numVal = parseFormattedNumber(raw);
+                onChange(numVal);
+              }
+            }}
+            onFocus={() => {
+              setIsFocused(true);
+              // Remove formatting on focus for easier editing
+              const numVal = parseFormattedNumber(displayValue);
+              setDisplayValue(numVal === 0 ? '' : numVal.toString());
             }}
             onBlur={() => {
-              const numVal = parseFloat(displayValue);
+              setIsFocused(false);
+              const numVal = parseFormattedNumber(displayValue);
               const finalVal = isNaN(numVal) ? 0 : numVal;
-              setDisplayValue(finalVal.toString());
+              setDisplayValue(formatNumberWithCommas(finalVal));
               onChange(finalVal);
             }}
-            min={0}
-            step="0.01"
             className="pl-8"
             placeholder="0.00"
           />
@@ -883,7 +913,8 @@ export default function SALNEditDetailPage({
                         ...formData.submission,
                         complianceType: opt.value,
                         // Clear complianceDate when switching type so assumption/exit dates don't carry over
-                        complianceDate: (formData.submission as Record<string, unknown>)?.complianceType !== opt.value
+                        // For 'annual', always clear it; for assumption/exit, only clear when switching between them
+                        complianceDate: opt.value === 'annual' || (formData.submission as Record<string, unknown>)?.complianceType !== opt.value
                           ? null
                           : (formData.submission as Record<string, unknown>)?.complianceDate,
                       })
