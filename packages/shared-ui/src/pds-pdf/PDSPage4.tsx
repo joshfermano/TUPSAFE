@@ -25,7 +25,6 @@ import {
 import type { PDSData, Reference } from './types';
 import {
   PDSPageFooter,
-  SectionHeader,
   PhotoBox,
   ThumbmarkBox,
   SignatureBox,
@@ -115,48 +114,48 @@ export function PDSPage4({ data }: PDSPage4Props) {
   // For now, we map existing fields to the closest equivalents
 
   // Question 34: Related by consanguinity/affinity
-  const q34Related = questions.Q34_criminal_charged ?? false;
-  const q34Details = questions.Q34_criminal_charged_details ?? '';
+  const q34Related = questions.Q34_related_to_authority ?? questions.Q34_criminal_charged ?? false;
+  const q34Details = questions.Q34_related_to_authority_details ?? questions.Q34_criminal_charged_details ?? '';
 
   // Question 35a: Administrative offense
-  const q35aAdminOffense = questions.Q35_criminal_convicted ?? false;
-  const q35aDetails = questions.Q35_criminal_convicted_details ?? '';
+  const q35aAdminOffense = questions.Q35a_admin_offense ?? questions.Q35_criminal_convicted ?? false;
+  const q35aDetails = questions.Q35a_admin_offense_details ?? questions.Q35_criminal_convicted_details ?? '';
 
   // Question 35b: Criminally charged
-  const q35bCriminalCharged = questions.Q34_criminal_charged ?? false;
-  const q35bDetails = questions.Q34_criminal_charged_details ?? '';
+  const q35bCriminalCharged = questions.Q35b_criminal_charged ?? false;
+  const q35bDetails = questions.Q35b_criminal_charged_details ?? '';
 
   // Question 36: Convicted of crime
-  const q36Convicted = questions.Q35_criminal_convicted ?? false;
-  const q36Details = questions.Q35_criminal_convicted_details ?? '';
+  const q36Convicted = questions.Q36_convicted_of_crime ?? false;
+  const q36Details = questions.Q36_convicted_of_crime_details ?? '';
 
   // Question 37: Separated from service
-  const q37Separated = questions.Q36_separated_from_service ?? false;
-  const q37Details = questions.Q36_separated_from_service_details ?? '';
+  const q37Separated = questions.Q37_separated_from_service ?? questions.Q36_separated_from_service ?? false;
+  const q37Details = questions.Q37_separated_from_service_details ?? questions.Q36_separated_from_service_details ?? '';
 
   // Question 38a: Candidate in election
-  const q38aCandidate = questions.Q37_candidate_for_election ?? false;
-  const q38aDetails = questions.Q37_candidate_for_election_details ?? '';
+  const q38aCandidate = questions.Q38a_candidate_for_election ?? questions.Q37_candidate_for_election ?? false;
+  const q38aDetails = questions.Q38a_candidate_for_election_details ?? questions.Q37_candidate_for_election_details ?? '';
 
   // Question 38b: Resigned to campaign
-  const q38bResigned = questions.Q38_resigned_from_government ?? false;
-  const q38bDetails = questions.Q38_resigned_from_government_details ?? '';
+  const q38bResigned = questions.Q38b_resigned_to_campaign ?? questions.Q38_resigned_from_government ?? false;
+  const q38bDetails = questions.Q38b_resigned_to_campaign_details ?? questions.Q38_resigned_from_government_details ?? '';
 
   // Question 39: Immigrant/permanent resident
-  const q39Immigrant = questions.Q39_immigrant_or_acquired_residence ?? false;
-  const q39Details = questions.Q39_immigrant_or_acquired_residence_details ?? '';
+  const q39Immigrant = questions.Q39_immigrant_status ?? questions.Q39_immigrant_or_acquired_residence ?? false;
+  const q39Details = questions.Q39_immigrant_status_details ?? questions.Q39_immigrant_or_acquired_residence_details ?? '';
 
   // Question 40a: Indigenous group member
-  const q40aIndigenous = questions.Q40_indigenous_group ?? false;
-  const q40aDetails = questions.Q40_indigenous_group_details ?? '';
+  const q40aIndigenous = questions.Q40a_indigenous_group ?? questions.Q40_indigenous_group ?? false;
+  const q40aDetails = questions.Q40a_indigenous_group_details ?? questions.Q40_indigenous_group_details ?? '';
 
   // Question 40b: Person with disability
-  const q40bDisabled = questions.Q41_disabled ?? false;
-  const q40bDetails = questions.Q41_disabled_details ?? '';
+  const q40bDisabled = questions.Q40b_disabled ?? questions.Q41_disabled ?? false;
+  const q40bDetails = questions.Q40b_disabled_details ?? questions.Q41_disabled_details ?? '';
 
   // Question 40c: Solo parent
-  const q40cSoloParent = questions.Q42_solo_parent ?? false;
-  const q40cDetails = questions.Q42_solo_parent_details ?? '';
+  const q40cSoloParent = questions.Q40c_solo_parent ?? questions.Q42_solo_parent ?? false;
+  const q40cDetails = questions.Q40c_solo_parent_details ?? questions.Q42_solo_parent_details ?? '';
 
   return (
     <Page size="LEGAL" style={styles.page}>
@@ -266,7 +265,13 @@ export function PDSPage4({ data }: PDSPage4Props) {
 
       {/* 41. REFERENCES Section */}
       <View style={[styles.borderedSection, styles.marginTop5]}>
-        <SectionHeader number="41" title="REFERENCES" />
+        <View style={[styles.fieldRow, { backgroundColor: '#D9D9D9' }]}>
+          <View style={[styles.labelCell, { flex: 1, borderRightWidth: 0 }]}>
+            <Text style={[styles.labelSmall, { fontWeight: 'bold' }]}>
+              41. REFERENCES
+            </Text>
+          </View>
+        </View>
 
         <View
           style={[
@@ -305,10 +310,13 @@ export function PDSPage4({ data }: PDSPage4Props) {
 
       {/* 42. GOVERNMENT ISSUED ID Section */}
       <View style={[styles.borderedSection, styles.marginTop5]}>
-        <SectionHeader
-          number="42"
-          title="Government Issued ID (i.e.Passport, GSIS, SSS, PRC, Driver's License, etc.)"
-        />
+        <View style={[styles.fieldRow, { backgroundColor: '#D9D9D9' }]}>
+          <View style={[styles.labelCell, { flex: 1, borderRightWidth: 0 }]}>
+            <Text style={[styles.labelSmall, { fontWeight: 'bold' }]}>
+              42. Government Issued ID (i.e.Passport, GSIS, SSS, PRC, Driver&apos;s License, etc.)
+            </Text>
+          </View>
+        </View>
         <View
           style={[
             styles.subSectionHeader,

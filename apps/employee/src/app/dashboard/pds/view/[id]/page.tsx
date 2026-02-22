@@ -124,6 +124,30 @@ interface PdsCitizenship {
 }
 
 interface PdsQuestions {
+  // New 2025 field names
+  Q34_related_to_authority?: boolean | string;
+  Q34_related_to_authority_details?: string;
+  Q35a_admin_offense?: boolean | string;
+  Q35a_admin_offense_details?: string;
+  Q35b_criminal_charged?: boolean | string;
+  Q35b_criminal_charged_details?: string;
+  Q36_convicted_of_crime?: boolean | string;
+  Q36_convicted_of_crime_details?: string;
+  Q37_separated_from_service?: boolean | string;
+  Q37_separated_from_service_details?: string;
+  Q38a_candidate_for_election?: boolean | string;
+  Q38a_candidate_for_election_details?: string;
+  Q38b_resigned_to_campaign?: boolean | string;
+  Q38b_resigned_to_campaign_details?: string;
+  Q39_immigrant_status?: boolean | string;
+  Q39_immigrant_status_details?: string;
+  Q40a_indigenous_group?: boolean | string;
+  Q40a_indigenous_group_details?: string;
+  Q40b_disabled?: boolean | string;
+  Q40b_disabled_details?: string;
+  Q40c_solo_parent?: boolean | string;
+  Q40c_solo_parent_details?: string;
+  // Old field names (kept for backwards compatibility with existing DB data)
   Q34_criminal_charged?: boolean | string;
   Q34_criminal_charged_details?: string;
   Q35_criminal_convicted?: boolean | string;
@@ -1398,14 +1422,14 @@ export default function PDSViewDetailPage({
             <div className="space-y-3">
               <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
                 <Field
-                  label="Have you ever been formally charged?"
-                  value={pdsData.otherInfo?.questions?.Q34_criminal_charged}
+                  label="34. Are you related by consanguinity or affinity to the appointing or recommending authority?"
+                  value={pdsData.otherInfo?.questions?.Q34_related_to_authority ?? pdsData.otherInfo?.questions?.Q34_criminal_charged}
                 />
-                {pdsData.otherInfo?.questions?.Q34_criminal_charged && (
+                {(pdsData.otherInfo?.questions?.Q34_related_to_authority ?? pdsData.otherInfo?.questions?.Q34_criminal_charged) && (
                   <Field
                     label="Details"
                     value={
-                      pdsData.otherInfo.questions.Q34_criminal_charged_details
+                      pdsData.otherInfo?.questions?.Q34_related_to_authority_details ?? pdsData.otherInfo?.questions?.Q34_criminal_charged_details
                     }
                     fullWidth
                   />
@@ -1413,14 +1437,14 @@ export default function PDSViewDetailPage({
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
                 <Field
-                  label="Have you ever been convicted?"
-                  value={pdsData.otherInfo?.questions?.Q35_criminal_convicted}
+                  label="35a. Have you ever been found guilty of any administrative offense?"
+                  value={pdsData.otherInfo?.questions?.Q35a_admin_offense ?? pdsData.otherInfo?.questions?.Q35_criminal_convicted}
                 />
-                {pdsData.otherInfo?.questions?.Q35_criminal_convicted && (
+                {(pdsData.otherInfo?.questions?.Q35a_admin_offense ?? pdsData.otherInfo?.questions?.Q35_criminal_convicted) && (
                   <Field
                     label="Details"
                     value={
-                      pdsData.otherInfo.questions.Q35_criminal_convicted_details
+                      pdsData.otherInfo?.questions?.Q35a_admin_offense_details ?? pdsData.otherInfo?.questions?.Q35_criminal_convicted_details
                     }
                     fullWidth
                   />
@@ -1428,17 +1452,46 @@ export default function PDSViewDetailPage({
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
                 <Field
-                  label="Have you ever been separated from service?"
+                  label="35b. Have you ever been criminally charged before any court?"
+                  value={pdsData.otherInfo?.questions?.Q35b_criminal_charged}
+                />
+                {pdsData.otherInfo?.questions?.Q35b_criminal_charged && (
+                  <Field
+                    label="Details"
+                    value={
+                      pdsData.otherInfo?.questions?.Q35b_criminal_charged_details
+                    }
+                    fullWidth
+                  />
+                )}
+              </div>
+              <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                <Field
+                  label="36. Have you ever been convicted of any crime or violation?"
+                  value={pdsData.otherInfo?.questions?.Q36_convicted_of_crime}
+                />
+                {pdsData.otherInfo?.questions?.Q36_convicted_of_crime && (
+                  <Field
+                    label="Details"
+                    value={
+                      pdsData.otherInfo?.questions?.Q36_convicted_of_crime_details
+                    }
+                    fullWidth
+                  />
+                )}
+              </div>
+              <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                <Field
+                  label="37. Have you ever been separated from the service?"
                   value={
-                    pdsData.otherInfo?.questions?.Q36_separated_from_service
+                    pdsData.otherInfo?.questions?.Q37_separated_from_service ?? pdsData.otherInfo?.questions?.Q36_separated_from_service
                   }
                 />
-                {pdsData.otherInfo?.questions?.Q36_separated_from_service && (
+                {(pdsData.otherInfo?.questions?.Q37_separated_from_service ?? pdsData.otherInfo?.questions?.Q36_separated_from_service) && (
                   <Field
                     label="Details"
                     value={
-                      pdsData.otherInfo.questions
-                        .Q36_separated_from_service_details
+                      pdsData.otherInfo?.questions?.Q37_separated_from_service_details ?? pdsData.otherInfo?.questions?.Q36_separated_from_service_details
                     }
                     fullWidth
                   />
@@ -1446,17 +1499,16 @@ export default function PDSViewDetailPage({
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
                 <Field
-                  label="Have you ever been a candidate?"
+                  label="38a. Have you ever been a candidate in a national or local election?"
                   value={
-                    pdsData.otherInfo?.questions?.Q37_candidate_for_election
+                    pdsData.otherInfo?.questions?.Q38a_candidate_for_election ?? pdsData.otherInfo?.questions?.Q37_candidate_for_election
                   }
                 />
-                {pdsData.otherInfo?.questions?.Q37_candidate_for_election && (
+                {(pdsData.otherInfo?.questions?.Q38a_candidate_for_election ?? pdsData.otherInfo?.questions?.Q37_candidate_for_election) && (
                   <Field
                     label="Details"
                     value={
-                      pdsData.otherInfo.questions
-                        .Q37_candidate_for_election_details
+                      pdsData.otherInfo?.questions?.Q38a_candidate_for_election_details ?? pdsData.otherInfo?.questions?.Q37_candidate_for_election_details
                     }
                     fullWidth
                   />
@@ -1464,17 +1516,16 @@ export default function PDSViewDetailPage({
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
                 <Field
-                  label="Have you resigned from government service?"
+                  label="38b. Have you resigned from government service to campaign?"
                   value={
-                    pdsData.otherInfo?.questions?.Q38_resigned_from_government
+                    pdsData.otherInfo?.questions?.Q38b_resigned_to_campaign ?? pdsData.otherInfo?.questions?.Q38_resigned_from_government
                   }
                 />
-                {pdsData.otherInfo?.questions?.Q38_resigned_from_government && (
+                {(pdsData.otherInfo?.questions?.Q38b_resigned_to_campaign ?? pdsData.otherInfo?.questions?.Q38_resigned_from_government) && (
                   <Field
                     label="Details"
                     value={
-                      pdsData.otherInfo.questions
-                        .Q38_resigned_from_government_details
+                      pdsData.otherInfo?.questions?.Q38b_resigned_to_campaign_details ?? pdsData.otherInfo?.questions?.Q38_resigned_from_government_details
                     }
                     fullWidth
                   />
@@ -1482,19 +1533,16 @@ export default function PDSViewDetailPage({
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
                 <Field
-                  label="Have you acquired immigrant status?"
+                  label="39. Have you acquired immigrant or permanent resident status?"
                   value={
-                    pdsData.otherInfo?.questions
-                      ?.Q39_immigrant_or_acquired_residence
+                    pdsData.otherInfo?.questions?.Q39_immigrant_status ?? pdsData.otherInfo?.questions?.Q39_immigrant_or_acquired_residence
                   }
                 />
-                {pdsData.otherInfo?.questions
-                  ?.Q39_immigrant_or_acquired_residence && (
+                {(pdsData.otherInfo?.questions?.Q39_immigrant_status ?? pdsData.otherInfo?.questions?.Q39_immigrant_or_acquired_residence) && (
                   <Field
                     label="Details"
                     value={
-                      pdsData.otherInfo.questions
-                        .Q39_immigrant_or_acquired_residence_details
+                      pdsData.otherInfo?.questions?.Q39_immigrant_status_details ?? pdsData.otherInfo?.questions?.Q39_immigrant_or_acquired_residence_details
                     }
                     fullWidth
                   />
@@ -1502,14 +1550,14 @@ export default function PDSViewDetailPage({
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
                 <Field
-                  label="Are you a member of indigenous group?"
-                  value={pdsData.otherInfo?.questions?.Q40_indigenous_group}
+                  label="40a. Are you a member of any indigenous group?"
+                  value={pdsData.otherInfo?.questions?.Q40a_indigenous_group ?? pdsData.otherInfo?.questions?.Q40_indigenous_group}
                 />
-                {pdsData.otherInfo?.questions?.Q40_indigenous_group && (
+                {(pdsData.otherInfo?.questions?.Q40a_indigenous_group ?? pdsData.otherInfo?.questions?.Q40_indigenous_group) && (
                   <Field
                     label="Details"
                     value={
-                      pdsData.otherInfo.questions.Q40_indigenous_group_details
+                      pdsData.otherInfo?.questions?.Q40a_indigenous_group_details ?? pdsData.otherInfo?.questions?.Q40_indigenous_group_details
                     }
                     fullWidth
                   />
@@ -1517,26 +1565,30 @@ export default function PDSViewDetailPage({
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
                 <Field
-                  label="Are you a person with disability?"
-                  value={pdsData.otherInfo?.questions?.Q41_disabled}
+                  label="40b. Are you a person with disability?"
+                  value={pdsData.otherInfo?.questions?.Q40b_disabled ?? pdsData.otherInfo?.questions?.Q41_disabled}
                 />
-                {pdsData.otherInfo?.questions?.Q41_disabled && (
+                {(pdsData.otherInfo?.questions?.Q40b_disabled ?? pdsData.otherInfo?.questions?.Q41_disabled) && (
                   <Field
                     label="Details"
-                    value={pdsData.otherInfo.questions.Q41_disabled_details}
+                    value={
+                      pdsData.otherInfo?.questions?.Q40b_disabled_details ?? pdsData.otherInfo?.questions?.Q41_disabled_details
+                    }
                     fullWidth
                   />
                 )}
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
                 <Field
-                  label="Are you a solo parent?"
-                  value={pdsData.otherInfo?.questions?.Q42_solo_parent}
+                  label="40c. Are you a solo parent?"
+                  value={pdsData.otherInfo?.questions?.Q40c_solo_parent ?? pdsData.otherInfo?.questions?.Q42_solo_parent}
                 />
-                {pdsData.otherInfo?.questions?.Q42_solo_parent && (
+                {(pdsData.otherInfo?.questions?.Q40c_solo_parent ?? pdsData.otherInfo?.questions?.Q42_solo_parent) && (
                   <Field
                     label="Details"
-                    value={pdsData.otherInfo.questions.Q42_solo_parent_details}
+                    value={
+                      pdsData.otherInfo?.questions?.Q40c_solo_parent_details ?? pdsData.otherInfo?.questions?.Q42_solo_parent_details
+                    }
                     fullWidth
                   />
                 )}
