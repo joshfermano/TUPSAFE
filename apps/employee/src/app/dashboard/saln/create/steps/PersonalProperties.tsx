@@ -287,7 +287,7 @@ export const PersonalProperties = memo(function PersonalProperties() {
                         </div>
 
                         {/* Year and Cost */}
-                        <div className="grid gap-6 md:grid-cols-2">
+                        <div className="grid gap-6 md:grid-cols-2 items-start">
                           <div className="grid gap-2">
                             <Label
                               htmlFor={`personalProperties.${index}.yearAcquired`}

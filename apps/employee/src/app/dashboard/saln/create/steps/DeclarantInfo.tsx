@@ -180,7 +180,7 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
             <h3 className="text-base font-semibold text-foreground">
               Position Information
             </h3>
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-6 md:grid-cols-2 items-start">
               <div className="grid gap-2">
                 <Label
                   htmlFor="submission.position"
@@ -581,7 +581,7 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
                         </AlertDescription>
                       </Alert>
 
-                      <div className="grid gap-6 md:grid-cols-2">
+                      <div className="grid gap-6 md:grid-cols-2 items-start">
                         <div className="grid gap-2">
                           <Label
                             htmlFor="submission.spousePosition"

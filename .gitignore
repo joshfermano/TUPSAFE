@@ -28,6 +28,8 @@ apps/*/node_modules/
 # Package Lock Files (Use root lock only)
 packages/*/package-lock.json
 apps/*/package-lock.json
+packages/*/pnpm-lock.yaml
+apps/*/pnpm-lock.yaml
 
 # Testing
 coverage/
@@ -124,6 +126,7 @@ pids/
 # Package Manager
 *.tgz
 .yarn-integrity
+.pnpm-store/
 
 # Storybook
 .out

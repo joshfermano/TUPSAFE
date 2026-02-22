@@ -319,6 +319,7 @@ export const CurrencyInput = memo(function CurrencyInput({
               <Label
                 htmlFor={name}
                 className={cn(
+                  'text-base font-medium',
                   error && 'text-destructive',
                   required &&
                     "after:content-['*'] after:ml-0.5 after:text-destructive"
