@@ -465,7 +465,7 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
                         </div>
 
                         <div className="grid gap-6">
-                          <div className="grid gap-6 md:grid-cols-2">
+                          <div className="grid gap-6 md:grid-cols-2 items-start">
                             <div className="grid gap-2">
                               <Label
                                 htmlFor={`relativesInGov.${index}.name`}
