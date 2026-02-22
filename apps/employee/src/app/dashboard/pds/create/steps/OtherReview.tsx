@@ -22,32 +22,49 @@ import { type CompletePdsData } from '../../../../../lib/validations/pds-schema'
 // Define questions array outside component to prevent recreation on each render
 const CSC_QUESTIONS = [
   {
-    key: 'Q34_criminal_charged',
-    label: 'Have you ever been formally charged?',
-  },
-  { key: 'Q35_criminal_convicted', label: 'Have you ever been convicted?' },
-  {
-    key: 'Q36_separated_from_service',
-    label: 'Have you ever been separated from service?',
+    key: 'Q34_related_to_authority',
+    label: 'Are you related by consanguinity or affinity to the appointing or recommending authority, or to the chief of bureau or office or to the person who has immediate supervision over you in the Office, Bureau or Department where you will be appointed, a. within the third degree? b. within the fourth degree (for Local Government Unit - Career Employees)?',
   },
   {
-    key: 'Q37_candidate_for_election',
-    label: 'Have you ever been a candidate?',
+    key: 'Q35a_admin_offense',
+    label: 'Have you ever been found guilty of any administrative offense?',
   },
   {
-    key: 'Q38_resigned_from_government',
-    label: 'Have you resigned from government service?',
+    key: 'Q35b_criminal_charged',
+    label: 'Have you ever been criminally charged before any court?',
   },
   {
-    key: 'Q39_immigrant_or_acquired_residence',
-    label: 'Have you acquired immigrant status?',
+    key: 'Q36_convicted_of_crime',
+    label: 'Have you ever been convicted of any crime or violation of any law, decree, ordinance or regulation by any court or tribunal?',
   },
   {
-    key: 'Q40_indigenous_group',
-    label: 'Are you a member of an indigenous group?',
+    key: 'Q37_separated_from_service',
+    label: 'Have you ever been separated from the service in any of the following modes: resignation, retirement, dropped from the rolls, dismissal, termination, end of term, finished contract or phased out (abolition) in the public or private sector?',
   },
-  { key: 'Q41_disabled', label: 'Are you a person with disability?' },
-  { key: 'Q42_solo_parent', label: 'Are you a solo parent?' },
+  {
+    key: 'Q38a_candidate_for_election',
+    label: 'Have you ever been a candidate in a national or local election held within the last year (except Barangay election)?',
+  },
+  {
+    key: 'Q38b_resigned_to_campaign',
+    label: 'Have you resigned from the government service during the three (3)-month period before the last election to promote/actively campaign for a national or local candidate?',
+  },
+  {
+    key: 'Q39_immigrant_status',
+    label: 'Have you acquired the status of an immigrant or permanent resident of another country?',
+  },
+  {
+    key: 'Q40a_indigenous_group',
+    label: 'Pursuant to existing provisions of Republic Act No. 8371 (THE INDIGENOUS PEOPLES RIGHTS ACT OF 1997), are you a member of any indigenous group/indigenous people?',
+  },
+  {
+    key: 'Q40b_disabled',
+    label: 'Pursuant to existing provisions of Republic Act No. 7277 (MAGNA CARTA FOR DISABLED PERSONS), are you a person with disability?',
+  },
+  {
+    key: 'Q40c_solo_parent',
+    label: 'Pursuant to existing provisions of Republic Act No. 11861 (EXPANDED SOLO PARENTS WELFARE ACT), are you a solo parent?',
+  },
 ] as const;
 
 /**
