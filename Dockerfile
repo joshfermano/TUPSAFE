@@ -2,9 +2,12 @@
 # Usage: docker build --build-arg APP_NAME=employee -t tupsafe-employee .
 #        docker build --build-arg APP_NAME=admin -t tupsafe-admin .
 
-# Stage 1: Dependencies
+# Stage 1: Dependencies (production only, for runner stage)
 FROM node:22-alpine AS deps
 WORKDIR /app
+
+# Prevent interactive prompts in CI
+ENV CI=true
 
 # Install dependencies needed for node-gyp and native modules
 RUN apk add --no-cache libc6-compat python3 make g++
@@ -12,13 +15,9 @@ RUN apk add --no-cache libc6-compat python3 make g++
 # Enable corepack for pnpm version management
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
-# Copy lockfile first for pnpm fetch (Docker layer cache optimization)
-# pnpm fetch only needs the lockfile - downloads all packages into the store
-COPY pnpm-lock.yaml ./
-RUN pnpm fetch --prod
-
-# Copy package manifests for install
-COPY package.json pnpm-workspace.yaml .npmrc turbo.json ./
+# Copy package manifests first (Docker layer cache optimization)
+# Changes to source code won't invalidate this layer
+COPY package.json pnpm-workspace.yaml .npmrc pnpm-lock.yaml turbo.json ./
 COPY apps/employee/package.json ./apps/employee/
 COPY apps/admin/package.json ./apps/admin/
 COPY packages/database/package.json ./packages/database/
@@ -26,12 +25,15 @@ COPY packages/auth/package.json ./packages/auth/
 COPY packages/types/package.json ./packages/types/
 COPY packages/shared-ui/package.json ./packages/shared-ui/
 
-# Install production deps from pre-fetched store (offline, fast)
-RUN pnpm install --frozen-lockfile --prod --ignore-scripts
+# Install production deps only
+RUN pnpm install --frozen-lockfile --prod
 
 # Stage 2: Builder
 FROM node:22-alpine AS builder
 WORKDIR /app
+
+# Prevent interactive prompts in CI
+ENV CI=true
 
 # Accept build argument for app name
 ARG APP_NAME
@@ -48,12 +50,8 @@ RUN apk add --no-cache libc6-compat python3 make g++
 # Enable corepack for pnpm
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
-# Copy lockfile and fetch ALL deps (including devDependencies for build)
-COPY pnpm-lock.yaml ./
-RUN pnpm fetch
-
-# Copy package manifests
-COPY package.json pnpm-workspace.yaml .npmrc turbo.json ./
+# Copy package manifests first (Docker layer cache optimization)
+COPY package.json pnpm-workspace.yaml .npmrc pnpm-lock.yaml turbo.json ./
 COPY apps/employee/package.json ./apps/employee/
 COPY apps/admin/package.json ./apps/admin/
 COPY packages/database/package.json ./packages/database/
@@ -61,8 +59,8 @@ COPY packages/auth/package.json ./packages/auth/
 COPY packages/types/package.json ./packages/types/
 COPY packages/shared-ui/package.json ./packages/shared-ui/
 
-# Install all deps from pre-fetched store
-RUN pnpm install --frozen-lockfile --ignore-scripts
+# Install all deps (including devDependencies for build)
+RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY . .
