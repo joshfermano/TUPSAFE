@@ -62,7 +62,9 @@ services:
     environment:
       <<: *common-env
       PORT: 3000
+      HOSTNAME: 0.0.0.0
       WATCHPACK_POLLING: 'true'
+      WATCHPACK_POLLING_INTERVAL: '1000'
       CHOKIDAR_USEPOLLING: 'true'
       NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
@@ -78,7 +80,7 @@ services:
       EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-TUPSAFE}
       USE_MOCK_EMAILS: ${USE_MOCK_EMAILS:-true}
     working_dir: /app/apps/employee
-    command: /app/node_modules/.bin/next dev --port 3000
+    command: /app/node_modules/.bin/next dev --turbopack --hostname 0.0.0.0 --port 3000
     depends_on:
       redis:
         condition: service_healthy
@@ -127,7 +129,9 @@ services:
     environment:
       <<: *common-env
       PORT: 3001
+      HOSTNAME: 0.0.0.0
       WATCHPACK_POLLING: 'true'
+      WATCHPACK_POLLING_INTERVAL: '1000'
       CHOKIDAR_USEPOLLING: 'true'
       NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
@@ -143,7 +147,7 @@ services:
       EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-TUPSAFE}
       USE_MOCK_EMAILS: ${USE_MOCK_EMAILS:-true}
     working_dir: /app/apps/admin
-    command: /app/node_modules/.bin/next dev --port 3001
+    command: /app/node_modules/.bin/next dev --turbopack --hostname 0.0.0.0 --port 3001
     depends_on:
       redis:
         condition: service_healthy

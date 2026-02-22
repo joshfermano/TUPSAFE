@@ -12,32 +12,32 @@ Two portals: **employee** (applicants + employees) and **admin** (HR/administrat
 
 ```bash
 # Development
-npm run dev                # All apps (employee:3000, admin:3001)
-npm run dev:employee       # Employee portal only
-npm run dev:admin          # Admin portal only
+pnpm dev                # All apps (employee:3000, admin:3001)
+pnpm dev:employee       # Employee portal only
+pnpm dev:admin          # Admin portal only
 
 # Build & Quality (run before committing)
-npm run build:employee     # Build employee app
-npm run build:admin        # Build admin app
-npm run lint               # Lint all packages
-npm run type-check         # TypeScript check
+pnpm build:employee     # Build employee app
+pnpm build:admin        # Build admin app
+pnpm lint               # Lint all packages
+pnpm type-check         # TypeScript check
 
 # Database (run from packages/database/)
-npx drizzle-kit generate   # Generate migrations from schema changes
-npx drizzle-kit push       # Push migrations to database
-npx drizzle-kit studio     # Visual database browser
+pnpm exec drizzle-kit generate   # Generate migrations from schema changes
+pnpm exec drizzle-kit push       # Push migrations to database
+pnpm exec drizzle-kit studio     # Visual database browser
 ```
 
-No test framework is configured yet. Verify changes via `npm run build:employee && npm run lint`.
+No test framework is configured yet. Verify changes via `pnpm build:employee && pnpm lint`.
 
 ```bash
 # Docker (local development)
-npm run docker:up              # Start all containers (uses .env.local)
-npm run docker:down            # Stop all containers
-npm run docker:logs            # Tail container logs
-npm run docker:build           # Build images
-npm run docker:rebuild         # Force rebuild (no cache)
-npm run docker:clean           # Remove containers, volumes, images
+pnpm docker:up              # Start all containers (uses .env.local)
+pnpm docker:down            # Stop all containers
+pnpm docker:logs            # Tail container logs
+pnpm docker:build           # Build images
+pnpm docker:rebuild         # Force rebuild (no cache)
+pnpm docker:clean           # Remove containers, volumes, images
 ```
 
 ## Monorepo Architecture
@@ -61,7 +61,7 @@ packages/
 
 **DO NOT MIX design systems across portals:**
 - **Employee app**: Magic UI components + `@radix-ui/react-icons` ONLY (no Radix component primitives)
-- **Admin app**: shadcn/ui + Radix primitives. Install: `npx shadcn@latest add [component] --path apps/admin`
+- **Admin app**: shadcn/ui + Radix primitives. Install: `pnpm dlx shadcn@latest add [component] --path apps/admin`
 - **shared-ui**: Design-agnostic only (PDF rendering, form utilities)
 
 ## Data Flow: Form → Database → PDF
@@ -245,4 +245,4 @@ docker compose logs -f                         # Tail logs
 - **Data fetching:** React Query hooks (never raw `useState` + `useEffect` for API calls)
 - **Validation:** Zod at both frontend (form submit) and API route (request body)
 - **DB writes:** Use transactions for multi-table operations
-- **Pre-commit:** Run `npm run lint` + `npm run build:employee` (or `build:admin`)
+- **Pre-commit:** Run `pnpm lint` + `pnpm build:employee` (or `build:admin`)
