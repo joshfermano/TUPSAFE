@@ -5,7 +5,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { useForm, UseFormReturn } from 'react-hook-form';
+import { useForm, UseFormReturn, Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -97,7 +97,7 @@ export function useEditUserForm({
 
   // Form setup
   const form = useForm<EditUserFormValues>({
-    resolver: zodResolver(editUserFormSchema),
+    resolver: zodResolver(editUserFormSchema) as Resolver<EditUserFormValues>,
     defaultValues: defaultEditUserFormValues,
     mode: 'onChange',
   });

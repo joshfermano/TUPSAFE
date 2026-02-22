@@ -74,7 +74,7 @@ function verifyNoArtifacts() {
       console.error('  - ' + foundArtifacts[k]);
     }
     console.error('');
-    console.error('Run "npm run clean:dist" to remove them.');
+    console.error('Run "pnpm run clean:dist" to remove them.');
     process.exit(1);
   }
 
