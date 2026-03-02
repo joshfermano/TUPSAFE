@@ -238,6 +238,30 @@ export interface PDSOtherInfo {
     | unknown;
   questions?:
     | {
+        // New 2025 question fields
+        Q34_related_to_authority?: boolean;
+        Q34_related_to_authority_details?: string;
+        Q35a_admin_offense?: boolean;
+        Q35a_admin_offense_details?: string;
+        Q35b_criminal_charged?: boolean;
+        Q35b_criminal_charged_details?: string;
+        Q36_convicted_of_crime?: boolean;
+        Q36_convicted_of_crime_details?: string;
+        Q37_separated_from_service?: boolean;
+        Q37_separated_from_service_details?: string;
+        Q38a_candidate_for_election?: boolean;
+        Q38a_candidate_for_election_details?: string;
+        Q38b_resigned_to_campaign?: boolean;
+        Q38b_resigned_to_campaign_details?: string;
+        Q39_immigrant_status?: boolean;
+        Q39_immigrant_status_details?: string;
+        Q40a_indigenous_group?: boolean;
+        Q40a_indigenous_group_details?: string;
+        Q40b_disabled?: boolean;
+        Q40b_disabled_details?: string;
+        Q40c_solo_parent?: boolean;
+        Q40c_solo_parent_details?: string;
+        // Backward compat: old field names from existing submissions
         Q34_criminal_charged?: boolean;
         Q34_criminal_charged_details?: string;
         Q35_criminal_convicted?: boolean;

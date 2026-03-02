@@ -2,30 +2,38 @@
 # Usage: docker build --build-arg APP_NAME=employee -t tupsafe-employee .
 #        docker build --build-arg APP_NAME=admin -t tupsafe-admin .
 
-# Stage 1: Dependencies
+# Stage 1: Dependencies (production only, for runner stage)
 FROM node:22-alpine AS deps
 WORKDIR /app
+
+# Prevent interactive prompts in CI
+ENV CI=true
 
 # Install dependencies needed for node-gyp and native modules
 RUN apk add --no-cache libc6-compat python3 make g++
 
-# Copy package files
-COPY package*.json ./
-COPY turbo.json ./
-COPY apps/employee/package*.json ./apps/employee/
-COPY apps/admin/package*.json ./apps/admin/
-COPY packages/database/package*.json ./packages/database/
-COPY packages/auth/package*.json ./packages/auth/
-COPY packages/types/package*.json ./packages/types/
-COPY packages/shared-ui/package*.json ./packages/shared-ui/
+# Enable corepack for pnpm version management
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
-# Install dependencies (production only for deps stage)
-RUN npm ci --omit=dev --ignore-scripts && \
-    npm cache clean --force
+# Copy package manifests first (Docker layer cache optimization)
+# Changes to source code won't invalidate this layer
+COPY package.json pnpm-workspace.yaml .npmrc pnpm-lock.yaml turbo.json ./
+COPY apps/employee/package.json ./apps/employee/
+COPY apps/admin/package.json ./apps/admin/
+COPY packages/database/package.json ./packages/database/
+COPY packages/auth/package.json ./packages/auth/
+COPY packages/types/package.json ./packages/types/
+COPY packages/shared-ui/package.json ./packages/shared-ui/
+
+# Install production deps only
+RUN pnpm install --frozen-lockfile --prod
 
 # Stage 2: Builder
 FROM node:22-alpine AS builder
 WORKDIR /app
+
+# Prevent interactive prompts in CI
+ENV CI=true
 
 # Accept build argument for app name
 ARG APP_NAME
@@ -39,22 +47,29 @@ RUN if [ "$APP_NAME" != "employee" ] && [ "$APP_NAME" != "admin" ]; then \
 # Install dependencies needed for building
 RUN apk add --no-cache libc6-compat python3 make g++
 
-# Copy node_modules from deps stage
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps ./apps
-COPY --from=deps /app/packages ./packages
+# Enable corepack for pnpm
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+
+# Copy package manifests first (Docker layer cache optimization)
+COPY package.json pnpm-workspace.yaml .npmrc pnpm-lock.yaml turbo.json ./
+COPY apps/employee/package.json ./apps/employee/
+COPY apps/admin/package.json ./apps/admin/
+COPY packages/database/package.json ./packages/database/
+COPY packages/auth/package.json ./packages/auth/
+COPY packages/types/package.json ./packages/types/
+COPY packages/shared-ui/package.json ./packages/shared-ui/
+
+# Install all deps (including devDependencies for build)
+RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY . .
 
-# Install all dependencies for build (including devDependencies)
-RUN npm ci --ignore-scripts
-
 # Build shared packages first (database must come before types due to dependencies)
-RUN npm run build --workspace=@tupsafe/database
-RUN npm run build --workspace=@tupsafe/types
-RUN npm run build --workspace=@tupsafe/auth
-RUN npm run build --workspace=@tupsafe/shared-ui
+RUN pnpm --filter @tupsafe/database build
+RUN pnpm --filter @tupsafe/types build
+RUN pnpm --filter @tupsafe/auth build
+RUN pnpm --filter @tupsafe/shared-ui build
 
 # Accept NEXT_PUBLIC_* variables as build args (these are baked into Next.js at build time)
 # IMPORTANT: These must be passed during docker build, not at runtime
@@ -78,7 +93,7 @@ ENV SUPABASE_SERVICE_ROLE_KEY=placeholder-service-role-key-for-build
 ENV DATABASE_URL=postgresql://placeholder:placeholder@localhost:5432/placeholder
 
 # Build the specific app using Turbo
-RUN npx turbo build --filter=${APP_NAME}
+RUN pnpm exec turbo build --filter=${APP_NAME}
 
 # Stage 3: Runner
 FROM node:22-alpine AS runner

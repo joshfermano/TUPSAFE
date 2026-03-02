@@ -137,7 +137,7 @@ export const styles = StyleSheet.create({
   },
   csFormNumber: {
     fontSize: PDS_FONT_SIZES.csFormNumber,
-    textAlign: 'right',
+    textAlign: 'left',
     marginBottom: 2,
   },
   formTitle: {

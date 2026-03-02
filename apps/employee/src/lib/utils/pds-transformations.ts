@@ -399,15 +399,17 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): Recor
         recognitions: transformedData.otherInfo.recognitions || [],
         associations: transformedData.otherInfo.associations || [],
         questions: transformedData.otherInfo.questions || {
-          Q34_criminal_charged: false,
-          Q35_criminal_convicted: false,
-          Q36_separated_from_service: false,
-          Q37_candidate_for_election: false,
-          Q38_resigned_from_government: false,
-          Q39_immigrant_or_acquired_residence: false,
-          Q40_indigenous_group: false,
-          Q41_disabled: false,
-          Q42_solo_parent: false,
+          Q34_related_to_authority: false,
+          Q35a_admin_offense: false,
+          Q35b_criminal_charged: false,
+          Q36_convicted_of_crime: false,
+          Q37_separated_from_service: false,
+          Q38a_candidate_for_election: false,
+          Q38b_resigned_to_campaign: false,
+          Q39_immigrant_status: false,
+          Q40a_indigenous_group: false,
+          Q40b_disabled: false,
+          Q40c_solo_parent: false,
         },
       };
     }
@@ -809,35 +811,51 @@ export function transformPdsForPdf<T extends object>(dataInput: T): PDSData {
 
   // Transform questions to the PDF format
   const transformQuestions = () => {
-    const questions = (otherInfo.questions || {}) as Record<string, boolean | string | undefined>;
+    const q = (otherInfo.questions || {}) as Record<string, boolean | string | undefined>;
     return {
-      Q34_criminal_charged: (questions.Q34_criminal_charged as boolean) || false,
-      Q34_criminal_charged_details:
-        (questions.Q34_criminal_charged_details as string) || undefined,
-      Q35_criminal_convicted: (questions.Q35_criminal_convicted as boolean) || false,
-      Q35_criminal_convicted_details:
-        (questions.Q35_criminal_convicted_details as string) || undefined,
-      Q36_separated_from_service: (questions.Q36_separated_from_service as boolean) || false,
-      Q36_separated_from_service_details:
-        (questions.Q36_separated_from_service_details as string) || undefined,
-      Q37_candidate_for_election: (questions.Q37_candidate_for_election as boolean) || false,
-      Q37_candidate_for_election_details:
-        (questions.Q37_candidate_for_election_details as string) || undefined,
-      Q38_resigned_from_government:
-        (questions.Q38_resigned_from_government as boolean) || false,
-      Q38_resigned_from_government_details:
-        (questions.Q38_resigned_from_government_details as string) || undefined,
-      Q39_immigrant_or_acquired_residence:
-        (questions.Q39_immigrant_or_acquired_residence as boolean) || false,
-      Q39_immigrant_or_acquired_residence_details:
-        (questions.Q39_immigrant_or_acquired_residence_details as string) || undefined,
-      Q40_indigenous_group: (questions.Q40_indigenous_group as boolean) || false,
-      Q40_indigenous_group_details:
-        (questions.Q40_indigenous_group_details as string) || undefined,
-      Q41_disabled: (questions.Q41_disabled as boolean) || false,
-      Q41_disabled_details: (questions.Q41_disabled_details as string) || undefined,
-      Q42_solo_parent: (questions.Q42_solo_parent as boolean) || false,
-      Q42_solo_parent_details: (questions.Q42_solo_parent_details as string) || undefined,
+      // New fields with backward-compat fallback from old field names
+      Q34_related_to_authority: (q.Q34_related_to_authority as boolean) || false,
+      Q34_related_to_authority_details:
+        (q.Q34_related_to_authority_details as string) || undefined,
+      Q35a_admin_offense: (q.Q35a_admin_offense as boolean) || false,
+      Q35a_admin_offense_details:
+        (q.Q35a_admin_offense_details as string) || undefined,
+      Q35b_criminal_charged:
+        (q.Q35b_criminal_charged as boolean) || (q.Q34_criminal_charged as boolean) || false,
+      Q35b_criminal_charged_details:
+        (q.Q35b_criminal_charged_details as string) || (q.Q34_criminal_charged_details as string) || undefined,
+      Q36_convicted_of_crime:
+        (q.Q36_convicted_of_crime as boolean) || (q.Q35_criminal_convicted as boolean) || false,
+      Q36_convicted_of_crime_details:
+        (q.Q36_convicted_of_crime_details as string) || (q.Q35_criminal_convicted_details as string) || undefined,
+      Q37_separated_from_service:
+        (q.Q37_separated_from_service as boolean) || (q.Q36_separated_from_service as boolean) || false,
+      Q37_separated_from_service_details:
+        (q.Q37_separated_from_service_details as string) || (q.Q36_separated_from_service_details as string) || undefined,
+      Q38a_candidate_for_election:
+        (q.Q38a_candidate_for_election as boolean) || (q.Q37_candidate_for_election as boolean) || false,
+      Q38a_candidate_for_election_details:
+        (q.Q38a_candidate_for_election_details as string) || (q.Q37_candidate_for_election_details as string) || undefined,
+      Q38b_resigned_to_campaign:
+        (q.Q38b_resigned_to_campaign as boolean) || (q.Q38_resigned_from_government as boolean) || false,
+      Q38b_resigned_to_campaign_details:
+        (q.Q38b_resigned_to_campaign_details as string) || (q.Q38_resigned_from_government_details as string) || undefined,
+      Q39_immigrant_status:
+        (q.Q39_immigrant_status as boolean) || (q.Q39_immigrant_or_acquired_residence as boolean) || false,
+      Q39_immigrant_status_details:
+        (q.Q39_immigrant_status_details as string) || (q.Q39_immigrant_or_acquired_residence_details as string) || undefined,
+      Q40a_indigenous_group:
+        (q.Q40a_indigenous_group as boolean) || (q.Q40_indigenous_group as boolean) || false,
+      Q40a_indigenous_group_details:
+        (q.Q40a_indigenous_group_details as string) || (q.Q40_indigenous_group_details as string) || undefined,
+      Q40b_disabled:
+        (q.Q40b_disabled as boolean) || (q.Q41_disabled as boolean) || false,
+      Q40b_disabled_details:
+        (q.Q40b_disabled_details as string) || (q.Q41_disabled_details as string) || undefined,
+      Q40c_solo_parent:
+        (q.Q40c_solo_parent as boolean) || (q.Q42_solo_parent as boolean) || false,
+      Q40c_solo_parent_details:
+        (q.Q40c_solo_parent_details as string) || (q.Q42_solo_parent_details as string) || undefined,
     };
   };
 

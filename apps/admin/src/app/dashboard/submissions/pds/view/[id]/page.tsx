@@ -1283,7 +1283,7 @@ export default function PdsSubmissionViewPage() {
             {/* IX. QUESTIONS */}
             <DataSection
               icon={HelpCircle}
-              title="IX. QUESTIONS (34-40)"
+              title="IX. QUESTIONS (34-40c)"
               badge={
                 <ValidationBadge
                   status={getSectionStatus(
@@ -1296,98 +1296,113 @@ export default function PdsSubmissionViewPage() {
               {viewPdsData?.otherInfo?.questions ? (
                 <QuestionList>
                   <QuestionItem
-                    number="34a."
-                    question="Are you related by consanguinity or affinity to the appointing or recommending authority, or to the chief of bureau or office or to the person who has immediate supervision over you in the Office, Bureau or Department where you will be appointed? a. within the third degree?"
+                    number="34."
+                    question="Are you related by consanguinity or affinity to the appointing or recommending authority?"
                     answer={
-                      viewPdsData?.otherInfo.questions.Q34_criminal_charged
+                      viewPdsData?.otherInfo.questions.Q34_related_to_authority ?? viewPdsData?.otherInfo.questions.Q34_criminal_charged
                     }
                     details={
-                      viewPdsData?.otherInfo.questions
-                        .Q34_criminal_charged_details
+                      viewPdsData?.otherInfo.questions.Q34_related_to_authority_details ?? viewPdsData?.otherInfo.questions.Q34_criminal_charged_details
                     }
                   />
                   <QuestionItem
                     number="35a."
                     question="Have you ever been found guilty of any administrative offense?"
                     answer={
-                      viewPdsData?.otherInfo.questions.Q35_criminal_convicted
+                      viewPdsData?.otherInfo.questions.Q35a_admin_offense ?? viewPdsData?.otherInfo.questions.Q35_criminal_convicted
                     }
                     details={
-                      viewPdsData?.otherInfo.questions
-                        .Q35_criminal_convicted_details
+                      viewPdsData?.otherInfo.questions.Q35a_admin_offense_details ?? viewPdsData?.otherInfo.questions.Q35_criminal_convicted_details
+                    }
+                  />
+                  <QuestionItem
+                    number="35b."
+                    question="Have you ever been criminally charged before any court?"
+                    answer={
+                      viewPdsData?.otherInfo.questions.Q35b_criminal_charged
+                    }
+                    details={
+                      viewPdsData?.otherInfo.questions.Q35b_criminal_charged_details
                     }
                   />
                   <QuestionItem
                     number="36."
-                    question="Have you ever been separated from the service in any of the following modes: resignation, retirement, dropped from the rolls, dismissal, termination, end of term, finished contract or phased out (abolition) in the public or private sector?"
+                    question="Have you ever been convicted of any crime or violation?"
                     answer={
-                      viewPdsData?.otherInfo.questions.Q36_separated_from_service
+                      viewPdsData?.otherInfo.questions.Q36_convicted_of_crime
                     }
                     details={
-                      viewPdsData?.otherInfo.questions
-                        .Q36_separated_from_service_details
+                      viewPdsData?.otherInfo.questions.Q36_convicted_of_crime_details
                     }
                   />
                   <QuestionItem
-                    number="37a."
-                    question="Have you ever been a candidate in a national or local election held within the last year (except Barangay election)?"
+                    number="37."
+                    question="Have you ever been separated from the service?"
                     answer={
-                      viewPdsData?.otherInfo.questions.Q37_candidate_for_election
+                      viewPdsData?.otherInfo.questions.Q37_separated_from_service ?? viewPdsData?.otherInfo.questions.Q36_separated_from_service
                     }
                     details={
-                      viewPdsData?.otherInfo.questions
-                        .Q37_candidate_for_election_details
+                      viewPdsData?.otherInfo.questions.Q37_separated_from_service_details ?? viewPdsData?.otherInfo.questions.Q36_separated_from_service_details
                     }
                   />
                   <QuestionItem
-                    number="37b."
-                    question="Have you resigned from the government service during the three (3)-month period before the last election to promote/actively campaign for a national or local candidate?"
+                    number="38a."
+                    question="Have you ever been a candidate in a national or local election?"
                     answer={
-                      viewPdsData?.otherInfo.questions
-                        .Q38_resigned_from_government
+                      viewPdsData?.otherInfo.questions.Q38a_candidate_for_election ?? viewPdsData?.otherInfo.questions.Q37_candidate_for_election
                     }
                     details={
-                      viewPdsData?.otherInfo.questions
-                        .Q38_resigned_from_government_details
+                      viewPdsData?.otherInfo.questions.Q38a_candidate_for_election_details ?? viewPdsData?.otherInfo.questions.Q37_candidate_for_election_details
                     }
                   />
                   <QuestionItem
-                    number="38."
-                    question="Have you acquired the status of an immigrant or permanent resident of another country?"
+                    number="38b."
+                    question="Have you resigned from government service to campaign?"
                     answer={
-                      viewPdsData?.otherInfo.questions
-                        .Q39_immigrant_or_acquired_residence
+                      viewPdsData?.otherInfo.questions.Q38b_resigned_to_campaign ?? viewPdsData?.otherInfo.questions.Q38_resigned_from_government
                     }
                     details={
-                      viewPdsData?.otherInfo.questions
-                        .Q39_immigrant_or_acquired_residence_details
+                      viewPdsData?.otherInfo.questions.Q38b_resigned_to_campaign_details ?? viewPdsData?.otherInfo.questions.Q38_resigned_from_government_details
                     }
                   />
                   <QuestionItem
-                    number="39a."
+                    number="39."
+                    question="Have you acquired immigrant or permanent resident status?"
+                    answer={
+                      viewPdsData?.otherInfo.questions.Q39_immigrant_status ?? viewPdsData?.otherInfo.questions.Q39_immigrant_or_acquired_residence
+                    }
+                    details={
+                      viewPdsData?.otherInfo.questions.Q39_immigrant_status_details ?? viewPdsData?.otherInfo.questions.Q39_immigrant_or_acquired_residence_details
+                    }
+                  />
+                  <QuestionItem
+                    number="40a."
                     question="Are you a member of any indigenous group?"
                     answer={
-                      viewPdsData?.otherInfo.questions.Q40_indigenous_group
+                      viewPdsData?.otherInfo.questions.Q40a_indigenous_group ?? viewPdsData?.otherInfo.questions.Q40_indigenous_group
                     }
                     details={
-                      viewPdsData?.otherInfo.questions
-                        .Q40_indigenous_group_details
+                      viewPdsData?.otherInfo.questions.Q40a_indigenous_group_details ?? viewPdsData?.otherInfo.questions.Q40_indigenous_group_details
                     }
                   />
                   <QuestionItem
-                    number="39b."
+                    number="40b."
                     question="Are you a person with disability?"
-                    answer={viewPdsData?.otherInfo.questions.Q41_disabled}
+                    answer={
+                      viewPdsData?.otherInfo.questions.Q40b_disabled ?? viewPdsData?.otherInfo.questions.Q41_disabled
+                    }
                     details={
-                      viewPdsData?.otherInfo.questions.Q41_disabled_details
+                      viewPdsData?.otherInfo.questions.Q40b_disabled_details ?? viewPdsData?.otherInfo.questions.Q41_disabled_details
                     }
                   />
                   <QuestionItem
-                    number="39c."
+                    number="40c."
                     question="Are you a solo parent?"
-                    answer={viewPdsData?.otherInfo.questions.Q42_solo_parent}
+                    answer={
+                      viewPdsData?.otherInfo.questions.Q40c_solo_parent ?? viewPdsData?.otherInfo.questions.Q42_solo_parent
+                    }
                     details={
-                      viewPdsData?.otherInfo.questions.Q42_solo_parent_details
+                      viewPdsData?.otherInfo.questions.Q40c_solo_parent_details ?? viewPdsData?.otherInfo.questions.Q42_solo_parent_details
                     }
                   />
                 </QuestionList>

@@ -114,7 +114,7 @@ export function PDSPage2({ data }: PDSPage2Props) {
             </Text>
             <Text style={[styles.labelSmall, styles.center]}>CONFERMENT</Text>
           </View>
-          <View style={[styles.tableCellHeader, { width: '20%', borderRightWidth: 0 }]}>
+          <View style={[styles.tableCellHeader, { width: '15%' }]}>
             <Text style={[styles.labelSmall, styles.center]}>LICENSE</Text>
             <Text style={[styles.labelSmall, styles.center]}>(if applicable)</Text>
             <View style={[styles.row, { marginTop: 2 }]}>
@@ -157,12 +157,12 @@ export function PDSPage2({ data }: PDSPage2Props) {
                   {eligibility ? displayOrEmpty(eligibility.placeOfExam) : ''}
                 </Text>
               </View>
-              <View style={[styles.tableCell, { width: '10%' }]}>
+              <View style={[styles.tableCell, { width: '7.5%' }]}>
                 <Text style={[styles.valueSmall, styles.center]}>
                   {eligibility ? displayOrEmpty(eligibility.licenseNo) : ''}
                 </Text>
               </View>
-              <View style={[styles.tableCellNoBorder, { width: '10%' }]}>
+              <View style={[styles.tableCell, { width: '7.5%' }]}>
                 <Text style={[styles.valueSmall, styles.center]}>
                   {eligibility
                     ? formatDateMMDDYYYY(eligibility.licenseValidityDate)

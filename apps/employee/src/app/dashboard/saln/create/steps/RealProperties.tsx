@@ -262,7 +262,7 @@ export const RealProperties = memo(function RealProperties() {
                         </div>
 
                         {/* Kind & Acquisition Year */}
-                        <div className="grid gap-6 md:grid-cols-2">
+                        <div className="grid gap-6 md:grid-cols-2 items-start">
                           <div className="grid gap-2">
                             <Label
                               htmlFor={`realProperties.${index}.kind`}
@@ -345,7 +345,7 @@ export const RealProperties = memo(function RealProperties() {
                         </div>
 
                         {/* Financial Values */}
-                        <div className="grid gap-6 md:grid-cols-2">
+                        <div className="grid gap-6 md:grid-cols-2 items-start">
                           <CurrencyInput
                             name={`realProperties.${index}.assessedValue`}
                             label="Assessed Value"
@@ -362,7 +362,7 @@ export const RealProperties = memo(function RealProperties() {
                         </div>
 
                         {/* Acquisition Details */}
-                        <div className="grid gap-6 md:grid-cols-2">
+                        <div className="grid gap-6 md:grid-cols-2 items-start">
                           <div className="grid gap-2">
                             <Label
                               htmlFor={`realProperties.${index}.acquisitionMode`}

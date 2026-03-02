@@ -1009,68 +1009,82 @@ const referenceSchema = z.object({
 });
 
 /**
- * CSC Form Questions (Questions 34-42)
+ * CSC Form Questions (Questions 34-40) - CS Form No. 212 Revised 2025
  */
 const questionsSchema = z.object({
-  // Q34: Have you ever been formally charged?
-  Q34_criminal_charged: z.boolean(),
-  Q34_criminal_charged_details: z
+  // Q34: Are you related by consanguinity or affinity to the appointing or recommending authority?
+  Q34_related_to_authority: z.boolean(),
+  Q34_related_to_authority_details: z
     .string()
     .max(500, 'Details must not exceed 500 characters')
     .optional(),
 
-  // Q35: Have you ever been convicted?
-  Q35_criminal_convicted: z.boolean(),
-  Q35_criminal_convicted_details: z
+  // Q35a: Have you ever been found guilty of any administrative offense?
+  Q35a_admin_offense: z.boolean(),
+  Q35a_admin_offense_details: z
     .string()
     .max(500, 'Details must not exceed 500 characters')
     .optional(),
 
-  // Q36: Have you ever been separated from service?
-  Q36_separated_from_service: z.boolean(),
-  Q36_separated_from_service_details: z
+  // Q35b: Have you ever been criminally charged before any court?
+  Q35b_criminal_charged: z.boolean(),
+  Q35b_criminal_charged_details: z
     .string()
     .max(500, 'Details must not exceed 500 characters')
     .optional(),
 
-  // Q37: Have you ever been a candidate?
-  Q37_candidate_for_election: z.boolean(),
-  Q37_candidate_for_election_details: z
+  // Q36: Have you ever been convicted of any crime or violation of any law?
+  Q36_convicted_of_crime: z.boolean(),
+  Q36_convicted_of_crime_details: z
     .string()
     .max(500, 'Details must not exceed 500 characters')
     .optional(),
 
-  // Q38: Have you resigned from government service?
-  Q38_resigned_from_government: z.boolean(),
-  Q38_resigned_from_government_details: z
+  // Q37: Have you ever been separated from the service?
+  Q37_separated_from_service: z.boolean(),
+  Q37_separated_from_service_details: z
     .string()
     .max(500, 'Details must not exceed 500 characters')
     .optional(),
 
-  // Q39: Have you acquired immigrant status?
-  Q39_immigrant_or_acquired_residence: z.boolean(),
-  Q39_immigrant_or_acquired_residence_details: z
+  // Q38a: Have you ever been a candidate in a national or local election?
+  Q38a_candidate_for_election: z.boolean(),
+  Q38a_candidate_for_election_details: z
     .string()
     .max(500, 'Details must not exceed 500 characters')
     .optional(),
 
-  // Q40: Are you a member of indigenous group?
-  Q40_indigenous_group: z.boolean(),
-  Q40_indigenous_group_details: z
+  // Q38b: Have you resigned from the government service during the three-month period before any election to promote/actively campaign for a candidate?
+  Q38b_resigned_to_campaign: z.boolean(),
+  Q38b_resigned_to_campaign_details: z
+    .string()
+    .max(500, 'Details must not exceed 500 characters')
+    .optional(),
+
+  // Q39: Have you acquired the status of an immigrant or permanent resident of another country?
+  Q39_immigrant_status: z.boolean(),
+  Q39_immigrant_status_details: z
+    .string()
+    .max(500, 'Details must not exceed 500 characters')
+    .optional(),
+
+  // Q40a: Are you a member of any indigenous group/indigenous cultural community?
+  Q40a_indigenous_group: z.boolean(),
+  Q40a_indigenous_group_details: z
     .string()
     .max(200, 'Details must not exceed 200 characters')
     .optional(),
 
-  // Q41: Are you a person with disability?
-  Q41_disabled: z.boolean(),
-  Q41_disabled_details: z
+  // Q40b: Are you a person with disability?
+  Q40b_disabled: z.boolean(),
+  Q40b_disabled_details: z
     .string()
     .max(200, 'Details must not exceed 200 characters')
     .optional(),
 
-  // Q42: Are you a solo parent?
-  Q42_solo_parent: z.boolean(),
-  Q42_solo_parent_details: z
+  // Q40c: Are you a solo parent? (RA 11861 - Expanded Solo Parents Welfare Act)
+  Q40c_solo_parent: z.boolean(),
+  Q40c_solo_parent_details: z
     .string()
     .max(200, 'Details must not exceed 200 characters')
     .optional(),
@@ -1092,119 +1106,134 @@ export const otherInformationSchema = z
   })
   .refine(
     (data) => {
-      // If Q34 is true, details must be provided
-      if (data.questions.Q34_criminal_charged) {
-        return !!data.questions.Q34_criminal_charged_details;
+      if (data.questions.Q34_related_to_authority) {
+        return !!data.questions.Q34_related_to_authority_details;
       }
       return true;
     },
     {
       message: 'Please provide details',
-      path: ['questions', 'Q34_criminal_charged_details'],
+      path: ['questions', 'Q34_related_to_authority_details'],
     }
   )
   .refine(
     (data) => {
-      // If Q35 is true, details must be provided
-      if (data.questions.Q35_criminal_convicted) {
-        return !!data.questions.Q35_criminal_convicted_details;
+      if (data.questions.Q35a_admin_offense) {
+        return !!data.questions.Q35a_admin_offense_details;
       }
       return true;
     },
     {
       message: 'Please provide details',
-      path: ['questions', 'Q35_criminal_convicted_details'],
+      path: ['questions', 'Q35a_admin_offense_details'],
     }
   )
   .refine(
     (data) => {
-      // If Q36 is true, details must be provided
-      if (data.questions.Q36_separated_from_service) {
-        return !!data.questions.Q36_separated_from_service_details;
+      if (data.questions.Q35b_criminal_charged) {
+        return !!data.questions.Q35b_criminal_charged_details;
       }
       return true;
     },
     {
       message: 'Please provide details',
-      path: ['questions', 'Q36_separated_from_service_details'],
+      path: ['questions', 'Q35b_criminal_charged_details'],
     }
   )
   .refine(
     (data) => {
-      // If Q37 is true, details must be provided
-      if (data.questions.Q37_candidate_for_election) {
-        return !!data.questions.Q37_candidate_for_election_details;
+      if (data.questions.Q36_convicted_of_crime) {
+        return !!data.questions.Q36_convicted_of_crime_details;
       }
       return true;
     },
     {
       message: 'Please provide details',
-      path: ['questions', 'Q37_candidate_for_election_details'],
+      path: ['questions', 'Q36_convicted_of_crime_details'],
     }
   )
   .refine(
     (data) => {
-      // If Q38 is true, details must be provided
-      if (data.questions.Q38_resigned_from_government) {
-        return !!data.questions.Q38_resigned_from_government_details;
+      if (data.questions.Q37_separated_from_service) {
+        return !!data.questions.Q37_separated_from_service_details;
       }
       return true;
     },
     {
       message: 'Please provide details',
-      path: ['questions', 'Q38_resigned_from_government_details'],
+      path: ['questions', 'Q37_separated_from_service_details'],
     }
   )
   .refine(
     (data) => {
-      // If Q39 is true, details must be provided
-      if (data.questions.Q39_immigrant_or_acquired_residence) {
-        return !!data.questions.Q39_immigrant_or_acquired_residence_details;
+      if (data.questions.Q38a_candidate_for_election) {
+        return !!data.questions.Q38a_candidate_for_election_details;
       }
       return true;
     },
     {
       message: 'Please provide details',
-      path: ['questions', 'Q39_immigrant_or_acquired_residence_details'],
+      path: ['questions', 'Q38a_candidate_for_election_details'],
     }
   )
   .refine(
     (data) => {
-      // If Q40 is true, details must be provided
-      if (data.questions.Q40_indigenous_group) {
-        return !!data.questions.Q40_indigenous_group_details;
+      if (data.questions.Q38b_resigned_to_campaign) {
+        return !!data.questions.Q38b_resigned_to_campaign_details;
       }
       return true;
     },
     {
       message: 'Please provide details',
-      path: ['questions', 'Q40_indigenous_group_details'],
+      path: ['questions', 'Q38b_resigned_to_campaign_details'],
     }
   )
   .refine(
     (data) => {
-      // If Q41 is true, details must be provided
-      if (data.questions.Q41_disabled) {
-        return !!data.questions.Q41_disabled_details;
+      if (data.questions.Q39_immigrant_status) {
+        return !!data.questions.Q39_immigrant_status_details;
       }
       return true;
     },
     {
       message: 'Please provide details',
-      path: ['questions', 'Q41_disabled_details'],
+      path: ['questions', 'Q39_immigrant_status_details'],
     }
   )
   .refine(
     (data) => {
-      // If Q42 is true, details must be provided
-      if (data.questions.Q42_solo_parent) {
-        return !!data.questions.Q42_solo_parent_details;
+      if (data.questions.Q40a_indigenous_group) {
+        return !!data.questions.Q40a_indigenous_group_details;
       }
       return true;
     },
     {
       message: 'Please provide details',
-      path: ['questions', 'Q42_solo_parent_details'],
+      path: ['questions', 'Q40a_indigenous_group_details'],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.questions.Q40b_disabled) {
+        return !!data.questions.Q40b_disabled_details;
+      }
+      return true;
+    },
+    {
+      message: 'Please provide details',
+      path: ['questions', 'Q40b_disabled_details'],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.questions.Q40c_solo_parent) {
+        return !!data.questions.Q40c_solo_parent_details;
+      }
+      return true;
+    },
+    {
+      message: 'Please provide details',
+      path: ['questions', 'Q40c_solo_parent_details'],
     }
   );
 
@@ -1564,15 +1593,17 @@ export function createEmptyPds(): Partial<CompletePdsData> {
       recognitions: [],
       associations: [],
       questions: {
-        Q34_criminal_charged: false,
-        Q35_criminal_convicted: false,
-        Q36_separated_from_service: false,
-        Q37_candidate_for_election: false,
-        Q38_resigned_from_government: false,
-        Q39_immigrant_or_acquired_residence: false,
-        Q40_indigenous_group: false,
-        Q41_disabled: false,
-        Q42_solo_parent: false,
+        Q34_related_to_authority: false,
+        Q35a_admin_offense: false,
+        Q35b_criminal_charged: false,
+        Q36_convicted_of_crime: false,
+        Q37_separated_from_service: false,
+        Q38a_candidate_for_election: false,
+        Q38b_resigned_to_campaign: false,
+        Q39_immigrant_status: false,
+        Q40a_indigenous_group: false,
+        Q40b_disabled: false,
+        Q40c_solo_parent: false,
       },
       // At least 3 complete references required per CSC Form 212
       references: [
