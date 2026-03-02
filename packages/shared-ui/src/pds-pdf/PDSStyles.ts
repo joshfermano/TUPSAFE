@@ -68,6 +68,7 @@ export const PDS_COLORS = {
   black: '#000000',
   white: '#FFFFFF',
   pageBackground: '#FFFFFF',
+  labelTextDark: '#333333',
 };
 
 /**
@@ -389,15 +390,22 @@ export const styles = StyleSheet.create({
   marginBottom10: { marginBottom: 10 },
 
   // Width utilities
+  w5: { width: '5%' },
+  w8: { width: '8%' },
   w10: { width: '10%' },
+  w12: { width: '12%' },
   w15: { width: '15%' },
   w20: { width: '20%' },
   w25: { width: '25%' },
   w30: { width: '30%' },
   w33: { width: '33.33%' },
+  w35: { width: '35%' },
   w40: { width: '40%' },
+  w45: { width: '45%' },
   w50: { width: '50%' },
+  w55: { width: '55%' },
   w60: { width: '60%' },
+  w65: { width: '65%' },
   w70: { width: '70%' },
   w75: { width: '75%' },
   w80: { width: '80%' },

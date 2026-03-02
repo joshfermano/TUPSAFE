@@ -84,7 +84,7 @@ export function PDSPage2({ data }: PDSPage2Props) {
 
         {/* Header Row */}
         <View style={styles.fieldRow}>
-          <View style={[styles.tableCellHeader, styles.w25]}>
+          <View style={[styles.tableCellHeader, styles.w30]}>
             <Text style={[styles.labelSmall, styles.center]}>
               CAREER SERVICE/ RA 1080 (BOARD/
             </Text>
@@ -108,13 +108,13 @@ export function PDSPage2({ data }: PDSPage2Props) {
             </Text>
             <Text style={[styles.labelSmall, styles.center]}>CONFERMENT</Text>
           </View>
-          <View style={[styles.tableCellHeader, styles.w20]}>
+          <View style={[styles.tableCellHeader, styles.w25]}>
             <Text style={[styles.labelSmall, styles.center]}>
               PLACE OF EXAMINATION/
             </Text>
             <Text style={[styles.labelSmall, styles.center]}>CONFERMENT</Text>
           </View>
-          <View style={[styles.tableCellHeader, { width: '15%' }]}>
+          <View style={[styles.tableCellHeader, { width: '20%', borderRightWidth: 0 }]}>
             <Text style={[styles.labelSmall, styles.center]}>LICENSE</Text>
             <Text style={[styles.labelSmall, styles.center]}>(if applicable)</Text>
             <View style={[styles.row, { marginTop: 2 }]}>
@@ -128,14 +128,6 @@ export function PDSPage2({ data }: PDSPage2Props) {
               </View>
             </View>
           </View>
-          <View
-            style={[
-              styles.tableCellHeader,
-              { width: '15%', borderRightWidth: 0 },
-            ]}
-          >
-            <Text style={[styles.labelSmall, styles.center]}>N/A</Text>
-          </View>
         </View>
 
         {/* Eligibility Rows */}
@@ -145,7 +137,7 @@ export function PDSPage2({ data }: PDSPage2Props) {
           const eligibility = sortedEligibilities[index];
           return (
             <View key={index} style={styles.fieldRow}>
-              <View style={[styles.tableCell, styles.w25]}>
+              <View style={[styles.tableCell, styles.w30]}>
                 <Text style={styles.valueSmall}>
                   {eligibility ? displayOrEmpty(eligibility.eligibilityName) : ''}
                 </Text>
@@ -160,25 +152,22 @@ export function PDSPage2({ data }: PDSPage2Props) {
                   {eligibility ? formatDateMMDDYYYY(eligibility.dateOfExam) : ''}
                 </Text>
               </View>
-              <View style={[styles.tableCell, styles.w20]}>
+              <View style={[styles.tableCell, styles.w25]}>
                 <Text style={styles.valueSmall}>
                   {eligibility ? displayOrEmpty(eligibility.placeOfExam) : ''}
                 </Text>
               </View>
-              <View style={[styles.tableCell, { width: '7.5%' }]}>
+              <View style={[styles.tableCell, { width: '10%' }]}>
                 <Text style={[styles.valueSmall, styles.center]}>
                   {eligibility ? displayOrEmpty(eligibility.licenseNo) : ''}
                 </Text>
               </View>
-              <View style={[styles.tableCell, { width: '7.5%' }]}>
+              <View style={[styles.tableCellNoBorder, { width: '10%' }]}>
                 <Text style={[styles.valueSmall, styles.center]}>
                   {eligibility
                     ? formatDateMMDDYYYY(eligibility.licenseValidityDate)
                     : ''}
                 </Text>
-              </View>
-              <View style={[styles.tableCellNoBorder, { width: '15%' }]}>
-                <Text style={styles.valueSmall}></Text>
               </View>
             </View>
           );

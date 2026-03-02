@@ -318,10 +318,8 @@ export const PDSPageFooter: React.FC<PDSPageFooterProps> = ({
   return (
     <View
       style={{
-        position: 'absolute',
-        bottom: 10,
-        left: PDS_DIMENSIONS.pagePadding,
-        right: PDS_DIMENSIONS.pagePadding,
+        marginTop: 'auto',
+        paddingTop: 5,
       }}
     >
       {/* Signature and Date Row */}
@@ -335,27 +333,28 @@ export const PDSPageFooter: React.FC<PDSPageFooterProps> = ({
           }}
         >
           {/* Signature Section - Left */}
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: PDS_FONT_SIZES.footerText }}>
-              SIGNATURE
-            </Text>
+          <View style={{ width: '25%' }}>
             <View
               style={{
                 borderBottomWidth: 1,
                 borderBottomColor: PDS_COLORS.black,
-                width: 150,
-                marginTop: 15,
+                marginBottom: 2,
+                minHeight: 20,
               }}
             />
+            <Text style={{ fontSize: PDS_FONT_SIZES.footerText, fontWeight: 'bold' }}>
+              SIGNATURE
+            </Text>
           </View>
 
           {/* Center Note */}
-          <View style={{ flex: 1, alignItems: 'center' }}>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-end' }}>
             <Text
               style={{
                 fontSize: PDS_FONT_SIZES.noteText,
                 fontStyle: 'italic',
                 textAlign: 'center',
+                color: PDS_COLORS.warningRed,
               }}
             >
               (wet signature/e-signature/digital certificate)
@@ -363,16 +362,17 @@ export const PDSPageFooter: React.FC<PDSPageFooterProps> = ({
           </View>
 
           {/* Date Section - Right */}
-          <View style={{ flex: 1, alignItems: 'flex-end' }}>
-            <Text style={{ fontSize: PDS_FONT_SIZES.footerText }}>DATE</Text>
+          <View style={{ width: '25%', alignItems: 'flex-end' }}>
             <View
               style={{
                 borderBottomWidth: 1,
                 borderBottomColor: PDS_COLORS.black,
-                width: 150,
-                marginTop: 15,
+                width: '100%',
+                marginBottom: 2,
+                minHeight: 20,
               }}
             />
+            <Text style={{ fontSize: PDS_FONT_SIZES.footerText, fontWeight: 'bold' }}>DATE</Text>
           </View>
         </View>
       )}
@@ -382,7 +382,7 @@ export const PDSPageFooter: React.FC<PDSPageFooterProps> = ({
         style={{
           flexDirection: 'row',
           justifyContent: 'flex-end',
-          marginTop: showSignature ? 5 : 0,
+          marginTop: showSignature ? 3 : 0,
         }}
       >
         <Text
