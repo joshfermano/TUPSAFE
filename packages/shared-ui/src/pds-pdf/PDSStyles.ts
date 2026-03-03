@@ -84,11 +84,11 @@ export const PDS_DIMENSIONS = {
   pagePadding: 20,
   headerHeight: 18,
   subHeaderHeight: 16,
-  rowHeight: 20,
-  emptyRowHeight: 22,
-  minRowHeight: 16,
-  cellPadding: 3,
-  cellPaddingSmall: 2,
+  rowHeight: 18,
+  emptyRowHeight: 18,
+  minRowHeight: 14,
+  cellPadding: 2,
+  cellPaddingSmall: 1,
   borderWidth: 0.5,
   thickBorderWidth: 1,
   photoWidth: 127.56, // 4.5cm in points
@@ -133,7 +133,7 @@ export const styles = StyleSheet.create({
 
   // Form header
   formHeader: {
-    marginBottom: 5,
+    marginBottom: 2,
   },
   csFormNumber: {
     fontSize: PDS_FONT_SIZES.csFormNumber,
@@ -144,7 +144,7 @@ export const styles = StyleSheet.create({
     fontSize: PDS_FONT_SIZES.formTitle,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 2,
+    marginBottom: 1,
   },
   formSubtitle: {
     fontSize: PDS_FONT_SIZES.formSubtitle,
@@ -157,7 +157,7 @@ export const styles = StyleSheet.create({
     color: PDS_COLORS.warningRed,
     textAlign: 'center',
     fontStyle: 'italic',
-    marginBottom: 8,
+    marginBottom: 3,
   },
 
   // Section headers (Gray background with white text - matching official CSC form)
@@ -169,10 +169,10 @@ export const styles = StyleSheet.create({
     fontStyle: 'italic',
     textAlign: 'left',
     paddingLeft: 5,
-    paddingVertical: PDS_DIMENSIONS.cellPadding,
+    paddingVertical: 1,
     borderWidth: PDS_DIMENSIONS.borderWidth,
     borderColor: PDS_COLORS.borderColor,
-    minHeight: PDS_DIMENSIONS.headerHeight,
+    minHeight: 14,
     justifyContent: 'center',
   },
   subSectionHeader: {
@@ -181,10 +181,10 @@ export const styles = StyleSheet.create({
     fontSize: PDS_FONT_SIZES.subSectionHeader,
     fontWeight: 'bold',
     textAlign: 'center',
-    padding: PDS_DIMENSIONS.cellPaddingSmall,
+    padding: 1,
     borderWidth: PDS_DIMENSIONS.borderWidth,
     borderColor: PDS_COLORS.borderColor,
-    minHeight: PDS_DIMENSIONS.subHeaderHeight,
+    minHeight: 12,
     justifyContent: 'center',
   },
 
@@ -282,7 +282,7 @@ export const styles = StyleSheet.create({
     fontStyle: 'italic',
     color: PDS_COLORS.warningRed,
     textAlign: 'right',
-    marginTop: 5,
+    marginTop: 2,
   },
 
   // Signature and ID section

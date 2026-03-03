@@ -71,7 +71,7 @@ export function PDSPage2({ data }: PDSPage2Props) {
   return (
     <Page size="LEGAL" style={styles.page}>
       {/* Section IV: Civil Service Eligibility */}
-      <View style={styles.borderedSection}>
+      <View style={[styles.borderedSection]}>
         <SectionHeader number="IV" title="CIVIL SERVICE ELIGIBILITY" />
 
         {/* Note */}
