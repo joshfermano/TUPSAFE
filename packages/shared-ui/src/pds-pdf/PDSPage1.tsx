@@ -5,7 +5,7 @@
  * Contains:
  * - Form header with CS Form No. 212 / Revised 2025
  * - Form title "PERSONAL DATA SHEET"
- * - WARNING text in RED
+ * - WARNING text
  * - Instructions with "DO NOT ABBREVIATE"
  * - Section I: Personal Information (items 1-21)
  * - Section II: Family Background (items 22-25)
@@ -27,20 +27,6 @@ interface PDSPage1Props {
   data: PDSData;
 }
 
-// Helper to format full address
-function formatAddress(address: Address): string {
-  const parts = [
-    address.houseNumber,
-    address.street,
-    address.subdivision,
-    address.barangay,
-    address.city,
-    address.province,
-    address.zipCode,
-  ].filter(Boolean);
-  return parts.join(', ') || '';
-}
-
 // Checkbox component using bordered View elements
 function Checkbox({ checked }: { checked: boolean }) {
   return (
@@ -56,204 +42,61 @@ function Checkbox({ checked }: { checked: boolean }) {
   );
 }
 
-// Field with label above value
-function LabeledField({
-  label,
-  value,
-  width,
-}: {
-  label: string;
-  value: string;
-  width?: string;
-}) {
-  return (
-    <View style={[styles.fieldCell, width ? { width } : styles.flex1]}>
-      <Text style={styles.labelSmall}>{label}</Text>
-      <Text style={styles.value}>{value}</Text>
-    </View>
-  );
-}
-
-// Compact address renderer for 2025 format
-// Row 1: House/Block/Lot No. | Subdivision/Village | City/Municipality
-// Row 2: Street | Barangay | Province
-function AddressBlock({
-  itemNumber,
-  label,
-  address,
-}: {
-  itemNumber: string;
-  label: string;
-  address: Address;
-}) {
-  return (
-    <View
-      style={{
-        flexDirection: 'row',
-        borderBottomWidth: 0.5,
-        borderBottomColor: colors.borderColor,
-        minHeight: 45,
-        maxHeight: 50,
-      }}>
-      <View style={[styles.labelCell, styles.w20]}>
-        <Text style={styles.labelSmall}>
-          {itemNumber}. {label}
-        </Text>
-      </View>
-      <View style={[styles.fieldCellLast, { flex: 1, padding: 2 }]}>
-        {/* Row 1: House/Block/Lot No. | Subdivision/Village | City/Municipality */}
-        <View style={[styles.row, { height: 14 }]}>
-          <View style={{ flex: 1, paddingRight: 3 }}>
-            <Text style={styles.valueSingleLine}>
-              {displayOrEmpty(address?.houseNumber)}
-            </Text>
-            <Text
-              style={[styles.labelSmall, styles.center, { fontSize: 4 }]}>
-              House/Block/Lot No.
-            </Text>
-          </View>
-          <View style={{ flex: 1, paddingRight: 3 }}>
-            <Text style={styles.valueSingleLine}>
-              {displayOrEmpty(address?.subdivision)}
-            </Text>
-            <Text
-              style={[styles.labelSmall, styles.center, { fontSize: 4 }]}>
-              Subdivision/Village
-            </Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.valueSingleLine}>
-              {displayOrEmpty(address?.city)}
-            </Text>
-            <Text
-              style={[styles.labelSmall, styles.center, { fontSize: 4 }]}>
-              City/Municipality
-            </Text>
-          </View>
-        </View>
-        {/* Row 2: Street | Barangay | Province */}
-        <View style={[styles.row, { height: 14, marginTop: 2 }]}>
-          <View style={{ flex: 1, paddingRight: 3 }}>
-            <Text style={styles.valueSingleLine}>
-              {displayOrEmpty(address?.street)}
-            </Text>
-            <Text
-              style={[styles.labelSmall, styles.center, { fontSize: 4 }]}>
-              Street
-            </Text>
-          </View>
-          <View style={{ flex: 1, paddingRight: 3 }}>
-            <Text style={styles.valueSingleLine}>
-              {displayOrEmpty(address?.barangay)}
-            </Text>
-            <Text
-              style={[styles.labelSmall, styles.center, { fontSize: 4 }]}>
-              Barangay
-            </Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.valueSingleLine}>
-              {displayOrEmpty(address?.province)}
-            </Text>
-            <Text
-              style={[styles.labelSmall, styles.center, { fontSize: 4 }]}>
-              Province
-            </Text>
-          </View>
-        </View>
-        {/* ZIP CODE */}
-        <View
-          style={[
-            styles.row,
-            {
-              height: 10,
-              marginTop: 1,
-              justifyContent: 'flex-end',
-              alignItems: 'center',
-            },
-          ]}>
-          <Text style={[styles.labelSmall, { fontSize: 5 }]}>ZIP CODE:</Text>
-          <Text
-            style={[styles.valueSingleLine, { marginLeft: 3, width: 40 }]}>
-            {displayOrEmpty(address?.zipCode)}
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
-}
-
 export function PDSPage1({ data }: PDSPage1Props) {
   const { personalInfo, familyBackground, education } = data;
 
-  // Education levels to render in the table
-  const educationLevels: {
-    key: 'elementary' | 'secondary' | 'vocational' | 'college' | 'graduate';
-    label: string;
-  }[] = [
-    { key: 'elementary', label: 'ELEMENTARY' },
-    { key: 'secondary', label: 'SECONDARY' },
-    { key: 'vocational', label: 'VOCATIONAL /\nTRADE COURSE' },
-    { key: 'college', label: 'COLLEGE' },
-    { key: 'graduate', label: 'GRADUATE STUDIES' },
-  ];
-
-  // Children rows: minimum 4 to save space for education table
-  const childrenRowCount = Math.max(4, familyBackground.children.length);
+  // Education levels for the table
+  type EducationKey = keyof typeof education;
+  const educationLevels: { key: EducationKey; label: string }[] =
+    [
+      { key: 'elementary', label: 'ELEMENTARY' },
+      { key: 'secondary', label: 'SECONDARY' },
+      { key: 'vocational', label: 'VOCATIONAL /' },
+      { key: 'college', label: 'COLLEGE' },
+      { key: 'graduate', label: 'GRADUATE STUDIES' },
+    ];
 
   return (
     <Page size="LEGAL" style={styles.page}>
-      {/* Header - CS Form No. 212 / Revised 2025 */}
+      {/* Form Header */}
       <View style={styles.formHeader}>
         <Text style={styles.csFormNumber}>CS Form No. 212</Text>
-        <Text style={styles.csFormNumber}>Revised 2025</Text>
+        <Text style={[styles.csFormNumber, { marginBottom: 0 }]}>Revised 2025</Text>
       </View>
 
       {/* Form Title */}
-      <Text style={styles.formTitle}>PERSONAL DATA SHEET</Text>
+      <Text style={[styles.formTitle, { marginBottom: 3, marginTop: 2 }]}>PERSONAL DATA SHEET</Text>
 
-      {/* WARNING Text in RED */}
-      <Text style={styles.warningText}>
-        WARNING: Any misrepresentation made in the Personal Data Sheet and the
-        Work Experience Sheet shall cause the filing of administrative/criminal
-        case/s against the person concerned.
-      </Text>
+      {/* WARNING text - bold italic, left-aligned */}
+      <View style={{ marginBottom: 2 }}>
+        <Text style={{ fontSize: 6, fontStyle: 'italic' }}>
+          <Text style={styles.bold}>WARNING: </Text>
+          <Text>Any misrepresentation made in the Personal Data Sheet and the Work Experience Sheet shall cause the filing of administrative/criminal case/s against the person concerned.</Text>
+        </Text>
+      </View>
 
       {/* Instructions */}
-      <Text style={styles.noteText}>
-        READ THE ATTACHED GUIDE TO FILLING OUT THE PERSONAL DATA SHEET (PDS)
-        BEFORE ACCOMPLISHING THE PDS FORM.
-      </Text>
-
-      {/* Print legibly instruction with checkbox example */}
-      <View style={[styles.row, styles.marginTop5, { alignItems: 'center' }]}>
-        <Text style={styles.labelSmall}>
-          Print legibly. Tick appropriate boxes (
+      <View style={{ marginBottom: 2 }}>
+        <Text style={{ fontSize: 6, fontWeight: 'bold', fontStyle: 'italic' }}>
+          READ THE ATTACHED GUIDE TO FILLING OUT THE PERSONAL DATA SHEET (PDS) BEFORE ACCOMPLISHING THE PDS FORM.
         </Text>
-        <View style={styles.checkbox} />
-        <Text style={styles.labelSmall}>
-          ) and use separate sheet if necessary. Indicate N/A if not applicable.
-          DO NOT ABBREVIATE.
+        <Text style={{ fontSize: 6 }}>
+          Print legibly. Tick appropriate boxes (  ) and use separate sheet if necessary. Indicate N/A if not applicable.{'  '}
+          <Text style={styles.bold}>DO NOT ABBREVIATE.</Text>
         </Text>
       </View>
 
-      {/* CS ID No. instruction */}
-      <View style={[styles.row, styles.marginTop5]}>
-        <Text style={[styles.labelSmall, { flex: 1 }]}>
-          1. CS ID No.{' '}
-          <Text style={styles.value}>(Do not fill up. For CSC use only)</Text>
-        </Text>
-      </View>
-
-      {/* Section I: PERSONAL INFORMATION */}
-      <View style={[styles.borderedSection, styles.marginTop5]}>
+      {/* ============================================================= */}
+      {/* Section I: PERSONAL INFORMATION                               */}
+      {/* ============================================================= */}
+      <View style={[styles.borderedSection, { marginTop: 2 }]}>
         <View style={styles.sectionHeader}>
           <Text>I. PERSONAL INFORMATION</Text>
         </View>
 
-        {/* Item 1: SURNAME — full width */}
+        {/* Row: 1. SURNAME */}
         <View style={styles.fieldRow}>
-          <View style={[styles.labelCell, styles.w20]}>
+          <View style={[styles.labelCell, { width: '18%' }]}>
             <Text style={styles.labelSmall}>1. SURNAME</Text>
           </View>
           <View style={[styles.fieldCellLast, { flex: 1 }]}>
@@ -261,63 +104,65 @@ export function PDSPage1({ data }: PDSPage1Props) {
           </View>
         </View>
 
-        {/* Item 2: FIRST NAME | NAME EXTENSION | MIDDLE NAME — full width */}
+        {/* Row: 2. FIRST NAME | NAME EXTENSION */}
         <View style={styles.fieldRow}>
-          <View style={[styles.labelCell, styles.w20]}>
+          <View style={[styles.labelCell, { width: '18%' }]}>
             <Text style={styles.labelSmall}>2. FIRST NAME</Text>
           </View>
           <View style={[styles.fieldCell, { flex: 1 }]}>
             <Text style={styles.value}>{displayOrEmpty(personalInfo.firstName)}</Text>
           </View>
-          <View style={[styles.labelCell, styles.w15]}>
+          <View style={[styles.labelCell, { width: '18%' }]}>
             <Text style={styles.labelSmall}>NAME EXTENSION (JR., SR)</Text>
           </View>
-          <View style={[styles.fieldCell, styles.w10]}>
+          <View style={[styles.fieldCellLast, { width: '14%' }]}>
             <Text style={styles.value}>{displayOrEmpty(personalInfo.nameExtension)}</Text>
           </View>
-          <View style={[styles.labelCell, styles.w10]}>
+        </View>
+
+        {/* Row: MIDDLE NAME */}
+        <View style={styles.fieldRow}>
+          <View style={[styles.labelCell, { width: '18%' }]}>
             <Text style={styles.labelSmall}>MIDDLE NAME</Text>
           </View>
-          <View style={[styles.fieldCellLast, styles.w15]}>
+          <View style={[styles.fieldCellLast, { flex: 1 }]}>
             <Text style={styles.value}>{displayOrEmpty(personalInfo.middleName)}</Text>
           </View>
         </View>
 
-        {/* TWO-COLUMN LAYOUT: LEFT (items 3-15) | RIGHT (items 16-21) */}
-        <View style={{ flexDirection: 'row' }}>
-
-          {/* ===== LEFT COLUMN: Items 3-15 ===== */}
-          <View style={{ flex: 2, borderRightWidth: 0.5, borderRightColor: colors.black }}>
-
-            {/* Item 3: DATE OF BIRTH */}
-            <View style={[styles.fieldRow, { minHeight: 20 }]}>
-              <View style={[styles.labelCell, { width: '45%' }]}>
+        {/* ============================================================= */}
+        {/* Block: Items 3-5 (left 50%) | Item 16 Citizenship (right 50%) */}
+        {/* ============================================================= */}
+        <View style={{ flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: colors.borderColor }}>
+          {/* LEFT 50%: Items 3, 4, 5 */}
+          <View style={{ width: '50%' }}>
+            {/* 3. DATE OF BIRTH */}
+            <View style={{ flexDirection: 'row', minHeight: 16, borderBottomWidth: 0.5, borderBottomColor: colors.borderColor }}>
+              <View style={[styles.labelCell, { width: '36%' }]}>
                 <Text style={styles.labelSmall}>3. DATE OF BIRTH</Text>
-                <Text style={[styles.labelSmall, styles.italic]}>(mm/dd/yyyy)</Text>
+                <Text style={[styles.labelSmall, styles.italic]}>(dd/mm/yyyy)</Text>
               </View>
               <View style={[styles.fieldCellLast, { flex: 1 }]}>
                 <Text style={styles.value}>{formatDateMMDDYYYY(personalInfo.dateOfBirth)}</Text>
               </View>
             </View>
-
-            {/* Item 4: PLACE OF BIRTH */}
-            <View style={[styles.fieldRow, { minHeight: 20 }]}>
-              <View style={[styles.labelCell, { width: '45%' }]}>
+            {/* 4. PLACE OF BIRTH */}
+            <View style={{ flexDirection: 'row', minHeight: 16, borderBottomWidth: 0.5, borderBottomColor: colors.borderColor }}>
+              <View style={[styles.labelCell, { width: '36%' }]}>
                 <Text style={styles.labelSmall}>4. PLACE OF BIRTH</Text>
               </View>
               <View style={[styles.fieldCellLast, { flex: 1 }]}>
                 <Text style={styles.value}>{displayOrEmpty(personalInfo.placeOfBirth)}</Text>
               </View>
             </View>
-
-            {/* Item 5: SEX AT BIRTH */}
-            <View style={[styles.fieldRow, { minHeight: 20 }]}>
-              <View style={[styles.labelCell, { width: '45%' }]}>
+            {/* 5. SEX AT BIRTH */}
+            <View style={{ flexDirection: 'row', minHeight: 16 }}>
+              <View style={[styles.labelCell, { width: '36%' }]}>
                 <Text style={styles.labelSmall}>5. SEX AT BIRTH</Text>
               </View>
-              <View style={[styles.fieldCellLast, { flex: 1 }]}>
-                <View style={[styles.row, { gap: 6 }]}>
-                  <View style={styles.checkboxRow}>
+              <View style={{ flex: 1, padding: 2, justifyContent: 'center' }}>
+                <View style={[styles.row]}>
+                  <View style={[styles.checkboxRow, { width: '50%' }]}>
                     <Checkbox checked={personalInfo.sex === 'male'} />
                     <Text style={styles.labelSmall}>Male</Text>
                   </View>
@@ -328,15 +173,65 @@ export function PDSPage1({ data }: PDSPage1Props) {
                 </View>
               </View>
             </View>
+          </View>
 
-            {/* Item 6: CIVIL STATUS — official 2025 form: Single, Married, Widowed, Other/s only */}
-            <View style={[styles.fieldRow, { minHeight: 24 }]}>
+          {/* RIGHT 50%: Item 16 CITIZENSHIP */}
+          <View style={{ width: '50%', borderLeftWidth: 0.5, borderLeftColor: colors.borderColor }}>
+            <View style={{ flexDirection: 'row', flex: 1 }}>
+              {/* Left label column */}
               <View style={[styles.labelCell, { width: '45%' }]}>
+                <Text style={styles.labelSmall}>16. CITIZENSHIP</Text>
+                <Text style={[styles.labelSmall, { marginTop: 4 }]}> </Text>
+                <Text style={[styles.labelSmall, styles.italic]}>If holder of dual citizenship,</Text>
+                <Text style={[styles.labelSmall, styles.italic]}>please indicate the details.</Text>
+                <Text style={[styles.labelSmall, { marginTop: 4 }]}>Pls. indicate country:</Text>
+              </View>
+              {/* Right value column */}
+              <View style={{ width: '55%', padding: 2, justifyContent: 'flex-start' }}>
+                <View style={[styles.row, { gap: 6, marginBottom: 2 }]}>
+                  <View style={styles.checkboxRow}>
+                    <Checkbox checked={personalInfo.citizenship.type === 'Filipino'} />
+                    <Text style={styles.labelSmall}>Filipino</Text>
+                  </View>
+                  <View style={styles.checkboxRow}>
+                    <Checkbox checked={personalInfo.citizenship.type === 'Dual'} />
+                    <Text style={styles.labelSmall}>Dual Citizenship</Text>
+                  </View>
+                </View>
+                <View style={[styles.row, { gap: 6, marginBottom: 2 }]}>
+                  <View style={styles.checkboxRow}>
+                    <Checkbox checked={personalInfo.citizenship.details?.includes('by birth') ?? false} />
+                    <Text style={styles.labelSmall}>by birth</Text>
+                  </View>
+                  <View style={styles.checkboxRow}>
+                    <Checkbox checked={personalInfo.citizenship.details?.includes('by naturalization') ?? false} />
+                    <Text style={styles.labelSmall}>by naturalization</Text>
+                  </View>
+                </View>
+                <View style={{ borderBottomWidth: 0.5, borderBottomColor: colors.black, minHeight: 10, marginTop: 2 }}>
+                  <Text style={styles.valueSmall}>
+                    {personalInfo.citizenship.type === 'Dual' ? displayOrEmpty(personalInfo.citizenship.details) : ''}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* ============================================================= */}
+        {/* Block: Items 6-8 (left 50%) | 17 Residential Address (right)  */}
+        {/* ============================================================= */}
+        <View style={{ flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: colors.borderColor }}>
+          {/* LEFT 50%: Items 6, 7, 8 */}
+          <View style={{ width: '50%' }}>
+            {/* 6. CIVIL STATUS */}
+            <View style={{ flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: colors.borderColor }}>
+              <View style={[styles.labelCell, { width: '36%' }]}>
                 <Text style={styles.labelSmall}>6. CIVIL STATUS</Text>
               </View>
-              <View style={[styles.fieldCellLast, { flex: 1 }]}>
-                <View style={[styles.row, { flexWrap: 'wrap', gap: 2 }]}>
-                  <View style={styles.checkboxRow}>
+              <View style={{ flex: 1, padding: 4, justifyContent: 'center' }}>
+                <View style={[styles.row, { marginBottom: 5 }]}>
+                  <View style={[styles.checkboxRow, { width: '50%' }]}>
                     <Checkbox checked={personalInfo.civilStatus === 'single'} />
                     <Text style={styles.labelSmall}>Single</Text>
                   </View>
@@ -344,451 +239,461 @@ export function PDSPage1({ data }: PDSPage1Props) {
                     <Checkbox checked={personalInfo.civilStatus === 'married'} />
                     <Text style={styles.labelSmall}>Married</Text>
                   </View>
-                  <View style={styles.checkboxRow}>
+                </View>
+                <View style={[styles.row, { marginBottom: 5 }]}>
+                  <View style={[styles.checkboxRow, { width: '50%' }]}>
                     <Checkbox checked={personalInfo.civilStatus === 'widowed'} />
                     <Text style={styles.labelSmall}>Widowed</Text>
                   </View>
-                  <View style={[styles.row, { alignItems: 'center' }]}>
-                    <View style={styles.checkboxRow}>
-                      <Checkbox
-                        checked={
-                          personalInfo.civilStatus !== 'single' &&
-                          personalInfo.civilStatus !== 'married' &&
-                          personalInfo.civilStatus !== 'widowed'
-                        }
-                      />
-                      <Text style={[styles.labelSmall, { marginRight: 2 }]}>Other/s:</Text>
-                    </View>
-                    <View
-                      style={{
-                        borderBottomWidth: 0.5,
-                        borderBottomColor: colors.black,
-                        width: 28,
-                        minHeight: 8,
-                      }}>
-                      <Text style={styles.valueSmall}>
-                        {personalInfo.civilStatus !== 'single' &&
-                        personalInfo.civilStatus !== 'married' &&
-                        personalInfo.civilStatus !== 'widowed'
-                          ? personalInfo.civilStatus
-                          : ''}
-                      </Text>
-                    </View>
+                  <View style={styles.checkboxRow}>
+                    <Checkbox checked={personalInfo.civilStatus === 'separated'} />
+                    <Text style={styles.labelSmall}>Separated</Text>
+                  </View>
+                </View>
+                <View style={[styles.row, { alignItems: 'center' }]}>
+                  <View style={styles.checkboxRow}>
+                    <Checkbox checked={personalInfo.civilStatus !== 'single' && personalInfo.civilStatus !== 'married' && personalInfo.civilStatus !== 'widowed' && personalInfo.civilStatus !== 'separated' && !!personalInfo.civilStatus} />
+                    <Text style={[styles.labelSmall, { marginRight: 2 }]}>Other/s:</Text>
+                  </View>
+                  <View style={{ borderBottomWidth: 0.5, borderBottomColor: colors.black, flex: 1, minHeight: 8 }}>
+                    <Text style={styles.valueSmall}></Text>
                   </View>
                 </View>
               </View>
             </View>
-
-            {/* Item 7: HEIGHT */}
-            <View style={[styles.fieldRow, { minHeight: 20 }]}>
-              <View style={[styles.labelCell, { width: '45%' }]}>
+            {/* 7. HEIGHT */}
+            <View style={{ flexDirection: 'row', minHeight: 16, borderBottomWidth: 0.5, borderBottomColor: colors.borderColor }}>
+              <View style={[styles.labelCell, { width: '36%' }]}>
                 <Text style={styles.labelSmall}>7. HEIGHT (m)</Text>
               </View>
               <View style={[styles.fieldCellLast, { flex: 1 }]}>
                 <Text style={styles.value}>
-                  {personalInfo.heightM
-                    ? parseFloat(String(personalInfo.heightM)).toFixed(2)
-                    : ''}
+                  {personalInfo.heightM ? parseFloat(String(personalInfo.heightM)).toFixed(2) : ''}
                 </Text>
               </View>
             </View>
-
-            {/* Item 8: WEIGHT */}
-            <View style={[styles.fieldRow, { minHeight: 20 }]}>
-              <View style={[styles.labelCell, { width: '45%' }]}>
+            {/* 8. WEIGHT */}
+            <View style={{ flexDirection: 'row', minHeight: 16, flex: 1 }}>
+              <View style={[styles.labelCell, { width: '36%' }]}>
                 <Text style={styles.labelSmall}>8. WEIGHT (kg)</Text>
               </View>
               <View style={[styles.fieldCellLast, { flex: 1 }]}>
                 <Text style={styles.value}>
-                  {personalInfo.weightKg
-                    ? parseFloat(String(personalInfo.weightKg)).toFixed(2)
-                    : ''}
+                  {personalInfo.weightKg ? parseFloat(String(personalInfo.weightKg)).toFixed(2) : ''}
                 </Text>
               </View>
             </View>
+          </View>
 
-            {/* Item 9: BLOOD TYPE */}
-            <View style={[styles.fieldRow, { minHeight: 20 }]}>
-              <View style={[styles.labelCell, { width: '45%' }]}>
+          {/* RIGHT 50%: 17. RESIDENTIAL ADDRESS */}
+          <View style={{ width: '50%', borderLeftWidth: 0.5, borderLeftColor: colors.borderColor }}>
+            <View style={{ flexDirection: 'row', flex: 1 }}>
+              {/* Left label column — address label + ZIP CODE label */}
+              <View style={{ width: '30%', borderRightWidth: 0.5, borderRightColor: colors.borderColor, backgroundColor: colors.labelCellBg }}>
+                <View style={{ flex: 1, padding: 2, justifyContent: 'center' }}>
+                  <Text style={styles.labelSmall}>17. RESIDENTIAL ADDRESS</Text>
+                </View>
+                <View style={{ padding: 2, justifyContent: 'center' }}>
+                  <Text style={[styles.labelSmall, { fontWeight: 'bold' }]}>ZIP CODE</Text>
+                </View>
+              </View>
+              {/* Right grid column */}
+              <View style={{ width: '70%' }}>
+                {/* House/Block/Lot No. | Street */}
+                <View style={{ flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: colors.borderColor, flex: 1 }}>
+                  <View style={{ width: '50%', alignItems: 'center', justifyContent: 'center', padding: 2, borderRightWidth: 0.5, borderRightColor: colors.borderColor }}>
+                    <Text style={[styles.valueSmall, styles.center]}>{displayOrEmpty(personalInfo.residentialAddress.houseNumber)}</Text>
+                    <Text style={[styles.labelSmall, styles.italic, styles.center]}>House/Block/Lot No.</Text>
+                  </View>
+                  <View style={{ width: '50%', alignItems: 'center', justifyContent: 'center', padding: 2 }}>
+                    <Text style={[styles.valueSmall, styles.center]}>{displayOrEmpty(personalInfo.residentialAddress.street)}</Text>
+                    <Text style={[styles.labelSmall, styles.italic, styles.center]}>Street</Text>
+                  </View>
+                </View>
+                {/* Subdivision/Village | Barangay */}
+                <View style={{ flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: colors.borderColor, flex: 1 }}>
+                  <View style={{ width: '50%', alignItems: 'center', justifyContent: 'center', padding: 2, borderRightWidth: 0.5, borderRightColor: colors.borderColor }}>
+                    <Text style={[styles.valueSmall, styles.center]}>{displayOrEmpty(personalInfo.residentialAddress.subdivision)}</Text>
+                    <Text style={[styles.labelSmall, styles.italic, styles.center]}>Subdivision/Village</Text>
+                  </View>
+                  <View style={{ width: '50%', alignItems: 'center', justifyContent: 'center', padding: 2 }}>
+                    <Text style={[styles.valueSmall, styles.center]}>{displayOrEmpty(personalInfo.residentialAddress.barangay)}</Text>
+                    <Text style={[styles.labelSmall, styles.italic, styles.center]}>Barangay</Text>
+                  </View>
+                </View>
+                {/* City/Municipality | Province */}
+                <View style={{ flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: colors.borderColor, flex: 1 }}>
+                  <View style={{ width: '50%', alignItems: 'center', justifyContent: 'center', padding: 2, borderRightWidth: 0.5, borderRightColor: colors.borderColor }}>
+                    <Text style={[styles.valueSmall, styles.center]}>{displayOrEmpty(personalInfo.residentialAddress.city)}</Text>
+                    <Text style={[styles.labelSmall, styles.italic, styles.center]}>City/Municipality</Text>
+                  </View>
+                  <View style={{ width: '50%', alignItems: 'center', justifyContent: 'center', padding: 2 }}>
+                    <Text style={[styles.valueSmall, styles.center]}>{displayOrEmpty(personalInfo.residentialAddress.province)}</Text>
+                    <Text style={[styles.labelSmall, styles.italic, styles.center]}>Province</Text>
+                  </View>
+                </View>
+                {/* ZIP CODE value — no gray background */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', padding: 2, minHeight: 14 }}>
+                  <Text style={styles.value}>{displayOrEmpty(personalInfo.residentialAddress.zipCode)}</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* ============================================================= */}
+        {/* Block: Items 9-12 (left 50%) | 18 Permanent Address (right)   */}
+        {/* ============================================================= */}
+        <View style={{ flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: colors.borderColor }}>
+          {/* LEFT 50%: Items 9, 10, 11, 12 */}
+          <View style={{ width: '50%' }}>
+            {/* 9. BLOOD TYPE */}
+            <View style={{ flexDirection: 'row', minHeight: 16, borderBottomWidth: 0.5, borderBottomColor: colors.borderColor }}>
+              <View style={[styles.labelCell, { width: '36%' }]}>
                 <Text style={styles.labelSmall}>9. BLOOD TYPE</Text>
               </View>
               <View style={[styles.fieldCellLast, { flex: 1 }]}>
                 <Text style={styles.value}>{displayOrEmpty(personalInfo.bloodType)}</Text>
               </View>
             </View>
-
-            {/* Item 10: UMID ID NO. */}
-            <View style={[styles.fieldRow, { minHeight: 20 }]}>
-              <View style={[styles.labelCell, { width: '45%' }]}>
+            {/* 10. UMID ID NO. */}
+            <View style={{ flexDirection: 'row', minHeight: 16, borderBottomWidth: 0.5, borderBottomColor: colors.borderColor }}>
+              <View style={[styles.labelCell, { width: '36%' }]}>
                 <Text style={styles.labelSmall}>10. UMID ID NO.</Text>
               </View>
               <View style={[styles.fieldCellLast, { flex: 1 }]}>
                 <Text style={styles.value}>{displayOrEmpty(personalInfo.gsisNo)}</Text>
               </View>
             </View>
-
-            {/* Item 11: PAG-IBIG ID NO. */}
-            <View style={[styles.fieldRow, { minHeight: 20 }]}>
-              <View style={[styles.labelCell, { width: '45%' }]}>
+            {/* 11. PAG-IBIG ID NO. */}
+            <View style={{ flexDirection: 'row', minHeight: 16, borderBottomWidth: 0.5, borderBottomColor: colors.borderColor }}>
+              <View style={[styles.labelCell, { width: '36%' }]}>
                 <Text style={styles.labelSmall}>11. PAG-IBIG ID NO.</Text>
               </View>
               <View style={[styles.fieldCellLast, { flex: 1 }]}>
                 <Text style={styles.value}>{displayOrEmpty(personalInfo.pagibigNo)}</Text>
               </View>
             </View>
-
-            {/* Item 12: PHILHEALTH NO. */}
-            <View style={[styles.fieldRow, { minHeight: 20 }]}>
-              <View style={[styles.labelCell, { width: '45%' }]}>
+            {/* 12. PHILHEALTH NO. */}
+            <View style={{ flexDirection: 'row', minHeight: 18, borderBottomWidth: 0.5, borderBottomColor: colors.borderColor }}>
+              <View style={[styles.labelCell, { width: '36%' }]}>
                 <Text style={styles.labelSmall}>12. PHILHEALTH NO.</Text>
               </View>
               <View style={[styles.fieldCellLast, { flex: 1 }]}>
                 <Text style={styles.value}>{displayOrEmpty(personalInfo.philhealthNo)}</Text>
               </View>
             </View>
-
-            {/* Item 13: PhilSys Number (PSN) */}
-            <View style={[styles.fieldRow, { minHeight: 20 }]}>
-              <View style={[styles.labelCell, { width: '45%' }]}>
-                <Text style={styles.labelSmall}>13. PhilSys Number (PSN):</Text>
-              </View>
-              <View style={[styles.fieldCellLast, { flex: 1 }]}>
-                <Text style={styles.value}>{displayOrEmpty(personalInfo.philsysNo)}</Text>
-              </View>
-            </View>
-
-            {/* Item 14: TIN NO. */}
-            <View style={[styles.fieldRow, { minHeight: 20 }]}>
-              <View style={[styles.labelCell, { width: '45%' }]}>
-                <Text style={styles.labelSmall}>14. TIN NO.</Text>
-              </View>
-              <View style={[styles.fieldCellLast, { flex: 1 }]}>
-                <Text style={styles.value}>{displayOrEmpty(personalInfo.tinNo)}</Text>
-              </View>
-            </View>
-
-            {/* Item 15: AGENCY EMPLOYEE NO. — flex: 1 to fill remaining left column height */}
-            <View style={[{ flexDirection: 'row', flex: 1, minHeight: 20 }]}>
-              <View style={[styles.labelCell, { width: '45%' }]}>
-                <Text style={styles.labelSmall}>15. AGENCY EMPLOYEE NO.</Text>
-              </View>
-              <View style={[styles.fieldCellLast, { flex: 1 }]}>
-                <Text style={styles.value}>{displayOrEmpty(personalInfo.agencyEmployeeNo)}</Text>
-              </View>
-            </View>
-
           </View>
-          {/* ===== END LEFT COLUMN ===== */}
 
-          {/* ===== RIGHT COLUMN: Items 16-21 ===== */}
-          <View style={{ flex: 3 }}>
-
-            {/* Item 16: CITIZENSHIP */}
-            <View style={[styles.fieldRow, { minHeight: 40 }]}>
-              <View style={[styles.labelCell, { width: '25%' }]}>
-                <Text style={styles.labelSmall}>16. CITIZENSHIP</Text>
+          {/* RIGHT 50%: 18. PERMANENT ADDRESS */}
+          <View style={{ width: '50%', borderLeftWidth: 0.5, borderLeftColor: colors.borderColor }}>
+            <View style={{ flexDirection: 'row', flex: 1 }}>
+              {/* Left label column — address label + ZIP CODE label */}
+              <View style={{ width: '30%', borderRightWidth: 0.5, borderRightColor: colors.borderColor, backgroundColor: colors.labelCellBg }}>
+                <View style={{ flex: 1, padding: 2, justifyContent: 'center' }}>
+                  <Text style={styles.labelSmall}>18. PERMANENT ADDRESS</Text>
+                </View>
+                <View style={{ padding: 2, justifyContent: 'center' }}>
+                  <Text style={[styles.labelSmall, { fontWeight: 'bold' }]}>ZIP CODE</Text>
+                </View>
               </View>
-              <View style={[styles.fieldCellLast, { flex: 1 }]}>
-                <View style={[styles.column, { gap: 3 }]}>
-                  <View style={[styles.row, { gap: 10, alignItems: 'center' }]}>
-                    <View style={styles.checkboxRow}>
-                      <Checkbox checked={personalInfo.citizenship.type === 'Filipino'} />
-                      <Text style={styles.valueSmall}>Filipino</Text>
-                    </View>
-                    <View style={styles.checkboxRow}>
-                      <Checkbox checked={personalInfo.citizenship.type === 'Dual'} />
-                      <Text style={styles.valueSmall}>Dual Citizenship</Text>
-                    </View>
+              {/* Right grid column */}
+              <View style={{ width: '70%' }}>
+                {/* House/Block/Lot No. | Street */}
+                <View style={{ flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: colors.borderColor, flex: 1 }}>
+                  <View style={{ width: '50%', alignItems: 'center', justifyContent: 'center', padding: 2, borderRightWidth: 0.5, borderRightColor: colors.borderColor }}>
+                    <Text style={[styles.valueSmall, styles.center]}>{displayOrEmpty(personalInfo.permanentAddress.houseNumber)}</Text>
+                    <Text style={[styles.labelSmall, styles.italic, styles.center]}>House/Block/Lot No.</Text>
                   </View>
-                  {personalInfo.citizenship.type === 'Dual' && (
-                    <View style={[styles.row, { gap: 8, alignItems: 'center' }]}>
-                      <View style={styles.checkboxRow}>
-                        <Checkbox
-                          checked={
-                            personalInfo.citizenship.details?.includes('by birth') ?? false
-                          }
-                        />
-                        <Text style={styles.valueSmall}>by birth</Text>
-                      </View>
-                      <View style={styles.checkboxRow}>
-                        <Checkbox
-                          checked={
-                            personalInfo.citizenship.details?.includes('by naturalization') ?? false
-                          }
-                        />
-                        <Text style={styles.valueSmall}>by naturalization</Text>
-                      </View>
-                    </View>
-                  )}
-                  <View style={[styles.row, { alignItems: 'center' }]}>
-                    <Text style={styles.labelSmall}>Pls. indicate country:</Text>
-                    <View
-                      style={{
-                        flex: 1,
-                        marginLeft: 3,
-                        borderBottomWidth: 0.5,
-                        borderBottomColor: colors.black,
-                        minHeight: 8,
-                      }}>
-                      <Text style={styles.valueSmall}>
-                        {personalInfo.citizenship.type === 'Dual'
-                          ? displayOrEmpty(personalInfo.citizenship.details)
-                          : ''}
-                      </Text>
-                    </View>
+                  <View style={{ width: '50%', alignItems: 'center', justifyContent: 'center', padding: 2 }}>
+                    <Text style={[styles.valueSmall, styles.center]}>{displayOrEmpty(personalInfo.permanentAddress.street)}</Text>
+                    <Text style={[styles.labelSmall, styles.italic, styles.center]}>Street</Text>
                   </View>
+                </View>
+                {/* Subdivision/Village | Barangay */}
+                <View style={{ flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: colors.borderColor, flex: 1 }}>
+                  <View style={{ width: '50%', alignItems: 'center', justifyContent: 'center', padding: 2, borderRightWidth: 0.5, borderRightColor: colors.borderColor }}>
+                    <Text style={[styles.valueSmall, styles.center]}>{displayOrEmpty(personalInfo.permanentAddress.subdivision)}</Text>
+                    <Text style={[styles.labelSmall, styles.italic, styles.center]}>Subdivision/Village</Text>
+                  </View>
+                  <View style={{ width: '50%', alignItems: 'center', justifyContent: 'center', padding: 2 }}>
+                    <Text style={[styles.valueSmall, styles.center]}>{displayOrEmpty(personalInfo.permanentAddress.barangay)}</Text>
+                    <Text style={[styles.labelSmall, styles.italic, styles.center]}>Barangay</Text>
+                  </View>
+                </View>
+                {/* City/Municipality | Province */}
+                <View style={{ flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: colors.borderColor, flex: 1 }}>
+                  <View style={{ width: '50%', alignItems: 'center', justifyContent: 'center', padding: 2, borderRightWidth: 0.5, borderRightColor: colors.borderColor }}>
+                    <Text style={[styles.valueSmall, styles.center]}>{displayOrEmpty(personalInfo.permanentAddress.city)}</Text>
+                    <Text style={[styles.labelSmall, styles.italic, styles.center]}>City/Municipality</Text>
+                  </View>
+                  <View style={{ width: '50%', alignItems: 'center', justifyContent: 'center', padding: 2 }}>
+                    <Text style={[styles.valueSmall, styles.center]}>{displayOrEmpty(personalInfo.permanentAddress.province)}</Text>
+                    <Text style={[styles.labelSmall, styles.italic, styles.center]}>Province</Text>
+                  </View>
+                </View>
+                {/* ZIP CODE value — no gray background */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', padding: 2, minHeight: 14 }}>
+                  <Text style={styles.value}>{displayOrEmpty(personalInfo.permanentAddress.zipCode)}</Text>
                 </View>
               </View>
             </View>
-
-            {/* Item 17: RESIDENTIAL ADDRESS */}
-            <AddressBlock
-              itemNumber="17"
-              label="RESIDENTIAL ADDRESS"
-              address={personalInfo.residentialAddress}
-            />
-
-            {/* Item 18: PERMANENT ADDRESS */}
-            <AddressBlock
-              itemNumber="18"
-              label="PERMANENT ADDRESS"
-              address={personalInfo.permanentAddress}
-            />
-
-            {/* Item 19: TELEPHONE NO. */}
-            <View style={[styles.fieldRow, { minHeight: 18 }]}>
-              <View style={[styles.labelCell, { width: '30%' }]}>
-                <Text style={styles.labelSmall}>19. TELEPHONE NO.</Text>
-              </View>
-              <View style={[styles.fieldCellLast, { flex: 1 }]}>
-                <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.telephoneNo)}</Text>
-              </View>
-            </View>
-
-            {/* Item 20: MOBILE NO. */}
-            <View style={[styles.fieldRow, { minHeight: 18 }]}>
-              <View style={[styles.labelCell, { width: '30%' }]}>
-                <Text style={styles.labelSmall}>20. MOBILE NO.</Text>
-              </View>
-              <View style={[styles.fieldCellLast, { flex: 1 }]}>
-                <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.mobileNo)}</Text>
-              </View>
-            </View>
-
-            {/* Item 21: E-MAIL ADDRESS — flex: 1 to fill remaining right column height */}
-            <View style={[{ flexDirection: 'row', flex: 1, minHeight: 18 }]}>
-              <View style={[styles.labelCell, { width: '30%' }]}>
-                <Text style={styles.labelSmall}>21. E-MAIL ADDRESS (if any)</Text>
-              </View>
-              <View style={[styles.fieldCellLast, { flex: 1 }]}>
-                <Text style={styles.valueSmall}>{displayOrEmpty(personalInfo.emailAddress)}</Text>
-              </View>
-            </View>
-
           </View>
-          {/* ===== END RIGHT COLUMN ===== */}
-
         </View>
-        {/* ===== END TWO-COLUMN LAYOUT ===== */}
+
+        {/* Row: 13 PhilSys Number | 19 TELEPHONE NO. */}
+        <View style={styles.fieldRow}>
+          <View style={[styles.labelCell, { width: '18%' }]}>
+            <Text style={styles.labelSmall}>13. PhilSys Number (PSN):</Text>
+          </View>
+          <View style={[styles.fieldCell, { width: '32%' }]}>
+            <Text style={[styles.value, { fontSize: 7 }]}>{displayOrEmpty(personalInfo.philsysNo)}</Text>
+          </View>
+          <View style={[styles.labelCell, { width: '18%' }]}>
+            <Text style={styles.labelSmall}>19. TELEPHONE NO.</Text>
+          </View>
+          <View style={[styles.fieldCellLast, { flex: 1 }]}>
+            <Text style={styles.value}>{displayOrEmpty(personalInfo.telephoneNo)}</Text>
+          </View>
+        </View>
+
+        {/* Row: 14 TIN NO. | 20 MOBILE NO. */}
+        <View style={styles.fieldRow}>
+          <View style={[styles.labelCell, { width: '18%' }]}>
+            <Text style={styles.labelSmall}>14. TIN NO.</Text>
+          </View>
+          <View style={[styles.fieldCell, { width: '32%' }]}>
+            <Text style={styles.value}>{displayOrEmpty(personalInfo.tinNo)}</Text>
+          </View>
+          <View style={[styles.labelCell, { width: '18%' }]}>
+            <Text style={styles.labelSmall}>20. MOBILE NO.</Text>
+          </View>
+          <View style={[styles.fieldCellLast, { flex: 1 }]}>
+            <Text style={styles.value}>{displayOrEmpty(personalInfo.mobileNo)}</Text>
+          </View>
+        </View>
+
+        {/* Row: 15 AGENCY EMPLOYEE NO. | 21 E-MAIL ADDRESS */}
+        <View style={styles.fieldRow}>
+          <View style={[styles.labelCell, { width: '18%' }]}>
+            <Text style={styles.labelSmall}>15. AGENCY EMPLOYEE NO.</Text>
+          </View>
+          <View style={[styles.fieldCell, { width: '32%' }]}>
+            <Text style={styles.value}>{displayOrEmpty(personalInfo.agencyEmployeeNo)}</Text>
+          </View>
+          <View style={[styles.labelCell, { width: '18%' }]}>
+            <Text style={styles.labelSmall}>21. E-MAIL ADDRESS (if any)</Text>
+          </View>
+          <View style={[styles.fieldCellLast, { flex: 1 }]}>
+            <Text style={styles.value}>{displayOrEmpty(personalInfo.emailAddress)}</Text>
+          </View>
+        </View>
       </View>
 
-      {/* Section II: FAMILY BACKGROUND */}
-      <View style={[styles.borderedSection, styles.marginTop5]}>
+      {/* ============================================================= */}
+      {/* Section II: FAMILY BACKGROUND                                 */}
+      {/* ============================================================= */}
+      <View style={[styles.borderedSection, { marginTop: 2 }]}>
         <View style={styles.sectionHeader}>
           <Text>II. FAMILY BACKGROUND</Text>
         </View>
 
-        {/* Spouse Section */}
-        <View style={styles.fieldRow}>
-          <View style={[styles.labelCell, styles.w15]}>
-            <Text style={styles.labelSmall}>22. SPOUSE&apos;S SURNAME</Text>
-          </View>
-          <View style={[styles.fieldCell, styles.w25]}>
-            <Text style={styles.value}>
-              {displayOrEmpty(familyBackground.spouseSurname)}
-            </Text>
-          </View>
-          <View style={[styles.labelCell, styles.w15]}>
-            <Text style={styles.labelSmall}>FIRST NAME</Text>
-          </View>
-          <View style={[styles.fieldCell, styles.w25]}>
-            <Text style={styles.value}>
-              {displayOrEmpty(familyBackground.spouseFirstName)}
-            </Text>
-          </View>
-          <View style={[styles.labelCell, styles.w10]}>
-            <Text style={styles.labelSmall}>NAME EXTN.</Text>
-          </View>
-          <View style={[styles.fieldCellLast, styles.w10]}>
-            <Text style={styles.value}>
-              {displayOrEmpty(familyBackground.spouseNameExtension)}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.fieldRow}>
-          <View style={[styles.labelCell, styles.w15]}>
-            <Text style={styles.labelSmall}>MIDDLE NAME</Text>
-          </View>
-          <View style={[styles.fieldCellLast, { flex: 1 }]}>
-            <Text style={styles.value}>
-              {displayOrEmpty(familyBackground.spouseMiddleName)}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.fieldRow}>
-          <View style={[styles.labelCell, styles.w15]}>
-            <Text style={styles.labelSmall}>OCCUPATION</Text>
-          </View>
-          <View style={[styles.fieldCell, styles.w25]}>
-            <Text style={styles.value}>
-              {displayOrEmpty(familyBackground.spouseOccupation)}
-            </Text>
-          </View>
-          <View style={[styles.labelCell, styles.w15]}>
-            <Text style={styles.labelSmall}>EMPLOYER/BUSINESS NAME</Text>
-          </View>
-          <View style={[styles.fieldCellLast, { flex: 1 }]}>
-            <Text style={styles.value}>
-              {displayOrEmpty(familyBackground.spouseEmployer)}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.fieldRow}>
-          <View style={[styles.labelCell, styles.w15]}>
-            <Text style={styles.labelSmall}>BUSINESS ADDRESS</Text>
-          </View>
-          <View style={[styles.fieldCell, styles.w25]}>
-            <Text style={styles.value}>
-              {displayOrEmpty(familyBackground.spouseBusinessAddress)}
-            </Text>
-          </View>
-          <View style={[styles.labelCell, styles.w15]}>
-            <Text style={styles.labelSmall}>TELEPHONE NO.</Text>
-          </View>
-          <View style={[styles.fieldCellLast, { flex: 1 }]}>
-            <Text style={styles.value}>
-              {displayOrEmpty(familyBackground.spouseTelephoneNo)}
-            </Text>
-          </View>
-        </View>
-
-        {/* Father Section */}
-        <View style={styles.fieldRow}>
-          <View style={[styles.labelCell, styles.w15]}>
-            <Text style={styles.labelSmall}>23. FATHER&apos;S SURNAME</Text>
-          </View>
-          <View style={[styles.fieldCell, styles.w25]}>
-            <Text style={styles.value}>
-              {displayOrEmpty(familyBackground.fatherSurname)}
-            </Text>
-          </View>
-          <View style={[styles.labelCell, styles.w15]}>
-            <Text style={styles.labelSmall}>FIRST NAME</Text>
-          </View>
-          <View style={[styles.fieldCell, styles.w25]}>
-            <Text style={styles.value}>
-              {displayOrEmpty(familyBackground.fatherFirstName)}
-            </Text>
-          </View>
-          <View style={[styles.labelCell, styles.w10]}>
-            <Text style={styles.labelSmall}>NAME EXTN.</Text>
-          </View>
-          <View style={[styles.fieldCellLast, styles.w10]}>
-            <Text style={styles.value}>
-              {displayOrEmpty(familyBackground.fatherNameExtension)}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.fieldRow}>
-          <View style={[styles.labelCell, styles.w15]}>
-            <Text style={styles.labelSmall}>MIDDLE NAME</Text>
-          </View>
-          <View style={[styles.fieldCellLast, { flex: 1 }]}>
-            <Text style={styles.value}>
-              {displayOrEmpty(familyBackground.fatherMiddleName)}
-            </Text>
-          </View>
-        </View>
-
-        {/* Mother Section */}
-        <View style={styles.fieldRow}>
-          <View style={[styles.labelCell, styles.w15]}>
-            <Text style={styles.labelSmall}>
-              24. MOTHER&apos;S MAIDEN NAME
-            </Text>
-          </View>
-          <View style={[styles.fieldCell, styles.w25]}>
-            <Text style={styles.value}>
-              {displayOrEmpty(familyBackground.motherMaidenSurname)}
-            </Text>
-          </View>
-          <View style={[styles.labelCell, styles.w15]}>
-            <Text style={styles.labelSmall}>FIRST NAME</Text>
-          </View>
-          <View style={[styles.fieldCellLast, { flex: 1 }]}>
-            <Text style={styles.value}>
-              {displayOrEmpty(familyBackground.motherFirstName)}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.fieldRow}>
-          <View style={[styles.labelCell, styles.w15]}>
-            <Text style={styles.labelSmall}>MIDDLE NAME</Text>
-          </View>
-          <View style={[styles.fieldCellLast, { flex: 1 }]}>
-            <Text style={styles.value}>
-              {displayOrEmpty(familyBackground.motherMiddleName)}
-            </Text>
-          </View>
-        </View>
-
-        {/* Children Section */}
-        <View style={styles.subSectionHeader}>
-          <Text>25. NAME OF CHILDREN (Write full name and list all)</Text>
-        </View>
-
-        {/* Children header row */}
-        <View style={styles.fieldRow}>
-          <View style={[styles.tableCellHeader, styles.w70]}>
-            <Text style={[styles.labelSmall, styles.center]}>NAME</Text>
-          </View>
-          <View style={[styles.tableCellHeader, { flex: 1 }]}>
-            <Text style={[styles.labelSmall, styles.center]}>
-              DATE OF BIRTH (mm/dd/yyyy)
-            </Text>
-          </View>
-        </View>
-
-        {/* Children rows (reduced to max(4, actual count) to save space for education) */}
-        {Array.from({ length: childrenRowCount }).map((_, index) => {
-          const child = familyBackground.children[index];
-          return (
-            <View key={index} style={styles.fieldRowCompact}>
-              <View style={[styles.tableCell, styles.w70]}>
-                <Text style={styles.value}>
-                  {child ? displayOrEmpty(child.fullName) : ''}
-                </Text>
+        {/* Side-by-side layout: LEFT = Spouse/Father/Mother, RIGHT = Children */}
+        <View style={styles.row}>
+          {/* LEFT SIDE: Spouse, Father, Mother (~55%) */}
+          <View style={[styles.w55, { borderRightWidth: 0.5, borderRightColor: colors.borderColor }]}>
+            {/* Spouse Section */}
+            <View style={styles.fieldRow}>
+              <View style={[styles.labelCell, { width: '27%', backgroundColor: '#D9D9D9' }]}>
+                <Text style={[styles.labelSmall, styles.bold]}>22. SPOUSE&apos;S SURNAME</Text>
               </View>
-              <View style={[styles.tableCellNoBorder, { flex: 1 }]}>
-                <Text style={[styles.value, styles.center]}>
-                  {child ? formatDateMMDDYYYY(child.dateOfBirth) : ''}
+              <View style={[styles.fieldCellLast, { flex: 1 }]}>
+                <Text style={styles.value}>{displayOrEmpty(familyBackground.spouseSurname)}</Text>
+              </View>
+            </View>
+
+            <View style={styles.fieldRow}>
+              <View style={[styles.labelCell, { width: '27%' }]}>
+                <Text style={styles.labelSmall}>FIRST NAME</Text>
+              </View>
+              <View style={[styles.fieldCell, { flex: 1 }]}>
+                <Text style={styles.value}>{displayOrEmpty(familyBackground.spouseFirstName)}</Text>
+              </View>
+              <View style={[styles.labelCell, { width: '20%' }]}>
+                <Text style={styles.labelSmall}>NAME EXTENSION (JR., SR)</Text>
+              </View>
+              <View style={[styles.fieldCellLast, { width: '12%' }]}>
+                <Text style={styles.value}>{displayOrEmpty(familyBackground.spouseNameExtension)}</Text>
+              </View>
+            </View>
+
+            <View style={styles.fieldRow}>
+              <View style={[styles.labelCell, { width: '27%' }]}>
+                <Text style={styles.labelSmall}>MIDDLE NAME</Text>
+              </View>
+              <View style={[styles.fieldCellLast, { flex: 1 }]}>
+                <Text style={styles.value}>{displayOrEmpty(familyBackground.spouseMiddleName)}</Text>
+              </View>
+            </View>
+
+            <View style={styles.fieldRow}>
+              <View style={[styles.labelCell, { width: '27%' }]}>
+                <Text style={styles.labelSmall}>OCCUPATION</Text>
+              </View>
+              <View style={[styles.fieldCellLast, { flex: 1 }]}>
+                <Text style={styles.value}>{displayOrEmpty(familyBackground.spouseOccupation)}</Text>
+              </View>
+            </View>
+
+            <View style={styles.fieldRow}>
+              <View style={[styles.labelCell, { width: '27%' }]}>
+                <Text style={styles.labelSmall}>EMPLOYER/BUSINESS NAME</Text>
+              </View>
+              <View style={[styles.fieldCellLast, { flex: 1 }]}>
+                <Text style={styles.value}>{displayOrEmpty(familyBackground.spouseEmployer)}</Text>
+              </View>
+            </View>
+
+            <View style={styles.fieldRow}>
+              <View style={[styles.labelCell, { width: '27%' }]}>
+                <Text style={styles.labelSmall}>BUSINESS ADDRESS</Text>
+              </View>
+              <View style={[styles.fieldCellLast, { flex: 1 }]}>
+                <Text style={styles.value}>{displayOrEmpty(familyBackground.spouseBusinessAddress)}</Text>
+              </View>
+            </View>
+
+            <View style={styles.fieldRow}>
+              <View style={[styles.labelCell, { width: '27%' }]}>
+                <Text style={styles.labelSmall}>TELEPHONE NO.</Text>
+              </View>
+              <View style={[styles.fieldCellLast, { flex: 1 }]}>
+                <Text style={styles.value}>{displayOrEmpty(familyBackground.spouseTelephoneNo)}</Text>
+              </View>
+            </View>
+
+            {/* Father Section */}
+            <View style={styles.fieldRow}>
+              <View style={[styles.labelCell, { width: '27%', backgroundColor: '#D9D9D9' }]}>
+                <Text style={[styles.labelSmall, styles.bold]}>23. FATHER&apos;S SURNAME</Text>
+              </View>
+              <View style={[styles.fieldCellLast, { flex: 1 }]}>
+                <Text style={styles.value}>{displayOrEmpty(familyBackground.fatherSurname)}</Text>
+              </View>
+            </View>
+
+            <View style={styles.fieldRow}>
+              <View style={[styles.labelCell, { width: '27%' }]}>
+                <Text style={styles.labelSmall}>FIRST NAME</Text>
+              </View>
+              <View style={[styles.fieldCell, { flex: 1 }]}>
+                <Text style={styles.value}>{displayOrEmpty(familyBackground.fatherFirstName)}</Text>
+              </View>
+              <View style={[styles.labelCell, { width: '20%' }]}>
+                <Text style={styles.labelSmall}>NAME EXTENSION (JR., SR)</Text>
+              </View>
+              <View style={[styles.fieldCellLast, { width: '12%' }]}>
+                <Text style={styles.value}>{displayOrEmpty(familyBackground.fatherNameExtension)}</Text>
+              </View>
+            </View>
+
+            <View style={styles.fieldRow}>
+              <View style={[styles.labelCell, { width: '27%' }]}>
+                <Text style={styles.labelSmall}>MIDDLE NAME</Text>
+              </View>
+              <View style={[styles.fieldCellLast, { flex: 1 }]}>
+                <Text style={styles.value}>{displayOrEmpty(familyBackground.fatherMiddleName)}</Text>
+              </View>
+            </View>
+
+            {/* Mother Section */}
+            <View style={styles.fieldRow}>
+              <View style={[styles.labelCell, { width: '27%', backgroundColor: '#D9D9D9' }]}>
+                <Text style={[styles.labelSmall, styles.bold]}>24. MOTHER&apos;S MAIDEN NAME</Text>
+              </View>
+              <View style={[styles.fieldCellLast, { flex: 1 }]}>
+                <Text style={styles.value}>{displayOrEmpty(familyBackground.motherMaidenSurname)}</Text>
+              </View>
+            </View>
+
+            <View style={styles.fieldRow}>
+              <View style={[styles.labelCell, { width: '27%' }]}>
+                <Text style={styles.labelSmall}>SURNAME</Text>
+              </View>
+              <View style={[styles.fieldCellLast, { flex: 1 }]}>
+                <Text style={styles.value}>{displayOrEmpty(familyBackground.motherMaidenSurname)}</Text>
+              </View>
+            </View>
+
+            <View style={styles.fieldRow}>
+              <View style={[styles.labelCell, { width: '27%' }]}>
+                <Text style={styles.labelSmall}>FIRST NAME</Text>
+              </View>
+              <View style={[styles.fieldCellLast, { flex: 1 }]}>
+                <Text style={styles.value}>{displayOrEmpty(familyBackground.motherFirstName)}</Text>
+              </View>
+            </View>
+
+            <View style={styles.fieldRow}>
+              <View style={[styles.labelCell, { width: '27%' }]}>
+                <Text style={styles.labelSmall}>MIDDLE NAME</Text>
+              </View>
+              <View style={[styles.fieldCellLast, { flex: 1 }]}>
+                <Text style={styles.value}>{displayOrEmpty(familyBackground.motherMiddleName)}</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* RIGHT SIDE: Children Table (~45%) */}
+          <View style={styles.w45}>
+            {/* Children Header */}
+            <View style={styles.subSectionHeader}>
+              <Text style={[styles.labelSmall, { fontSize: 6 }]}>
+                25. NAME of CHILDREN (Write full name and list all)
+              </Text>
+            </View>
+
+            {/* Children column headers */}
+            <View style={styles.fieldRow}>
+              <View style={[styles.tableCellHeader, styles.w60]}>
+                <Text style={[styles.labelSmall, styles.center]}>NAME</Text>
+              </View>
+              <View style={[styles.tableCellHeader, { flex: 1, borderRightWidth: 0 }]}>
+                <Text style={[styles.labelSmall, styles.center]}>
+                  DATE OF BIRTH{'\n'}(dd/mm/yyyy)
                 </Text>
               </View>
             </View>
-          );
-        })}
 
-        {/* Continue text for children */}
-        <ContinueText align="right" marginTop={2} />
+            {/* Children rows */}
+            {Array.from({ length: Math.max(12, familyBackground.children.length) }).map((_, index) => {
+              const child = familyBackground.children[index];
+              return (
+                <View key={index} style={[styles.fieldRowCompact, { height: 14, maxHeight: 14 }]}>
+                  <View style={[styles.tableCell, styles.w60]}>
+                    <Text style={styles.value}>
+                      {child ? displayOrEmpty(child.fullName) : ''}
+                    </Text>
+                  </View>
+                  <View style={[styles.tableCellNoBorder, { flex: 1 }]}>
+                    <Text style={[styles.value, styles.center]}>
+                      {child ? formatDateMMDDYYYY(child.dateOfBirth) : ''}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
+
+            {/* Continue text for children */}
+            <ContinueText align="right" marginTop={0} />
+          </View>
+        </View>
       </View>
 
-      {/* Section III: EDUCATIONAL BACKGROUND - Full table */}
-      <View style={[styles.borderedSection, styles.marginTop5]}>
+      {/* ============================================================= */}
+      {/* Section III: EDUCATIONAL BACKGROUND                           */}
+      {/* ============================================================= */}
+      <View style={[styles.borderedSection, { marginTop: 1 }]}>
         <View style={styles.sectionHeader}>
           <Text>III. EDUCATIONAL BACKGROUND</Text>
         </View>
@@ -872,10 +777,10 @@ export function PDSPage1({ data }: PDSPage1Props) {
         {educationLevels.map((level) => {
           const edu = education[level.key];
           return (
-            <View key={level.key} style={[styles.fieldRow, { minHeight: 18 }]}>
+            <View key={level.key} style={[styles.fieldRow, { minHeight: 14 }]}>
               {/* Level */}
               <View style={[styles.tableCell, styles.w15]}>
-                <Text style={styles.valueSmall}>{level.label}</Text>
+                <Text style={[styles.valueSmall, styles.bold]}>{level.label}</Text>
               </View>
               {/* School Name */}
               <View style={[styles.tableCell, styles.w20]}>
@@ -930,6 +835,7 @@ export function PDSPage1({ data }: PDSPage1Props) {
             </View>
           );
         })}
+
 
         {/* Continue text for education */}
         <ContinueText align="right" marginTop={2} />
