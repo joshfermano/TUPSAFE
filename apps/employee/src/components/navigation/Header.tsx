@@ -130,8 +130,8 @@ const MobileNavigation: React.FC<{
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent
         side="right"
-        className="w-80 bg-background/95 backdrop-blur-xl border-border/50 shadow-2xl">
-        <SheetHeader className="text-left pb-6">
+        className="w-80 bg-background/95 backdrop-blur-xl border-border/50 shadow-2xl overflow-y-auto">
+        <SheetHeader className="text-left pb-4">
           <SheetTitle className="flex items-center gap-2">
             <Image
               src="/tup-logo.png"
@@ -144,12 +144,46 @@ const MobileNavigation: React.FC<{
           </SheetTitle>
         </SheetHeader>
 
-        <nav className="flex flex-col gap-2 flex-1 px-1">
-          {navigationItems.map((item, index) => (
-            <div
-              key={item.name}
-              className="space-y-2 animate-fade-in"
-              style={{ animationDelay: `${index * 100}ms` }}>
+        {/* Auth Buttons - Show at top for unauthenticated users */}
+        {!user && (
+          <div className="flex flex-col gap-2 px-1 pb-4 border-b border-border/30">
+            <Button
+              asChild
+              variant="ghost"
+              className="btn-tup-ghost w-full justify-center h-11 text-base font-medium">
+              <Link href="/auth/login" onClick={onClose}>Sign In</Link>
+            </Button>
+            <Button
+              asChild
+              variant="default"
+              className="btn-tup w-full justify-center h-11 text-base font-medium shadow-lg">
+              <Link href="/auth/register" onClick={onClose}>Sign Up</Link>
+            </Button>
+          </div>
+        )}
+
+        {/* User info - Show at top for authenticated users */}
+        {user && (
+          <div className="px-1 pb-4 border-b border-border/30">
+            <div className="px-4 py-3 rounded-xl bg-primary/5 border border-primary/20">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <UserIcon className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {user.email}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Signed in</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <nav className="flex flex-col gap-1.5 px-1 py-2">
+          {navigationItems.map((item) => (
+            <div key={item.name} className="space-y-1.5">
               <Link
                 href={item.href}
                 onClick={(e) => {
@@ -157,31 +191,28 @@ const MobileNavigation: React.FC<{
                   onClose();
                 }}
                 className={cn(
-                  'group flex items-center gap-3 px-4 py-4 rounded-xl text-base font-medium transition-all duration-300',
-                  'hover:bg-primary/10 hover:text-primary hover:shadow-sm',
-                  'focus-tup relative overflow-hidden',
-                  'border border-transparent hover:border-primary/20',
-                  'transform hover:scale-[1.01] active:scale-[0.99]',
+                  'group flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium transition-all duration-200',
+                  'hover:bg-primary/10 hover:text-primary',
+                  'focus-tup',
                   pathname === item.href
-                    ? 'bg-primary/15 text-primary border-primary/30 shadow-sm'
+                    ? 'bg-primary/15 text-primary border border-primary/30'
                     : 'text-foreground/80 hover:text-foreground'
                 )}>
                 {item.icon && (
                   <item.icon className="h-4 w-4 transition-colors" />
                 )}
                 {item.name}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </Link>
 
               {item.items && (
-                <div className="ml-6 space-y-2 border-l border-border/30 pl-4">
+                <div className="ml-6 space-y-1 border-l border-border/30 pl-4">
                   {item.items.map((subItem) => (
                     <Link
                       key={subItem.name}
                       href={subItem.href}
                       onClick={onClose}
                       className={cn(
-                        'flex items-start gap-3 px-3 py-3 rounded-lg text-sm transition-all duration-200',
+                        'flex items-start gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200',
                         'hover:bg-primary/8 hover:text-primary',
                         'focus-tup',
                         pathname === subItem.href
@@ -193,7 +224,7 @@ const MobileNavigation: React.FC<{
                       )}
                       <div className="flex-1">
                         <div className="font-medium">{subItem.name}</div>
-                        <div className="text-muted-foreground text-xs leading-tight mt-1">
+                        <div className="text-muted-foreground text-xs leading-tight mt-0.5">
                           {subItem.description}
                         </div>
                       </div>
@@ -205,55 +236,21 @@ const MobileNavigation: React.FC<{
           ))}
         </nav>
 
-        <div className="mt-auto pt-6 border-t border-border/30">
-          <div className="flex flex-col gap-3 px-1">
-            {user ? (
-              <>
-                <div className="px-4 py-3 rounded-xl bg-primary/5 border border-primary/20">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <UserIcon className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {user.email}
-                      </p>
-                      <p className="text-xs text-muted-foreground">Signed in</p>
-                    </div>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    onLogout();
-                    onClose();
-                  }}
-                  className="btn-tup-ghost w-full justify-center h-12 text-base font-medium">
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sign Out
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  asChild
-                  variant="ghost"
-                  className="btn-tup-ghost w-full justify-center h-12 text-base font-medium">
-                  <Link href="/auth/login">Sign In</Link>
-                </Button>
-                <Button
-                  asChild
-                  variant="default"
-                  className="btn-tup w-full justify-center h-12 text-base font-medium shadow-lg">
-                  <Link href="/auth/register">Get Started</Link>
-                </Button>
-                <p className="text-xs text-muted-foreground text-center mt-2 px-4">
-                  Secure government employee portal
-                </p>
-              </>
-            )}
+        {/* Sign Out - Only for authenticated users */}
+        {user && (
+          <div className="mt-auto pt-4 border-t border-border/30 px-1">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                onLogout();
+                onClose();
+              }}
+              className="btn-tup-ghost w-full justify-center h-11 text-base font-medium">
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
           </div>
-        </div>
+        )}
       </SheetContent>
     </Sheet>
   );
@@ -484,17 +481,14 @@ export const Header: React.FC = () => {
                 />
                 <div className="absolute inset-0 bg-primary/20 rounded-full blur-sm -z-10 transition-all duration-300 group-hover:bg-primary/30 group-hover:scale-110" />
               </div>
-              <span className="text-base sm:text-lg font-bold text-tup transition-all duration-300 group-hover:text-primary hidden xs:inline">
+              <span className="text-sm sm:text-base md:text-lg font-bold text-tup transition-all duration-300 group-hover:text-primary">
                 TUPSAFE
-              </span>
-              <span className="text-sm font-bold text-tup transition-all duration-300 group-hover:text-primary xs:hidden">
-                TS
               </span>
             </Link>
           </div>
 
-          {/* Navigation - Center */}
-          <div className="flex-1 flex justify-center mx-4">
+          {/* Navigation - Center (hidden on mobile, no flex-1 to avoid stretching the pill) */}
+          <div className="hidden md:flex justify-center mx-4">
             <DesktopNavigation />
             <TabletNavigation />
           </div>
@@ -507,7 +501,7 @@ export const Header: React.FC = () => {
             {/* Notification Bell - Only show for authenticated users */}
             {user && <NotificationBellClient variant="minimal" />}
 
-            {/* Auth Buttons - Desktop & Tablet */}
+            {/* Auth Buttons - Desktop/Tablet only (mobile uses sidebar Sheet) */}
             <div className="hidden md:flex items-center gap-2">
               {user ? (
                 <>

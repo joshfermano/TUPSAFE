@@ -32,7 +32,8 @@ export async function fetchReportsOverview(): Promise<ReportsOverviewResponse> {
     throw new Error(error.error || 'Failed to fetch reports');
   }
 
-  return response.json();
+  const result = await response.json();
+  return result.success === true && 'data' in result ? result.data : result;
 }
 
 /**

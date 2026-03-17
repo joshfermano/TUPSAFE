@@ -97,7 +97,8 @@ export function UserGrowthChart() {
   }
 
   // Transform data for chart (with breakdown if available)
-  const chartData = data.data.map((point) => ({
+  const trendPoints = data?.data ?? [];
+  const chartData = trendPoints.map((point) => ({
     date:
       typeof point.date === 'string'
         ? point.date

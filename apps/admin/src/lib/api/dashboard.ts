@@ -28,7 +28,8 @@ export async function fetchDashboardOverview(): Promise<DashboardOverviewRespons
     throw new Error('Failed to fetch dashboard overview');
   }
 
-  return response.json();
+  const result = await response.json();
+  return result.success === true && 'data' in result ? result.data : result;
 }
 
 /**
@@ -52,7 +53,8 @@ export async function fetchDashboardTrends(
     throw new Error('Failed to fetch dashboard trends');
   }
 
-  return response.json();
+  const result = await response.json();
+  return result.success === true && 'data' in result ? result.data : result;
 }
 
 /**
@@ -68,7 +70,8 @@ export async function fetchDepartmentAnalytics(): Promise<DashboardDepartmentsRe
     throw new Error('Failed to fetch department analytics');
   }
 
-  return response.json();
+  const result = await response.json();
+  return result.success === true && 'data' in result ? result.data : result;
 }
 
 /**
@@ -84,7 +87,8 @@ export async function fetchComplianceReport(): Promise<DashboardComplianceRespon
     throw new Error('Failed to fetch compliance report');
   }
 
-  return response.json();
+  const result = await response.json();
+  return result.success === true && 'data' in result ? result.data : result;
 }
 
 /**
@@ -111,7 +115,8 @@ export async function fetchRecentActivity(
     throw new Error('Failed to fetch recent activity');
   }
 
-  return response.json();
+  const result = await response.json();
+  return result.success === true && 'data' in result ? result.data : result;
 }
 
 /**

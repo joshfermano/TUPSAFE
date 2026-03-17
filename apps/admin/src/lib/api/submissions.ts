@@ -45,7 +45,8 @@ export async function fetchSubmissions(
     throw new Error(error.error || 'Failed to fetch submissions');
   }
 
-  return response.json();
+  const result = await response.json();
+  return result.success === true && 'data' in result ? result.data : result;
 }
 
 /**
@@ -65,7 +66,8 @@ export async function fetchPDSDetails(id: string): Promise<PDSSubmissionDetail> 
     throw new Error(error.error || 'Failed to fetch PDS details');
   }
 
-  return response.json();
+  const result = await response.json();
+  return result.success === true && 'data' in result ? result.data : result;
 }
 
 /**
@@ -85,7 +87,8 @@ export async function fetchSALNDetails(id: string): Promise<SALNSubmissionDetail
     throw new Error(error.error || 'Failed to fetch SALN details');
   }
 
-  return response.json();
+  const result = await response.json();
+  return result.success === true && 'data' in result ? result.data : result;
 }
 
 /**
@@ -109,7 +112,8 @@ export async function approvePDS(
     throw new Error(error.error || 'Failed to approve PDS');
   }
 
-  return response.json();
+  const result = await response.json();
+  return result.success === true && 'data' in result ? result.data : result;
 }
 
 /**
@@ -133,7 +137,8 @@ export async function rejectPDS(
     throw new Error(error.error || 'Failed to reject PDS');
   }
 
-  return response.json();
+  const result = await response.json();
+  return result.success === true && 'data' in result ? result.data : result;
 }
 
 /**
@@ -157,7 +162,8 @@ export async function approveSALN(
     throw new Error(error.error || 'Failed to approve SALN');
   }
 
-  return response.json();
+  const result = await response.json();
+  return result.success === true && 'data' in result ? result.data : result;
 }
 
 /**
@@ -181,7 +187,8 @@ export async function rejectSALN(
     throw new Error(error.error || 'Failed to reject SALN');
   }
 
-  return response.json();
+  const result = await response.json();
+  return result.success === true && 'data' in result ? result.data : result;
 }
 
 /**
@@ -204,7 +211,8 @@ export async function bulkApproveSubmissions(
     throw new Error(error.error || 'Failed to bulk approve submissions');
   }
 
-  return response.json();
+  const result = await response.json();
+  return result.success === true && 'data' in result ? result.data : result;
 }
 
 /**
@@ -224,5 +232,6 @@ export async function fetchSubmissionStats(): Promise<SubmissionStatsResponse> {
     throw new Error(error.error || 'Failed to fetch submission statistics');
   }
 
-  return response.json();
+  const result = await response.json();
+  return result.success === true && 'data' in result ? result.data : result;
 }

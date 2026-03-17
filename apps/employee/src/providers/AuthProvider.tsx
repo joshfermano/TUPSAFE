@@ -92,9 +92,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.warn('[AuthProvider] Profile fetch returned', response.status);
         return null;
       }
-      const data = await response.json();
+      const json = await response.json();
       initialProfileLoadedRef.current = true;
-      return data.profile as UserProfile;
+      // API returns { success: true, data: { ...profile } } via apiSuccess()
+      const profileData = json.data ?? json.profile;
+      if (!profileData) {
+        console.warn('[AuthProvider] No profile data in response:', Object.keys(json));
+        return null;
+      }
+      return profileData as UserProfile;
     } catch (error) {
       console.error('[AuthProvider] Error fetching profile:', error);
       return null;
