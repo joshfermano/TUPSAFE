@@ -60,6 +60,7 @@ packages/
 ## Critical Design Constraint
 
 **DO NOT MIX design systems across portals:**
+
 - **Employee app**: Magic UI components + `@radix-ui/react-icons` ONLY (no Radix component primitives)
 - **Admin app**: shadcn/ui + Radix primitives. Install: `pnpm dlx shadcn@latest add [component] --path apps/admin`
 - **shared-ui**: Design-agnostic only (PDF rendering, form utilities)
@@ -80,6 +81,7 @@ UI Form (camelCase)
 ```
 
 **Key rules:**
+
 - Drizzle schema columns MUST match Supabase DB columns exactly (snake_case)
 - Apply migrations via Supabase MCP tool before updating Drizzle schema
 - All currency fields: `decimal(15,2)` in DB, formatted to 2 decimal places
@@ -120,6 +122,7 @@ Single schema file: `packages/database/src/schema.ts` (~2000 lines, Drizzle ORM)
 ## API Route Pattern
 
 All routes follow this structure:
+
 ```typescript
 // Extract user from middleware-set headers
 const userId = request.headers.get('x-user-id');
@@ -132,45 +135,47 @@ const validated = schema.parse(await request.json());
 
 ## RBAC
 
-| Role       | Scope            | Access                                            |
-| ---------- | ---------------- | ------------------------------------------------- |
-| applicant  | Own applications | Browse/apply for jobs, PDS for applications       |
-| employee   | Own records      | PDS/SALN submit/edit, compliance tracking         |
-| supervisor | Department       | Approve/return submissions, department reports    |
-| hr         | All records      | User management, compliance, job postings         |
-| admin      | All + config     | Full system, role management, applicant conversion|
+| Role       | Scope            | Access                                             |
+| ---------- | ---------------- | -------------------------------------------------- |
+| applicant  | Own applications | Browse/apply for jobs, PDS for applications        |
+| employee   | Own records      | PDS/SALN submit/edit, compliance tracking          |
+| supervisor | Department       | Approve/return submissions, department reports     |
+| hr         | All records      | User management, compliance, job postings          |
+| admin      | All + config     | Full system, role management, applicant conversion |
 
 Account flow: `pending → active (verified+approved) → hired (applicant→employee conversion)`
 
 ## Key File Locations
 
-| Purpose | Path |
-|---------|------|
-| PDS form validation | `apps/employee/src/lib/validations/pds-schema.ts` |
-| SALN form validation | `apps/employee/src/lib/validations/saln-schema.ts` |
-| PDS data transformations | `apps/employee/src/lib/utils/pds-transformations.ts` |
-| SALN data transformations | `apps/employee/src/lib/utils/saln-transformations.ts` |
-| Date utilities | `apps/employee/src/lib/utils/date-utils.ts` |
-| Date input component | `apps/employee/src/components/forms/shared/FormDateInput.tsx` |
-| Database schema | `packages/database/src/schema.ts` |
-| PDS queries | `packages/database/src/queries/pds.ts` |
-| SALN queries | `packages/database/src/queries/saln.ts` |
-| Real-time hooks | `packages/database/src/hooks/useRealtime*.ts` |
-| PDS PDF rendering | `packages/shared-ui/src/pds-pdf/` |
-| SALN PDF rendering | `packages/shared-ui/src/saln-pdf/` |
-| Auth middleware | `packages/auth/src/middleware.ts` |
-| MCP server config | `.mcp.json` |
+| Purpose                   | Path                                                          |
+| ------------------------- | ------------------------------------------------------------- |
+| PDS form validation       | `apps/employee/src/lib/validations/pds-schema.ts`             |
+| SALN form validation      | `apps/employee/src/lib/validations/saln-schema.ts`            |
+| PDS data transformations  | `apps/employee/src/lib/utils/pds-transformations.ts`          |
+| SALN data transformations | `apps/employee/src/lib/utils/saln-transformations.ts`         |
+| Date utilities            | `apps/employee/src/lib/utils/date-utils.ts`                   |
+| Date input component      | `apps/employee/src/components/forms/shared/FormDateInput.tsx` |
+| Database schema           | `packages/database/src/schema.ts`                             |
+| PDS queries               | `packages/database/src/queries/pds.ts`                        |
+| SALN queries              | `packages/database/src/queries/saln.ts`                       |
+| Real-time hooks           | `packages/database/src/hooks/useRealtime*.ts`                 |
+| PDS PDF rendering         | `packages/shared-ui/src/pds-pdf/`                             |
+| SALN PDF rendering        | `packages/shared-ui/src/saln-pdf/`                            |
+| Auth middleware           | `packages/auth/src/middleware.ts`                             |
+| MCP server config         | `.mcp.json`                                                   |
 
 ## Production Deployment (AWS EC2)
 
 Single EC2 instance (t2.micro, 1 vCPU, 1GB RAM + 4GB swap) running all services via Docker.
 
 **Live URLs:**
+
 - Employee: `https://tupsafe.tech` (Nginx HTTPS, Let's Encrypt SSL)
 - Admin: `http://18.142.250.161:9443` (Nginx HTTP, IP-restricted via Security Group)
 - AI Agent: internal Docker network only (`http://ai-agent:8000`)
 
 **Infrastructure:**
+
 - **Region:** ap-southeast-1 (Singapore)
 - **OS:** Ubuntu 24.04
 - **Registry:** AWS ECR (3 repos: `tupsafe/employee`, `tupsafe/admin`, `tupsafe/ai-agent`)
@@ -180,15 +185,16 @@ Single EC2 instance (t2.micro, 1 vCPU, 1GB RAM + 4GB swap) running all services 
 
 **Docker services (docker-compose.prod.yml):**
 
-| Service | Image | Memory Limit | Ports |
-|---------|-------|-------------|-------|
-| nginx | nginx:1.27-alpine | 64M | 80, 443, 9443 |
-| redis | redis:7-alpine | 96M | internal |
-| employee | ECR tupsafe/employee | 256M | internal (3000) |
-| admin | ECR tupsafe/admin | 256M | internal (3001) |
-| ai-agent | ECR tupsafe/ai-agent | 350M | internal (8000) |
+| Service  | Image                | Memory Limit | Ports           |
+| -------- | -------------------- | ------------ | --------------- |
+| nginx    | nginx:1.27-alpine    | 64M          | 80, 443, 9443   |
+| redis    | redis:7-alpine       | 96M          | internal        |
+| employee | ECR tupsafe/employee | 256M         | internal (3000) |
+| admin    | ECR tupsafe/admin    | 256M         | internal (3001) |
+| ai-agent | ECR tupsafe/ai-agent | 350M         | internal (8000) |
 
 **CI/CD (`.github/workflows/deploy.yml`):**
+
 1. Triggered on push to `main` (or manual dispatch)
 2. Builds 3 Docker images in parallel matrix → pushes to ECR with SHA + latest tags
 3. SSHs into EC2 → pulls images → `docker compose up -d` → health check
@@ -196,22 +202,24 @@ Single EC2 instance (t2.micro, 1 vCPU, 1GB RAM + 4GB swap) running all services 
 
 **Key deployment files:**
 
-| Purpose | Path |
-|---------|------|
-| Local dev compose | `docker-compose.yml` |
-| EC2 prod compose | `docker-compose.prod.yml` |
-| Nginx config | `nginx/nginx.conf` |
-| CI/CD workflow | `.github/workflows/deploy.yml` |
-| EC2 env template | `.env.ec2.example` |
+| Purpose              | Path                                             |
+| -------------------- | ------------------------------------------------ |
+| Local dev compose    | `docker-compose.yml`                             |
+| EC2 prod compose     | `docker-compose.prod.yml`                        |
+| Nginx config         | `nginx/nginx.conf`                               |
+| CI/CD workflow       | `.github/workflows/deploy.yml`                   |
+| EC2 env template     | `.env.ec2.example`                               |
 | EC2 env (gitignored) | `.env.prod` (on EC2 at `/opt/tupsafe/.env.prod`) |
 
 **Nginx notes:**
+
 - Proxy buffers set to 128k/256k for large Supabase auth cookies (default 4k/8k causes 502)
 - Rate limiting: 10r/s general, 5r/s API, 1r/s auth
 - HSTS, security headers, gzip compression enabled
 - Static assets (`/_next/static/`) cached 365 days
 
 **EC2 commands (via SSH):**
+
 ```bash
 ssh -i tupsafe-aws.pem ubuntu@18.142.250.161
 cd /opt/tupsafe
@@ -233,7 +241,9 @@ docker compose logs -f                         # Tail logs
 
 ## Claude Code Workflow
 
-- **Always use Claude sub-agents** (Task tool) for planning, analyzing, and developing. Launch multiple agents in parallel when tasks are independent to maximize efficiency.
+- **Always use specialized Claude sub-agents** (Agent tool) for all analysis and engineering work. Select the appropriate `subagent_type` for the task domain (e.g., `senior-frontend-engineer` for React/Next.js, `backend-architect` for API/DB, `database-architect` for schema design, `devops-engineer` for Docker/CI/CD, `ai-ml-engineer` for AI/LLM work, `Plan` for architecture planning, `Explore` for codebase research). Launch multiple agents in parallel when tasks are independent to maximize efficiency.
+- **Always leverage Claude skills** (Skill tool) before starting work. Invoke relevant skills like `superpowers:brainstorming` before creative work, `superpowers:writing-plans` before multi-step tasks, `superpowers:systematic-debugging` for bugs, `superpowers:test-driven-development` for features, and `superpowers:verification-before-completion` before claiming work is done.
+- **Always leverage MCP servers** for domain-specific operations. Use Serena for symbolic code analysis and editing, Supabase MCP for database migrations and SQL, GitHub MCP for PR/issue management, Context7 for up-to-date library docs, shadcn MCP for UI components, and Playwright for browser testing.
 - **Git commits:** Never include `Co-Authored-By: Claude` in commit messages. Use conventional commit format (`feat:`, `fix:`, `refactor:`, `chore:`, etc.).
 
 ## Coding Conventions
