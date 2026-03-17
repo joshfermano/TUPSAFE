@@ -9,7 +9,7 @@
 
 import { useState } from 'react';
 import { formatDistanceToNow, format } from 'date-fns';
-import { X, User, Clock, FileText, CheckCircle, XCircle } from 'lucide-react';
+import { User, Clock, FileText, CheckCircle, XCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,

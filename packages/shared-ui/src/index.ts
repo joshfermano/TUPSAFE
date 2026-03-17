@@ -53,6 +53,17 @@ export * from './ui/enhanced-text-field';
 export * from './ui/enhanced-background';
 export * from './ui/enhanced-success';
 
+// ============================================================================
+// PDF Exports (kept for backward compatibility)
+//
+// PREFER importing from '@tupsafe/shared-ui/pdf' instead of '@tupsafe/shared-ui'
+// for PDF-related imports. This avoids pulling @react-pdf/renderer (~50KB+)
+// into bundles that only need UI components.
+//
+// Example:
+//   import { PDSDocument, SALNDocument } from '@tupsafe/shared-ui/pdf';
+// ============================================================================
+
 // Export PDF fonts utility
 export * from './fonts';
 

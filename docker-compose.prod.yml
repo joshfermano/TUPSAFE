@@ -20,8 +20,8 @@ x-logging: &logging
   logging:
     driver: 'json-file'
     options:
-      max-size: '10m'
-      max-file: '3'
+      max-size: '50m'
+      max-file: '5'
 
 x-security: &security
   security_opt:
@@ -61,11 +61,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.25'
-          memory: 64M
+          cpus: '0.15'
+          memory: 48M
         reservations:
-          cpus: '0.1'
-          memory: 32M
+          cpus: '0.05'
+          memory: 24M
     <<: [*logging, *security]
 
   # ============================================
@@ -104,11 +104,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.25'
-          memory: 96M
-        reservations:
-          cpus: '0.1'
+          cpus: '0.15'
           memory: 64M
+        reservations:
+          cpus: '0.05'
+          memory: 32M
     <<: *logging
 
   # ============================================
@@ -134,7 +134,7 @@ services:
       EMAIL_FROM: ${EMAIL_FROM:-noreply@tupsafe.tech}
       EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-TUPSAFE}
       USE_MOCK_EMAILS: 'false'
-      NODE_OPTIONS: '--max-old-space-size=180'
+      NODE_OPTIONS: '--max-old-space-size=160'
     depends_on:
       redis:
         condition: service_healthy
@@ -156,11 +156,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 256M
+          cpus: '0.30'
+          memory: 220M
         reservations:
-          cpus: '0.15'
-          memory: 180M
+          cpus: '0.10'
+          memory: 128M
     <<: [*logging, *security]
 
   # ============================================
@@ -186,7 +186,7 @@ services:
       EMAIL_FROM: ${EMAIL_FROM:-noreply@tupsafe.tech}
       EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-TUPSAFE}
       USE_MOCK_EMAILS: 'false'
-      NODE_OPTIONS: '--max-old-space-size=180'
+      NODE_OPTIONS: '--max-old-space-size=160'
     depends_on:
       redis:
         condition: service_healthy
@@ -208,11 +208,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 256M
+          cpus: '0.30'
+          memory: 220M
         reservations:
-          cpus: '0.15'
-          memory: 180M
+          cpus: '0.10'
+          memory: 128M
     <<: [*logging, *security]
 
   # ============================================
@@ -266,11 +266,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 350M
+          cpus: '0.30'
+          memory: 280M
         reservations:
-          cpus: '0.15'
-          memory: 200M
+          cpus: '0.10'
+          memory: 150M
     <<: [*logging, *security]
 
 networks:

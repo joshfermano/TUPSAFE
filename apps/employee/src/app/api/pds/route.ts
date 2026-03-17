@@ -4,7 +4,7 @@
  * POST /api/pds - Create new PDS submission
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import {
   getPDSSubmissions,
   getPDSSubmissionById,
@@ -19,6 +19,7 @@ import {
 import { createServerClient } from '@tupsafe/auth/server';
 import { transformPdsFromBackend } from '../../../lib/utils/pds-transformations';
 import { getPdsReadinessProgress } from '../../../lib/validations/pds-schema';
+import { apiSuccess, apiPaginated, apiError } from '../../../lib/api-helpers';
 
 /**
  * Helper function to compute and persist PDS completion
@@ -107,10 +108,7 @@ export async function GET(request: NextRequest) {
 
     if (authError || !user) {
       console.error('[GET /api/pds] Authentication failed:', authError);
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized. Please log in.' },
-        { status: 401 }
-      );
+      return apiError('Unauthorized. Please log in.', 401);
     }
 
     // Extract query parameters
@@ -130,14 +128,7 @@ export async function GET(request: NextRequest) {
 
     // Validate pagination parameters
     if (page < 1 || limit < 1) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            'Invalid pagination parameters. Page and limit must be positive integers.',
-        },
-        { status: 400 }
-      );
+      return apiError('Invalid pagination parameters. Page and limit must be positive integers.');
     }
 
     // Build filter options
@@ -156,15 +147,7 @@ export async function GET(request: NextRequest) {
         'rejected',
       ];
       if (!validStatuses.includes(status)) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: `Invalid status. Must be one of: ${validStatuses.join(
-              ', '
-            )}`,
-          },
-          { status: 400 }
-        );
+        return apiError(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
       }
       filters.status = status;
     }
@@ -176,27 +159,12 @@ export async function GET(request: NextRequest) {
       `[GET /api/pds] Retrieved ${submissions.length} PDS submissions for user ${user.id}`
     );
 
-    return NextResponse.json({
-      success: true,
-      data: submissions,
-      pagination: {
-        page,
-        limit,
-        total: submissions.length,
-        hasMore: submissions.length === limit,
-      },
-    });
+    return apiPaginated(submissions, { page, limit, total: submissions.length });
   } catch (error) {
     console.error('[GET /api/pds] Error fetching PDS submissions:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : 'Failed to fetch PDS submissions',
-      },
-      { status: 500 }
+    return apiError(
+      error instanceof Error ? error.message : 'Failed to fetch PDS submissions',
+      500
     );
   }
 }
@@ -236,10 +204,7 @@ export async function POST(request: NextRequest) {
 
     if (authError || !user) {
       console.error('[POST /api/pds] Authentication failed:', authError);
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized. Please log in.' },
-        { status: 401 }
-      );
+      return apiError('Unauthorized. Please log in.', 401);
     }
 
     // Parse request body
@@ -248,10 +213,7 @@ export async function POST(request: NextRequest) {
       body = await request.json();
     } catch (parseError) {
       console.error('[POST /api/pds] Invalid JSON body:', parseError);
-      return NextResponse.json(
-        { success: false, error: 'Invalid request body. Expected valid JSON.' },
-        { status: 400 }
-      );
+      return apiError('Invalid request body. Expected valid JSON.');
     }
 
     // For drafts, allow partial data
@@ -269,13 +231,7 @@ export async function POST(request: NextRequest) {
 
       // If at least some personal info is provided, that's good enough for a draft
       if (providedFields.length === 0) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Please provide at least some personal information to save a draft.',
-          },
-          { status: 400 }
-        );
+        return apiError('Please provide at least some personal information to save a draft.');
       }
     }
 
@@ -296,14 +252,7 @@ export async function POST(request: NextRequest) {
       // Compute and persist the completion percentage
       await computeAndPersistCompletion(existingDraftId, user.id);
 
-      return NextResponse.json(
-        {
-          success: true,
-          data: { id: existingDraftId },
-          message: 'Draft updated successfully',
-        },
-        { status: 200 }
-      );
+      return apiSuccess({ id: existingDraftId });
     }
 
     // No recent draft exists - create new one
@@ -316,25 +265,12 @@ export async function POST(request: NextRequest) {
       `[POST /api/pds] Created new PDS submission ${pdsId} for user ${user.id}`
     );
 
-    return NextResponse.json(
-      {
-        success: true,
-        data: { id: pdsId },
-        message: 'PDS submission created successfully',
-      },
-      { status: 201 }
-    );
+    return apiSuccess({ id: pdsId }, 201);
   } catch (error) {
     console.error('[POST /api/pds] Error creating PDS submission:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : 'Failed to create PDS submission',
-      },
-      { status: 500 }
+    return apiError(
+      error instanceof Error ? error.message : 'Failed to create PDS submission',
+      500
     );
   }
 }

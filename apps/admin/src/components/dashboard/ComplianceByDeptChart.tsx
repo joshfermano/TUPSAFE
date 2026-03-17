@@ -12,8 +12,6 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  ResponsiveContainer,
-  Cell,
 } from 'recharts';
 import {
   Card,
@@ -79,7 +77,7 @@ export function ComplianceByDeptChart() {
 
   // Calculate average compliance rate for each department
   const chartData = data.departments
-    .map((dept: any) => ({
+    .map((dept) => ({
       name: dept.code || dept.name.substring(0, 20),
       fullName: dept.name,
       compliance: Math.round(
@@ -93,12 +91,12 @@ export function ComplianceByDeptChart() {
         )
       ),
     }))
-    .sort((a: any, b: any) => b.compliance - a.compliance)
+    .sort((a, b) => b.compliance - a.compliance)
     .slice(0, 10); // Top 10 departments
 
   // Custom label showing percentage on bars
-  const CustomLabel = (props: any) => {
-    const { x, y, width, height, value } = props;
+  const CustomLabel = (props: { x?: number; y?: number; width?: number; height?: number; value?: number }) => {
+    const { x = 0, y = 0, width = 0, height = 0, value } = props;
     return (
       <text
         x={x + width + 5}
@@ -192,7 +190,7 @@ export function ComplianceByDeptChart() {
               <div className="space-y-1">
                 {data.summary.needsAttention
                   .slice(0, 2)
-                  .map((dept: any, idx: number) => (
+                  .map((dept, idx) => (
                     <div
                       key={idx}
                       className="flex items-center justify-between">

@@ -114,12 +114,13 @@ export function useApproveRegistration() {
       // Optimistically update all list queries (remove from pending, add to approved)
       queryClient.setQueriesData(
         { queryKey: registrationKeys.lists() },
-        (old: any) => {
-          if (!old?.registrations) return old;
+        (old: unknown) => {
+          const data = old as Record<string, unknown> | undefined;
+          if (!data?.registrations) return old;
 
           return {
-            ...old,
-            registrations: old.registrations.map((reg: any) =>
+            ...data,
+            registrations: (data.registrations as Array<Record<string, unknown>>).map((reg) =>
               reg.id === id
                 ? { ...reg, status: 'approved', reviewedAt: new Date().toISOString() }
                 : reg
@@ -129,12 +130,13 @@ export function useApproveRegistration() {
       );
 
       // Optimistically update stats
-      queryClient.setQueryData(registrationKeys.stats(), (old: any) => {
+      queryClient.setQueryData(registrationKeys.stats(), (old: unknown) => {
         if (!old) return old;
+        const data = old as Record<string, number>;
         return {
-          ...old,
-          pending: Math.max(0, (old.pending || 0) - 1),
-          approved: (old.approved || 0) + 1,
+          ...data,
+          pending: Math.max(0, (data.pending || 0) - 1),
+          approved: (data.approved || 0) + 1,
         };
       });
 
@@ -218,12 +220,13 @@ export function useRejectRegistration() {
       // Optimistically update all list queries
       queryClient.setQueriesData(
         { queryKey: registrationKeys.lists() },
-        (old: any) => {
-          if (!old?.registrations) return old;
+        (old: unknown) => {
+          const data = old as Record<string, unknown> | undefined;
+          if (!data?.registrations) return old;
 
           return {
-            ...old,
-            registrations: old.registrations.map((reg: any) =>
+            ...data,
+            registrations: (data.registrations as Array<Record<string, unknown>>).map((reg) =>
               reg.id === id
                 ? { ...reg, status: 'rejected', rejectedAt: new Date().toISOString() }
                 : reg
@@ -233,12 +236,13 @@ export function useRejectRegistration() {
       );
 
       // Optimistically update stats
-      queryClient.setQueryData(registrationKeys.stats(), (old: any) => {
+      queryClient.setQueryData(registrationKeys.stats(), (old: unknown) => {
         if (!old) return old;
+        const data = old as Record<string, number>;
         return {
-          ...old,
-          pending: Math.max(0, (old.pending || 0) - 1),
-          rejected: (old.rejected || 0) + 1,
+          ...data,
+          pending: Math.max(0, (data.pending || 0) - 1),
+          rejected: (data.rejected || 0) + 1,
         };
       });
 

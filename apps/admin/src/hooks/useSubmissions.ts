@@ -116,7 +116,7 @@ export function useApprovePDS() {
         description: err.message,
       });
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast.success('PDS Approved', {
         description: 'The submission has been approved successfully.',
       });

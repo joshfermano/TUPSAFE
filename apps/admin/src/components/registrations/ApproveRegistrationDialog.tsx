@@ -58,7 +58,7 @@ export function ApproveRegistrationDialog({
   const handleApprove = async () => {
     if (!registration) return;
 
-    const data: any = {
+    const data: Record<string, unknown> = {
       notes: notes || undefined,
       sendWelcomeEmail: true,
     };

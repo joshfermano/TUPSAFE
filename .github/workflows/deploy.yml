@@ -109,23 +109,49 @@ jobs:
             docker compose -f docker-compose.prod.yml --env-file .env.prod pull employee admin ai-agent
             docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
 
-            sleep 30
-            for svc in tupsafe-employee tupsafe-admin tupsafe-ai-agent tupsafe-redis tupsafe-nginx; do
-              STATUS=$(docker inspect --format='{{.State.Health.Status}}' "$svc" 2>/dev/null || echo "n/a")
-              echo "$svc: $STATUS"
+            # Wait for services to become healthy with retry loop
+            echo "Waiting for services to become healthy..."
+            MAX_RETRIES=12
+            RETRY_INTERVAL=10
+            for i in $(seq 1 $MAX_RETRIES); do
+              echo "Health check attempt $i/$MAX_RETRIES..."
+              ALL_HEALTHY=true
+              for svc in tupsafe-employee tupsafe-admin tupsafe-nginx; do
+                STATUS=$(docker inspect --format='{{.State.Health.Status}}' "$svc" 2>/dev/null || echo "starting")
+                echo "  $svc: $STATUS"
+                if [ "$STATUS" != "healthy" ]; then
+                  ALL_HEALTHY=false
+                fi
+              done
+              if [ "$ALL_HEALTHY" = true ]; then
+                echo "All services healthy!"
+                break
+              fi
+              if [ "$i" = "$MAX_RETRIES" ]; then
+                echo "ERROR: Services did not become healthy within $((MAX_RETRIES * RETRY_INTERVAL))s"
+                docker compose -f docker-compose.prod.yml logs --tail=50
+                exit 1
+              fi
+              sleep $RETRY_INTERVAL
+            done
+
+            # Verify endpoint responses
+            echo "Verifying endpoint responses..."
+            for endpoint in "https://tupsafe.tech/api/health" "http://localhost:9443/api/health"; do
+              VERIFIED=false
+              for attempt in 1 2 3; do
+                if curl -sf --max-time 10 "$endpoint" > /dev/null 2>&1; then
+                  echo "  OK: $endpoint"
+                  VERIFIED=true
+                  break
+                fi
+                echo "  Attempt $attempt failed for $endpoint, retrying..."
+                sleep 5
+              done
+              if [ "$VERIFIED" = false ]; then
+                echo "  WARN: $endpoint not responding after 3 attempts"
+              fi
             done
 
             docker image prune -f
             echo "=== Deploy complete ==="
-
-      - name: Verify health
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.EC2_ELASTIC_IP }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          port: 22
-          timeout: 60s
-          script: |
-            curl -sf --max-time 10 https://tupsafe.tech/api/health > /dev/null 2>&1 && echo "Employee: OK" || echo "Employee: FAILED"
-            curl -sf --max-time 10 http://localhost:9443/api/health > /dev/null 2>&1 && echo "Admin: OK" || echo "Admin: FAILED"

@@ -96,7 +96,7 @@ export const ReportDocument: React.FC<ReportDocumentProps> = ({ data }) => {
  */
 export function calculateColumnWidths(
   headers: string[],
-  data: Record<string, string | number>[]
+  _data: Record<string, string | number>[]
 ): string[] {
   // Simple equal distribution for now
   // Can be enhanced to analyze content and adjust widths dynamically

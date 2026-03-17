@@ -7,7 +7,7 @@
 
 import { NextResponse } from 'next/server';
 import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
-import { db, openPositions, jobApplications, departments } from '@tupsafe/database/server';
+import { db, openPositions, jobApplications } from '@tupsafe/database/server';
 import { eq, sql, count, and, gte, desc } from 'drizzle-orm';
 import type { JobsStatsResponse } from '@tupsafe/types/admin/jobs';
 

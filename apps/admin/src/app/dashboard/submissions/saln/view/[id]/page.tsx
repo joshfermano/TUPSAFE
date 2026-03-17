@@ -93,7 +93,8 @@ export default function SalnSubmissionViewPage() {
   const isSubmitting = isApproving || isRejecting || isRequestingChanges;
 
   // Extract data from the API response structure
-  const salnData = completeSubmission?.salnData;
+  // The API returns data conforming to SALNData shape
+  const salnData = completeSubmission?.salnData as (SALNData & Record<string, unknown>) | undefined;
 
   // Memoize arrays to prevent hook dependency issues
   const realProperties = React.useMemo(
@@ -120,16 +121,14 @@ export default function SalnSubmissionViewPage() {
   // Calculate totals - API now returns numbers, use directly
   const totalRealProperties = React.useMemo(() => {
     return realProperties.reduce(
-      (sum: number, prop: { currentFairMarketValue?: number }) =>
-        sum + (prop.currentFairMarketValue || 0),
+      (sum, prop) => sum + (prop.currentFairMarketValue || 0),
       0
     );
   }, [realProperties]);
 
   const totalPersonalProperties = React.useMemo(() => {
     return personalProperties.reduce(
-      (sum: number, prop: { acquisitionCost?: number }) =>
-        sum + (prop.acquisitionCost || 0),
+      (sum, prop) => sum + (prop.acquisitionCost || 0),
       0
     );
   }, [personalProperties]);
@@ -150,8 +149,7 @@ export default function SalnSubmissionViewPage() {
     }
     // Fallback: calculate from liabilities
     return liabilities.reduce(
-      (sum: number, liability: { outstandingBalance?: number }) =>
-        sum + (liability.outstandingBalance || 0),
+      (sum, liability) => sum + (liability.outstandingBalance || 0),
       0
     );
   }, [salnData?.totalLiabilities, liabilities]);
@@ -182,15 +180,16 @@ export default function SalnSubmissionViewPage() {
 
     // Parse spouse info - always shown in 2025 format
     let spouseInfo = undefined;
-    if (salnData?.spouseName) {
-      const nameParts = salnData.spouseName.trim().split(/\s+/);
+    const spouseNameRaw = (salnData as Record<string, unknown>)?.spouseName as string | undefined;
+    if (spouseNameRaw) {
+      const nameParts = spouseNameRaw.trim().split(/\s+/);
       spouseInfo = {
         surname: nameParts[nameParts.length - 1] || '',
         firstName: nameParts[0] || '',
         middleInitial: nameParts.length > 2 ? nameParts[1]?.charAt(0) : null,
-        position: (salnData as any)?.spousePosition || '',
-        agency: (salnData as any)?.spouseAgency || '',
-        officeAddress: (salnData as any)?.spouseOfficeAddress || employee.officeAddress || '',
+        position: salnData?.spousePosition || '',
+        agency: salnData?.spouseAgency || '',
+        officeAddress: salnData?.spouseOfficeAddress || employee.officeAddress || '',
       };
     }
 
@@ -209,68 +208,37 @@ export default function SalnSubmissionViewPage() {
       },
       spouseInfo,
       children: [],
-      realProperties: (salnData?.realProperties || []).map((prop: Record<string, unknown>) => ({
-        description: (prop.description as string) || '',
-        kind: (prop.kind as string) || 'residential',
-        exactLocation: (prop.exactLocation as string) || '',
-        assessedValue: (prop.assessedValue as number) || 0,
-        currentFairMarketValue: (prop.currentFairMarketValue as number) || 0,
-        acquisitionYear: (prop.acquisitionYear as number) || new Date().getFullYear(),
-        acquisitionMode: (prop.acquisitionMode as string) || 'Purchase',
-        acquisitionCost: (prop.acquisitionCost as number) || 0,
-        owner: (prop.owner as string) || undefined,
-      })),
-      personalProperties: (salnData?.personalProperties || []).map((prop: Record<string, unknown>) => ({
-        description: (prop.description as string) || '',
-        yearAcquired: (prop.yearAcquired as number) || new Date().getFullYear(),
-        acquisitionCost: (prop.acquisitionCost as number) || 0,
-        owner: (prop.owner as string) || undefined,
-      })),
-      liabilities: (salnData?.liabilities || []).map((liability: Record<string, unknown>) => ({
-        nature: (liability.nature as string) || '',
-        creditorName: (liability.creditorName as string) || '',
-        outstandingBalance: (liability.outstandingBalance as number) || 0,
-        owner: (liability.owner as string) || undefined,
-      })),
-      businessInterests: (salnData?.businessInterests || []).map((business: Record<string, unknown>) => ({
-        entityName: (business.entityName as string) || '',
-        businessAddress: (business.businessAddress as string) || '',
-        natureOfBusiness: (business.natureOfBusiness as string) || '',
-        dateOfAcquisition: (business.dateOfAcquisition as string) || new Date().toISOString(),
-        owner: (business.owner as string) || undefined,
-      })),
-      relativesInGov: (salnData?.relativesInGov || []).map((relative: Record<string, unknown>) => ({
-        name: (relative.name as string) || '',
-        relationship: (relative.relationship as string) || '',
-        position: (relative.position as string) || '',
-        agencyAddress: (relative.agencyAddress as string) || '',
-      })),
+      realProperties: salnData?.realProperties || [],
+      personalProperties: salnData?.personalProperties || [],
+      liabilities: salnData?.liabilities || [],
+      businessInterests: salnData?.businessInterests || [],
+      relativesInGov: salnData?.relativesInGov || [],
       totalAssets,
       totalLiabilities,
       netWorth,
       submittedAt: submission.submittedAt,
       // 2025 SALN Format fields
-      salnFormatVersion: (salnData as any)?.salnFormatVersion || 2025,
-      complianceType: (salnData as any)?.complianceType,
-      complianceDate: (salnData as any)?.complianceDate,
-      hasMultipleMarriages: (salnData as any)?.hasMultipleMarriages,
-      previousSpouseNames: (salnData as any)?.previousSpouseNames,
-      spouseIsPublicOfficial: (salnData as any)?.spouseIsPublicOfficial,
-      spousePosition: (salnData as any)?.spousePosition,
-      spouseAgency: (salnData as any)?.spouseAgency,
-      spouseOfficeAddress: (salnData as any)?.spouseOfficeAddress,
-      unmarriedChildren: (salnData as any)?.unmarriedChildren,
-      hasNoBusinessInterests: (salnData as any)?.hasNoBusinessInterests,
-      hasNoRelativesInGov: (salnData as any)?.hasNoRelativesInGov,
-      governmentIdType: (salnData as any)?.governmentIdType,
-      governmentIdNumber: (salnData as any)?.governmentIdNumber,
-      governmentIdDateIssued: (salnData as any)?.governmentIdDateIssued,
-      governmentIdType2: (salnData as any)?.governmentIdType2,
-      governmentIdNumber2: (salnData as any)?.governmentIdNumber2,
-      governmentIdDateIssued2: (salnData as any)?.governmentIdDateIssued2,
-      declarantTin: (salnData as any)?.declarantTin,
-      spouseTin: (salnData as any)?.spouseTin,
-      spouseDateOfBirth: (salnData as any)?.spouseDateOfBirth,
+      salnFormatVersion: salnData?.salnFormatVersion || 2025,
+      complianceType: salnData?.complianceType,
+      complianceDate: salnData?.complianceDate,
+      hasMultipleMarriages: salnData?.hasMultipleMarriages,
+      previousSpouseNames: salnData?.previousSpouseNames,
+      spouseIsPublicOfficial: salnData?.spouseIsPublicOfficial,
+      spousePosition: salnData?.spousePosition,
+      spouseAgency: salnData?.spouseAgency,
+      spouseOfficeAddress: salnData?.spouseOfficeAddress,
+      unmarriedChildren: salnData?.unmarriedChildren,
+      hasNoBusinessInterests: salnData?.hasNoBusinessInterests,
+      hasNoRelativesInGov: salnData?.hasNoRelativesInGov,
+      governmentIdType: salnData?.governmentIdType,
+      governmentIdNumber: salnData?.governmentIdNumber,
+      governmentIdDateIssued: salnData?.governmentIdDateIssued,
+      governmentIdType2: salnData?.governmentIdType2,
+      governmentIdNumber2: salnData?.governmentIdNumber2,
+      governmentIdDateIssued2: salnData?.governmentIdDateIssued2,
+      declarantTin: salnData?.declarantTin,
+      spouseTin: salnData?.spouseTin,
+      spouseDateOfBirth: salnData?.spouseDateOfBirth,
     };
 
     console.log('[SALN PDF] Data transformed successfully:', {
@@ -323,7 +291,7 @@ export default function SalnSubmissionViewPage() {
   );
 
   // Handle request changes
-  const handleRequestChanges = React.useCallback(
+  const _handleRequestChanges = React.useCallback(
     async (notes: string) => {
       if (!user?.id) return;
 
@@ -556,8 +524,8 @@ export default function SalnSubmissionViewPage() {
               defaultOpen>
               {realProperties.length > 0 ? (
                 <div className="space-y-3">
-                  {realProperties.map((property: Record<string, unknown>, index: number) => (
-                    <PropertyCard key={index} type="real" data={property} index={index} />
+                  {realProperties.map((property, index) => (
+                    <PropertyCard key={index} type="real" data={property as unknown as Record<string, unknown>}index={index} />
                   ))}
                   {/* Total Row */}
                   <div className="flex justify-between items-center pt-3 border-t">
@@ -583,8 +551,8 @@ export default function SalnSubmissionViewPage() {
               defaultOpen>
               {personalProperties.length > 0 ? (
                 <div className="space-y-3">
-                  {personalProperties.map((property: Record<string, unknown>, index: number) => (
-                    <PropertyCard key={index} type="personal" data={property} index={index} />
+                  {personalProperties.map((property, index) => (
+                    <PropertyCard key={index} type="personal" data={property as unknown as Record<string, unknown>}index={index} />
                   ))}
                   {/* Total Row */}
                   <div className="flex justify-between items-center pt-3 border-t">
@@ -644,8 +612,8 @@ export default function SalnSubmissionViewPage() {
               defaultOpen>
               {liabilities.length > 0 ? (
                 <div className="space-y-3">
-                  {liabilities.map((liability: Record<string, unknown>, index: number) => (
-                    <PropertyCard key={index} type="liability" data={liability} index={index} />
+                  {liabilities.map((liability, index) => (
+                    <PropertyCard key={index} type="liability" data={liability as unknown as Record<string, unknown>}index={index} />
                   ))}
                   {/* Total Row */}
                   <div className="flex justify-between items-center pt-3 border-t">
@@ -743,8 +711,8 @@ export default function SalnSubmissionViewPage() {
               defaultOpen={false}>
               {businessInterests.length > 0 ? (
                 <div className="space-y-3">
-                  {businessInterests.map((business: Record<string, unknown>, index: number) => (
-                    <PropertyCard key={index} type="business" data={business} index={index} />
+                  {businessInterests.map((business, index) => (
+                    <PropertyCard key={index} type="business" data={business as unknown as Record<string, unknown>}index={index} />
                   ))}
                 </div>
               ) : (
@@ -765,8 +733,8 @@ export default function SalnSubmissionViewPage() {
               defaultOpen={false}>
               {relativesInGov.length > 0 ? (
                 <div className="space-y-3">
-                  {relativesInGov.map((relative: Record<string, unknown>, index: number) => (
-                    <PropertyCard key={index} type="relative" data={relative} index={index} />
+                  {relativesInGov.map((relative, index) => (
+                    <PropertyCard key={index} type="relative" data={relative as unknown as Record<string, unknown>}index={index} />
                   ))}
                 </div>
               ) : (

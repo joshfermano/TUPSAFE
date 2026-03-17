@@ -45,7 +45,8 @@ export async function fetchUsers(
     throw new Error(error.error || 'Failed to fetch users');
   }
 
-  return response.json();
+  const result = await response.json();
+  return result.success === true && 'data' in result ? result.data : result;
 }
 
 /**
@@ -67,7 +68,7 @@ export async function fetchUserDetails(userId: string): Promise<UserDetail> {
 
   // API returns { success: true, data: UserDetail }
   const result = await response.json();
-  return result.data;
+  return result.success === true && 'data' in result ? result.data : result;
 }
 
 /**
@@ -87,7 +88,9 @@ export async function fetchUserStats(): Promise<UserStatsResponse> {
     throw new Error(error.error || 'Failed to fetch user statistics');
   }
 
-  return response.json();
+  const result = await response.json();
+  // Stats endpoint returns data directly (not wrapped in apiSuccess)
+  return result.data ?? result;
 }
 
 /**
@@ -112,7 +115,7 @@ export async function updateUser(
 
   // API returns { success: true, message: '...', data: updatedUser }
   const result = await response.json();
-  return result.data;
+  return result.success === true && 'data' in result ? result.data : result;
 }
 
 /**
@@ -192,5 +195,6 @@ export async function resetUserPassword(
     throw new Error(error.error || 'Failed to reset password');
   }
 
-  return response.json();
+  const result = await response.json();
+  return result.success === true && 'data' in result ? result.data : result;
 }

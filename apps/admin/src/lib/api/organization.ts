@@ -50,7 +50,8 @@ export async function fetchOrganizations(
     throw new Error(error.error || 'Failed to fetch organizations');
   }
 
-  return response.json();
+  const result = await response.json();
+  return result.success === true && 'data' in result ? result.data : result;
 }
 
 /**
@@ -149,7 +150,7 @@ export async function createCollege(
   }
 
   const result = await response.json();
-  return result.data;
+  return result.success === true && 'data' in result ? result.data : result;
 }
 
 /**
@@ -172,7 +173,7 @@ export async function createDepartment(
   }
 
   const result = await response.json();
-  return result.data;
+  return result.success === true && 'data' in result ? result.data : result;
 }
 
 /**
@@ -195,7 +196,7 @@ export async function createOffice(
   }
 
   const result = await response.json();
-  return result.data;
+  return result.success === true && 'data' in result ? result.data : result;
 }
 
 /**
@@ -219,7 +220,7 @@ export async function updateOrganization(
   }
 
   const result = await response.json();
-  return result.data;
+  return result.success === true && 'data' in result ? result.data : result;
 }
 
 /**
@@ -264,7 +265,7 @@ export async function reactivateOrganization(
   }
 
   const result = await response.json();
-  return result.data;
+  return result.success === true && 'data' in result ? result.data : result;
 }
 
 /**
@@ -313,5 +314,5 @@ export async function reassignAndDelete(
   }
 
   const result = await response.json();
-  return result.data;
+  return result.success === true && 'data' in result ? result.data : result;
 }

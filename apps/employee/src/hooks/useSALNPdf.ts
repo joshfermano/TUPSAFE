@@ -4,16 +4,18 @@
  * Provides functionality for generating, downloading, and previewing
  * SALN (Statement of Assets, Liabilities and Net Worth) forms as PDF documents.
  *
- * Uses @react-pdf/renderer for client-side PDF generation.
+ * Uses dynamic imports for @react-pdf/renderer and SALN PDF components
+ * to avoid loading ~50KB+ of PDF libraries on pages that don't
+ * immediately need PDF generation. The heavy imports are deferred
+ * until the user actually triggers PDF generation.
+ *
  * Components are imported from the shared package via local re-exports.
  *
  * @module hooks/useSalnPdf
  */
 
 import { useState, useCallback } from 'react';
-import { pdf } from '@react-pdf/renderer';
-// Import from local re-export layer (which uses @tupsafe/shared-ui/saln-pdf)
-import { SALNDocument, registerSALNFonts, type SALNData } from '@/components/saln/pdf';
+import type { SALNData } from '@/components/saln/pdf';
 import { validateSALNData } from '@/lib/utils/saln-validation';
 
 // ============================================================================
@@ -115,6 +117,10 @@ function triggerDownload(blob: Blob, filename: string): void {
  * - downloadPDF: Generates and downloads the PDF
  * - openPDFInNewTab: Generates and opens PDF in a new tab
  *
+ * PDF libraries (@react-pdf/renderer, SALN document components) are loaded
+ * on-demand via dynamic imports when generatePDF is first called, keeping
+ * the initial page bundle lean.
+ *
  * @returns Object containing PDF generation functions and state
  *
  * @example
@@ -162,6 +168,7 @@ export function useSALNPdf(): UseSALNPdfReturn {
 
   /**
    * Generate a PDF blob from SALN data
+   * Dynamically imports @react-pdf/renderer and SALN components on first call
    */
   const generatePDF = useCallback(async (salnData: SALNData): Promise<Blob> => {
     setIsGenerating(true);
@@ -173,7 +180,7 @@ export function useSALNPdf(): UseSALNPdfReturn {
 
       if (!validation.isValid) {
         const errorMessages = validation.errors
-          .map((e) => `${e}`)
+          .map((e: string) => `${e}`)
           .join('; ');
         throw new Error(`Cannot generate PDF - ${errorMessages}`);
       }
@@ -182,6 +189,12 @@ export function useSALNPdf(): UseSALNPdfReturn {
       if (validation.warnings.length > 0) {
         console.warn('PDF Generation Warnings:', validation.warnings);
       }
+
+      // Dynamically import PDF libraries (deferred from top-level)
+      const [{ pdf }, { SALNDocument, registerSALNFonts }] = await Promise.all([
+        import('@react-pdf/renderer'),
+        import('@/components/saln/pdf'),
+      ]);
 
       // Get base URL for font paths and register fonts
       const baseUrl =

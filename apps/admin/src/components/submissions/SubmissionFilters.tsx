@@ -54,7 +54,6 @@ export function SubmissionFilters({ onFilterChange }: SubmissionFiltersProps) {
     const params = new URLSearchParams(searchParams.toString());
 
     // Preserve existing pagination params
-    const existingPage = searchParams.get('page');
     const existingLimit = searchParams.get('limit');
 
     if (filters.type !== 'all') params.set('type', filters.type);
@@ -74,6 +73,7 @@ export function SubmissionFilters({ onFilterChange }: SubmissionFiltersProps) {
 
     router.push(`?${params.toString()}`, { scroll: false });
     onFilterChange?.({ ...filters, search: debouncedSearch });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- individual filter fields are listed; adding the filters object would cause infinite re-renders
   }, [
     filters.type,
     filters.status,
@@ -85,7 +85,7 @@ export function SubmissionFilters({ onFilterChange }: SubmissionFiltersProps) {
     onFilterChange,
   ]);
 
-  const updateFilter = (key: keyof FilterState, value: any) => {
+  const updateFilter = (key: keyof FilterState, value: string | number | undefined) => {
     setFilters((prev) => ({
       ...prev,
       [key]: value,

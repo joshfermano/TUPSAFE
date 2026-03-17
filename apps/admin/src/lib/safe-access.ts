@@ -17,24 +17,24 @@
  * safeGet(user, 'profile.department.name', 'Unknown Department')
  * safeGet(details, 'status', 'pending')
  */
-export function safeGet<T = any>(
-  obj: any,
+export function safeGet<T = unknown>(
+  obj: unknown,
   path: string,
   fallback: T
 ): T {
   if (!obj || typeof obj !== 'object') return fallback;
 
   const keys = path.split('.');
-  let current = obj;
+  let current: unknown = obj;
 
   for (const key of keys) {
     if (current === null || current === undefined) {
       return fallback;
     }
-    current = current[key];
+    current = (current as Record<string, unknown>)[key];
   }
 
-  return current !== undefined && current !== null ? current : fallback;
+  return current !== undefined && current !== null ? (current as T) : fallback;
 }
 
 /**

@@ -197,7 +197,7 @@ export async function getSALNSubmissions(
     const { year, status, page = 1, pageSize = 10 } = options;
     const offset = (page - 1) * pageSize;
 
-    // Build where conditions using Drizzle query builder (like PDS)
+    // Build where conditions
     const conditions = [eq(salnSubmissions.userId, userId)];
 
     if (year !== undefined) {
@@ -208,14 +208,22 @@ export async function getSALNSubmissions(
       conditions.push(eq(salnSubmissions.status, status));
     }
 
-    // Query submissions using standard query builder pattern
-    const submissions = await db
-      .select()
-      .from(salnSubmissions)
-      .where(and(...conditions))
-      .orderBy(desc(salnSubmissions.year), desc(salnSubmissions.createdAt))
-      .limit(pageSize)
-      .offset(offset);
+    // Use relational query API to load all child tables in a fixed number of
+    // queries (one per relation) rather than issuing 5 queries per submission
+    // row (the previous N+1 pattern).
+    const submissions = await db.query.salnSubmissions.findMany({
+      where: and(...conditions),
+      orderBy: [desc(salnSubmissions.year), desc(salnSubmissions.createdAt)],
+      limit: pageSize,
+      offset,
+      with: {
+        realProperties: true,
+        personalProperties: true,
+        liabilities: true,
+        businessInterests: true,
+        relativesInGov: true,
+      },
+    });
 
     console.log(`[getSALNSubmissions] User ID for query: ${userId}`);
     console.log(`[getSALNSubmissions] Submissions found: ${submissions.length}`);
@@ -225,50 +233,7 @@ export async function getSALNSubmissions(
       console.log(`[getSALNSubmissions] No submissions found for user ${userId}`);
     }
 
-    // Load relations for each submission
-    const completeSalns: CompleteSaln[] = await Promise.all(
-      submissions.map(async (submission) => {
-        const [
-          realProperties,
-          personalProperties,
-          liabilities,
-          businessInterests,
-          relativesInGov,
-        ] = await Promise.all([
-          db
-            .select()
-            .from(salnRealProperties)
-            .where(eq(salnRealProperties.salnSubmissionId, submission.id)),
-          db
-            .select()
-            .from(salnPersonalProperties)
-            .where(eq(salnPersonalProperties.salnSubmissionId, submission.id)),
-          db
-            .select()
-            .from(salnLiabilities)
-            .where(eq(salnLiabilities.salnSubmissionId, submission.id)),
-          db
-            .select()
-            .from(salnBusinessInterests)
-            .where(eq(salnBusinessInterests.salnSubmissionId, submission.id)),
-          db
-            .select()
-            .from(salnRelativesInGov)
-            .where(eq(salnRelativesInGov.salnSubmissionId, submission.id)),
-        ]);
-
-        return {
-          ...submission,
-          realProperties,
-          personalProperties,
-          liabilities,
-          businessInterests,
-          relativesInGov,
-        };
-      })
-    );
-
-    return completeSalns;
+    return submissions as CompleteSaln[];
   } catch (error) {
     console.error('[getSALNSubmissions] Database error:', error);
     throw new Error(

@@ -28,11 +28,10 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useBulkApproveRegistrations } from '@/hooks/useRegistrations';
-import type { Registration } from '@/lib/api/registrations';
+import type { Registration, BulkApproveData } from '@/lib/api/registrations';
 
 interface BulkApproveDialogProps {
   registrations: Registration[];
@@ -70,12 +69,12 @@ export function BulkApproveDialog({
     bulkApproveMutation.mutate(
       {
         registrationIds,
-        defaultRole: defaultRole as any,
+        defaultRole: defaultRole as BulkApproveData['defaultRole'],
         notes: notes || undefined,
         sendWelcomeEmails: true,
       },
       {
-        onSuccess: (data) => {
+        onSuccess: () => {
           setShowResults(true);
           onSuccess?.();
         },

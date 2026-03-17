@@ -201,6 +201,34 @@ export interface PaginatedResponse<T = unknown> {
   };
 }
 
+// Standardised API envelope types (framework-agnostic).
+// The helper functions that produce NextResponse objects live in each app's
+// src/lib/api-helpers.ts to avoid importing 'next/server' from this package.
+
+export interface ApiSuccessResponse<T = unknown> {
+  success: true;
+  data: T;
+}
+
+export interface ApiPaginatedResponse<T = unknown> {
+  success: true;
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface ApiErrorResponse {
+  success: false;
+  error: string;
+  code?: string;
+}
+
+export type ApiResult<T = unknown> = ApiSuccessResponse<T> | ApiErrorResponse;
+
 // Form validation types
 export interface ValidationError {
   field: string;

@@ -23,7 +23,7 @@ import { StyleSheet, Font } from '@react-pdf/renderer';
  * Register report fonts (no-op for Helvetica - it's built-in)
  * Kept for API compatibility
  */
-export function registerReportFonts(baseUrl: string = ''): void {
+export function registerReportFonts(_baseUrl: string = ''): void {
   // Helvetica is built into @react-pdf/renderer, no registration needed
   // Disable hyphenation for better text control
   Font.registerHyphenationCallback((word) => [word]);
@@ -33,7 +33,7 @@ export function registerReportFonts(baseUrl: string = ''): void {
  * Ensure fonts are registered (no-op for Helvetica - it's built-in)
  * Kept for API compatibility
  */
-export function ensureReportFontsRegistered(baseUrl: string = ''): void {
+export function ensureReportFontsRegistered(_baseUrl: string = ''): void {
   // Helvetica is built into @react-pdf/renderer, no registration needed
   Font.registerHyphenationCallback((word) => [word]);
 }

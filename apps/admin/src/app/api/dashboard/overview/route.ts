@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { apiError } from '../../../../lib/api-helpers';
 import { db } from '@tupsafe/database/server';
 import {
   profiles,
@@ -32,10 +33,7 @@ export async function GET(_request: NextRequest) {
     const hasPermission = await checkUserRoleFromSupabase(['admin', 'co_admin', 'hr'], 'admin');
 
     if (!hasPermission) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Admin, Co-Admin, or HR role required.' },
-        { status: 403 }
-      );
+      return apiError('Unauthorized. Admin, Co-Admin, or HR role required.', 403);
     }
 
     // Date ranges for metrics
@@ -454,10 +452,7 @@ export async function GET(_request: NextRequest) {
     });
   } catch (error) {
     console.error('[Dashboard Overview] Error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch dashboard overview' },
-      { status: 500 }
-    );
+    return apiError('Failed to fetch dashboard overview', 500);
   }
 }
 

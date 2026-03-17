@@ -53,7 +53,7 @@ export function OrganizationListExample() {
       <div className="filters">
         <select
           value={filters.type}
-          onChange={(e) => setFilters({ ...filters, type: e.target.value as any })}
+          onChange={(e) => setFilters({ ...filters, type: e.target.value as 'all' | 'college' | 'department' | 'office' })}
         >
           <option value="all">All Types</option>
           <option value="college">Colleges</option>
@@ -461,6 +461,7 @@ export function DepartmentDropdownExample({ collegeId }: { collegeId: string }) 
  * Example 11: Complete organization management page
  */
 export function CompleteOrganizationManagementExample() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- example component, selectedOrg used for demonstration
   const [selectedOrg, setSelectedOrg] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
@@ -471,7 +472,7 @@ export function CompleteOrganizationManagementExample() {
     sortOrder: 'asc',
   });
 
-  const updateOrg = useUpdateOrganization();
+  const _updateOrg = useUpdateOrganization();
   const deleteOrg = useDeleteOrganization();
 
   const handleToggleStatus = (id: string, currentStatus: boolean) => {

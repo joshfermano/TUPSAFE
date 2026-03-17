@@ -9,18 +9,22 @@ WORKDIR /app
 ARG APP_NAME
 ENV APP_NAME=${APP_NAME}
 
+# CI=true prevents pnpm interactive prompts in Docker builds
+ENV CI=true
+
 # Install dependencies needed for node-gyp and native modules
 RUN apk add --no-cache libc6-compat python3 make g++
 
 # Enable corepack for pnpm version management
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
-# Copy lockfile first for pnpm fetch (Docker layer cache optimization)
-COPY pnpm-lock.yaml ./
+# Copy lockfile AND .npmrc first for pnpm fetch (Docker layer cache optimization)
+# .npmrc must be present before fetch so pnpm uses correct node-linker/hoist settings
+COPY pnpm-lock.yaml .npmrc ./
 RUN pnpm fetch
 
 # Copy package manifests
-COPY package.json pnpm-workspace.yaml .npmrc turbo.json ./
+COPY package.json pnpm-workspace.yaml turbo.json ./
 COPY apps/employee/package.json ./apps/employee/
 COPY apps/admin/package.json ./apps/admin/
 COPY packages/database/package.json ./packages/database/
@@ -28,8 +32,9 @@ COPY packages/auth/package.json ./packages/auth/
 COPY packages/types/package.json ./packages/types/
 COPY packages/shared-ui/package.json ./packages/shared-ui/
 
-# Install ALL dependencies (including devDependencies for development)
-RUN pnpm install --frozen-lockfile --ignore-scripts
+# Install ALL dependencies from store (populated by pnpm fetch)
+# --offline uses only the local store, --frozen-lockfile ensures lockfile isn't modified
+RUN pnpm install --frozen-lockfile --offline
 
 # Copy source code (will be overridden by volume mounts in dev)
 COPY . .

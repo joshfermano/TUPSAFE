@@ -10,7 +10,7 @@
  */
 
 import * as React from 'react';
-import { User, GraduationCap, Briefcase, Mail, Phone, MapPin } from 'lucide-react';
+import { User, GraduationCap, Briefcase, Mail, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';

@@ -7,6 +7,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./pdf": {
+      "types": "./dist/pdf-exports.d.ts",
+      "default": "./dist/pdf-exports.js"
+    },
     "./components/*": {
       "types": "./dist/components/*.d.ts",
       "default": "./dist/components/*.js"

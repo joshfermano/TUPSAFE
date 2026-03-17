@@ -210,7 +210,7 @@ export default function ApplicationsPage() {
 
   // Filter applications by search query (client-side)
   const filteredApplications =
-    data?.applications.filter(
+    data?.applications?.filter(
       (app) =>
         app.position.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         app.applicationNumber

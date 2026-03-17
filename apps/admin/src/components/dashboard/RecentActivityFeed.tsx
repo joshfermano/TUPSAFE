@@ -101,7 +101,7 @@ export function RecentActivityFeed({ activities }: RecentActivityFeedProps) {
       <CardContent>
         <ScrollArea className="h-[400px] pr-4">
           <div className="space-y-4">
-            {activities.map((activity: any, index: number) => (
+            {activities.map((activity, index) => (
               <div key={activity.id}>
                 <div className="flex items-start gap-3">
                   {/* Activity Icon */}
@@ -119,7 +119,7 @@ export function RecentActivityFeed({ activities }: RecentActivityFeedProps) {
                     {activity.user && (
                       <div className="flex items-center gap-2">
                         <Avatar className="h-5 w-5">
-                          <AvatarImage src={activity.user.avatarUrl || undefined} alt={activity.user.name} />
+                          <AvatarImage src={(activity.user as { name: string; role: string; avatarUrl?: string }).avatarUrl || undefined} alt={activity.user.name} />
                           <AvatarFallback className="text-[10px]">
                             {getInitials(activity.user.name)}
                           </AvatarFallback>

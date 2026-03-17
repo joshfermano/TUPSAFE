@@ -57,9 +57,9 @@ function loadChatHistory(): ChatMessage[] {
     if (!stored) return [];
 
     const parsed = JSON.parse(stored);
-    return parsed.map((msg: any) => ({
+    return parsed.map((msg: Record<string, unknown>) => ({
       ...msg,
-      timestamp: new Date(msg.timestamp),
+      timestamp: new Date(msg.timestamp as string | number),
     }));
   } catch (error) {
     console.error('Failed to load chat history:', error);
@@ -89,7 +89,7 @@ function getSessionId(): string {
     const newId = generateSessionId();
     localStorage.setItem(SESSION_KEY, newId);
     return newId;
-  } catch (error) {
+  } catch (_error) {
     return generateSessionId();
   }
 }
@@ -162,7 +162,7 @@ function parseSSEBuffer(buffer: string): {
     const dataStart = line.indexOf(':');
     if (dataStart === -1) continue;
 
-    let data = line.slice(dataStart + 1).trim();
+    const data = line.slice(dataStart + 1).trim();
 
     // Handle [DONE] signal
     if (data === '[DONE]') {
@@ -269,7 +269,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
 
         const decoder = new TextDecoder();
         let accumulatedContent = '';
-        let toolsUsed: string[] = [];
+        const toolsUsed: string[] = [];
         let sseBuffer = '';
 
         while (true) {

@@ -7,7 +7,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar'
 import { Button } from '../../components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../../components/ui/sheet';
 import { cn } from '../../lib/utils';
-import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -47,7 +46,6 @@ interface NavItemProps {
   item: NavigationItem;
   isActive: boolean;
   onClick: () => void;
-  prefersReducedMotion: boolean;
   isExpanded?: boolean;
   onToggle?: () => void;
   onNavigate?: (href: string) => void;
@@ -59,7 +57,6 @@ interface UserInfoProps {
   email?: string;
   initials: string;
   avatarUrl?: string | null;
-  prefersReducedMotion: boolean;
 }
 
 interface DashboardSidebarProps {
@@ -70,77 +67,26 @@ interface DashboardSidebarProps {
 }
 
 // ============================================================================
-// CUSTOM HOOKS
-// ============================================================================
-
-/**
- * Hook to detect if user prefers reduced motion
- * Respects system accessibility preferences
- */
-function useReducedMotion(): boolean {
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setPrefersReducedMotion(mediaQuery.matches);
-
-    const handleChange = (event: MediaQueryListEvent) => {
-      setPrefersReducedMotion(event.matches);
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
-
-  return prefersReducedMotion;
-}
-
-// ============================================================================
-// ANIMATION UTILITIES
-// ============================================================================
-
-/**
- * Returns animation props based on reduced motion preference
- * Disables animations if user prefers reduced motion
- */
-function getAnimationProps(
-  prefersReducedMotion: boolean,
-  animationProps: object
-) {
-  return prefersReducedMotion ? {} : animationProps;
-}
-
-// ============================================================================
 // MEMOIZED COMPONENTS
 // ============================================================================
 
 /**
  * Minimalistic UserInfo component with clean design
- * Simple hover effect with subtle scale
+ * Uses CSS transitions for smooth hover effects without Framer Motion overhead
  */
 const UserInfo = memo<UserInfoProps>(
-  ({ email, initials, avatarUrl, prefersReducedMotion }) => {
+  ({ email, initials, avatarUrl }) => {
     return (
-      <motion.div
-        className="group cursor-pointer"
-        {...getAnimationProps(prefersReducedMotion, {
-          initial: { opacity: 0, y: -8 },
-          animate: { opacity: 1, y: 0 },
-          transition: { duration: 0.4, ease: 'easeOut' },
-        })}>
+      <div className="group cursor-pointer">
         <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50/50 dark:bg-slate-800/30 border border-slate-200/50 dark:border-slate-700/30 transition-all duration-300 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 hover:border-[#093FB4]/20 dark:hover:border-[#093FB4]/30">
-          <motion.div
-            {...getAnimationProps(prefersReducedMotion, {
-              whileHover: { scale: 1.05 },
-              transition: { duration: 0.2 },
-            })}>
+          <div className="transition-transform duration-200 hover:scale-105">
             <Avatar className="h-10 w-10 ring-2 ring-slate-200 dark:ring-slate-700 transition-all duration-300 group-hover:ring-primary/30">
               <AvatarImage src={avatarUrl || undefined} alt={email?.split('@')[0] || 'User'} />
               <AvatarFallback className="bg-primary text-white font-semibold text-sm">
                 {initials}
               </AvatarFallback>
             </Avatar>
-          </motion.div>
+          </div>
 
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate leading-tight">
@@ -151,7 +97,7 @@ const UserInfo = memo<UserInfoProps>(
             </p>
           </div>
         </div>
-      </motion.div>
+      </div>
     );
   }
 );
@@ -168,7 +114,6 @@ const NavItem = memo<NavItemProps>(
     item,
     isActive,
     onClick,
-    prefersReducedMotion,
     isExpanded,
     onToggle,
     onNavigate,
@@ -180,19 +125,15 @@ const NavItem = memo<NavItemProps>(
 
     return (
       <div>
-        <motion.button
+        <button
           onClick={hasSubItems ? onToggle : onClick}
-          {...getAnimationProps(prefersReducedMotion, {
-            whileHover: { x: isCollapsed ? 0 : 2 },
-            whileTap: { scale: 0.98 },
-            transition: { duration: 0.2 },
-          })}
           className={cn(
             'relative w-full flex items-center rounded-xl text-sm font-medium transition-all duration-300 group',
             isCollapsed ? 'justify-center px-2 py-3' : 'gap-3 px-4 py-3',
             isActive
               ? 'bg-primary text-white shadow-sm shadow-primary/20'
-              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100'
+              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100',
+            !isCollapsed && 'hover:translate-x-0.5 active:scale-[0.98]'
           )}
           title={isCollapsed ? item.name : undefined}>
           <Icon
@@ -219,50 +160,42 @@ const NavItem = memo<NavItemProps>(
                   )}
                 />
               ) : isActive ? (
-                <motion.div
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="h-1.5 w-1.5 rounded-full bg-white"
-                />
+                <div className="h-1.5 w-1.5 rounded-full bg-white animate-in fade-in zoom-in duration-300" />
               ) : null}
             </>
           )}
-        </motion.button>
+        </button>
 
-        {/* Sub-items with smooth expand/collapse animation - Hidden when collapsed */}
+        {/* Sub-items with smooth expand/collapse via CSS grid-rows trick - Hidden when collapsed */}
         {hasSubItems && !isCollapsed && (
-          <motion.div
-            initial={false}
-            animate={{
-              height: isExpanded ? 'auto' : 0,
-              opacity: isExpanded ? 1 : 0,
-            }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="overflow-hidden">
-            <div className="mt-1 ml-4 space-y-1 border-l-2 border-slate-200 dark:border-slate-700 pl-4 py-1">
-              {item.subItems?.map((subItem) => {
-                const isSubActive = currentPathname === subItem.href;
+          <div
+            className={cn(
+              'grid transition-all duration-300 ease-in-out',
+              isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+            )}>
+            <div className="overflow-hidden">
+              <div className="mt-1 ml-4 space-y-1 border-l-2 border-slate-200 dark:border-slate-700 pl-4 py-1">
+                {item.subItems?.map((subItem) => {
+                  const isSubActive = currentPathname === subItem.href;
 
-                return (
-                  <motion.button
-                    key={subItem.href}
-                    onClick={() => onNavigate?.(subItem.href)}
-                    {...getAnimationProps(prefersReducedMotion, {
-                      whileHover: { x: 2 },
-                      transition: { duration: 0.2 },
-                    })}
-                    className={cn(
-                      'w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200',
-                      isSubActive
-                        ? 'bg-primary/10 text-primary font-medium'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100'
-                    )}>
-                    {subItem.name}
-                  </motion.button>
-                );
-              })}
+                  return (
+                    <button
+                      key={subItem.href}
+                      onClick={() => onNavigate?.(subItem.href)}
+                      className={cn(
+                        'w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200',
+                        'hover:translate-x-0.5',
+                        isSubActive
+                          ? 'bg-primary/10 text-primary font-medium'
+                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100'
+                      )}>
+                      {subItem.name}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </motion.div>
+          </div>
         )}
       </div>
     );
@@ -287,7 +220,6 @@ const DashboardSidebar = memo(function DashboardSidebar({
   const pathname = usePathname();
   const router = useRouter();
   const { user, profile, signOut } = useAuth();
-  const prefersReducedMotion = useReducedMotion();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
   // Memoize navigation items array based on user type
@@ -425,13 +357,7 @@ const DashboardSidebar = memo(function DashboardSidebar({
         {/* Sidebar Header - Clean and Simple */}
         <div className="flex flex-col gap-4 p-6 border-b border-slate-200 dark:border-slate-800">
           {/* Logo - TUP Logo with clean styling */}
-          <motion.div
-            className="flex items-center gap-3"
-            {...getAnimationProps(prefersReducedMotion, {
-              initial: { opacity: 0, y: -12 },
-              animate: { opacity: 1, y: 0 },
-              transition: { duration: 0.5, ease: 'easeOut' },
-            })}>
+          <div className="flex items-center gap-3">
             <div className="flex items-center justify-center shrink-0">
               <Image
                 src="/tup-logo.png"
@@ -451,7 +377,7 @@ const DashboardSidebar = memo(function DashboardSidebar({
                 </span>
               </div>
             )}
-          </motion.div>
+          </div>
 
           {/* Collapse Toggle Button - Visible only on tablets (md:flex lg:hidden) */}
           {onToggleCollapse && (
@@ -475,7 +401,6 @@ const DashboardSidebar = memo(function DashboardSidebar({
               email={user?.email}
               initials={userInitials}
               avatarUrl={profile?.avatarUrl}
-              prefersReducedMotion={prefersReducedMotion}
             />
           )}
         </div>
@@ -490,52 +415,39 @@ const DashboardSidebar = memo(function DashboardSidebar({
             const isExpanded = expandedItems.has(item.name);
 
             return (
-              <motion.div
-                key={item.name}
-                {...getAnimationProps(prefersReducedMotion, {
-                  initial: { opacity: 0, x: -12 },
-                  animate: { opacity: 1, x: 0 },
-                  transition: {
-                    duration: 0.3,
-                    delay: index * 0.05,
-                    ease: 'easeOut',
-                  },
-                })}>
+              <div
+                key={item.name}>
                 <NavItem
                   item={item}
                   isActive={isActive}
                   onClick={() => item.href && handleNavigate(item.href)}
-                  prefersReducedMotion={prefersReducedMotion}
                   isExpanded={isExpanded}
                   onToggle={() => handleToggle(item.name)}
                   onNavigate={handleNavigate}
                   currentPathname={pathname || ''}
                   isCollapsed={isCollapsed}
                 />
-              </motion.div>
+              </div>
             );
           })}
         </nav>
 
         {/* Sidebar Footer - Simple Sign Out Button */}
         <div className="p-4 border-t border-slate-200 dark:border-slate-800">
-          <motion.div
-            {...getAnimationProps(prefersReducedMotion, {
-              whileHover: { x: isCollapsed ? 0 : 2 },
-              whileTap: { scale: 0.98 },
-            })}>
+          <div>
             <Button
               variant="ghost"
               className={cn(
-                "w-full gap-3 text-slate-700 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all duration-300",
-                isCollapsed ? "justify-center px-2" : "justify-start"
+                "w-full gap-3 text-slate-700 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all duration-300 active:scale-[0.98]",
+                isCollapsed ? "justify-center px-2" : "justify-start",
+                !isCollapsed && "hover:translate-x-0.5"
               )}
               onClick={handleSignOut}
               title={isCollapsed ? "Sign Out" : undefined}>
               <LogOut className="h-5 w-5" />
               {!isCollapsed && <span>Sign Out</span>}
             </Button>
-          </motion.div>
+          </div>
         </div>
       </div>
     </div>

@@ -4,16 +4,20 @@
  * Provides functionality for generating, downloading, and previewing
  * PDS (Personal Data Sheet) forms as PDF documents.
  *
- * Uses @react-pdf/renderer for client-side PDF generation.
+ * Uses dynamic imports for @react-pdf/renderer and PDF components
+ * to avoid loading ~50KB+ of PDF libraries on pages that don't
+ * immediately need PDF generation. The heavy imports are deferred
+ * until the user actually triggers PDF generation.
  *
  * @module hooks/usePDSPdf
  */
 
 import { useState, useCallback } from 'react';
-import { pdf } from '@react-pdf/renderer';
-import { PDSDocument, ensurePDSFontsRegistered } from '@tupsafe/shared-ui/pds-pdf';
 import type { PDSData } from '@tupsafe/shared-ui/pds-pdf';
 import { validatePDSForPDF } from '../lib/utils/pds-validation';
+
+// Re-export type so consumers don't need a separate import
+export type { PDSData } from '@tupsafe/shared-ui/pds-pdf';
 
 // ============================================================================
 // Types
@@ -107,6 +111,10 @@ function triggerDownload(blob: Blob, filename: string): void {
  * - downloadPDF: Generates and downloads the PDF
  * - openPDFInNewTab: Generates and opens PDF in a new tab
  *
+ * PDF libraries (@react-pdf/renderer, PDS document components) are loaded
+ * on-demand via dynamic imports when generatePDF is first called, keeping
+ * the initial page bundle lean.
+ *
  * @returns Object containing PDF generation functions and state
  *
  * @example
@@ -154,6 +162,7 @@ export function usePDSPdf(): UsePDSPdfReturn {
 
   /**
    * Generate a PDF blob from PDS data
+   * Dynamically imports @react-pdf/renderer and PDS components on first call
    */
   const generatePDF = useCallback(async (pdsData: PDSData): Promise<Blob> => {
     setIsGenerating(true);
@@ -230,6 +239,12 @@ export function usePDSPdf(): UsePDSPdfReturn {
       pdsData.recognitions = pdsData.recognitions || [];
       pdsData.associations = pdsData.associations || [];
       pdsData.references = pdsData.references || [];
+
+      // STEP 7: Dynamically import PDF libraries (deferred from top-level)
+      const [{ pdf }, { PDSDocument, ensurePDSFontsRegistered }] = await Promise.all([
+        import('@react-pdf/renderer'),
+        import('@tupsafe/shared-ui/pds-pdf'),
+      ]);
 
       // Get base URL for font paths and ensure fonts are registered
       const baseUrl =

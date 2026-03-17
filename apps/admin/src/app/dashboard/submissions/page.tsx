@@ -10,7 +10,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { usePagination } from '@/hooks/usePagination';
-import { CheckCircle, Plus } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import {
   SubmissionStatsCards,
   SubmissionFilters,

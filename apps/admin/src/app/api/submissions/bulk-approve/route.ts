@@ -72,11 +72,11 @@ export async function POST(request: NextRequest) {
 
     // Separate PDS and SALN submission IDs
     const pdsIds = validatedData.submissionIds
-      .filter((s: any) => s.type === 'pds')
-      .map((s: any) => s.id);
+      .filter((s) => s.type === 'pds')
+      .map((s) => s.id);
     const salnIds = validatedData.submissionIds
-      .filter((s: any) => s.type === 'saln')
-      .map((s: any) => s.id);
+      .filter((s) => s.type === 'saln')
+      .map((s) => s.id);
 
     // Fetch all PDS submissions with employee info
     const pdsSubmissionsToApprove = pdsIds.length

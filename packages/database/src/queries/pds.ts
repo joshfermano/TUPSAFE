@@ -24,7 +24,7 @@ import {
   pdsOtherInfo,
   archives,
 } from '../schema';
-import { eq, and, desc, gte, notInArray, inArray } from 'drizzle-orm';
+import { eq, and, asc, desc, gte, notInArray, inArray } from 'drizzle-orm';
 import type {
   PdsSubmission,
   PdsPersonalInfo,
@@ -238,100 +238,59 @@ export async function getPDSSubmissionById(
       throw new Error('Valid user ID is required');
     }
 
-    // Fetch main submission with ownership validation
-    const [submission] = await db
-      .select()
-      .from(pdsSubmissions)
-      .where(and(eq(pdsSubmissions.id, id), eq(pdsSubmissions.userId, userId)))
-      .limit(1);
+    // Single relational query: fetches the submission + all 9 child tables via JOINs.
+    // Ownership is validated inline via the `where` clause — no separate round-trip needed.
+    const result = await db.query.pdsSubmissions.findFirst({
+      where: and(
+        eq(pdsSubmissions.id, id),
+        eq(pdsSubmissions.userId, userId)
+      ),
+      with: {
+        personalInfo: true,
+        familyBackground: true,
+        children: {
+          orderBy: asc(pdsChildren.dateOfBirth),
+        },
+        education: {
+          orderBy: asc(pdsEducation.level),
+        },
+        civilService: {
+          orderBy: desc(pdsCivilService.dateOfExam),
+        },
+        workExperience: {
+          orderBy: desc(pdsWorkExperience.dateFrom),
+        },
+        voluntaryWork: {
+          orderBy: desc(pdsVoluntaryWork.dateFrom),
+        },
+        training: {
+          orderBy: desc(pdsTraining.dateFrom),
+        },
+        otherInfo: true,
+      },
+    });
 
-    if (!submission) {
+    if (!result) {
       return null;
     }
 
-    // Fetch all related sections in parallel for optimal performance
-    const [
-      personalInfo,
-      familyBackground,
-      children,
-      education,
-      civilService,
-      workExperience,
-      voluntaryWork,
-      training,
-      otherInfo,
-    ] = await Promise.all([
-      // One-to-one relations
-      db
-        .select()
-        .from(pdsPersonalInfo)
-        .where(eq(pdsPersonalInfo.pdsSubmissionId, id))
-        .limit(1)
-        .then((rows) => rows[0] || null),
-
-      db
-        .select()
-        .from(pdsFamilyBackground)
-        .where(eq(pdsFamilyBackground.pdsSubmissionId, id))
-        .limit(1)
-        .then((rows) => rows[0] || null),
-
-      // One-to-many relations
-      db
-        .select()
-        .from(pdsChildren)
-        .where(eq(pdsChildren.pdsSubmissionId, id))
-        .orderBy(pdsChildren.dateOfBirth),
-
-      db
-        .select()
-        .from(pdsEducation)
-        .where(eq(pdsEducation.pdsSubmissionId, id))
-        .orderBy(pdsEducation.level),
-
-      db
-        .select()
-        .from(pdsCivilService)
-        .where(eq(pdsCivilService.pdsSubmissionId, id))
-        .orderBy(desc(pdsCivilService.dateOfExam)),
-
-      db
-        .select()
-        .from(pdsWorkExperience)
-        .where(eq(pdsWorkExperience.pdsSubmissionId, id))
-        .orderBy(desc(pdsWorkExperience.dateFrom)),
-
-      db
-        .select()
-        .from(pdsVoluntaryWork)
-        .where(eq(pdsVoluntaryWork.pdsSubmissionId, id))
-        .orderBy(desc(pdsVoluntaryWork.dateFrom)),
-
-      db
-        .select()
-        .from(pdsTraining)
-        .where(eq(pdsTraining.pdsSubmissionId, id))
-        .orderBy(desc(pdsTraining.dateFrom)),
-
-      db
-        .select()
-        .from(pdsOtherInfo)
-        .where(eq(pdsOtherInfo.pdsSubmissionId, id))
-        .limit(1)
-        .then((rows) => rows[0] || null),
-    ]);
+    // Destructure to match CompletePDSSubmission shape.
+    // One-to-one relations (personalInfo, familyBackground, otherInfo) are already
+    // typed as T | null by the relational API.  The `user` relation is excluded
+    // because CompletePDSSubmission only exposes the submission row itself.
+    const { personalInfo, familyBackground, children, education, civilService, workExperience, voluntaryWork, training, otherInfo, ...submission } = result;
 
     return {
       submission,
-      personalInfo,
-      familyBackground,
+      personalInfo: personalInfo ?? null,
+      familyBackground: familyBackground ?? null,
       children,
       education,
       civilService,
       workExperience,
       voluntaryWork,
       training,
-      otherInfo,
+      otherInfo: otherInfo ?? null,
     };
   } catch (error) {
     console.error('[getPDSSubmissionById] Database error:', error);

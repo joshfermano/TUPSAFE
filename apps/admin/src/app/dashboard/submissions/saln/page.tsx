@@ -12,7 +12,6 @@ import {
   CheckCircle,
   XCircle,
   TrendingUp,
-  TrendingDown,
   Loader2,
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
@@ -113,7 +112,8 @@ const formatCurrency = (amount: number): string => {
   }).format(amount);
 };
 
-// Custom hook for number counting animation
+// Custom hook for number counting animation (currently unused, kept for future use)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const useCountingAnimation = (end: number, duration: number = 1500) => {
   const [count, setCount] = React.useState(0);
 
@@ -387,7 +387,7 @@ export default function SalnSubmissionsPage() {
   const { user } = useAuth();
 
   // PDF hook
-  const { downloadPDF, isGenerating } = useSALNPdf();
+  const { downloadPDF, isGenerating: _isGenerating } = useSALNPdf();
 
   // Pagination hook
   const { page, pageSize, paginationParams, setPage, setPageSize } = usePagination(20);
@@ -416,7 +416,7 @@ export default function SalnSubmissionsPage() {
     rejectSubmissionAsync,
     isApproving,
     isRejecting,
-    useCompleteSubmission,
+    useCompleteSubmission: _useCompleteSubmission,
   } = useSalnSubmissionsQuery(filters);
 
   const isSubmitting = isApproving || isRejecting;
@@ -533,37 +533,37 @@ export default function SalnSubmissionsPage() {
           },
           spouseInfo,
           children: [],
-          realProperties: (salnData?.realProperties || []).map((prop: any) => ({
-            description: prop.description || '',
-            kind: prop.kind || 'residential',
-            exactLocation: prop.exactLocation || '',
-            assessedValue: parseFloat(prop.assessedValue || '0'),
-            currentFairMarketValue: parseFloat(prop.currentFairMarketValue || '0'),
-            acquisitionYear: prop.acquisitionYear || new Date().getFullYear(),
-            acquisitionMode: prop.acquisitionMode || 'Purchase',
-            acquisitionCost: parseFloat(prop.acquisitionCost || '0'),
+          realProperties: (salnData?.realProperties || []).map((prop: Record<string, unknown>) => ({
+            description: (prop.description as string) || '',
+            kind: (prop.kind as string) || 'residential',
+            exactLocation: (prop.exactLocation as string) || '',
+            assessedValue: parseFloat((prop.assessedValue as string) || '0'),
+            currentFairMarketValue: parseFloat((prop.currentFairMarketValue as string) || '0'),
+            acquisitionYear: (prop.acquisitionYear as number) || new Date().getFullYear(),
+            acquisitionMode: (prop.acquisitionMode as string) || 'Purchase',
+            acquisitionCost: parseFloat((prop.acquisitionCost as string) || '0'),
           })),
-          personalProperties: (salnData?.personalProperties || []).map((prop: any) => ({
-            description: prop.description || '',
-            yearAcquired: prop.yearAcquired || new Date().getFullYear(),
-            acquisitionCost: parseFloat(prop.acquisitionCost || '0'),
+          personalProperties: (salnData?.personalProperties || []).map((prop: Record<string, unknown>) => ({
+            description: (prop.description as string) || '',
+            yearAcquired: (prop.yearAcquired as number) || new Date().getFullYear(),
+            acquisitionCost: parseFloat((prop.acquisitionCost as string) || '0'),
           })),
-          liabilities: (salnData?.liabilities || []).map((liability: any) => ({
-            nature: liability.nature || '',
-            creditorName: liability.creditorName || '',
-            outstandingBalance: parseFloat(liability.outstandingBalance || '0'),
+          liabilities: (salnData?.liabilities || []).map((liability: Record<string, unknown>) => ({
+            nature: (liability.nature as string) || '',
+            creditorName: (liability.creditorName as string) || '',
+            outstandingBalance: parseFloat((liability.outstandingBalance as string) || '0'),
           })),
-          businessInterests: (salnData?.businessInterests || []).map((business: any) => ({
-            entityName: business.entityName || '',
-            businessAddress: business.businessAddress || '',
-            natureOfBusiness: business.natureOfBusiness || '',
-            dateOfAcquisition: business.dateOfAcquisition || new Date().toISOString(),
+          businessInterests: (salnData?.businessInterests || []).map((business: Record<string, unknown>) => ({
+            entityName: (business.entityName as string) || '',
+            businessAddress: (business.businessAddress as string) || '',
+            natureOfBusiness: (business.natureOfBusiness as string) || '',
+            dateOfAcquisition: (business.dateOfAcquisition as string) || new Date().toISOString(),
           })),
-          relativesInGov: (salnData?.relativesInGov || []).map((relative: any) => ({
-            name: relative.name || '',
-            relationship: relative.relationship || '',
-            position: relative.position || '',
-            agencyAddress: relative.agencyAddress || '',
+          relativesInGov: (salnData?.relativesInGov || []).map((relative: Record<string, unknown>) => ({
+            name: (relative.name as string) || '',
+            relationship: (relative.relationship as string) || '',
+            position: (relative.position as string) || '',
+            agencyAddress: (relative.agencyAddress as string) || '',
           })),
           totalAssets,
           totalLiabilities,

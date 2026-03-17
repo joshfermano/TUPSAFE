@@ -30,12 +30,31 @@ import {
   pdsSubmissions,
   salnSubmissions,
 } from '@tupsafe/database/server';
-import { and, eq, or, ilike, desc, asc, sql, count, inArray } from 'drizzle-orm';
+import { and, eq, sql, count, inArray } from 'drizzle-orm';
 import {
   submissionListQuerySchema,
   type SubmissionListResponse,
   type SubmissionListItem,
 } from '@tupsafe/types';
+
+interface SubmissionQueryResult {
+  id: string;
+  type: 'pds' | 'saln';
+  status: string;
+  submittedAt: Date | null;
+  version?: number;
+  fiscalYear?: number;
+  approvedBy: string | null;
+  approvedAt: Date | null;
+  userId: string;
+  employeeId: string | null;
+  firstName: string;
+  lastName: string;
+  departmentId: string | null;
+  departmentName: string | null;
+  positionId: string | null;
+  positionTitle: string | null;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -89,7 +108,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch PDS submissions if type allows
-    let pdsResults: any[] = [];
+    let pdsResults: SubmissionQueryResult[] = [];
     if (validatedQuery.type === 'pds' || validatedQuery.type === 'all') {
       // Add department filter to conditions
       if (validatedQuery.departmentId) {
@@ -133,7 +152,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch SALN submissions if type allows
-    let salnResults: any[] = [];
+    let salnResults: SubmissionQueryResult[] = [];
     if (validatedQuery.type === 'saln' || validatedQuery.type === 'all') {
       // Add department filter to conditions
       if (validatedQuery.departmentId) {

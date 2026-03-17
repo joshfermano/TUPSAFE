@@ -98,10 +98,14 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
     positionTitle: string;
     currentStatus: ApplicationStatus;
   } | null>(null);
-  const [applicationsFilters, setApplicationsFilters] = useState({
+  const [applicationsFilters, setApplicationsFilters] = useState<{
+    page: number;
+    limit: number;
+    status: ApplicationStatus | 'all';
+  }>({
     page: 1,
     limit: 10,
-    status: 'all' as const,
+    status: 'all',
   });
 
   // Fetch position details
@@ -582,7 +586,7 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
                 onChange={(e) =>
                   setApplicationsFilters((prev) => ({
                     ...prev,
-                    status: e.target.value as any,
+                    status: e.target.value as ApplicationStatus | 'all',
                     page: 1,
                   }))
                 }>

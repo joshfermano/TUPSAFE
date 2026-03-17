@@ -12,7 +12,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Search, X, Filter, SlidersHorizontal } from 'lucide-react';
+import { Search, X, SlidersHorizontal } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -72,7 +72,7 @@ const EMPLOYMENT_CATEGORIES = [
   { value: 'not_applicable', label: 'Not Applicable' },
 ];
 
-export function UserFilters({ onFilterChange, totalResults }: UserFiltersProps) {
+export function UserFilters({ onFilterChange, totalResults: _totalResults }: UserFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 

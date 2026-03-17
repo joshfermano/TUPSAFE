@@ -13,7 +13,6 @@ import {
   Image as ImageIcon,
   Download,
   Eye,
-  FileType2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -80,6 +79,7 @@ function AttachmentCard({ attachment }: { attachment: PdsAttachment }) {
         {/* File Icon/Thumbnail */}
         <div className="flex-shrink-0">
           {isImage && hasValidUrl && !imageError ? (
+            /* eslint-disable-next-line @next/next/no-img-element -- dynamic Supabase storage URL */
             <img
               src={attachment.fileUrl!}
               alt={attachment.fileName}
@@ -172,6 +172,7 @@ function AttachmentCard({ attachment }: { attachment: PdsAttachment }) {
               <DialogTitle>{attachment.fileName}</DialogTitle>
             </DialogHeader>
             <div className="flex items-center justify-center overflow-auto">
+              {/* eslint-disable-next-line @next/next/no-img-element -- dynamic Supabase storage URL */}
               <img
                 src={attachment.fileUrl!}
                 alt={attachment.fileName}

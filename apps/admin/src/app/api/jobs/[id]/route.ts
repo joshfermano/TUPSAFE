@@ -327,7 +327,6 @@ export async function PATCH(
     }
 
     // Transform salary values from numbers to strings for database (decimal type)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { salaryRangeMin, salaryRangeMax, ...restData } = validatedData;
     const updateData: Record<string, unknown> = {
       ...restData,

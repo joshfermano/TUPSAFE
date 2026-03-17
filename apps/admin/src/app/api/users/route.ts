@@ -17,7 +17,8 @@
  * - Audit logging for sensitive operations
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { apiSuccess, apiError } from '../../../lib/api-helpers';
 import { checkUserRoleFromSupabase, getProfilePicturePublicUrl } from '@tupsafe/auth/server';
 import { db, profiles, departments, positions } from '@tupsafe/database/server';
 import { and, eq, ne, sql, count, or, ilike, asc, desc } from 'drizzle-orm';
@@ -33,10 +34,7 @@ export async function GET(request: NextRequest) {
     const hasPermission = await checkUserRoleFromSupabase(['admin', 'co_admin', 'hr', 'supervisor'], 'admin');
 
     if (!hasPermission) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Admin, HR, or Supervisor role required.' },
-        { status: 403 }
-      );
+      return apiError('Unauthorized. Admin, HR, or Supervisor role required.', 403);
     }
 
     // Parse and validate query parameters
@@ -273,27 +271,17 @@ export async function GET(request: NextRequest) {
       },
     };
 
-    return NextResponse.json(response, { status: 200 });
+    return apiSuccess(response);
   } catch (error) {
     console.error('User list error:', error);
 
-    // Handle validation errors
     if (error instanceof Error && error.name === 'ZodError') {
-      return NextResponse.json(
-        {
-          error: 'Invalid query parameters',
-          details: error.message,
-        },
-        { status: 400 }
-      );
+      return apiError(`Invalid query parameters: ${error.message}`);
     }
 
-    return NextResponse.json(
-      {
-        error: 'Failed to fetch users',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
+    return apiError(
+      error instanceof Error ? error.message : 'Failed to fetch users',
+      500
     );
   }
 }

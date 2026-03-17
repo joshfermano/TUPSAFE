@@ -247,6 +247,7 @@ export function SubmissionsDataTable({
         },
       },
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- columns are used to create the table; table cannot be a dep of its own input
     [data, onViewDetails, onApprove, onReject, onBulkSelect]
   );
 
