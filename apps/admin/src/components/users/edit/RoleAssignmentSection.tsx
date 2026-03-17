@@ -34,9 +34,9 @@ interface RoleAssignmentSectionProps {
 
 export function RoleAssignmentSection({
   control,
-  setValue,
+  setValue: _setValue,
   showCoAdminToggle,
-  isCoAdmin,
+  isCoAdmin: _isCoAdmin,
 }: RoleAssignmentSectionProps) {
   return (
     <Card>

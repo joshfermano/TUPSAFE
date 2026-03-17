@@ -4,7 +4,8 @@
  * POST /api/saln - Create new SALN submission
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { apiSuccess, apiPaginated, apiError } from '../../../lib/api-helpers';
 import { createServerClient } from '@tupsafe/auth/server';
 import { db } from '@tupsafe/database/server';
 import { profiles } from '@tupsafe/database/schema';
@@ -80,10 +81,7 @@ export async function GET(request: NextRequest) {
 
     if (authError || !user) {
       console.error('[GET /api/saln] Authentication failed:', authError);
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized. Please log in.' },
-        { status: 401 }
-      );
+      return apiError('Unauthorized. Please log in.', 401);
     }
 
     // ========================================================================
@@ -103,14 +101,7 @@ export async function GET(request: NextRequest) {
       console.error(
         `[GET /api/saln] Access denied for user ${user.id}: userType=${profile?.userType || 'null'}`
       );
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Access Denied',
-          message: 'SALN is only available to employees.',
-        },
-        { status: 403 }
-      );
+      return apiError('SALN is only available to employees.', 403);
     }
 
     // ========================================================================
@@ -129,25 +120,12 @@ export async function GET(request: NextRequest) {
 
     // Validate pagination parameters
     if (page < 1 || limit < 1) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            'Invalid pagination parameters. Page and limit must be positive integers.',
-        },
-        { status: 400 }
-      );
+      return apiError('Invalid pagination parameters. Page and limit must be positive integers.');
     }
 
     // Validate year if provided
     if (year !== undefined && (year < 2000 || year > new Date().getFullYear() + 1)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Invalid year. Must be between 2000 and ${new Date().getFullYear() + 1}`,
-        },
-        { status: 400 }
-      );
+      return apiError(`Invalid year. Must be between 2000 and ${new Date().getFullYear() + 1}`);
     }
 
     // Validate status if provided
@@ -160,13 +138,7 @@ export async function GET(request: NextRequest) {
         'rejected',
       ];
       if (!validStatuses.includes(status)) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
-          },
-          { status: 400 }
-        );
+        return apiError(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
       }
     }
 
@@ -190,27 +162,12 @@ export async function GET(request: NextRequest) {
       console.log(`[GET /api/saln] No submissions found for user ${user.id}`);
     }
 
-    return NextResponse.json({
-      success: true,
-      data: submissions,
-      pagination: {
-        page,
-        limit,
-        total: submissions.length,
-        hasMore: submissions.length === limit,
-      },
-    });
+    return apiPaginated(submissions, { page, limit, total: submissions.length });
   } catch (error) {
     console.error('[GET /api/saln] Error fetching SALN submissions:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : 'Failed to fetch SALN submissions',
-      },
-      { status: 500 }
+    return apiError(
+      error instanceof Error ? error.message : 'Failed to fetch SALN submissions',
+      500
     );
   }
 }
@@ -249,10 +206,7 @@ export async function POST(request: NextRequest) {
 
     if (authError || !user) {
       console.error('[POST /api/saln] Authentication failed:', authError);
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized. Please log in.' },
-        { status: 401 }
-      );
+      return apiError('Unauthorized. Please log in.', 401);
     }
 
     // ========================================================================
@@ -269,14 +223,7 @@ export async function POST(request: NextRequest) {
       console.error(
         `[POST /api/saln] Access denied for user ${user.id}: userType=${profile?.userType || 'null'}`
       );
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Access Denied',
-          message: 'SALN is only available to employees.',
-        },
-        { status: 403 }
-      );
+      return apiError('SALN is only available to employees.', 403);
     }
 
     // ========================================================================
@@ -287,10 +234,7 @@ export async function POST(request: NextRequest) {
       body = await request.json();
     } catch (parseError) {
       console.error('[POST /api/saln] Invalid JSON body:', parseError);
-      return NextResponse.json(
-        { success: false, error: 'Invalid request body. Expected valid JSON.' },
-        { status: 400 }
-      );
+      return apiError('Invalid request body. Expected valid JSON.');
     }
 
     // ========================================================================
@@ -300,10 +244,7 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!transformedData.year) {
-      return NextResponse.json(
-        { success: false, error: 'Year is required' },
-        { status: 400 }
-      );
+      return apiError('Year is required');
     }
 
     if (
@@ -312,27 +253,14 @@ export async function POST(request: NextRequest) {
         transformedData.filingType
       )
     ) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            'Valid filing type is required (joint, separate, or not_applicable)',
-        },
-        { status: 400 }
-      );
+      return apiError('Valid filing type is required (joint, separate, or not_applicable)');
     }
 
     // Validate year
     const year = typeof transformedData.year === 'string' ? parseInt(transformedData.year) : transformedData.year;
     const currentYear = new Date().getFullYear();
     if (year < 2000 || year > currentYear + 1) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Year must be between 2000 and ${currentYear + 1}`,
-        },
-        { status: 400 }
-      );
+      return apiError(`Year must be between 2000 and ${currentYear + 1}`);
     }
 
     // ========================================================================
@@ -387,14 +315,7 @@ export async function POST(request: NextRequest) {
       await updateSALNSubmission(editableSalnId, user.id, salnInput);
       await computeAndPersistCompletion(editableSalnId, user.id);
 
-      return NextResponse.json(
-        {
-          success: true,
-          data: { id: editableSalnId },
-          message: 'Submission updated successfully',
-        },
-        { status: 200 }
-      );
+      return apiSuccess({ id: editableSalnId });
     }
 
     // ========================================================================
@@ -410,36 +331,18 @@ export async function POST(request: NextRequest) {
       `[POST /api/saln] Created new SALN submission ${newSaln.id} for user ${user.id}, year ${year}`
     );
 
-    return NextResponse.json(
-      {
-        success: true,
-        data: { id: newSaln.id },
-        message: `SALN for year ${year} created successfully`,
-      },
-      { status: 201 }
-    );
+    return apiSuccess({ id: newSaln.id }, 201);
   } catch (error) {
     console.error('[POST /api/saln] Error creating SALN submission:', error);
 
     // Handle specific error cases
-    if (error instanceof Error) {
-      if (error.message.includes('already exists')) {
-        return NextResponse.json(
-          { success: false, error: error.message },
-          { status: 409 } // Conflict
-        );
-      }
+    if (error instanceof Error && error.message.includes('already exists')) {
+      return apiError(error.message, 409);
     }
 
-    return NextResponse.json(
-      {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : 'Failed to create SALN submission',
-      },
-      { status: 500 }
+    return apiError(
+      error instanceof Error ? error.message : 'Failed to create SALN submission',
+      500
     );
   }
 }

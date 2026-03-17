@@ -15,7 +15,7 @@ import {
 import { toast } from 'sonner';
 import { formatDistanceToNow, format } from 'date-fns';
 import { motion } from 'framer-motion';
-import { Bar, BarChart, Legend, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, XAxis, YAxis } from 'recharts';
 
 import {
   usePdsSubmissionsQuery,

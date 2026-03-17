@@ -21,7 +21,6 @@ import {
 } from '@/components/ui/accordion';
 import { CheckCircle, XCircle, User, Users, GraduationCap, Briefcase, Award } from 'lucide-react';
 import { usePDSDetails } from '@/hooks/useSubmissions';
-import { format } from 'date-fns';
 
 interface PDSDetailsDialogProps {
   open: boolean;
@@ -185,6 +184,7 @@ export function PDSDetailsDialog({
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- display-only component receiving well-typed data from PDSSubmissionDetail
 function PersonalInfoSection({ data }: { data: any }) {
   if (!data) return <div className="text-muted-foreground">No data available</div>;
 
@@ -214,7 +214,9 @@ function FamilyBackgroundSection({
   familyData,
   childrenData,
 }: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- display-only component
   familyData: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- display-only component
   childrenData: any[];
 }) {
   return (
@@ -235,7 +237,7 @@ function FamilyBackgroundSection({
         <div>
           <h3 className="font-semibold mb-3">Children</h3>
           <div className="space-y-2">
-            {childrenData.map((child: any, idx: number) => (
+            {childrenData.map((child, idx) => (
               <div key={idx} className="border rounded-lg p-3 grid grid-cols-2 gap-4">
                 <InfoField label="Name" value={child.name} />
                 <InfoField label="Date of Birth" value={child.dateOfBirth} />
@@ -248,6 +250,7 @@ function FamilyBackgroundSection({
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- display-only component
 function EducationSection({ education }: { education: any[] }) {
   if (!education || education.length === 0) {
     return <div className="text-muted-foreground">No education records</div>;
@@ -255,7 +258,7 @@ function EducationSection({ education }: { education: any[] }) {
 
   return (
     <div className="space-y-3">
-      {education.map((edu: any, idx: number) => (
+      {education.map((edu, idx) => (
         <div key={idx} className="border rounded-lg p-4">
           <div className="grid grid-cols-2 gap-4">
             <InfoField label="Level" value={edu.level} />
@@ -276,7 +279,9 @@ function WorkExperienceSection({
   workExperience,
   voluntaryWork,
 }: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- display-only component
   workExperience: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- display-only component
   voluntaryWork: any[];
 }) {
   return (
@@ -286,7 +291,7 @@ function WorkExperienceSection({
         <AccordionContent>
           {workExperience && workExperience.length > 0 ? (
             <div className="space-y-3">
-              {workExperience.map((work: any, idx: number) => (
+              {workExperience.map((work, idx) => (
                 <div key={idx} className="border rounded-lg p-4">
                   <div className="grid grid-cols-2 gap-4">
                     <InfoField label="Position" value={work.position} />
@@ -310,7 +315,7 @@ function WorkExperienceSection({
         <AccordionContent>
           {voluntaryWork && voluntaryWork.length > 0 ? (
             <div className="space-y-3">
-              {voluntaryWork.map((vol: any, idx: number) => (
+              {voluntaryWork.map((vol, idx) => (
                 <div key={idx} className="border rounded-lg p-4">
                   <div className="grid grid-cols-2 gap-4">
                     <InfoField label="Organization" value={vol.organization} />
@@ -335,8 +340,11 @@ function OtherInfoSection({
   training,
   otherInfo,
 }: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- display-only component
   civilService: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- display-only component
   training: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- display-only component
   otherInfo: any;
 }) {
   return (
@@ -346,7 +354,7 @@ function OtherInfoSection({
         <AccordionContent>
           {civilService && civilService.length > 0 ? (
             <div className="space-y-3">
-              {civilService.map((cs: any, idx: number) => (
+              {civilService.map((cs, idx) => (
                 <div key={idx} className="border rounded-lg p-4">
                   <div className="grid grid-cols-2 gap-4">
                     <InfoField label="Eligibility" value={cs.eligibility} />
@@ -369,7 +377,7 @@ function OtherInfoSection({
         <AccordionContent>
           {training && training.length > 0 ? (
             <div className="space-y-3">
-              {training.map((tr: any, idx: number) => (
+              {training.map((tr, idx) => (
                 <div key={idx} className="border rounded-lg p-4">
                   <div className="grid grid-cols-2 gap-4">
                     <InfoField label="Title" value={tr.title} />
@@ -402,6 +410,7 @@ function OtherInfoSection({
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- display utility accepting dynamic values
 function InfoField({ label, value }: { label: string; value: any }) {
   return (
     <div>

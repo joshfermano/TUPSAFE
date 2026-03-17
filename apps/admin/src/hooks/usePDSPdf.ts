@@ -5,15 +5,15 @@
  * PDS (Personal Data Sheet) forms as PDF documents using the shared
  * PDS PDF package.
  *
- * Uses @react-pdf/renderer for client-side PDF generation.
- * Components are imported from the shared package.
+ * Uses dynamic imports for @react-pdf/renderer and PDF components
+ * to avoid loading ~50KB+ of PDF libraries on pages that don't
+ * immediately need PDF generation.
  *
  * @module hooks/usePDSPdf
  */
 
 import { useState, useCallback } from 'react';
-import { pdf } from '@react-pdf/renderer';
-import { PDSDocument, ensurePDSFontsRegistered, type PDSData } from '@tupsafe/shared-ui';
+import type { PDSData } from '@tupsafe/shared-ui';
 
 // Re-export the transformation utility from employee portal
 // This stays in employee app as it's specific to form data transformation
@@ -108,10 +108,9 @@ function triggerDownload(blob: Blob, filename: string): void {
 /**
  * Hook for generating PDS PDF documents
  *
- * Provides three main functions:
- * - generatePDF: Creates a PDF blob from PDS data
- * - downloadPDF: Generates and downloads the PDF
- * - openPDFInNewTab: Generates and opens PDF in a new tab
+ * PDF libraries (@react-pdf/renderer, PDS document components) are loaded
+ * on-demand via dynamic imports when generatePDF is first called, keeping
+ * the initial page bundle lean.
  *
  * @returns Object containing PDF generation functions and state
  */
@@ -121,6 +120,7 @@ export function usePDSPdf(): UsePDSPdfReturn {
 
   /**
    * Generate a PDF blob from PDS data
+   * Dynamically imports @react-pdf/renderer and PDS components on first call
    */
   const generatePDF = useCallback(async (data: PDSData): Promise<Blob> => {
     setIsGenerating(true);
@@ -133,6 +133,12 @@ export function usePDSPdf(): UsePDSPdfReturn {
           'Cannot generate PDF: Personal information must include surname and firstName'
         );
       }
+
+      // Dynamically import PDF libraries (deferred from top-level)
+      const [{ pdf }, { PDSDocument, ensurePDSFontsRegistered }] = await Promise.all([
+        import('@react-pdf/renderer'),
+        import('@tupsafe/shared-ui/pds-pdf'),
+      ]);
 
       // Get base URL for font paths and register fonts
       const baseUrl =

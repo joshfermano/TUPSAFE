@@ -1,42 +1,93 @@
 /**
  * Admin Dashboard Page
  *
- * Comprehensive real-time analytics dashboard with interactive charts and compliance tracking
+ * Comprehensive real-time analytics dashboard with interactive charts and compliance tracking.
+ *
+ * Performance: Heavy chart components (UserGrowthChart, ComplianceByDeptChart,
+ * ComplianceOverview, DepartmentRankingsTable) are dynamically imported since
+ * they depend on recharts (~40KB) and are below the fold. The stats cards and
+ * skeleton loaders remain statically imported for fast initial render.
  */
 
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
 import {
   useDashboardOverview,
   useRefreshDashboard,
   useLastUpdated,
 } from '@/hooks/useDashboard';
+// Static imports: lightweight components needed for initial render and loading states
 import {
   DashboardStatsCards,
   DashboardStatsCardsSkeleton,
-  UserGrowthChart,
   UserGrowthChartSkeleton,
-  RecentActivityFeed,
   RecentActivityFeedSkeleton,
-  PendingTasksWidget,
   PendingTasksWidgetSkeleton,
-  ComplianceByDeptChart,
   ComplianceByDeptChartSkeleton,
-  UpcomingDeadlinesCard,
   UpcomingDeadlinesCardSkeleton,
-  ComplianceOverview,
   ComplianceOverviewSkeleton,
-  DepartmentRankingsTable,
   DepartmentRankingsTableSkeleton,
-  QuickActionsMenu,
 } from '@/components/dashboard';
 import Link from 'next/link';
+
+// ============================================================================
+// Dynamic imports for heavy chart components (recharts dependency ~40KB)
+// These are below the fold and benefit from code splitting
+// ============================================================================
+
+const ChartPlaceholder = () => (
+  <div className="rounded-lg border bg-card p-6">
+    <Skeleton className="h-[300px] w-full" />
+  </div>
+);
+
+const UserGrowthChart = dynamic(
+  () => import('@/components/dashboard/UserGrowthChart').then(m => ({ default: m.UserGrowthChart })),
+  { loading: () => <UserGrowthChartSkeleton /> }
+);
+
+const RecentActivityFeed = dynamic(
+  () => import('@/components/dashboard/RecentActivityFeed').then(m => ({ default: m.RecentActivityFeed })),
+  { loading: () => <RecentActivityFeedSkeleton /> }
+);
+
+const PendingTasksWidget = dynamic(
+  () => import('@/components/dashboard/PendingTasksWidget').then(m => ({ default: m.PendingTasksWidget })),
+  { loading: () => <PendingTasksWidgetSkeleton /> }
+);
+
+const ComplianceByDeptChart = dynamic(
+  () => import('@/components/dashboard/ComplianceByDeptChart').then(m => ({ default: m.ComplianceByDeptChart })),
+  { loading: () => <ComplianceByDeptChartSkeleton /> }
+);
+
+const UpcomingDeadlinesCard = dynamic(
+  () => import('@/components/dashboard/UpcomingDeadlinesCard').then(m => ({ default: m.UpcomingDeadlinesCard })),
+  { loading: () => <UpcomingDeadlinesCardSkeleton /> }
+);
+
+const ComplianceOverview = dynamic(
+  () => import('@/components/dashboard/ComplianceOverview').then(m => ({ default: m.ComplianceOverview })),
+  { loading: () => <ComplianceOverviewSkeleton /> }
+);
+
+const DepartmentRankingsTable = dynamic(
+  () => import('@/components/dashboard/DepartmentRankingsTable').then(m => ({ default: m.DepartmentRankingsTable })),
+  { loading: () => <DepartmentRankingsTableSkeleton /> }
+);
+
+const QuickActionsMenu = dynamic(
+  () => import('@/components/dashboard/QuickActionsMenu').then(m => ({ default: m.QuickActionsMenu })),
+  { loading: () => <ChartPlaceholder /> }
+);
 
 export default function DashboardPage() {
   const { data, isLoading, isError, error } = useDashboardOverview();
@@ -136,7 +187,7 @@ export default function DashboardPage() {
       {/* System Alerts */}
       {data.alerts.length > 0 && (
         <div className="space-y-2">
-          {data.alerts.map((alert: any) => (
+          {data.alerts.map((alert) => (
             <Alert
               key={alert.id}
               variant={alert.type === 'error' ? 'destructive' : 'default'}>

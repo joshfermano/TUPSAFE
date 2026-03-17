@@ -21,7 +21,7 @@ import {
   displayOrEmpty,
 } from './PDSStyles';
 import { ContinueText, PDSPageFooter } from './PDSComponents';
-import type { PDSData, Address } from './types';
+import type { PDSData } from './types';
 
 interface PDSPage1Props {
   data: PDSData;

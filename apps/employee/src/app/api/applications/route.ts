@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { apiSuccess, apiError } from '../../../lib/api-helpers';
 import { createServerClient } from '@tupsafe/auth/server';
 import { db } from '@tupsafe/database/server';
 import {
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return apiError('Unauthorized', 401);
     }
 
     // Verify user is an applicant using Drizzle (source of truth)
@@ -60,10 +61,7 @@ export async function GET(request: NextRequest) {
 
     if (!profile) {
       console.error('[Applications API] Profile not found for user:', user.id);
-      return NextResponse.json(
-        { error: 'User profile not found or invalid.' },
-        { status: 403 }
-      );
+      return apiError('User profile not found or invalid.', 403);
     }
 
     console.log('[Applications API] User profile:', {
@@ -77,19 +75,17 @@ export async function GET(request: NextRequest) {
     // Employees may have been hired from applicant status and should still see their application history
     const allowedUserTypes = ['applicant', 'employee'];
     if (!allowedUserTypes.includes(profile.userType ?? '')) {
-      return NextResponse.json({ error: 'Access denied.' }, { status: 403 });
+      return apiError('Access denied.', 403);
     }
 
     if (profile.accountStatus !== 'active') {
-      return NextResponse.json(
-        {
-          error: `Account status is ${profile.accountStatus}. ${
-            profile.accountStatus === 'pending'
-              ? 'Your account is pending approval.'
-              : 'Please contact support.'
-          }`,
-        },
-        { status: 403 }
+      return apiError(
+        `Account status is ${profile.accountStatus}. ${
+          profile.accountStatus === 'pending'
+            ? 'Your account is pending approval.'
+            : 'Please contact support.'
+        }`,
+        403
       );
     }
 
@@ -168,16 +164,13 @@ export async function GET(request: NextRequest) {
       },
     }));
 
-    return NextResponse.json({
+    return apiSuccess({
       applications: formattedApplications,
       total: formattedApplications.length,
       filter: statusFilter || 'all',
     });
   } catch (error) {
     console.error('Error fetching applications:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch applications' },
-      { status: 500 }
-    );
+    return apiError('Failed to fetch applications', 500);
   }
 }

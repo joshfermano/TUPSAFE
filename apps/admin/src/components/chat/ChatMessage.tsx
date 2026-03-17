@@ -104,7 +104,9 @@ export function ChatMessage({
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
-                  code({ inline, className, children, ...props }: any) {
+                  code(codeProps) {
+                    const { className, children, style: _style, ref: _ref, ...restProps } = codeProps;
+                    const inline = !className;
                     const match = /language-(\w+)/.exec(className || '');
                     const language = match ? match[1] : '';
 
@@ -119,21 +121,20 @@ export function ChatMessage({
                           padding: '0.875rem 1rem',
                           fontSize: '13px',
                         }}
-                        {...props}
                       >
                         {String(children).replace(/\n$/, '')}
                       </SyntaxHighlighter>
                     ) : !inline ? (
                       // Code block without language
                       <pre className="bg-muted/80 rounded-lg p-3 my-2 overflow-x-auto">
-                        <code className="text-[13px] font-mono" {...props}>
+                        <code className="text-[13px] font-mono" {...restProps}>
                           {children}
                         </code>
                       </pre>
                     ) : (
                       <code
                         className="bg-muted/80 px-1.5 py-0.5 rounded text-[13px] font-mono"
-                        {...props}
+                        {...restProps}
                       >
                         {children}
                       </code>

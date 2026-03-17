@@ -3,7 +3,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type {
   PdsSubmissionsListResponse,
-  PdsSubmissionListItem,
 } from '@tupsafe/types';
 
 /**
@@ -138,7 +137,7 @@ export function usePdsSubmissionsQuery(filters: PdsSubmissionsFilters = {}) {
     mutationFn: async ({
       submissionId,
       reviewNotes,
-      reviewedBy,
+      reviewedBy: _reviewedBy,
     }: {
       submissionId: string;
       reviewNotes?: string;
@@ -221,7 +220,7 @@ export function usePdsSubmissionsQuery(filters: PdsSubmissionsFilters = {}) {
     mutationFn: async ({
       submissionId,
       reviewNotes,
-      reviewedBy,
+      reviewedBy: _reviewedBy,
     }: {
       submissionId: string;
       reviewNotes: string;

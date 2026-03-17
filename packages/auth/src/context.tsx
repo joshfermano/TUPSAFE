@@ -131,6 +131,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     });
 
     return () => subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only run on mount; fetchProfile and supabase.auth are stable refs
   }, []);
 
   const signIn = async (email: string, password: string) => {

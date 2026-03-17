@@ -69,7 +69,7 @@ export function DepartmentRankingsTable() {
 
   // Top 5 departments
   const topDepartments = data.departments
-    .sort((a: any, b: any) => {
+    .sort((a, b) => {
       const aCompliance = (a.submissions.pdsCompliance + a.submissions.salnCompliance) / 2;
       const bCompliance = (b.submissions.pdsCompliance + b.submissions.salnCompliance) / 2;
       return bCompliance - aCompliance;
@@ -109,10 +109,10 @@ export function DepartmentRankingsTable() {
             </div>
 
             {/* Table Rows */}
-            {topDepartments.map((dept: any, index: number) => {
+            {topDepartments.map((dept, index) => {
               const rank = index + 1;
               const medal = getMedal(rank);
-              const overallCompliance = (dept.submissions.pdsCompliance + dept.submissions.salnCompliance) / 2;
+              const _overallCompliance = (dept.submissions.pdsCompliance + dept.submissions.salnCompliance) / 2;
 
               return (
                 <div

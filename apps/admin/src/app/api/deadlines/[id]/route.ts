@@ -26,7 +26,6 @@ import {
   type DeadlineDetail,
   type DeadlineComplianceStats,
   type UpdateDeadlineResponse,
-  type DeleteDeadlineResponse,
 } from '@tupsafe/types';
 
 interface RouteParams {

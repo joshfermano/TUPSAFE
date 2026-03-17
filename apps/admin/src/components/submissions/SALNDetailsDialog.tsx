@@ -181,7 +181,9 @@ function SummarySection({
   salnData,
   previousYear,
 }: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- display-only component receiving API data
   salnData: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- display-only component
   previousYear: any;
 }) {
   const hasComparison = !!previousYear;
@@ -267,7 +269,9 @@ function AssetsSection({
   realProperties,
   personalProperties,
 }: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- display-only component
   realProperties: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- display-only component
   personalProperties: any[];
 }) {
   return (
@@ -288,7 +292,7 @@ function AssetsSection({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {realProperties.map((prop: any, idx: number) => (
+              {realProperties.map((prop, idx) => (
                 <TableRow key={idx}>
                   <TableCell>{prop.description}</TableCell>
                   <TableCell>{prop.kind}</TableCell>
@@ -324,7 +328,7 @@ function AssetsSection({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {personalProperties.map((prop: any, idx: number) => (
+              {personalProperties.map((prop, idx) => (
                 <TableRow key={idx}>
                   <TableCell>{prop.description}</TableCell>
                   <TableCell>{prop.acquisitionYear}</TableCell>
@@ -343,6 +347,7 @@ function AssetsSection({
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- display-only component
 function LiabilitiesSection({ liabilities }: { liabilities: any[] }) {
   return (
     <div>
@@ -357,7 +362,7 @@ function LiabilitiesSection({ liabilities }: { liabilities: any[] }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {liabilities.map((liability: any, idx: number) => (
+            {liabilities.map((liability, idx) => (
               <TableRow key={idx}>
                 <TableCell>{liability.nature}</TableCell>
                 <TableCell>{liability.nameOfCreditors}</TableCell>
@@ -375,6 +380,7 @@ function LiabilitiesSection({ liabilities }: { liabilities: any[] }) {
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- display-only component
 function BusinessSection({ businessInterests }: { businessInterests: any[] }) {
   return (
     <div>
@@ -390,7 +396,7 @@ function BusinessSection({ businessInterests }: { businessInterests: any[] }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {businessInterests.map((business: any, idx: number) => (
+            {businessInterests.map((business, idx) => (
               <TableRow key={idx}>
                 <TableCell>{business.nameOfEntity}</TableCell>
                 <TableCell>{business.businessAddress}</TableCell>
@@ -409,6 +415,7 @@ function BusinessSection({ businessInterests }: { businessInterests: any[] }) {
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- display-only component
 function RelativesSection({ relatives }: { relatives: any[] }) {
   return (
     <div>
@@ -424,7 +431,7 @@ function RelativesSection({ relatives }: { relatives: any[] }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {relatives.map((relative: any, idx: number) => (
+            {relatives.map((relative, idx) => (
               <TableRow key={idx}>
                 <TableCell>{relative.name}</TableCell>
                 <TableCell>{relative.relationship}</TableCell>

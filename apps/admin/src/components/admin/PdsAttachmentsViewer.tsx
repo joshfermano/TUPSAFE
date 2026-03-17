@@ -14,8 +14,6 @@ import {
   Image as ImageIcon,
   Download,
   Eye,
-  ChevronDown,
-  ChevronRight,
   Award,
   BookOpen,
   Paperclip,
@@ -152,7 +150,7 @@ function AttachmentChip({ attachment }: { attachment: PdsAttachment }) {
 }
 
 export function PdsAttachmentsViewer({
-  userId,
+  userId: _userId,
   submissions,
 }: PdsAttachmentsViewerProps) {
   // Get unique years from submissions (excluding drafts)

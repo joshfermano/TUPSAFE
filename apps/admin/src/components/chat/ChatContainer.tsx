@@ -34,7 +34,7 @@ export function ChatContainer({ className }: ChatContainerProps) {
     error,
     sendMessage,
     clearHistory,
-    sessionId,
+    sessionId: _sessionId,
   } = useChat({
     onError: (err) => {
       toast.error('Chat Error', {

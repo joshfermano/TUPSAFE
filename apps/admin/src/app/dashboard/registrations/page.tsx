@@ -8,7 +8,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { CheckCircle, UserPlus } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -27,12 +27,10 @@ import type { RegistrationFiltersState } from '@/components/registrations/Regist
 import {
   useRegistrations,
   useRegistrationStats,
-  registrationKeys,
 } from '@/hooks/useRegistrations';
 import type { Registration } from '@/lib/api/registrations';
 import {
   useRealtimeRegistrations,
-  type UseRealtimeRegistrationsOptions,
 } from '@tupsafe/database';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import type { PendingRegistration } from '@tupsafe/database';
@@ -78,7 +76,7 @@ export default function RegistrationsPage() {
   });
 
   // Real-time subscription for live updates
-  const { isConnected: isRealtimeConnected } = useRealtimeRegistrations({
+  const { isConnected: _isRealtimeConnected } = useRealtimeRegistrations({
     queryClient,
     queryKeys: [
       ['registrations', 'list'],

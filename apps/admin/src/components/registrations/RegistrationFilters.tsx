@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, X } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -50,19 +50,20 @@ export function RegistrationFilters({
     }, 300);
 
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- debounce should only re-run when searchValue changes, not when filters/onFiltersChange refs change
   }, [searchValue]);
 
   const handleStatusChange = (status: string) => {
     onFiltersChange({
       ...filters,
-      status: status === 'all' ? undefined : (status as any),
+      status: status === 'all' ? undefined : (status as RegistrationFiltersState['status']),
     });
   };
 
   const handleUserTypeChange = (userType: string) => {
     onFiltersChange({
       ...filters,
-      userType: userType === 'all' ? undefined : (userType as any),
+      userType: userType === 'all' ? undefined : (userType as RegistrationFiltersState['userType']),
     });
   };
 

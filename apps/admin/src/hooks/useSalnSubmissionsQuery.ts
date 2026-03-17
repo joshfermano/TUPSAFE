@@ -135,7 +135,7 @@ export function useSalnSubmissionsQuery(filters: SalnSubmissionsFilters = {}) {
     mutationFn: async ({
       submissionId,
       reviewNotes,
-      reviewedBy,
+      reviewedBy: _reviewedBy,
     }: {
       submissionId: string;
       reviewNotes?: string;
@@ -218,7 +218,7 @@ export function useSalnSubmissionsQuery(filters: SalnSubmissionsFilters = {}) {
     mutationFn: async ({
       submissionId,
       reviewNotes,
-      reviewedBy,
+      reviewedBy: _reviewedBy,
     }: {
       submissionId: string;
       reviewNotes: string;
@@ -302,7 +302,7 @@ export function useSalnSubmissionsQuery(filters: SalnSubmissionsFilters = {}) {
     mutationFn: async ({
       submissionId,
       reviewNotes,
-      reviewedBy,
+      reviewedBy: _reviewedBy,
     }: {
       submissionId: string;
       reviewNotes: string;

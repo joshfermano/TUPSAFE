@@ -101,7 +101,7 @@ export function RealAuthProvider({ children }: { children: React.ReactNode }) {
   /**
    * Fetch user profile from the server
    */
-  const fetchProfile = useCallback(async (userId: string): Promise<AdminProfile | null> => {
+  const fetchProfile = useCallback(async (_userId: string): Promise<AdminProfile | null> => {
     try {
       const response = await fetch('/api/auth/profile');
       if (!response.ok) {
@@ -155,7 +155,7 @@ export function RealAuthProvider({ children }: { children: React.ReactNode }) {
 
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: any, session: any) => {
+      async (event: string, session: { user: { id: string; email?: string; created_at: string } } | null) => {
         if (event === 'SIGNED_IN' && session) {
           const currentUser: User = {
             id: session.user.id,
@@ -252,7 +252,7 @@ export function RealAuthProvider({ children }: { children: React.ReactNode }) {
 
       // Login successful - establish Supabase session in the browser
       if (data.session) {
-        const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+        const { error: sessionError } = await supabase.auth.setSession({
           access_token: data.session.access_token,
           refresh_token: data.session.refresh_token,
         });

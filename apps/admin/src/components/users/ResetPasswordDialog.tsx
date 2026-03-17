@@ -67,7 +67,7 @@ export function ResetPasswordDialog({ userId, open, onOpenChange }: ResetPasswor
       setCopied(true);
       toast.success('Password copied to clipboard');
       setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to copy password');
     }
   };
