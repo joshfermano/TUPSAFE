@@ -55,9 +55,17 @@ services:
       - ./apps/employee/postcss.config.mjs:/app/apps/employee/postcss.config.mjs
       - ./apps/employee/components.json:/app/apps/employee/components.json
       - ./packages/auth/src:/app/packages/auth/src
+      - ./packages/auth/dist:/app/packages/auth/dist
+      - ./packages/auth/package.json:/app/packages/auth/package.json
       - ./packages/database/src:/app/packages/database/src
+      - ./packages/database/dist:/app/packages/database/dist
+      - ./packages/database/package.json:/app/packages/database/package.json
       - ./packages/shared-ui/src:/app/packages/shared-ui/src
+      - ./packages/shared-ui/dist:/app/packages/shared-ui/dist
+      - ./packages/shared-ui/package.json:/app/packages/shared-ui/package.json
       - ./packages/types/src:/app/packages/types/src
+      - ./packages/types/dist:/app/packages/types/dist
+      - ./packages/types/package.json:/app/packages/types/package.json
       - employee_next_cache:/app/apps/employee/.next
     environment:
       <<: *common-env
@@ -122,9 +130,17 @@ services:
       - ./apps/admin/components.json:/app/apps/admin/components.json
       - ./apps/admin/tailwind.config.mjs:/app/apps/admin/tailwind.config.mjs
       - ./packages/auth/src:/app/packages/auth/src
+      - ./packages/auth/dist:/app/packages/auth/dist
+      - ./packages/auth/package.json:/app/packages/auth/package.json
       - ./packages/database/src:/app/packages/database/src
+      - ./packages/database/dist:/app/packages/database/dist
+      - ./packages/database/package.json:/app/packages/database/package.json
       - ./packages/shared-ui/src:/app/packages/shared-ui/src
+      - ./packages/shared-ui/dist:/app/packages/shared-ui/dist
+      - ./packages/shared-ui/package.json:/app/packages/shared-ui/package.json
       - ./packages/types/src:/app/packages/types/src
+      - ./packages/types/dist:/app/packages/types/dist
+      - ./packages/types/package.json:/app/packages/types/package.json
       - admin_next_cache:/app/apps/admin/.next
     environment:
       <<: *common-env

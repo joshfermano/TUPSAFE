@@ -5,7 +5,7 @@
 #
 # Access:
 #   - Employee Portal: https://tupsafe.tech (via Nginx)
-#   - Admin Portal: http://18.142.250.161:9443 (via Nginx, IP-restricted)
+#   - Admin Portal: http://18.139.182.61:9443 (via Nginx, IP-restricted)
 #   - AI Agent: Internal only (http://ai-agent:8000)
 #   - Redis: Internal only
 #

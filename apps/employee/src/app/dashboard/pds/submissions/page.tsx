@@ -242,35 +242,35 @@ const ApprovedCard = memo<{
             </div>
 
             {/* Actions */}
-            <div className="flex flex-wrap gap-2 pt-2">
+            <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => onView(submission.id)}
-                className="flex-1 min-w-[100px]">
-                <Eye className="h-4 w-4 mr-2" />
+                className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
+                <Eye className="h-4 w-4 mr-1.5" />
                 View
               </Button>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => onDownload(submission.id)}
                 disabled={isDownloading}
-                className="flex-1 min-w-[100px]">
+                className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
                 {isDownloading ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
                 ) : (
-                  <Download className="h-4 w-4 mr-2" />
+                  <Download className="h-4 w-4 mr-1.5" />
                 )}
                 {isDownloading ? 'Downloading...' : 'Download'}
               </Button>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => onPrint(submission.id)}
                 disabled={isDownloading}
-                className="flex-1 min-w-[100px]">
-                <Printer className="h-4 w-4 mr-2" />
+                className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
+                <Printer className="h-4 w-4 mr-1.5" />
                 Print
               </Button>
             </div>
@@ -344,38 +344,40 @@ const RejectedCard = memo<{
           </div>
 
           {/* Actions */}
-          <div className="flex flex-wrap gap-2 pt-2">
+          <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={() => onView(submission.id)}
               disabled={isDeleting}
-              className="flex-1 min-w-[100px]">
-              <Eye className="h-4 w-4 mr-2" />
+              className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
+              <Eye className="h-4 w-4 mr-1.5" />
               View
             </Button>
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={() => onEdit(submission.id)}
               disabled={isDeleting}
-              className="flex-1 min-w-[100px]">
-              <FileEdit className="h-4 w-4 mr-2" />
+              className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
+              <FileEdit className="h-4 w-4 mr-1.5" />
               Edit & Resubmit
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onDelete(submission.id)}
-              disabled={isDeleting}
-              className="flex-1 min-w-[100px] text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20 border-rose-200 dark:border-rose-800">
-              {isDeleting ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Trash2 className="h-4 w-4 mr-2" />
-              )}
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </Button>
+            <div className="ml-auto">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onDelete(submission.id)}
+                disabled={isDeleting}
+                className="text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20">
+                {isDeleting ? (
+                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4 mr-1.5" />
+                )}
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </Button>
+            </div>
           </div>
         </div>
       </CardContent>
@@ -872,7 +874,7 @@ export default function SubmissionsPage() {
           </BlurFade>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               {paginatedSubmissions.map(
                 (submission: PDSSubmission, index: number) => {
                   const mappedSubmission: Submission = {

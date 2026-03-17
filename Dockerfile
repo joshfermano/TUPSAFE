@@ -65,6 +65,24 @@ RUN pnpm install --frozen-lockfile
 # Copy source code
 COPY . .
 
+# Fix workspace symlinks: pnpm on Windows may create symlinks with Windows absolute paths
+# (e.g., C:/Personal/TUPSAFE/packages/auth/) which don't resolve inside Linux containers.
+# The .dockerignore excludes **/node_modules, but this is defense-in-depth.
+RUN for tupsafe_dir in \
+      /app/node_modules/@tupsafe \
+      /app/apps/*/node_modules/@tupsafe \
+      /app/packages/*/node_modules/@tupsafe; do \
+      [ -d "$tupsafe_dir" ] || continue; \
+      for entry in "$tupsafe_dir"/*; do \
+        pkg=$(basename "$entry"); \
+        target="/app/packages/$pkg"; \
+        if [ -d "$target" ]; then \
+          rm -rf "$entry"; \
+          ln -s "$target" "$entry"; \
+        fi; \
+      done; \
+    done
+
 # Build shared packages first (database must come before types due to dependencies)
 RUN pnpm --filter @tupsafe/database build
 RUN pnpm --filter @tupsafe/types build
