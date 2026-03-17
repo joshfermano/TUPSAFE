@@ -109,62 +109,78 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     // Fetch attachments for this submission
-    const attachmentsList = await db
-      .select()
-      .from(pdsAttachments)
-      .where(eq(pdsAttachments.pdsSubmissionId, id));
-
-    // Use admin client for storage to bypass RLS
-    // Authorization is already verified above (user owns the submission)
-    const adminClient = createAdminClient();
-
-    // Generate signed URLs for all attachments (private bucket)
-    const attachmentsWithUrls = await Promise.all(
-      attachmentsList.map(async (att) => {
-        let fileUrl: string | null = null;
-
-        if (att.filePath) {
-          const { data: signedUrlData } = await adminClient.storage
-            .from(PDS_ATTACHMENTS_BUCKET)
-            .createSignedUrl(att.filePath, SIGNED_URL_EXPIRY_SECONDS);
-          fileUrl = signedUrlData?.signedUrl || null;
-        }
-
-        return {
-          id: att.id,
-          fileName: att.fileName,
-          mimeType: att.mimeType,
-          sizeBytes: att.sizeBytes,
-          filePath: att.filePath,
-          fileUrl,
-          trainingId: att.trainingId,
-          civilServiceId: att.civilServiceId,
-          createdAt: att.createdAt,
-        };
-      })
-    );
-
-    // Group attachments by trainingId and civilServiceId for easy frontend access
+    let attachmentsWithUrls: {
+      id: string;
+      fileName: string;
+      mimeType: string;
+      sizeBytes: number;
+      filePath: string;
+      fileUrl: string | null;
+      trainingId: string | null;
+      civilServiceId: string | null;
+      createdAt: Date;
+    }[] = [];
     const attachmentsByTraining: Record<string, typeof attachmentsWithUrls> = {};
     const attachmentsByCivilService: Record<string, typeof attachmentsWithUrls> = {};
 
-    attachmentsWithUrls.forEach((att) => {
-      if (att.trainingId) {
-        if (!attachmentsByTraining[att.trainingId]) {
-          attachmentsByTraining[att.trainingId] = [];
-        }
-        attachmentsByTraining[att.trainingId].push(att);
+    try {
+      const attachmentsList = await db
+        .select()
+        .from(pdsAttachments)
+        .where(eq(pdsAttachments.pdsSubmissionId, id));
+
+      // Only create admin client and generate signed URLs if there are attachments
+      if (attachmentsList.length > 0) {
+        const adminClient = createAdminClient();
+
+        attachmentsWithUrls = await Promise.all(
+          attachmentsList.map(async (att) => {
+            let fileUrl: string | null = null;
+
+            if (att.filePath) {
+              const { data: signedUrlData } = await adminClient.storage
+                .from(PDS_ATTACHMENTS_BUCKET)
+                .createSignedUrl(att.filePath, SIGNED_URL_EXPIRY_SECONDS);
+              fileUrl = signedUrlData?.signedUrl || null;
+            }
+
+            return {
+              id: att.id,
+              fileName: att.fileName,
+              mimeType: att.mimeType,
+              sizeBytes: att.sizeBytes,
+              filePath: att.filePath,
+              fileUrl,
+              trainingId: att.trainingId,
+              civilServiceId: att.civilServiceId,
+              createdAt: att.createdAt,
+            };
+          })
+        );
+
+        // Group attachments by trainingId and civilServiceId
+        attachmentsWithUrls.forEach((att) => {
+          if (att.trainingId) {
+            if (!attachmentsByTraining[att.trainingId]) {
+              attachmentsByTraining[att.trainingId] = [];
+            }
+            attachmentsByTraining[att.trainingId].push(att);
+          }
+          if (att.civilServiceId) {
+            if (!attachmentsByCivilService[att.civilServiceId]) {
+              attachmentsByCivilService[att.civilServiceId] = [];
+            }
+            attachmentsByCivilService[att.civilServiceId].push(att);
+          }
+        });
       }
-      if (att.civilServiceId) {
-        if (!attachmentsByCivilService[att.civilServiceId]) {
-          attachmentsByCivilService[att.civilServiceId] = [];
-        }
-        attachmentsByCivilService[att.civilServiceId].push(att);
-      }
-    });
+    } catch (attachmentError) {
+      // Log but don't fail the request — PDS data is more important than attachments
+      console.error('[GET /api/pds/[id]] Attachment processing failed:', attachmentError);
+    }
 
     console.log(
-      `[GET /api/pds/[id]] Retrieved PDS ${id} for user ${user.id} with ${attachmentsList.length} attachments`
+      `[GET /api/pds/[id]] Retrieved PDS ${id} for user ${user.id} with ${attachmentsWithUrls.length} attachments`
     );
 
     return NextResponse.json({

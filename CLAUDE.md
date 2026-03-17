@@ -171,7 +171,7 @@ Single EC2 instance (t2.micro, 1 vCPU, 1GB RAM + 4GB swap) running all services 
 **Live URLs:**
 
 - Employee: `https://tupsafe.tech` (Nginx HTTPS, Let's Encrypt SSL)
-- Admin: `http://18.142.250.161:9443` (Nginx HTTP, IP-restricted via Security Group)
+- Admin: `http://18.139.182.61:9443` (Nginx HTTP, IP-restricted via Security Group)
 - AI Agent: internal Docker network only (`http://ai-agent:8000`)
 
 **Infrastructure:**
@@ -179,7 +179,7 @@ Single EC2 instance (t2.micro, 1 vCPU, 1GB RAM + 4GB swap) running all services 
 - **Region:** ap-southeast-1 (Singapore)
 - **OS:** Ubuntu 24.04
 - **Registry:** AWS ECR (3 repos: `tupsafe/employee`, `tupsafe/admin`, `tupsafe/ai-agent`)
-- **DNS:** get.tech registrar, A records for `tupsafe.tech` + `www.tupsafe.tech` → `18.142.250.161`
+- **DNS:** get.tech registrar, A records for `tupsafe.tech` + `www.tupsafe.tech` → `18.139.182.61`
 - **SSL:** Let's Encrypt via certbot (auto-renewal), certs at `/etc/letsencrypt/live/www.tupsafe.tech/`
 - **Database/Auth:** Supabase Cloud (not self-hosted)
 
@@ -221,7 +221,7 @@ Single EC2 instance (t2.micro, 1 vCPU, 1GB RAM + 4GB swap) running all services 
 **EC2 commands (via SSH):**
 
 ```bash
-ssh -i tupsafe-aws.pem ubuntu@18.142.250.161
+ssh -i tupsafe-aws.pem ubuntu@18.139.182.61
 cd /opt/tupsafe
 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d      # Start all
 docker compose -f docker-compose.prod.yml --env-file .env.prod restart     # Restart all

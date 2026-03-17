@@ -20,7 +20,21 @@ export * from './utils/device';
 export * from './utils/email';
 export * from './utils/password';
 export * from './utils/session';
-export * from './utils/rate-limit';
+export {
+  RATE_LIMITS,
+  type RateLimitAction,
+  checkRateLimit,
+  checkRateLimitAsync,
+  resetRateLimit,
+  resetRateLimitAsync,
+  getRateLimitStatus,
+  getRateLimitStatusAsync,
+  cleanupExpiredRateLimits,
+  formatRateLimitError,
+  getRequestIdentifier,
+  isDistributedRateLimitingEnabled,
+  getRateLimitingBackend,
+} from './utils/rate-limit';
 
 // Storage utilities (profile pictures, etc.)
 export * from './utils/storage';

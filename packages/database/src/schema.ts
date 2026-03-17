@@ -1515,6 +1515,115 @@ export const pdsSubmissionsRelations = relations(
   })
 );
 
+// PDS child table inverse relations (required for Drizzle relational queries with `many()`)
+export const pdsPersonalInfoRelations = relations(
+  pdsPersonalInfo,
+  ({ one }) => ({
+    pdsSubmission: one(pdsSubmissions, {
+      fields: [pdsPersonalInfo.pdsSubmissionId],
+      references: [pdsSubmissions.id],
+    }),
+  })
+);
+
+export const pdsFamilyBackgroundRelations = relations(
+  pdsFamilyBackground,
+  ({ one }) => ({
+    pdsSubmission: one(pdsSubmissions, {
+      fields: [pdsFamilyBackground.pdsSubmissionId],
+      references: [pdsSubmissions.id],
+    }),
+  })
+);
+
+export const pdsChildrenRelations = relations(
+  pdsChildren,
+  ({ one }) => ({
+    pdsSubmission: one(pdsSubmissions, {
+      fields: [pdsChildren.pdsSubmissionId],
+      references: [pdsSubmissions.id],
+    }),
+  })
+);
+
+export const pdsEducationRelations = relations(
+  pdsEducation,
+  ({ one }) => ({
+    pdsSubmission: one(pdsSubmissions, {
+      fields: [pdsEducation.pdsSubmissionId],
+      references: [pdsSubmissions.id],
+    }),
+  })
+);
+
+export const pdsCivilServiceRelations = relations(
+  pdsCivilService,
+  ({ one }) => ({
+    pdsSubmission: one(pdsSubmissions, {
+      fields: [pdsCivilService.pdsSubmissionId],
+      references: [pdsSubmissions.id],
+    }),
+  })
+);
+
+export const pdsWorkExperienceRelations = relations(
+  pdsWorkExperience,
+  ({ one }) => ({
+    pdsSubmission: one(pdsSubmissions, {
+      fields: [pdsWorkExperience.pdsSubmissionId],
+      references: [pdsSubmissions.id],
+    }),
+  })
+);
+
+export const pdsVoluntaryWorkRelations = relations(
+  pdsVoluntaryWork,
+  ({ one }) => ({
+    pdsSubmission: one(pdsSubmissions, {
+      fields: [pdsVoluntaryWork.pdsSubmissionId],
+      references: [pdsSubmissions.id],
+    }),
+  })
+);
+
+export const pdsTrainingRelations = relations(
+  pdsTraining,
+  ({ one }) => ({
+    pdsSubmission: one(pdsSubmissions, {
+      fields: [pdsTraining.pdsSubmissionId],
+      references: [pdsSubmissions.id],
+    }),
+  })
+);
+
+export const pdsOtherInfoRelations = relations(
+  pdsOtherInfo,
+  ({ one }) => ({
+    pdsSubmission: one(pdsSubmissions, {
+      fields: [pdsOtherInfo.pdsSubmissionId],
+      references: [pdsSubmissions.id],
+    }),
+  })
+);
+
+export const pdsAttachmentsRelations = relations(
+  pdsAttachments,
+  ({ one }) => ({
+    pdsSubmission: one(pdsSubmissions, {
+      fields: [pdsAttachments.pdsSubmissionId],
+      references: [pdsSubmissions.id],
+    }),
+    training: one(pdsTraining, {
+      fields: [pdsAttachments.trainingId],
+      references: [pdsTraining.id],
+    }),
+    civilService: one(pdsCivilService, {
+      fields: [pdsAttachments.civilServiceId],
+      references: [pdsCivilService.id],
+    }),
+  })
+);
+
 export const salnSubmissionsRelations = relations(
   salnSubmissions,
   ({ one, many }) => ({

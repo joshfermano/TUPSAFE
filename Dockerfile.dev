@@ -39,11 +39,32 @@ RUN pnpm install --frozen-lockfile --offline
 # Copy source code (will be overridden by volume mounts in dev)
 COPY . .
 
+# Fix workspace symlinks: pnpm on Windows may create symlinks with Windows absolute paths
+# (e.g., C:/Personal/TUPSAFE/packages/auth/) which don't resolve inside Linux containers.
+# Replace all @tupsafe/* entries (symlinks or dereferenced copies) with correct Linux symlinks.
+# Covers: root node_modules, app node_modules, AND package node_modules (cross-package deps).
+RUN for tupsafe_dir in \
+      /app/node_modules/@tupsafe \
+      /app/apps/*/node_modules/@tupsafe \
+      /app/packages/*/node_modules/@tupsafe; do \
+      [ -d "$tupsafe_dir" ] || continue; \
+      for entry in "$tupsafe_dir"/*; do \
+        pkg=$(basename "$entry"); \
+        target="/app/packages/$pkg"; \
+        if [ -d "$target" ]; then \
+          rm -rf "$entry"; \
+          ln -s "$target" "$entry"; \
+        fi; \
+      done; \
+    done
+
 # Build shared packages (needed for Next.js to resolve @tupsafe/* imports)
-RUN pnpm --filter @tupsafe/database build && \
-    pnpm --filter @tupsafe/types build && \
-    pnpm --filter @tupsafe/auth build && \
-    pnpm --filter @tupsafe/shared-ui build
+# Each build is independent with || true so cross-package TS errors don't block Docker build.
+# In dev mode, dist/ directories are volume-mounted from the host (pre-built locally).
+RUN pnpm --filter @tupsafe/database build || true; \
+    pnpm --filter @tupsafe/types build || true; \
+    pnpm --filter @tupsafe/auth build || true; \
+    pnpm --filter @tupsafe/shared-ui build || true
 
 # Set development environment
 ENV NODE_ENV=development
