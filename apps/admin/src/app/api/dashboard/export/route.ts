@@ -12,7 +12,8 @@ import { exportQuerySchema } from '@tupsafe/types';
 import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 import { generateExcelReport } from '@/lib/excel/report-excel';
 import { pdf } from '@react-pdf/renderer';
-import { ReportDocument, ensureReportFontsRegistered } from '@tupsafe/shared-ui';
+import { ReportDocument } from '@tupsafe/shared-ui/report-pdf';
+import { ensureReportFontsRegistered } from '@tupsafe/shared-ui/report-pdf';
 import React from 'react';
 
 /**

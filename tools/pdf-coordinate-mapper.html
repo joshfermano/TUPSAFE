@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF Coordinate Mapper - TUPSAFE</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-primary: #1a1a2e;
+    --bg-secondary: #16213e;
+    --bg-tertiary: #0f3460;
+    --bg-surface: #1e2a4a;
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0b8;
+    --text-muted: #6c6c80;
+    --accent: #00d4ff;
+    --accent-dim: #007a94;
+    --accent-glow: rgba(0, 212, 255, 0.15);
+    --danger: #ff4d6a;
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --border: #2a3a5e;
+    --border-light: #3a4a6e;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --header-height: 56px;
+    --panel-width: 420px;
+    --footer-height: 44px;
+  }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+  }
+
+  /* ── Layout ─────────────────────────────────────────────────── */
+  #app {
+    display: grid;
+    grid-template-rows: var(--header-height) 1fr var(--footer-height);
+    grid-template-columns: 1fr var(--panel-width);
+    height: 100vh;
+  }
+
+  /* ── Header ─────────────────────────────────────────────────── */
+  #header {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    z-index: 100;
+  }
+
+  #header h1 {
+    font-size: 15px;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+  }
+
+  .separator {
+    width: 1px;
+    height: 24px;
+    background: var(--border-light);
+    flex-shrink: 0;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .btn:hover { background: var(--bg-tertiary); border-color: var(--accent-dim); }
+  .btn:active { transform: scale(0.97); }
+  .btn.primary { background: var(--accent-dim); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { background: var(--accent); color: var(--bg-primary); }
+  .btn.danger { border-color: var(--danger); color: var(--danger); }
+  .btn.danger:hover { background: var(--danger); color: #fff; }
+
+  .btn-icon {
+    padding: 6px 8px;
+    min-width: 32px;
+    justify-content: center;
+  }
+
+  select, input[type="text"], input[type="number"] {
+    padding: 5px 10px;
+    font-size: 12px;
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  select:focus, input:focus { border-color: var(--accent); }
+  select { cursor: pointer; }
+
+  input[type="file"] { display: none; }
+
+  .control-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .control-group label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  #fieldNameInput {
+    width: 180px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  #zoomDisplay {
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--text-secondary);
+    min-width: 42px;
+    text-align: center;
+  }
+
+  /* ── Canvas Area ────────────────────────────────────────────── */
+  #canvas-area {
+    position: relative;
+    overflow: auto;
+    background: var(--bg-primary);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 24px;
+  }
+
+  #canvas-wrapper {
+    position: relative;
+    display: inline-block;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+    line-height: 0;
+  }
+
+  #pdf-canvas {
+    display: block;
+    cursor: none;
+  }
+
+  #overlay-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+  }
+
+  #crosshair-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* ── Right Panel ────────────────────────────────────────────── */
+  #panel {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-secondary);
+    border-left: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  #panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  #panel-header h2 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+
+  #pin-count {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+  }
+
+  #panel-controls {
+    display: flex;
+    gap: 6px;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  #pin-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 0;
+  }
+
+  .pin-entry {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    transition: background 0.1s;
+  }
+
+  .pin-entry:hover {
+    background: var(--accent-glow);
+  }
+
+  .pin-entry .pin-field {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .pin-entry .pin-coords {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+    grid-column: 1;
+  }
+
+  .pin-entry .pin-actions {
+    grid-row: 1 / 3;
+    grid-column: 2;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .pin-entry .pin-delete {
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .pin-entry .pin-delete:hover {
+    background: var(--danger);
+    color: #fff;
+  }
+
+  #code-output-section {
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  #code-output-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  #code-output-header:hover { background: var(--bg-surface); }
+
+  #code-output-header h3 {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  #code-output-wrapper {
+    max-height: 220px;
+    overflow: auto;
+  }
+
+  #code-output {
+    padding: 10px 14px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--text-primary);
+    white-space: pre;
+    background: var(--bg-primary);
+    border-top: 1px solid var(--border);
+    min-height: 60px;
+  }
+
+  /* ── Footer ─────────────────────────────────────────────────── */
+  #footer {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 0 16px;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    font-family: var(--font-mono);
+  }
+
+  .coord-label {
+    color: var(--text-muted);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .coord-value {
+    color: var(--accent);
+    font-weight: 600;
+    min-width: 60px;
+    display: inline-block;
+  }
+
+  .coord-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #page-size-info {
+    color: var(--text-muted);
+    margin-left: auto;
+  }
+
+  /* ── Splash / Empty State ───────────────────────────────────── */
+  #splash {
+    grid-column: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    color: var(--text-muted);
+    padding: 40px;
+  }
+
+  #splash .splash-icon {
+    font-size: 48px;
+    opacity: 0.3;
+  }
+
+  #splash p {
+    font-size: 14px;
+    text-align: center;
+    max-width: 360px;
+    line-height: 1.6;
+  }
+
+  #splash .shortcut-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 8px;
+  }
+
+  .kbd {
+    display: inline-block;
+    padding: 2px 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    border: 1px solid var(--border-light);
+    border-radius: 4px;
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+  }
+
+  /* ── Toast ──────────────────────────────────────────────────── */
+  #toast {
+    position: fixed;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    padding: 8px 20px;
+    background: var(--success);
+    color: var(--bg-primary);
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 8px;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    z-index: 1000;
+  }
+
+  #toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ── Scrollbar ──────────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg-primary); }
+  ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+  /* ── Hidden ─────────────────────────────────────────────────── */
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- Header -->
+  <header id="header">
+    <h1>PDF Coordinate Mapper</h1>
+    <div class="separator"></div>
+
+    <button class="btn" id="btn-open" title="Open PDF file">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Open PDF
+    </button>
+    <input type="file" id="file-input" accept=".pdf">
+
+    <select id="template-select" title="Quick-load a project template">
+      <option value="">-- Templates --</option>
+      <option value="/templates/pds-cs-form-212-2025.pdf">PDS CS Form 212 (2025)</option>
+      <option value="/templates/saln-annexes-2025.pdf">SALN Annexes (2025)</option>
+    </select>
+
+    <div class="separator"></div>
+
+    <div class="control-group">
+      <label>Page</label>
+      <button class="btn btn-icon" id="btn-prev-page" title="Previous page">&larr;</button>
+      <span id="page-indicator" style="font-size:12px;font-family:var(--font-mono);min-width:40px;text-align:center;">-</span>
+      <button class="btn btn-icon" id="btn-next-page" title="Next page">&rarr;</button>
+    </div>
+
+    <div class="separator"></div>
+
+    <div class="control-group">
+      <label>Zoom</label>
+      <button class="btn btn-icon" id="btn-zoom-out" title="Zoom out (-)">-</button>
+      <span id="zoomDisplay">100%</span>
+      <button class="btn btn-icon" id="btn-zoom-in" title="Zoom in (+)">+</button>
+      <button class="btn btn-icon" id="btn-zoom-fit" title="Fit to view (0)">Fit</button>
+    </div>
+
+    <div class="separator"></div>
+
+    <div class="control-group">
+      <label>Grid</label>
+      <button class="btn btn-icon" id="btn-grid" title="Toggle grid overlay (G)">Off</button>
+    </div>
+
+    <div class="separator"></div>
+
+    <div class="control-group">
+      <label>Field</label>
+      <input type="text" id="fieldNameInput" placeholder="e.g. personalInfo.surname" spellcheck="false">
+    </div>
+
+    <div class="control-group" style="margin-left:4px;">
+      <label>maxW</label>
+      <input type="number" id="maxWidthInput" value="100" min="10" max="600" style="width:60px;font-family:var(--font-mono);">
+    </div>
+
+    <div class="control-group" style="margin-left:4px;">
+      <label>fontSize</label>
+      <input type="number" id="fontSizeInput" value="8" min="4" max="24" style="width:50px;font-family:var(--font-mono);">
+    </div>
+  </header>
+
+  <!-- Canvas Area or Splash -->
+  <div id="splash">
+    <div class="splash-icon">&#128196;</div>
+    <p>Open a PDF template to begin mapping coordinates. Click on the rendered page to pin field positions.</p>
+    <div class="shortcut-hint">
+      <span class="kbd">Ctrl+O</span> Open file &nbsp;
+      <span class="kbd">+</span> / <span class="kbd">-</span> Zoom &nbsp;
+      <span class="kbd">G</span> Grid &nbsp;
+      <span class="kbd">&larr;</span> <span class="kbd">&rarr;</span> Pages &nbsp;
+      <span class="kbd">Ctrl+C</span> Copy code
+    </div>
+  </div>
+
+  <div id="canvas-area" class="hidden">
+    <div id="canvas-wrapper">
+      <canvas id="pdf-canvas"></canvas>
+      <canvas id="overlay-canvas"></canvas>
+      <canvas id="crosshair-canvas"></canvas>
+    </div>
+  </div>
+
+  <!-- Right Panel -->
+  <div id="panel">
+    <div id="panel-header">
+      <h2>Pinned Coordinates</h2>
+      <span id="pin-count">0 pins</span>
+    </div>
+    <div id="panel-controls">
+      <button class="btn primary" id="btn-export" title="Copy TypeScript code to clipboard (Ctrl+Shift+C)">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Export TS
+      </button>
+      <button class="btn danger" id="btn-clear-all" title="Remove all pins">Clear All</button>
+    </div>
+    <div id="pin-list"></div>
+    <div id="code-output-section">
+      <div id="code-output-header">
+        <h3>TypeScript Output</h3>
+        <span style="font-size:11px;color:var(--text-muted);">click to toggle</span>
+      </div>
+      <div id="code-output-wrapper">
+        <div id="code-output">// Pin coordinates to see TypeScript output here</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer id="footer">
+    <div class="coord-group">
+      <span class="coord-label">Canvas</span>
+      <span class="coord-value" id="coord-canvas">--, --</span>
+    </div>
+    <div class="coord-group">
+      <span class="coord-label">PDF (x, y)</span>
+      <span class="coord-value" id="coord-pdf" style="color:var(--accent);">--, --</span>
+    </div>
+    <div class="coord-group">
+      <span class="coord-label">Page</span>
+      <span class="coord-value" id="coord-page" style="color:var(--warning);">-</span>
+    </div>
+    <span id="page-size-info">No PDF loaded</span>
+  </footer>
+</div>
+
+<div id="toast"></div>
+
+<!-- PDF.js from CDN -->
+<script type="module">
+import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs';
+
+// ── State ──────────────────────────────────────────────────────
+let pdfDoc = null;
+let currentPage = 1;
+let totalPages = 0;
+let zoom = 1.0;
+let showGrid = false;
+let pageWidth = 0;   // PDF points
+let pageHeight = 0;  // PDF points
+let pins = [];        // { id, page, fieldName, pdfX, pdfY, maxWidth, fontSize }
+let pinIdCounter = 0;
+let codeOutputCollapsed = false;
+
+// ── DOM refs ───────────────────────────────────────────────────
+const fileInput = document.getElementById('file-input');
+const templateSelect = document.getElementById('template-select');
+const pdfCanvas = document.getElementById('pdf-canvas');
+const overlayCanvas = document.getElementById('overlay-canvas');
+const crosshairCanvas = document.getElementById('crosshair-canvas');
+const pdfCtx = pdfCanvas.getContext('2d');
+const overlayCtx = overlayCanvas.getContext('2d');
+const crossCtx = crosshairCanvas.getContext('2d');
+const canvasArea = document.getElementById('canvas-area');
+const splash = document.getElementById('splash');
+const fieldNameInput = document.getElementById('fieldNameInput');
+const maxWidthInput = document.getElementById('maxWidthInput');
+const fontSizeInput = document.getElementById('fontSizeInput');
+const coordCanvas = document.getElementById('coord-canvas');
+const coordPdf = document.getElementById('coord-pdf');
+const coordPage = document.getElementById('coord-page');
+const pageSizeInfo = document.getElementById('page-size-info');
+const pageIndicator = document.getElementById('page-indicator');
+const zoomDisplay = document.getElementById('zoomDisplay');
+const pinList = document.getElementById('pin-list');
+const pinCount = document.getElementById('pin-count');
+const codeOutput = document.getElementById('code-output');
+const toast = document.getElementById('toast');
+
+// ── PDF Loading ────────────────────────────────────────────────
+document.getElementById('btn-open').addEventListener('click', () => fileInput.click());
+
+fileInput.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const arrayBuffer = await file.arrayBuffer();
+  await loadPdf(arrayBuffer);
+});
+
+templateSelect.addEventListener('change', async (e) => {
+  const path = e.target.value;
+  if (!path) return;
+  try {
+    const resp = await fetch(path);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const arrayBuffer = await resp.arrayBuffer();
+    await loadPdf(arrayBuffer);
+  } catch (err) {
+    showToast(`Failed to load template: ${err.message}`, true);
+    templateSelect.value = '';
+  }
+});
+
+async function loadPdf(data) {
+  try {
+    pdfDoc = await pdfjsLib.getDocument({ data }).promise;
+    totalPages = pdfDoc.numPages;
+    currentPage = 1;
+    splash.classList.add('hidden');
+    canvasArea.classList.remove('hidden');
+    await renderPage();
+    showToast(`Loaded PDF: ${totalPages} page${totalPages > 1 ? 's' : ''}`);
+  } catch (err) {
+    showToast(`Error loading PDF: ${err.message}`, true);
+  }
+}
+
+// ── Page Rendering ─────────────────────────────────────────────
+async function renderPage() {
+  if (!pdfDoc) return;
+
+  const page = await pdfDoc.getPage(currentPage);
+  const viewport = page.getViewport({ scale: 1.0 }); // 1 PDF pt = 1 px at scale 1
+  pageWidth = viewport.width;
+  pageHeight = viewport.height;
+
+  const renderScale = zoom;
+  const scaledViewport = page.getViewport({ scale: renderScale });
+  const w = scaledViewport.width;
+  const h = scaledViewport.height;
+
+  // Handle device pixel ratio for sharp rendering
+  const dpr = window.devicePixelRatio || 1;
+
+  [pdfCanvas, overlayCanvas, crosshairCanvas].forEach(c => {
+    c.width = w * dpr;
+    c.height = h * dpr;
+    c.style.width = w + 'px';
+    c.style.height = h + 'px';
+  });
+
+  pdfCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  overlayCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  crossCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  // Render PDF page
+  await page.render({
+    canvasContext: pdfCtx,
+    viewport: scaledViewport,
+  }).promise;
+
+  // Update UI
+  pageIndicator.textContent = `${currentPage} / ${totalPages}`;
+  pageSizeInfo.textContent = `Page ${currentPage}: ${Math.round(pageWidth)} x ${Math.round(pageHeight)} pts`;
+  zoomDisplay.textContent = `${Math.round(zoom * 100)}%`;
+  coordPage.textContent = `${currentPage}`;
+
+  drawOverlay();
+}
+
+// ── Overlay: Grid + Pins ───────────────────────────────────────
+function drawOverlay() {
+  const w = parseFloat(overlayCanvas.style.width);
+  const h = parseFloat(overlayCanvas.style.height);
+  overlayCtx.clearRect(0, 0, w, h);
+
+  // Grid
+  if (showGrid) {
+    drawGrid(w, h);
+  }
+
+  // Pins for current page
+  const pagePins = pins.filter(p => p.page === currentPage);
+  pagePins.forEach(pin => {
+    const cx = pin.pdfX * zoom;
+    const cy = (pageHeight - pin.pdfY) * zoom; // Convert PDF Y to canvas Y
+    drawPin(cx, cy, pin.fieldName, pin.maxWidth);
+  });
+}
+
+function drawGrid(w, h) {
+  overlayCtx.save();
+  overlayCtx.strokeStyle = 'rgba(0, 212, 255, 0.12)';
+  overlayCtx.lineWidth = 0.5;
+  overlayCtx.font = '9px monospace';
+  overlayCtx.fillStyle = 'rgba(0, 212, 255, 0.35)';
+
+  const step = 50; // PDF points
+
+  // Vertical lines (X axis)
+  for (let x = 0; x <= pageWidth; x += step) {
+    const cx = x * zoom;
+    overlayCtx.beginPath();
+    overlayCtx.moveTo(cx, 0);
+    overlayCtx.lineTo(cx, h);
+    overlayCtx.stroke();
+    if (x > 0) overlayCtx.fillText(`${x}`, cx + 2, 10);
+  }
+
+  // Horizontal lines (shown with PDF Y values, drawn from top)
+  for (let y = 0; y <= pageHeight; y += step) {
+    const cy = y * zoom; // canvas Y from top
+    const pdfY = pageHeight - y; // corresponding PDF Y
+    overlayCtx.beginPath();
+    overlayCtx.moveTo(0, cy);
+    overlayCtx.lineTo(w, cy);
+    overlayCtx.stroke();
+    if (y > 0) overlayCtx.fillText(`y=${Math.round(pdfY)}`, 2, cy - 2);
+  }
+
+  overlayCtx.restore();
+}
+
+function drawPin(cx, cy, label, maxWidth) {
+  overlayCtx.save();
+
+  // Dot
+  overlayCtx.fillStyle = 'rgba(255, 77, 106, 0.9)';
+  overlayCtx.beginPath();
+  overlayCtx.arc(cx, cy, 4, 0, Math.PI * 2);
+  overlayCtx.fill();
+
+  // Outer ring
+  overlayCtx.strokeStyle = 'rgba(255, 77, 106, 0.6)';
+  overlayCtx.lineWidth = 1.5;
+  overlayCtx.beginPath();
+  overlayCtx.arc(cx, cy, 7, 0, Math.PI * 2);
+  overlayCtx.stroke();
+
+  // maxWidth indicator line
+  if (maxWidth > 0) {
+    const mwPx = maxWidth * zoom;
+    overlayCtx.strokeStyle = 'rgba(251, 191, 36, 0.5)';
+    overlayCtx.lineWidth = 1;
+    overlayCtx.setLineDash([3, 3]);
+    overlayCtx.beginPath();
+    overlayCtx.moveTo(cx, cy);
+    overlayCtx.lineTo(cx + mwPx, cy);
+    overlayCtx.stroke();
+    overlayCtx.setLineDash([]);
+  }
+
+  // Label
+  if (label) {
+    overlayCtx.font = '10px monospace';
+    const textW = overlayCtx.measureText(label).width;
+    const lx = cx + 10;
+    const ly = cy - 10;
+
+    overlayCtx.fillStyle = 'rgba(26, 26, 46, 0.85)';
+    overlayCtx.fillRect(lx - 2, ly - 10, textW + 6, 14);
+
+    overlayCtx.fillStyle = '#ff4d6a';
+    overlayCtx.fillText(label, lx + 1, ly);
+  }
+
+  overlayCtx.restore();
+}
+
+// ── Crosshair ──────────────────────────────────────────────────
+function drawCrosshair(mx, my) {
+  const w = parseFloat(crosshairCanvas.style.width);
+  const h = parseFloat(crosshairCanvas.style.height);
+  crossCtx.clearRect(0, 0, w, h);
+
+  crossCtx.save();
+  crossCtx.strokeStyle = 'rgba(0, 212, 255, 0.5)';
+  crossCtx.lineWidth = 0.5;
+  crossCtx.setLineDash([4, 4]);
+
+  // Vertical line
+  crossCtx.beginPath();
+  crossCtx.moveTo(mx, 0);
+  crossCtx.lineTo(mx, h);
+  crossCtx.stroke();
+
+  // Horizontal line
+  crossCtx.beginPath();
+  crossCtx.moveTo(0, my);
+  crossCtx.lineTo(w, my);
+  crossCtx.stroke();
+
+  crossCtx.restore();
+}
+
+// ── Mouse Events ───────────────────────────────────────────────
+pdfCanvas.addEventListener('mousemove', (e) => {
+  const rect = pdfCanvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  // Canvas coords at current zoom (in CSS pixels)
+  const canvasX = mx;
+  const canvasY = my;
+
+  // PDF coordinates
+  const pdfX = mx / zoom;
+  const pdfY = pageHeight - (my / zoom);
+
+  coordCanvas.textContent = `${canvasX.toFixed(1)}, ${canvasY.toFixed(1)}`;
+  coordPdf.textContent = `${pdfX.toFixed(1)}, ${pdfY.toFixed(1)}`;
+
+  drawCrosshair(mx, my);
+});
+
+pdfCanvas.addEventListener('mouseleave', () => {
+  const w = parseFloat(crosshairCanvas.style.width);
+  const h = parseFloat(crosshairCanvas.style.height);
+  crossCtx.clearRect(0, 0, w, h);
+  coordCanvas.textContent = '--, --';
+  coordPdf.textContent = '--, --';
+});
+
+pdfCanvas.addEventListener('click', (e) => {
+  if (!pdfDoc) return;
+
+  const rect = pdfCanvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  const pdfX = Math.round((mx / zoom) * 10) / 10;
+  const pdfY = Math.round((pageHeight - my / zoom) * 10) / 10;
+
+  const fieldName = fieldNameInput.value.trim() || `field_${pinIdCounter}`;
+  const maxWidth = parseInt(maxWidthInput.value) || 100;
+  const fontSize = parseInt(fontSizeInput.value) || 8;
+
+  const pin = {
+    id: pinIdCounter++,
+    page: currentPage,
+    fieldName,
+    pdfX,
+    pdfY,
+    maxWidth,
+    fontSize,
+  };
+
+  pins.push(pin);
+  drawOverlay();
+  updatePinList();
+  updateCodeOutput();
+
+  // Auto-increment field name if it ends with a number
+  const match = fieldName.match(/^(.+?)(\d+)$/);
+  if (match) {
+    fieldNameInput.value = match[1] + (parseInt(match[2]) + 1);
+  }
+
+  showToast(`Pinned "${fieldName}" at (${pdfX}, ${pdfY})`);
+});
+
+// ── Pin List ───────────────────────────────────────────────────
+function updatePinList() {
+  pinCount.textContent = `${pins.length} pin${pins.length !== 1 ? 's' : ''}`;
+  pinList.innerHTML = '';
+
+  // Group by page
+  const pageGroups = {};
+  pins.forEach(pin => {
+    if (!pageGroups[pin.page]) pageGroups[pin.page] = [];
+    pageGroups[pin.page].push(pin);
+  });
+
+  Object.keys(pageGroups).sort((a, b) => a - b).forEach(pg => {
+    const header = document.createElement('div');
+    header.style.cssText = 'padding:6px 14px;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;background:var(--bg-primary);border-bottom:1px solid var(--border);';
+    header.textContent = `Page ${pg}`;
+    pinList.appendChild(header);
+
+    pageGroups[pg].forEach(pin => {
+      const entry = document.createElement('div');
+      entry.className = 'pin-entry';
+      entry.innerHTML = `
+        <span class="pin-field">${escapeHtml(pin.fieldName)}</span>
+        <span class="pin-actions">
+          <button class="pin-delete" data-id="${pin.id}" title="Delete pin">&times;</button>
+        </span>
+        <span class="pin-coords">x: ${pin.pdfX}, y: ${pin.pdfY}, maxW: ${pin.maxWidth}, font: ${pin.fontSize}</span>
+      `;
+      entry.addEventListener('mouseenter', () => {
+        if (pin.page === currentPage) highlightPin(pin);
+      });
+      entry.addEventListener('mouseleave', () => drawOverlay());
+      entry.querySelector('.pin-delete').addEventListener('click', () => deletePin(pin.id));
+      pinList.appendChild(entry);
+    });
+  });
+}
+
+function highlightPin(pin) {
+  drawOverlay();
+  const cx = pin.pdfX * zoom;
+  const cy = (pageHeight - pin.pdfY) * zoom;
+  overlayCtx.save();
+  overlayCtx.strokeStyle = 'rgba(74, 222, 128, 0.8)';
+  overlayCtx.lineWidth = 2;
+  overlayCtx.beginPath();
+  overlayCtx.arc(cx, cy, 12, 0, Math.PI * 2);
+  overlayCtx.stroke();
+  overlayCtx.restore();
+}
+
+function deletePin(id) {
+  pins = pins.filter(p => p.id !== id);
+  drawOverlay();
+  updatePinList();
+  updateCodeOutput();
+}
+
+// ── Code Output ────────────────────────────────────────────────
+function updateCodeOutput() {
+  if (pins.length === 0) {
+    codeOutput.textContent = '// Pin coordinates to see TypeScript output here';
+    return;
+  }
+
+  let code = '';
+  const pageGroups = {};
+  pins.forEach(pin => {
+    if (!pageGroups[pin.page]) pageGroups[pin.page] = [];
+    pageGroups[pin.page].push(pin);
+  });
+
+  Object.keys(pageGroups).sort((a, b) => a - b).forEach(pg => {
+    code += `// ── Page ${pg} (pageIndex: ${pg - 1}) ──\n`;
+    pageGroups[pg].forEach(pin => {
+      code += `'${pin.fieldName}': { x: ${pin.pdfX}, y: ${pin.pdfY}, maxWidth: ${pin.maxWidth}, fontSize: ${pin.fontSize} },\n`;
+    });
+    code += '\n';
+  });
+
+  codeOutput.textContent = code.trimEnd();
+}
+
+function getExportCode() {
+  if (pins.length === 0) return '// No pins to export';
+
+  let code = '// Generated by PDF Coordinate Mapper\n';
+  code += `// Page size: ${Math.round(pageWidth)} x ${Math.round(pageHeight)} pts\n\n`;
+
+  const pageGroups = {};
+  pins.forEach(pin => {
+    if (!pageGroups[pin.page]) pageGroups[pin.page] = [];
+    pageGroups[pin.page].push(pin);
+  });
+
+  Object.keys(pageGroups).sort((a, b) => a - b).forEach(pg => {
+    code += `// ── Page ${pg} (pageIndex: ${parseInt(pg) - 1}) ──\nfields: {\n`;
+    pageGroups[pg].forEach(pin => {
+      code += `  '${pin.fieldName}': { x: ${pin.pdfX}, y: ${pin.pdfY}, maxWidth: ${pin.maxWidth}, fontSize: ${pin.fontSize} },\n`;
+    });
+    code += '},\n\n';
+  });
+
+  return code.trimEnd();
+}
+
+// ── Page Navigation ────────────────────────────────────────────
+document.getElementById('btn-prev-page').addEventListener('click', () => navigatePage(-1));
+document.getElementById('btn-next-page').addEventListener('click', () => navigatePage(1));
+
+function navigatePage(delta) {
+  if (!pdfDoc) return;
+  const next = currentPage + delta;
+  if (next < 1 || next > totalPages) return;
+  currentPage = next;
+  renderPage();
+}
+
+// ── Zoom ───────────────────────────────────────────────────────
+const ZOOM_STEPS = [0.25, 0.33, 0.5, 0.67, 0.75, 0.8, 0.9, 1.0, 1.1, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 4.0];
+
+document.getElementById('btn-zoom-in').addEventListener('click', () => changeZoom(1));
+document.getElementById('btn-zoom-out').addEventListener('click', () => changeZoom(-1));
+document.getElementById('btn-zoom-fit').addEventListener('click', fitToView);
+
+function changeZoom(direction) {
+  if (!pdfDoc) return;
+  const currentIdx = ZOOM_STEPS.findIndex(z => z >= zoom - 0.001);
+  const nextIdx = Math.max(0, Math.min(ZOOM_STEPS.length - 1, (currentIdx === -1 ? 7 : currentIdx) + direction));
+  zoom = ZOOM_STEPS[nextIdx];
+  renderPage();
+}
+
+function fitToView() {
+  if (!pdfDoc) return;
+  const areaRect = canvasArea.getBoundingClientRect();
+  const padding = 48;
+  const fitW = (areaRect.width - padding) / pageWidth;
+  const fitH = (areaRect.height - padding) / pageHeight;
+  zoom = Math.min(fitW, fitH, 4.0);
+  // Snap to nearest step for cleanliness
+  zoom = Math.round(zoom * 100) / 100;
+  renderPage();
+}
+
+// ── Grid Toggle ────────────────────────────────────────────────
+const btnGrid = document.getElementById('btn-grid');
+btnGrid.addEventListener('click', () => {
+  showGrid = !showGrid;
+  btnGrid.textContent = showGrid ? 'On' : 'Off';
+  btnGrid.style.borderColor = showGrid ? 'var(--accent)' : '';
+  drawOverlay();
+});
+
+// ── Code Output Toggle ─────────────────────────────────────────
+document.getElementById('code-output-header').addEventListener('click', () => {
+  codeOutputCollapsed = !codeOutputCollapsed;
+  document.getElementById('code-output-wrapper').classList.toggle('hidden', codeOutputCollapsed);
+});
+
+// ── Export ──────────────────────────────────────────────────────
+document.getElementById('btn-export').addEventListener('click', exportToClipboard);
+
+async function exportToClipboard() {
+  const code = getExportCode();
+  try {
+    await navigator.clipboard.writeText(code);
+    showToast('TypeScript code copied to clipboard');
+  } catch {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = code;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('TypeScript code copied to clipboard');
+  }
+}
+
+// ── Clear All ──────────────────────────────────────────────────
+document.getElementById('btn-clear-all').addEventListener('click', () => {
+  if (pins.length === 0) return;
+  if (!confirm(`Delete all ${pins.length} pins?`)) return;
+  pins = [];
+  drawOverlay();
+  updatePinList();
+  updateCodeOutput();
+  showToast('All pins cleared');
+});
+
+// ── Keyboard Shortcuts ─────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  // Don't capture when typing in an input
+  const tag = e.target.tagName;
+  const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+
+  if (e.ctrlKey && e.key === 'o') {
+    e.preventDefault();
+    fileInput.click();
+    return;
+  }
+
+  if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+    e.preventDefault();
+    exportToClipboard();
+    return;
+  }
+
+  if (isInput) return;
+
+  switch (e.key) {
+    case 'ArrowLeft':
+      e.preventDefault();
+      navigatePage(-1);
+      break;
+    case 'ArrowRight':
+      e.preventDefault();
+      navigatePage(1);
+      break;
+    case '+':
+    case '=':
+      e.preventDefault();
+      changeZoom(1);
+      break;
+    case '-':
+      e.preventDefault();
+      changeZoom(-1);
+      break;
+    case '0':
+      e.preventDefault();
+      fitToView();
+      break;
+    case 'g':
+    case 'G':
+      e.preventDefault();
+      btnGrid.click();
+      break;
+    case 'z':
+      e.preventDefault();
+      if (pins.length > 0) {
+        const last = pins[pins.length - 1];
+        deletePin(last.id);
+        showToast('Undid last pin');
+      }
+      break;
+    case 'f':
+    case 'F':
+      e.preventDefault();
+      fieldNameInput.focus();
+      fieldNameInput.select();
+      break;
+  }
+});
+
+// ── Mouse wheel zoom ───────────────────────────────────────────
+canvasArea.addEventListener('wheel', (e) => {
+  if (!pdfDoc) return;
+  if (e.ctrlKey || e.metaKey) {
+    e.preventDefault();
+    changeZoom(e.deltaY < 0 ? 1 : -1);
+  }
+}, { passive: false });
+
+// ── Toast ──────────────────────────────────────────────────────
+let toastTimeout;
+function showToast(msg, isError = false) {
+  toast.textContent = msg;
+  toast.style.background = isError ? 'var(--danger)' : 'var(--success)';
+  toast.classList.add('show');
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
+// ── Utility ────────────────────────────────────────────────────
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+</script>
+</body>
+</html>
