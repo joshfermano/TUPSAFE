@@ -24,7 +24,7 @@
  */
 
 import type { CompletePdsData } from '../validations/pds-schema';
-import type { PDSData } from '@tupsafe/shared-ui/pds-pdf';
+import type { PDSData } from '@tupsafe/shared-ui/pds-template';
 
 // ============================================================================
 // Internal type aliases for data flowing across serialization boundaries

@@ -54,26 +54,57 @@ export * from './ui/enhanced-background';
 export * from './ui/enhanced-success';
 
 // ============================================================================
-// PDF Exports (kept for backward compatibility)
+// PDF Type-Only Exports
 //
-// PREFER importing from '@tupsafe/shared-ui/pdf' instead of '@tupsafe/shared-ui'
-// for PDF-related imports. This avoids pulling @react-pdf/renderer (~50KB+)
-// into bundles that only need UI components.
+// IMPORTANT: pdf-lib and @react-pdf/renderer modules must NOT be statically
+// imported here. They are heavy dependencies that should only load via:
+//   - Dynamic import() in hooks (e.g., usePDSPdf, useSALNPdf)
+//   - Subpath imports: '@tupsafe/shared-ui/pds-template'
+//   - Subpath imports: '@tupsafe/shared-ui/saln-template'
+//   - Subpath imports: '@tupsafe/shared-ui/report-pdf'
+//   - Subpath imports: '@tupsafe/shared-ui/pdf'
 //
-// Example:
-//   import { PDSDocument, SALNDocument } from '@tupsafe/shared-ui/pdf';
+// Only TYPE exports are safe here (erased at compile time).
 // ============================================================================
 
-// Export PDF fonts utility
-export * from './fonts';
+// PDS types (no runtime cost — types are erased)
+export type {
+  PDSData,
+  PersonalInfo,
+  FamilyBackground,
+  Child,
+  Education,
+  CivilServiceEligibility,
+  WorkExperience,
+  VoluntaryWork,
+  Training,
+  Recognition,
+  Association,
+  Reference,
+  PDSQuestions,
+  GovernmentID as PDSGovernmentID,
+  Address,
+} from './pds-template';
 
-// Export SALN PDF components and utilities
-export * from './saln-pdf';
+// SALN types (no runtime cost)
+export type {
+  SALNData,
+  DeclarantInfo,
+  SpouseInfo,
+  ChildInfo,
+  RealProperty,
+  PersonalProperty,
+  Liability,
+  BusinessInterest,
+  RelativeInGov,
+  GovernmentID,
+  FilingType,
+  ComplianceType,
+  PropertyOwner,
+  UnmarriedChild,
+} from './saln-template';
 
-// Export PDS PDF components and utilities
-export * from './pds-pdf';
-
-// Export Report PDF components and utilities (with explicit re-exports to avoid conflicts)
+// Report PDF types (no runtime cost)
 export type {
   ReportType,
   ReportData,
@@ -83,27 +114,3 @@ export type {
   ReportTableProps,
   ReportFooterProps,
 } from './report-pdf/types';
-
-export {
-  reportStyles,
-  REPORT_COLORS,
-  REPORT_DIMENSIONS,
-  REPORT_FONT_SIZES,
-  registerReportFonts,
-  ensureReportFontsRegistered,
-  formatReportDate,
-  formatReportDateTime,
-  displayOrNA,
-} from './report-pdf/ReportStyles';
-
-export {
-  ReportHeader,
-  TableHeader,
-  ReportFooter,
-} from './report-pdf/ReportComponents';
-
-export {
-  ReportDocument,
-  calculateColumnWidths,
-  validateReportData,
-} from './report-pdf/ReportDocument';

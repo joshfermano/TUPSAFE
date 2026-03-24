@@ -1,39 +1,61 @@
 /**
- * PDF-specific exports from @tupsafe/shared-ui
+ * PDF-specific type exports from @tupsafe/shared-ui
  *
- * This module consolidates all PDF-related exports (SALN, PDS, Report PDFs, and fonts)
- * into a single entry point. Consumers that only need PDF functionality should import
- * from '@tupsafe/shared-ui/pdf' to avoid pulling in UI components and their dependencies.
+ * IMPORTANT: This barrel must NOT statically import pdf-lib or @react-pdf/renderer
+ * modules. Those are heavy dependencies that should only load via dynamic import()
+ * or subpath imports:
+ *   import { fillPDS } from '@tupsafe/shared-ui/pds-template';
+ *   import { fillSALN } from '@tupsafe/shared-ui/saln-template';
+ *   import { ReportDocument } from '@tupsafe/shared-ui/report-pdf';
  *
- * Bundle impact: @react-pdf/renderer adds ~50KB+ to the client bundle.
- * By separating PDF exports, pages that don't generate PDFs avoid this cost entirely.
+ * Only TYPE exports are safe here (erased at compile time).
  *
  * @module pdf-exports
  */
 
 // ============================================================================
-// PDF Font Utilities
+// PDS Types (type-only, no runtime cost)
 // ============================================================================
-export {
-  DEFAULT_FONT_PATHS,
-  type FontPaths,
-  registerPDFFonts,
-  ensurePDFFontsRegistered,
-  resetFontRegistration,
-} from './fonts';
+export type {
+  PDSData,
+  PersonalInfo,
+  FamilyBackground,
+  Child,
+  Education,
+  CivilServiceEligibility,
+  WorkExperience,
+  VoluntaryWork,
+  Training,
+  Recognition,
+  Association,
+  Reference,
+  PDSQuestions,
+  GovernmentID as PDSGovernmentID,
+  Address,
+} from './pds-template';
 
 // ============================================================================
-// SALN PDF Components and Utilities
+// SALN Types (type-only, no runtime cost)
 // ============================================================================
-export * from './saln-pdf';
+export type {
+  SALNData,
+  DeclarantInfo,
+  SpouseInfo,
+  ChildInfo,
+  RealProperty,
+  PersonalProperty,
+  Liability,
+  BusinessInterest,
+  RelativeInGov,
+  GovernmentID,
+  FilingType,
+  ComplianceType,
+  PropertyOwner,
+  UnmarriedChild,
+} from './saln-template';
 
 // ============================================================================
-// PDS PDF Components and Utilities
-// ============================================================================
-export * from './pds-pdf';
-
-// ============================================================================
-// Report PDF Components and Utilities
+// Report PDF Types (type-only, no runtime cost)
 // ============================================================================
 export type {
   ReportType,
@@ -44,27 +66,3 @@ export type {
   ReportTableProps,
   ReportFooterProps,
 } from './report-pdf/types';
-
-export {
-  reportStyles,
-  REPORT_COLORS,
-  REPORT_DIMENSIONS,
-  REPORT_FONT_SIZES,
-  registerReportFonts,
-  ensureReportFontsRegistered,
-  formatReportDate,
-  formatReportDateTime,
-  displayOrNA,
-} from './report-pdf/ReportStyles';
-
-export {
-  ReportHeader,
-  TableHeader,
-  ReportFooter,
-} from './report-pdf/ReportComponents';
-
-export {
-  ReportDocument,
-  calculateColumnWidths,
-  validateReportData,
-} from './report-pdf/ReportDocument';

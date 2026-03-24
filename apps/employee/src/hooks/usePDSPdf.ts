@@ -13,11 +13,11 @@
  */
 
 import { useState, useCallback } from 'react';
-import type { PDSData } from '@tupsafe/shared-ui/pds-pdf';
+import type { PDSData } from '@tupsafe/shared-ui/pds-template';
 import { validatePDSForPDF } from '../lib/utils/pds-validation';
 
 // Re-export type so consumers don't need a separate import
-export type { PDSData } from '@tupsafe/shared-ui/pds-pdf';
+export type { PDSData } from '@tupsafe/shared-ui/pds-template';
 
 // ============================================================================
 // Types
@@ -240,24 +240,18 @@ export function usePDSPdf(): UsePDSPdfReturn {
       pdsData.associations = pdsData.associations || [];
       pdsData.references = pdsData.references || [];
 
-      // STEP 7: Dynamically import PDF libraries (deferred from top-level)
-      const [{ pdf }, { PDSDocument, ensurePDSFontsRegistered }] = await Promise.all([
-        import('@react-pdf/renderer'),
-        import('@tupsafe/shared-ui/pds-pdf'),
-      ]);
+      // STEP 7: Dynamically import pdf-lib template filler via deep subpath
+      // (NOT the barrel — barrel must stay free of pdf-lib transitive imports)
+      const { fillPDS } = await import('@tupsafe/shared-ui/pds-template/pds-filler');
 
-      // Get base URL for font paths and ensure fonts are registered
       const baseUrl =
         typeof window !== 'undefined' ? window.location.origin : '';
-      ensurePDSFontsRegistered(baseUrl);
 
-      // Create the PDF document element
-      const document = PDSDocument({ data: pdsData });
+      // Fill the government PDF template with data using pdf-lib
+      const pdfBytes = await fillPDS(baseUrl, pdsData);
 
-      // Generate the PDF blob using @react-pdf/renderer
-      const blob = await pdf(document).toBlob();
-
-      return blob;
+      // Cast: pdf-lib returns Uint8Array<ArrayBufferLike>, Blob needs ArrayBuffer
+      return new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
     } catch (err) {
       const error =
         err instanceof Error ? err : new Error('Failed to generate PDF');
