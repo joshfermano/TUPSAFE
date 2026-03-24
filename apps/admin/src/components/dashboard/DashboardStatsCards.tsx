@@ -107,7 +107,7 @@ export function DashboardStatsCards({ data }: DashboardStatsCardsProps) {
       </Link>
 
       {/* Compliance Rate Card */}
-      <Link href="/dashboard/compliance" className="block">
+      <Link href="/dashboard/submissions" className="block">
         <Card className="hover:shadow-lg transition-shadow cursor-pointer">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Compliance Rate</CardTitle>

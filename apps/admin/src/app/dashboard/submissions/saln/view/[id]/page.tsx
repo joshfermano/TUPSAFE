@@ -16,6 +16,7 @@ import {
   TrendingUp,
   Printer,
   Loader2,
+  XCircle,
 } from 'lucide-react';
 
 import {
@@ -70,6 +71,7 @@ export default function SalnSubmissionViewPage() {
   const submissionId = params.id as string;
 
   const [isReviewDialogOpen, setIsReviewDialogOpen] = React.useState(false);
+  const [reviewAction, setReviewAction] = React.useState<'approve' | 'reject' | undefined>(undefined);
 
   const {
     useCompleteSubmission,
@@ -495,11 +497,32 @@ export default function SalnSubmissionViewPage() {
                 Print PDF
               </Button>
               {canReview && (
-                <Button
-                  onClick={() => setIsReviewDialogOpen(true)}
-                  className="gap-2 bg-tup-primary hover:bg-tup-primary/90">
-                  Review Submission
-                </Button>
+                <>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      setReviewAction('reject');
+                      setIsReviewDialogOpen(true);
+                    }}
+                    disabled={isSubmitting}
+                    className="gap-2">
+                    <XCircle className="h-4 w-4" />
+                    Reject
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => {
+                      setReviewAction('approve');
+                      setIsReviewDialogOpen(true);
+                    }}
+                    disabled={isSubmitting}
+                    className="gap-2">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Approve
+                  </Button>
+                </>
               )}
             </div>
           </div>
@@ -880,12 +903,30 @@ export default function SalnSubmissionViewPage() {
                 <Separator />
                 <div className="space-y-2">
                   {canReview && (
-                    <Button
-                      onClick={() => setIsReviewDialogOpen(true)}
-                      className="w-full bg-emerald-500 hover:bg-emerald-700 gap-2">
-                      <CheckCircle2 className="h-4 w-4" />
-                      Review Submission
-                    </Button>
+                    <>
+                      <Button
+                        variant="default"
+                        onClick={() => {
+                          setReviewAction('approve');
+                          setIsReviewDialogOpen(true);
+                        }}
+                        disabled={isSubmitting}
+                        className="w-full gap-2">
+                        <CheckCircle2 className="h-4 w-4" />
+                        Approve
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          setReviewAction('reject');
+                          setIsReviewDialogOpen(true);
+                        }}
+                        disabled={isSubmitting}
+                        className="w-full gap-2">
+                        <XCircle className="h-4 w-4" />
+                        Reject
+                      </Button>
+                    </>
                   )}
                   <Button
                     variant="outline"
@@ -928,6 +969,7 @@ export default function SalnSubmissionViewPage() {
           submissionType="saln"
           currentStatus={submission.status}
           employeeName={`${employee.firstName} ${employee.lastName}`}
+          defaultAction={reviewAction}
           onApprove={handleApprove}
           onReject={handleReject}
           isSubmitting={isSubmitting}

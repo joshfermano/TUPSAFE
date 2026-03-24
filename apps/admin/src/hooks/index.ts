@@ -135,6 +135,9 @@ export {
   useIsLarge,
 } from './useMediaQuery';
 
+// Dark Mode Detection Hook
+export { useIsDarkMode } from './useIsDarkMode';
+
 // Organization Options Hook (for user edit form)
 export {
   useOrganizationOptions,

@@ -1,5 +1,4 @@
 import { memo } from 'react';
-import { Badge } from '@/components/ui/badge';
 import {
   CheckCircle2,
   Clock,
@@ -10,95 +9,104 @@ import {
   UserX,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useIsDarkMode } from '@/hooks/useIsDarkMode';
 
-/**
- * Status configuration mapping for StatusBadge component
- * Defines visual appearance and icons for each status type
- */
-const statusConfig = {
+interface StatusColors {
+  bg: string;
+  text: string;
+  border: string;
+}
+
+const statusConfig: Record<
+  string,
+  {
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    light: StatusColors;
+    dark: StatusColors;
+    pulse?: boolean;
+  }
+> = {
   draft: {
     label: 'Draft',
     icon: FileText,
-    className: 'bg-secondary text-secondary-foreground border-secondary',
+    light: { bg: '#e2e8f0', text: '#475569', border: '#94a3b8' },
+    dark: { bg: 'rgba(100,116,139,0.15)', text: '#94a3b8', border: 'rgba(100,116,139,0.4)' },
   },
   submitted: {
     label: 'Submitted',
     icon: Clock,
-    className:
-      'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20 dark:border-blue-500/30',
+    light: { bg: '#bfdbfe', text: '#1e3a8a', border: '#60a5fa' },
+    dark: { bg: 'rgba(59,130,246,0.15)', text: '#93c5fd', border: 'rgba(59,130,246,0.4)' },
   },
   reviewing: {
     label: 'Reviewing',
     icon: Eye,
-    className:
-      'bg-yellow-500/10 text-yellow-700 dark:text-yellow-300 border-yellow-500/20 dark:border-yellow-500/30 animate-pulse',
+    pulse: true,
+    light: { bg: '#fef08a', text: '#713f12', border: '#facc15' },
+    dark: { bg: 'rgba(234,179,8,0.15)', text: '#fde047', border: 'rgba(234,179,8,0.4)' },
   },
   approved: {
     label: 'Approved',
     icon: CheckCircle2,
-    className:
-      'bg-green-500/10 text-green-700 dark:text-green-300 border-green-500/20 dark:border-green-500/30',
+    light: { bg: '#bbf7d0', text: '#14532d', border: '#4ade80' },
+    dark: { bg: 'rgba(34,197,94,0.15)', text: '#86efac', border: 'rgba(34,197,94,0.4)' },
   },
   rejected: {
     label: 'Rejected',
     icon: XCircle,
-    className: 'bg-destructive/10 text-destructive border-destructive/20',
+    light: { bg: '#fecaca', text: '#7f1d1d', border: '#f87171' },
+    dark: { bg: 'rgba(239,68,68,0.15)', text: '#fca5a5', border: 'rgba(239,68,68,0.4)' },
   },
   active: {
     label: 'Active',
     icon: UserCheck,
-    className:
-      'bg-green-500/10 text-green-700 dark:text-green-300 border-green-500/20 dark:border-green-500/30',
+    light: { bg: '#bbf7d0', text: '#14532d', border: '#4ade80' },
+    dark: { bg: 'rgba(34,197,94,0.15)', text: '#86efac', border: 'rgba(34,197,94,0.4)' },
   },
   inactive: {
     label: 'Inactive',
     icon: UserX,
-    className: 'bg-muted text-muted-foreground border-muted',
+    light: { bg: '#e2e8f0', text: '#64748b', border: '#cbd5e1' },
+    dark: { bg: 'rgba(100,116,139,0.15)', text: '#94a3b8', border: 'rgba(100,116,139,0.4)' },
   },
-} as const;
+};
 
 export type StatusType = keyof typeof statusConfig;
 
 interface StatusBadgeProps {
-  /** The status to display */
   status: StatusType;
-  /** Additional CSS classes */
   className?: string;
-  /** Whether to show the icon */
   showIcon?: boolean;
 }
 
-/**
- * StatusBadge Component
- *
- * Displays a status badge with color coding and optional icon.
- * Used throughout the admin portal to show submission and user statuses.
- *
- * @example
- * ```tsx
- * <StatusBadge status="approved" />
- * <StatusBadge status="reviewing" showIcon={false} />
- * ```
- */
 export const StatusBadge = memo(function StatusBadge({
   status,
   className,
   showIcon = true,
 }: StatusBadgeProps) {
+  const isDark = useIsDarkMode();
   const config = statusConfig[status];
+  if (!config) return null;
+
+  const colors = isDark ? config.dark : config.light;
   const Icon = config.icon;
 
   return (
-    <Badge
-      variant="outline"
+    <span
       className={cn(
-        'inline-flex items-center gap-1.5 font-medium transition-colors',
-        config.className,
+        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors',
+        config.pulse && 'animate-pulse',
         className
-      )}>
+      )}
+      style={{
+        backgroundColor: colors.bg,
+        color: colors.text,
+        borderColor: colors.border,
+      }}>
       {showIcon && <Icon className="h-3.5 w-3.5" />}
       {config.label}
-    </Badge>
+    </span>
   );
 });
 

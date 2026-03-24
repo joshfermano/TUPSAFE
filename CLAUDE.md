@@ -28,7 +28,7 @@ pnpm exec drizzle-kit push       # Push migrations to database
 pnpm exec drizzle-kit studio     # Visual database browser
 ```
 
-No test framework is configured yet. Verify changes via `pnpm build:employee && pnpm lint`.
+No test framework is configured yet. After implementation changes, run `pnpm lint` to check for errors. Only run `pnpm build:employee` or `pnpm build:admin` before committing — do NOT run builds after every implementation step.
 
 ```bash
 # Docker (local development)

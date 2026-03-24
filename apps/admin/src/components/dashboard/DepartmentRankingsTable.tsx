@@ -84,7 +84,7 @@ export function DepartmentRankingsTable() {
             <CardTitle>Top Departments</CardTitle>
             <CardDescription>Ranked by overall compliance rate</CardDescription>
           </div>
-          <Link href="/dashboard/departments">
+          <Link href="/dashboard/organization">
             <Badge variant="outline" className="cursor-pointer hover:bg-muted">
               View All
             </Badge>
@@ -117,10 +117,11 @@ export function DepartmentRankingsTable() {
               return (
                 <div
                   key={dept.id}
-                  className={cn(
-                    'rounded-lg border p-3 transition-colors hover:bg-muted/50',
-                    rank <= 3 && 'border-yellow-500/30 bg-yellow-50/50 dark:bg-yellow-950/20'
-                  )}>
+                  className="rounded-lg border p-3 transition-colors hover:bg-muted/50"
+                  style={rank <= 3 ? {
+                    borderColor: 'var(--ranking-border)',
+                    backgroundColor: 'var(--ranking-bg)',
+                  } : undefined}>
                   {/* Mobile & Tablet Layout (< md) */}
                   <div className="md:hidden">
                     {/* Department Header */}
