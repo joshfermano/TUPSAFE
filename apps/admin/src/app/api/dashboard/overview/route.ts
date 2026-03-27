@@ -366,8 +366,8 @@ export async function GET(_request: NextRequest) {
         title: 'Low PDS Compliance',
         message: `Only ${pdsRate.toFixed(1)}% of employees have submitted PDS`,
         action: {
-          label: 'View Report',
-          url: '/dashboard/compliance',
+          label: 'View Submissions',
+          url: '/dashboard/submissions/pds',
         },
       });
     }
@@ -381,8 +381,8 @@ export async function GET(_request: NextRequest) {
           1
         )}% of employees have submitted SALN for ${now.getFullYear()}`,
         action: {
-          label: 'View Report',
-          url: '/dashboard/compliance',
+          label: 'View Submissions',
+          url: '/dashboard/submissions/saln',
         },
       });
     }

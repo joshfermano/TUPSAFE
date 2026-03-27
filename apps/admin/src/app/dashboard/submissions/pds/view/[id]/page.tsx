@@ -514,20 +514,24 @@ export default function PdsSubmissionViewPage() {
                   <>
                     <Button
                       variant="destructive"
+                      size="sm"
                       onClick={() => {
                         setReviewAction('reject');
                         setIsReviewDialogOpen(true);
                       }}
+                      disabled={isSubmitting}
                       className="gap-2">
                       <XCircle className="h-4 w-4" />
                       Reject
                     </Button>
                     <Button
                       variant="default"
+                      size="sm"
                       onClick={() => {
                         setReviewAction('approve');
                         setIsReviewDialogOpen(true);
                       }}
+                      disabled={isSubmitting}
                       className="gap-2">
                       <CheckCircle className="h-4 w-4" />
                       Approve
@@ -537,10 +541,12 @@ export default function PdsSubmissionViewPage() {
                 {isDraft && !canReview && (
                   <Button
                     variant="destructive"
+                    size="sm"
                     onClick={() => {
                       setReviewAction('reject');
                       setIsReviewDialogOpen(true);
                     }}
+                    disabled={isSubmitting}
                     className="gap-2">
                     <XCircle className="h-4 w-4" />
                     Reject Draft

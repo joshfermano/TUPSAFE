@@ -413,68 +413,6 @@ export default function ProfilePage() {
         </BlurFade>
       )}
 
-      {/* Quick Actions */}
-      <BlurFade delay={0.3}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* PDS Quick Action */}
-          <MagicCard
-            gradientSize={200}
-            gradientColor="var(--primary)"
-            gradientOpacity={0.08}
-            gradientFrom="var(--primary)"
-            gradientTo="var(--tup-crimson-dark)"
-            className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden hover:border-primary/30 transition-all duration-300">
-            <div className="p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row items-start gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 group-hover:from-primary/20 group-hover:to-primary/10 transition-colors">
-                  <FileText className="h-6 w-6 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-1">
-                    Personal Data Sheet
-                  </h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-                    View and update your e-PDS
-                  </p>
-                  <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary hover:text-white bg-primary/5 hover:bg-primary dark:bg-primary/10 dark:hover:bg-primary border border-primary/20 hover:border-primary rounded-lg transition-all duration-200">
-                    <Eye className="h-4 w-4" />
-                    View e-PDS
-                  </button>
-                </div>
-              </div>
-            </div>
-          </MagicCard>
-
-          {/* SALN Quick Action */}
-          <MagicCard
-            gradientSize={200}
-            gradientColor="var(--secondary)"
-            gradientOpacity={0.08}
-            gradientFrom="var(--secondary)"
-            gradientTo="var(--tup-gold-dark)"
-            className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden hover:border-secondary/30 transition-all duration-300">
-            <div className="p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row items-start gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-secondary/10 to-secondary/5 dark:from-secondary/20 dark:to-secondary/10 group-hover:from-secondary/20 group-hover:to-secondary/10 transition-colors">
-                  <Award className="h-6 w-6 text-secondary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-1">
-                    Statement of Assets
-                  </h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-                    Manage your annual e-SALN
-                  </p>
-                  <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-secondary hover:text-slate-900 bg-secondary/5 hover:bg-secondary dark:bg-secondary/10 dark:hover:bg-secondary border border-secondary/20 hover:border-secondary rounded-lg transition-all duration-200">
-                    <Eye className="h-4 w-4" />
-                    View e-SALN
-                  </button>
-                </div>
-              </div>
-            </div>
-          </MagicCard>
-        </div>
-      </BlurFade>
     </div>
   );
 }

@@ -115,7 +115,7 @@ export function UpcomingDeadlinesCard() {
             <CardTitle>Upcoming Deadlines</CardTitle>
             <CardDescription>Submission deadlines and progress</CardDescription>
           </div>
-          <Link href="/dashboard/compliance">
+          <Link href="/dashboard/submissions">
             <Badge variant="outline" className="cursor-pointer hover:bg-muted">
               View Details
             </Badge>

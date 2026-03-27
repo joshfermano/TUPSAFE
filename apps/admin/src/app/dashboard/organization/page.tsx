@@ -234,10 +234,30 @@ export default function OrganizationPage() {
             onValueChange={(value) => updateParams({ type: value })}
           >
             <TabsList>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="college">Colleges</TabsTrigger>
-              <TabsTrigger value="department">Departments</TabsTrigger>
-              <TabsTrigger value="office">Offices</TabsTrigger>
+              {[
+                { value: 'all', label: 'All' },
+                { value: 'college', label: 'Colleges' },
+                { value: 'department', label: 'Departments' },
+                { value: 'office', label: 'Offices' },
+              ].map((tab) => {
+                const isActive = (queryParams.type || 'all') === tab.value;
+                const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+                return (
+                  <TabsTrigger
+                    key={tab.value}
+                    value={tab.value}
+                    style={isActive ? {
+                      backgroundColor: isDark ? 'rgba(139,21,56,0.2)' : '#fce4ec',
+                      color: isDark ? '#f48fb1' : '#880e4f',
+                      borderColor: isDark ? 'rgba(139,21,56,0.5)' : '#f06292',
+                      borderWidth: '1px',
+                      borderStyle: 'solid',
+                    } : undefined}
+                  >
+                    {tab.label}
+                  </TabsTrigger>
+                );
+              })}
             </TabsList>
           </Tabs>
 

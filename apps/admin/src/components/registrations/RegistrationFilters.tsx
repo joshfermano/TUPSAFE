@@ -3,11 +3,12 @@
  *
  * Provides filtering and search capabilities for registration list.
  * Includes status tabs, user type filter, department filter, and debounced search.
+ * Uses inline styles for theme-aware colors to avoid Tailwind v4 specificity issues.
  */
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type CSSProperties } from 'react';
 import { Search, X } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { useIsDarkMode } from '@/hooks/useIsDarkMode';
 
 export interface RegistrationFiltersState {
   status?: 'pending' | 'approved' | 'rejected';
@@ -27,6 +29,28 @@ export interface RegistrationFiltersState {
   departmentId?: string;
   search?: string;
 }
+
+/** Theme-aware styles for active tab triggers */
+const tabActiveStyles = {
+  all: {
+    light: { backgroundColor: '#e2e8f0', color: '#1e293b', borderColor: '#94a3b8' },
+    dark: { backgroundColor: 'rgba(100,116,139,0.2)', color: '#e2e8f0', borderColor: 'rgba(100,116,139,0.4)' },
+  },
+  pending: {
+    light: { backgroundColor: '#bfdbfe', color: '#1e3a8a', borderColor: '#60a5fa' },
+    dark: { backgroundColor: 'rgba(59,130,246,0.15)', color: '#93c5fd', borderColor: 'rgba(59,130,246,0.4)' },
+  },
+  approved: {
+    light: { backgroundColor: '#bbf7d0', color: '#14532d', borderColor: '#4ade80' },
+    dark: { backgroundColor: 'rgba(34,197,94,0.15)', color: '#86efac', borderColor: 'rgba(34,197,94,0.4)' },
+  },
+  rejected: {
+    light: { backgroundColor: '#fecaca', color: '#7f1d1d', borderColor: '#f87171' },
+    dark: { backgroundColor: 'rgba(239,68,68,0.15)', color: '#fca5a5', borderColor: 'rgba(239,68,68,0.4)' },
+  },
+} as const;
+
+type TabStatus = keyof typeof tabActiveStyles;
 
 interface RegistrationFiltersProps {
   filters: RegistrationFiltersState;
@@ -40,6 +64,8 @@ export function RegistrationFilters({
   departments = [],
 }: RegistrationFiltersProps) {
   const [searchValue, setSearchValue] = useState(filters.search || '');
+  const isDark = useIsDarkMode();
+  const activeTab = filters.status || 'all';
 
   // Debounce search input (300ms)
   useEffect(() => {
@@ -86,32 +112,34 @@ export function RegistrationFilters({
     filters.search,
   ].filter(Boolean).length;
 
+  /**
+   * Returns inline style for a tab trigger when it is the active tab.
+   * Returns undefined for inactive tabs so the default shadcn styling applies.
+   */
+  function getTabStyle(value: string): CSSProperties | undefined {
+    if (activeTab !== value) return undefined;
+    const config = tabActiveStyles[value as TabStatus];
+    if (!config) return undefined;
+    return isDark ? config.dark : config.light;
+  }
+
   return (
     <div className="space-y-4">
       {/* Status Tabs */}
       <Tabs
-        value={filters.status || 'all'}
+        value={activeTab}
         onValueChange={handleStatusChange}
         className="w-full"
       >
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger
-            value="pending"
-            className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-blue-200 dark:data-[state=active]:bg-blue-900/90 dark:data-[state=active]:text-blue-400 dark:data-[state=active]:border-blue-800"
-          >
+          <TabsTrigger value="all" style={getTabStyle('all')}>All</TabsTrigger>
+          <TabsTrigger value="pending" style={getTabStyle('pending')}>
             Pending
           </TabsTrigger>
-          <TabsTrigger
-            value="approved"
-            className="data-[state=active]:bg-green-50 data-[state=active]:text-green-700 data-[state=active]:border-green-200 dark:data-[state=active]:bg-green-900/90 dark:data-[state=active]:text-green-400 dark:data-[state=active]:border-green-800"
-          >
+          <TabsTrigger value="approved" style={getTabStyle('approved')}>
             Approved
           </TabsTrigger>
-          <TabsTrigger
-            value="rejected"
-            className="data-[state=active]:bg-red-50 data-[state=active]:text-red-700 data-[state=active]:border-red-200 dark:data-[state=active]:bg-red-900/90 dark:data-[state=active]:text-red-500 dark:data-[state=active]:border-red-800"
-          >
+          <TabsTrigger value="rejected" style={getTabStyle('rejected')}>
             Rejected
           </TabsTrigger>
         </TabsList>

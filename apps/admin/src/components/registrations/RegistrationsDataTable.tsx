@@ -35,8 +35,37 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useIsDarkMode } from '@/hooks/useIsDarkMode';
 import type { Registration } from '@/lib/api/registrations';
 import { capitalize } from '@/lib/formatting-helpers';
+
+/** Theme-aware styles for registration status badges */
+const statusStyles = {
+  pending: {
+    light: { bg: '#bfdbfe', color: '#1e3a8a', border: '#60a5fa' },
+    dark: { bg: 'rgba(59,130,246,0.15)', color: '#93c5fd', border: 'rgba(59,130,246,0.4)' },
+  },
+  approved: {
+    light: { bg: '#bbf7d0', color: '#14532d', border: '#4ade80' },
+    dark: { bg: 'rgba(34,197,94,0.15)', color: '#86efac', border: 'rgba(34,197,94,0.4)' },
+  },
+  rejected: {
+    light: { bg: '#fecaca', color: '#7f1d1d', border: '#f87171' },
+    dark: { bg: 'rgba(239,68,68,0.15)', color: '#fca5a5', border: 'rgba(239,68,68,0.4)' },
+  },
+} as const;
+
+/** Theme-aware styles for user type badges */
+const userTypeStyles = {
+  employee: {
+    light: { bg: '#bfdbfe', color: '#1e3a8a', border: '#60a5fa' },
+    dark: { bg: 'rgba(59,130,246,0.15)', color: '#93c5fd', border: 'rgba(59,130,246,0.4)' },
+  },
+  applicant: {
+    light: { bg: '#ffedd5', color: '#9a3412', border: '#fb923c' },
+    dark: { bg: 'rgba(249,115,22,0.15)', color: '#fdba74', border: 'rgba(249,115,22,0.4)' },
+  },
+} as const;
 
 // Memoized actions cell component to prevent re-renders from closing dropdown
 const ActionsCell = memo(
@@ -111,6 +140,8 @@ export function RegistrationsDataTable({
   selectedRows,
   onSelectionChange,
 }: RegistrationsDataTableProps) {
+  const isDark = useIsDarkMode();
+
   const columns = useMemo<ColumnDef<Registration>[]>(
     () => [
       {
@@ -173,14 +204,18 @@ export function RegistrationsDataTable({
         header: 'User Type',
         cell: ({ row }) => {
           const userType = row.original.userType;
+          const key = userType === 'employee' ? 'employee' : 'applicant';
+          const theme = isDark ? userTypeStyles[key].dark : userTypeStyles[key].light;
           return (
             <Badge
-              variant={userType === 'employee' ? 'default' : 'secondary'}
-              className={
-                userType === 'employee'
-                  ? 'bg-blue-800 text-blue-100'
-                  : 'bg-orange-800 text-orange-100'
-              }>
+              variant="secondary"
+              className="border"
+              style={{
+                backgroundColor: theme.bg,
+                color: theme.color,
+                borderColor: theme.border,
+              }}
+            >
               {userType === 'employee' ? 'Employee' : 'Applicant'}
             </Badge>
           );
@@ -234,30 +269,24 @@ export function RegistrationsDataTable({
         header: 'Status',
         cell: ({ row }) => {
           const status = row.original.status;
-          const variants = {
-            pending: {
-              variant: 'secondary',
-              className: 'bg-blue-800 text-blue-100',
-            },
-            approved: {
-              variant: 'secondary',
-              className: 'bg-green-800 text-green-300',
-            },
-            rejected: {
-              variant: 'secondary',
-              className: 'bg-red-800 text-red-100',
-            },
-          } as const;
 
           // Safety check for undefined status
           if (!status) {
             return <Badge variant="secondary">Unknown</Badge>;
           }
 
-          const config = variants[status];
+          const theme = isDark ? statusStyles[status].dark : statusStyles[status].light;
 
           return (
-            <Badge variant="secondary" className={config.className}>
+            <Badge
+              variant="secondary"
+              className="border"
+              style={{
+                backgroundColor: theme.bg,
+                color: theme.color,
+                borderColor: theme.border,
+              }}
+            >
               {capitalize(status, 'Unknown')}
             </Badge>
           );
@@ -283,6 +312,7 @@ export function RegistrationsDataTable({
       onViewDetails,
       onApprove,
       onReject,
+      isDark,
     ]
   );
 
