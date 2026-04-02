@@ -84,6 +84,7 @@ interface ViewBusinessInterest {
   dateAcquired?: string;
   dateOfAcquisition?: string;
   owner?: string;
+  childName?: string | null;
 }
 
 interface ViewRelativeInGov {
@@ -358,6 +359,8 @@ export default function SALNViewDetailPage({
           businessAddress: bi.businessAddress || '',
           natureOfBusiness: bi.nature || bi.natureOfBusiness || '',
           dateOfAcquisition: bi.dateAcquired || bi.dateOfAcquisition || '',
+          owner: bi.owner || undefined,
+          childName: bi.childName || null,
         })) || [],
       relativesInGov:
         salnDataInput.relativesInGov?.map((rel: ViewRelativeInGov) => ({
