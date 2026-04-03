@@ -578,6 +578,36 @@ export async function createPDSSubmission(
     });
   } catch (error) {
     console.error('[createPDSSubmission] Transaction error:', error);
+
+    // Detect PostgreSQL unique constraint violations (error code 23505)
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorDetail = (error as Record<string, unknown>)?.detail as string | undefined;
+    const errorCode = (error as Record<string, unknown>)?.code as string | undefined;
+
+    if (errorCode === '23505' || errorMessage.includes('duplicate key') || errorMessage.includes('unique constraint')) {
+      // Map constraint names to user-friendly field names
+      const constraintFieldMap: Record<string, string> = {
+        'philsys_no': 'PhilSys Number (PSN)',
+        'gsis_no': 'GSIS ID Number',
+        'sss_no': 'SSS Number',
+        'tin_no': 'TIN Number',
+        'philhealth_no': 'PhilHealth Number',
+        'pagibig_no': 'PAG-IBIG Number',
+      };
+
+      let friendlyField = 'a government ID number';
+      for (const [field, label] of Object.entries(constraintFieldMap)) {
+        if (errorMessage.includes(field) || errorDetail?.includes(field)) {
+          friendlyField = label;
+          break;
+        }
+      }
+
+      throw new Error(
+        `The ${friendlyField} you entered is already associated with another account. Please verify and use your own unique ID number.`
+      );
+    }
+
     throw new Error(
       `Failed to create PDS submission for user ${userId}: ${
         error instanceof Error ? error.message : 'Unknown error'

@@ -140,7 +140,9 @@ export function useApplicationsQuery(filters?: { status?: string }) {
         throw new Error('Failed to fetch applications');
       }
 
-      const data = await response.json();
+      const result = await response.json();
+      // apiSuccess wraps in { success, data } envelope — unwrap it
+      const data = result.data || result;
       return data as { applications: Application[]; total: number };
     },
     staleTime: 2 * 60 * 1000, // 2 minutes

@@ -26,12 +26,12 @@ const phoneRegex = /^(\+63|0)?[2-9]\d{1,2}-?\d{3}-?\d{4}$/;
 const mobileRegex = /^(\+63|0)?9\d{2}-?\d{3}-?\d{4}$/;
 
 // Government ID number formats
-const gsisRegex = /^\d{2}-\d{7}-\d{1}$/; // Format: 12-3456789-0
+const gsisRegex = /^\d{2}-\d{7,8}-\d{1}$/; // Format: XX-XXXXXXX-X or XX-XXXXXXXX-X
 const sssRegex = /^\d{2}-\d{7}-\d{1}$/; // Format: 34-5678901-2
 const tinRegex = /^\d{3}-\d{3}-\d{3}-\d{3}$/; // Format: 123-456-789-000
 const philhealthRegex = /^\d{2}-\d{9}-\d{1}$/; // Format: 12-345678901-2
 const pagibigRegex = /^\d{4}-\d{4}-\d{4}$/; // Format: 1234-5678-9012
-const philsysRegex = /^\d{2}-\d{9}-\d{1}$/; // Format: 12-345678901-2 (PhilSys Number - PSN)
+const philsysRegex = /^(\d{4}-\d{4}-\d{4}-\d{4}|\d{2}-\d{9}-\d{1})$/; // Format: XXXX-XXXX-XXXX-XXXX or XX-XXXXXXXXX-X
 
 // Date validation helpers
 // Use end-of-today comparison to allow "today" as a valid past date
@@ -134,7 +134,7 @@ export const personalInfoBasicSchema = z.object({
   gsisNo: z
     .union([
       z.literal(''),
-      z.string().regex(gsisRegex, 'Invalid GSIS ID format (XX-XXXXXXX-X)'),
+      z.string().regex(gsisRegex, 'Invalid GSIS ID format (XX-XXXXXXX-X or XX-XXXXXXXX-X)'),
     ])
     .optional()
     .nullable(),
@@ -189,7 +189,7 @@ export const personalInfoBasicSchema = z.object({
       z.literal(''),
       z
         .string()
-        .regex(philsysRegex, 'Invalid PhilSys Number format (XX-XXXXXXXXX-X)'),
+        .regex(philsysRegex, 'Invalid PhilSys Number format (XXXX-XXXX-XXXX-XXXX or XX-XXXXXXXXX-X)'),
     ])
     .optional()
     .nullable(),
