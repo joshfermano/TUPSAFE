@@ -113,8 +113,7 @@ export async function POST(request: NextRequest) {
         });
 
         console.log(
-          `✓ Created profile for user ${userId} during email verification (${userType}, status: ${
-            userType === 'applicant' ? 'active' : 'pending'
+          `✓ Created profile for user ${userId} during email verification (${userType}, status: ${userType === 'applicant' ? 'active' : 'pending'
           })`
         );
       } else {
