@@ -1,3 +1,5 @@
+'use client';
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -70,8 +72,8 @@ async function fetchNotifications(params?: NotificationsQueryParams): Promise<No
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch notifications');
+    const error = await response.json().catch(() => null);
+    throw new Error(error?.error || 'Failed to fetch notifications');
   }
 
   return response.json();
@@ -82,7 +84,7 @@ async function fetchNotifications(params?: NotificationsQueryParams): Promise<No
  */
 async function markNotificationAsRead(notificationId: string): Promise<void> {
   const response = await fetch(`/api/notifications/${notificationId}/read`, {
-    method: 'POST',
+    method: 'PATCH',
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
@@ -90,8 +92,8 @@ async function markNotificationAsRead(notificationId: string): Promise<void> {
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to mark notification as read');
+    const error = await response.json().catch(() => null);
+    throw new Error(error?.error || 'Failed to mark notification as read');
   }
 }
 
@@ -108,8 +110,8 @@ async function markAllNotificationsAsRead(): Promise<void> {
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to mark all notifications as read');
+    const error = await response.json().catch(() => null);
+    throw new Error(error?.error || 'Failed to mark all notifications as read');
   }
 }
 
@@ -135,46 +137,12 @@ export function useMarkNotificationAsRead() {
 
   return useMutation({
     mutationFn: markNotificationAsRead,
-    onMutate: async (notificationId) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ['notifications'] });
-
-      // Snapshot the previous value
-      const previousNotifications = queryClient.getQueriesData({ queryKey: ['notifications'] });
-
-      // Optimistically update notification
-      queryClient.setQueriesData<NotificationsResponse>(
-        { queryKey: ['notifications'] },
-        (old) => {
-          if (!old) return old;
-
-          return {
-            ...old,
-            notifications: old.notifications.map((notification) =>
-              notification.id === notificationId
-                ? { ...notification, isRead: true, readAt: new Date().toISOString() }
-                : notification
-            ),
-          };
-        }
-      );
-
-      return { previousNotifications };
-    },
-    onError: (_error, _variables, context) => {
-      // Rollback on error
-      if (context?.previousNotifications) {
-        context.previousNotifications.forEach(([queryKey, data]) => {
-          queryClient.setQueryData(queryKey, data);
-        });
-      }
-
-      toast.error('Failed to mark notification as read');
-    },
     onSuccess: () => {
-      // Invalidate to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+    },
+    onError: () => {
+      toast.error('Failed to mark notification as read');
     },
   });
 }
@@ -187,40 +155,7 @@ export function useMarkAllNotificationsAsRead() {
 
   return useMutation({
     mutationFn: markAllNotificationsAsRead,
-    onMutate: async () => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ['notifications'] });
-
-      // Snapshot the previous value
-      const previousNotifications = queryClient.getQueriesData({ queryKey: ['notifications'] });
-
-      // Optimistically update all notifications
-      queryClient.setQueriesData<NotificationsResponse>(
-        { queryKey: ['notifications'] },
-        (old) => {
-          if (!old) return old;
-
-          return {
-            ...old,
-            notifications: old.notifications.map((notification) => ({
-              ...notification,
-              isRead: true,
-              readAt: new Date().toISOString(),
-            })),
-          };
-        }
-      );
-
-      return { previousNotifications };
-    },
-    onError: (_error, _variables, context) => {
-      // Rollback on error
-      if (context?.previousNotifications) {
-        context.previousNotifications.forEach(([queryKey, data]) => {
-          queryClient.setQueryData(queryKey, data);
-        });
-      }
-
+    onError: () => {
       toast.error('Failed to mark all notifications as read');
     },
     onSuccess: () => {
@@ -230,6 +165,27 @@ export function useMarkAllNotificationsAsRead() {
 
       toast.success('All notifications marked as read');
     },
+  });
+}
+
+/**
+ * Hook to get unread notification count (lightweight, for sidebar badge)
+ */
+export function useUnreadCount() {
+  return useQuery({
+    queryKey: ['notifications', 'unread-count'],
+    queryFn: async () => {
+      const response = await fetch('/api/notifications?isRead=false&limit=1', {
+        credentials: 'include',
+      });
+      if (!response.ok) return 0;
+      const data: NotificationsResponse = await response.json();
+      return data.pagination.totalCount;
+    },
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    retry: 1,
+    refetchOnWindowFocus: false,
   });
 }
 

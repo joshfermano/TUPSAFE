@@ -54,6 +54,7 @@ import { Ripple } from '../../../../../components/ui/ripple';
 
 // Custom Components
 import { AvatarUpload } from '../../../../../components/profile/AvatarUpload';
+import { CertificationsSection } from '../../../../../components/profile/CertificationsSection';
 
 // Utilities & Validation
 import {
@@ -939,6 +940,9 @@ export default function EditProfilePage({ params }: EditProfilePageProps) {
           </Form>
         </div>
       </motion.div>
+
+      {/* Certifications & Trainings Section (independent CRUD lifecycle) */}
+      <CertificationsSection />
 
       {/* Info Banner */}
       <motion.div

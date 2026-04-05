@@ -23,9 +23,11 @@ import {
   X,
   PanelLeftClose,
   PanelLeftOpen,
+  Bell,
   type LucideIcon,
 } from 'lucide-react';
 import { ThemeToggle } from '../../components/theme/ThemeToggle';
+import { useUnreadCount } from '../../hooks/useNotifications';
 
 // ============================================================================
 // TYPES
@@ -41,6 +43,7 @@ interface NavigationItem {
   href?: string;
   icon: LucideIcon;
   subItems?: NavigationSubItem[];
+  badge?: number;
 }
 
 interface NavItemProps {
@@ -146,9 +149,25 @@ const NavItem = memo<NavItemProps>(
                 : 'text-slate-500 dark:text-slate-400 group-hover:text-primary dark:group-hover:text-primary'
             )}
           />
+          {isCollapsed && item.badge != null && item.badge > 0 && (
+            <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-blue-500" />
+          )}
           {!isCollapsed && (
             <>
               <span className="flex-1 text-left">{item.name}</span>
+
+              {item.badge != null && item.badge > 0 && (
+                <span
+                  className={cn(
+                    'inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 rounded-full text-[10px] font-bold leading-none',
+                    isActive
+                      ? 'bg-white/25 text-white'
+                      : 'bg-blue-600 text-white'
+                  )}
+                >
+                  {item.badge > 99 ? '99+' : item.badge}
+                </span>
+              )}
 
               {hasSubItems ? (
                 <ChevronDown
@@ -222,6 +241,7 @@ const DashboardSidebar = memo(function DashboardSidebar({
   const router = useRouter();
   const { user, profile, signOut } = useAuth();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const { data: unreadNotificationCount } = useUnreadCount();
 
   // Memoize navigation items array based on user type
   const navigationItems = useMemo<NavigationItem[]>(() => {
@@ -253,6 +273,12 @@ const DashboardSidebar = memo(function DashboardSidebar({
           name: 'Open Positions',
           href: '/dashboard/positions',
           icon: Building2,
+        },
+        {
+          name: 'Notifications',
+          href: '/dashboard/notifications',
+          icon: Bell,
+          badge: unreadNotificationCount ?? 0,
         },
         {
           name: 'Settings',
@@ -294,12 +320,18 @@ const DashboardSidebar = memo(function DashboardSidebar({
         ],
       },
       {
+        name: 'Notifications',
+        href: '/dashboard/notifications',
+        icon: Bell,
+        badge: unreadNotificationCount ?? 0,
+      },
+      {
         name: 'Settings',
         href: '/dashboard/settings',
         icon: Settings,
       },
     ];
-  }, [effectiveUserType]);
+  }, [effectiveUserType, unreadNotificationCount]);
 
   // Memoize sign out handler to prevent recreation on every render
   const handleSignOut = useCallback(async () => {
@@ -509,6 +541,7 @@ const APPLICANT_ALLOWED_ROUTES = [
   '/dashboard/pds',
   '/dashboard/applications',
   '/dashboard/positions',
+  '/dashboard/notifications',
   '/dashboard/settings',
 ] as const;
 

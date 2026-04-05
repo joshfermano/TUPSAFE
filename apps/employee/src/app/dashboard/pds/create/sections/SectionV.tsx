@@ -10,8 +10,8 @@
  * - Professional color scheme (TUP Blue primary)
  */
 
-import { memo, useCallback, startTransition, useRef } from 'react';
-import { Heart, BookOpen, Plus, GraduationCap } from 'lucide-react';
+import { memo, useCallback, startTransition, useRef, useState } from 'react';
+import { Heart, BookOpen, Plus, GraduationCap, Download } from 'lucide-react';
 import { useFormContext, useFieldArray } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -21,10 +21,15 @@ import { VoluntaryWorkItem, TrainingItem } from '../../../../../components/pds/a
 import { type CompletePdsData } from '../../../../../lib/validations/pds-schema';
 import { autoSortWithNotification } from '../../../../../lib/utils/pds-sort';
 import { usePdsContextSafe } from '../../../../../context/PdsContext';
+import { ImportCertificationsModal } from '../../../../../components/pds/ImportCertificationsModal';
+import type { ProfileCertificationData } from '@tupsafe/types';
 
 export const SectionV = memo(function SectionV() {
   const form = useFormContext<CompletePdsData>();
   const pdsContext = usePdsContextSafe();
+
+  // Import from Profile modal state
+  const [showImportModal, setShowImportModal] = useState(false);
 
   // Refs for virtualization
   const trainingParentRef = useRef<HTMLDivElement>(null);
@@ -137,6 +142,37 @@ export const SectionV = memo(function SectionV() {
   const handleTrainingDateBlur = useCallback(() => {
     sortTrainingEntries();
   }, [sortTrainingEntries]);
+
+  /**
+   * Handle importing certifications from the profile wallet into the
+   * Learning & Development section. Each imported cert becomes a new
+   * training entry with a stable UUID for attachment linking.
+   */
+  const handleImportCertifications = useCallback(
+    (certs: ProfileCertificationData[]) => {
+      certs.forEach((cert) => {
+        appendTraining({
+          id: uuidv4(),
+          title: cert.title,
+          dateFrom: new Date(cert.dateFrom),
+          dateTo: new Date(cert.dateTo),
+          hours: cert.hours,
+          typeOfLd: cert.typeOfLd || '',
+          conductedBy: cert.conductedBy || '',
+        });
+      });
+
+      startTransition(() => {
+        sortTrainingEntries();
+      });
+
+      toast.success(
+        `Imported ${certs.length} certification${certs.length > 1 ? 's' : ''} from profile`
+      );
+      setShowImportModal(false);
+    },
+    [appendTraining, sortTrainingEntries]
+  );
 
   /**
    * Handle removing training with attachment cleanup
@@ -261,15 +297,26 @@ export const SectionV = memo(function SectionV() {
                 </p>
               </div>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleAddTraining}
-              className="border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Training
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowImportModal(true)}
+                className="border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950">
+                <Download className="h-4 w-4 mr-2" />
+                Import from Profile
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddTraining}
+                className="border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Training
+              </Button>
+            </div>
           </div>
 
           {trainingFields.length === 0 ? (
@@ -344,6 +391,21 @@ export const SectionV = memo(function SectionV() {
           </p>
         </div>
       </div>
+
+      {/* Import from Profile Modal */}
+      <ImportCertificationsModal
+        open={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={handleImportCertifications}
+        existingTrainings={trainingFields.map((field, index) => {
+          const values = form.getValues(`learningDevelopment.${index}`);
+          return {
+            title: values?.title ?? '',
+            dateFrom: values?.dateFrom ?? null,
+            dateTo: values?.dateTo ?? null,
+          };
+        })}
+      />
     </div>
   );
 });
