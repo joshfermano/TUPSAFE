@@ -17,7 +17,7 @@ import {
   profiles,
   notifications,
 } from '@tupsafe/database/server';
-import { eq, desc, inArray } from 'drizzle-orm';
+import { eq, desc, and, gte, lt, inArray } from 'drizzle-orm';
 import type { ProfileCertificationData, CertificationFileData } from '@tupsafe/types';
 import { createCertificationSchema } from '../../../lib/validations/certification-schema';
 
@@ -26,7 +26,7 @@ import { createCertificationSchema } from '../../../lib/validations/certificatio
  * Returns all profile certifications for the authenticated user,
  * each with its attached files and fresh signed URLs.
  */
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerClient('employee');
     const {
@@ -43,11 +43,22 @@ export async function GET(_request: NextRequest) {
 
     const userId = user.id;
 
-    // Fetch all certifications for this user, newest first
+    // Optional year filter: ?year=2026
+    const yearParam = request.nextUrl.searchParams.get('year');
+    const yearFilter = yearParam ? parseInt(yearParam, 10) : null;
+
+    // Build where conditions
+    const conditions = [eq(profileCertifications.userId, userId)];
+    if (yearFilter && !isNaN(yearFilter)) {
+      conditions.push(gte(profileCertifications.dateFrom, `${yearFilter}-01-01`));
+      conditions.push(lt(profileCertifications.dateFrom, `${yearFilter + 1}-01-01`));
+    }
+
+    // Fetch certifications for this user, newest first
     const certRows = await db
       .select()
       .from(profileCertifications)
-      .where(eq(profileCertifications.userId, userId))
+      .where(and(...conditions))
       .orderBy(desc(profileCertifications.dateFrom));
 
     if (certRows.length === 0) {

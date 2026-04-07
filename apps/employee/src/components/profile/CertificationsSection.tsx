@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   PlusIcon,
@@ -14,6 +14,8 @@ import {
   ClockIcon,
   DownloadIcon,
   EyeOpenIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
 } from '@radix-ui/react-icons';
 
 import {
@@ -30,6 +32,8 @@ import type {
   CertificationFileData,
   CreateCertificationRequest,
 } from '@tupsafe/types';
+
+import { groupCertificationsByYear } from '@/lib/utils/certification-grouping';
 
 // ============================================================================
 // Constants
@@ -547,8 +551,8 @@ function CertificationCard({
         </div>
 
         {/* Action Buttons */}
-        {isPending && (
-          <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
+          {isPending && (
             <button
               type="button"
               onClick={onEdit}
@@ -557,43 +561,43 @@ function CertificationCard({
               <Pencil1Icon className="h-3.5 w-3.5" />
               Edit
             </button>
-            {!showDeleteConfirm ? (
+          )}
+          {!showDeleteConfirm ? (
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 dark:border-red-800 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              title="Delete certification">
+              <TrashIcon className="h-3.5 w-3.5" />
+              Delete
+            </button>
+          ) : (
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
-                onClick={() => setShowDeleteConfirm(true)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 dark:border-red-800 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                title="Delete certification">
-                <TrashIcon className="h-3.5 w-3.5" />
-                Delete
+                onClick={() => {
+                  onDelete();
+                  setShowDeleteConfirm(false);
+                }}
+                disabled={isDeletePending}
+                className="inline-flex items-center gap-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 transition-colors disabled:opacity-50">
+                {isDeletePending ? (
+                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                ) : (
+                  <TrashIcon className="h-3.5 w-3.5" />
+                )}
+                Confirm
               </button>
-            ) : (
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    onDelete();
-                    setShowDeleteConfirm(false);
-                  }}
-                  disabled={isDeletePending}
-                  className="inline-flex items-center gap-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 transition-colors disabled:opacity-50">
-                  {isDeletePending ? (
-                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  ) : (
-                    <TrashIcon className="h-3.5 w-3.5" />
-                  )}
-                  Confirm
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteConfirm(false)}
-                  className="inline-flex items-center gap-1 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                  <Cross2Icon className="h-3.5 w-3.5" />
-                  Cancel
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(false)}
+                className="inline-flex items-center gap-1 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                <Cross2Icon className="h-3.5 w-3.5" />
+                Cancel
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Rejection Notes */}
@@ -744,6 +748,23 @@ export function CertificationsSection() {
   const uploadFileMutation = useUploadCertificationFile();
   const deleteFileMutation = useDeleteCertificationFile();
 
+  // Year-grouped state
+  const [collapsedYears, setCollapsedYears] = useState<Set<number>>(new Set());
+
+  const groupedCertifications = useMemo(() => {
+    if (!certifications) return new Map<number, ProfileCertificationData[]>();
+    return groupCertificationsByYear(certifications);
+  }, [certifications]);
+
+  const toggleYear = useCallback((year: number) => {
+    setCollapsedYears((prev) => {
+      const next = new Set(prev);
+      if (next.has(year)) next.delete(year);
+      else next.add(year);
+      return next;
+    });
+  }, []);
+
   // -- Handlers --
 
   const handleCreate = useCallback(
@@ -856,27 +877,55 @@ export function CertificationsSection() {
       {/* Loading State */}
       {isLoading && <CertificationSkeleton />}
 
-      {/* Certifications List */}
+      {/* Certifications List — year-grouped */}
       {!isLoading && certifications && certifications.length > 0 && (
-        <AnimatePresence mode="popLayout">
-          {certifications.map((cert) => (
-            <CertificationCard
-              key={cert.id}
-              cert={cert}
-              isEditing={editingId === cert.id}
-              onEdit={() => startEdit(cert)}
-              onDelete={() => handleDelete(cert.id)}
-              onSaveEdit={handleUpdate}
-              onCancelEdit={() => setEditingId(null)}
-              onUploadFile={handleFileUpload}
-              onDeleteFile={handleFileDelete}
-              isUpdatePending={updateMutation.isPending}
-              isDeletePending={deleteMutation.isPending}
-              isUploadPending={uploadFileMutation.isPending}
-              isFileDeletePending={deleteFileMutation.isPending}
-            />
-          ))}
-        </AnimatePresence>
+        <div className="space-y-4">
+          {Array.from(groupedCertifications.entries()).map(([year, certs]) => {
+            const collapsed = collapsedYears.has(year);
+            return (
+              <div key={year}>
+                <button
+                  type="button"
+                  onClick={() => toggleYear(year)}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors mb-3"
+                >
+                  {collapsed ? (
+                    <ChevronRightIcon className="h-4 w-4 text-gray-500" />
+                  ) : (
+                    <ChevronDownIcon className="h-4 w-4 text-gray-500" />
+                  )}
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    {year}
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {certs.length} certification{certs.length !== 1 ? 's' : ''}
+                  </span>
+                </button>
+
+                <AnimatePresence mode="popLayout">
+                  {!collapsed &&
+                    certs.map((cert) => (
+                      <CertificationCard
+                        key={cert.id}
+                        cert={cert}
+                        isEditing={editingId === cert.id}
+                        onEdit={() => startEdit(cert)}
+                        onDelete={() => handleDelete(cert.id)}
+                        onSaveEdit={handleUpdate}
+                        onCancelEdit={() => setEditingId(null)}
+                        onUploadFile={handleFileUpload}
+                        onDeleteFile={handleFileDelete}
+                        isUpdatePending={updateMutation.isPending}
+                        isDeletePending={deleteMutation.isPending}
+                        isUploadPending={uploadFileMutation.isPending}
+                        isFileDeletePending={deleteFileMutation.isPending}
+                      />
+                    ))}
+                </AnimatePresence>
+              </div>
+            );
+          })}
+        </div>
       )}
 
       {/* Empty State */}

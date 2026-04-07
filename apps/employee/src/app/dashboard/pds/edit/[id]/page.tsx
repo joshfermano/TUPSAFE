@@ -1144,6 +1144,7 @@ export default function PDSEditPage({
         <FormProvider {...form}>
           <PdsProvider
             pdsSubmissionId={pdsId}
+            pdsYear={submission?.year ?? new Date().getFullYear()}
             canEdit={canEdit}
             initialAttachments={attachments}
             onBeforeUpload={handleAutoSaveForUpload}

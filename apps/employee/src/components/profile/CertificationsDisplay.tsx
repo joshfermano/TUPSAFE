@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { motion } from 'motion/react';
 import Link from 'next/link';
 import {
@@ -14,6 +15,7 @@ import { useCertifications } from '../../hooks/useCertifications';
 import { MagicCard } from '../ui/magic-card';
 import { Badge } from '../ui/badge';
 import { cn } from '../../lib/utils';
+import { groupCertificationsByYear } from '../../lib/utils/certification-grouping';
 import type {
   ProfileCertificationData,
   CertificationFileData,
@@ -242,6 +244,11 @@ export function CertificationsDisplay() {
 
   const editUrl = `/dashboard/profile/edit/${user?.id ?? ''}`;
 
+  const groupedCertifications = useMemo(() => {
+    if (!certifications) return new Map<number, ProfileCertificationData[]>();
+    return groupCertificationsByYear(certifications);
+  }, [certifications]);
+
   if (isLoading) {
     return (
       <MagicCard
@@ -301,10 +308,23 @@ export function CertificationsDisplay() {
           </Link>
         </div>
 
-        {/* Certification list */}
-        <div className="space-y-0">
-          {certifications.map((cert, index) => (
-            <CertCard key={cert.id} cert={cert} index={index} />
+        {/* Certification list — grouped by year */}
+        <div className="space-y-4">
+          {[...groupedCertifications.entries()].map(([year, certs]) => (
+            <div key={year}>
+              <div className="flex items-center gap-2 px-1 py-2">
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{year}</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500">
+                  ({certs.length})
+                </span>
+                <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+              </div>
+              <div className="space-y-0">
+                {certs.map((cert, index) => (
+                  <CertCard key={cert.id} cert={cert} index={index} />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       </div>

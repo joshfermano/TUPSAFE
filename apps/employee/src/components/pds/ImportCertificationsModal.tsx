@@ -17,8 +17,11 @@ import {
   ClockIcon,
   FileIcon,
   DownloadIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
 } from '@radix-ui/react-icons';
 import { useCertifications } from '../../hooks/useCertifications';
+import { groupCertificationsByYear } from '../../lib/utils/certification-grouping';
 import type { ProfileCertificationData } from '@tupsafe/types';
 
 // ---------------------------------------------------------------------------
@@ -29,6 +32,8 @@ interface ImportCertificationsModalProps {
   open: boolean;
   onClose: () => void;
   onImport: (certifications: ProfileCertificationData[]) => void;
+  /** PDS filing year — used for year-filtered display (Task 8) */
+  pdsYear?: number;
   existingTrainings: Array<{
     title: string;
     dateFrom: Date | null;
@@ -123,10 +128,12 @@ export function ImportCertificationsModal({
   open,
   onClose,
   onImport,
+  pdsYear,
   existingTrainings,
 }: ImportCertificationsModalProps) {
   const { data: certifications, isLoading, isError } = useCertifications();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [yearFilter, setYearFilter] = useState<number | null>(pdsYear ?? null);
 
   // Build a set of keys for trainings already in the PDS form
   const existingKeys = useMemo(() => {
@@ -144,6 +151,42 @@ export function ImportCertificationsModal({
     },
     [existingKeys]
   );
+
+  // Available years from certifications
+  const availableYears = useMemo(() => {
+    if (!certifications) return [];
+    const years = new Set<number>();
+    certifications.forEach((cert) => {
+      years.add(parseInt(cert.dateFrom.slice(0, 4), 10));
+    });
+    return [...years].sort((a, b) => b - a);
+  }, [certifications]);
+
+  // Filtered certifications based on year filter
+  const filteredCertifications = useMemo(() => {
+    if (!certifications) return [];
+    if (yearFilter === null) return certifications;
+    return certifications.filter(
+      (cert) => parseInt(cert.dateFrom.slice(0, 4), 10) === yearFilter
+    );
+  }, [certifications, yearFilter]);
+
+  // Grouped by year for display
+  const groupedCertifications = useMemo(() => {
+    return groupCertificationsByYear(filteredCertifications);
+  }, [filteredCertifications]);
+
+  // Collapsed year groups
+  const [collapsedYears, setCollapsedYears] = useState<Set<number>>(new Set());
+
+  const toggleYearGroup = useCallback((year: number) => {
+    setCollapsedYears((prev) => {
+      const next = new Set(prev);
+      if (next.has(year)) next.delete(year);
+      else next.add(year);
+      return next;
+    });
+  }, []);
 
   const toggleSelection = useCallback((id: string) => {
     setSelectedIds((prev) => {
@@ -171,19 +214,17 @@ export function ImportCertificationsModal({
   }, [onClose]);
 
   const selectableCount = useMemo(() => {
-    if (!certifications) return 0;
-    return certifications.filter((c) => !isDuplicate(c)).length;
-  }, [certifications, isDuplicate]);
+    return filteredCertifications.filter((c) => !isDuplicate(c)).length;
+  }, [filteredCertifications, isDuplicate]);
 
   const toggleSelectAll = useCallback(() => {
-    if (!certifications) return;
-    const selectable = certifications.filter((c) => !isDuplicate(c));
+    const selectable = filteredCertifications.filter((c) => !isDuplicate(c));
     if (selectedIds.size === selectable.length && selectable.length > 0) {
       setSelectedIds(new Set());
     } else {
       setSelectedIds(new Set(selectable.map((c) => c.id)));
     }
-  }, [certifications, isDuplicate, selectedIds.size]);
+  }, [filteredCertifications, isDuplicate, selectedIds.size]);
 
   return (
     <AnimatePresence>
@@ -230,6 +271,37 @@ export function ImportCertificationsModal({
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto px-6 py-4">
+              {/* Year filter */}
+              {!isLoading && !isError && certifications && certifications.length > 0 && availableYears.length > 1 && (
+                <div className="flex items-center gap-2 mb-4 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setYearFilter(null)}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                      yearFilter === null
+                        ? 'bg-red-600 text-white'
+                        : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+                    }`}
+                  >
+                    All
+                  </button>
+                  {availableYears.map((year) => (
+                    <button
+                      key={year}
+                      type="button"
+                      onClick={() => setYearFilter(year)}
+                      className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                        yearFilter === year
+                          ? 'bg-red-600 text-white'
+                          : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+                      }`}
+                    >
+                      {year}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {isLoading && (
                 <div className="flex flex-col items-center justify-center py-12">
                   <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-red-600" />
@@ -265,7 +337,28 @@ export function ImportCertificationsModal({
               {!isLoading &&
                 !isError &&
                 certifications &&
-                certifications.length > 0 && (
+                certifications.length > 0 &&
+                filteredCertifications.length === 0 && (
+                  <div className="text-center py-12">
+                    <FileIcon className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground">
+                      No certifications found for {yearFilter}.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setYearFilter(null)}
+                      className="text-xs font-medium text-red-600 dark:text-red-400 hover:underline mt-2"
+                    >
+                      Show all years
+                    </button>
+                  </div>
+                )}
+
+              {!isLoading &&
+                !isError &&
+                certifications &&
+                certifications.length > 0 &&
+                filteredCertifications.length > 0 && (
                   <div className="space-y-2">
                     {/* Select All */}
                     {selectableCount > 1 && (
@@ -280,109 +373,135 @@ export function ImportCertificationsModal({
                       </button>
                     )}
 
-                    {certifications.map((cert) => {
-                      const duplicate = isDuplicate(cert);
-                      const selected = selectedIds.has(cert.id);
+                    {[...groupedCertifications.entries()].map(([year, certs]) => (
+                      <div key={year} className="mb-3">
+                        {/* Year group header -- only show when "All" filter is active */}
+                        {yearFilter === null && (
+                          <button
+                            type="button"
+                            onClick={() => toggleYearGroup(year)}
+                            className="w-full flex items-center gap-2 px-2 py-1.5 mb-1 text-left"
+                          >
+                            {collapsedYears.has(year) ? (
+                              <ChevronRightIcon className="h-3.5 w-3.5 text-slate-400" />
+                            ) : (
+                              <ChevronDownIcon className="h-3.5 w-3.5 text-slate-400" />
+                            )}
+                            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">{year}</span>
+                            <span className="text-xs text-slate-400">({certs.length})</span>
+                            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+                          </button>
+                        )}
+                        {/* Certification items */}
+                        {(!collapsedYears.has(year) || yearFilter !== null) && (
+                          <div className="space-y-2">
+                            {certs.map((cert) => {
+                              const duplicate = isDuplicate(cert);
+                              const selected = selectedIds.has(cert.id);
 
-                      return (
-                        <button
-                          key={cert.id}
-                          type="button"
-                          disabled={duplicate}
-                          onClick={() => toggleSelection(cert.id)}
-                          className={`w-full text-left rounded-xl border p-4 transition-all ${
-                            duplicate
-                              ? 'opacity-50 cursor-not-allowed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900'
-                              : selected
-                                ? 'border-red-300 dark:border-red-700 bg-red-50/50 dark:bg-red-950/30 ring-1 ring-red-200 dark:ring-red-800'
-                                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-750'
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            {/* Checkbox area */}
-                            <div className="pt-0.5 shrink-0">
-                              <div
-                                className={`h-5 w-5 rounded-md border-2 flex items-center justify-center transition-colors ${
-                                  duplicate
-                                    ? 'border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800'
-                                    : selected
-                                      ? 'border-red-600 bg-red-600 dark:border-red-500 dark:bg-red-500'
-                                      : 'border-slate-300 dark:border-slate-600'
-                                }`}
-                              >
-                                {selected && !duplicate && (
-                                  <svg
-                                    className="h-3 w-3 text-white"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                    strokeWidth={3}
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      d="M5 13l4 4L19 7"
-                                    />
-                                  </svg>
-                                )}
-                              </div>
-                            </div>
+                              return (
+                                <button
+                                  key={cert.id}
+                                  type="button"
+                                  disabled={duplicate}
+                                  onClick={() => toggleSelection(cert.id)}
+                                  className={`w-full text-left rounded-xl border p-4 transition-all ${
+                                    duplicate
+                                      ? 'opacity-50 cursor-not-allowed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900'
+                                      : selected
+                                        ? 'border-red-300 dark:border-red-700 bg-red-50/50 dark:bg-red-950/30 ring-1 ring-red-200 dark:ring-red-800'
+                                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-750'
+                                  }`}
+                                >
+                                  <div className="flex items-start gap-3">
+                                    {/* Checkbox area */}
+                                    <div className="pt-0.5 shrink-0">
+                                      <div
+                                        className={`h-5 w-5 rounded-md border-2 flex items-center justify-center transition-colors ${
+                                          duplicate
+                                            ? 'border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800'
+                                            : selected
+                                              ? 'border-red-600 bg-red-600 dark:border-red-500 dark:bg-red-500'
+                                              : 'border-slate-300 dark:border-slate-600'
+                                        }`}
+                                      >
+                                        {selected && !duplicate && (
+                                          <svg
+                                            className="h-3 w-3 text-white"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                            strokeWidth={3}
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              d="M5 13l4 4L19 7"
+                                            />
+                                          </svg>
+                                        )}
+                                      </div>
+                                    </div>
 
-                            {/* Content */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="min-w-0">
-                                  <p className="text-sm font-semibold text-foreground truncate">
-                                    {cert.title}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground mt-0.5">
-                                    {formatDate(cert.dateFrom)} -{' '}
-                                    {formatDate(cert.dateTo)}
-                                  </p>
-                                </div>
-                                <div className="shrink-0 flex items-center gap-2">
-                                  <VerificationBadge
-                                    status={cert.verificationStatus}
-                                  />
-                                </div>
-                              </div>
+                                    {/* Content */}
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-start justify-between gap-2">
+                                        <div className="min-w-0">
+                                          <p className="text-sm font-semibold text-foreground truncate">
+                                            {cert.title}
+                                          </p>
+                                          <p className="text-xs text-muted-foreground mt-0.5">
+                                            {formatDate(cert.dateFrom)} -{' '}
+                                            {formatDate(cert.dateTo)}
+                                          </p>
+                                        </div>
+                                        <div className="shrink-0 flex items-center gap-2">
+                                          <VerificationBadge
+                                            status={cert.verificationStatus}
+                                          />
+                                        </div>
+                                      </div>
 
-                              {/* Metadata row */}
-                              <div className="flex items-center gap-3 mt-2 flex-wrap">
-                                {cert.hours != null && (
-                                  <span className="text-xs text-muted-foreground">
-                                    {cert.hours} hours
-                                  </span>
-                                )}
-                                {cert.typeOfLd && (
-                                  <span className="text-xs text-muted-foreground">
-                                    {cert.typeOfLd}
-                                  </span>
-                                )}
-                                {cert.conductedBy && (
-                                  <span className="text-xs text-muted-foreground">
-                                    by {cert.conductedBy}
-                                  </span>
-                                )}
-                                {cert.files.length > 0 && (
-                                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                                    <FileIcon className="h-3 w-3" />
-                                    {cert.files.length} file
-                                    {cert.files.length > 1 ? 's' : ''}
-                                  </span>
-                                )}
-                              </div>
+                                      {/* Metadata row */}
+                                      <div className="flex items-center gap-3 mt-2 flex-wrap">
+                                        {cert.hours != null && (
+                                          <span className="text-xs text-muted-foreground">
+                                            {cert.hours} hours
+                                          </span>
+                                        )}
+                                        {cert.typeOfLd && (
+                                          <span className="text-xs text-muted-foreground">
+                                            {cert.typeOfLd}
+                                          </span>
+                                        )}
+                                        {cert.conductedBy && (
+                                          <span className="text-xs text-muted-foreground">
+                                            by {cert.conductedBy}
+                                          </span>
+                                        )}
+                                        {cert.files.length > 0 && (
+                                          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                            <FileIcon className="h-3 w-3" />
+                                            {cert.files.length} file
+                                            {cert.files.length > 1 ? 's' : ''}
+                                          </span>
+                                        )}
+                                      </div>
 
-                              {duplicate && (
-                                <p className="text-xs font-medium text-amber-600 dark:text-amber-400 mt-2">
-                                  (Already added)
-                                </p>
-                              )}
-                            </div>
+                                      {duplicate && (
+                                        <p className="text-xs font-medium text-amber-600 dark:text-amber-400 mt-2">
+                                          (Already added)
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </button>
+                              );
+                            })}
                           </div>
-                        </button>
-                      );
-                    })}
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
             </div>

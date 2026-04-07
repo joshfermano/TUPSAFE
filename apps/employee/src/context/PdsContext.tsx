@@ -29,6 +29,8 @@ export interface PdsAttachmentsMap {
 interface PdsContextValue {
   /** PDS submission ID (null if not yet saved) */
   pdsSubmissionId: string | null;
+  /** The filing year for this PDS */
+  pdsYear: number;
   /** Whether the form can be edited */
   canEdit: boolean;
   /** Attachments grouped by entry */
@@ -58,6 +60,7 @@ const PdsContext = createContext<PdsContextValue | null>(null);
 interface PdsProviderProps {
   children: ReactNode;
   pdsSubmissionId: string | null;
+  pdsYear: number;
   canEdit?: boolean;
   initialAttachments?: PdsAttachmentsMap;
   onAttachmentsChange?: (attachments: PdsAttachmentsMap) => void;
@@ -75,6 +78,7 @@ interface PdsProviderProps {
 export function PdsProvider({
   children,
   pdsSubmissionId,
+  pdsYear,
   canEdit = true,
   initialAttachments,
   onAttachmentsChange,
@@ -146,6 +150,7 @@ export function PdsProvider({
   const value = useMemo(
     () => ({
       pdsSubmissionId,
+      pdsYear,
       canEdit,
       attachments,
       updateTrainingAttachments,
@@ -156,6 +161,7 @@ export function PdsProvider({
     }),
     [
       pdsSubmissionId,
+      pdsYear,
       canEdit,
       attachments,
       updateTrainingAttachments,

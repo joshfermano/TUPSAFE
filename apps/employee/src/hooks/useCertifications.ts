@@ -26,6 +26,7 @@ export const certificationsKeys = {
   all: ['certifications'] as const,
   list: () => [...certificationsKeys.all, 'list'] as const,
   detail: (id: string) => [...certificationsKeys.all, 'detail', id] as const,
+  byYear: (year: number) => [...certificationsKeys.all, 'year', year] as const,
 };
 
 // ============================================================================
@@ -37,6 +38,23 @@ export const certificationsKeys = {
  */
 async function fetchCertifications(): Promise<ProfileCertificationData[]> {
   const response = await fetch('/api/certifications', {
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+    throw new Error(error?.error || 'Failed to fetch certifications');
+  }
+
+  const data = await response.json();
+  return data.certifications;
+}
+
+/**
+ * Fetch certifications filtered by year for the authenticated user
+ */
+async function fetchCertificationsByYear(year: number): Promise<ProfileCertificationData[]> {
+  const response = await fetch(`/api/certifications?year=${year}`, {
     credentials: 'include',
   });
 
@@ -188,6 +206,31 @@ export function useCertifications() {
   return useQuery({
     queryKey: certificationsKeys.list(),
     queryFn: fetchCertifications,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+  });
+}
+
+/**
+ * Hook to fetch certifications for a specific year
+ *
+ * Returns certifications whose dateFrom falls within the given calendar year.
+ * Cached for 5 minutes with a 10-minute garbage collection window.
+ *
+ * @param year - The calendar year to filter by (e.g. 2026)
+ * @returns Query result with certifications array for the specified year
+ *
+ * @example
+ * ```tsx
+ * const { data: certs, isLoading } = useCertificationsByYear(2026);
+ * ```
+ */
+export function useCertificationsByYear(year: number) {
+  return useQuery({
+    queryKey: certificationsKeys.byYear(year),
+    queryFn: () => fetchCertificationsByYear(year),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     retry: 2,

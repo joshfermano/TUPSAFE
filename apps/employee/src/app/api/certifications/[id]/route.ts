@@ -279,7 +279,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 /**
  * DELETE /api/certifications/[id]
  * Deletes storage objects first, then removes the DB row (cascade handles the
- * files join table). Only pending certifications may be deleted.
+ * files join table). Any certification owned by the user may be deleted.
  */
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
@@ -303,16 +303,6 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       return NextResponse.json(
         { success: false, error: 'Certification not found or access denied' },
         { status: 404 }
-      );
-    }
-
-    if (cert.verificationStatus !== 'pending') {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Cannot delete a certification with status '${cert.verificationStatus}'. Only pending certifications can be deleted.`,
-        },
-        { status: 403 }
       );
     }
 
