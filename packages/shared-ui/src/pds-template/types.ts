@@ -36,7 +36,9 @@ export interface PersonalInfo {
   philsysNo?: string | null; // PhilSys Number (PSN) - CS Form 212 Item 13
   citizenship: {
     type: 'Filipino' | 'Dual';
-    details?: string;
+    acquisitionMethod?: 'byBirth' | 'byNaturalization';
+    country?: string;
+    details?: string; // Legacy field for backward compatibility
   };
   residentialAddress: Address;
   permanentAddress: Address;

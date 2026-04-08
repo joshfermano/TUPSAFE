@@ -415,6 +415,14 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): Recor
     }
   }
 
+  // Format dateIssued for Government ID (Item 42)
+  if (transformedData.otherInfo?.governmentId) {
+    transformedData.otherInfo.governmentId = {
+      ...transformedData.otherInfo.governmentId,
+      dateIssued: toDateOnlyString(transformedData.otherInfo.governmentId.dateIssued) as unknown as Date | null | undefined,
+    };
+  }
+
   // ========================================================================
   // STEP 2: Transform education from object to array format
   // ========================================================================
@@ -886,7 +894,23 @@ export function transformPdsForPdf<T extends object>(dataInput: T): PDSData {
       tinNo: (personalInfo.tinNo as string | null) ?? null,
       agencyEmployeeNo: (personalInfo.agencyEmployeeNo as string | null) ?? null,
       philsysNo: (personalInfo.philsysNo as string | null) ?? null,
-      citizenship: (personalInfo.citizenship as { type: 'Filipino' | 'Dual'; details?: string }) || { type: 'Filipino' },
+      citizenship: (() => {
+        const c = personalInfo.citizenship as Record<string, unknown> | null;
+        if (!c) return { type: 'Filipino' };
+        
+        // Map "by birth" -> "byBirth", "by naturalization" -> "byNaturalization"
+        let acqMethod;
+        if (c.acquisitionMethod === 'by birth') acqMethod = 'byBirth';
+        else if (c.acquisitionMethod === 'by naturalization') acqMethod = 'byNaturalization';
+        else acqMethod = c.acquisitionMethod;
+
+        return {
+          type: c.type || 'Filipino',
+          acquisitionMethod: acqMethod,
+          country: c.country,
+          details: c.country || c.details || '',
+        };
+      })() as any,
       residentialAddress: transformAddress(personalInfo.residentialAddress as Record<string, unknown> | null | undefined),
       permanentAddress: transformAddress(personalInfo.permanentAddress as Record<string, unknown> | null | undefined),
       telephoneNo: (personalInfo.telephoneNo as string | null) ?? null,
@@ -992,7 +1016,7 @@ export function transformPdsForPdf<T extends object>(dataInput: T): PDSData {
         }))
       : [],
 
-    governmentId: (data.governmentId as PDSData['governmentId']) ?? undefined,
+    governmentId: (otherInfo.governmentId || data.governmentId) as PDSData['governmentId'] ?? undefined,
     photoUrl: (data.photoUrl as string | null) ?? null,
   };
 

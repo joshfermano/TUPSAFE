@@ -13,7 +13,7 @@
 
 import { memo } from 'react';
 import * as React from 'react';
-import { Info, Plus, CheckCircle2, Award, Users, Shield } from 'lucide-react';
+import { Info, Plus, CheckCircle2, Award, Users, Shield, CreditCard } from 'lucide-react';
 import { useFormContext, useFieldArray, type FieldPath } from 'react-hook-form';
 import {
   FormField,
@@ -23,9 +23,11 @@ import {
   FormMessage,
 } from '../../../../../components/ui/form';
 import { Button } from '../../../../../components/ui/button';
+import { Input } from '../../../../../components/ui/input';
 import { Checkbox } from '../../../../../components/ui/checkbox';
 import { Textarea } from '../../../../../components/ui/textarea';
 import { type CompletePdsData } from '../../../../../lib/validations/pds-schema';
+import { FormDateInput } from '../../../../../components/forms/shared/FormDateInput';
 import {
   SkillItem,
   RecognitionItem,
@@ -421,6 +423,87 @@ export const SectionVI = memo(function SectionVI() {
               ))}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Government Issued ID Card (Item 42) - CS Form No. 212 Revised 2025 */}
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm hover:shadow-md transition-shadow duration-200">
+        <div className="p-6 sm:p-8 space-y-6">
+          <div className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5 text-primary" />
+            <h3 className="text-base font-semibold text-foreground">
+              Government Issued ID (Item 42)
+            </h3>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Please provide details of one valid government-issued ID for identification and signature verification.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField
+              control={form.control}
+              name="otherInfo.governmentId.idType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Government Issued ID (i.e. Passport, GSIS, SSS, PRC, Driver&apos;s License, etc.)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g., Driver's License, Passport, PRC ID"
+                      {...field}
+                      value={field.value ?? ''}
+                      className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="otherInfo.governmentId.idNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>ID/License/Passport No.</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g., N01-12-123456"
+                      {...field}
+                      value={field.value ?? ''}
+                      className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormDateInput
+              control={form.control}
+              name="otherInfo.governmentId.dateIssued"
+              label="Date of Issuance"
+              placeholder="Select date issued"
+            />
+
+            <FormField
+              control={form.control}
+              name="otherInfo.governmentId.placeIssued"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Place of Issuance</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g., LTO Manila, DFA NCR"
+                      {...field}
+                      value={field.value ?? ''}
+                      className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
       </div>
 

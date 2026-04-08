@@ -497,6 +497,7 @@ export async function GET(
               associations: otherInfo.associations,
               references: otherInfo.references,
               questions: otherInfo.questions,
+              governmentId: otherInfo.governmentId,
             }
           : null,
       },

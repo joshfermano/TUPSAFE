@@ -282,6 +282,14 @@ export interface PDSOtherInfo {
         Q42_solo_parent_details?: string;
       }
     | unknown;
+  governmentId?:
+    | {
+        idType?: string;
+        idNumber?: string;
+        dateIssued?: string | Date;
+        placeIssued?: string;
+      }
+    | unknown;
 }
 
 /**

@@ -764,6 +764,7 @@ export const pdsOtherInfo = pgTable(
     associations: jsonb('associations'), // Array of organization memberships
     questions: jsonb('questions'), // Q34-Q40 answers
     references: jsonb('references'), // Character references
+    governmentId: jsonb('government_id'), // Government Issued ID (Item 42) - CS Form No. 212 Revised 2025
   },
   (table) => ({
     pdsSubmissionIdIdx: index('pds_other_info_submission_id_idx').on(

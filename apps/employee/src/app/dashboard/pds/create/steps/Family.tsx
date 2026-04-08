@@ -135,6 +135,7 @@ export const Family = memo(function Family() {
                         <SelectContent>
                           <SelectItem value="Jr.">Jr.</SelectItem>
                           <SelectItem value="Sr.">Sr.</SelectItem>
+                          <SelectItem value="I">I</SelectItem>
                           <SelectItem value="II">II</SelectItem>
                           <SelectItem value="III">III</SelectItem>
                           <SelectItem value="IV">IV</SelectItem>
@@ -313,6 +314,7 @@ export const Family = memo(function Family() {
                         <SelectContent>
                           <SelectItem value="Jr.">Jr.</SelectItem>
                           <SelectItem value="Sr.">Sr.</SelectItem>
+                          <SelectItem value="I">I</SelectItem>
                           <SelectItem value="II">II</SelectItem>
                           <SelectItem value="III">III</SelectItem>
                           <SelectItem value="IV">IV</SelectItem>

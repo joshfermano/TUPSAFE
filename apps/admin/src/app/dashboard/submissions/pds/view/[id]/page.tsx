@@ -231,6 +231,7 @@ export default function PdsSubmissionViewPage() {
             associations: pd.otherInfo.associations,
             references: pd.otherInfo.references,
             questions: pd.otherInfo.questions,
+            governmentId: pd.otherInfo.governmentId,
           }
         : null,
     };
@@ -1454,6 +1455,43 @@ export default function PdsSubmissionViewPage() {
                 </p>
               )}
             </DataSection>
+
+            {/* XI. GOVERNMENT ISSUED ID */}
+            {viewPdsData?.otherInfo?.governmentId && (
+              <DataSection
+                icon={FileText}
+                title="XI. GOVERNMENT ISSUED ID (ITEM 42)"
+                badge={<ValidationBadge status="complete" />}
+                defaultOpen={true}>
+                <div className="space-y-6">
+                  <SectionCardGrid columns={4}>
+                    <SectionCardField
+                      label="ID Type"
+                      value={viewPdsData.otherInfo.governmentId.idType}
+                    />
+                    <SectionCardField
+                      label="ID/License/Passport No."
+                      value={viewPdsData.otherInfo.governmentId.idNumber}
+                    />
+                    <SectionCardField
+                      label="Date of Issuance"
+                      value={
+                        viewPdsData.otherInfo.governmentId.dateIssued
+                          ? format(
+                              new Date(viewPdsData.otherInfo.governmentId.dateIssued),
+                              'MMM d, yyyy'
+                            )
+                          : null
+                      }
+                    />
+                    <SectionCardField
+                      label="Place of Issuance"
+                      value={viewPdsData.otherInfo.governmentId.placeIssued}
+                    />
+                  </SectionCardGrid>
+                </div>
+              </DataSection>
+            )}
           </div>
 
           {/* Sidebar - Employee Info */}

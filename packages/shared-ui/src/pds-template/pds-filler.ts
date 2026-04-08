@@ -117,9 +117,9 @@ function evaluateCheckbox(key: string, data: PDSData): boolean {
   if (key === 'checkbox:citizenship:filipino') return pi.citizenship.type === 'Filipino';
   if (key === 'checkbox:citizenship:dual') return pi.citizenship.type === 'Dual';
   if (key === 'checkbox:citizenship:byBirth')
-    return pi.citizenship.type === 'Dual' && (pi.citizenship.details?.includes('by birth') ?? false);
+    return pi.citizenship.type === 'Dual' && pi.citizenship.acquisitionMethod === 'byBirth';
   if (key === 'checkbox:citizenship:byNaturalization')
-    return pi.citizenship.type === 'Dual' && (pi.citizenship.details?.includes('by naturalization') ?? false);
+    return pi.citizenship.type === 'Dual' && pi.citizenship.acquisitionMethod === 'byNaturalization';
 
   // Question checkboxes (yes/no pairs)
   const qMap: Record<string, QuestionResolved> = {
@@ -318,7 +318,7 @@ function fillPersonalInfo(filler: FormFiller, data: PDSData): void {
   filler.setText('personalInfo.philsysNo', displayOrEmpty(pi.philsysNo));
   filler.setText(
     'personalInfo.citizenship.details',
-    pi.citizenship.type === 'Dual' ? displayOrEmpty(pi.citizenship.details) : ''
+    pi.citizenship.type === 'Dual' ? displayOrEmpty(pi.citizenship.country || pi.citizenship.details) : ''
   );
 
   // Residential address
@@ -425,11 +425,13 @@ function fillCheckboxes(filler: FormFiller, data: PDSData): void {
   filler.setCheckbox('cb.citizenship.dual', pi.citizenship.type === 'Dual');
   filler.setCheckbox(
     'cb.citizenship.byBirth',
-    pi.citizenship.type === 'Dual' && (pi.citizenship.details?.includes('by birth') ?? false)
+    pi.citizenship.type === 'Dual' && 
+    ((pi.citizenship.acquisitionMethod as string) === 'byBirth' || (pi.citizenship.acquisitionMethod as string) === 'by birth')
   );
   filler.setCheckbox(
     'cb.citizenship.byNaturalization',
-    pi.citizenship.type === 'Dual' && (pi.citizenship.details?.includes('by naturalization') ?? false)
+    pi.citizenship.type === 'Dual' && 
+    ((pi.citizenship.acquisitionMethod as string) === 'byNaturalization' || (pi.citizenship.acquisitionMethod as string) === 'by naturalization')
   );
 
   // Questions (Q34-Q40c)

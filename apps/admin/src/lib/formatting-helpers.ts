@@ -24,11 +24,19 @@ export function formatAddress(
 /**
  * Format citizenship
  */
-export function formatCitizenship(citizenship: Citizenship | undefined | null): string {
+export function formatCitizenship(citizenship: Record<string, any> | undefined | null): string {
   if (!citizenship) return 'Filipino';
   if (citizenship.type === 'Filipino') return 'Filipino';
-  if (citizenship.type === 'Dual' && citizenship.details) {
-    return `Dual Citizenship (${citizenship.details})`;
+  if (citizenship.type === 'Dual') {
+    const methodStr = citizenship.acquisitionMethod === 'byBirth' ? 'By Birth' : 
+                      citizenship.acquisitionMethod === 'byNaturalization' ? 'By Naturalization' :
+                      citizenship.acquisitionMethod;
+    const countryStr = citizenship.country || citizenship.details;
+    const parts = [];
+    if (methodStr) parts.push(methodStr);
+    if (countryStr) parts.push(countryStr);
+    
+    return parts.length > 0 ? `Dual Citizenship (${parts.join(' - ')})` : 'Dual Citizenship';
   }
   return citizenship.type || 'Filipino';
 }

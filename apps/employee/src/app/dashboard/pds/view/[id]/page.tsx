@@ -717,8 +717,12 @@ export default function PDSViewDetailPage({
               value={
                 pdsData.personalInfo?.citizenship
                   ? `${pdsData.personalInfo.citizenship.type}${
-                      pdsData.personalInfo.citizenship.details
-                        ? ` - ${pdsData.personalInfo.citizenship.details}`
+                      pdsData.personalInfo.citizenship.type === 'Dual' && pdsData.personalInfo.citizenship.acquisitionMethod
+                        ? ` (${pdsData.personalInfo.citizenship.acquisitionMethod === 'byBirth' ? 'By Birth' : 'By Naturalization'})`
+                        : ''
+                    }${
+                      pdsData.personalInfo.citizenship.details || pdsData.personalInfo.citizenship.country
+                        ? ` - ${pdsData.personalInfo.citizenship.details || pdsData.personalInfo.citizenship.country}`
                         : ''
                     }`
                   : undefined
@@ -1623,6 +1627,26 @@ export default function PDSViewDetailPage({
                 </div>
               </div>
             )}
+
+          {/* Government ID (Item 42) */}
+          {!!pdsData.otherInfo?.governmentId && (
+            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+              <h3 className="text-sm font-semibold mb-3 text-slate-900 dark:text-slate-100">
+                Government Issued ID (Item 42)
+              </h3>
+              <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Field label="ID Type" value={(pdsData.otherInfo.governmentId as Record<string, unknown>).idType as string | null} />
+                  <Field label="ID/License/Passport No." value={(pdsData.otherInfo.governmentId as Record<string, unknown>).idNumber as string | null} />
+                  <Field 
+                    label="Date of Issuance" 
+                    value={(pdsData.otherInfo.governmentId as Record<string, unknown>).dateIssued ? format(new Date((pdsData.otherInfo.governmentId as Record<string, unknown>).dateIssued as string), 'MMM d, yyyy') : 'N/A'} 
+                  />
+                  <Field label="Place of Issuance" value={(pdsData.otherInfo.governmentId as Record<string, unknown>).placeIssued as string | null} />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </Section>
     </div>
