@@ -31,6 +31,7 @@ import {
   GraduationCap,
   MapPin,
 } from 'lucide-react';
+import { CertificationsDisplay } from '../../../components/profile/CertificationsDisplay';
 
 // Info row component for clean display
 function InfoRow({
@@ -311,8 +312,13 @@ export default function ProfilePage() {
         </MagicCard>
       </BlurFade>
 
-      {/* Account Status Card */}
+      {/* Certifications & Trainings */}
       <BlurFade delay={0.2}>
+        <CertificationsDisplay />
+      </BlurFade>
+
+      {/* Account Status Card */}
+      <BlurFade delay={0.25}>
         <MagicCard
           gradientSize={300}
           gradientColor="var(--primary)"
@@ -368,7 +374,7 @@ export default function ProfilePage() {
 
       {/* Department Information Card */}
       {department && (
-        <BlurFade delay={0.25}>
+        <BlurFade delay={0.3}>
           <MagicCard
             gradientSize={300}
             gradientColor="var(--primary)"

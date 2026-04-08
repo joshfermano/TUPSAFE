@@ -483,6 +483,75 @@ export { usePDSPdf, type UsePDSPdfReturn } from './usePDSPdf';
  */
 export { useSALNPdf, type UseSALNPdfReturn } from './useSALNPdf';
 
+// ============================================================================
+// Notification Hooks
+// ============================================================================
+
+/**
+ * Notification Hooks
+ *
+ * React Query hooks for fetching and managing notifications including
+ * pagination, mark-as-read (single + bulk), and unread count for badges.
+ *
+ * @example
+ * ```tsx
+ * import { useNotifications, useUnreadCount } from '@/hooks';
+ *
+ * function NotificationsPage() {
+ *   const { data } = useNotifications({ page: 1, limit: 20 });
+ *   const { data: unreadCount } = useUnreadCount();
+ * }
+ * ```
+ */
+export {
+  useNotifications,
+  useMarkNotificationAsRead,
+  useMarkAllNotificationsAsRead,
+  useUnreadCount,
+} from './useNotifications';
+export type {
+  Notification,
+  Pagination as NotificationPagination,
+  NotificationsQueryParams,
+} from './useNotifications';
+
+// ============================================================================
+// Certification Wallet Hooks
+// ============================================================================
+
+/**
+ * Certification Wallet Hooks
+ *
+ * React Query hooks for managing employee profile certifications including
+ * CRUD operations, file uploads/deletions, and optimistic cache updates.
+ *
+ * @example
+ * ```tsx
+ * import {
+ *   useCertifications,
+ *   useCreateCertification,
+ *   useDeleteCertification,
+ * } from '@/hooks';
+ *
+ * function CertificationsPage() {
+ *   const { data: certifications, isLoading } = useCertifications();
+ *   const createMutation = useCreateCertification();
+ *   const deleteMutation = useDeleteCertification();
+ *
+ *   return <CertificationList certifications={certifications} />;
+ * }
+ * ```
+ */
+export {
+  useCertifications,
+  useCreateCertification,
+  useUpdateCertification,
+  useDeleteCertification,
+  useUploadCertificationFile,
+  useDeleteCertificationFile,
+  certificationsKeys,
+} from './useCertifications';
+
 /**
  * Usage Examples
  *

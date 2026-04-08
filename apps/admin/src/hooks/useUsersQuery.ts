@@ -217,7 +217,7 @@ export function useUsersQuery(filters: UsersFilters = {}) {
       queryClient.setQueryData<UserListResponse>(
         usersKeys.list(filters),
         (old) => {
-          if (!old) return old;
+          if (!old?.users) return old;
           return {
             ...old,
             users: old.users.map((user) =>
@@ -287,13 +287,13 @@ export function useUsersQuery(filters: UsersFilters = {}) {
       queryClient.setQueryData<UserListResponse>(
         usersKeys.list(filters),
         (old) => {
-          if (!old) return old;
+          if (!old?.users) return old;
           return {
             ...old,
             users: old.users.filter((user) => user.id !== userId),
             pagination: {
               ...old.pagination,
-              total: old.pagination.total - 1,
+              total: (old.pagination?.total ?? 1) - 1,
             },
           };
         }

@@ -147,3 +147,15 @@ export type {
   UseOrganizationOptionsParams,
   UseOrganizationOptionsResult,
 } from './useOrganizationOptions';
+
+// Notifications Query Hooks
+export {
+  useAdminNotifications,
+  useMarkNotificationsRead,
+  useUnreadNotificationCount,
+  notificationKeys,
+} from './useNotificationsQuery';
+export type {
+  AdminNotification,
+  NotificationFilters,
+} from './useNotificationsQuery';

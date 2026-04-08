@@ -263,6 +263,9 @@ export * from './admin/settings';
 export * from './admin/jobs';
 export * from './admin/deadlines';
 
+// Certifications
+export * from './certifications';
+
 // Employee-specific types
 export * from './employee';
 

@@ -1609,6 +1609,7 @@ export default function PDSCreatePage() {
         <FormProvider {...form}>
           <PdsProvider
             pdsSubmissionId={draftId}
+            pdsYear={deadline?.year ?? new Date().getFullYear()}
             canEdit={true}
             initialAttachments={attachments}
             onAttachmentsChange={setAttachments}

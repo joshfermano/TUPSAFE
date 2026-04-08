@@ -75,6 +75,11 @@ export const approvalStatusEnum = pgEnum('approval_status', [
   'approved',
   'rejected',
 ]);
+export const certificationStatusEnum = pgEnum('certification_status', [
+  'pending',
+  'verified',
+  'rejected',
+]);
 export const notificationTypeEnum = pgEnum('notification_type', [
   'deadline_reminder',
   'submission_status',
@@ -811,6 +816,64 @@ export const pdsAttachments = pgTable(
   })
 );
 
+// Profile Certifications (standalone, independent of PDS)
+export const profileCertifications = pgTable(
+  'profile_certifications',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .$defaultFn(() => v7()),
+    userId: uuid('user_id').notNull(),
+    title: text('title').notNull(),
+    dateFrom: date('date_from').notNull(),
+    dateTo: date('date_to').notNull(),
+    hours: integer('hours'),
+    typeOfLd: text('type_of_ld'),
+    conductedBy: text('conducted_by'),
+    verificationStatus: certificationStatusEnum('verification_status')
+      .default('pending')
+      .notNull(),
+    verificationNotes: text('verification_notes'),
+    verifiedBy: uuid('verified_by'),
+    verifiedAt: timestamp('verified_at'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index('profile_certifications_user_id_idx').on(table.userId),
+    statusIdx: index('profile_certifications_status_idx').on(
+      table.verificationStatus
+    ),
+    userStatusIdx: index('profile_certifications_user_status_idx').on(
+      table.userId,
+      table.verificationStatus
+    ),
+    dateIdx: index('profile_certifications_date_idx').on(table.dateFrom),
+  })
+);
+
+export const profileCertificationFiles = pgTable(
+  'profile_certification_files',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .$defaultFn(() => v7()),
+    certificationId: uuid('certification_id')
+      .notNull()
+      .references(() => profileCertifications.id, { onDelete: 'cascade' }),
+    filePath: text('file_path').notNull(),
+    fileName: text('file_name').notNull(),
+    mimeType: text('mime_type').notNull(),
+    sizeBytes: integer('size_bytes').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    certIdIdx: index('profile_cert_files_cert_id_idx').on(
+      table.certificationId
+    ),
+  })
+);
+
 // SALN Tables (Statement of Assets, Liabilities, Net Worth)
 export const salnSubmissions = pgTable(
   'saln_submissions',
@@ -1440,6 +1503,8 @@ export const profilesRelations = relations(profiles, ({ one, many }) => ({
   }),
   // Session logs
   sessionLogs: many(sessionLogs),
+  // Profile certifications
+  certifications: many(profileCertifications),
 }));
 
 export const userPreferencesRelations = relations(
@@ -1624,6 +1689,33 @@ export const pdsAttachmentsRelations = relations(
   })
 );
 
+// Profile Certifications Relations
+export const profileCertificationsRelations = relations(
+  profileCertifications,
+  ({ one, many }) => ({
+    user: one(profiles, {
+      fields: [profileCertifications.userId],
+      references: [profiles.id],
+    }),
+    verifier: one(profiles, {
+      fields: [profileCertifications.verifiedBy],
+      references: [profiles.id],
+      relationName: 'certificationVerifier',
+    }),
+    files: many(profileCertificationFiles),
+  })
+);
+
+export const profileCertificationFilesRelations = relations(
+  profileCertificationFiles,
+  ({ one }) => ({
+    certification: one(profileCertifications, {
+      fields: [profileCertificationFiles.certificationId],
+      references: [profileCertifications.id],
+    }),
+  })
+);
+
 export const salnSubmissionsRelations = relations(
   salnSubmissions,
   ({ one, many }) => ({
@@ -1791,6 +1883,9 @@ export const schema = {
   employeeIdRegistry,
   // User preferences
   userPreferences,
+  // Profile Certifications
+  profileCertifications,
+  profileCertificationFiles,
 
   // Relations (required for Drizzle relational queries)
   profilesRelations,
@@ -1806,6 +1901,9 @@ export const schema = {
   salnLiabilitiesRelations,
   salnBusinessInterestsRelations,
   salnRelativesInGovRelations,
+  // Profile Certifications Relations
+  profileCertificationsRelations,
+  profileCertificationFilesRelations,
   // Job Application Relations
   openPositionsRelations,
   jobApplicationsRelations,

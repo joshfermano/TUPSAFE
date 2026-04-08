@@ -31,3 +31,7 @@ export { Timeline, type TimelineEvent } from './Timeline';
 
 // PDS Attachments Viewer
 export { PdsAttachmentsViewer } from './PdsAttachmentsViewer';
+
+// Certification Components
+export { CertificationCard } from './CertificationCard';
+export { CertificationVerifyDialog } from './CertificationVerifyDialog';

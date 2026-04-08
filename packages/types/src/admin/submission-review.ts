@@ -300,6 +300,8 @@ export interface SALNRealProperty {
   acquisitionYear?: number;
   acquisitionMode?: string;
   acquisitionCost?: string | number;
+  owner?: string;
+  childName?: string | null;
 }
 
 export interface SALNPersonalProperty {
@@ -308,6 +310,8 @@ export interface SALNPersonalProperty {
   yearAcquired?: number;
   acquisitionYear?: number; // Alias for yearAcquired
   acquisitionCost?: string | number;
+  owner?: string;
+  childName?: string | null;
 }
 
 export interface SALNLiability {
@@ -317,6 +321,8 @@ export interface SALNLiability {
   creditor?: string; // Alias for creditorName
   outstandingBalance?: string | number;
   amount?: string | number; // Alias for outstandingBalance
+  owner?: string;
+  childName?: string | null;
 }
 
 export interface SALNBusinessInterest {
@@ -326,6 +332,8 @@ export interface SALNBusinessInterest {
   businessAddress?: string;
   natureOfBusiness?: string;
   dateOfAcquisition?: string | Date;
+  owner?: string;
+  childName?: string | null;
 }
 
 export interface SALNRelativeInGov {
@@ -613,6 +621,28 @@ export interface SALNSubmissionDetail {
     totalAssets: string | number | null;
     totalLiabilities: string | number | null;
     netWorth: string | number | null;
+    // 2025 SALN format fields
+    complianceType?: string | null;
+    complianceDate?: string | Date | null;
+    hasMultipleMarriages?: boolean;
+    previousSpouseNames?: string | null;
+    spouseIsPublicOfficial?: boolean;
+    spousePosition?: string | null;
+    spouseAgency?: string | null;
+    spouseOfficeAddress?: string | null;
+    unmarriedChildren?: Array<{ name: string; dateOfBirth?: string; age: number }> | null;
+    hasNoBusinessInterests?: boolean;
+    hasNoRelativesInGov?: boolean;
+    governmentIdType?: string | null;
+    governmentIdNumber?: string | null;
+    governmentIdDateIssued?: string | Date | null;
+    governmentIdType2?: string | null;
+    governmentIdNumber2?: string | null;
+    governmentIdDateIssued2?: string | Date | null;
+    declarantTin?: string | null;
+    spouseTin?: string | null;
+    spouseDateOfBirth?: string | Date | null;
+    salnFormatVersion?: number;
   };
   previousYear?: {
     fiscalYear: number;

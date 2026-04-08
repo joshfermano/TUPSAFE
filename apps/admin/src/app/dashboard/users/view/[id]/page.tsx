@@ -21,6 +21,7 @@ import {
   LogOut,
   RotateCcw,
   AlertTriangle,
+  Award,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -29,6 +30,10 @@ import { useQuery } from '@tanstack/react-query';
 import { useUsersQuery } from '@/hooks/useUsersQuery';
 import { usePdsSubmissionsQuery } from '@/hooks/usePdsSubmissionsQuery';
 import { useSalnSubmissionsQuery } from '@/hooks/useSalnSubmissionsQuery';
+import {
+  useUserCertifications,
+  useVerifyCertification,
+} from '@/hooks/useCertificationsQuery';
 import { PageTransition } from '@/components/PageTransition';
 import {
   StatusBadge,
@@ -40,7 +45,10 @@ import {
   LoadingCard,
   ErrorAlert,
   PdsAttachmentsViewer,
+  CertificationCard,
+  CertificationVerifyDialog,
 } from '@/components/admin';
+import type { ProfileCertificationData } from '@tupsafe/types';
 
 import {
   Card,
@@ -199,11 +207,24 @@ export default function UserViewPage() {
     (s) => s.employee.id === userId
   );
 
+  // Certifications data and mutations
+  const {
+    data: certifications = [],
+    isLoading: isCertificationsLoading,
+  } = useUserCertifications(userId);
+  const verifyCertificationMutation = useVerifyCertification();
+
   const [activeTab, setActiveTab] = useState('overview');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
   const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
   const [showRevertToApplicantDialog, setShowRevertToApplicantDialog] = useState(false);
+
+  // Certification verification dialog state
+  const [showCertVerifyDialog, setShowCertVerifyDialog] = useState(false);
+  const [certVerifyAction, setCertVerifyAction] = useState<'verify' | 'reject'>('verify');
+  const [selectedCertification, setSelectedCertification] =
+    useState<ProfileCertificationData | null>(null);
 
   // Fetch real activity log from API
   const { data: activities = [], isLoading: isActivitiesLoading } = useUserActivities(userId);
@@ -298,6 +319,65 @@ export default function UserViewPage() {
     toast.info(`Downloading ${type.toUpperCase()} PDF...`);
     console.log(`Download ${type} PDF for ID: ${id}`);
   }, []);
+
+  // Certification verification handlers
+  const handleCertVerify = useCallback(
+    (certId: string) => {
+      const cert = certifications.find((c) => c.id === certId) ?? null;
+      setSelectedCertification(cert);
+      setCertVerifyAction('verify');
+      setShowCertVerifyDialog(true);
+    },
+    [certifications]
+  );
+
+  const handleCertReject = useCallback(
+    (certId: string) => {
+      const cert = certifications.find((c) => c.id === certId) ?? null;
+      setSelectedCertification(cert);
+      setCertVerifyAction('reject');
+      setShowCertVerifyDialog(true);
+    },
+    [certifications]
+  );
+
+  const handleCertVerifyConfirm = useCallback(
+    async (notes: string) => {
+      if (!selectedCertification) return;
+      try {
+        const apiStatus = certVerifyAction === 'verify' ? 'verified' : 'rejected' as const;
+        await verifyCertificationMutation.mutateAsync({
+          id: selectedCertification.id,
+          body: { status: apiStatus, notes: notes || undefined },
+        });
+        toast.success(
+          certVerifyAction === 'verify'
+            ? 'Certification verified successfully'
+            : 'Certification rejected',
+          {
+            description: `"${selectedCertification.title}" has been ${certVerifyAction === 'verify' ? 'verified' : 'rejected'}.`,
+          }
+        );
+        setShowCertVerifyDialog(false);
+        setSelectedCertification(null);
+      } catch (err) {
+        toast.error(
+          `Failed to ${certVerifyAction} certification`,
+          {
+            description:
+              err instanceof Error ? err.message : 'Unknown error occurred',
+          }
+        );
+      }
+    },
+    [selectedCertification, certVerifyAction, verifyCertificationMutation]
+  );
+
+  // Count pending certifications
+  const pendingCertificationsCount = useMemo(
+    () => certifications.filter((c) => c.verificationStatus === 'pending').length,
+    [certifications]
+  );
 
   if (isLoading) {
     return (
@@ -605,10 +685,18 @@ export default function UserViewPage() {
         value={activeTab}
         onValueChange={setActiveTab}
         className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="pds">PDS</TabsTrigger>
           <TabsTrigger value="saln">SALN</TabsTrigger>
+          <TabsTrigger value="certifications" className="relative">
+            Certifications
+            {pendingCertificationsCount > 0 && (
+              <span className="ml-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-semibold text-white">
+                {pendingCertificationsCount}
+              </span>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
 
@@ -910,6 +998,63 @@ export default function UserViewPage() {
           </Card>
         </TabsContent>
 
+        {/* Certifications Tab */}
+        <TabsContent value="certifications" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Award className="h-5 w-5" />
+                    Certifications
+                    {certifications.length > 0 && (
+                      <Badge variant="secondary" className="ml-1">
+                        {certifications.length}
+                      </Badge>
+                    )}
+                  </CardTitle>
+                  <CardDescription>
+                    Learning and development certifications
+                    {pendingCertificationsCount > 0 && (
+                      <span className="ml-1 text-amber-600 dark:text-amber-400">
+                        ({pendingCertificationsCount} pending verification)
+                      </span>
+                    )}
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isCertificationsLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-32" />
+                  ))}
+                </div>
+              ) : certifications.length > 0 ? (
+                <ScrollArea className="h-[600px] pr-1">
+                  <div className="space-y-4">
+                    {certifications.map((cert) => (
+                      <CertificationCard
+                        key={cert.id}
+                        certification={cert}
+                        onVerify={handleCertVerify}
+                        onReject={handleCertReject}
+                      />
+                    ))}
+                  </div>
+                </ScrollArea>
+              ) : (
+                <EmptyState
+                  icon={Award}
+                  title="No certifications"
+                  description="This user hasn't uploaded any certifications yet"
+                />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Activity Tab */}
         <TabsContent value="activity" className="space-y-4">
           <Card>
@@ -992,6 +1137,16 @@ export default function UserViewPage() {
         }
         confirmText="REVERT TO APPLICANT"
         onConfirm={handleRevertToApplicant}
+      />
+
+      {/* Certification Verify/Reject Dialog */}
+      <CertificationVerifyDialog
+        open={showCertVerifyDialog}
+        onOpenChange={setShowCertVerifyDialog}
+        certification={selectedCertification}
+        action={certVerifyAction}
+        onConfirm={handleCertVerifyConfirm}
+        isPending={verifyCertificationMutation.isPending}
       />
     </PageTransition>
   );
