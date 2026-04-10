@@ -31,6 +31,8 @@ import {
 import { OrganizationSelector } from './OrganizationSelector';
 import { HireDateInput } from './HireDateInput';
 import { EmailVerificationStep } from './EmailVerificationStep';
+import { FormDateInput } from '../forms/shared/FormDateInput';
+import { formatDateForInput } from '../../lib/utils/date-utils';
 
 import {
   employeeRegistrationSchemaWithConfirmation,
@@ -358,14 +360,11 @@ export function EmployeeRegistrationForm({
                     Date of Birth *
                   </FormLabel>
                   <FormControl>
-                    <Input
-                      type="date"
-                      value={field.value ? field.value.toISOString().split('T')[0] : ''}
-                      onChange={(e) => {
-                        const dateValue = e.target.value ? new Date(e.target.value) : undefined;
-                        field.onChange(dateValue);
-                      }}
-                      max={new Date().toISOString().split('T')[0]}
+                    <FormDateInput
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      max={formatDateForInput(new Date())}
                       className={inputClasses}
                     />
                   </FormControl>

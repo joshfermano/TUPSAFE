@@ -25,7 +25,7 @@ import {
 import { FormSection } from '../../../../../components/forms/shared/FormSection';
 import { type CompletePdsData } from '../../../../../lib/validations/pds-schema';
 import { autoSortWithNotification } from '../../../../../lib/utils/pds-sort';
-import { formatDateForInput, parseDateFromInput } from '../../../../../lib/utils/date-utils';
+import { FormDateInput } from '../../../../../components/forms/shared/FormDateInput';
 import { usePdsContextSafe } from '../../../../../context/PdsContext';
 import { EntryAttachments } from '../../../../../components/pds/EntryAttachments';
 
@@ -220,52 +220,19 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
                       )}
                     />
 
-                    <FormField
+                    <FormDateInput
                       control={form.control}
                       name={`voluntaryWork.${index}.dateFrom`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            From <span className="text-destructive">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="date"
-                              {...field}
-                              value={formatDateForInput(field.value as Date | null)}
-                              onChange={(e) => {
-                                field.onChange(parseDateFromInput(e.target.value));
-                              }}
-                              onBlur={handleVoluntaryDateBlur}
-                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="From"
+                      required
+                      onBlur={handleVoluntaryDateBlur}
                     />
 
-                    <FormField
+                    <FormDateInput
                       control={form.control}
                       name={`voluntaryWork.${index}.dateTo`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>To (leave blank if ongoing)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="date"
-                              {...field}
-                              value={formatDateForInput(field.value as Date | null)}
-                              onChange={(e) => {
-                                field.onChange(parseDateFromInput(e.target.value));
-                              }}
-                              onBlur={handleVoluntaryDateBlur}
-                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="To (leave blank if ongoing)"
+                      onBlur={handleVoluntaryDateBlur}
                     />
 
                     <FormField
@@ -381,54 +348,20 @@ export const VoluntaryTraining = memo(function VoluntaryTraining() {
                   />
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
+                    <FormDateInput
                       control={form.control}
                       name={`learningDevelopment.${index}.dateFrom`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            From <span className="text-destructive">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="date"
-                              {...field}
-                              value={formatDateForInput(field.value as Date | null)}
-                              onChange={(e) => {
-                                field.onChange(parseDateFromInput(e.target.value));
-                              }}
-                              onBlur={handleTrainingDateBlur}
-                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="From"
+                      required
+                      onBlur={handleTrainingDateBlur}
                     />
 
-                    <FormField
+                    <FormDateInput
                       control={form.control}
                       name={`learningDevelopment.${index}.dateTo`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            To <span className="text-destructive">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="date"
-                              {...field}
-                              value={formatDateForInput(field.value as Date | null)}
-                              onChange={(e) => {
-                                field.onChange(parseDateFromInput(e.target.value));
-                              }}
-                              onBlur={handleTrainingDateBlur}
-                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="To"
+                      required
+                      onBlur={handleTrainingDateBlur}
                     />
 
                     <FormField

@@ -29,10 +29,8 @@ import { Button } from '../../../../../components/ui/button';
 import { Badge } from '../../../../../components/ui/badge';
 import { Alert, AlertDescription } from '../../../../../components/ui/alert';
 import { Textarea } from '../../../../../components/ui/textarea';
-import {
-  formatDateForInput,
-  parseDateFromInput,
-} from '../../../../../lib/utils/date-utils';
+import { formatDateForInput } from '../../../../../lib/utils/date-utils';
+import { FormDateInput } from '../../../../../components/forms/shared/FormDateInput';
 
 // Import Enhanced Components from shared-ui
 import {
@@ -434,22 +432,12 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
                     Date of {complianceType === 'assumption' ? 'Assumption' : 'Exit'}{' '}
                     <span className="text-destructive">*</span>
                   </Label>
-                  <Controller
-                    name="submission.complianceDate"
+                  <FormDateInput
                     control={control}
-                    render={({ field }) => (
-                      <EnhancedInput
-                        type="date"
-                        id="submission.complianceDate"
-                        value={formatDateForInput(field.value)}
-                        onChange={(e) => {
-                          const date = parseDateFromInput(e.target.value);
-                          field.onChange(date);
-                        }}
-                        max={formatDateForInput(new Date())}
-                        className="max-w-xs"
-                      />
-                    )}
+                    name="submission.complianceDate"
+                    variant="enhanced"
+                    max={formatDateForInput(new Date())}
+                    className="max-w-xs"
                   />
                   {errors?.submission && 'complianceDate' in errors.submission && (
                     <p className="text-sm text-destructive">

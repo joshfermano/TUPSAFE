@@ -24,7 +24,7 @@ import { FormSection } from '../../../../../components/forms/shared/FormSection'
 import {
   type CompletePdsData,
 } from '../../../../../lib/validations/pds-schema';
-import { formatDateForInput, parseDateFromInput } from '../../../../../lib/utils/date-utils';
+import { FormDateInput } from '../../../../../components/forms/shared/FormDateInput';
 
 /**
  * Step 4: Family Background
@@ -445,26 +445,10 @@ export const Family = memo(function Family() {
                       )}
                     />
 
-                    <FormField
+                    <FormDateInput
                       control={form.control}
                       name={`family.children.${index}.dateOfBirth`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Date of Birth</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="date"
-                              {...field}
-                              value={formatDateForInput(field.value as Date | null)}
-                              onChange={(e) => {
-                                field.onChange(parseDateFromInput(e.target.value));
-                              }}
-                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="Date of Birth"
                     />
                   </div>
 

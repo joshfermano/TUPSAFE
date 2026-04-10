@@ -45,6 +45,8 @@ import type {
 
 // Import Enhanced Components
 import { EnhancedFormSection, EnhancedInput, BlurFade } from '@tupsafe/shared-ui';
+import { formatDateForInput } from '../../../../../lib/utils/date-utils';
+import { FormDateInput } from '../../../../../components/forms/shared/FormDateInput';
 
 // Government ID types for selection
 const GOVERNMENT_ID_TYPES = [
@@ -522,40 +524,11 @@ export const ReviewSubmit = memo(function ReviewSubmit({
             </div>
 
             <div className="grid gap-2">
-              <Label
-                htmlFor="submission.governmentIdDateIssued"
-                className="text-base font-medium">
-                Date Issued
-              </Label>
-              <Controller
-                name="submission.governmentIdDateIssued"
+              <FormDateInput
                 control={control}
-                render={({ field }) => {
-                  // Normalize value to YYYY-MM-DD string format
-                  let displayValue = '';
-                  if (field.value instanceof Date) {
-                    displayValue = field.value.toISOString().split('T')[0];
-                  } else if (typeof field.value === 'string' && field.value) {
-                    try {
-                      displayValue = new Date(field.value).toISOString().split('T')[0];
-                    } catch {
-                      displayValue = field.value;
-                    }
-                  }
-
-                  return (
-                    <input
-                      type="date"
-                      value={displayValue}
-                      onChange={(e) => {
-                        const dateStr = e.target.value;
-                        field.onChange(dateStr ? new Date(dateStr) : null);
-                      }}
-                      max={new Date().toISOString().split('T')[0]}
-                      className="flex h-10 w-full rounded-lg border bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all px-3 py-2 text-sm shadow-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                    />
-                  );
-                }}
+                name="submission.governmentIdDateIssued"
+                label="Date Issued"
+                max={formatDateForInput(new Date())}
               />
             </div>
           </div>
@@ -614,40 +587,11 @@ export const ReviewSubmit = memo(function ReviewSubmit({
             </div>
 
             <div className="grid gap-2">
-              <Label
-                htmlFor="submission.governmentIdDateIssued2"
-                className="text-base font-medium">
-                Date Issued
-              </Label>
-              <Controller
-                name="submission.governmentIdDateIssued2"
+              <FormDateInput
                 control={control}
-                render={({ field }) => {
-                  // Normalize value to YYYY-MM-DD string format
-                  let displayValue = '';
-                  if (field.value instanceof Date) {
-                    displayValue = field.value.toISOString().split('T')[0];
-                  } else if (typeof field.value === 'string' && field.value) {
-                    try {
-                      displayValue = new Date(field.value).toISOString().split('T')[0];
-                    } catch {
-                      displayValue = field.value;
-                    }
-                  }
-
-                  return (
-                    <input
-                      type="date"
-                      value={displayValue}
-                      onChange={(e) => {
-                        const dateStr = e.target.value;
-                        field.onChange(dateStr ? new Date(dateStr) : null);
-                      }}
-                      max={new Date().toISOString().split('T')[0]}
-                      className="flex h-10 w-full rounded-lg border bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all px-3 py-2 text-sm shadow-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                    />
-                  );
-                }}
+                name="submission.governmentIdDateIssued2"
+                label="Date Issued"
+                max={formatDateForInput(new Date())}
               />
             </div>
           </div>

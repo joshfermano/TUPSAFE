@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Calendar, Info } from 'lucide-react';
 import { Label } from '../ui/label';
 import { cn } from '../../lib/utils';
+import { formatDateForInput } from '../../lib/utils/date-utils';
 
 export interface HireDateInputProps {
   value?: Date;
@@ -45,13 +46,12 @@ export function HireDateInput({
       const date = new Date(year, month - 1, day);
       if (!isNaN(date.getTime())) {
         onChange(date);
-      } else {
-        onChange(undefined);
       }
-    } else {
-      // Do not update parent value for incomplete input
+    } else if (newValue === '') {
+      // Only clear when user explicitly empties the field
       onChange(undefined);
     }
+    // Do NOT call onChange for incomplete values - prevents parent re-renders
   };
 
   // Format display date
@@ -67,8 +67,8 @@ export function HireDateInput({
     });
   };
 
-  // Get today's date in YYYY-MM-DD format for max attribute
-  const today = new Date().toISOString().split('T')[0];
+  // Get today's date in YYYY-MM-DD format for max attribute (local timezone)
+  const today = formatDateForInput(new Date());
 
   return (
     <div className={cn('space-y-2', className)}>

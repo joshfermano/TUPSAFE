@@ -6,7 +6,7 @@ import { Input } from '../../ui/input';
 import { Button } from '../../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { type CompletePdsData } from '../../../lib/validations/pds-schema';
-import { formatDateForInput, parseDateFromInput } from '../../../lib/utils/date-utils';
+import { FormDateInput } from '../../forms/shared/FormDateInput';
 import { usePdsContextSafe } from '../../../context/PdsContext';
 import { EntryAttachments } from '../EntryAttachments';
 
@@ -60,54 +60,20 @@ export const TrainingItem = memo(({ index, onRemove, onDateBlur }: TrainingItemP
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <FormField
+        <FormDateInput
           control={form.control}
           name={`learningDevelopment.${index}.dateFrom`}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                From <span className="text-destructive">*</span>
-              </FormLabel>
-              <FormControl>
-                <Input
-                  type="date"
-                  {...field}
-                  value={formatDateForInput(field.value as Date | null)}
-                  onChange={(e) => {
-                    field.onChange(parseDateFromInput(e.target.value));
-                  }}
-                  onBlur={onDateBlur}
-                  className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          label="From"
+          required
+          onBlur={onDateBlur}
         />
 
-        <FormField
+        <FormDateInput
           control={form.control}
           name={`learningDevelopment.${index}.dateTo`}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                To <span className="text-destructive">*</span>
-              </FormLabel>
-              <FormControl>
-                <Input
-                  type="date"
-                  {...field}
-                  value={formatDateForInput(field.value as Date | null)}
-                  onChange={(e) => {
-                    field.onChange(parseDateFromInput(e.target.value));
-                  }}
-                  onBlur={onDateBlur}
-                  className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          label="To"
+          required
+          onBlur={onDateBlur}
         />
 
         <FormField

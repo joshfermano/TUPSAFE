@@ -58,6 +58,8 @@ import {
 } from '../../../../../components/ui/select';
 import { cn } from '../../../../../lib/utils';
 import { formatCurrency } from '../../../../../lib/utils/currency';
+import { formatDateForInput } from '../../../../../lib/utils/date-utils';
+import { FormDateInput } from '../../../../../components/forms/shared/FormDateInput';
 import type { CompleteSalnData } from '../../../../../lib/validations/saln-schema';
 import {
   PROPERTY_KIND,
@@ -937,28 +939,15 @@ export default function SALNEditDetailPage({
                   Date of {(formData.submission as Record<string, unknown>)?.complianceType === 'assumption' ? 'Assumption' : 'Exit'}{' '}
                   <span className="text-rose-500">*</span>
                 </Label>
-                <Input
-                  type="date"
-                  value={
-                    (formData.submission as Record<string, unknown>)?.complianceDate
-                      ? (() => {
-                          const cd = (formData.submission as Record<string, unknown>).complianceDate;
-                          if (cd instanceof Date) return cd.toISOString().split('T')[0];
-                          if (typeof cd === 'string') {
-                            try { return new Date(cd).toISOString().split('T')[0]; } catch { return cd; }
-                          }
-                          return '';
-                        })()
-                      : ''
-                  }
-                  onChange={(e) => {
-                    const dateStr = e.target.value;
+                <FormDateInput
+                  value={(formData.submission as Record<string, unknown>)?.complianceDate as Date | string | null}
+                  onChange={(date) => {
                     handleFieldChange('submission', {
                       ...formData.submission,
-                      complianceDate: dateStr ? new Date(dateStr) : null,
+                      complianceDate: date,
                     });
                   }}
-                  max={new Date().toISOString().split('T')[0]}
+                  max={formatDateForInput(new Date())}
                   className="max-w-xs"
                 />
               </div>
@@ -1243,28 +1232,15 @@ export default function SALNEditDetailPage({
               />
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium">Date Issued</Label>
-                <Input
-                  type="date"
-                  value={
-                    (formData.submission as Record<string, unknown>)?.governmentIdDateIssued
-                      ? (() => {
-                          const d = (formData.submission as Record<string, unknown>).governmentIdDateIssued;
-                          if (d instanceof Date) return d.toISOString().split('T')[0];
-                          if (typeof d === 'string') {
-                            try { return new Date(d).toISOString().split('T')[0]; } catch { return d; }
-                          }
-                          return '';
-                        })()
-                      : ''
-                  }
-                  onChange={(e) => {
-                    const dateStr = e.target.value;
+                <FormDateInput
+                  value={(formData.submission as Record<string, unknown>)?.governmentIdDateIssued as Date | string | null}
+                  onChange={(date) => {
                     handleFieldChange('submission', {
                       ...formData.submission,
-                      governmentIdDateIssued: dateStr ? new Date(dateStr) : null,
+                      governmentIdDateIssued: date,
                     });
                   }}
-                  max={new Date().toISOString().split('T')[0]}
+                  max={formatDateForInput(new Date())}
                 />
               </div>
             </div>
@@ -1307,28 +1283,15 @@ export default function SALNEditDetailPage({
               />
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium">Date Issued</Label>
-                <Input
-                  type="date"
-                  value={
-                    (formData.submission as Record<string, unknown>)?.governmentIdDateIssued2
-                      ? (() => {
-                          const d = (formData.submission as Record<string, unknown>).governmentIdDateIssued2;
-                          if (d instanceof Date) return d.toISOString().split('T')[0];
-                          if (typeof d === 'string') {
-                            try { return new Date(d).toISOString().split('T')[0]; } catch { return d; }
-                          }
-                          return '';
-                        })()
-                      : ''
-                  }
-                  onChange={(e) => {
-                    const dateStr = e.target.value;
+                <FormDateInput
+                  value={(formData.submission as Record<string, unknown>)?.governmentIdDateIssued2 as Date | string | null}
+                  onChange={(date) => {
                     handleFieldChange('submission', {
                       ...formData.submission,
-                      governmentIdDateIssued2: dateStr ? new Date(dateStr) : null,
+                      governmentIdDateIssued2: date,
                     });
                   }}
-                  max={new Date().toISOString().split('T')[0]}
+                  max={formatDateForInput(new Date())}
                 />
               </div>
             </div>
@@ -1836,17 +1799,10 @@ export default function SALNEditDetailPage({
                     {/* Date of Acquisition */}
                     <div className="space-y-1.5">
                       <Label className="text-xs font-medium">Date of Acquisition <span className="text-rose-500">*</span></Label>
-                      <Input
-                        type="date"
-                        value={
-                          biz.dateOfAcquisition instanceof Date
-                            ? biz.dateOfAcquisition.toISOString().split('T')[0]
-                            : typeof biz.dateOfAcquisition === 'string' && biz.dateOfAcquisition
-                              ? (() => { try { return new Date(biz.dateOfAcquisition).toISOString().split('T')[0]; } catch { return biz.dateOfAcquisition; } })()
-                              : ''
-                        }
-                        onChange={(e) => updateBusinessInterest(index, 'dateOfAcquisition', e.target.value)}
-                        max={new Date().toISOString().split('T')[0]}
+                      <FormDateInput
+                        value={biz.dateOfAcquisition as Date | string | null}
+                        onChange={(date) => updateBusinessInterest(index, 'dateOfAcquisition', date)}
+                        max={formatDateForInput(new Date())}
                       />
                     </div>
 

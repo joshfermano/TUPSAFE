@@ -37,6 +37,8 @@ import {
   EnhancedInput,
   BlurFade,
 } from '@tupsafe/shared-ui';
+import { formatDateForInput } from '../../../../../lib/utils/date-utils';
+import { FormDateInput } from '../../../../../components/forms/shared/FormDateInput';
 
 // Helper component to watch individual business interest owner
 function BusinessOwnerSelect({ index, control }: { index: number; control: unknown }) {
@@ -328,36 +330,11 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
                               className="text-base font-medium after:content-['*'] after:ml-0.5 after:text-destructive">
                               Date of Acquisition
                             </Label>
-                            <Controller
-                              name={`businessInterests.${index}.dateOfAcquisition`}
+                            <FormDateInput
                               control={control}
-                              render={({ field }) => {
-                                // Normalize value to YYYY-MM-DD string format
-                                let displayValue = '';
-                                if (field.value instanceof Date) {
-                                  displayValue = field.value.toISOString().split('T')[0];
-                                } else if (typeof field.value === 'string' && field.value) {
-                                  // Handle ISO string from localStorage
-                                  try {
-                                    displayValue = new Date(field.value).toISOString().split('T')[0];
-                                  } catch {
-                                    displayValue = field.value;
-                                  }
-                                }
-
-                                return (
-                                  <EnhancedInput
-                                    type="date"
-                                    value={displayValue}
-                                    onChange={(e) => {
-                                      const dateStr = e.target.value;
-                                      // Store as Date object for consistency with form state
-                                      field.onChange(dateStr ? new Date(dateStr) : null);
-                                    }}
-                                    max={new Date().toISOString().split('T')[0]}
-                                  />
-                                );
-                              }}
+                              name={`businessInterests.${index}.dateOfAcquisition`}
+                              variant="enhanced"
+                              max={formatDateForInput(new Date())}
                             />
                           </div>
 

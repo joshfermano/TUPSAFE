@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { type Control, type FieldPath, type FieldValues, useController } from 'react-hook-form';
+import { type Control, type FieldPath, type FieldValues } from 'react-hook-form';
 import { Input } from '../../ui/input';
 import { EnhancedInput } from '@tupsafe/shared-ui';
 import {
@@ -18,7 +18,7 @@ import { cn } from '../../../lib/utils';
 // Props for DIRECT usage: <FormDateInput value={...} onChange={...} />
 // ---------------------------------------------------------------------------
 export interface FormDateInputDirectProps {
-  value: Date | null | undefined;
+  value: Date | string | null | undefined;
   onChange: (date: Date | null) => void;
   onBlur?: () => void;
   max?: string;
@@ -31,6 +31,7 @@ export interface FormDateInputDirectProps {
   name?: undefined;
   label?: undefined;
   placeholder?: undefined;
+  required?: undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -46,10 +47,11 @@ export interface FormDateInputFieldProps<TFieldValues extends FieldValues = Fiel
   disabled?: boolean;
   id?: string;
   variant?: 'input' | 'enhanced';
+  required?: boolean;
+  onBlur?: () => void;
   // These must NOT be provided in FormField mode
   value?: undefined;
   onChange?: undefined;
-  onBlur?: undefined;
 }
 
 export type FormDateInputProps<TFieldValues extends FieldValues = FieldValues> =
@@ -60,7 +62,7 @@ export type FormDateInputProps<TFieldValues extends FieldValues = FieldValues> =
 // Inner date input — handles local string buffering to prevent keyboard resets
 // ---------------------------------------------------------------------------
 interface DateInputCoreProps {
-  value: Date | null | undefined;
+  value: Date | string | null | undefined;
   onChange: (date: Date | null) => void;
   onBlur?: () => void;
   max?: string;
@@ -187,19 +189,19 @@ export const FormDateInput = React.memo(function FormDateInput(props: FormDateIn
   // Discriminate: if `control` is provided, use FormField-wrapper mode
   if (props.control !== undefined && props.name !== undefined) {
     // FormField-wrapper mode
-    const { control, name, label, max, className, disabled, id, variant } = props;
+    const { control, name, label, max, className, disabled, id, variant, required, onBlur: externalOnBlur } = props;
     return (
       <FormField
         control={control}
         name={name}
         render={({ field }) => (
           <FormItem>
-            {label && <FormLabel>{label}</FormLabel>}
+            {label && <FormLabel>{label}{required && <span className="text-destructive"> *</span>}</FormLabel>}
             <FormControl>
               <DateInputCore
-                value={field.value as Date | null | undefined}
+                value={field.value as Date | string | null | undefined}
                 onChange={field.onChange}
-                onBlur={field.onBlur}
+                onBlur={() => { field.onBlur(); externalOnBlur?.(); }}
                 max={max}
                 className={className}
                 disabled={disabled}
@@ -215,7 +217,7 @@ export const FormDateInput = React.memo(function FormDateInput(props: FormDateIn
   }
 
   // Direct mode — pass through to DateInputCore
-  const { value, onChange, onBlur, max, className, disabled, id, variant } = props as FormDateInputDirectProps;
+  const { value, onChange, onBlur, max, className, disabled, id, variant } = props as Omit<FormDateInputDirectProps, 'control' | 'name' | 'label' | 'placeholder' | 'required'>;
   return (
     <DateInputCore
       value={value}

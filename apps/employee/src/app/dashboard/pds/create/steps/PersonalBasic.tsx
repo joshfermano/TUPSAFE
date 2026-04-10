@@ -27,7 +27,7 @@ import {
 import { Separator } from '../../../../../components/ui/separator';
 import { FormSection } from '../../../../../components/forms/shared/FormSection';
 import { type CompletePdsData } from '../../../../../lib/validations/pds-schema';
-import { formatDateForInput, parseDateFromInput } from '../../../../../lib/utils/date-utils';
+import { FormDateInput } from '../../../../../components/forms/shared/FormDateInput';
 
 /**
  * Step 1: Personal Information - Basic Details
@@ -160,28 +160,11 @@ export const PersonalBasic = memo(function PersonalBasic() {
             Birth Information
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
+            <FormDateInput
               control={form.control}
               name="personalInfo.dateOfBirth"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Date of Birth <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type="date"
-                      {...field}
-                      value={formatDateForInput(field.value as Date | null)}
-                      onChange={(e) => {
-                        field.onChange(parseDateFromInput(e.target.value));
-                      }}
-                      className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              label="Date of Birth"
+              required
             />
 
             <FormField
