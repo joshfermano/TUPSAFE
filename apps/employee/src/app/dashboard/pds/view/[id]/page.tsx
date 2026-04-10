@@ -717,12 +717,12 @@ export default function PDSViewDetailPage({
               value={
                 pdsData.personalInfo?.citizenship
                   ? `${pdsData.personalInfo.citizenship.type}${
-                      pdsData.personalInfo.citizenship.type === 'Dual' && pdsData.personalInfo.citizenship.acquisitionMethod
-                        ? ` (${pdsData.personalInfo.citizenship.acquisitionMethod === 'byBirth' ? 'By Birth' : 'By Naturalization'})`
+                      pdsData.personalInfo.citizenship.type === 'Dual' && (pdsData.personalInfo.citizenship as any).acquisitionMethod
+                        ? ` (${(pdsData.personalInfo.citizenship as any).acquisitionMethod === 'byBirth' ? 'By Birth' : 'By Naturalization'})`
                         : ''
                     }${
-                      pdsData.personalInfo.citizenship.details || pdsData.personalInfo.citizenship.country
-                        ? ` - ${pdsData.personalInfo.citizenship.details || pdsData.personalInfo.citizenship.country}`
+                      (pdsData.personalInfo.citizenship as any).details || (pdsData.personalInfo.citizenship as any).country
+                        ? ` - ${(pdsData.personalInfo.citizenship as any).details || (pdsData.personalInfo.citizenship as any).country}`
                         : ''
                     }`
                   : undefined

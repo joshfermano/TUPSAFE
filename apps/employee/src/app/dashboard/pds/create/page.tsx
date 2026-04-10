@@ -88,6 +88,105 @@ interface PdsDraftData {
   attachments?: PdsAttachmentsMap;
 }
 
+// ============================================================================
+// DATE REHYDRATION HELPER
+// ============================================================================
+
+/**
+ * Convert a DateLike value (string, Date, null) to a Date object.
+ * Handles ISO date-only (YYYY-MM-DD) and ISO datetime strings using LOCAL timezone
+ * to prevent -1 day shifts from UTC conversion.
+ */
+function toDateObj(value: unknown): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  if (typeof value === 'string') {
+    // ISO date-only: parse as local time
+    const dateOnly = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (dateOnly) {
+      return new Date(parseInt(dateOnly[1]), parseInt(dateOnly[2]) - 1, parseInt(dateOnly[3]));
+    }
+    // ISO datetime: extract date portion, parse as local time
+    const isoDatetime = value.match(/^(\d{4})-(\d{2})-(\d{2})T/);
+    if (isoDatetime) {
+      return new Date(parseInt(isoDatetime[1]), parseInt(isoDatetime[2]) - 1, parseInt(isoDatetime[3]));
+    }
+    // Fallback
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  return null;
+}
+
+/**
+ * Rehydrate all Date fields in a PDS draft that were serialized as ISO strings
+ * by localStorage. Mutates the input object in-place and returns it.
+ *
+ * localStorage JSON.stringify converts Date objects to ISO strings.
+ * This function converts them back so react-hook-form and FormDateInput work correctly.
+ */
+function rehydrateDraftDates(data: Partial<CompletePdsData>): Partial<CompletePdsData> {
+  // Personal Info
+  if (data.personalInfo) {
+    const pi = data.personalInfo as Record<string, unknown>;
+    if (pi.dateOfBirth) pi.dateOfBirth = toDateObj(pi.dateOfBirth);
+  }
+
+  // Family → Children
+  if (data.family?.children) {
+    data.family.children = data.family.children.map((child) => ({
+      ...child,
+      dateOfBirth: toDateObj(child.dateOfBirth) as Date | null | undefined,
+    }));
+  }
+
+  // Eligibility
+  if (data.eligibility) {
+    data.eligibility = data.eligibility.map((item) => ({
+      ...item,
+      dateOfExam: toDateObj(item.dateOfExam) as Date | null,
+      licenseValidityDate: toDateObj(item.licenseValidityDate) as Date | null | undefined,
+    }));
+  }
+
+  // Work Experience
+  if (data.workExperience) {
+    data.workExperience = data.workExperience.map((item) => ({
+      ...item,
+      dateFrom: toDateObj(item.dateFrom) as Date | null | undefined,
+      dateTo: toDateObj(item.dateTo) as Date | null | undefined,
+    }));
+  }
+
+  // Voluntary Work
+  if (data.voluntaryWork) {
+    data.voluntaryWork = data.voluntaryWork.map((item) => ({
+      ...item,
+      dateFrom: toDateObj(item.dateFrom) as Date | null | undefined,
+      dateTo: toDateObj(item.dateTo) as Date | null | undefined,
+    }));
+  }
+
+  // Learning & Development
+  if (data.learningDevelopment) {
+    data.learningDevelopment = data.learningDevelopment.map((item) => ({
+      ...item,
+      dateFrom: toDateObj(item.dateFrom) as Date | null | undefined,
+      dateTo: toDateObj(item.dateTo) as Date | null | undefined,
+    }));
+  }
+
+  // Other Info → Government ID
+  if (data.otherInfo?.governmentId) {
+    const govId = data.otherInfo.governmentId as Record<string, unknown>;
+    if (govId.dateIssued) {
+      govId.dateIssued = toDateObj(govId.dateIssued);
+    }
+  }
+
+  return data;
+}
+
 /**
  * Section definition for the form
  */
@@ -362,16 +461,8 @@ export default function PDSCreatePage() {
             // Transform backend data to frontend format
             const formData = transformPdsFromBackend(pdsData);
 
-            // Ensure children.dateOfBirth is a Date object
-            if (formData?.family?.children) {
-              formData.family.children = formData.family.children.map((child) => ({
-                ...child,
-                dateOfBirth:
-                  child.dateOfBirth && typeof child.dateOfBirth === 'string'
-                    ? new Date(child.dateOfBirth)
-                    : child.dateOfBirth,
-              }));
-            }
+            // Rehydrate all date fields (converts any remaining strings to Date objects)
+            rehydrateDraftDates(formData);
 
             // Reset form with transformed data
             form.reset(formData);
@@ -403,16 +494,8 @@ export default function PDSCreatePage() {
         savedDraft.formData &&
         Object.keys(savedDraft.formData).length > 0
       ) {
-        // Ensure children.dateOfBirth is a Date object
-        if (savedDraft.formData?.family?.children) {
-          savedDraft.formData.family.children = savedDraft.formData.family.children.map((child) => ({
-            ...child,
-            dateOfBirth:
-              child.dateOfBirth && typeof child.dateOfBirth === 'string'
-                ? new Date(child.dateOfBirth)
-                : child.dateOfBirth,
-          }));
-        }
+        // Rehydrate all date fields from localStorage (ISO strings → Date objects)
+        rehydrateDraftDates(savedDraft.formData);
         setHasSavedDraft(true);
         setShowDraftDialog(true);
       }
@@ -423,7 +506,10 @@ export default function PDSCreatePage() {
   const handleRestoreDraft = useCallback(() => {
     const savedDraft = getSavedDraft<PdsDraftData>(`pds-draft-${userId}`);
     if (savedDraft && savedDraft.formData) {
-      // Restore form data
+      // Rehydrate all date fields from localStorage (ISO strings → Date objects)
+      rehydrateDraftDates(savedDraft.formData);
+
+      // Restore form data with properly rehydrated dates
       form.reset(savedDraft.formData);
 
       // Restore attachments if available

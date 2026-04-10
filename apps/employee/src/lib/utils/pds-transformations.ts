@@ -174,10 +174,13 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): Recor
   // Convert Family Background - Children dateOfBirth
   // NOTE: dateOfBirth is converted to YYYY-MM-DD string to prevent timezone issues
   if (transformedData.family?.children) {
-    transformedData.family.children = transformedData.family.children.map((child) => ({
-      ...child,
-      dateOfBirth: toDateOnlyString(child.dateOfBirth) as unknown as Date | null | undefined,
-    }));
+    transformedData.family = {
+      ...transformedData.family,
+      children: transformedData.family.children.map((child) => ({
+        ...child,
+        dateOfBirth: toDateOnlyString(child.dateOfBirth) as unknown as Date | null | undefined,
+      })),
+    } as CompletePdsData['family'];
   }
 
   // Convert Civil Service Eligibility dates and rating
@@ -376,9 +379,11 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): Recor
   // STEP 1: Filter out empty references
   // ========================================================================
 
-  if (transformedData.otherInfo?.references) {
-    transformedData.otherInfo.references =
-      transformedData.otherInfo.references.filter(
+  let otherInfoRef = transformedData.otherInfo ? { ...transformedData.otherInfo } : undefined;
+
+  if (otherInfoRef?.references) {
+    otherInfoRef.references =
+      otherInfoRef.references.filter(
         (ref) =>
           ref.name && ref.name.trim() !== '' &&
           ref.address && ref.address.trim() !== '' &&
@@ -388,17 +393,17 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): Recor
 
   // Ensure otherInfo has required structure even if no references
   if (
-    !transformedData.otherInfo?.references ||
-    transformedData.otherInfo.references.length === 0
+    !otherInfoRef?.references ||
+    otherInfoRef.references.length === 0
   ) {
-    if (transformedData.otherInfo) {
-      transformedData.otherInfo = {
-        ...transformedData.otherInfo,
+    if (otherInfoRef) {
+      otherInfoRef = {
+        ...otherInfoRef,
         references: [],
-        skills: transformedData.otherInfo.skills || [],
-        recognitions: transformedData.otherInfo.recognitions || [],
-        associations: transformedData.otherInfo.associations || [],
-        questions: transformedData.otherInfo.questions || {
+        skills: otherInfoRef.skills || [],
+        recognitions: otherInfoRef.recognitions || [],
+        associations: otherInfoRef.associations || [],
+        questions: otherInfoRef.questions || {
           Q34_related_to_authority: false,
           Q35a_admin_offense: false,
           Q35b_criminal_charged: false,
@@ -416,12 +421,17 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): Recor
   }
 
   // Format dateIssued for Government ID (Item 42)
-  if (transformedData.otherInfo?.governmentId) {
-    transformedData.otherInfo.governmentId = {
-      ...transformedData.otherInfo.governmentId,
-      dateIssued: toDateOnlyString(transformedData.otherInfo.governmentId.dateIssued) as unknown as Date | null | undefined,
+  if (otherInfoRef?.governmentId) {
+    otherInfoRef = {
+      ...otherInfoRef,
+      governmentId: {
+        ...otherInfoRef.governmentId,
+        dateIssued: toDateOnlyString(otherInfoRef.governmentId.dateIssued) as unknown as Date | null | undefined,
+      },
     };
   }
+  
+  transformedData.otherInfo = otherInfoRef;
 
   // ========================================================================
   // STEP 2: Transform education from object to array format
@@ -688,7 +698,22 @@ export function transformPdsFromBackend<T extends object>(backendInput: T): Part
     workExperience: workExperience as unknown as CompletePdsData['workExperience'],
     voluntaryWork: voluntaryWork as unknown as CompletePdsData['voluntaryWork'],
     learningDevelopment: learningDevelopment as unknown as CompletePdsData['learningDevelopment'],
-    otherInfo: backendData.otherInfo as unknown as CompletePdsData['otherInfo'],
+    otherInfo: (() => {
+      const oi = backendData.otherInfo as Record<string, unknown> | undefined;
+      if (!oi) return undefined;
+      // Convert governmentId.dateIssued from string to Date
+      const govId = oi.governmentId as Record<string, unknown> | undefined;
+      if (govId && govId.dateIssued) {
+        return {
+          ...oi,
+          governmentId: {
+            ...govId,
+            dateIssued: stringToDate(govId.dateIssued as DateLike),
+          },
+        } as unknown as CompletePdsData['otherInfo'];
+      }
+      return oi as unknown as CompletePdsData['otherInfo'];
+    })(),
   };
 
   return frontendData;

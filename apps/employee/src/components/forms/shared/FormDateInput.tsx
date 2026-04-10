@@ -1,12 +1,65 @@
 'use client';
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { type Control, type FieldPath, type FieldValues, useController } from 'react-hook-form';
 import { Input } from '../../ui/input';
 import { EnhancedInput } from '@tupsafe/shared-ui';
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from '../../ui/form';
 import { formatDateForInput, parseDateFromInput } from '../../../lib/utils/date-utils';
 import { cn } from '../../../lib/utils';
 
-export interface FormDateInputProps {
+// ---------------------------------------------------------------------------
+// Props for DIRECT usage: <FormDateInput value={...} onChange={...} />
+// ---------------------------------------------------------------------------
+export interface FormDateInputDirectProps {
+  value: Date | null | undefined;
+  onChange: (date: Date | null) => void;
+  onBlur?: () => void;
+  max?: string;
+  className?: string;
+  disabled?: boolean;
+  id?: string;
+  variant?: 'input' | 'enhanced';
+  // Discriminator: when control is absent, this is the "direct" overload
+  control?: undefined;
+  name?: undefined;
+  label?: undefined;
+  placeholder?: undefined;
+}
+
+// ---------------------------------------------------------------------------
+// Props for FORM-FIELD usage: <FormDateInput control={form.control} name="..." label="..." />
+// ---------------------------------------------------------------------------
+export interface FormDateInputFieldProps<TFieldValues extends FieldValues = FieldValues> {
+  control: Control<TFieldValues>;
+  name: FieldPath<TFieldValues>;
+  label?: string;
+  placeholder?: string;
+  max?: string;
+  className?: string;
+  disabled?: boolean;
+  id?: string;
+  variant?: 'input' | 'enhanced';
+  // These must NOT be provided in FormField mode
+  value?: undefined;
+  onChange?: undefined;
+  onBlur?: undefined;
+}
+
+export type FormDateInputProps<TFieldValues extends FieldValues = FieldValues> =
+  | FormDateInputDirectProps
+  | FormDateInputFieldProps<TFieldValues>;
+
+// ---------------------------------------------------------------------------
+// Inner date input — handles local string buffering to prevent keyboard resets
+// ---------------------------------------------------------------------------
+interface DateInputCoreProps {
   value: Date | null | undefined;
   onChange: (date: Date | null) => void;
   onBlur?: () => void;
@@ -17,15 +70,7 @@ export interface FormDateInputProps {
   variant?: 'input' | 'enhanced';
 }
 
-/**
- * FormDateInput - Date input that buffers local state to prevent
- * keyboard typing resets in controlled React <input type="date"> elements.
- *
- * The native date input only returns a complete YYYY-MM-DD string when
- * all segments (month, day, year) are filled. This component maintains
- * local string state so partial typing is never overwritten by form re-renders.
- */
-export const FormDateInput = React.memo(function FormDateInput({
+const DateInputCore = React.memo(function DateInputCore({
   value,
   onChange,
   onBlur,
@@ -34,7 +79,7 @@ export const FormDateInput = React.memo(function FormDateInput({
   disabled,
   id,
   variant = 'input',
-}: FormDateInputProps) {
+}: DateInputCoreProps) {
   const [localValue, setLocalValue] = useState<string>(() =>
     formatDateForInput(value)
   );
@@ -110,6 +155,77 @@ export const FormDateInput = React.memo(function FormDateInput({
       max={max}
       disabled={disabled}
       className={inputClassName}
+    />
+  );
+});
+
+DateInputCore.displayName = 'DateInputCore';
+
+// ---------------------------------------------------------------------------
+// Public component — supports both direct and FormField-wrapped usage
+// ---------------------------------------------------------------------------
+
+/**
+ * FormDateInput - Date input that buffers local state to prevent
+ * keyboard typing resets in controlled React <input type="date"> elements.
+ *
+ * **Two usage modes:**
+ *
+ * 1. **Direct** (value/onChange):
+ *    ```tsx
+ *    <FormDateInput value={date} onChange={setDate} />
+ *    ```
+ *
+ * 2. **FormField-wrapped** (control/name):
+ *    ```tsx
+ *    <FormDateInput control={form.control} name="otherInfo.governmentId.dateIssued" label="Date" />
+ *    ```
+ *    Renders inside FormField > FormItem > FormLabel > FormControl > FormMessage.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const FormDateInput = React.memo(function FormDateInput(props: FormDateInputProps<any>) {
+  // Discriminate: if `control` is provided, use FormField-wrapper mode
+  if (props.control !== undefined && props.name !== undefined) {
+    // FormField-wrapper mode
+    const { control, name, label, max, className, disabled, id, variant } = props;
+    return (
+      <FormField
+        control={control}
+        name={name}
+        render={({ field }) => (
+          <FormItem>
+            {label && <FormLabel>{label}</FormLabel>}
+            <FormControl>
+              <DateInputCore
+                value={field.value as Date | null | undefined}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                max={max}
+                className={className}
+                disabled={disabled}
+                id={id}
+                variant={variant}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    );
+  }
+
+  // Direct mode — pass through to DateInputCore
+  const { value, onChange, onBlur, max, className, disabled, id, variant } = props as FormDateInputDirectProps;
+  return (
+    <DateInputCore
+      value={value}
+      onChange={onChange}
+      onBlur={onBlur}
+      max={max}
+      className={className}
+      disabled={disabled}
+      id={id}
+      variant={variant}
     />
   );
 });
