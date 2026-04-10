@@ -501,7 +501,12 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): Recor
           honorsReceived: levelData.honors || null, // Map honors to honorsReceived
         };
       })
-      .filter(Boolean) as Record<string, unknown>[]; // Remove null entries
+      .filter((entry) => {
+        if (!entry) return false;
+        const e = entry as Record<string, unknown>;
+        // schoolName is NOT NULL in DB - filter out entries with empty schoolName
+        return e.schoolName && (e.schoolName as string).trim() !== '';
+      }) as Record<string, unknown>[];
   }
 
   // ========================================================================
@@ -532,7 +537,11 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): Recor
       motherMiddleName: transformedData.family.motherMiddleName ?? null,
     } : undefined,
     // Extract children as separate array for backend API
-    children: transformedData.family?.children || [],
+    // Filter out incomplete entries (fullName and dateOfBirth are NOT NULL in DB)
+    // Strip DB-only fields (id, pdsSubmissionId) that leak from transformPdsFromBackend
+    children: (transformedData.family?.children || [])
+      .filter((child) => child.fullName && child.fullName.trim() !== '' && child.dateOfBirth != null)
+      .map(({ fullName, dateOfBirth }) => ({ fullName, dateOfBirth })),
     education: educationArray, // Use transformed education array
     civilService: transformedData.eligibility, // Map 'eligibility' to 'civilService'
     training: transformedData.learningDevelopment, // Map 'learningDevelopment' to 'training'

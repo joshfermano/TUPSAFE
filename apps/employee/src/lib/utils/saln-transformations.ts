@@ -308,6 +308,8 @@ export function transformSalnForSubmission(data: Partial<CompleteSalnData>): Rec
         owner: prop.owner || 'declarant',
         childName: prop.childName ?? null,
       }))
+      // Filter out incomplete entries - description, kind, exactLocation, acquisitionMode are NOT NULL in DB
+      .filter((prop) => prop.description && prop.kind && prop.exactLocation && prop.acquisitionMode)
     : undefined;
 
   // ========================================================================
@@ -322,6 +324,8 @@ export function transformSalnForSubmission(data: Partial<CompleteSalnData>): Rec
         owner: prop.owner || 'declarant',
         childName: prop.childName ?? null,
       }))
+      // Filter out incomplete entries - description, yearAcquired are NOT NULL in DB
+      .filter((prop) => prop.description && prop.yearAcquired)
     : undefined;
 
   // ========================================================================
@@ -336,6 +340,8 @@ export function transformSalnForSubmission(data: Partial<CompleteSalnData>): Rec
         owner: liability.owner || 'declarant',
         childName: liability.childName ?? null,
       }))
+      // Filter out incomplete entries - nature, creditorName are NOT NULL in DB
+      .filter((l) => l.nature && l.creditorName)
     : undefined;
 
   // ========================================================================
@@ -355,6 +361,8 @@ export function transformSalnForSubmission(data: Partial<CompleteSalnData>): Rec
           childName: interest.childName ?? null,
         };
       })
+      // Filter out incomplete entries - entityName, businessAddress, natureOfBusiness, dateOfAcquisition are NOT NULL in DB
+      .filter((b) => b.entityName && b.businessAddress && b.natureOfBusiness && b.dateOfAcquisition)
     : undefined;
 
   // ========================================================================
@@ -367,6 +375,8 @@ export function transformSalnForSubmission(data: Partial<CompleteSalnData>): Rec
         position: relative.position,
         agencyAddress: relative.agencyAddress,
       }))
+      // Filter out incomplete entries - name, relationship, position, agencyAddress are NOT NULL in DB
+      .filter((r) => r.name && r.relationship && r.position && r.agencyAddress)
     : undefined;
 
   // ========================================================================

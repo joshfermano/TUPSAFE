@@ -354,6 +354,18 @@ export default function SALNCreatePage() {
     defaultValue: [],
   });
 
+  const watchedBusinessInterests = useWatch({
+    control: form.control,
+    name: 'businessInterests',
+    defaultValue: [],
+  });
+
+  const watchedRelativesInGov = useWatch({
+    control: form.control,
+    name: 'relativesInGov',
+    defaultValue: [],
+  });
+
   // Callback-based approach for getting draft data
   const getDraftData = useCallback(
     (): SalnDraftData => ({
@@ -451,7 +463,7 @@ export default function SALNCreatePage() {
     const formData = form.getValues();
     return getOverallSalnProgress(formData);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchedRealProperties, watchedPersonalProperties, watchedLiabilities]);
+  }, [watchedRealProperties, watchedPersonalProperties, watchedLiabilities, watchedBusinessInterests, watchedRelativesInGov]);
 
   // Update form calculations in real-time
   useEffect(() => {
