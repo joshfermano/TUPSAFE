@@ -407,6 +407,7 @@ export async function GET(
               sssNo: personalInfo.sssNo ?? undefined,
               tinNo: personalInfo.tinNo ?? undefined,
               agencyEmployeeNo: personalInfo.agencyEmployeeNo ?? undefined,
+              philsysNo: personalInfo.philsysNo ?? undefined,
               citizenship: personalInfo.citizenship,
               residentialAddress: personalInfo.residentialAddress,
               permanentAddress: personalInfo.permanentAddress,
