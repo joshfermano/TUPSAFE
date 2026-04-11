@@ -32,6 +32,7 @@ export interface PDSPersonalInfo {
   gsisNo?: string;
   pagibigNo?: string;
   philhealthNo?: string;
+  philsysNo?: string;
   sssNo?: string;
   tinNo?: string;
   agencyEmployeeNo?: string; // Canonical DB field name
