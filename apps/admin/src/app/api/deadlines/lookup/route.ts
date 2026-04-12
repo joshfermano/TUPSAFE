@@ -24,6 +24,7 @@ import { eq, and, count, sql } from 'drizzle-orm';
 import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
 /**
  * Query parameter validation schema
  */

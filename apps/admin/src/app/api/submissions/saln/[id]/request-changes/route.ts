@@ -30,6 +30,7 @@ import { eq } from 'drizzle-orm';
 import { salnRequestChangesSchema } from '@tupsafe/types';
 import { createAuditLog } from '@tupsafe/database/server';
 
+export const dynamic = 'force-dynamic';
 interface RouteParams {
   params: Promise<{
     id: string;

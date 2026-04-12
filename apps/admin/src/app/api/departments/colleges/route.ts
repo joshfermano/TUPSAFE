@@ -20,6 +20,7 @@ import { NextResponse } from 'next/server';
 import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 import { getAllColleges } from '@tupsafe/database/server';
 
+export const dynamic = 'force-dynamic';
 /**
  * College list item for API response
  */

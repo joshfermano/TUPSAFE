@@ -180,31 +180,33 @@ function fillAnnexAPage1(filler: FormFiller, data: SALNData): void {
   }
 
   // --- Declarant info ---
+  const miFit = { alignment: 'center' as const, minFontSize: 5 };
+  const fieldFit = { minFontSize: 5 };
   filler.setText('a1.declarantInfo.surname', displayOrEmpty(data.declarantInfo.surname));
   filler.setText('a1.declarantInfo.firstName', displayOrEmpty(data.declarantInfo.firstName));
-  filler.setText('a1.declarantInfo.middleInitial', displayOrEmpty(data.declarantInfo.middleInitial));
-  filler.setText('a1.declarantInfo.position', displayOrEmpty(data.declarantInfo.position));
-  filler.setText('a1.declarantInfo.agency', displayOrEmpty(data.declarantInfo.agency));
-  filler.setText('a1.declarantInfo.officeAddress', displayOrEmpty(data.declarantInfo.officeAddress));
+  filler.setTextWithFit('a1.declarantInfo.middleInitial', displayOrEmpty(data.declarantInfo.middleInitial), miFit);
+  filler.setTextWithFit('a1.declarantInfo.position', displayOrEmpty(data.declarantInfo.position), fieldFit);
+  filler.setTextWithFit('a1.declarantInfo.agency', displayOrEmpty(data.declarantInfo.agency), fieldFit);
+  filler.setTextWithFit('a1.declarantInfo.officeAddress', displayOrEmpty(data.declarantInfo.officeAddress), fieldFit);
 
   // --- Spouse info ---
   if (data.spouseInfo) {
     filler.setText('a1.spouseInfo.surname', displayOrEmpty(data.spouseInfo.surname));
     filler.setText('a1.spouseInfo.firstName', displayOrEmpty(data.spouseInfo.firstName));
-    filler.setText('a1.spouseInfo.middleInitial', displayOrEmpty(data.spouseInfo.middleInitial));
+    filler.setTextWithFit('a1.spouseInfo.middleInitial', displayOrEmpty(data.spouseInfo.middleInitial), miFit);
   } else {
     filler.setText('a1.spouseInfo.surname', 'N/A');
     filler.setText('a1.spouseInfo.firstName', 'N/A');
-    filler.setText('a1.spouseInfo.middleInitial', 'N/A');
+    filler.setTextWithFit('a1.spouseInfo.middleInitial', 'N/A', miFit);
   }
 
   // Spouse position/agency uses either top-level fields or spouseInfo fallback
   const spousePos = data.spousePosition || data.spouseInfo?.position || '';
   const spouseAgency = data.spouseAgency || data.spouseInfo?.agency || '';
   const spouseAddr = data.spouseOfficeAddress || data.spouseInfo?.officeAddress || '';
-  filler.setText('a1.spousePosition', displayOrEmpty(spousePos));
-  filler.setText('a1.spouseAgency', displayOrEmpty(spouseAgency));
-  filler.setText('a1.spouseOfficeAddress', displayOrEmpty(spouseAddr));
+  filler.setTextWithFit('a1.spousePosition', displayOrEmpty(spousePos), fieldFit);
+  filler.setTextWithFit('a1.spouseAgency', displayOrEmpty(spouseAgency), fieldFit);
+  filler.setTextWithFit('a1.spouseOfficeAddress', displayOrEmpty(spouseAddr), fieldFit);
 
   // --- Filing type checkboxes ---
   filler.setCheckbox('cb.filing.joint', data.filingType === 'joint');
@@ -232,6 +234,7 @@ function fillAnnexAPage1(filler: FormFiller, data: SALNData): void {
   }
 
   // --- Real properties table (declarant/joint, first 10) ---
+  const tableFit = { minFontSize: 4 };
   const realSplit = splitRealProperties(data);
   if (realSplit.mainPage.length > 0) {
     const realRows = realSplit.mainPage.map((p) => ({
@@ -244,7 +247,7 @@ function fillAnnexAPage1(filler: FormFiller, data: SALNData): void {
       acquisitionMode: displayOrEmpty(p.acquisitionMode),
       acquisitionCost: formatCurrency(p.acquisitionCost),
     }));
-    filler.fillTable('realProperties', realRows, 'a1.tbl.realProperties');
+    filler.fillTable('realProperties', realRows, 'a1.tbl.realProperties', tableFit);
   }
 
   // --- Personal properties table (declarant/joint, first 8) ---
@@ -255,7 +258,7 @@ function fillAnnexAPage1(filler: FormFiller, data: SALNData): void {
       yearAcquired: String(p.yearAcquired),
       acquisitionCost: formatCurrency(p.acquisitionCost),
     }));
-    filler.fillTable('personalProperties', personalRows, 'a1.tbl.personalProperties');
+    filler.fillTable('personalProperties', personalRows, 'a1.tbl.personalProperties', tableFit);
   }
 
   // --- Subtotals and total assets ---
@@ -274,6 +277,8 @@ function fillAnnexAPage1(filler: FormFiller, data: SALNData): void {
 // ---------------------------------------------------------------------------
 
 function fillAnnexAPage2(filler: FormFiller, data: SALNData): void {
+  const tableFit = { minFontSize: 4 };
+
   // --- Liabilities table ---
   const liabSplit = splitLiabilities(data);
   if (liabSplit.mainPage.length > 0) {
@@ -282,7 +287,7 @@ function fillAnnexAPage2(filler: FormFiller, data: SALNData): void {
       creditorName: displayOrEmpty(l.creditorName),
       outstandingBalance: formatCurrency(l.outstandingBalance),
     }));
-    filler.fillTable('liabilities', liabRows, 'a2.tbl.liabilities');
+    filler.fillTable('liabilities', liabRows, 'a2.tbl.liabilities', tableFit);
   }
 
   // Total liabilities
@@ -308,7 +313,7 @@ function fillAnnexAPage2(filler: FormFiller, data: SALNData): void {
         natureOfBusiness: displayOrEmpty(b.natureOfBusiness),
         dateOfAcquisition: toDateStr(b.dateOfAcquisition),
       }));
-      filler.fillTable('businessInterests', bizRows, 'a2.tbl.businessInterests');
+      filler.fillTable('businessInterests', bizRows, 'a2.tbl.businessInterests', tableFit);
     }
   }
 
@@ -324,7 +329,7 @@ function fillAnnexAPage2(filler: FormFiller, data: SALNData): void {
         position: displayOrEmpty(r.position),
         agencyAddress: displayOrEmpty(r.agencyAddress),
       }));
-      filler.fillTable('relativesInGov', relRows, 'a2.tbl.relativesInGov');
+      filler.fillTable('relativesInGov', relRows, 'a2.tbl.relativesInGov', tableFit);
     }
   }
 
@@ -362,12 +367,16 @@ function fillAnnexAPage2(filler: FormFiller, data: SALNData): void {
 // ---------------------------------------------------------------------------
 
 function fillAnnexB(filler: FormFiller, data: SALNData): void {
+  const miFit = { alignment: 'center' as const, minFontSize: 5 };
+  const fieldFit = { minFontSize: 5 };
+  const tableFit = { minFontSize: 4 };
+
   // --- Declarant identification ---
   filler.setText('b.declarantInfo.surname', displayOrEmpty(data.declarantInfo.surname));
   filler.setText('b.declarantInfo.firstName', displayOrEmpty(data.declarantInfo.firstName));
-  filler.setText('b.declarantInfo.middleInitial', displayOrEmpty(data.declarantInfo.middleInitial));
-  filler.setText('b.declarantInfo.position', displayOrEmpty(data.declarantInfo.position));
-  filler.setText('b.declarantInfo.agency', displayOrEmpty(data.declarantInfo.agency));
+  filler.setTextWithFit('b.declarantInfo.middleInitial', displayOrEmpty(data.declarantInfo.middleInitial), miFit);
+  filler.setTextWithFit('b.declarantInfo.position', displayOrEmpty(data.declarantInfo.position), fieldFit);
+  filler.setTextWithFit('b.declarantInfo.agency', displayOrEmpty(data.declarantInfo.agency), fieldFit);
 
   // --- Overflow real properties ---
   const realSplit = splitRealProperties(data);
@@ -382,7 +391,7 @@ function fillAnnexB(filler: FormFiller, data: SALNData): void {
       acquisitionMode: displayOrEmpty(p.acquisitionMode),
       acquisitionCost: formatCurrency(p.acquisitionCost),
     }));
-    filler.fillTable('realProperties', realRows, 'b.tbl.realProperties');
+    filler.fillTable('realProperties', realRows, 'b.tbl.realProperties', tableFit);
 
     // Subtotal - use currentFairMarketValue per SALNAnnexB.tsx
     const subtotal = realSplit.overflow.reduce(
@@ -400,7 +409,7 @@ function fillAnnexB(filler: FormFiller, data: SALNData): void {
       yearAcquired: String(p.yearAcquired),
       acquisitionCost: formatCurrency(p.acquisitionCost),
     }));
-    filler.fillTable('personalProperties', personalRows, 'b.tbl.personalProperties');
+    filler.fillTable('personalProperties', personalRows, 'b.tbl.personalProperties', tableFit);
 
     const subtotal = personalSplit.overflow.reduce(
       (sum, p) => sum + (p.acquisitionCost || 0),
@@ -430,7 +439,7 @@ function fillAnnexB(filler: FormFiller, data: SALNData): void {
       creditorName: displayOrEmpty(l.creditorName),
       outstandingBalance: formatCurrency(l.outstandingBalance),
     }));
-    filler.fillTable('liabilities', liabRows, 'b.tbl.liabilities');
+    filler.fillTable('liabilities', liabRows, 'b.tbl.liabilities', tableFit);
 
     const subtotal = liabSplit.overflow.reduce(
       (sum, l) => sum + (l.outstandingBalance || 0),
@@ -448,7 +457,7 @@ function fillAnnexB(filler: FormFiller, data: SALNData): void {
       natureOfBusiness: displayOrEmpty(b.natureOfBusiness),
       dateOfAcquisition: toDateStr(b.dateOfAcquisition),
     }));
-    filler.fillTable('businessInterests', bizRows, 'b.tbl.businessInterests');
+    filler.fillTable('businessInterests', bizRows, 'b.tbl.businessInterests', tableFit);
   }
 }
 
@@ -458,13 +467,16 @@ function fillAnnexB(filler: FormFiller, data: SALNData): void {
 
 function fillAnnexC(filler: FormFiller, data: SALNData): void {
   const annexCData = getAnnexCData(data);
+  const miFit = { alignment: 'center' as const, minFontSize: 5 };
+  const fieldFit = { minFontSize: 5 };
+  const tableFit = { minFontSize: 4 };
 
   // --- Declarant identification ---
   filler.setText('c.declarantInfo.surname', displayOrEmpty(data.declarantInfo.surname));
   filler.setText('c.declarantInfo.firstName', displayOrEmpty(data.declarantInfo.firstName));
-  filler.setText('c.declarantInfo.middleInitial', displayOrEmpty(data.declarantInfo.middleInitial));
-  filler.setText('c.declarantInfo.position', displayOrEmpty(data.declarantInfo.position));
-  filler.setText('c.declarantInfo.agency', displayOrEmpty(data.declarantInfo.agency));
+  filler.setTextWithFit('c.declarantInfo.middleInitial', displayOrEmpty(data.declarantInfo.middleInitial), miFit);
+  filler.setTextWithFit('c.declarantInfo.position', displayOrEmpty(data.declarantInfo.position), fieldFit);
+  filler.setTextWithFit('c.declarantInfo.agency', displayOrEmpty(data.declarantInfo.agency), fieldFit);
 
   // --- Spouse/child real properties ---
   if (annexCData.realProperties.length > 0) {
@@ -478,7 +490,7 @@ function fillAnnexC(filler: FormFiller, data: SALNData): void {
       acquisitionMode: displayOrEmpty(p.acquisitionMode),
       acquisitionCost: formatCurrency(p.acquisitionCost),
     }));
-    filler.fillTable('realProperties', realRows, 'c.tbl.realProperties');
+    filler.fillTable('realProperties', realRows, 'c.tbl.realProperties', tableFit);
 
     const subtotal = annexCData.realProperties.reduce(
       (sum, p) => sum + (p.acquisitionCost || 0),
@@ -494,7 +506,7 @@ function fillAnnexC(filler: FormFiller, data: SALNData): void {
       yearAcquired: String(p.yearAcquired),
       acquisitionCost: formatCurrency(p.acquisitionCost),
     }));
-    filler.fillTable('personalProperties', personalRows, 'c.tbl.personalProperties');
+    filler.fillTable('personalProperties', personalRows, 'c.tbl.personalProperties', tableFit);
 
     const subtotal = annexCData.personalProperties.reduce(
       (sum, p) => sum + (p.acquisitionCost || 0),
@@ -525,7 +537,7 @@ function fillAnnexC(filler: FormFiller, data: SALNData): void {
       creditorName: displayOrEmpty(l.creditorName),
       outstandingBalance: formatCurrency(l.outstandingBalance),
     }));
-    filler.fillTable('liabilities', liabRows, 'c.tbl.liabilities');
+    filler.fillTable('liabilities', liabRows, 'c.tbl.liabilities', tableFit);
 
     const subtotal = annexCData.liabilities.reduce(
       (sum, l) => sum + (l.outstandingBalance || 0),
@@ -557,7 +569,7 @@ function fillAnnexC(filler: FormFiller, data: SALNData): void {
       natureOfBusiness: displayOrEmpty(b.natureOfBusiness),
       dateOfAcquisition: toDateStr(b.dateOfAcquisition),
     }));
-    filler.fillTable('businessInterests', bizRows, 'c.tbl.businessInterests');
+    filler.fillTable('businessInterests', bizRows, 'c.tbl.businessInterests', tableFit);
   }
 }
 

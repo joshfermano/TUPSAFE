@@ -11,6 +11,8 @@ import {
   checkUserRoleFromSupabase,
 } from '@tupsafe/auth/server';
 
+export const dynamic = 'force-dynamic';
+
 const AI_AGENT_URL = process.env.AI_AGENT_URL || 'http://localhost:8000';
 
 export async function POST(request: NextRequest) {

@@ -28,6 +28,8 @@ import {
   type RegistrationListResponse,
 } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     // Authorization check - HR or Admin only (using Supabase session)

@@ -37,6 +37,8 @@ import {
   type UserProfile,
 } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/settings/profile
  * Fetch current user's profile with department and position details

@@ -37,6 +37,8 @@ import {
   type SubmissionListItem,
 } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
+
 interface SubmissionQueryResult {
   id: string;
   type: 'pds' | 'saln';

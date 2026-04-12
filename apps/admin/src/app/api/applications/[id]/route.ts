@@ -35,6 +35,7 @@ import { eq, and, ne, desc } from 'drizzle-orm';
 import { z } from 'zod';
 import type { JobApplicationDetail } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
 // Update application schema (for reviewer notes and interview details)
 const updateApplicationSchema = z.object({
   reviewerNotes: z.string().max(1000).optional(),

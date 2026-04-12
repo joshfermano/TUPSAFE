@@ -16,6 +16,7 @@ import { checkUserRoleFromSupabase, createServerClient } from '@tupsafe/auth/ser
 import { db, profiles } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
 interface RouteParams {
   params: Promise<{
     id: string;

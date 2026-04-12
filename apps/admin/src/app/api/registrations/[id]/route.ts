@@ -22,6 +22,7 @@ import { eq, or } from 'drizzle-orm';
 import { checkUserRoleFromSupabase, createServerClient } from '@tupsafe/auth/server';
 import type { RegistrationDetail, ApiResponse } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
 interface RouteParams {
   params: Promise<{
     id: string;

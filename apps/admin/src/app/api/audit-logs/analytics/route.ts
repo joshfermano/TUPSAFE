@@ -5,6 +5,7 @@ import { sql, desc, count, gte } from 'drizzle-orm';
 import { subDays, format } from 'date-fns';
 import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/audit-logs/analytics
  *

@@ -35,6 +35,7 @@ import {
 } from '@tupsafe/auth/server';
 import { createUserSchema, type CreateUserResponse, isAdminPortalRole, isHRDepartment } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     // Get current admin user from Supabase session (portal-specific)

@@ -11,6 +11,8 @@ import {
   createServerClient,
 } from '@tupsafe/auth/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(_request: NextRequest) {
   try {
     // Check if user has HR or admin role

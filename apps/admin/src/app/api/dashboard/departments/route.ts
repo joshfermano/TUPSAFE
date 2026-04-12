@@ -10,6 +10,7 @@ import { eq, and, sql } from 'drizzle-orm';
 import type { DashboardDepartmentsResponse, DepartmentMetrics } from '@tupsafe/types';
 import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/dashboard/departments
  *

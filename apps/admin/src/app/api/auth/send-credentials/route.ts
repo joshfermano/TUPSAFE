@@ -26,6 +26,7 @@ import {
 import { sendCredentialsEmail } from '@tupsafe/auth/server';
 import { createAuditLogFromRequest } from '@tupsafe/database/server';
 
+export const dynamic = 'force-dynamic';
 // Request body validation schema
 const sendCredentialsSchema = z.object({
   email: z.string().email('Invalid email address'),

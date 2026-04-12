@@ -20,6 +20,7 @@ import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 import { db, auditLogs, profiles } from '@tupsafe/database/server';
 import { eq, or, desc } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
 /**
  * Activity log item response type
  */

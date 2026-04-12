@@ -34,6 +34,7 @@ import {
 import { eq, and, gte, count, sql, desc } from 'drizzle-orm';
 import type { SubmissionStatsResponse } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
 export async function GET(_request: NextRequest) {
   try {
     // Verify admin/HR permissions

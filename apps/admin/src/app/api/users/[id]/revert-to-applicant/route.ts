@@ -34,6 +34,7 @@ import {
 } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
 interface RevertToApplicantResponse {
   success: boolean;
   message: string;

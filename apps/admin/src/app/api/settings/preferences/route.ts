@@ -28,6 +28,8 @@ import {
   type UserPreferences,
 } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Default user preferences
  */

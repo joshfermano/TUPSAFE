@@ -11,6 +11,7 @@ import { db, openPositions, jobApplications } from '@tupsafe/database/server';
 import { eq, sql, count, and, gte, desc } from 'drizzle-orm';
 import type { JobsStatsResponse } from '@tupsafe/types/admin/jobs';
 
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/jobs/stats
  * Get comprehensive job positions statistics

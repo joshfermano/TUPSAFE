@@ -28,6 +28,8 @@ import {
   type SalnSubmissionListItem,
 } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
 

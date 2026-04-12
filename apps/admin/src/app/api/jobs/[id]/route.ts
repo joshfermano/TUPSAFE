@@ -31,6 +31,7 @@ import {
   APPLICATION_STATUS,
 } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/jobs/[id]
  * Fetch detailed job position information including department info,

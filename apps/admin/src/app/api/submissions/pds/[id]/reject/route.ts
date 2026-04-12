@@ -46,6 +46,7 @@ import { createAuditLog } from '@tupsafe/database/utils/audit-log';
 import { rejectSubmissionSchema, type ApiSuccess } from '@tupsafe/types';
 import { v7 as uuidv7 } from 'uuid';
 
+export const dynamic = 'force-dynamic';
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

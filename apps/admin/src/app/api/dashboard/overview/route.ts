@@ -12,6 +12,7 @@ import { eq, and, gte, lt, sql, desc, count, avg } from 'drizzle-orm';
 import type { DashboardOverviewResponse } from '@tupsafe/types';
 import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/dashboard/overview
  *

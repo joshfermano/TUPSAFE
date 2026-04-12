@@ -11,6 +11,7 @@ import { eq, and, sql, isNull, gte, lt } from 'drizzle-orm';
 import type { DashboardComplianceResponse } from '@tupsafe/types';
 import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/dashboard/compliance
  *

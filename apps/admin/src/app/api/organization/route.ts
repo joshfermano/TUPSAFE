@@ -41,6 +41,7 @@ import {
 } from '@tupsafe/types';
 import { ZodError } from 'zod';
 
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/organization
  * List all organizational units with filtering, search, and sorting

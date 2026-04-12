@@ -321,33 +321,34 @@ function fillPersonalInfo(filler: FormFiller, data: PDSData): void {
     pi.citizenship.type === 'Dual' ? displayOrEmpty(pi.citizenship.country || pi.citizenship.details) : ''
   );
 
-  // Residential address
+  // Residential address — centered alignment with auto-fit
+  const addressFit = { alignment: 'center' as const, minFontSize: 5 };
   const ra = pi.residentialAddress;
   if (ra) {
-    filler.setText('personalInfo.residentialAddress.houseNumber', displayOrEmpty(ra.houseNumber));
-    filler.setText('personalInfo.residentialAddress.street', displayOrEmpty(ra.street));
-    filler.setText('personalInfo.residentialAddress.subdivision', displayOrEmpty(ra.subdivision));
-    filler.setText('personalInfo.residentialAddress.barangay', displayOrEmpty(ra.barangay));
-    filler.setText('personalInfo.residentialAddress.city', displayOrEmpty(ra.city));
-    filler.setText('personalInfo.residentialAddress.province', displayOrEmpty(ra.province));
-    filler.setText('personalInfo.residentialAddress.zipCode', displayOrEmpty(ra.zipCode));
+    filler.setTextWithFit('personalInfo.residentialAddress.houseNumber', displayOrEmpty(ra.houseNumber), addressFit);
+    filler.setTextWithFit('personalInfo.residentialAddress.street', displayOrEmpty(ra.street), addressFit);
+    filler.setTextWithFit('personalInfo.residentialAddress.subdivision', displayOrEmpty(ra.subdivision), addressFit);
+    filler.setTextWithFit('personalInfo.residentialAddress.barangay', displayOrEmpty(ra.barangay), addressFit);
+    filler.setTextWithFit('personalInfo.residentialAddress.city', displayOrEmpty(ra.city), addressFit);
+    filler.setTextWithFit('personalInfo.residentialAddress.province', displayOrEmpty(ra.province), addressFit);
+    filler.setTextWithFit('personalInfo.residentialAddress.zipCode', displayOrEmpty(ra.zipCode), addressFit);
   }
 
-  // Permanent address
+  // Permanent address — centered alignment with auto-fit
   const pa = pi.permanentAddress;
   if (pa) {
-    filler.setText('personalInfo.permanentAddress.houseNumber', displayOrEmpty(pa.houseNumber));
-    filler.setText('personalInfo.permanentAddress.street', displayOrEmpty(pa.street));
-    filler.setText('personalInfo.permanentAddress.subdivision', displayOrEmpty(pa.subdivision));
-    filler.setText('personalInfo.permanentAddress.barangay', displayOrEmpty(pa.barangay));
-    filler.setText('personalInfo.permanentAddress.city', displayOrEmpty(pa.city));
-    filler.setText('personalInfo.permanentAddress.province', displayOrEmpty(pa.province));
-    filler.setText('personalInfo.permanentAddress.zipCode', displayOrEmpty(pa.zipCode));
+    filler.setTextWithFit('personalInfo.permanentAddress.houseNumber', displayOrEmpty(pa.houseNumber), addressFit);
+    filler.setTextWithFit('personalInfo.permanentAddress.street', displayOrEmpty(pa.street), addressFit);
+    filler.setTextWithFit('personalInfo.permanentAddress.subdivision', displayOrEmpty(pa.subdivision), addressFit);
+    filler.setTextWithFit('personalInfo.permanentAddress.barangay', displayOrEmpty(pa.barangay), addressFit);
+    filler.setTextWithFit('personalInfo.permanentAddress.city', displayOrEmpty(pa.city), addressFit);
+    filler.setTextWithFit('personalInfo.permanentAddress.province', displayOrEmpty(pa.province), addressFit);
+    filler.setTextWithFit('personalInfo.permanentAddress.zipCode', displayOrEmpty(pa.zipCode), addressFit);
   }
 
   filler.setText('personalInfo.telephoneNo', displayOrEmpty(pi.telephoneNo));
   filler.setText('personalInfo.mobileNo', displayOrEmpty(pi.mobileNo));
-  filler.setText('personalInfo.emailAddress', displayOrEmpty(pi.emailAddress));
+  filler.setTextWithFit('personalInfo.emailAddress', displayOrEmpty(pi.emailAddress), { minFontSize: 5 });
 }
 
 function fillFamilyBackground(filler: FormFiller, data: PDSData): void {
@@ -377,19 +378,22 @@ function fillFamilyBackground(filler: FormFiller, data: PDSData): void {
 
 function fillEducation(filler: FormFiller, data: PDSData): void {
   const levels = ['elementary', 'secondary', 'vocational', 'college', 'graduate'] as const;
+  const eduFit = { minFontSize: 4 };
+  // Date fields are only ~30pt wide — need small font to fit MM/DD/YYYY
+  const dateFit = { minFontSize: 4, alignment: 'center' as const };
 
   for (const level of levels) {
     const edu = data.education[level];
     if (!edu) continue;
 
     const prefix = `education.${level}`;
-    filler.setText(`${prefix}.schoolName`, displayOrEmpty(edu.schoolName));
-    filler.setText(`${prefix}.degreeCourse`, displayOrEmpty(edu.degreeCourse));
-    filler.setText(`${prefix}.periodFrom`, formatEducationPeriod(edu.periodFrom));
-    filler.setText(`${prefix}.periodTo`, formatEducationPeriod(edu.periodTo));
-    filler.setText(`${prefix}.highestLevelEarned`, displayOrEmpty(edu.highestLevelEarned));
-    filler.setText(`${prefix}.yearGraduated`, edu.yearGraduated != null ? String(edu.yearGraduated) : '');
-    filler.setText(`${prefix}.honorsReceived`, displayOrEmpty(edu.honorsReceived));
+    filler.setTextWithFit(`${prefix}.schoolName`, displayOrEmpty(edu.schoolName), eduFit);
+    filler.setTextWithFit(`${prefix}.degreeCourse`, displayOrEmpty(edu.degreeCourse), eduFit);
+    filler.setTextWithFit(`${prefix}.periodFrom`, formatEducationPeriod(edu.periodFrom), dateFit);
+    filler.setTextWithFit(`${prefix}.periodTo`, formatEducationPeriod(edu.periodTo), dateFit);
+    filler.setTextWithFit(`${prefix}.highestLevelEarned`, displayOrEmpty(edu.highestLevelEarned), eduFit);
+    filler.setTextWithFit(`${prefix}.yearGraduated`, edu.yearGraduated != null ? String(edu.yearGraduated) : '', dateFit);
+    filler.setTextWithFit(`${prefix}.honorsReceived`, displayOrEmpty(edu.honorsReceived), eduFit);
   }
 }
 
@@ -450,6 +454,9 @@ function fillCheckboxes(filler: FormFiller, data: PDSData): void {
 }
 
 function fillTables(filler: FormFiller, data: PDSData): void {
+  // Many table columns are narrow (29-46pt) so need small min font to fit dates/text
+  const tableFit = { minFontSize: 4 };
+
   // Children
   const childRows = childrenToRows(data.familyBackground.children).map((r) => ({
     fullName: displayOrEmpty(r.fullName),
@@ -466,7 +473,7 @@ function fillTables(filler: FormFiller, data: PDSData): void {
     licenseNo: displayOrEmpty(r.licenseNo),
     licenseValidityDate: formatDateMMDDYYYY(r.licenseValidityDate),
   }));
-  filler.fillTable('eligibilities', eligRows);
+  filler.fillTable('eligibilities', eligRows, undefined, tableFit);
 
   // Work Experience
   const workRows = workExperienceToRows(data.workExperiences).map((r) => ({
@@ -479,7 +486,7 @@ function fillTables(filler: FormFiller, data: PDSData): void {
     statusOfAppointment: displayOrEmpty(r.statusOfAppointment),
     isGovernment: r.isGovernment ? 'Y' : 'N',
   }));
-  filler.fillTable('workExperiences', workRows);
+  filler.fillTable('workExperiences', workRows, undefined, tableFit);
 
   // Voluntary Work
   const volRows = voluntaryWorkToRows(data.voluntaryWorks).map((r) => ({
@@ -489,7 +496,7 @@ function fillTables(filler: FormFiller, data: PDSData): void {
     numberOfHours: displayOrEmpty(r.numberOfHours),
     positionNature: displayOrEmpty(r.positionNature),
   }));
-  filler.fillTable('voluntaryWorks', volRows);
+  filler.fillTable('voluntaryWorks', volRows, undefined, tableFit);
 
   // Training / Learning & Development
   const trainRows = trainingToRows(data.trainings).map((r) => ({
@@ -500,25 +507,25 @@ function fillTables(filler: FormFiller, data: PDSData): void {
     typeOfLd: displayOrEmpty(r.typeOfLd),
     conductedBy: displayOrEmpty(r.conductedBy),
   }));
-  filler.fillTable('trainings', trainRows);
+  filler.fillTable('trainings', trainRows, undefined, tableFit);
 
   // Skills
   const skillRows = skillsToRows(data.skills).map((r) => ({
     value: displayOrEmpty(r.value),
   }));
-  filler.fillTable('skills', skillRows);
+  filler.fillTable('skills', skillRows, undefined, tableFit);
 
   // Recognitions
   const recogRows = recognitionsToRows(data.recognitions).map((r) => ({
     display: displayOrEmpty(r.display),
   }));
-  filler.fillTable('recognitions', recogRows);
+  filler.fillTable('recognitions', recogRows, undefined, tableFit);
 
   // Associations
   const assocRows = associationsToRows(data.associations).map((r) => ({
     display: displayOrEmpty(r.display),
   }));
-  filler.fillTable('associations', assocRows);
+  filler.fillTable('associations', assocRows, undefined, tableFit);
 
   // References
   const refRows = referencesToRows(data.references).map((r) => ({
@@ -526,7 +533,7 @@ function fillTables(filler: FormFiller, data: PDSData): void {
     address: displayOrEmpty(r.address),
     telephoneNo: displayOrEmpty(r.telephoneNo),
   }));
-  filler.fillTable('references', refRows);
+  filler.fillTable('references', refRows, undefined, tableFit);
 }
 
 // ---------------------------------------------------------------------------

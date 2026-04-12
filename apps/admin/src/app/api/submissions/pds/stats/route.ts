@@ -23,6 +23,7 @@ import { db, profiles, departments, pdsSubmissions } from '@tupsafe/database/ser
 import { eq, and, gte, sql } from 'drizzle-orm';
 import type { PdsTimelineStats } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
 export async function GET() {
   const startTime = Date.now();
 

@@ -30,6 +30,8 @@ import {
   type CreateDeadlineResponse,
 } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Calculate days remaining until deadline
  */

@@ -45,6 +45,7 @@ import { createAuditLog } from '@tupsafe/database/utils/audit-log';
 import { PDS_ATTACHMENTS_BUCKET, SIGNED_URL_EXPIRY_SECONDS } from '@tupsafe/auth/server';
 import type { PDSSubmissionDetail } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

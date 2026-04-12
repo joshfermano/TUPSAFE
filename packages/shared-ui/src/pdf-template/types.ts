@@ -15,6 +15,8 @@ export interface FieldPosition {
   fontVariant?: 'regular' | 'bold' | 'italic' | 'boldItalic';
   /** Optional transform before stamping */
   transform?: 'uppercase' | 'capitalize';
+  /** If set, shrink font down to this minimum before truncating */
+  minFontSize?: number;
 }
 
 export interface CheckboxPosition {

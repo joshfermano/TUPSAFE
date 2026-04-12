@@ -22,6 +22,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 import { getDepartmentDependencies } from '@tupsafe/database/server';
 
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/organization/[id]/dependencies
  * Get comprehensive dependency information for a department

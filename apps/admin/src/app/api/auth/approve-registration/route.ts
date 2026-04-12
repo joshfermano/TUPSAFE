@@ -20,6 +20,8 @@ import {
   createServerClient,
 } from '@tupsafe/auth/server';
 
+export const dynamic = 'force-dynamic';
+
 // Approval validation schema
 const approvalSchema = z.object({
   userId: z.string().uuid('Invalid user ID'),

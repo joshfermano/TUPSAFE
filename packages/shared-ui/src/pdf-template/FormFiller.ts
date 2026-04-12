@@ -9,7 +9,7 @@
  *   formFiller.setCheckbox('cb.sex.male', true);
  */
 
-import { PDFDocument, PDFFont, PDFForm, PDFPage } from 'pdf-lib';
+import { PDFDocument, PDFFont, PDFForm, PDFPage, TextAlignment } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 
 export interface FontSet {
@@ -17,6 +17,15 @@ export interface FontSet {
   bold: PDFFont;
   italic: PDFFont;
   boldItalic: PDFFont;
+}
+
+export interface FitOptions {
+  /** Minimum font size before truncating (default: 5) */
+  minFontSize?: number;
+  /** Maximum font size to start from (default: derived from field height) */
+  maxFontSize?: number;
+  /** Text alignment within the field */
+  alignment?: 'left' | 'center' | 'right';
 }
 
 export class FormFiller {
@@ -104,18 +113,82 @@ export class FormFiller {
   }
 
   /**
+   * Set a text field with smart font sizing: shrinks font to fit (down to
+   * minFontSize), then truncates only if it still overflows.
+   * Also supports setting alignment programmatically.
+   */
+  setTextWithFit(fieldName: string, value: string, options?: FitOptions): void {
+    if (!value) return;
+    try {
+      const field = this.form.getTextField(fieldName);
+      const minSize = options?.minFontSize ?? 5;
+      const alignment = options?.alignment;
+
+      // Set alignment if requested
+      if (alignment === 'center') {
+        field.setAlignment(TextAlignment.Center);
+      } else if (alignment === 'right') {
+        field.setAlignment(TextAlignment.Right);
+      } else if (alignment === 'left') {
+        field.setAlignment(TextAlignment.Left);
+      }
+
+      // Get available width from the field's widget rectangle
+      const fieldWidth = this.getFieldWidth(field);
+      if (fieldWidth <= 0) {
+        // Fallback to basic setText if we can't measure
+        field.setText(value);
+        field.updateAppearances(this.fonts.regular);
+        return;
+      }
+
+      // Determine starting font size (use field height as upper bound, capped at 14pt)
+      const fieldHeight = this.getFieldHeight(field);
+      const maxSize = options?.maxFontSize ?? Math.min(fieldHeight, 14);
+
+      // Find the largest font size that fits, down to minSize
+      let fontSize = maxSize;
+      const font = this.fonts.regular;
+      while (fontSize > minSize) {
+        if (font.widthOfTextAtSize(value, fontSize) <= fieldWidth) break;
+        fontSize -= 0.5;
+      }
+      fontSize = Math.max(fontSize, minSize);
+
+      // If still overflows at minSize, truncate
+      let displayText = value;
+      if (font.widthOfTextAtSize(displayText, fontSize) > fieldWidth) {
+        displayText = this.truncateToFit(displayText, font, fontSize, fieldWidth);
+      }
+
+      field.setFontSize(fontSize);
+      field.setText(displayText);
+      field.updateAppearances(this.fonts.regular);
+    } catch {
+      // Field not in template — skip silently
+    }
+  }
+
+  /**
    * Fill a table: sets `{prefix}.{rowIndex}.{colKey}` for each row/column.
    * Extra template rows beyond data length are left empty (invisible).
+   * When fitOptions is provided, uses setTextWithFit for smart font sizing.
    */
   fillTable(
     tableName: string,
     rows: Record<string, string>[],
-    prefix?: string
+    prefix?: string,
+    fitOptions?: FitOptions
   ): void {
     const pfx = prefix ?? `tbl.${tableName}`;
     for (let i = 0; i < rows.length; i++) {
       for (const [key, value] of Object.entries(rows[i])) {
-        this.setText(`${pfx}.${i}.${key}`, value);
+        const fieldName = `${pfx}.${i}.${key}`;
+        if (fitOptions) {
+          this.setTextWithFit(fieldName, value, fitOptions);
+        } else {
+          this.setText(fieldName, value);
+        }
       }
     }
   }
@@ -199,5 +272,59 @@ export class FormFiller {
    */
   async save(): Promise<Uint8Array> {
     return this.pdfDoc.save();
+  }
+
+  /**
+   * Get the usable text width from a text field's first widget rectangle.
+   * Returns 0 if the field has no widgets.
+   */
+  private getFieldWidth(field: ReturnType<PDFForm['getTextField']>): number {
+    try {
+      const widgets = field.acroField.getWidgets();
+      if (widgets.length === 0) return 0;
+      const rect = widgets[0].getRectangle();
+      // Minimal padding deduction — pdf-lib handles its own internal padding
+      return Math.max(rect.width - 2, 0);
+    } catch {
+      return 0;
+    }
+  }
+
+  /**
+   * Get the usable text height from a text field's first widget rectangle.
+   * Returns 10 as fallback if the field has no widgets.
+   */
+  private getFieldHeight(field: ReturnType<PDFForm['getTextField']>): number {
+    try {
+      const widgets = field.acroField.getWidgets();
+      if (widgets.length === 0) return 10;
+      const rect = widgets[0].getRectangle();
+      return Math.max(rect.height - 2, 6);
+    } catch {
+      return 10;
+    }
+  }
+
+  /**
+   * Truncate text to fit within maxWidth using binary search.
+   */
+  private truncateToFit(
+    text: string,
+    font: PDFFont,
+    fontSize: number,
+    maxWidth: number
+  ): string {
+    let low = 0;
+    let high = text.length;
+    while (low < high) {
+      const mid = Math.ceil((low + high) / 2);
+      const substr = text.substring(0, mid);
+      if (font.widthOfTextAtSize(substr, fontSize) <= maxWidth) {
+        low = mid;
+      } else {
+        high = mid - 1;
+      }
+    }
+    return text.substring(0, low);
   }
 }

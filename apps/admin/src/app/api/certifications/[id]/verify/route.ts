@@ -31,6 +31,7 @@ import {
 import { createAuditLog } from '@tupsafe/database/utils/audit-log';
 import { eq } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
 interface VerifyRequestBody {
   status: 'verified' | 'rejected';
   notes?: string;

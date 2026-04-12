@@ -31,6 +31,8 @@ import {
   type RevokeAllSessionsResponse,
 } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Parse user agent string to extract browser and OS information
  * Basic implementation - can be enhanced with a library like ua-parser-js

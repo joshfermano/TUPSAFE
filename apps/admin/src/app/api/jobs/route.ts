@@ -37,6 +37,8 @@ import {
   type CreateOpenPositionData,
 } from '@tupsafe/types/admin/jobs';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/jobs
  * List all job positions with filtering, sorting, and pagination

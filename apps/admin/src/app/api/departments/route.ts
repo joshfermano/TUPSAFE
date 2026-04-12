@@ -21,6 +21,7 @@ import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 import { db, departments } from '@tupsafe/database/server';
 import { eq, asc } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
 /**
  * Department list item for API response
  */

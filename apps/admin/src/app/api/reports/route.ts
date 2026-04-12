@@ -35,6 +35,7 @@ import {
 import { eq, and, gte, lt, sql, desc, count } from 'drizzle-orm';
 import type { ReportsOverviewResponse } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
 export async function GET(_request: NextRequest) {
   const startTime = Date.now();
   try {

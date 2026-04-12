@@ -24,6 +24,7 @@ import { eq } from 'drizzle-orm';
 import { passwordResetSchema, ROLE_HIERARCHY } from '@tupsafe/types';
 import crypto from 'crypto';
 
+export const dynamic = 'force-dynamic';
 /**
  * Generate a secure random password
  * @param length - Password length (default: 16)

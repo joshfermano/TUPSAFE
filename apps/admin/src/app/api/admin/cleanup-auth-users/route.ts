@@ -16,6 +16,7 @@ import { createAdminClient } from '@tupsafe/auth/server';
 import { db, profiles } from '@tupsafe/database/server';
 import { eq, or } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
 /**
  * Admin account to preserve
  */

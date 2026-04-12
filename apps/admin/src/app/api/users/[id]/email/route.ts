@@ -17,6 +17,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkUserRoleFromSupabase, createAdminClient } from '@tupsafe/auth/server';
 
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/users/[id]/email
  * Fetch user email address from Supabase Auth

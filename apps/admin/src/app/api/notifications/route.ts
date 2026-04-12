@@ -15,6 +15,7 @@ import {
 import { db, notifications } from '@tupsafe/database/server';
 import { eq, and, desc, inArray, count } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     // Verify admin/HR permissions

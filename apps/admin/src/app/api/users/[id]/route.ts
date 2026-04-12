@@ -39,6 +39,7 @@ import {
   isHRDepartment,
 } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/users/[id]
  * Fetch detailed user information including submission history and audit logs

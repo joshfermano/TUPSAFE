@@ -32,6 +32,7 @@ import type {
   CertificationFileData,
 } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     // Verify admin/HR permissions

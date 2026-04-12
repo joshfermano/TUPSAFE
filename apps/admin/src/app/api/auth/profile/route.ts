@@ -12,6 +12,7 @@ import { createServerClient, getProfilePicturePublicUrl } from '@tupsafe/auth/se
 import { db, profiles } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
 export async function GET(_request: NextRequest) {
   try {
     // Get Supabase user directly

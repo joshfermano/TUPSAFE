@@ -34,6 +34,7 @@ import {
 import { parseUserAgent, formatUserAgent } from '@/lib/user-agent-parser';
 import { isHRDepartment } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
 // Login validation schema
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),

@@ -36,6 +36,7 @@ import {
 } from '@tupsafe/types';
 import { ZodError } from 'zod';
 
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/positions
  * List positions with filtering, search, and sorting

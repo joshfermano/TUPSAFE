@@ -19,6 +19,8 @@ import {
   createServerClient,
 } from '@tupsafe/auth/server';
 
+export const dynamic = 'force-dynamic';
+
 // Rejection validation schema
 const rejectionSchema = z.object({
   userId: z.string().uuid('Invalid user ID'),

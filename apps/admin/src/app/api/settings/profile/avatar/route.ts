@@ -23,6 +23,7 @@ import {
   PROFILE_PICTURES_BUCKET,
 } from '@tupsafe/auth/server';
 
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/settings/profile/avatar
  * Upload a new profile picture

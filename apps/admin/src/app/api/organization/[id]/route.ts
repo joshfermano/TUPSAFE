@@ -33,6 +33,7 @@ import { eq } from 'drizzle-orm';
 import { updateDepartmentSchema } from '@tupsafe/types';
 import { ZodError } from 'zod';
 
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/organization/[id]
  * Get single organizational unit with comprehensive statistics

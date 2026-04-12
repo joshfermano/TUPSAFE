@@ -25,6 +25,7 @@ import { db, profiles, departments, salnSubmissions } from '@tupsafe/database/se
 import { eq, and, gte, sql } from 'drizzle-orm';
 import type { SalnTimelineStats } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
 export async function GET() {
   const startTime = Date.now();
 

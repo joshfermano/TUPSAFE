@@ -92,16 +92,31 @@ export class TemplateFiller {
     }
 
     const font = this.getFont(position.fontVariant);
-    const textWidth = font.widthOfTextAtSize(displayText, position.fontSize);
+    let effectiveFontSize = position.fontSize;
+    const textWidth = font.widthOfTextAtSize(displayText, effectiveFontSize);
 
-    // Truncate if too wide
+    // Handle overflow: shrink font if minFontSize is set, then truncate if still too wide
     if (textWidth > position.maxWidth) {
-      displayText = this.truncateToFit(displayText, font, position.fontSize, position.maxWidth);
+      if (position.minFontSize !== undefined && position.minFontSize < effectiveFontSize) {
+        // Shrink font size down to minFontSize
+        while (effectiveFontSize > position.minFontSize) {
+          effectiveFontSize -= 0.5;
+          if (font.widthOfTextAtSize(displayText, effectiveFontSize) <= position.maxWidth) break;
+        }
+        effectiveFontSize = Math.max(effectiveFontSize, position.minFontSize);
+        // If still overflows at min size, truncate
+        if (font.widthOfTextAtSize(displayText, effectiveFontSize) > position.maxWidth) {
+          displayText = this.truncateToFit(displayText, font, effectiveFontSize, position.maxWidth);
+        }
+      } else {
+        // Original behavior: truncate at original font size
+        displayText = this.truncateToFit(displayText, font, effectiveFontSize, position.maxWidth);
+      }
     }
 
     // Calculate x offset based on alignment
     let xOffset = position.x;
-    const finalWidth = font.widthOfTextAtSize(displayText, position.fontSize);
+    const finalWidth = font.widthOfTextAtSize(displayText, effectiveFontSize);
     const alignment: TextAlignment = position.alignment ?? 'left';
 
     if (alignment === 'center') {
@@ -113,7 +128,7 @@ export class TemplateFiller {
     page.drawText(displayText, {
       x: xOffset,
       y: position.y,
-      size: position.fontSize,
+      size: effectiveFontSize,
       font,
       color: rgb(0, 0, 0),
     });

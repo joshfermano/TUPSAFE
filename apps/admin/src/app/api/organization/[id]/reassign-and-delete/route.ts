@@ -31,6 +31,7 @@ import {
 import { z } from 'zod';
 import { ZodError } from 'zod';
 
+export const dynamic = 'force-dynamic';
 /**
  * Validation schema for reassign and delete request body
  *

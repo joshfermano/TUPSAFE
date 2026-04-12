@@ -16,6 +16,7 @@ import { ReportDocument } from '@tupsafe/shared-ui/report-pdf';
 import { ensureReportFontsRegistered } from '@tupsafe/shared-ui/report-pdf';
 import React from 'react';
 
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/dashboard/export
  *

@@ -38,6 +38,7 @@ import {
 } from '@tupsafe/types';
 import { ZodError } from 'zod';
 
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/positions/[id]
  * Get single position with comprehensive details
