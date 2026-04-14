@@ -180,15 +180,26 @@ export default function SalnSubmissionViewPage() {
       return null;
     }
 
-    // Parse spouse info - always shown in 2025 format
+    // Parse spouse info - always shown in 2025 format; prefer split fields, fall back to combined
     let spouseInfo = undefined;
     const spouseNameRaw = (salnData as Record<string, unknown>)?.spouseName as string | undefined;
-    if (spouseNameRaw) {
-      const nameParts = spouseNameRaw.trim().split(/\s+/);
+    const spouseFamilyNameRaw = (salnData as Record<string, unknown>)?.spouseFamilyName as string | undefined;
+    const spouseFirstNameRaw = (salnData as Record<string, unknown>)?.spouseFirstName as string | undefined;
+    const spouseMiddleInitialRaw = (salnData as Record<string, unknown>)?.spouseMiddleInitial as string | undefined;
+    if (spouseFamilyNameRaw || spouseFirstNameRaw || spouseNameRaw) {
+      let fallbackSurname = '';
+      let fallbackFirst = '';
+      let fallbackMi: string | null = null;
+      if (spouseNameRaw) {
+        const nameParts = spouseNameRaw.trim().split(/\s+/);
+        fallbackSurname = nameParts[nameParts.length - 1] || '';
+        fallbackFirst = nameParts[0] || '';
+        fallbackMi = nameParts.length > 2 ? nameParts[1]?.charAt(0) ?? null : null;
+      }
       spouseInfo = {
-        surname: nameParts[nameParts.length - 1] || '',
-        firstName: nameParts[0] || '',
-        middleInitial: nameParts.length > 2 ? nameParts[1]?.charAt(0) : null,
+        surname: spouseFamilyNameRaw || fallbackSurname,
+        firstName: spouseFirstNameRaw || fallbackFirst,
+        middleInitial: spouseMiddleInitialRaw || fallbackMi,
         position: salnData?.spousePosition || '',
         agency: salnData?.spouseAgency || '',
         officeAddress: salnData?.spouseOfficeAddress || employee.officeAddress || '',
@@ -241,6 +252,7 @@ export default function SalnSubmissionViewPage() {
       declarantTin: salnData?.declarantTin,
       spouseTin: salnData?.spouseTin,
       spouseDateOfBirth: salnData?.spouseDateOfBirth,
+      declarationDate: (salnData as Record<string, unknown>)?.declarationDate as string | undefined,
     };
 
     console.log('[SALN PDF] Data transformed successfully:', {

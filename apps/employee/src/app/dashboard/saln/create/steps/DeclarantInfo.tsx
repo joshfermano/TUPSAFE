@@ -20,10 +20,11 @@
  * - React.memo for performance
  */
 
-import { memo, useEffect, useRef } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { useFormContext, useWatch, useFieldArray, Controller } from 'react-hook-form';
 import { PersonIcon } from '@radix-ui/react-icons';
 import { Plus, Trash2, Info, Users, Calendar, Briefcase } from 'lucide-react';
+import { useProfile } from '../../../../../hooks/useProfile';
 import { Label } from '../../../../../components/ui/label';
 import { Button } from '../../../../../components/ui/button';
 import { Badge } from '../../../../../components/ui/badge';
@@ -48,6 +49,9 @@ interface SubmissionErrors {
   officeAddress?: { message?: string };
   filingType?: { message?: string };
   spouseName?: { message?: string };
+  spouseFamilyName?: { message?: string };
+  spouseFirstName?: { message?: string };
+  spouseMiddleInitial?: { message?: string };
   complianceType?: { message?: string };
   complianceDate?: { message?: string };
   hasMultipleMarriages?: { message?: string };
@@ -70,6 +74,10 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
     control,
     formState: { errors },
   } = form;
+
+  // Profile data for declarant name defaults (Task 3)
+  const { data: profileData } = useProfile();
+  const [overrideName, setOverrideName] = useState(false);
 
   // Watch for conditional rendering
   const filingType = useWatch({ control, name: 'submission.filingType' });
@@ -138,6 +146,95 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
           </div>
         </div>
       </div>
+
+      {/* Declarant Name (Task 3) — read-only from profile with optional override */}
+      <BlurFade delay={0.08}>
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm hover:shadow-md transition-shadow duration-200">
+          <div className="p-6 sm:p-8 space-y-6">
+            <div>
+              <h3 className="text-base font-semibold text-foreground mb-2">Declarant Name</h3>
+              <p className="text-sm text-muted-foreground">
+                Name as it will appear on the SALN form. Defaults to your profile name.
+              </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-2">
+                <Label className="text-base font-medium">Family Name</Label>
+                <Controller
+                  name="submission.declarantLastName"
+                  control={control}
+                  render={({ field }) => (
+                    <EnhancedInput
+                      {...field}
+                      value={overrideName ? (field.value || '') : (profileData?.lastName || '')}
+                      readOnly={!overrideName}
+                      placeholder="Family name"
+                      className={!overrideName ? 'opacity-70 cursor-not-allowed' : ''}
+                      onChange={(e) => overrideName && field.onChange(e.target.value)}
+                    />
+                  )}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label className="text-base font-medium">First Name</Label>
+                <Controller
+                  name="submission.declarantFirstName"
+                  control={control}
+                  render={({ field }) => (
+                    <EnhancedInput
+                      {...field}
+                      value={overrideName ? (field.value || '') : (profileData?.firstName || '')}
+                      readOnly={!overrideName}
+                      placeholder="First name"
+                      className={!overrideName ? 'opacity-70 cursor-not-allowed' : ''}
+                      onChange={(e) => overrideName && field.onChange(e.target.value)}
+                    />
+                  )}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label className="text-base font-medium">M.I.</Label>
+                <Controller
+                  name="submission.declarantMiddleInitial"
+                  control={control}
+                  render={({ field }) => (
+                    <EnhancedInput
+                      {...field}
+                      value={overrideName ? (field.value || '') : (profileData?.middleName?.charAt(0) || '')}
+                      readOnly={!overrideName}
+                      placeholder="M.I."
+                      maxLength={5}
+                      className={!overrideName ? 'opacity-70 cursor-not-allowed' : ''}
+                      onChange={(e) => overrideName && field.onChange(e.target.value)}
+                    />
+                  )}
+                />
+              </div>
+            </div>
+
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={overrideName}
+                onChange={(e) => {
+                  setOverrideName(e.target.checked);
+                  if (!e.target.checked) {
+                    // Clear override fields when disabling — profile values will be used
+                    form.setValue('submission.declarantLastName', null);
+                    form.setValue('submission.declarantFirstName', null);
+                    form.setValue('submission.declarantMiddleInitial', null);
+                  }
+                }}
+                className="w-4 h-4 text-primary border-2 border-slate-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-primary cursor-pointer"
+              />
+              <span className="text-sm text-muted-foreground">
+                Override for this SALN submission (use a different name than your profile)
+              </span>
+            </label>
+          </div>
+        </div>
+      </BlurFade>
 
       {/* Reporting Year */}
       <BlurFade delay={0.1}>
@@ -312,31 +409,81 @@ export const DeclarantInfo = memo(function DeclarantInfo() {
               </p>
             )}
 
-            {/* Spouse Name - shown for joint or separate filing (married declarants) */}
+            {/* Spouse Name — split into Family / First / M.I. (CSC 2025 form layout) */}
               {hasSpouse && (
                 <BlurFade delay={0.25}>
-                  <div className="grid gap-2 pt-4">
-                    <Label
-                      htmlFor="submission.spouseName"
-                      className="text-base font-medium">
-                      Spouse Full Name <span className="text-destructive">*</span>
+                  <div className="pt-4 space-y-3">
+                    <Label className="text-base font-medium">
+                      Spouse Name <span className="text-destructive">*</span>
                     </Label>
-                    <EnhancedInput
-                      id="submission.spouseName"
-                      placeholder="e.g., Maria Clara Santos"
-                      {...register('submission.spouseName')}
-                    />
-                    {errors?.submission && 'spouseName' in errors.submission && (
-                      <p className="text-sm text-destructive">
-                        {(errors as FormErrors).submission?.spouseName?.message}
-                      </p>
-                    )}
+                    <div className="grid gap-4 md:grid-cols-3">
+                      <div className="grid gap-2">
+                        <Label htmlFor="submission.spouseFamilyName" className="text-sm font-medium text-muted-foreground">
+                          Family Name
+                        </Label>
+                        <Controller
+                          name="submission.spouseFamilyName"
+                          control={control}
+                          render={({ field }) => (
+                            <EnhancedInput
+                              {...field}
+                              id="submission.spouseFamilyName"
+                              value={field.value || ''}
+                              placeholder="e.g., Santos"
+                            />
+                          )}
+                        />
+                        {errors?.submission && 'spouseFamilyName' in errors.submission && (
+                          <p className="text-sm text-destructive">
+                            {(errors as FormErrors).submission?.spouseFamilyName?.message}
+                          </p>
+                        )}
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="submission.spouseFirstName" className="text-sm font-medium text-muted-foreground">
+                          First Name
+                        </Label>
+                        <Controller
+                          name="submission.spouseFirstName"
+                          control={control}
+                          render={({ field }) => (
+                            <EnhancedInput
+                              {...field}
+                              id="submission.spouseFirstName"
+                              value={field.value || ''}
+                              placeholder="e.g., Maria Clara"
+                            />
+                          )}
+                        />
+                        {errors?.submission && 'spouseFirstName' in errors.submission && (
+                          <p className="text-sm text-destructive">
+                            {(errors as FormErrors).submission?.spouseFirstName?.message}
+                          </p>
+                        )}
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="submission.spouseMiddleInitial" className="text-sm font-medium text-muted-foreground">
+                          M.I.
+                        </Label>
+                        <Controller
+                          name="submission.spouseMiddleInitial"
+                          control={control}
+                          render={({ field }) => (
+                            <EnhancedInput
+                              {...field}
+                              id="submission.spouseMiddleInitial"
+                              value={field.value || ''}
+                              placeholder="e.g., D"
+                              maxLength={5}
+                            />
+                          )}
+                        />
+                      </div>
+                    </div>
                     <p className="text-sm text-muted-foreground">
-                      Required for joint filing. Include middle name if
-                      applicable.
+                      Required for joint or separate filing. Enter each name part separately.
                     </p>
                   </div>
-
                 </BlurFade>
               )}
             </div>

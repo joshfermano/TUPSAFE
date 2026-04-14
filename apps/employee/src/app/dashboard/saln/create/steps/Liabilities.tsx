@@ -68,7 +68,7 @@ function LiabilityOwnerSelect({ index, control }: { index: number; control: unkn
         <Label
           htmlFor={`liabilities.${index}.owner`}
           className="text-base font-medium">
-          Liability Owner
+          Who owns this?
         </Label>
         <Controller
           name={`liabilities.${index}.owner`}
@@ -90,7 +90,7 @@ function LiabilityOwnerSelect({ index, control }: { index: number; control: unkn
           )}
         />
         <p className="text-xs text-muted-foreground">
-          Declarant & Joint go to ANNEX A/B. Spouse/Child go to ANNEX C.
+          Declarant or Joint items print on ANNEX A. Spouse or Child-exclusive items print on AS-2 (ANNEX C).
         </p>
       </div>
 
@@ -190,6 +190,13 @@ export const Liabilities = memo(function Liabilities() {
       <BlurFade delay={0.1}>
         <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm hover:shadow-md transition-shadow duration-200">
           <div className="p-6 sm:p-8">
+          <Alert className="mb-4 border-slate-200/50 dark:border-slate-800/50">
+            <Info className="h-4 w-4" />
+            <AlertDescription className="text-sm text-muted-foreground">
+              Assign an owner to each row. Spouse-exclusive and child-exclusive items automatically flow to the spouse/children additional sheet (AS-2). Joint items stay on the main form.
+            </AlertDescription>
+          </Alert>
+
           <Alert className="mb-6 border-slate-200/50 dark:border-slate-800/50">
             <Info className="h-4 w-4" />
             <AlertDescription className="text-sm text-muted-foreground">

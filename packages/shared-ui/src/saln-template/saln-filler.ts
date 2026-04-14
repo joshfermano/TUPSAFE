@@ -157,6 +157,7 @@ function normalizeSALNData(raw: SALNData): SALNData {
     governmentIdType2: raw.governmentIdType2 ?? '',
     governmentIdNumber2: raw.governmentIdNumber2 ?? '',
     governmentIdDateIssued2: raw.governmentIdDateIssued2 ?? undefined,
+    declarationDate: raw.declarationDate ?? null,
   };
 }
 
@@ -334,8 +335,10 @@ function fillAnnexAPage2(filler: FormFiller, data: SALNData): void {
   }
 
   // --- Declaration date ---
-  if (data.submittedAt) {
-    filler.setText('a2.declarationDate', toDateStr(data.submittedAt));
+  // Use explicit declarationDate if set; fall back to submittedAt (legacy behaviour)
+  const declarationDateVal = data.declarationDate ?? data.submittedAt;
+  if (declarationDateVal) {
+    filler.setText('a2.declarationDate', toDateStr(declarationDateVal));
   }
 
   // --- Government ID 1 ---

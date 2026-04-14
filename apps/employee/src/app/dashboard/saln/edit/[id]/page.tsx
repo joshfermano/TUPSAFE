@@ -841,19 +841,58 @@ export default function SALNEditDetailPage({
               required
             />
             {(formData.submission?.filingType === 'joint' || formData.submission?.filingType === 'separate') && (
-              <FormField
-                label="Spouse Name"
-                name="spouseName"
-                value={formData.submission?.spouseName}
-                onChange={(val) =>
-                  handleFieldChange('submission', {
-                    ...formData.submission,
-                    spouseName: val,
-                  })
-                }
-                fullWidth
-                required
-              />
+              /* Spouse name split into Family / First / M.I. (CSC 2025 form layout) */
+              <div className="col-span-full space-y-3">
+                <Label className="text-xs font-medium">Spouse Name <span className="text-rose-500">*</span></Label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-slate-500">Family Name</Label>
+                    <input
+                      type="text"
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                      placeholder="e.g., Santos"
+                      value={((formData.submission as Record<string, unknown>)?.spouseFamilyName as string) || ''}
+                      onChange={(e) =>
+                        handleFieldChange('submission', {
+                          ...formData.submission,
+                          spouseFamilyName: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-slate-500">First Name</Label>
+                    <input
+                      type="text"
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                      placeholder="e.g., Maria Clara"
+                      value={((formData.submission as Record<string, unknown>)?.spouseFirstName as string) || ''}
+                      onChange={(e) =>
+                        handleFieldChange('submission', {
+                          ...formData.submission,
+                          spouseFirstName: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-slate-500">M.I.</Label>
+                    <input
+                      type="text"
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                      placeholder="e.g., D"
+                      maxLength={5}
+                      value={((formData.submission as Record<string, unknown>)?.spouseMiddleInitial as string) || ''}
+                      onChange={(e) =>
+                        handleFieldChange('submission', {
+                          ...formData.submission,
+                          spouseMiddleInitial: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
             )}
             <FormField
               label="Position"
@@ -1247,8 +1286,20 @@ export default function SALNEditDetailPage({
           </div>
 
           {/* Second Government Issued ID */}
+          {formData.submission?.filingType !== 'not_applicable' && (
           <div className="space-y-3">
-            <Label className="text-xs font-medium">Second Government Issued ID</Label>
+            <div className="space-y-0.5">
+              <Label className="text-xs font-medium">
+                {formData.submission?.filingType === 'joint'
+                  ? "Spouse's Government Issued ID"
+                  : 'Second Government Issued ID'}
+              </Label>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                {formData.submission?.filingType === 'joint'
+                  ? 'Required — spouse co-signs joint filings'
+                  : 'Optional — add a second ID if you have one'}
+              </p>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium">ID Type</Label>
@@ -1297,7 +1348,35 @@ export default function SALNEditDetailPage({
             </div>
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
               <Info className="h-4 w-4 text-slate-400" />
-              <span className="text-xs text-slate-500">The 2025 SALN format requires two government-issued IDs for verification.</span>
+              <span className="text-xs text-slate-500">
+                {formData.submission?.filingType === 'joint'
+                  ? 'Joint filings require a separate government ID for each signing spouse.'
+                  : '2025 SALN accepts a second ID as optional additional verification.'}
+              </span>
+            </div>
+          </div>
+          )}
+
+          {/* Declaration Date (Task 6) */}
+          <Separator />
+          <div className="space-y-3">
+            <div className="space-y-0.5">
+              <Label className="text-xs font-medium">Declaration Date</Label>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Date that will be stamped on the SALN form
+              </p>
+            </div>
+            <div className="max-w-xs">
+              <FormDateInput
+                value={((formData.submission as Record<string, unknown>)?.declarationDate as Date | string | null)}
+                onChange={(date) => {
+                  handleFieldChange('submission', {
+                    ...formData.submission,
+                    declarationDate: date,
+                  });
+                }}
+                max={formatDateForInput(new Date())}
+              />
             </div>
           </div>
         </div>

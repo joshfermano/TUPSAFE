@@ -59,7 +59,7 @@ function BusinessOwnerSelect({ index, control }: { index: number; control: unkno
         <Label
           htmlFor={`businessInterests.${index}.owner`}
           className="text-base font-medium">
-          Business Owner
+          Who owns this?
         </Label>
         <Controller
           name={`businessInterests.${index}.owner`}
@@ -81,7 +81,7 @@ function BusinessOwnerSelect({ index, control }: { index: number; control: unkno
           )}
         />
         <p className="text-xs text-muted-foreground">
-          Declarant & Joint go to ANNEX A/B. Spouse/Child go to ANNEX C.
+          Declarant or Joint items print on ANNEX A. Spouse or Child-exclusive items print on AS-2 (ANNEX C).
         </p>
       </div>
 
@@ -199,6 +199,13 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
             <p className="text-sm text-muted-foreground mb-6">
               Disclose any business interests, partnerships, or financial connections
             </p>
+          <Alert className="mb-4 border-slate-200/50 dark:border-slate-800/50">
+            <Info className="h-4 w-4" />
+            <AlertDescription className="text-sm text-muted-foreground">
+              Assign an owner to each row. Spouse-exclusive and child-exclusive items automatically flow to the spouse/children additional sheet (AS-2). Joint items stay on the main form.
+            </AlertDescription>
+          </Alert>
+
           <Alert className="mb-6 border-slate-200/50 dark:border-slate-800/50">
             <Info className="h-4 w-4" />
             <AlertDescription className="text-sm text-muted-foreground">

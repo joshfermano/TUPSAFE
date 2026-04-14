@@ -930,6 +930,12 @@ export const salnSubmissions = pgTable(
     governmentIdNumber2: text('government_id_number_2'),
     governmentIdDateIssued2: date('government_id_date_issued_2'),
     salnFormatVersion: integer('saln_format_version').default(2019).notNull(),
+    // Declaration date (2025 format) — stamped on ANNEX A page 2 "Date:" line
+    declarationDate: date('declaration_date'),
+    // Split spouse name fields (2025 format) — CSC form has separate Family/First/MI slots
+    spouseFamilyName: text('spouse_family_name'),
+    spouseFirstName: text('spouse_first_name'),
+    spouseMiddleInitial: text('spouse_middle_initial'),
     completion: integer('completion').default(0).notNull(), // Completion percentage (0-100) based on submission readiness
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),

@@ -13,7 +13,7 @@
  */
 
 import { memo, useState } from 'react';
-import { useFormContext, Controller } from 'react-hook-form';
+import { useFormContext, Controller, useWatch } from 'react-hook-form';
 import {
   ChevronDown,
   ChevronUp,
@@ -26,6 +26,7 @@ import {
   Calculator,
   AlertTriangle,
   IdCard,
+  FileText,
 } from 'lucide-react';
 import { Checkbox } from '../../../../../components/ui/checkbox';
 import { Label } from '../../../../../components/ui/label';
@@ -69,6 +70,34 @@ interface ReviewSubmitProps {
   summary: SalnSummary;
 }
 
+// Local predicates mirroring packages/shared-ui/src/saln-template/saln-overflow.ts.
+// Do not import from shared-ui here — keep this component self-contained.
+type OwnerItem = { owner?: string | null };
+const ANNEX_B_CAPS = { real: 10, personal: 8, liabilities: 12, business: 8 } as const;
+const isMainFormOwner = (o?: string | null) =>
+  o === 'declarant' || o === 'joint' || o === undefined || o === null;
+const shouldRenderAnnexB = (data: Partial<CompleteSalnData>) => {
+  const real = (data.realProperties ?? []) as OwnerItem[];
+  const personal = (data.personalProperties ?? []) as OwnerItem[];
+  const liab = (data.liabilities ?? []) as OwnerItem[];
+  const biz = (data.businessInterests ?? []) as OwnerItem[];
+  return (
+    real.filter((r) => isMainFormOwner(r.owner)).length > ANNEX_B_CAPS.real ||
+    personal.filter((r) => isMainFormOwner(r.owner)).length > ANNEX_B_CAPS.personal ||
+    liab.filter((r) => isMainFormOwner(r.owner)).length > ANNEX_B_CAPS.liabilities ||
+    biz.filter((r) => isMainFormOwner(r.owner)).length > ANNEX_B_CAPS.business
+  );
+};
+const shouldRenderAnnexC = (data: Partial<CompleteSalnData>) => {
+  const all: OwnerItem[] = [
+    ...((data.realProperties ?? []) as OwnerItem[]),
+    ...((data.personalProperties ?? []) as OwnerItem[]),
+    ...((data.liabilities ?? []) as OwnerItem[]),
+    ...((data.businessInterests ?? []) as OwnerItem[]),
+  ];
+  return all.some((r) => r.owner === 'spouse' || r.owner === 'child');
+};
+
 export const ReviewSubmit = memo(function ReviewSubmit({
   data,
   summary,
@@ -77,6 +106,15 @@ export const ReviewSubmit = memo(function ReviewSubmit({
     control,
     formState: { errors },
   } = useFormContext();
+
+  const filingType = useWatch({ control, name: 'submission.filingType' }) as
+    | 'joint'
+    | 'separate'
+    | 'not_applicable'
+    | undefined;
+
+  const annexBActive = shouldRenderAnnexB(data);
+  const annexCActive = shouldRenderAnnexC(data);
 
   const [expandedSections, setExpandedSections] = useState<
     Record<string, boolean>
@@ -96,6 +134,36 @@ export const ReviewSubmit = memo(function ReviewSubmit({
 
   return (
     <div className="space-y-8">
+      {/* Export Preview — which annexes will render */}
+      <BlurFade delay={0.05}>
+        <EnhancedFormSection
+          title="Export Preview"
+          subtitle="Annexes that will be included in your PDF"
+          variant="default">
+          <div className="flex flex-wrap items-center gap-3">
+            <Badge variant="default" className="text-sm">
+              <FileText className="h-3.5 w-3.5 mr-1.5" />
+              ANNEX A
+            </Badge>
+            <Badge
+              variant={annexBActive ? 'default' : 'outline'}
+              className={`text-sm ${annexBActive ? '' : 'opacity-50 line-through'}`}>
+              <FileText className="h-3.5 w-3.5 mr-1.5" />
+              AS-1 (ANNEX B)
+            </Badge>
+            <Badge
+              variant={annexCActive ? 'default' : 'outline'}
+              className={`text-sm ${annexCActive ? '' : 'opacity-50 line-through'}`}>
+              <FileText className="h-3.5 w-3.5 mr-1.5" />
+              AS-2 (ANNEX C)
+            </Badge>
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Pages automatically included based on your data. Tag spouse/child-exclusive items on the property steps to trigger AS-2.
+          </p>
+        </EnhancedFormSection>
+      </BlurFade>
+
       <BlurFade delay={0.1}>
         <EnhancedFormSection
           title="Review Your SALN"
@@ -536,10 +604,19 @@ export const ReviewSubmit = memo(function ReviewSubmit({
       </BlurFade>
 
       {/* Second Government ID Section (2025 SALN Format) */}
+      {filingType !== 'not_applicable' && (
       <BlurFade delay={0.39}>
         <EnhancedFormSection
-          title="Second Government Issued ID"
-          subtitle="Provide a different government-issued ID for the second signature"
+          title={
+            filingType === 'joint'
+              ? "Spouse's Government Issued ID"
+              : 'Second Government Issued ID'
+          }
+          subtitle={
+            filingType === 'joint'
+              ? 'Required — spouse co-signs joint filings'
+              : 'Optional — add a second ID if you have one'
+          }
           variant="default">
           <div className="grid gap-6 md:grid-cols-3">
             <div className="grid gap-2">
@@ -599,11 +676,32 @@ export const ReviewSubmit = memo(function ReviewSubmit({
           <Alert className="mt-6 border-slate-200/50 dark:border-slate-800/50">
             <IdCard className="h-4 w-4" />
             <AlertDescription className="text-sm text-slate-600 dark:text-slate-400">
-              The 2025 SALN format requires two government-issued IDs for
-              verification. Please ensure the first and second IDs are different
-              from each other.
+              {filingType === 'joint'
+                ? 'Joint filings require a separate government ID for each signing spouse.'
+                : '2025 SALN accepts a second ID as optional additional verification.'}
             </AlertDescription>
           </Alert>
+        </EnhancedFormSection>
+      </BlurFade>
+      )}
+
+      {/* Declaration Date (Task 6) */}
+      <BlurFade delay={0.41}>
+        <EnhancedFormSection
+          title="Declaration Date"
+          subtitle="Date that will be stamped on the SALN form"
+          variant="default">
+          <div className="grid gap-2 max-w-xs">
+            <FormDateInput
+              control={control}
+              name="submission.declarationDate"
+              label="Date of Declaration"
+              max={formatDateForInput(new Date())}
+            />
+            <p className="text-sm text-muted-foreground">
+              This is the date that will be stamped on the SALN form.
+            </p>
+          </div>
         </EnhancedFormSection>
       </BlurFade>
 
@@ -614,17 +712,29 @@ export const ReviewSubmit = memo(function ReviewSubmit({
           subtitle="Required declaration under penalty of perjury"
           variant="default">
           <div className="space-y-6">
-            <div className="p-6 bg-muted/50 rounded-lg border border-slate-200/50 dark:border-slate-800/50">
+            <div className="p-6 bg-muted/50 rounded-lg border border-slate-200/50 dark:border-slate-800/50 space-y-4">
               <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-                I declare under penalty of perjury that this Statement of
-                Assets, Liabilities and Net Worth is a true, detailed and sworn
-                statement of my assets, liabilities, net worth, business
-                interests and financial connections, including those of my
-                spouse and unmarried children below eighteen (18) years of age
-                living in my household, as of December 31,{' '}
-                {data.submission?.year}, pursuant to Section 8 of Republic Act
-                No. 6713 (Code of Conduct and Ethical Standards for Public
-                Officials and Employees).
+                I hereby certify that these are true and correct statements of
+                my assets, liabilities, net worth, business interests and
+                financial connections, including those of my spouse and
+                unmarried children below eighteen (18) years of age living in
+                my household, and that to the best of my knowledge, the
+                above-enumerated are names of my relatives in the government
+                within the fourth civil degree of consanguinity or affinity,
+                as of December 31, {data.submission?.year}, pursuant to
+                Section 8 of Republic Act No. 6713 (Code of Conduct and
+                Ethical Standards for Public Officials and Employees).
+              </p>
+              <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                I hereby authorize the Ombudsman or his/her duly authorized
+                representative to obtain and secure from all appropriate
+                government agencies, including the Bureau of Internal
+                Revenue, such documents that may show my assets, liabilities,
+                net worth, business interests and financial connections, to
+                include those of my spouse and unmarried children below 18
+                years of age living with me in my household, covering
+                previous years to include the year I first assumed office in
+                government.
               </p>
             </div>
 

@@ -365,6 +365,8 @@ export interface SALNData {
   spouseTin?: string;
   /** Spouse date of birth (2025 format) */
   spouseDateOfBirth?: Date | string;
+  /** Declaration date — stamped on ANNEX A page 2 "Date:" line (YYYY-MM-DD or Date) */
+  declarationDate?: string | Date | null;
 }
 
 /**

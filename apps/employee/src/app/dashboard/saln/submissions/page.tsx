@@ -356,11 +356,12 @@ export default function SalnSubmissionsPage() {
           officeAddress: submission.officeAddress || '',
         },
         spouseInfo:
-          submission.filingType === 'joint' && submission.spouseName
+          (submission.filingType === 'joint' || submission.filingType === 'separate') &&
+          (submission.spouseFamilyName || submission.spouseFirstName || submission.spouseName)
             ? {
-                surname: submission.spouseName?.split(' ').pop() || '',
-                firstName: submission.spouseName?.split(' ')[0] || '',
-                middleInitial: submission.spouseName?.split(' ')[1]?.charAt(0) || null,
+                surname: submission.spouseFamilyName || submission.spouseName?.split(' ').pop() || '',
+                firstName: submission.spouseFirstName || submission.spouseName?.split(' ')[0] || '',
+                middleInitial: submission.spouseMiddleInitial || submission.spouseName?.split(' ')[1]?.charAt(0) || null,
                 position: '',
                 agency: '',
                 officeAddress: '',
