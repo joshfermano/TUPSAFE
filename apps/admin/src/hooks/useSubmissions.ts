@@ -16,6 +16,7 @@ import type {
   BulkApproveData,
   BulkApproveResponse,
   SubmissionStatsResponse,
+  DeleteSubmissionData,
 } from '@tupsafe/types';
 import {
   fetchSubmissions,
@@ -25,6 +26,8 @@ import {
   rejectPDS,
   approveSALN,
   rejectSALN,
+  deletePDS,
+  deleteSALN,
   bulkApproveSubmissions,
   fetchSubmissionStats,
 } from '@/lib/api/submissions';
@@ -266,6 +269,104 @@ export function useRejectSALN() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['submissions'] });
       queryClient.invalidateQueries({ queryKey: ['submission-stats'] });
+    },
+  });
+}
+
+/**
+ * Hook for deleting PDS submissions (admin / co_admin only)
+ *
+ * Optimistically removes the row from the cached list, rolls back on error,
+ * and invalidates list + stats + detail caches on settle.
+ */
+export function useDeletePDS() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: DeleteSubmissionData }) =>
+      deletePDS(id, data),
+    onMutate: async ({ id }) => {
+      await queryClient.cancelQueries({ queryKey: ['submissions'] });
+      await queryClient.cancelQueries({ queryKey: ['pds-detail', id] });
+
+      const previousSubmissions = queryClient.getQueryData(['submissions']);
+
+      queryClient.setQueryData(['submissions'], (old: SubmissionListResponse | undefined) => {
+        if (!old) return old;
+        return {
+          ...old,
+          submissions: old.submissions.filter((sub) => sub.id !== id),
+        };
+      });
+
+      return { previousSubmissions };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousSubmissions) {
+        queryClient.setQueryData(['submissions'], context.previousSubmissions);
+      }
+      toast.error('Failed to delete submission', {
+        description: err.message,
+      });
+    },
+    onSuccess: () => {
+      toast.success('Submission Deleted', {
+        description: 'The submission has been permanently deleted and archived.',
+      });
+    },
+    onSettled: (_data, _err, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ['submissions'] });
+      queryClient.invalidateQueries({ queryKey: ['submission-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['pds-detail', id] });
+    },
+  });
+}
+
+/**
+ * Hook for deleting SALN submissions (admin / co_admin only)
+ *
+ * Optimistically removes the row from the cached list, rolls back on error,
+ * and invalidates list + stats + detail caches on settle.
+ */
+export function useDeleteSALN() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: DeleteSubmissionData }) =>
+      deleteSALN(id, data),
+    onMutate: async ({ id }) => {
+      await queryClient.cancelQueries({ queryKey: ['submissions'] });
+      await queryClient.cancelQueries({ queryKey: ['saln-detail', id] });
+
+      const previousSubmissions = queryClient.getQueryData(['submissions']);
+
+      queryClient.setQueryData(['submissions'], (old: SubmissionListResponse | undefined) => {
+        if (!old) return old;
+        return {
+          ...old,
+          submissions: old.submissions.filter((sub) => sub.id !== id),
+        };
+      });
+
+      return { previousSubmissions };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousSubmissions) {
+        queryClient.setQueryData(['submissions'], context.previousSubmissions);
+      }
+      toast.error('Failed to delete submission', {
+        description: err.message,
+      });
+    },
+    onSuccess: () => {
+      toast.success('Submission Deleted', {
+        description: 'The submission has been permanently deleted and archived.',
+      });
+    },
+    onSettled: (_data, _err, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ['submissions'] });
+      queryClient.invalidateQueries({ queryKey: ['submission-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['saln-detail', id] });
     },
   });
 }

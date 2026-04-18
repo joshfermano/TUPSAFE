@@ -17,6 +17,7 @@ import {
   Printer,
   Loader2,
   XCircle,
+  Trash2,
 } from 'lucide-react';
 
 import {
@@ -35,6 +36,7 @@ import { Separator } from '@/components/ui/separator';
 import { StatusBadge } from '@/components/admin/StatusBadge';
 import { UserAvatar } from '@/components/admin/UserAvatar';
 import { ReviewDialog } from '@/components/admin/ReviewDialog';
+import { DeleteSubmissionDialog } from '@/components/admin/DeleteSubmissionDialog';
 import { LoadingCard } from '@/components/admin/LoadingCard';
 import { ErrorAlert } from '@/components/admin/ErrorAlert';
 import { EmptyState } from '@/components/admin/EmptyState';
@@ -42,6 +44,7 @@ import { EmptyState } from '@/components/admin/EmptyState';
 import { DataSection, PropertyCard, FinancialSummaryCards } from '@/components/saln';
 
 import { useSalnSubmissionsQuery } from '@/hooks/useSalnSubmissionsQuery';
+import { useDeleteSALN } from '@/hooks/useSubmissions';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/formatting-helpers';
@@ -67,11 +70,14 @@ import type { SALNData } from '@/components/saln/pdf';
 export default function SalnSubmissionViewPage() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const submissionId = params.id as string;
+  const canDelete = profile?.role === 'admin' || profile?.role === 'co_admin';
 
   const [isReviewDialogOpen, setIsReviewDialogOpen] = React.useState(false);
   const [reviewAction, setReviewAction] = React.useState<'approve' | 'reject' | undefined>(undefined);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+  const deleteMutation = useDeleteSALN();
 
   const {
     useCompleteSubmission,
@@ -536,6 +542,17 @@ export default function SalnSubmissionViewPage() {
                   </Button>
                 </>
               )}
+              {canDelete && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                  disabled={isSubmitting || deleteMutation.isPending}
+                  className="gap-2">
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </Button>
+              )}
             </div>
           </div>
 
@@ -985,6 +1002,27 @@ export default function SalnSubmissionViewPage() {
           onApprove={handleApprove}
           onReject={handleReject}
           isSubmitting={isSubmitting}
+        />
+      )}
+
+      {/* Delete Submission Dialog (admin / co_admin only) */}
+      {canDelete && submission && employee && (
+        <DeleteSubmissionDialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+          submissionType="saln"
+          ownerName={`${employee.firstName} ${employee.lastName}`}
+          year={submission.fiscalYear ?? null}
+          status={submission.status}
+          isLoading={deleteMutation.isPending}
+          onConfirm={async (reason) => {
+            await deleteMutation.mutateAsync({
+              id: submissionId,
+              data: { reason },
+            });
+            setIsDeleteDialogOpen(false);
+            router.push('/dashboard/submissions/saln');
+          }}
         />
       )}
     </>

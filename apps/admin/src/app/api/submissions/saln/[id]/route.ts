@@ -34,10 +34,15 @@ import {
   salnLiabilities,
   salnBusinessInterests,
   salnRelativesInGov,
+  notifications,
   auditLogs,
+  deleteSALNSubmissionAsAdmin,
+  deletePdfFromStorage,
 } from '@tupsafe/database/server';
 import { and, eq, desc, lt } from 'drizzle-orm';
 import { createAuditLog } from '@tupsafe/database/utils/audit-log';
+import { deleteSubmissionSchema, type ApiSuccess } from '@tupsafe/types';
+import { v7 as uuidv7 } from 'uuid';
 import type { SALNSubmissionDetail } from '@tupsafe/types';
 
 export const dynamic = 'force-dynamic';
@@ -416,6 +421,181 @@ export async function GET(
     return NextResponse.json(
       {
         error: 'Failed to fetch SALN submission details',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * DELETE /api/submissions/saln/[id]
+ *
+ * Admin-only permanent deletion of a SALN submission at any status.
+ * Archives the full snapshot to the archives table before hard-deleting.
+ * Post-commit: cleans up storage file (best-effort) and sends owner notification.
+ *
+ * Security:
+ * - Requires admin or co_admin role (HR cannot delete)
+ * - Cannot delete own submission
+ * - Requires reason (10-500 chars) for audit trail
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    // 1. Verify admin/co_admin permissions — HR is explicitly excluded
+    const hasPermission = await checkUserRoleFromSupabase(
+      ['admin', 'co_admin'],
+      'admin'
+    );
+
+    if (!hasPermission) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Admin or Co-Admin role required.' },
+        { status: 403 }
+      );
+    }
+
+    // 2. Get current session user
+    const sessionUser = await getUserFromSupabase('admin');
+    if (!sessionUser) {
+      return NextResponse.json({ error: 'Session expired' }, { status: 401 });
+    }
+
+    // 3. Validate UUID format
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      return NextResponse.json(
+        { error: 'Invalid submission ID' },
+        { status: 400 }
+      );
+    }
+
+    // 4. Parse and validate request body
+    const body = await request.json();
+    const validated = deleteSubmissionSchema.parse(body);
+
+    // 5. Fetch submission to get owner + employee name for self-check and notification
+    const [submissionRow] = await db
+      .select({
+        userId: salnSubmissions.userId,
+        firstName: profiles.firstName,
+        lastName: profiles.lastName,
+      })
+      .from(salnSubmissions)
+      .innerJoin(profiles, eq(salnSubmissions.userId, profiles.id))
+      .where(eq(salnSubmissions.id, id))
+      .limit(1);
+
+    if (!submissionRow) {
+      return NextResponse.json(
+        { error: 'SALN submission not found' },
+        { status: 404 }
+      );
+    }
+
+    // 6. Prevent admin from deleting their own submission
+    if (submissionRow.userId === sessionUser.id) {
+      return NextResponse.json(
+        { error: 'Cannot delete your own submission' },
+        { status: 403 }
+      );
+    }
+
+    // 7. Execute transactional deletion and archival
+    const { ownerUserId, pdfFilePath, snapshot } =
+      await deleteSALNSubmissionAsAdmin(id, sessionUser.id, validated.reason);
+
+    const ipAddress =
+      request.headers.get('x-forwarded-for') || undefined;
+    const userAgent =
+      request.headers.get('user-agent') || undefined;
+    const now = new Date();
+
+    // 8a. Audit log (best-effort — never throws)
+    try {
+      await createAuditLog({
+        userId: sessionUser.id,
+        action: 'admin_delete_saln_submission',
+        entityType: 'saln_submission',
+        entityId: id,
+        changes: { reason: validated.reason, before: snapshot },
+        ipAddress,
+        userAgent,
+      });
+    } catch (auditError) {
+      console.error('[DELETE /saln] Failed to create audit log:', auditError);
+    }
+
+    // 8b. Storage cleanup — PDF (best-effort)
+    if (pdfFilePath) {
+      try {
+        await deletePdfFromStorage('saln-submissions', pdfFilePath);
+      } catch (storageError) {
+        console.error('[DELETE /saln] Failed to delete PDF from storage:', storageError);
+      }
+    }
+
+    // 8c. Owner notification (best-effort)
+    try {
+      const employeeName =
+        submissionRow.firstName && submissionRow.lastName
+          ? `${submissionRow.firstName} ${submissionRow.lastName}`
+          : null;
+      const notificationMessage = employeeName
+        ? `Your SALN submission (for ${employeeName}) was deleted by an administrator. Reason: ${validated.reason}`
+        : `Your SALN submission was deleted by an administrator. Reason: ${validated.reason}`;
+
+      await db.insert(notifications).values({
+        id: uuidv7(),
+        userId: ownerUserId,
+        type: 'submission_status',
+        title: 'SALN Submission Deleted',
+        message: notificationMessage,
+        isRead: false,
+        createdAt: now,
+      });
+    } catch (notifyError) {
+      console.error('[DELETE /saln] Failed to insert notification:', notifyError);
+    }
+
+    const response: ApiSuccess<{ id: string }> = {
+      success: true,
+      message: 'SALN submission deleted successfully',
+      data: { id },
+    };
+
+    return NextResponse.json(response, { status: 200 });
+  } catch (error) {
+    console.error('[DELETE /saln] Error:', error);
+
+    // Handle Zod validation errors
+    if (error instanceof Error && error.name === 'ZodError') {
+      return NextResponse.json(
+        { error: 'Invalid request data', details: error.message },
+        { status: 400 }
+      );
+    }
+
+    // Handle known "not found" from query layer
+    if (
+      error instanceof Error &&
+      error.message.includes('SALN submission not found')
+    ) {
+      return NextResponse.json(
+        { error: 'SALN submission not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(
+      {
+        error: 'Failed to delete SALN submission',
         details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }

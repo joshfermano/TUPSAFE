@@ -17,6 +17,10 @@ export { ErrorAlert } from './ErrorAlert';
 // Dialog Components
 export { ReviewDialog, type ReviewDialogProps } from './ReviewDialog';
 export { ConfirmationDialog, type ConfirmationDialogProps } from './ConfirmationDialog';
+export {
+  DeleteSubmissionDialog,
+  type DeleteSubmissionDialogProps,
+} from './DeleteSubmissionDialog';
 
 // Section Components
 export {

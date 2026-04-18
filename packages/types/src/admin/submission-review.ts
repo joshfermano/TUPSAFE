@@ -451,6 +451,20 @@ export const returnForRevisionSchema = z.object({
 export type ReturnForRevisionData = z.infer<typeof returnForRevisionSchema>;
 
 /**
+ * Admin delete submission schema
+ * Reason is required for compliance, audit trail, and owner notification.
+ */
+export const deleteSubmissionSchema = z.object({
+  reason: z
+    .string()
+    .trim()
+    .min(10, 'Reason must be at least 10 characters')
+    .max(500, 'Reason cannot exceed 500 characters'),
+});
+
+export type DeleteSubmissionData = z.infer<typeof deleteSubmissionSchema>;
+
+/**
  * Bulk approve schema
  */
 export const bulkApproveSubmissionsSchema = z.object({

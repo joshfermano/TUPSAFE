@@ -14,6 +14,7 @@ import type {
   BulkApproveData,
   BulkApproveResponse,
   SubmissionStatsResponse,
+  DeleteSubmissionData,
 } from '@tupsafe/types';
 
 const API_BASE = '/api/submissions';
@@ -189,6 +190,62 @@ export async function rejectSALN(
 
   const result = await response.json();
   return result.success === true && 'data' in result ? result.data : result;
+}
+
+/**
+ * Delete PDS submission (admin / co_admin only)
+ *
+ * Permanently deletes a PDS submission at any status. A snapshot is archived
+ * server-side for compliance before the row is removed.
+ */
+export async function deletePDS(
+  id: string,
+  data: DeleteSubmissionData
+): Promise<{ success: boolean; message: string; data: { id: string } }> {
+  const response = await fetch(`${API_BASE}/pds/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to delete PDS');
+  }
+
+  const result = await response.json();
+  return result.success === true && 'data' in result ? result : result;
+}
+
+/**
+ * Delete SALN submission (admin / co_admin only)
+ *
+ * Permanently deletes a SALN submission at any status. A snapshot is archived
+ * server-side for compliance before the row is removed.
+ */
+export async function deleteSALN(
+  id: string,
+  data: DeleteSubmissionData
+): Promise<{ success: boolean; message: string; data: { id: string } }> {
+  const response = await fetch(`${API_BASE}/saln/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to delete SALN');
+  }
+
+  const result = await response.json();
+  return result.success === true && 'data' in result ? result : result;
 }
 
 /**

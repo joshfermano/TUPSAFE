@@ -16,8 +16,10 @@ import {
   salnLiabilities,
   salnBusinessInterests,
   salnRelativesInGov,
+  approvalWorkflows,
   archives,
 } from '../schema';
+import { v7 as uuidv7 } from 'uuid';
 import type {
   SalnSubmission,
   SalnRealProperty,
@@ -1019,6 +1021,124 @@ export async function deleteSALNSubmission(
 
     return deleted;
   });
+}
+
+/**
+ * Admin-only hard delete of a SALN submission at ANY status.
+ *
+ * Archives a full snapshot of the submission and all related data to the
+ * archives table before hard-deleting it. Removes approval workflow records
+ * within the same transaction.
+ *
+ * Callers are responsible for post-commit storage cleanup and notifications.
+ *
+ * @param id - SALN submission UUID
+ * @param adminUserId - Admin user UUID performing the deletion
+ * @param reason - Deletion reason (10-500 chars) for audit trail
+ * @returns Owner user ID, PDF file path (or null), and snapshot
+ * @throws Error if submission not found or transaction fails
+ */
+export async function deleteSALNSubmissionAsAdmin(
+  id: string,
+  adminUserId: string,
+  reason: string
+): Promise<{
+  ownerUserId: string;
+  pdfFilePath: string | null;
+  snapshot: Record<string, unknown>;
+}> {
+  try {
+    return await db.transaction(async (tx) => {
+      // 1. Fetch the main submission (no ownership filter — admin bypass)
+      const [submission] = await tx
+        .select()
+        .from(salnSubmissions)
+        .where(eq(salnSubmissions.id, id))
+        .limit(1);
+
+      if (!submission) {
+        throw new Error('SALN submission not found');
+      }
+
+      // 2. Fetch all related records in parallel for snapshot
+      const [
+        realPropertyRows,
+        personalPropertyRows,
+        liabilityRows,
+        businessInterestRows,
+        relativesInGovRows,
+        workflowRows,
+      ] = await Promise.all([
+        tx.select().from(salnRealProperties).where(eq(salnRealProperties.salnSubmissionId, id)),
+        tx.select().from(salnPersonalProperties).where(eq(salnPersonalProperties.salnSubmissionId, id)),
+        tx.select().from(salnLiabilities).where(eq(salnLiabilities.salnSubmissionId, id)),
+        tx.select().from(salnBusinessInterests).where(eq(salnBusinessInterests.salnSubmissionId, id)),
+        tx.select().from(salnRelativesInGov).where(eq(salnRelativesInGov.salnSubmissionId, id)),
+        tx.select().from(approvalWorkflows).where(
+          and(
+            eq(approvalWorkflows.submissionId, id),
+            eq(approvalWorkflows.submissionType, 'saln')
+          )
+        ),
+      ]);
+
+      // 3. Build snapshot
+      const snapshot: Record<string, unknown> = {
+        submission,
+        realProperties: realPropertyRows,
+        personalProperties: personalPropertyRows,
+        liabilities: liabilityRows,
+        businessInterests: businessInterestRows,
+        relativesInGov: relativesInGovRows,
+        approvalWorkflows: workflowRows,
+        deletedBy: adminUserId,
+        deletedAt: new Date().toISOString(),
+        reason,
+      };
+
+      // 4. Insert into archives
+      await tx.insert(archives).values({
+        id: uuidv7(),
+        originalTable: 'saln_submissions',
+        originalId: id,
+        data: snapshot,
+        archivedBy: adminUserId,
+      });
+
+      // 5. Delete approval workflows for this submission
+      await tx
+        .delete(approvalWorkflows)
+        .where(
+          and(
+            eq(approvalWorkflows.submissionId, id),
+            eq(approvalWorkflows.submissionType, 'saln')
+          )
+        );
+
+      // 6. Delete all SALN child tables
+      await tx.delete(salnRealProperties).where(eq(salnRealProperties.salnSubmissionId, id));
+      await tx.delete(salnPersonalProperties).where(eq(salnPersonalProperties.salnSubmissionId, id));
+      await tx.delete(salnLiabilities).where(eq(salnLiabilities.salnSubmissionId, id));
+      await tx.delete(salnBusinessInterests).where(eq(salnBusinessInterests.salnSubmissionId, id));
+      await tx.delete(salnRelativesInGov).where(eq(salnRelativesInGov.salnSubmissionId, id));
+
+      // 7. Delete the main submission
+      await tx.delete(salnSubmissions).where(eq(salnSubmissions.id, id));
+
+      return {
+        ownerUserId: submission.userId,
+        pdfFilePath: submission.pdfFilePath ?? null,
+        snapshot,
+      };
+    });
+  } catch (error) {
+    console.error('[deleteSALNSubmissionAsAdmin] Transaction error:', error);
+    throw new Error(
+      `Failed to delete SALN submission ${id}: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
+    );
+  }
 }
 
 /**

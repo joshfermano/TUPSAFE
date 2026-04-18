@@ -36,6 +36,8 @@ export type AuditAction =
   | 'view_saln_submission'
   | 'bulk_approve_pds_submission'
   | 'bulk_approve_saln_submission'
+  | 'admin_delete_pds_submission'
+  | 'admin_delete_saln_submission'
   | 'verify_certification'
   | 'reject_certification';
 

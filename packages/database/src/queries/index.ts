@@ -23,6 +23,7 @@ export {
   updateSALNCompletion,
   calculateSALNTotals,
   deleteSALNSubmission,
+  deleteSALNSubmissionAsAdmin,
   submitSALNForApproval,
   approveSALN,
   rejectSALN,
@@ -55,6 +56,7 @@ export {
   archivePDSSubmission,
   getArchivedPDS,
   deletePDSSubmission,
+  deletePDSSubmissionAsAdmin,
   getPDSStatistics,
 } from './pds';
 
