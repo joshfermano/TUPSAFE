@@ -6,7 +6,10 @@ import { z } from 'zod';
  * Design principles:
  * - All organization fields are OPTIONAL to allow partial updates
  * - Validation is permissive at schema level
- * - Business logic validation (Co-Admin requires HR) happens in submit handler
+ * - Business logic (e.g. "HR/Admin roles require an HR-prefixed department",
+ *   "role change requires a reason ≥20 chars") is enforced in the submit
+ *   handler / confirmation dialog, NOT via Zod conditional schemas — this
+ *   keeps the resolver simple and the type inference clean.
  */
 export const editUserFormSchema = z.object({
   // Personal Information
@@ -23,11 +26,17 @@ export const editUserFormSchema = z.object({
   email: z.string().email('Invalid email address'),
 
   // Role & Access
-  baseRole: z.enum(['employee', 'hr', 'supervisor', 'auditor'], {
+  // `superadmin` is allowed in the enum so the form can round-trip a superadmin
+  // user without throwing during initialization. The UI never exposes
+  // superadmin as a selectable option — promotion to superadmin is a dedicated
+  // flow (see POST /api/users/[id]/role, PR 3).
+  role: z.enum(['superadmin', 'admin', 'hr', 'employee'], {
     required_error: 'Please select a role',
     invalid_type_error: 'Please select a valid role',
   }).default('employee'),
-  isCoAdmin: z.boolean().default(false),
+  // Human-readable justification required whenever `role` changes. Enforced in
+  // the submit handler + confirmation dialog, not here.
+  roleChangeReason: z.string().trim().max(500, 'Reason is too long').optional(),
 
   // Organization (ALL OPTIONAL for partial updates)
   collegeId: z.string().optional().default('none'),
@@ -51,8 +60,8 @@ export const defaultEditUserFormValues: EditUserFormValues = {
   middleName: '',
   suffix: 'none',
   email: '',
-  baseRole: 'employee',
-  isCoAdmin: false,
+  role: 'employee',
+  roleChangeReason: undefined,
   collegeId: 'none',
   departmentId: 'none',
   positionId: 'none',
@@ -80,8 +89,12 @@ export const validationMessages = {
     required: 'Email is required',
     invalid: 'Please enter a valid email address',
   },
-  baseRole: {
+  role: {
     required: 'Please select a role',
+  },
+  roleChangeReason: {
+    required: 'Please describe why this role is changing (at least 20 characters).',
+    maxLength: 'Reason cannot exceed 500 characters.',
   },
   positionTitle: {
     maxLength: 'Position title cannot exceed 200 characters',

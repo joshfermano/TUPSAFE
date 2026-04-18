@@ -179,10 +179,10 @@ const SidebarNav = memo(
     // Map role to display label
     const getRoleLabel = (role?: string) => {
       switch (role) {
+        case 'superadmin':
+          return 'Superadmin';
         case 'admin':
           return 'Administrator';
-        case 'co_admin':
-          return 'Co-Administrator';
         case 'hr':
           return 'HR Personnel';
         default:

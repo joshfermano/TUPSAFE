@@ -57,7 +57,7 @@ export async function POST(
     console.log(`[Approve] Starting approval process for registration ID: ${id}`);
 
     // Authorization check - HR or Admin only
-    const hasPermission = await checkUserRoleFromSupabase(['hr', 'admin'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(

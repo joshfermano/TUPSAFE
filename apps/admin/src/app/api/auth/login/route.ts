@@ -41,8 +41,8 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
-// Allowed admin roles (includes co_admin)
-const ADMIN_ROLES = ['admin', 'co_admin', 'super_admin', 'hr'] as const;
+// Allowed admin portal roles (post-RBAC consolidation — see RBAC plan §2).
+const ADMIN_ROLES = ['superadmin', 'admin', 'hr'] as const;
 
 export async function POST(request: NextRequest) {
   try {
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ADMIN PORTAL SECURITY: Verify user has admin privileges
-    if (!ADMIN_ROLES.includes(profile.role as 'admin' | 'co_admin' | 'hr' | 'super_admin')) {
+    if (!ADMIN_ROLES.includes(profile.role as (typeof ADMIN_ROLES)[number])) {
       // Log unauthorized access attempt
       try {
         await createAuditLog({
@@ -144,14 +144,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: 'Access denied',
-          message: 'Admin, Co-Admin, or HR privileges required to access this portal.',
+          message: 'Superadmin, Admin, or HR privileges required to access this portal.',
         },
         { status: 403 }
       );
     }
 
     // ADMIN PORTAL SECURITY: Verify user is from an HR office
-    // All Admin Portal users (admin, co_admin, hr) must belong to an HR department
+    // All Admin Portal users (superadmin, admin, hr) must belong to an HR department
     let departmentCode: string | null = null;
     if (profile.departmentId) {
       const [dept] = await db

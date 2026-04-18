@@ -72,7 +72,7 @@ export default function SalnSubmissionViewPage() {
   const router = useRouter();
   const { user, profile } = useAuth();
   const submissionId = params.id as string;
-  const canDelete = profile?.role === 'admin' || profile?.role === 'co_admin';
+  const canDelete = profile?.role === 'admin' || profile?.role === 'superadmin';
 
   const [isReviewDialogOpen, setIsReviewDialogOpen] = React.useState(false);
   const [reviewAction, setReviewAction] = React.useState<'approve' | 'reject' | undefined>(undefined);

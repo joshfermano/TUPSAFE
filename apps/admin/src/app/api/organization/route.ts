@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
   try {
     // Verify admin/Co-Admin/HR/supervisor permissions
     const hasPermission = await checkUserRoleFromSupabase(
-      ['admin', 'co_admin', 'hr', 'supervisor'],
+      ['superadmin', 'admin', 'hr'],
       'admin'
     );
 
@@ -311,7 +311,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check authorization based on type
-    const requiredRoles = type === 'college' ? ['admin'] : ['admin', 'co_admin', 'hr'];
+    const requiredRoles = type === 'college' ? ['superadmin'] : ['superadmin', 'admin', 'hr'];
     const hasPermission = await checkUserRoleFromSupabase(
       requiredRoles,
       'admin'

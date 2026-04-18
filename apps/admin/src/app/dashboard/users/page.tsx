@@ -80,7 +80,7 @@ export default function UsersPage() {
     if (search) params.search = search;
 
     const role = searchParams.get('role');
-    if (role) params.role = role as 'employee' | 'hr' | 'admin' | 'co_admin' | 'supervisor' | 'auditor';
+    if (role) params.role = role as 'superadmin' | 'admin' | 'hr' | 'employee';
 
     const userType = searchParams.get('userType');
     if (userType) params.userType = userType as 'employee' | 'applicant';

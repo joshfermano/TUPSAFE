@@ -73,7 +73,7 @@ const userFormSchema = z.object({
   suffix: z.string().optional(),
   dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date of birth is required (YYYY-MM-DD)'),
   email: z.string().email('Invalid email address'),
-  role: z.enum(['employee', 'hr', 'co_admin', 'admin', 'supervisor', 'auditor'], {
+  role: z.enum(['superadmin', 'admin', 'hr', 'employee'], {
     required_error: 'Role is required',
   }),
   employmentCategory: z.enum(['faculty', 'administrative', 'contractual'], {
@@ -90,18 +90,18 @@ const userFormSchema = z.object({
 
 type UserFormValues = z.infer<typeof userFormSchema>;
 
-// Available roles - matching the Role type from @tupsafe/database
+// Available roles - matching the Role type from @tupsafe/database.
+// Note: `superadmin` is intentionally NOT offered in the create-user UI — it can only be
+// minted via the bootstrap CLI or a separate promotion flow (see RBAC plan §6b).
+// Role dropdown filtering by actor (admin/hr) is handled at render time and in PR 3.
 const ROLES = [
   { value: 'employee', label: 'Employee' },
   { value: 'hr', label: 'HR Personnel' },
-  { value: 'co_admin', label: 'Co-Admin' },
   { value: 'admin', label: 'Admin' },
-  { value: 'supervisor', label: 'Supervisor' },
-  { value: 'auditor', label: 'Auditor' },
 ];
 
 // Roles that require HR department assignment
-const ADMIN_PORTAL_ROLES = ['admin', 'co_admin', 'hr'];
+const ADMIN_PORTAL_ROLES = ['superadmin', 'admin', 'hr'];
 
 // Check if a department code indicates an HR office
 function isHRDepartmentCode(code: string | undefined | null): boolean {
@@ -835,7 +835,7 @@ export default function CreateUserPage() {
                         )}
                         {roleRequiresHRDepartment && !isDepartmentsLoading && (
                           <FormDescription className="text-amber-600 dark:text-amber-400">
-                            Admin Portal users (Admin, Co-Admin, HR) must be assigned to an HR office.
+                            Admin Portal users (Admin, HR) must be assigned to an HR office.
                           </FormDescription>
                         )}
                         <FormMessage />

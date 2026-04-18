@@ -17,12 +17,10 @@ import { v7 } from 'uuid';
 
 // Enums
 export const roleEnum = pgEnum('role', [
-  'employee',
-  'hr',
+  'superadmin',
   'admin',
-  'co_admin',
-  'supervisor',
-  'auditor',
+  'hr',
+  'employee',
 ]);
 export const submissionStatusEnum = pgEnum('submission_status', [
   'draft',

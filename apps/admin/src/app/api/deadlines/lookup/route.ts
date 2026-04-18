@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
 
     // Authorization check - HR or Admin only
     console.log('[Deadlines Lookup API] Checking authorization...');
-    const hasPermission = await checkUserRoleFromSupabase(['hr', 'admin'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
 
     if (!hasPermission) {
       console.warn('[Deadlines Lookup API] Authorization failed - insufficient permissions');

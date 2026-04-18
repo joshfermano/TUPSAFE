@@ -402,7 +402,7 @@ export default function SalnSubmissionsPage() {
 
   // Get authenticated user (and role for conditional delete UI)
   const { user, profile } = useAuth();
-  const canDelete = profile?.role === 'admin' || profile?.role === 'co_admin';
+  const canDelete = profile?.role === 'admin' || profile?.role === 'superadmin';
 
   // Delete dialog state + mutation (admin-only)
   const [deleteTarget, setDeleteTarget] = useState<{

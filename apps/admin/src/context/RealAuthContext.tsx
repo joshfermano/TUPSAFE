@@ -21,9 +21,12 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useMemo,
 } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@tupsafe/auth/client';
+import type { UserRole } from '@tupsafe/types';
+import { hasPermission, type Permission } from '@tupsafe/auth/permissions';
 
 /**
  * User interface matching Supabase Auth structure
@@ -43,7 +46,7 @@ export interface AdminProfile {
   firstName: string;
   lastName: string;
   middleName?: string;
-  role: 'admin' | 'co_admin' | 'super_admin' | 'hr';
+  role: UserRole;
   employeeId?: string;
   departmentId?: string;
   positionId?: string;
@@ -84,6 +87,8 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   isAuthenticated: boolean;
   refreshProfile: () => Promise<void>;
+  /** Check whether the current profile holds a specific permission. Returns false while loading or for unauthenticated users. */
+  can: (permission: Permission) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -366,6 +371,11 @@ export function RealAuthProvider({ children }: { children: React.ReactNode }) {
 
   const isAuthenticated = !!user && !!profile;
 
+  const can = useMemo(() => {
+    const role = profile?.role;
+    return (permission: Permission) => hasPermission(role, permission);
+  }, [profile?.role]);
+
   const value: AuthContextType = {
     user,
     profile,
@@ -375,6 +385,7 @@ export function RealAuthProvider({ children }: { children: React.ReactNode }) {
     signOut,
     isAuthenticated,
     refreshProfile,
+    can,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
   try {
     // Verify authentication with admin portal roles
     const hasPermission = await checkUserRoleFromSupabase(
-      ['admin', 'hr', 'supervisor', 'employee'],
+      ['superadmin', 'admin', 'hr', 'employee'],
       'admin'
     );
 
@@ -164,7 +164,7 @@ export async function DELETE(_request: NextRequest) {
   try {
     // Verify authentication with admin portal roles
     const hasPermission = await checkUserRoleFromSupabase(
-      ['admin', 'hr', 'supervisor', 'employee'],
+      ['superadmin', 'admin', 'hr', 'employee'],
       'admin'
     );
 

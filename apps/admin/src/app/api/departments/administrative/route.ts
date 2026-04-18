@@ -44,7 +44,7 @@ export async function GET() {
     console.log('[Administrative Offices API] Request received');
 
     // Verify user is authenticated (any role)
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr', 'supervisor', 'employee'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr', 'employee'], 'admin');
     if (!hasPermission) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }

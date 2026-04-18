@@ -115,7 +115,7 @@ export async function POST(
     // Verify admin or HR permissions
     // This is a critical operation that permanently affects organizational structure
     const hasPermission = await checkUserRoleFromSupabase(
-      ['admin', 'co_admin', 'hr'],
+      ['superadmin', 'admin', 'hr'],
       'admin'
     );
 

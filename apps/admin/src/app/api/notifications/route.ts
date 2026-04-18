@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   try {
     // Verify admin/HR permissions
     const hasPermission = await checkUserRoleFromSupabase(
-      ['admin', 'co_admin', 'hr'],
+      ['superadmin', 'admin', 'hr'],
       'admin'
     );
 
@@ -136,7 +136,7 @@ export async function PATCH(request: NextRequest) {
   try {
     // Verify admin/HR permissions
     const hasPermission = await checkUserRoleFromSupabase(
-      ['admin', 'co_admin', 'hr'],
+      ['superadmin', 'admin', 'hr'],
       'admin'
     );
 

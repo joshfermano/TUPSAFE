@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify admin/HR permissions
-    const allowedRoles = ['admin', 'co_admin', 'hr'];
+    const allowedRoles = ['superadmin', 'admin', 'hr'];
     if (!allowedRoles.includes(sessionUser.role)) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin, Co-Admin, or HR role required.' },

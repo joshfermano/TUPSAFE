@@ -48,11 +48,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify user has HR, admin, or co_admin role
-    const allowedRoles = ['hr', 'admin', 'co_admin'];
+    // Verify caller has superadmin, admin, or hr role
+    const allowedRoles = ['superadmin', 'admin', 'hr'];
     if (!allowedRoles.includes(adminUser.role)) {
       return NextResponse.json(
-        { error: 'Unauthorized. HR, Admin, or Co-Admin role required.' },
+        { error: 'Unauthorized. Superadmin, Admin, or HR role required.' },
         { status: 403 }
       );
     }
@@ -73,23 +73,40 @@ export async function POST(request: NextRequest) {
 
     const data = validationResult.data;
 
-    // RBAC: Only admins/co-admins can create admin or co_admin accounts
-    if (data.role === 'admin' || data.role === 'co_admin') {
+    // RBAC: Enforce target-role creation rules
+    if (data.role === 'superadmin') {
+      // Superadmin accounts can only be created via the bootstrap CLI
+      return NextResponse.json(
+        { error: 'Superadmin accounts can only be created via the bootstrap CLI.' },
+        { status: 403 }
+      );
+    }
+
+    if (data.role === 'admin' || data.role === 'hr') {
       const creatorProfile = await db.query.profiles.findFirst({
         where: (profiles, { eq }) => eq(profiles.id, adminUser.userId),
         columns: { role: true },
       });
 
-      if (!creatorProfile || !['admin', 'co_admin'].includes(creatorProfile.role)) {
-        return NextResponse.json(
-          {
-            error:
-              'Unauthorized. Only administrators can create admin or co-admin accounts.',
-          },
-          { status: 403 }
-        );
+      if (data.role === 'admin') {
+        if (!creatorProfile || creatorProfile.role !== 'superadmin') {
+          return NextResponse.json(
+            { error: 'Only superadmins can create admin accounts.' },
+            { status: 403 }
+          );
+        }
+      }
+
+      if (data.role === 'hr') {
+        if (!creatorProfile || !['superadmin', 'admin'].includes(creatorProfile.role)) {
+          return NextResponse.json(
+            { error: 'Only superadmins or admins can create HR accounts.' },
+            { status: 403 }
+          );
+        }
       }
     }
+    // employee: any caller in allowedRoles can create employees — no extra check
 
     // Enforce HR* department requirement for Admin Portal roles
     if (isAdminPortalRole(data.role)) {

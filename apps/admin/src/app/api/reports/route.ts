@@ -43,11 +43,7 @@ export async function GET(_request: NextRequest) {
 
     // Verify permissions (admin, hr, or supervisor role required)
     const authStartTime = Date.now();
-    const hasPermission = await checkUserRoleFromSupabase([
-      'admin',
-      'hr',
-      'supervisor',
-    ], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
     const authDuration = Date.now() - authStartTime;
     console.log(
       `[Reports API] Permission check completed in ${authDuration}ms - result:`,

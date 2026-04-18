@@ -234,14 +234,14 @@ export async function createAuthMiddleware(options: AuthMiddlewareOptions = {}) 
           pathname.startsWith(route)
         );
 
-        if (isAdminRoute && !['admin', 'co_admin'].includes(resolvedProfile.role)) {
+        if (isAdminRoute && !['superadmin', 'admin'].includes(resolvedProfile.role)) {
           return NextResponse.redirect(new URL('/unauthorized', req.url));
         }
 
         // Check HR routes (hr, admin, and co_admin have access)
         const isHrRoute = HR_ROUTES.some((route) => pathname.startsWith(route));
 
-        if (isHrRoute && !['hr', 'admin', 'co_admin'].includes(resolvedProfile.role)) {
+        if (isHrRoute && !['superadmin', 'admin', 'hr'].includes(resolvedProfile.role)) {
           return NextResponse.redirect(new URL('/unauthorized', req.url));
         }
 
@@ -283,9 +283,7 @@ export function getUserFromHeaders(headers: Headers) {
     | 'employee'
     | 'hr'
     | 'admin'
-    | 'co_admin'
-    | 'supervisor'
-    | 'auditor'
+    | 'superadmin'
     | null;
 
   return userId ? { id: userId, role: userRole } : null;

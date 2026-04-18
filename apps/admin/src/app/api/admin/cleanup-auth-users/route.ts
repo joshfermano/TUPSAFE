@@ -62,7 +62,7 @@ export async function POST(_request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const hasPermission = await checkUserRoleFromSupabase(['admin'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin'], 'admin');
 
     if (!hasPermission) {
       console.error(

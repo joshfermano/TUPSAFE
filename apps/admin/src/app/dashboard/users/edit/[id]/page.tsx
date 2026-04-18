@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import type { UserRole } from '@tupsafe/types';
 
 import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
@@ -37,23 +38,33 @@ import {
   AccountStatusSection,
   SecuritySection,
   EditUserFormActions,
+  RoleChangeConfirmationDialog,
 } from '@/components/users/edit';
 
-import { useEditUserForm } from '@/hooks/useEditUserForm';
+import { useEditUserForm, computeIsElevation } from '@/hooks/useEditUserForm';
 import { useOrganizationOptions } from '@/hooks/useOrganizationOptions';
 import { usePositionsQuery } from '@/hooks/usePositionsQuery';
+import { useAuth } from '@/hooks/useAuth';
 import type { EditUserFormValues } from '@/lib/schemas/edit-user';
-import { isHROffice } from '@/lib/user-utils';
+import { isHRCode } from '@/lib/user-utils';
 
 export default function EditUserPage() {
   const params = useParams();
   const router = useRouter();
   const userId = params.id as string;
 
+  // Actor (signed-in admin) context
+  const { profile } = useAuth();
+  const actorRole = profile?.role as UserRole | undefined;
+  const isSelfEdit = !!profile?.id && profile.id === userId;
+
   // UI state
   const [isEmailLocked, setIsEmailLocked] = useState(true);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  // Role-change confirmation: holds the pending submit payload until confirmed
+  const [pendingRoleChangeSubmit, setPendingRoleChangeSubmit] =
+    useState<EditUserFormValues | null>(null);
 
   // Form hook
   const {
@@ -64,6 +75,7 @@ export default function EditUserPage() {
     error,
     isUpdating,
     formInitialized,
+    originalRole,
     handleSubmit: submitForm,
   } = useEditUserForm({ userId });
 
@@ -73,8 +85,11 @@ export default function EditUserPage() {
   // Watch form values
   const watchCollegeId = form.watch('collegeId');
   const watchDepartmentId = form.watch('departmentId');
-  const watchIsCoAdmin = form.watch('isCoAdmin');
+  const watchRole = form.watch('role');
   const watchIsActive = form.watch('isActive');
+
+  // HR/Admin roles require an HR-prefixed department
+  const roleRequiresHRDept = watchRole === 'hr' || watchRole === 'admin';
 
   // Organization options
   const {
@@ -83,11 +98,10 @@ export default function EditUserPage() {
     departmentOptions,
     selectedCollegeIsHR,
     selectedCollegeHasNoDepartments,
-    isInHROffice,
   } = useOrganizationOptions({
     selectedCollegeId: watchCollegeId,
     selectedDepartmentId: watchDepartmentId,
-    isCoAdmin: watchIsCoAdmin,
+    requiresHRDepartment: roleRequiresHRDept,
     currentUserDepartmentId: user?.departmentId,
     currentUserDepartment: user?.department,
   });
@@ -95,31 +109,60 @@ export default function EditUserPage() {
   // Positions
   const { data: positions = [] } = usePositionsQuery();
 
-  // Show Co-Admin toggle if user is in HR office OR if user's current department is HR
-  const showCoAdminToggle = Boolean(
-    isInHROffice ||
-    (user?.department && isHROffice(user.department.code, user.department.name))
-  );
+  // Can the currently-selected org unit carry an HR/Admin role?
+  // Accept either an HR-prefixed college/office OR an HR-prefixed department.
+  const canAssignHRDept = useMemo(() => {
+    if (selectedCollegeIsHR) return true;
+    if (watchDepartmentId && watchDepartmentId !== 'none') {
+      const dept = departmentOptions.find((d) => d.value === watchDepartmentId);
+      if (dept?.isHR) return true;
+      // Fall back to pure code check (e.g. if label-based isHR was not set)
+      const labelMatch = dept?.label?.match(/\(([^)]+)\)/);
+      if (labelMatch && isHRCode(labelMatch[1])) return true;
+    }
+    return false;
+  }, [selectedCollegeIsHR, watchDepartmentId, departmentOptions]);
 
   // Reset departmentId when collegeId changes (to avoid stale department from previous college)
   const prevCollegeIdRef = useRef(watchCollegeId);
   useEffect(() => {
     if (formInitialized && prevCollegeIdRef.current !== watchCollegeId) {
-      // College changed, reset department to 'none'
       form.setValue('departmentId', 'none', { shouldDirty: true });
       prevCollegeIdRef.current = watchCollegeId;
     }
   }, [watchCollegeId, form, formInitialized]);
 
-  // Handle form submission
+  // ------------------------------------------------------------------
+  // Submission flow
+  // ------------------------------------------------------------------
+  // If the role changed, intercept the submit and surface the confirmation
+  // dialog. On confirm, merge the reason into the values and call submitForm.
+  // ------------------------------------------------------------------
   const onSubmit = useCallback(
     async (values: EditUserFormValues) => {
+      const roleChanged = values.role !== originalRole;
+      if (roleChanged) {
+        setPendingRoleChangeSubmit(values);
+        return;
+      }
       await submitForm(values);
     },
-    [submitForm]
+    [submitForm, originalRole]
   );
 
-  // Handle cancel
+  const handleRoleChangeConfirm = useCallback(
+    async (reason: string) => {
+      if (!pendingRoleChangeSubmit) return;
+      await submitForm({
+        ...pendingRoleChangeSubmit,
+        roleChangeReason: reason,
+      });
+      setPendingRoleChangeSubmit(null);
+    },
+    [pendingRoleChangeSubmit, submitForm]
+  );
+
+  // Cancel
   const handleCancel = useCallback(() => {
     if (isDirty) {
       setShowCancelDialog(true);
@@ -168,6 +211,11 @@ export default function EditUserPage() {
     .filter(Boolean)
     .join(' ');
 
+  // Compute elevation flag for the confirmation dialog (only when pending)
+  const pendingIsElevation = pendingRoleChangeSubmit
+    ? computeIsElevation(originalRole, pendingRoleChangeSubmit.role)
+    : false;
+
   return (
     <PageTransition className="space-y-6">
       {/* Breadcrumb */}
@@ -215,9 +263,10 @@ export default function EditUserPage() {
 
           <RoleAssignmentSection
             control={form.control}
-            setValue={form.setValue}
-            showCoAdminToggle={showCoAdminToggle}
-            isCoAdmin={watchIsCoAdmin}
+            currentStoredRole={originalRole}
+            actorRole={actorRole}
+            isSelfEdit={isSelfEdit}
+            canAssignHRDept={canAssignHRDept}
           />
 
           <OrganizationSection
@@ -245,6 +294,22 @@ export default function EditUserPage() {
           />
         </form>
       </Form>
+
+      {/* Role-change Confirmation Dialog */}
+      {pendingRoleChangeSubmit && (
+        <RoleChangeConfirmationDialog
+          open={!!pendingRoleChangeSubmit}
+          onOpenChange={(open) => {
+            if (!open) setPendingRoleChangeSubmit(null);
+          }}
+          userFullName={fullName}
+          fromRole={originalRole}
+          toRole={pendingRoleChangeSubmit.role}
+          isElevation={pendingIsElevation}
+          isLoading={isUpdating}
+          onConfirm={handleRoleChangeConfirm}
+        />
+      )}
 
       {/* Cancel Confirmation Dialog */}
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>

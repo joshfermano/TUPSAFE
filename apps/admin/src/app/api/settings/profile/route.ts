@@ -51,7 +51,7 @@ export async function GET() {
 
     // Verify authentication using portal-specific session
     const hasPermission = await checkUserRoleFromSupabase(
-      ['admin', 'hr', 'supervisor', 'employee'],
+      ['superadmin', 'admin', 'hr', 'employee'],
       'admin'
     );
     if (!hasPermission) {
@@ -194,7 +194,7 @@ export async function PUT(request: NextRequest) {
 
     // Verify authentication using portal-specific session
     const hasPermission = await checkUserRoleFromSupabase(
-      ['admin', 'hr', 'supervisor', 'employee'],
+      ['superadmin', 'admin', 'hr', 'employee'],
       'admin'
     );
     if (!hasPermission) {

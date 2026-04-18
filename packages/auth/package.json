@@ -18,6 +18,10 @@
     "./edge": {
       "types": "./dist/edge.d.ts",
       "default": "./dist/edge.js"
+    },
+    "./permissions": {
+      "types": "./dist/utils/permissions.d.ts",
+      "default": "./dist/utils/permissions.js"
     }
   },
   "scripts": {

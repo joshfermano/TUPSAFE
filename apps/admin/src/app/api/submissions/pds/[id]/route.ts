@@ -59,7 +59,7 @@ export async function GET(
     const { id } = await params;
 
     // Verify admin/HR permissions
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'co_admin', 'hr'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(
@@ -553,7 +553,7 @@ export async function DELETE(
 
     // 1. Verify admin/co_admin permissions — HR is explicitly excluded
     const hasPermission = await checkUserRoleFromSupabase(
-      ['admin', 'co_admin'],
+      ['superadmin', 'admin'],
       'admin'
     );
 

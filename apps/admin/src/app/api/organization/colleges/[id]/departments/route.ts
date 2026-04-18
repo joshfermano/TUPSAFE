@@ -39,7 +39,7 @@ export async function GET(
 
     // Verify admin/HR/supervisor permissions
     const hasPermission = await checkUserRoleFromSupabase(
-      ['admin', 'hr', 'supervisor'],
+      ['superadmin', 'admin', 'hr'],
       'admin'
     );
 

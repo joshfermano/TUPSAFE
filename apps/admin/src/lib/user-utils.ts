@@ -45,32 +45,7 @@ export function isHROffice(code?: string | null, name?: string | null): boolean 
 // Role Mapping
 // =============================================================================
 
-export type BaseRole = 'employee' | 'hr' | 'supervisor' | 'auditor';
-export type StoredRole = 'employee' | 'hr' | 'admin' | 'co_admin' | 'supervisor' | 'auditor';
-
-/**
- * Determine the base role from stored role
- * Maps admin/co_admin to hr if in HR department, otherwise to employee
- */
-export function determineBaseRole(
-  role: string,
-  departmentCode?: string | null,
-  collegeName?: string | null
-): BaseRole {
-  if (['admin', 'co_admin'].includes(role)) {
-    const isInHR = isHRCode(departmentCode) || isHRName(collegeName);
-    return isInHR ? 'hr' : 'employee';
-  }
-  return role as BaseRole;
-}
-
-/**
- * Compute the stored role from base role and co-admin flag
- */
-export function computeStoredRole(baseRole: BaseRole, isCoAdmin: boolean): StoredRole {
-  if (isCoAdmin) return 'co_admin';
-  return baseRole;
-}
+export type StoredRole = 'superadmin' | 'admin' | 'hr' | 'employee';
 
 // =============================================================================
 // Form Options
@@ -104,19 +79,8 @@ export const SALARY_GRADE_OPTIONS = [
   })),
 ];
 
-/**
- * Role options for primary role select
- */
-export const ROLE_OPTIONS = [
-  { value: 'employee', label: 'Employee', description: 'Basic employee access' },
-  { value: 'hr', label: 'HR Personnel', description: 'HR department access' },
-  { value: 'supervisor', label: 'Supervisor', description: 'Department-level oversight' },
-  { value: 'auditor', label: 'Auditor', description: 'Read-only audit access' },
-] as const;
-
 // =============================================================================
 // Type Exports
 // =============================================================================
 
 export type SuffixOption = (typeof SUFFIX_OPTIONS)[number];
-export type RoleOption = (typeof ROLE_OPTIONS)[number];

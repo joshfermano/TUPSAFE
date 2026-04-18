@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(_request: NextRequest) {
   try {
     // Check if user has HR or admin role
-    const hasPermission = await checkUserRoleFromSupabase(['hr', 'admin'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(

@@ -37,18 +37,16 @@ export function isInstitutionalEmail(email: string): boolean {
  */
 export const ROLE_HIERARCHY = {
   employee: 1,     // Regular employee - lowest privilege
-  supervisor: 2,   // Department supervisor - can view department submissions
-  auditor: 2,      // Auditor - can view/audit records (same level as supervisor)
-  hr: 3,           // HR personnel - can manage users and submissions
-  co_admin: 4,     // Co-admin - admin assistant with full portal access
-  admin: 5,        // Full admin - highest privilege
+  hr: 2,           // HR personnel - manages users, approves submissions & registrations
+  admin: 3,        // Admin - full admin-portal powers; can create HR + employees
+  superadmin: 4,   // Superadmin - bootstrap role; can create admins and change any role
 } as const;
 
 /**
  * Roles that can access the Admin Portal
  * These roles require an HR* department assignment
  */
-export const ADMIN_PORTAL_ROLES = ['admin', 'co_admin', 'hr'] as const;
+export const ADMIN_PORTAL_ROLES = ['superadmin', 'admin', 'hr'] as const;
 export type AdminPortalRole = (typeof ADMIN_PORTAL_ROLES)[number];
 
 /**
@@ -72,7 +70,7 @@ export function isHRDepartment(departmentCode: string | null | undefined): boole
  * Validates admin updates to user profiles
  */
 export const updateUserSchema = z.object({
-  role: z.enum(['employee', 'hr', 'admin', 'co_admin', 'supervisor', 'auditor']).optional(),
+  role: z.enum(['superadmin', 'admin', 'hr', 'employee']).optional(),
   departmentId: z.string().uuid().optional(),
   positionId: z.string().uuid().optional(),
   accountStatus: z.enum(['pending', 'active', 'suspended', 'rejected']).optional(),
@@ -105,7 +103,7 @@ export const userListQuerySchema = z.object({
   search: z.string().max(200).optional(),
 
   // Filters
-  role: z.enum(['employee', 'hr', 'admin', 'co_admin', 'supervisor', 'auditor']).optional(),
+  role: z.enum(['superadmin', 'admin', 'hr', 'employee']).optional(),
   userType: z.enum(['employee', 'applicant']).optional(),
   accountStatus: z.enum(['pending', 'active', 'suspended', 'rejected']).optional(),
   isActive: z.boolean().optional(),
@@ -149,7 +147,7 @@ const createUserBaseSchema = z.object({
     /^\d{4}-\d{2}-\d{2}$/,
     'Date of birth must be in YYYY-MM-DD format'
   ),
-  role: z.enum(['employee', 'hr', 'admin', 'co_admin', 'supervisor', 'auditor']),
+  role: z.enum(['superadmin', 'admin', 'hr', 'employee']),
   employmentCategory: z.enum(['faculty', 'administrative', 'contractual']),
 
   // Optional fields
@@ -316,11 +314,10 @@ export interface UserStatsResponse {
     applicants: number;
   };
   byRole: {
-    employee: number;
-    hr: number;
+    superadmin: number;
     admin: number;
-    supervisor: number;
-    auditor: number;
+    hr: number;
+    employee: number;
   };
   byAccountStatus: {
     pending: number;

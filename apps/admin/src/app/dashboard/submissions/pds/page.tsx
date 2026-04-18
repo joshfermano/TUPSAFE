@@ -285,7 +285,7 @@ export default function PdsSubmissionsPage() {
 
   // Current user role (for showing admin-only delete action)
   const { profile } = useAuth();
-  const canDelete = profile?.role === 'admin' || profile?.role === 'co_admin';
+  const canDelete = profile?.role === 'admin' || profile?.role === 'superadmin';
 
   // Delete mutation
   const deleteMutation = useDeletePDS();

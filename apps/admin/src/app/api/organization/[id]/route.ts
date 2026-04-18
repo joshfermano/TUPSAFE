@@ -47,7 +47,7 @@ export async function GET(
 
     // Verify admin/HR/supervisor permissions
     const hasPermission = await checkUserRoleFromSupabase(
-      ['admin', 'hr', 'supervisor'],
+      ['superadmin', 'admin', 'hr'],
       'admin'
     );
 
@@ -132,7 +132,7 @@ export async function PATCH(
     // Determine required roles based on unit type
     // Colleges require admin, departments/offices allow admin or hr
     const isCollege = existing.officeType === 'academic' && !existing.parentCollegeId;
-    const requiredRoles = isCollege ? ['admin'] : ['admin', 'co_admin', 'hr'];
+    const requiredRoles = isCollege ? ['superadmin'] : ['superadmin', 'admin', 'hr'];
 
     const hasPermission = await checkUserRoleFromSupabase(
       requiredRoles,
@@ -291,11 +291,11 @@ export async function DELETE(
     let requiredRoles: string[];
 
     if (isHardDelete || isCollege) {
-      // Hard delete or college operations require admin only
-      requiredRoles = ['admin'];
+      // Hard delete or college operations require superadmin only
+      requiredRoles = ['superadmin'];
     } else {
       // Soft delete of departments/offices allows admin or hr
-      requiredRoles = ['admin', 'co_admin', 'hr'];
+      requiredRoles = ['superadmin', 'admin', 'hr'];
     }
 
     const hasPermission = await checkUserRoleFromSupabase(

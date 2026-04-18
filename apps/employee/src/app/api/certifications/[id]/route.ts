@@ -230,7 +230,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       `[PATCH /api/certifications/[id]] Updated certification ${id} for user ${user.id}`
     );
 
-    // Notify all admin/co_admin/hr users about the updated certification
+    // Notify all admin/superadmin/hr users about the updated certification
     const [employeeProfile] = await db
       .select({ firstName: profiles.firstName, lastName: profiles.lastName })
       .from(profiles)
@@ -240,7 +240,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const adminUsers = await db
       .select({ id: profiles.id })
       .from(profiles)
-      .where(inArray(profiles.role, ['admin', 'co_admin', 'hr']));
+      .where(inArray(profiles.role, ['admin', 'superadmin', 'hr']));
 
     if (adminUsers.length > 0) {
       const employeeName =
