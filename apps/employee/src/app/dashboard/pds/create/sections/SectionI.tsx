@@ -172,14 +172,17 @@ export const SectionI = memo(function SectionI() {
                   <FormItem>
                     <FormLabel>Name Extension/Suffix</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
-                      value={field.value || undefined}>
+                      onValueChange={(value) =>
+                        field.onChange(value === 'none' ? '' : value)
+                      }
+                      value={field.value || 'none'}>
                       <FormControl>
                         <SelectTrigger className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors">
                           <SelectValue placeholder="None (if applicable)" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
                         <SelectItem value="Jr.">Jr.</SelectItem>
                         <SelectItem value="Sr.">Sr.</SelectItem>
                         <SelectItem value="I">I</SelectItem>
