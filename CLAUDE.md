@@ -171,7 +171,8 @@ Single EC2 instance (t2.micro, 1 vCPU, 1GB RAM + 4GB swap) running all services 
 **Live URLs:**
 
 - Employee: `https://tupsafe.tech` (Nginx HTTPS, Let's Encrypt SSL)
-- Admin: `http://18.139.182.61:9443` (Nginx HTTP, IP-restricted via Security Group)
+- Admin: `https://tupsafe-admin.duckdns.org` (Nginx HTTPS, Let's Encrypt SSL)
+- Admin (legacy): `http://18.139.182.61:9443` (Nginx HTTP, IP-restricted via Security Group)
 - AI Agent: internal Docker network only (`http://ai-agent:8000`)
 
 **Infrastructure:**

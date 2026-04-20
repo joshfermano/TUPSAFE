@@ -61,7 +61,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_EMPLOYEE_APP_URL=https://tupsafe.tech
-          NEXT_PUBLIC_ADMIN_APP_URL=http://${{ secrets.EC2_ELASTIC_IP }}:9443
+          NEXT_PUBLIC_ADMIN_APP_URL=https://tupsafe-admin.duckdns.org
           NEXT_PUBLIC_APP_PORTAL=${{ matrix.service }}
           ARGS
           EOF
@@ -137,7 +137,7 @@ jobs:
 
             # Verify endpoint responses
             echo "Verifying endpoint responses..."
-            for endpoint in "https://tupsafe.tech/api/health" "http://localhost:9443/api/health"; do
+            for endpoint in "https://tupsafe.tech/api/health" "https://tupsafe-admin.duckdns.org/api/health" "http://localhost:9443/api/health"; do
               VERIFIED=false
               for attempt in 1 2 3; do
                 if curl -sf --max-time 10 "$endpoint" > /dev/null 2>&1; then
