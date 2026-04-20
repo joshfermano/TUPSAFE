@@ -188,7 +188,7 @@ async def get_current_user(
             )
 
         # If role not found in JWT, fetch from database
-        allowed_roles = {"admin", "co_admin", "hr"}
+        allowed_roles = {"superadmin", "admin"}
         if role not in allowed_roles:
             logger.debug(f"[AUTH] Role '{role}' not in allowed roles, fetching from DB...")
             db_role = await get_user_role_from_db(user_id)

@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
 
     // 3. Verify user has appropriate role
     const hasPermission = await checkUserRoleFromSupabase(
-      ['admin', 'hr'],
+      ['superadmin', 'admin'],
       'admin'
     );
 
