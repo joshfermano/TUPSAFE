@@ -27,7 +27,7 @@ import {
 import { Separator } from '../../../../../components/ui/separator';
 import { FormSection } from '../../../../../components/forms/shared/FormSection';
 import { type CompletePdsData } from '../../../../../lib/validations/pds-schema';
-import { formatDateForInput, parseDateFromInput } from '../../../../../lib/utils/date-utils';
+import { FormDateInput } from '../../../../../components/forms/shared/FormDateInput';
 
 /**
  * Step 1: Personal Information - Basic Details
@@ -37,6 +37,10 @@ export const PersonalBasic = memo(function PersonalBasic() {
   const form = useFormContext<CompletePdsData>();
   const citizenshipType = useMemo(
     () => form.watch('personalInfo.citizenship.type'),
+    [form]
+  );
+  const citizenshipAcquisitionMethod = useMemo(
+    () => form.watch('personalInfo.citizenship.acquisitionMethod'),
     [form]
   );
 
@@ -123,16 +127,20 @@ export const PersonalBasic = memo(function PersonalBasic() {
                 <FormItem>
                   <FormLabel>Name Extension/Suffix</FormLabel>
                   <Select
-                    onValueChange={field.onChange}
-                    value={field.value || undefined}>
+                    onValueChange={(value) =>
+                      field.onChange(value === 'none' ? '' : value)
+                    }
+                    value={field.value || 'none'}>
                     <FormControl>
                       <SelectTrigger className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all">
                         <SelectValue placeholder="None (if applicable)" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
                       <SelectItem value="Jr.">Jr.</SelectItem>
                       <SelectItem value="Sr.">Sr.</SelectItem>
+                      <SelectItem value="I">I</SelectItem>
                       <SelectItem value="II">II</SelectItem>
                       <SelectItem value="III">III</SelectItem>
                       <SelectItem value="IV">IV</SelectItem>
@@ -155,28 +163,11 @@ export const PersonalBasic = memo(function PersonalBasic() {
             Birth Information
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
+            <FormDateInput
               control={form.control}
               name="personalInfo.dateOfBirth"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Date of Birth <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type="date"
-                      {...field}
-                      value={formatDateForInput(field.value as Date | null)}
-                      onChange={(e) => {
-                        field.onChange(parseDateFromInput(e.target.value));
-                      }}
-                      className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              label="Date of Birth"
+              required
             />
 
             <FormField
@@ -538,18 +529,25 @@ export const PersonalBasic = memo(function PersonalBasic() {
                   </FormLabel>
                   <FormControl>
                     <RadioGroup
-                      onValueChange={field.onChange}
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        // Clear dual citizenship fields when switching to Filipino
+                        if (value === 'Filipino') {
+                          form.setValue('personalInfo.citizenship.acquisitionMethod', undefined);
+                          form.setValue('personalInfo.citizenship.country', undefined);
+                        }
+                      }}
                       value={field.value}>
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="Filipino" id="filipino" />
-                          <Label htmlFor="filipino" className="cursor-pointer">
+                          <RadioGroupItem value="Filipino" id="filipino-step" />
+                          <Label htmlFor="filipino-step" className="cursor-pointer">
                             Filipino
                           </Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="Dual" id="dual" />
-                          <Label htmlFor="dual" className="cursor-pointer">
+                          <RadioGroupItem value="Dual" id="dual-step" />
+                          <Label htmlFor="dual-step" className="cursor-pointer">
                             Dual Citizenship
                           </Label>
                         </div>
@@ -562,29 +560,68 @@ export const PersonalBasic = memo(function PersonalBasic() {
             />
 
             {citizenshipType === 'Dual' && (
-              <FormField
-                control={form.control}
-                name="personalInfo.citizenship.details"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Please specify country{' '}
-                      <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="e.g., United States"
-                        {...field}
-                        className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
-                      />
-                    </FormControl>
-                    <FormDescription className="text-sm text-slate-600 dark:text-slate-400">
-                      Indicate the other country of your dual citizenship
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <>
+                <FormField
+                  control={form.control}
+                  name="personalInfo.citizenship.acquisitionMethod"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        How did you acquire dual citizenship?{' '}
+                        <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          value={field.value}>
+                          <div className="flex items-center space-x-4">
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="byBirth" id="byBirth-step" />
+                              <Label htmlFor="byBirth-step" className="cursor-pointer">
+                                By Birth
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="byNaturalization" id="byNaturalization-step" />
+                              <Label htmlFor="byNaturalization-step" className="cursor-pointer">
+                                By Naturalization
+                              </Label>
+                            </div>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="personalInfo.citizenship.country"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Please indicate country{' '}
+                        <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g., United States"
+                          {...field}
+                          value={field.value || ''}
+                          className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                        />
+                      </FormControl>
+                      <FormDescription className="text-sm text-slate-600 dark:text-slate-400">
+                        {citizenshipAcquisitionMethod === 'byNaturalization' 
+                          ? 'Indicate the country where you were naturalized'
+                          : 'Indicate the other country of your dual citizenship'}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
             )}
           </div>
         </div>

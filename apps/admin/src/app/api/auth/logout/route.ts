@@ -16,6 +16,7 @@ import {
 } from '@tupsafe/auth/server';
 import { createAuditLog } from '@tupsafe/database/server';
 
+export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     // Get current session user for audit logging

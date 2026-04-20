@@ -39,5 +39,13 @@ export {
 // Storage utilities (profile pictures, etc.)
 export * from './utils/storage';
 
+// Permission matrix (role -> capabilities)
+export {
+  hasPermission,
+  assignableRoles,
+  ROLE_PERMISSIONS,
+  type Permission,
+} from './utils/permissions';
+
 // Re-export validation schemas for convenience
 export * from './auth';

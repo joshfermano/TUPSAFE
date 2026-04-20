@@ -19,6 +19,7 @@ import {
 import { eq } from 'drizzle-orm';
 import { verifyOTP, createSession, trustDevice } from '@tupsafe/auth/server';
 
+export const dynamic = 'force-dynamic';
 // Device verification validation schema
 const deviceVerificationSchema = z.object({
   userId: z.string().uuid('Invalid user ID'),

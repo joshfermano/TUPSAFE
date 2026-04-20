@@ -30,6 +30,7 @@ import { eq } from 'drizzle-orm';
 import { salnRequestChangesSchema } from '@tupsafe/types';
 import { createAuditLog } from '@tupsafe/database/server';
 
+export const dynamic = 'force-dynamic';
 interface RouteParams {
   params: Promise<{
     id: string;
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     console.log('[SALN Request Changes API] Request received');
 
     // Verify admin/HR permissions
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'co_admin', 'hr'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
     if (!hasPermission) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin, Co-Admin, or HR role required.' },

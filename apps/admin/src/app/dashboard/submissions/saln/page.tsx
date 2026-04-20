@@ -13,6 +13,7 @@ import {
   XCircle,
   TrendingUp,
   Loader2,
+  Trash2,
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -26,6 +27,7 @@ import {
 import { useSalnStatsQuery } from '@/hooks/useSalnStatsQuery';
 import { useDepartmentsQuery } from '@/hooks/useDepartmentsQuery';
 import { useAuth } from '@/context/AuthContext';
+import { useDeleteSALN } from '@/hooks/useSubmissions';
 import { useSALNPdf } from '@/hooks/useSALNPdf';
 import { usePagination } from '@/hooks/usePagination';
 import type { SALNData } from '@/components/saln/pdf';
@@ -33,6 +35,7 @@ import { DeadlineManagementCard } from '@/components/deadlines';
 import { ReviewDialog } from '@/components/admin/ReviewDialog';
 import type { SalnSubmissionListItem } from '@tupsafe/types';
 import {
+  DeleteSubmissionDialog,
   EmptyState,
   ErrorAlert,
   StatusBadge,
@@ -154,10 +157,12 @@ interface SalnSubmissionRowProps {
   onDownload: (submissionId: string) => Promise<void>;
   isDownloading: boolean;
   downloadingId: string | null;
+  onDelete?: (submission: SalnSubmissionListItem) => void;
+  canDelete: boolean;
 }
 
 const SalnSubmissionRow = memo(
-  ({ submission, index, onApprove, onReject, isSubmitting, onDownload, isDownloading, downloadingId }: SalnSubmissionRowProps) => {
+  ({ submission, index, onApprove, onReject, isSubmitting, onDownload, isDownloading, downloadingId, onDelete, canDelete }: SalnSubmissionRowProps) => {
     const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
     const [approveRejectDialogOpen, setApproveRejectDialogOpen] = useState(false);
     const [reviewAction, setReviewAction] = useState<'approve' | 'reject'>('approve');
@@ -266,6 +271,18 @@ const SalnSubmissionRow = memo(
                     >
                       <XCircle className="mr-2 h-4 w-4" />
                       Reject
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {canDelete && onDelete && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => onDelete(submission)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete Submission
                     </DropdownMenuItem>
                   </>
                 )}
@@ -383,8 +400,27 @@ export default function SalnSubmissionsPage() {
   const [searchFocused, setSearchFocused] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
-  // Get authenticated user
-  const { user } = useAuth();
+  // Get authenticated user (and role for conditional delete UI)
+  const { user, profile } = useAuth();
+  const canDelete = profile?.role === 'admin' || profile?.role === 'superadmin';
+
+  // Delete dialog state + mutation (admin-only)
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    ownerName: string;
+    year: number | null;
+    status: string;
+  } | null>(null);
+  const deleteMutation = useDeleteSALN();
+
+  const handleDeleteRequest = useCallback((submission: SalnSubmissionListItem) => {
+    setDeleteTarget({
+      id: submission.id,
+      ownerName: `${submission.employee.firstName} ${submission.employee.lastName}`,
+      year: submission.year ?? null,
+      status: submission.status,
+    });
+  }, []);
 
   // PDF hook
   const { downloadPDF, isGenerating: _isGenerating } = useSALNPdf();
@@ -506,7 +542,7 @@ export default function SalnSubmissionsPage() {
 
         // Parse spouse info if filing type is joint
         let spouseInfo = undefined;
-        if (submission.filingType === 'joint' && salnData?.spouseName) {
+        if ((submission.filingType === 'joint' || submission.filingType === 'separate') && salnData?.spouseName) {
           const nameParts = salnData.spouseName.split(' ');
           spouseInfo = {
             surname: nameParts[nameParts.length - 1] || '',
@@ -533,6 +569,7 @@ export default function SalnSubmissionsPage() {
           },
           spouseInfo,
           children: [],
+          unmarriedChildren: salnData?.unmarriedChildren || null,
           realProperties: (salnData?.realProperties || []).map((prop: Record<string, unknown>) => ({
             description: (prop.description as string) || '',
             kind: (prop.kind as string) || 'residential',
@@ -542,22 +579,30 @@ export default function SalnSubmissionsPage() {
             acquisitionYear: (prop.acquisitionYear as number) || new Date().getFullYear(),
             acquisitionMode: (prop.acquisitionMode as string) || 'Purchase',
             acquisitionCost: parseFloat((prop.acquisitionCost as string) || '0'),
+            owner: (prop.owner as string) || undefined,
+            childName: (prop.childName as string | null) || null,
           })),
           personalProperties: (salnData?.personalProperties || []).map((prop: Record<string, unknown>) => ({
             description: (prop.description as string) || '',
             yearAcquired: (prop.yearAcquired as number) || new Date().getFullYear(),
             acquisitionCost: parseFloat((prop.acquisitionCost as string) || '0'),
+            owner: (prop.owner as string) || undefined,
+            childName: (prop.childName as string | null) || null,
           })),
           liabilities: (salnData?.liabilities || []).map((liability: Record<string, unknown>) => ({
             nature: (liability.nature as string) || '',
             creditorName: (liability.creditorName as string) || '',
             outstandingBalance: parseFloat((liability.outstandingBalance as string) || '0'),
+            owner: (liability.owner as string) || undefined,
+            childName: (liability.childName as string | null) || null,
           })),
           businessInterests: (salnData?.businessInterests || []).map((business: Record<string, unknown>) => ({
             entityName: (business.entityName as string) || '',
             businessAddress: (business.businessAddress as string) || '',
             natureOfBusiness: (business.natureOfBusiness as string) || '',
             dateOfAcquisition: (business.dateOfAcquisition as string) || new Date().toISOString(),
+            owner: (business.owner as string) || undefined,
+            childName: (business.childName as string | null) || null,
           })),
           relativesInGov: (salnData?.relativesInGov || []).map((relative: Record<string, unknown>) => ({
             name: (relative.name as string) || '',
@@ -569,6 +614,27 @@ export default function SalnSubmissionsPage() {
           totalLiabilities,
           netWorth,
           submittedAt: submission.submittedAt,
+          // 2025 SALN format fields
+          salnFormatVersion: salnData?.salnFormatVersion || 2025,
+          complianceType: salnData?.complianceType,
+          complianceDate: salnData?.complianceDate,
+          hasMultipleMarriages: salnData?.hasMultipleMarriages,
+          previousSpouseNames: salnData?.previousSpouseNames,
+          spouseIsPublicOfficial: salnData?.spouseIsPublicOfficial,
+          spousePosition: salnData?.spousePosition,
+          spouseAgency: salnData?.spouseAgency,
+          spouseOfficeAddress: salnData?.spouseOfficeAddress,
+          hasNoBusinessInterests: salnData?.hasNoBusinessInterests,
+          hasNoRelativesInGov: salnData?.hasNoRelativesInGov,
+          governmentIdType: salnData?.governmentIdType,
+          governmentIdNumber: salnData?.governmentIdNumber,
+          governmentIdDateIssued: salnData?.governmentIdDateIssued,
+          governmentIdType2: salnData?.governmentIdType2,
+          governmentIdNumber2: salnData?.governmentIdNumber2,
+          governmentIdDateIssued2: salnData?.governmentIdDateIssued2,
+          declarantTin: salnData?.declarantTin,
+          spouseTin: salnData?.spouseTin,
+          spouseDateOfBirth: salnData?.spouseDateOfBirth,
         };
 
         // Download PDF
@@ -914,6 +980,8 @@ export default function SalnSubmissionsPage() {
                           onDownload={handleDownload}
                           isDownloading={!!downloadingId}
                           downloadingId={downloadingId}
+                          onDelete={canDelete ? handleDeleteRequest : undefined}
+                          canDelete={canDelete}
                         />
                       ))}
                     </EnhancedTableBody>
@@ -938,6 +1006,25 @@ export default function SalnSubmissionsPage() {
             )}
         </CardContent>
       </Card>
+
+      {/* Delete Submission Dialog (admin / co_admin only) */}
+      <DeleteSubmissionDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+        submissionType="saln"
+        ownerName={deleteTarget?.ownerName ?? ''}
+        year={deleteTarget?.year ?? null}
+        status={deleteTarget?.status ?? ''}
+        isLoading={deleteMutation.isPending}
+        onConfirm={async (reason) => {
+          if (!deleteTarget) return;
+          await deleteMutation.mutateAsync({
+            id: deleteTarget.id,
+            data: { reason },
+          });
+          setDeleteTarget(null);
+        }}
+      />
     </PageTransition>
   );
 }

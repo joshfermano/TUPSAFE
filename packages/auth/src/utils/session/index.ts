@@ -8,6 +8,8 @@ import type { Portal } from '../supabase/cookie-config';
 import { createClient } from '../supabase/server';
 import { db, profiles } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
+import type { UserRole } from '@tupsafe/types';
+import { hasPermission, type Permission } from '../permissions';
 
 /**
  * Session configuration constants
@@ -299,6 +301,55 @@ export async function checkUserRoleFromSupabase(
       allowedRoles,
     });
     return false;
+  }
+}
+
+/**
+ * Check whether the current Supabase-authenticated user holds a specific permission.
+ *
+ * Preferred over `checkUserRoleFromSupabase` for new code. Returns the caller's
+ * userId and role on success so handlers don't need a second query for things
+ * like self-action checks.
+ */
+export async function checkUserPermissionFromSupabase(
+  permission: Permission,
+  portal?: Portal
+): Promise<{ authorized: boolean; userId?: string; role?: UserRole }> {
+  try {
+    const supabase = await createClient(portal);
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return { authorized: false };
+    }
+
+    const userId = user.id;
+    const [profile] = await db
+      .select({ role: profiles.role })
+      .from(profiles)
+      .where(eq(profiles.id, userId))
+      .limit(1);
+
+    if (!profile) {
+      return { authorized: false, userId };
+    }
+
+    const role = profile.role as UserRole;
+    return {
+      authorized: hasPermission(role, permission),
+      userId,
+      role,
+    };
+  } catch (error) {
+    console.error('[checkUserPermissionFromSupabase] Error:', {
+      error: error instanceof Error ? error.message : error,
+      permission,
+      portal,
+    });
+    return { authorized: false };
   }
 }
 

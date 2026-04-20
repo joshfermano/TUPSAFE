@@ -41,6 +41,7 @@ import { createAuditLog } from '@tupsafe/database/utils/audit-log';
 import { rejectSubmissionSchema, type ApiSuccess } from '@tupsafe/types';
 import { v7 as uuidv7 } from 'uuid';
 
+export const dynamic = 'force-dynamic';
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -49,7 +50,7 @@ export async function POST(
     const { id } = await params;
 
     // Verify admin/HR permissions
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'co_admin', 'hr'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(

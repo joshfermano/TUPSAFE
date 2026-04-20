@@ -25,7 +25,7 @@ import {
 import { FormSection } from '../../../../../components/forms/shared/FormSection';
 import { type CompletePdsData } from '../../../../../lib/validations/pds-schema';
 import { autoSortWithNotification } from '../../../../../lib/utils/pds-sort';
-import { formatDateForInput, parseDateFromInput } from '../../../../../lib/utils/date-utils';
+import { FormDateInput } from '../../../../../components/forms/shared/FormDateInput';
 
 /**
  * Step 6: Civil Service Eligibility & Work Experience
@@ -203,26 +203,10 @@ export const EligibilityWork = memo(function EligibilityWork() {
                       )}
                     />
 
-                    <FormField
+                    <FormDateInput
                       control={form.control}
                       name={`eligibility.${index}.dateOfExam`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Date of Examination/Conferment</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="date"
-                              {...field}
-                              value={formatDateForInput(field.value as Date | null)}
-                              onChange={(e) => {
-                                field.onChange(parseDateFromInput(e.target.value));
-                              }}
-                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="Date of Examination/Conferment"
                     />
 
                     <FormField
@@ -263,26 +247,10 @@ export const EligibilityWork = memo(function EligibilityWork() {
                       )}
                     />
 
-                    <FormField
+                    <FormDateInput
                       control={form.control}
                       name={`eligibility.${index}.licenseValidityDate`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>License Validity Date</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="date"
-                              {...field}
-                              value={formatDateForInput(field.value as Date | null)}
-                              onChange={(e) => {
-                                field.onChange(parseDateFromInput(e.target.value));
-                              }}
-                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="License Validity Date"
                     />
                   </div>
                 </div>
@@ -334,52 +302,19 @@ export const EligibilityWork = memo(function EligibilityWork() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
+                    <FormDateInput
                       control={form.control}
                       name={`workExperience.${index}.dateFrom`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            From <span className="text-destructive">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="date"
-                              {...field}
-                              value={formatDateForInput(field.value as Date | null)}
-                              onChange={(e) => {
-                                field.onChange(parseDateFromInput(e.target.value));
-                              }}
-                              onBlur={handleDateBlur}
-                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="From"
+                      required
+                      onBlur={handleDateBlur}
                     />
 
-                    <FormField
+                    <FormDateInput
                       control={form.control}
                       name={`workExperience.${index}.dateTo`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>To (leave blank if present)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="date"
-                              {...field}
-                              value={formatDateForInput(field.value as Date | null)}
-                              onChange={(e) => {
-                                field.onChange(parseDateFromInput(e.target.value));
-                              }}
-                              onBlur={handleDateBlur}
-                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="To (leave blank if present)"
+                      onBlur={handleDateBlur}
                     />
 
                     <FormField

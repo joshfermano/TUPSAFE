@@ -32,6 +32,7 @@ export interface PDSPersonalInfo {
   gsisNo?: string;
   pagibigNo?: string;
   philhealthNo?: string;
+  philsysNo?: string;
   sssNo?: string;
   tinNo?: string;
   agencyEmployeeNo?: string; // Canonical DB field name
@@ -282,6 +283,14 @@ export interface PDSOtherInfo {
         Q42_solo_parent_details?: string;
       }
     | unknown;
+  governmentId?:
+    | {
+        idType?: string;
+        idNumber?: string;
+        dateIssued?: string | Date;
+        placeIssued?: string;
+      }
+    | unknown;
 }
 
 /**
@@ -300,6 +309,8 @@ export interface SALNRealProperty {
   acquisitionYear?: number;
   acquisitionMode?: string;
   acquisitionCost?: string | number;
+  owner?: string;
+  childName?: string | null;
 }
 
 export interface SALNPersonalProperty {
@@ -308,6 +319,8 @@ export interface SALNPersonalProperty {
   yearAcquired?: number;
   acquisitionYear?: number; // Alias for yearAcquired
   acquisitionCost?: string | number;
+  owner?: string;
+  childName?: string | null;
 }
 
 export interface SALNLiability {
@@ -317,6 +330,8 @@ export interface SALNLiability {
   creditor?: string; // Alias for creditorName
   outstandingBalance?: string | number;
   amount?: string | number; // Alias for outstandingBalance
+  owner?: string;
+  childName?: string | null;
 }
 
 export interface SALNBusinessInterest {
@@ -326,6 +341,8 @@ export interface SALNBusinessInterest {
   businessAddress?: string;
   natureOfBusiness?: string;
   dateOfAcquisition?: string | Date;
+  owner?: string;
+  childName?: string | null;
 }
 
 export interface SALNRelativeInGov {
@@ -432,6 +449,20 @@ export const returnForRevisionSchema = z.object({
 });
 
 export type ReturnForRevisionData = z.infer<typeof returnForRevisionSchema>;
+
+/**
+ * Admin delete submission schema
+ * Reason is required for compliance, audit trail, and owner notification.
+ */
+export const deleteSubmissionSchema = z.object({
+  reason: z
+    .string()
+    .trim()
+    .min(10, 'Reason must be at least 10 characters')
+    .max(500, 'Reason cannot exceed 500 characters'),
+});
+
+export type DeleteSubmissionData = z.infer<typeof deleteSubmissionSchema>;
 
 /**
  * Bulk approve schema
@@ -613,6 +644,28 @@ export interface SALNSubmissionDetail {
     totalAssets: string | number | null;
     totalLiabilities: string | number | null;
     netWorth: string | number | null;
+    // 2025 SALN format fields
+    complianceType?: string | null;
+    complianceDate?: string | Date | null;
+    hasMultipleMarriages?: boolean;
+    previousSpouseNames?: string | null;
+    spouseIsPublicOfficial?: boolean;
+    spousePosition?: string | null;
+    spouseAgency?: string | null;
+    spouseOfficeAddress?: string | null;
+    unmarriedChildren?: Array<{ name: string; dateOfBirth?: string; age: number }> | null;
+    hasNoBusinessInterests?: boolean;
+    hasNoRelativesInGov?: boolean;
+    governmentIdType?: string | null;
+    governmentIdNumber?: string | null;
+    governmentIdDateIssued?: string | Date | null;
+    governmentIdType2?: string | null;
+    governmentIdNumber2?: string | null;
+    governmentIdDateIssued2?: string | Date | null;
+    declarantTin?: string | null;
+    spouseTin?: string | null;
+    spouseDateOfBirth?: string | Date | null;
+    salnFormatVersion?: number;
   };
   previousYear?: {
     fiscalYear: number;

@@ -35,7 +35,13 @@ export type AuditAction =
   | 'reject_saln_submission'
   | 'view_saln_submission'
   | 'bulk_approve_pds_submission'
-  | 'bulk_approve_saln_submission';
+  | 'bulk_approve_saln_submission'
+  | 'admin_delete_pds_submission'
+  | 'admin_delete_saln_submission'
+  | 'bootstrap_superadmin'
+  | 'admin_change_user_role'
+  | 'verify_certification'
+  | 'reject_certification';
 
 export type AuditEntityType =
   | 'profile'
@@ -52,7 +58,8 @@ export type AuditEntityType =
   | 'open_position'
   | 'user_credentials'
   | 'USER'
-  | 'SESSION';
+  | 'SESSION'
+  | 'profile_certification';
 
 export interface AuditLogData {
   userId: string;

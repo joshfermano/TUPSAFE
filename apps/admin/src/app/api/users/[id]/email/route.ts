@@ -17,6 +17,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkUserRoleFromSupabase, createAdminClient } from '@tupsafe/auth/server';
 
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/users/[id]/email
  * Fetch user email address from Supabase Auth
@@ -27,7 +28,7 @@ export async function GET(
 ) {
   try {
     // Verify admin/HR permissions
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'co_admin', 'hr'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
     if (!hasPermission) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin, Co-Admin, or HR role required.' },

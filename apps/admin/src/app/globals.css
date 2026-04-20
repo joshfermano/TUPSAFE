@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Ensure Tailwind scans all source files including shared packages */
+@source "../../src/**/*.{ts,tsx}";
+@source "../../../../packages/shared-ui/src/**/*.{ts,tsx}";
+
 @layer base {
   :root {
     /* TUP Crimson Primary Theme (#8B1538 = hsl(345, 83%, 27%)) */
@@ -53,6 +57,10 @@
 
     /* Border Radius */
     --radius: 0.5rem;
+
+    /* Department Rankings - Top 3 highlight */
+    --ranking-bg: rgba(234, 179, 8, 0.08);
+    --ranking-border: rgba(234, 179, 8, 0.25);
   }
 
   .dark {
@@ -104,7 +112,25 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+
+    /* Department Rankings - Top 3 highlight */
+    --ranking-bg: rgba(234, 179, 8, 0.08);
+    --ranking-border: rgba(234, 179, 8, 0.3);
   }
+}
+
+/* Switch toggle — track must be visible in both themes */
+[data-slot="switch"][data-state="unchecked"] {
+  background-color: #a1a1aa !important; /* zinc-400 */
+}
+.dark [data-slot="switch"][data-state="unchecked"] {
+  background-color: #52525b !important; /* zinc-600 */
+}
+[data-slot="switch"][data-state="checked"] {
+  background-color: hsl(var(--primary)) !important;
+}
+.dark [data-slot="switch"][data-state="checked"] {
+  background-color: hsl(var(--primary)) !important;
 }
 
 @layer base {

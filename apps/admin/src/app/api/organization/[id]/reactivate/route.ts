@@ -24,6 +24,7 @@ import {
 } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
 /**
  * POST /api/organization/[id]/reactivate
  * Reactivate a soft-deleted organizational unit
@@ -37,7 +38,7 @@ export async function POST(
 
     // Verify admin/HR permissions
     const hasPermission = await checkUserRoleFromSupabase(
-      ['admin', 'co_admin', 'hr'],
+      ['superadmin', 'admin', 'hr'],
       'admin'
     );
 

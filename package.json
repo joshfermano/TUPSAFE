@@ -5,24 +5,23 @@
   "packageManager": "pnpm@9.15.4",
   "scripts": {
     "dev": "turbo dev",
+    "dev:employee": "turbo dev --filter=employee",
+    "dev:admin": "turbo dev --filter=admin",
+    "dev:ai-agent": "cd services/ai-agent && uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000",
     "build": "turbo build",
+    "build:employee": "turbo build --filter=employee",
+    "build:admin": "turbo build --filter=admin",
     "lint": "turbo lint",
     "type-check": "turbo type-check",
-    "type-check:employee": "tsc --noEmit -p apps/employee/tsconfig.json",
-    "type-check:admin": "tsc --noEmit -p apps/admin/tsconfig.json",
-    "type-check:apps": "pnpm run type-check:employee && pnpm run type-check:admin",
     "clean": "turbo clean",
     "clean:all": "rimraf --glob \"packages/*/dist\" \"packages/*/.turbo\" \"packages/*.tsbuildinfo\" \"packages/*/*.tsbuildinfo\" \"apps/*/.next\" \"apps/*/.turbo\" \"apps/*.tsbuildinfo\" \"apps/*/*.tsbuildinfo\" \".turbo\" \"node_modules/.cache\"",
     "clean:dist": "rimraf --glob \"packages/*/dist\" \"apps/*/.next\"",
     "rebuild": "pnpm run clean:all && pnpm run build",
-    "rebuild:quick": "pnpm run clean:dist && pnpm run build",
-    "verify:no-artifacts": "node scripts/verify-no-artifacts.js",
     "precommit": "pnpm run verify:no-artifacts",
-    "dev:employee": "turbo dev --filter=employee",
-    "dev:admin": "turbo dev --filter=admin",
-    "dev:ai-agent": "cd services/ai-agent && uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000",
-    "build:employee": "turbo build --filter=employee",
-    "build:admin": "turbo build --filter=admin",
+    "verify:no-artifacts": "node scripts/verify-no-artifacts.js",
+    "redis:up": "docker run -d --name tupsafe-redis -p 6379:6379 redis:7-alpine redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru",
+    "redis:down": "docker stop tupsafe-redis && docker rm tupsafe-redis",
+    "redis:status": "docker ps --filter name=tupsafe-redis --format \"table {{.Names}}\\t{{.Status}}\\t{{.Ports}}\"",
     "cleanup:registrations": "tsx scripts/cleanup-incomplete-registrations.ts",
     "cleanup:registrations:live": "tsx scripts/cleanup-incomplete-registrations.ts --live",
     "docker:up": "docker compose --env-file .env.local up -d",
@@ -33,20 +32,7 @@
     "docker:rebuild": "docker compose --env-file .env.local down && docker compose --env-file .env.local build --no-cache && docker compose --env-file .env.local up -d",
     "docker:clean": "docker compose --env-file .env.local down -v && docker system prune -f",
     "docker:status": "docker compose --env-file .env.local ps",
-    "docker:logs": "docker compose --env-file .env.local logs -f",
-    "docker:logs:employee": "docker compose --env-file .env.local logs -f employee",
-    "docker:logs:admin": "docker compose --env-file .env.local logs -f admin",
-    "docker:logs:ai-agent": "docker compose --env-file .env.local logs -f ai-agent",
-    "docker:logs:redis": "docker compose --env-file .env.local logs -f redis",
-    "docker:up:employee": "docker compose --env-file .env.local up -d redis employee",
-    "docker:up:admin": "docker compose --env-file .env.local up -d redis admin",
-    "docker:up:ai-agent": "docker compose --env-file .env.local up -d redis ai-agent",
-    "docker:restart:employee": "docker compose --env-file .env.local restart employee",
-    "docker:restart:admin": "docker compose --env-file .env.local restart admin",
-    "docker:restart:ai-agent": "docker compose --env-file .env.local restart ai-agent",
-    "docker:rebuild:employee": "docker compose --env-file .env.local build --no-cache employee && docker compose --env-file .env.local up -d employee",
-    "docker:rebuild:admin": "docker compose --env-file .env.local build --no-cache admin && docker compose --env-file .env.local up -d admin",
-    "docker:rebuild:ai-agent": "docker compose --env-file .env.local build --no-cache ai-agent && docker compose --env-file .env.local up -d ai-agent"
+    "docker:logs": "docker compose --env-file .env.local logs -f"
   },
   "devDependencies": {
     "drizzle-kit": "^0.12.8",
@@ -71,7 +57,9 @@
   },
   "pnpm": {
     "overrides": {
-      "drizzle-orm": "^0.45.1"
+      "drizzle-orm": "^0.45.1",
+      "react": "19.1.0",
+      "react-dom": "19.1.0"
     }
   }
 }

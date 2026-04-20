@@ -22,6 +22,7 @@ import {
   CheckCircle,
   Loader2,
   Paperclip,
+  Trash2,
 } from 'lucide-react';
 
 import {
@@ -44,6 +45,7 @@ import {
   SectionCardGrid,
 } from '@/components/admin/SectionCard';
 import { ReviewDialog } from '@/components/admin/ReviewDialog';
+import { DeleteSubmissionDialog } from '@/components/admin/DeleteSubmissionDialog';
 import { LoadingCard } from '@/components/admin/LoadingCard';
 import { ErrorAlert } from '@/components/admin/ErrorAlert';
 import { EmptyState } from '@/components/admin/EmptyState';
@@ -66,6 +68,7 @@ import {
 } from '@/components/pds';
 
 import { usePdsSubmissionsQuery } from '@/hooks/usePdsSubmissionsQuery';
+import { useDeletePDS } from '@/hooks/useSubmissions';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import { usePDSPdf, transformPdsForPdf } from '@/hooks/usePDSPdf';
@@ -99,13 +102,16 @@ import type { PDSSubmissionDetail } from '@tupsafe/types';
 export default function PdsSubmissionViewPage() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const submissionId = params.id as string;
+  const canDelete = profile?.role === 'admin' || profile?.role === 'superadmin';
 
   const [isReviewDialogOpen, setIsReviewDialogOpen] = React.useState(false);
   const [reviewAction, setReviewAction] = React.useState<'approve' | 'reject'>(
     'approve'
   );
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+  const deleteMutation = useDeletePDS();
 
   const {
     useCompleteSubmission,
@@ -231,6 +237,7 @@ export default function PdsSubmissionViewPage() {
             associations: pd.otherInfo.associations,
             references: pd.otherInfo.references,
             questions: pd.otherInfo.questions,
+            governmentId: pd.otherInfo.governmentId,
           }
         : null,
     };
@@ -514,20 +521,24 @@ export default function PdsSubmissionViewPage() {
                   <>
                     <Button
                       variant="destructive"
+                      size="sm"
                       onClick={() => {
                         setReviewAction('reject');
                         setIsReviewDialogOpen(true);
                       }}
+                      disabled={isSubmitting}
                       className="gap-2">
                       <XCircle className="h-4 w-4" />
                       Reject
                     </Button>
                     <Button
                       variant="default"
+                      size="sm"
                       onClick={() => {
                         setReviewAction('approve');
                         setIsReviewDialogOpen(true);
                       }}
+                      disabled={isSubmitting}
                       className="gap-2">
                       <CheckCircle className="h-4 w-4" />
                       Approve
@@ -537,13 +548,26 @@ export default function PdsSubmissionViewPage() {
                 {isDraft && !canReview && (
                   <Button
                     variant="destructive"
+                    size="sm"
                     onClick={() => {
                       setReviewAction('reject');
                       setIsReviewDialogOpen(true);
                     }}
+                    disabled={isSubmitting}
                     className="gap-2">
                     <XCircle className="h-4 w-4" />
                     Reject Draft
+                  </Button>
+                )}
+                {canDelete && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setIsDeleteDialogOpen(true)}
+                    disabled={isSubmitting || deleteMutation.isPending}
+                    className="gap-2">
+                    <Trash2 className="h-4 w-4" />
+                    Delete
                   </Button>
                 )}
               </div>
@@ -1448,6 +1472,43 @@ export default function PdsSubmissionViewPage() {
                 </p>
               )}
             </DataSection>
+
+            {/* XI. GOVERNMENT ISSUED ID */}
+            {viewPdsData?.otherInfo?.governmentId && (
+              <DataSection
+                icon={FileText}
+                title="XI. GOVERNMENT ISSUED ID (ITEM 42)"
+                badge={<ValidationBadge status="complete" />}
+                defaultOpen={true}>
+                <div className="space-y-6">
+                  <SectionCardGrid columns={4}>
+                    <SectionCardField
+                      label="ID Type"
+                      value={viewPdsData.otherInfo.governmentId.idType}
+                    />
+                    <SectionCardField
+                      label="ID/License/Passport No."
+                      value={viewPdsData.otherInfo.governmentId.idNumber}
+                    />
+                    <SectionCardField
+                      label="Date of Issuance"
+                      value={
+                        viewPdsData.otherInfo.governmentId.dateIssued
+                          ? format(
+                              new Date(viewPdsData.otherInfo.governmentId.dateIssued),
+                              'MMM d, yyyy'
+                            )
+                          : null
+                      }
+                    />
+                    <SectionCardField
+                      label="Place of Issuance"
+                      value={viewPdsData.otherInfo.governmentId.placeIssued}
+                    />
+                  </SectionCardGrid>
+                </div>
+              </DataSection>
+            )}
           </div>
 
           {/* Sidebar - Employee Info */}
@@ -1631,6 +1692,27 @@ export default function PdsSubmissionViewPage() {
         onReject={handleReject}
         isSubmitting={isSubmitting}
       />
+
+      {/* Delete Submission Dialog (admin / co_admin only) */}
+      {canDelete && (
+        <DeleteSubmissionDialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+          submissionType="pds"
+          ownerName={`${submissionUser?.firstName ?? ''} ${submissionUser?.lastName ?? ''}`.trim()}
+          year={submission.year ?? null}
+          status={submission.status}
+          isLoading={deleteMutation.isPending}
+          onConfirm={async (reason) => {
+            await deleteMutation.mutateAsync({
+              id: submissionId,
+              data: { reason },
+            });
+            setIsDeleteDialogOpen(false);
+            router.push('/dashboard/submissions/pds');
+          }}
+        />
+      )}
     </>
   );
 }

@@ -25,6 +25,7 @@ import { db, profiles, departments, salnSubmissions } from '@tupsafe/database/se
 import { eq, and, gte, sql } from 'drizzle-orm';
 import type { SalnTimelineStats } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
 export async function GET() {
   const startTime = Date.now();
 
@@ -33,7 +34,7 @@ export async function GET() {
 
     // Verify admin/HR permissions
     const authStartTime = Date.now();
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'co_admin', 'hr'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
     const authDuration = Date.now() - authStartTime;
 
     if (!hasPermission) {

@@ -28,6 +28,8 @@ import {
   type UpdateDeadlineResponse,
 } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
+
 interface RouteParams {
   params: Promise<{
     id: string;
@@ -151,7 +153,7 @@ async function getComplianceMetrics(
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     // Authorization check - HR or Admin only
-    const hasPermission = await checkUserRoleFromSupabase(['hr', 'admin'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(
@@ -255,7 +257,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
     // Authorization check - HR or Admin only
-    const hasPermission = await checkUserRoleFromSupabase(['hr', 'admin'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(
@@ -410,7 +412,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     // Authorization check - HR or Admin only
-    const hasPermission = await checkUserRoleFromSupabase(['hr', 'admin'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(

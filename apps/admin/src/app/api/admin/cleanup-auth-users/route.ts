@@ -16,6 +16,7 @@ import { createAdminClient } from '@tupsafe/auth/server';
 import { db, profiles } from '@tupsafe/database/server';
 import { eq, or } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
 /**
  * Admin account to preserve
  */
@@ -61,7 +62,7 @@ export async function POST(_request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const hasPermission = await checkUserRoleFromSupabase(['admin'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin'], 'admin');
 
     if (!hasPermission) {
       console.error(

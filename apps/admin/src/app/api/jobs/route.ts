@@ -37,6 +37,8 @@ import {
   type CreateOpenPositionData,
 } from '@tupsafe/types/admin/jobs';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/jobs
  * List all job positions with filtering, sorting, and pagination
@@ -44,7 +46,7 @@ import {
 export async function GET(request: NextRequest) {
   try {
     // Verify admin/HR permissions
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'co_admin', 'hr'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(
@@ -241,7 +243,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Verify admin/HR permissions
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'co_admin', 'hr'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(

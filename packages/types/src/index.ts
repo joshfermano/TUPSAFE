@@ -8,7 +8,7 @@ export interface User {
   updatedAt: Date;
 }
 
-export type UserRole = 'employee' | 'hr' | 'admin' | 'co_admin';
+export type UserRole = 'superadmin' | 'admin' | 'hr' | 'employee';
 
 export interface PDSSubmission {
   id: string;
@@ -262,6 +262,9 @@ export * from './admin/audit-logs';
 export * from './admin/settings';
 export * from './admin/jobs';
 export * from './admin/deadlines';
+
+// Certifications
+export * from './certifications';
 
 // Employee-specific types
 export * from './employee';

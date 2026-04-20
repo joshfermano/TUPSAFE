@@ -31,6 +31,7 @@ import {
   APPLICATION_STATUS,
 } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/jobs/[id]
  * Fetch detailed job position information including department info,
@@ -48,7 +49,7 @@ export async function GET(
     }
 
     // Verify permissions
-    const allowedRoles = ['admin', 'hr', 'supervisor'];
+    const allowedRoles = ['superadmin', 'admin', 'hr'];
     if (!allowedRoles.includes(sessionUser.role)) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin, HR, or Supervisor role required.' },
@@ -267,7 +268,7 @@ export async function PATCH(
     }
 
     // Verify permissions
-    const allowedRoles = ['admin', 'co_admin', 'hr'];
+    const allowedRoles = ['superadmin', 'admin', 'hr'];
     if (!allowedRoles.includes(sessionUser.role)) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin, Co-Admin, or HR role required.' },

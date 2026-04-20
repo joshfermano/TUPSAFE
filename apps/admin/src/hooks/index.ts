@@ -135,6 +135,9 @@ export {
   useIsLarge,
 } from './useMediaQuery';
 
+// Dark Mode Detection Hook
+export { useIsDarkMode } from './useIsDarkMode';
+
 // Organization Options Hook (for user edit form)
 export {
   useOrganizationOptions,
@@ -144,3 +147,15 @@ export type {
   UseOrganizationOptionsParams,
   UseOrganizationOptionsResult,
 } from './useOrganizationOptions';
+
+// Notifications Query Hooks
+export {
+  useAdminNotifications,
+  useMarkNotificationsRead,
+  useUnreadNotificationCount,
+  notificationKeys,
+} from './useNotificationsQuery';
+export type {
+  AdminNotification,
+  NotificationFilters,
+} from './useNotificationsQuery';

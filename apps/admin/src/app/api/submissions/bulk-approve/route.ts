@@ -49,6 +49,7 @@ import {
 } from '@tupsafe/types';
 import { v7 as uuidv7 } from 'uuid';
 
+export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     // Get current user from Supabase session (portal-specific)
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify admin/HR permissions
-    const allowedRoles = ['admin', 'co_admin', 'hr'];
+    const allowedRoles = ['superadmin', 'admin', 'hr'];
     if (!allowedRoles.includes(sessionUser.role)) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin, Co-Admin, or HR role required.' },

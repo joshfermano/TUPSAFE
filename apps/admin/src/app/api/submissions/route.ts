@@ -37,6 +37,8 @@ import {
   type SubmissionListItem,
 } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
+
 interface SubmissionQueryResult {
   id: string;
   type: 'pds' | 'saln';
@@ -65,7 +67,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify admin/HR/Co-Admin permissions
-    const allowedRoles = ['admin', 'co_admin', 'hr'];
+    const allowedRoles = ['superadmin', 'admin', 'hr'];
     if (!allowedRoles.includes(sessionUser.role)) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin, Co-Admin, or HR role required.' },

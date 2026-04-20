@@ -31,6 +31,8 @@ import {
   type RevokeAllSessionsResponse,
 } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Parse user agent string to extract browser and OS information
  * Basic implementation - can be enhanced with a library like ua-parser-js
@@ -113,7 +115,7 @@ export async function GET(request: NextRequest) {
 
     // Verify authentication using portal-specific session
     const hasPermission = await checkUserRoleFromSupabase(
-      ['admin', 'hr', 'supervisor', 'employee'],
+      ['superadmin', 'admin', 'hr', 'employee'],
       'admin'
     );
     if (!hasPermission) {
@@ -217,7 +219,7 @@ export async function DELETE(request: NextRequest) {
 
     // Verify authentication using portal-specific session
     const hasPermission = await checkUserRoleFromSupabase(
-      ['admin', 'hr', 'supervisor', 'employee'],
+      ['superadmin', 'admin', 'hr', 'employee'],
       'admin'
     );
     if (!hasPermission) {

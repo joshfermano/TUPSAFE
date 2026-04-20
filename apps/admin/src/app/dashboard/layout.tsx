@@ -23,10 +23,12 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Bot,
+  Bell,
 } from 'lucide-react';
 
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
+import { useUnreadNotificationCount } from '@/hooks/useNotificationsQuery';
 import { cn } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
@@ -68,6 +70,12 @@ const navItems: NavItem[] = [
     name: 'Reports',
     href: '/dashboard/reports',
     icon: BarChart3,
+    section: 'main',
+  },
+  {
+    name: 'Notifications',
+    href: '/dashboard/notifications',
+    icon: Bell,
     section: 'main',
   },
   // Management Section
@@ -171,10 +179,10 @@ const SidebarNav = memo(
     // Map role to display label
     const getRoleLabel = (role?: string) => {
       switch (role) {
+        case 'superadmin':
+          return 'Superadmin';
         case 'admin':
           return 'Administrator';
-        case 'co_admin':
-          return 'Co-Administrator';
         case 'hr':
           return 'HR Personnel';
         default:
@@ -183,11 +191,21 @@ const SidebarNav = memo(
     };
     const userRole = getRoleLabel(profile?.role);
 
-    // Group navigation items by section
+    // Fetch unread notification count for sidebar badge
+    const { data: unreadCount } = useUnreadNotificationCount();
+
+    // Group navigation items by section, injecting the unread badge on Notifications
     const groupedNavItems = navItems.reduce((acc, item) => {
       const section = item.section || 'main';
       if (!acc[section]) acc[section] = [];
-      acc[section].push(item);
+      if (item.name === 'Notifications' && unreadCount && unreadCount > 0) {
+        acc[section].push({
+          ...item,
+          badge: unreadCount > 99 ? '99+' : String(unreadCount),
+        });
+      } else {
+        acc[section].push(item);
+      }
       return acc;
     }, {} as Record<string, NavItem[]>);
 

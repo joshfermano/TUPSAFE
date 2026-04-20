@@ -34,6 +34,7 @@ import {
 } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
 interface RevertToApplicantResponse {
   success: boolean;
   message: string;
@@ -52,7 +53,7 @@ export async function POST(
 ): Promise<NextResponse<RevertToApplicantResponse>> {
   try {
     // Verify permissions - only admin or hr can revert accounts
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'co_admin', 'hr'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
     if (!hasPermission) {
       return NextResponse.json(
         {

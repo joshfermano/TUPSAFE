@@ -28,7 +28,7 @@ import { Button } from '../../../../../components/ui/button';
 import { WorkExperienceItem } from '../../../../../components/pds/array-items';
 import { type CompletePdsData } from '../../../../../lib/validations/pds-schema';
 import { autoSortWithNotification, sortBySingleDate } from '../../../../../lib/utils/pds-sort';
-import { formatDateForInput, parseDateFromInput } from '../../../../../lib/utils/date-utils';
+import { FormDateInput } from '../../../../../components/forms/shared/FormDateInput';
 import { usePdsContextSafe } from '../../../../../context/PdsContext';
 import { EntryAttachments } from '../../../../../components/pds/EntryAttachments';
 
@@ -310,27 +310,11 @@ export const SectionIV = memo(function SectionIV() {
                       )}
                     />
 
-                    <FormField
+                    <FormDateInput
                       control={form.control}
                       name={`eligibility.${index}.dateOfExam`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Date of Examination/Conferment</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="date"
-                              {...field}
-                              value={formatDateForInput(field.value as Date | null)}
-                              onChange={(e) => {
-                                field.onChange(parseDateFromInput(e.target.value));
-                              }}
-                              onBlur={handleEligibilityDateBlur}
-                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="Date of Examination/Conferment"
+                      onBlur={handleEligibilityDateBlur}
                     />
 
                     <FormField
@@ -371,26 +355,10 @@ export const SectionIV = memo(function SectionIV() {
                       )}
                     />
 
-                    <FormField
+                    <FormDateInput
                       control={form.control}
                       name={`eligibility.${index}.licenseValidityDate`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>License Validity Date</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="date"
-                              {...field}
-                              value={formatDateForInput(field.value as Date | null)}
-                              onChange={(e) => {
-                                field.onChange(parseDateFromInput(e.target.value));
-                              }}
-                              className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="License Validity Date"
                     />
                   </div>
 

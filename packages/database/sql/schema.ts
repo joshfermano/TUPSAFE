@@ -660,7 +660,7 @@ export const pdsPersonalInfo = pgTable("pds_personal_info", {
 	telephoneNo: text("telephone_no"),
 	mobileNo: text("mobile_no"),
 	emailAddress: text("email_address"),
-	philsysNo: varchar("philsys_no", { length: 14 }),
+	philsysNo: text("philsys_no"),
 }, (table) => [
 	index("idx_pds_personal_info_philsys_no").using("btree", table.philsysNo.asc().nullsLast().op("text_ops")).where(sql`(philsys_no IS NOT NULL)`),
 	index("pds_personal_info_submission_id_idx").using("btree", table.pdsSubmissionId.asc().nullsLast().op("uuid_ops")),

@@ -5,6 +5,7 @@ import { sql, desc, count, gte } from 'drizzle-orm';
 import { subDays, format } from 'date-fns';
 import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/audit-logs/analytics
  *
@@ -24,7 +25,7 @@ import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 export async function GET() {
   try {
     // Verify admin/HR permissions
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'co_admin', 'hr'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(

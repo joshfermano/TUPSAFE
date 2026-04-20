@@ -20,6 +20,7 @@ import { NextResponse } from 'next/server';
 import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 import { getAllColleges } from '@tupsafe/database/server';
 
+export const dynamic = 'force-dynamic';
 /**
  * College list item for API response
  */
@@ -43,7 +44,7 @@ export async function GET() {
     console.log('[Colleges API] Request received');
 
     // Verify user is authenticated (any role)
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'hr', 'supervisor', 'employee'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr', 'employee'], 'admin');
     if (!hasPermission) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }

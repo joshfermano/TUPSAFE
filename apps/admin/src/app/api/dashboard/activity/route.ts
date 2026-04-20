@@ -8,6 +8,7 @@ import {
 } from '@tupsafe/types';
 import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/dashboard/activity
  *
@@ -33,7 +34,7 @@ import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 export async function GET(request: NextRequest) {
   try {
     // Verify admin/HR permissions
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'co_admin', 'hr'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(

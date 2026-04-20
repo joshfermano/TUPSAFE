@@ -313,8 +313,8 @@ export default function ApplicationDetailsPage({
                         <p className="text-xs text-slate-500 dark:text-slate-400">
                           Employment Category
                         </p>
-                        <p className="font-medium text-slate-900 dark:text-slate-100">
-                          {application.position.employmentCategory}
+                        <p className="font-medium text-slate-900 dark:text-slate-100 capitalize">
+                          {application.position.employmentCategory?.replace('_', ' ')}
                         </p>
                       </div>
                     </div>

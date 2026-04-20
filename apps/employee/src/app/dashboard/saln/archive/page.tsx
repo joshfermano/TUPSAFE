@@ -629,14 +629,20 @@ export default function SALNArchivePage() {
   const transformSALNToData = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- SalnSubmissionWithNumbers sub-types don't match SALNData PDF types exactly
     (submission: any): SALNData => {
-      // Parse spouse info - always shown in 2025 format
+      // Parse spouse info - prefer split fields, fall back to combined
       let spouseInfo = undefined;
-      if (submission.spouseName) {
-        const nameParts = submission.spouseName.trim().split(/\s+/);
+      if (submission.spouseFamilyName || submission.spouseFirstName || submission.spouseName) {
+        let fbSurname = ''; let fbFirst = ''; let fbMi: string | null = null;
+        if (submission.spouseName) {
+          const nameParts = submission.spouseName.trim().split(/\s+/);
+          fbSurname = nameParts[nameParts.length - 1] || '';
+          fbFirst = nameParts[0] || '';
+          fbMi = nameParts.length > 2 ? nameParts[1]?.charAt(0) ?? null : null;
+        }
         spouseInfo = {
-          surname: nameParts[nameParts.length - 1] || '',
-          firstName: nameParts[0] || '',
-          middleInitial: nameParts.length > 2 ? nameParts[1]?.charAt(0) : null,
+          surname: submission.spouseFamilyName || fbSurname,
+          firstName: submission.spouseFirstName || fbFirst,
+          middleInitial: submission.spouseMiddleInitial || fbMi,
           position: submission.spousePosition || '',
           agency: submission.spouseAgency || '',
           officeAddress: submission.spouseOfficeAddress || '',
@@ -702,6 +708,7 @@ export default function SALNArchivePage() {
         declarantTin: submission.declarantTin,
         spouseTin: submission.spouseTin,
         spouseDateOfBirth: submission.spouseDateOfBirth,
+        declarationDate: submission.declarationDate,
       };
     },
     [profile]

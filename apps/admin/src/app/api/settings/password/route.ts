@@ -33,6 +33,8 @@ import {
   type ChangePasswordResponse,
 } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/settings/password
  * Change user's password

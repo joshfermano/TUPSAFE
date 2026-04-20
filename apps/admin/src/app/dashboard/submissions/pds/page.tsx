@@ -11,6 +11,7 @@ import {
   Search,
   TrendingUp,
   Loader2,
+  Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow, format } from 'date-fns';
@@ -25,9 +26,12 @@ import { usePDSPdf, transformPdsForPdf } from '@/hooks/usePDSPdf';
 import { ReviewDialog } from '@/components/admin/ReviewDialog';
 import { useDepartmentsQuery } from '@/hooks/useDepartmentsQuery';
 import { usePdsStatsQuery } from '@/hooks/usePdsStatsQuery';
+import { useDeletePDS } from '@/hooks/useSubmissions';
+import { useAuth } from '@/context/AuthContext';
 import { DeadlineManagementCard } from '@/components/deadlines';
 import type { PdsSubmissionListItem } from '@tupsafe/types';
 import {
+  DeleteSubmissionDialog,
   EmptyState,
   ErrorAlert,
   StatusBadge,
@@ -92,6 +96,8 @@ interface PdsSubmissionRowProps {
   onApprove: (submissionId: string, notes?: string) => Promise<void>;
   onReject: (submissionId: string, notes: string) => Promise<void>;
   onDownload: (submissionId: string) => Promise<void>;
+  onDelete?: (submission: PdsSubmissionListItem) => void;
+  canDelete: boolean;
   isApproving: boolean;
   isRejecting: boolean;
   isDownloading: boolean;
@@ -106,6 +112,8 @@ const PdsSubmissionRow = memo(
     onApprove,
     onReject,
     onDownload,
+    onDelete,
+    canDelete,
     isApproving,
     isRejecting,
     isDownloading,
@@ -207,6 +215,18 @@ const PdsSubmissionRow = memo(
                   )}
                   {isThisRowDownloading ? 'Downloading...' : 'Download PDF'}
                 </DropdownMenuItem>
+                {canDelete && onDelete && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => onDelete(submission)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete Submission
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </EnhancedTableCell>
@@ -256,6 +276,19 @@ export default function PdsSubmissionsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    ownerName: string;
+    year: number | null;
+    status: string;
+  } | null>(null);
+
+  // Current user role (for showing admin-only delete action)
+  const { profile } = useAuth();
+  const canDelete = profile?.role === 'admin' || profile?.role === 'superadmin';
+
+  // Delete mutation
+  const deleteMutation = useDeletePDS();
 
   // Pagination hook
   const {
@@ -428,6 +461,16 @@ export default function PdsSubmissionsPage() {
     setDepartmentFilter('all');
     setYearFilter('all');
     setSearchQuery('');
+  }, []);
+
+  // Delete handler (opens dialog with target context)
+  const handleDeleteRequest = useCallback((submission: PdsSubmissionListItem) => {
+    setDeleteTarget({
+      id: submission.id,
+      ownerName: `${submission.employee.firstName} ${submission.employee.lastName}`,
+      year: submission.year ?? null,
+      status: submission.status,
+    });
   }, []);
 
   const hasActiveFilters =
@@ -700,6 +743,8 @@ export default function PdsSubmissionsPage() {
                         onApprove={handleApprove}
                         onReject={handleReject}
                         onDownload={handleDownload}
+                        onDelete={canDelete ? handleDeleteRequest : undefined}
+                        canDelete={canDelete}
                         isApproving={isApproving}
                         isRejecting={isRejecting}
                         isDownloading={isGenerating || downloadingId !== null}
@@ -726,6 +771,25 @@ export default function PdsSubmissionsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Submission Dialog (admin / co_admin only) */}
+      <DeleteSubmissionDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+        submissionType="pds"
+        ownerName={deleteTarget?.ownerName ?? ''}
+        year={deleteTarget?.year ?? null}
+        status={deleteTarget?.status ?? ''}
+        isLoading={deleteMutation.isPending}
+        onConfirm={async (reason) => {
+          if (!deleteTarget) return;
+          await deleteMutation.mutateAsync({
+            id: deleteTarget.id,
+            data: { reason },
+          });
+          setDeleteTarget(null);
+        }}
+      />
     </PageTransition>
   );
 }

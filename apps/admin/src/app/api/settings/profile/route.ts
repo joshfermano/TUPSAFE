@@ -37,6 +37,8 @@ import {
   type UserProfile,
 } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/settings/profile
  * Fetch current user's profile with department and position details
@@ -49,7 +51,7 @@ export async function GET() {
 
     // Verify authentication using portal-specific session
     const hasPermission = await checkUserRoleFromSupabase(
-      ['admin', 'hr', 'supervisor', 'employee'],
+      ['superadmin', 'admin', 'hr', 'employee'],
       'admin'
     );
     if (!hasPermission) {
@@ -192,7 +194,7 @@ export async function PUT(request: NextRequest) {
 
     // Verify authentication using portal-specific session
     const hasPermission = await checkUserRoleFromSupabase(
-      ['admin', 'hr', 'supervisor', 'employee'],
+      ['superadmin', 'admin', 'hr', 'employee'],
       'admin'
     );
     if (!hasPermission) {

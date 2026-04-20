@@ -26,12 +26,12 @@ const phoneRegex = /^(\+63|0)?[2-9]\d{1,2}-?\d{3}-?\d{4}$/;
 const mobileRegex = /^(\+63|0)?9\d{2}-?\d{3}-?\d{4}$/;
 
 // Government ID number formats
-const gsisRegex = /^\d{2}-\d{7}-\d{1}$/; // Format: 12-3456789-0
+const gsisRegex = /^\d{2}-\d{7,8}-\d{1}$/; // Format: XX-XXXXXXX-X or XX-XXXXXXXX-X
 const sssRegex = /^\d{2}-\d{7}-\d{1}$/; // Format: 34-5678901-2
 const tinRegex = /^\d{3}-\d{3}-\d{3}-\d{3}$/; // Format: 123-456-789-000
 const philhealthRegex = /^\d{2}-\d{9}-\d{1}$/; // Format: 12-345678901-2
 const pagibigRegex = /^\d{4}-\d{4}-\d{4}$/; // Format: 1234-5678-9012
-const philsysRegex = /^\d{2}-\d{9}-\d{1}$/; // Format: 12-345678901-2 (PhilSys Number - PSN)
+const philsysRegex = /^(\d{4}-\d{4}-\d{4}-\d{4}|\d{2}-\d{9}-\d{1})$/; // Format: XXXX-XXXX-XXXX-XXXX or XX-XXXXXXXXX-X
 
 // Date validation helpers
 // Use end-of-today comparison to allow "today" as a valid past date
@@ -79,7 +79,7 @@ export const personalInfoBasicSchema = z.object({
     .optional(),
 
   nameExtension: z
-    .enum(['Jr.', 'Sr.', 'II', 'III', 'IV', 'V', ''])
+    .enum(['Jr.', 'Sr.', 'I', 'II', 'III', 'IV', 'V', ''])
     .nullable()
     .optional(),
 
@@ -134,7 +134,7 @@ export const personalInfoBasicSchema = z.object({
   gsisNo: z
     .union([
       z.literal(''),
-      z.string().regex(gsisRegex, 'Invalid GSIS ID format (XX-XXXXXXX-X)'),
+      z.string().regex(gsisRegex, 'Invalid GSIS ID format (XX-XXXXXXX-X or XX-XXXXXXXX-X)'),
     ])
     .optional()
     .nullable(),
@@ -189,7 +189,7 @@ export const personalInfoBasicSchema = z.object({
       z.literal(''),
       z
         .string()
-        .regex(philsysRegex, 'Invalid PhilSys Number format (XX-XXXXXXXXX-X)'),
+        .regex(philsysRegex, 'Invalid PhilSys Number format (XXXX-XXXX-XXXX-XXXX or XX-XXXXXXXXX-X)'),
     ])
     .optional()
     .nullable(),
@@ -199,6 +199,14 @@ export const personalInfoBasicSchema = z.object({
     type: z.enum(['Filipino', 'Dual'], {
       required_error: 'Citizenship type is required',
     }),
+    // For Dual citizenship: by birth or by naturalization
+    acquisitionMethod: z.enum(['byBirth', 'byNaturalization']).optional(),
+    // Country for dual citizenship
+    country: z
+      .string()
+      .max(100, 'Country must not exceed 100 characters')
+      .optional(),
+    // Legacy field for backward compatibility
     details: z
       .string()
       .max(100, 'Citizenship details must not exceed 100 characters')
@@ -278,10 +286,17 @@ export const personalInfoSchema = personalInfoBasicSchema
   )
   .merge(contactInfoSchema)
   .refine(
-    (data) => data.citizenship.type !== 'Dual' || data.citizenship.details,
+    (data) => data.citizenship.type !== 'Dual' || data.citizenship.acquisitionMethod,
     {
-      message: 'Please specify dual citizenship details',
-      path: ['citizenship', 'details'],
+      message: 'Please select how you acquired dual citizenship (by birth or by naturalization)',
+      path: ['citizenship', 'acquisitionMethod'],
+    }
+  )
+  .refine(
+    (data) => data.citizenship.type !== 'Dual' || data.citizenship.country,
+    {
+      message: 'Please indicate the country of your dual citizenship',
+      path: ['citizenship', 'country'],
     }
   );
 
@@ -312,7 +327,7 @@ const spouseSchema = z.object({
     .optional(),
 
   spouseNameExtension: z
-    .enum(['Jr.', 'Sr.', 'II', 'III', 'IV', 'V', ''])
+    .enum(['Jr.', 'Sr.', 'I', 'II', 'III', 'IV', 'V', ''])
     .nullable()
     .optional(),
 
@@ -367,7 +382,7 @@ const parentSchema = z.object({
     .optional(),
 
   fatherNameExtension: z
-    .enum(['Jr.', 'Sr.', 'II', 'III', 'IV', 'V', ''])
+    .enum(['Jr.', 'Sr.', 'I', 'II', 'III', 'IV', 'V', ''])
     .nullable()
     .optional(),
 
@@ -1009,6 +1024,33 @@ const referenceSchema = z.object({
 });
 
 /**
+ * Government Issued ID (Item 42) - CS Form No. 212 Revised 2025
+ * Located below the References section on Page 4
+ * Required for identification and signature verification
+ */
+export const governmentIdSchema = z.object({
+  idType: z
+    .string()
+    .max(100, 'ID type must not exceed 100 characters')
+    .nullable()
+    .optional(),
+
+  idNumber: z
+    .string()
+    .max(100, 'ID number must not exceed 100 characters')
+    .nullable()
+    .optional(),
+
+  dateIssued: z.date().nullable().optional(),
+
+  placeIssued: z
+    .string()
+    .max(150, 'Place issued must not exceed 150 characters')
+    .nullable()
+    .optional(),
+});
+
+/**
  * CSC Form Questions (Questions 34-40) - CS Form No. 212 Revised 2025
  */
 const questionsSchema = z.object({
@@ -1103,6 +1145,8 @@ export const otherInformationSchema = z
       .array(referenceSchema)
       .min(3, 'You must provide at least 3 character references')
       .max(5, 'Maximum of 5 character references allowed'),
+    // Government Issued ID (Item 42) - below references section
+    governmentId: governmentIdSchema.optional(),
   })
   .refine(
     (data) => {
@@ -1282,6 +1326,14 @@ const citizenshipSchema = z.object({
   type: z.enum(['Filipino', 'Dual'], {
     required_error: 'Citizenship type is required',
   }),
+  // For Dual citizenship: by birth or by naturalization
+  acquisitionMethod: z.enum(['byBirth', 'byNaturalization']).optional(),
+  // Country for dual citizenship
+  country: z
+    .string()
+    .max(100, 'Country must not exceed 100 characters')
+    .optional(),
+  // Legacy field for backward compatibility
   details: z
     .string()
     .max(100, 'Citizenship details must not exceed 100 characters')
@@ -1472,6 +1524,7 @@ export type OtherInformation = z.infer<typeof otherInformationSchema>;
 export type Recognition = z.infer<typeof recognitionSchema>;
 export type Association = z.infer<typeof associationSchema>;
 export type Reference = z.infer<typeof referenceSchema>;
+export type GovernmentId = z.infer<typeof governmentIdSchema>;
 export type CompletePdsData = z.infer<typeof completePdsSchema>;
 
 // Step-specific types
@@ -1611,6 +1664,13 @@ export function createEmptyPds(): Partial<CompletePdsData> {
         { name: '', address: '', telephoneNo: '' },
         { name: '', address: '', telephoneNo: '' },
       ],
+      // Government Issued ID (Item 42) - CS Form No. 212 Revised 2025
+      governmentId: {
+        idType: null,
+        idNumber: null,
+        dateIssued: null,
+        placeIssued: null,
+      },
     },
   };
 }

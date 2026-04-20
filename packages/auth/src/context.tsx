@@ -5,10 +5,10 @@ import { User, Session, AuthError, AuthChangeEvent } from '@supabase/supabase-js
 import { createClient } from './utils/supabase/client.js';
 
 // Simplified types for auth context
-type Role = 'employee' | 'hr' | 'admin' | 'co_admin' | 'supervisor' | 'auditor';
+type Role = 'superadmin' | 'admin' | 'hr' | 'employee';
 
 // Admin-equivalent roles (for permission checks)
-const ADMIN_EQUIVALENT_ROLES: Role[] = ['admin', 'co_admin'];
+const ADMIN_EQUIVALENT_ROLES: Role[] = ['admin', 'superadmin'];
 
 interface Profile {
   id: string;
@@ -189,7 +189,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const hasRole = (role: Role): boolean => {
     if (!profile) return false;
-    // Admin and co_admin are treated as admin-equivalent
+    // Admin and superadmin are treated as admin-equivalent
     if (ADMIN_EQUIVALENT_ROLES.includes(profile.role)) {
       return role === 'admin' || profile.role === role;
     }
@@ -199,7 +199,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const hasPermission = (permission: string): boolean => {
     if (!profile) return false;
 
-    // Admin and co_admin have all permissions
+    // Admin and superadmin have all permissions
     if (ADMIN_EQUIVALENT_ROLES.includes(profile.role)) return true;
 
     // Define role-based permissions
@@ -214,10 +214,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         'approve_submissions',
         'manage_users',
       ],
-      supervisor: ['view_subordinate_submissions', 'approve_submissions'],
-      auditor: ['view_all_submissions', 'view_audit_logs'],
       admin: ['*'], // All permissions
-      co_admin: ['*'], // Co-admin has same permissions as admin
+      superadmin: ['*'], // Superadmin has same permissions as admin
     };
 
     const userPermissions = rolePermissions[profile.role] || [];

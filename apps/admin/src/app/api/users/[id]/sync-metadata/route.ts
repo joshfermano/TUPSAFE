@@ -16,6 +16,7 @@ import { checkUserRoleFromSupabase, createServerClient } from '@tupsafe/auth/ser
 import { db, profiles } from '@tupsafe/database/server';
 import { eq } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
 interface RouteParams {
   params: Promise<{
     id: string;
@@ -28,7 +29,7 @@ export async function POST(
 ) {
   try {
     // Authorization check - HR or Admin only
-    const hasPermission = await checkUserRoleFromSupabase(['hr', 'admin'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(

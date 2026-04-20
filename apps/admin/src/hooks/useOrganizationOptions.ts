@@ -41,8 +41,12 @@ export interface UseOrganizationOptionsParams {
   selectedCollegeId: string | undefined;
   /** Currently selected department ID */
   selectedDepartmentId: string | undefined;
-  /** Whether the user being edited is a co-admin */
-  isCoAdmin: boolean;
+  /**
+   * Whether the currently-selected role requires an HR-prefixed department
+   * (true for `hr` and `admin`). When true and the selected college is not an
+   * HR office, department options are filtered to HR departments only.
+   */
+  requiresHRDepartment: boolean;
   /** Current user's department ID (for ensuring it's in options) */
   currentUserDepartmentId?: string | null;
   /** Current user's department details */
@@ -101,7 +105,7 @@ export interface UseOrganizationOptionsResult {
  * } = useOrganizationOptions({
  *   selectedCollegeId: watch('collegeId'),
  *   selectedDepartmentId: watch('departmentId'),
- *   isCoAdmin: watch('isCoAdmin'),
+ *   requiresHRDepartment: watch('role') === 'hr' || watch('role') === 'admin',
  *   currentUserDepartmentId: user?.departmentId,
  *   currentUserDepartment: user?.department,
  * });
@@ -110,7 +114,7 @@ export interface UseOrganizationOptionsResult {
 export function useOrganizationOptions({
   selectedCollegeId,
   selectedDepartmentId,
-  isCoAdmin,
+  requiresHRDepartment,
   currentUserDepartmentId,
   currentUserDepartment,
 }: UseOrganizationOptionsParams): UseOrganizationOptionsResult {
@@ -203,15 +207,15 @@ export function useOrganizationOptions({
         ? allDepartments.filter((d) => d.parentCollegeId === selectedCollegeId)
         : allDepartments;
 
-    // If co-admin is enabled AND the selected college is NOT an HR office,
-    // then filter to only HR departments (co-admin must be in HR)
-    if (isCoAdmin && !selectedCollegeIsHR) {
+    // If the selected role requires HR (hr/admin) AND the selected college is
+    // NOT an HR office, filter to only HR departments.
+    if (requiresHRDepartment && !selectedCollegeIsHR) {
       filteredDepartments = filteredDepartments.filter((dept) =>
         isHROffice(dept.code, dept.name)
       );
     }
-    // If co-admin is enabled AND the college IS an HR office,
-    // show all departments under that HR office (no filtering needed)
+    // If the role requires HR AND the college IS an HR office, show all
+    // departments under that HR office (no filtering needed).
 
     const options: OrganizationOption[] = filteredDepartments.map((dept) => ({
       value: dept.id,
@@ -261,7 +265,7 @@ export function useOrganizationOptions({
   }, [
     organizationsData,
     selectedCollegeId,
-    isCoAdmin,
+    requiresHRDepartment,
     selectedCollegeIsHR,
     currentUserDepartmentId,
     currentUserDepartment,
@@ -299,7 +303,7 @@ export function useOrganizationOptions({
     if (selectedCollegeIsHR || selectedDepartmentIsHR) return true;
 
     // Also check the current user's actual department assignment
-    // This ensures the Co-Admin toggle shows on initial load
+    // so the HR gating applies correctly on first render.
     if (currentUserDepartment) {
       if (isHROffice(currentUserDepartment.code, currentUserDepartment.name)) {
         return true;

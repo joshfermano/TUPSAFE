@@ -134,24 +134,18 @@ export function usePDSPdf(): UsePDSPdfReturn {
         );
       }
 
-      // Dynamically import PDF libraries (deferred from top-level)
-      const [{ pdf }, { PDSDocument, ensurePDSFontsRegistered }] = await Promise.all([
-        import('@react-pdf/renderer'),
-        import('@tupsafe/shared-ui/pds-pdf'),
-      ]);
+      // Dynamically import pdf-lib template filler via deep subpath
+      // (NOT the barrel — barrel must stay free of pdf-lib transitive imports)
+      const { fillPDS } = await import('@tupsafe/shared-ui/pds-template/pds-filler');
 
-      // Get base URL for font paths and register fonts
       const baseUrl =
         typeof window !== 'undefined' ? window.location.origin : '';
-      ensurePDSFontsRegistered(baseUrl);
 
-      // Create the PDF document element
-      const document = PDSDocument({ data });
+      // Fill the government PDF template with data using pdf-lib
+      const pdfBytes = await fillPDS(baseUrl, data);
 
-      // Generate the PDF blob using @react-pdf/renderer
-      const blob = await pdf(document).toBlob();
-
-      return blob;
+      // Cast: pdf-lib returns Uint8Array<ArrayBufferLike>, Blob needs ArrayBuffer
+      return new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
     } catch (err) {
       const error =
         err instanceof Error ? err : new Error('Failed to generate PDF');

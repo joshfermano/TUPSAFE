@@ -5,7 +5,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '../../
 import { Input } from '../../ui/input';
 import { Button } from '../../ui/button';
 import { type CompletePdsData } from '../../../lib/validations/pds-schema';
-import { formatDateForInput, parseDateFromInput } from '../../../lib/utils/date-utils';
+import { FormDateInput } from '../../forms/shared/FormDateInput';
 
 interface VoluntaryWorkItemProps {
   index: number;
@@ -75,52 +75,19 @@ export const VoluntaryWorkItem = memo(({ index, onRemove, onDateBlur }: Voluntar
           )}
         />
 
-        <FormField
+        <FormDateInput
           control={form.control}
           name={`voluntaryWork.${index}.dateFrom`}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                From <span className="text-destructive">*</span>
-              </FormLabel>
-              <FormControl>
-                <Input
-                  type="date"
-                  {...field}
-                  value={formatDateForInput(field.value as Date | null)}
-                  onChange={(e) => {
-                    field.onChange(parseDateFromInput(e.target.value));
-                  }}
-                  onBlur={onDateBlur}
-                  className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          label="From"
+          required
+          onBlur={onDateBlur}
         />
 
-        <FormField
+        <FormDateInput
           control={form.control}
           name={`voluntaryWork.${index}.dateTo`}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>To (leave blank if ongoing)</FormLabel>
-              <FormControl>
-                <Input
-                  type="date"
-                  {...field}
-                  value={formatDateForInput(field.value as Date | null)}
-                  onChange={(e) => {
-                    field.onChange(parseDateFromInput(e.target.value));
-                  }}
-                  onBlur={onDateBlur}
-                  className="bg-transparent border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          label="To (leave blank if ongoing)"
+          onBlur={onDateBlur}
         />
 
         <FormField

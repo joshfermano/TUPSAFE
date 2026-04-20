@@ -262,23 +262,30 @@ export function ReviewDialog({
     }
   };
 
+  // Detect dark mode for inline style theming
+  const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+
   // Action configurations for styling and labels
   const actionConfig = {
     approve: {
       icon: CheckCircle2,
       label: 'Approve',
       description: 'Accept this submission as complete and compliant',
-      color: 'text-emerald-600 dark:text-emerald-400',
-      bgColor: 'bg-emerald-50 dark:bg-emerald-950/20',
-      borderColor: 'border-emerald-200 dark:border-emerald-800',
+      iconColor: isDark ? '#6ee7b7' : '#059669',
+      selectedStyle: {
+        backgroundColor: isDark ? 'rgba(16,185,129,0.1)' : '#d1fae5',
+        borderColor: isDark ? 'rgba(16,185,129,0.4)' : '#6ee7b7',
+      },
     },
     reject: {
       icon: XCircle,
       label: 'Reject',
       description: 'Reject this submission due to non-compliance or errors',
-      color: 'text-red-600 dark:text-red-400',
-      bgColor: 'bg-red-50 dark:bg-red-950/20',
-      borderColor: 'border-red-200 dark:border-red-800',
+      iconColor: isDark ? '#fca5a5' : '#dc2626',
+      selectedStyle: {
+        backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : '#fee2e2',
+        borderColor: isDark ? 'rgba(239,68,68,0.4)' : '#f87171',
+      },
     },
   };
 
@@ -311,19 +318,19 @@ export function ReviewDialog({
                 return (
                   <label
                     key={action}
-                    className={`
-                      relative flex cursor-pointer items-start gap-3 rounded-lg border-2 p-4
-                      transition-all duration-200
-                      ${isSelected
-                        ? `${config.borderColor} ${config.bgColor}`
-                        : 'border-border hover:border-muted-foreground/20'
-                      }
-                    `}
+                    className="relative flex cursor-pointer items-start gap-3 rounded-lg border-2 p-4 transition-all duration-200"
+                    style={isSelected
+                      ? config.selectedStyle
+                      : { borderColor: 'var(--border)' }
+                    }
                   >
                     <RadioGroupItem value={action} className="mt-0.5" />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <Icon className={`h-5 w-5 ${isSelected ? config.color : 'text-muted-foreground'}`} />
+                        <Icon
+                          className="h-5 w-5"
+                          style={{ color: isSelected ? config.iconColor : undefined }}
+                        />
                         <span className="font-medium">{config.label}</span>
                       </div>
                       <p className="mt-1 text-sm text-muted-foreground">{config.description}</p>

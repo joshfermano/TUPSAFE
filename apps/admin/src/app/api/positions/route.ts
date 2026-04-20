@@ -36,6 +36,7 @@ import {
 } from '@tupsafe/types';
 import { ZodError } from 'zod';
 
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/positions
  * List positions with filtering, search, and sorting
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest) {
   try {
     // Verify admin/HR/supervisor permissions
     const hasPermission = await checkUserRoleFromSupabase(
-      ['admin', 'hr', 'supervisor'],
+      ['superadmin', 'admin', 'hr'],
       'admin'
     );
 
@@ -187,7 +188,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Check authorization - admin or hr only
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'co_admin', 'hr'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(

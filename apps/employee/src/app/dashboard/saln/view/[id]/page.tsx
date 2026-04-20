@@ -84,6 +84,7 @@ interface ViewBusinessInterest {
   dateAcquired?: string;
   dateOfAcquisition?: string;
   owner?: string;
+  childName?: string | null;
 }
 
 interface ViewRelativeInGov {
@@ -308,13 +309,14 @@ export default function SALNViewDetailPage({
 
     const spouseParsedName = parseSpouseName(submissionMeta.spouseName);
 
-    // Build spouse info for joint or separate filing (both imply marriage)
+    // Build spouse info for joint or separate filing — prefer split fields, fall back to parsed combined
     let spouseInfo = undefined;
-    if ((submissionMeta.filingType === 'joint' || submissionMeta.filingType === 'separate') && submissionMeta.spouseName) {
+    const hasSpouseData = submissionMeta.spouseFamilyName || submissionMeta.spouseFirstName || submissionMeta.spouseName;
+    if ((submissionMeta.filingType === 'joint' || submissionMeta.filingType === 'separate') && hasSpouseData) {
       spouseInfo = {
-        surname: spouseParsedName.surname,
-        firstName: spouseParsedName.firstName,
-        middleInitial: spouseParsedName.middleInitial,
+        surname: submissionMeta.spouseFamilyName || spouseParsedName.surname,
+        firstName: submissionMeta.spouseFirstName || spouseParsedName.firstName,
+        middleInitial: submissionMeta.spouseMiddleInitial || spouseParsedName.middleInitial,
         position: submissionMeta.spousePosition || '',
         agency: submissionMeta.spouseAgency || '',
         officeAddress: submissionMeta.spouseOfficeAddress || '',
@@ -337,9 +339,10 @@ export default function SALNViewDetailPage({
       year: submissionMeta.year || new Date().getFullYear(),
       filingType: submissionMeta.filingType || 'not_applicable',
       declarantInfo: {
-        surname: profileInput?.lastName || '',
-        firstName: profileInput?.firstName || '',
-        middleInitial: profileInput?.middleName || null,
+        // Use per-submission override if present; otherwise fall back to profile
+        surname: submissionMeta.declarantLastName || profileInput?.lastName || '',
+        firstName: submissionMeta.declarantFirstName || profileInput?.firstName || '',
+        middleInitial: submissionMeta.declarantMiddleInitial || profileInput?.middleName || null,
         position: submissionMeta.position || '',
         agency:
           submissionMeta.agency ||
@@ -358,6 +361,8 @@ export default function SALNViewDetailPage({
           businessAddress: bi.businessAddress || '',
           natureOfBusiness: bi.nature || bi.natureOfBusiness || '',
           dateOfAcquisition: bi.dateAcquired || bi.dateOfAcquisition || '',
+          owner: bi.owner || undefined,
+          childName: bi.childName || null,
         })) || [],
       relativesInGov:
         salnDataInput.relativesInGov?.map((rel: ViewRelativeInGov) => ({
@@ -392,6 +397,7 @@ export default function SALNViewDetailPage({
       declarantTin: submissionMeta.declarantTin,
       spouseTin: submissionMeta.spouseTin,
       spouseDateOfBirth: submissionMeta.spouseDateOfBirth,
+      declarationDate: submissionMeta.declarationDate,
     };
   };
 

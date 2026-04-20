@@ -11,6 +11,7 @@ import { db, openPositions, jobApplications } from '@tupsafe/database/server';
 import { eq, sql, count, and, gte, desc } from 'drizzle-orm';
 import type { JobsStatsResponse } from '@tupsafe/types/admin/jobs';
 
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/jobs/stats
  * Get comprehensive job positions statistics
@@ -18,7 +19,7 @@ import type { JobsStatsResponse } from '@tupsafe/types/admin/jobs';
 export async function GET() {
   try {
     // Verify admin/HR permissions
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'co_admin', 'hr'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(

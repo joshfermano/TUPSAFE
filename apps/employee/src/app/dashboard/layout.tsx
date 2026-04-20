@@ -23,8 +23,11 @@ import {
   X,
   PanelLeftClose,
   PanelLeftOpen,
+  Bell,
   type LucideIcon,
 } from 'lucide-react';
+import { ThemeToggle } from '../../components/theme/ThemeToggle';
+import { useUnreadCount } from '../../hooks/useNotifications';
 
 // ============================================================================
 // TYPES
@@ -40,6 +43,7 @@ interface NavigationItem {
   href?: string;
   icon: LucideIcon;
   subItems?: NavigationSubItem[];
+  badge?: number;
 }
 
 interface NavItemProps {
@@ -145,9 +149,25 @@ const NavItem = memo<NavItemProps>(
                 : 'text-slate-500 dark:text-slate-400 group-hover:text-primary dark:group-hover:text-primary'
             )}
           />
+          {isCollapsed && item.badge != null && item.badge > 0 && (
+            <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-blue-500" />
+          )}
           {!isCollapsed && (
             <>
               <span className="flex-1 text-left">{item.name}</span>
+
+              {item.badge != null && item.badge > 0 && (
+                <span
+                  className={cn(
+                    'inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 rounded-full text-[10px] font-bold leading-none',
+                    isActive
+                      ? 'bg-white/25 text-white'
+                      : 'bg-blue-600 text-white'
+                  )}
+                >
+                  {item.badge > 99 ? '99+' : item.badge}
+                </span>
+              )}
 
               {hasSubItems ? (
                 <ChevronDown
@@ -221,6 +241,7 @@ const DashboardSidebar = memo(function DashboardSidebar({
   const router = useRouter();
   const { user, profile, signOut } = useAuth();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const { data: unreadNotificationCount } = useUnreadCount();
 
   // Memoize navigation items array based on user type
   const navigationItems = useMemo<NavigationItem[]>(() => {
@@ -252,6 +273,12 @@ const DashboardSidebar = memo(function DashboardSidebar({
           name: 'Open Positions',
           href: '/dashboard/positions',
           icon: Building2,
+        },
+        {
+          name: 'Notifications',
+          href: '/dashboard/notifications',
+          icon: Bell,
+          badge: unreadNotificationCount ?? 0,
         },
         {
           name: 'Settings',
@@ -293,12 +320,18 @@ const DashboardSidebar = memo(function DashboardSidebar({
         ],
       },
       {
+        name: 'Notifications',
+        href: '/dashboard/notifications',
+        icon: Bell,
+        badge: unreadNotificationCount ?? 0,
+      },
+      {
         name: 'Settings',
         href: '/dashboard/settings',
         icon: Settings,
       },
     ];
-  }, [effectiveUserType]);
+  }, [effectiveUserType, unreadNotificationCount]);
 
   // Memoize sign out handler to prevent recreation on every render
   const handleSignOut = useCallback(async () => {
@@ -432,22 +465,30 @@ const DashboardSidebar = memo(function DashboardSidebar({
           })}
         </nav>
 
-        {/* Sidebar Footer - Simple Sign Out Button */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800">
-          <div>
-            <Button
-              variant="ghost"
-              className={cn(
-                "w-full gap-3 text-slate-700 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all duration-300 active:scale-[0.98]",
-                isCollapsed ? "justify-center px-2" : "justify-start",
-                !isCollapsed && "hover:translate-x-0.5"
-              )}
-              onClick={handleSignOut}
-              title={isCollapsed ? "Sign Out" : undefined}>
-              <LogOut className="h-5 w-5" />
-              {!isCollapsed && <span>Sign Out</span>}
-            </Button>
-          </div>
+        {/* Sidebar Footer - Theme Toggle + Sign Out */}
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 space-y-2">
+          {/* Theme Toggle */}
+          {isCollapsed ? (
+            <div className="flex justify-center">
+              <ThemeToggle variant="minimal" size="sm" />
+            </div>
+          ) : (
+            <ThemeToggle variant="button" size="sm" className="w-full [&>div]:w-full [&>div>button]:flex-1" />
+          )}
+
+          {/* Sign Out */}
+          <Button
+            variant="ghost"
+            className={cn(
+              "w-full gap-3 text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 hover:bg-red-100 dark:hover:bg-red-950/40 hover:text-red-800 dark:hover:text-red-300 transition-all duration-300 active:scale-[0.98]",
+              isCollapsed ? "justify-center px-2" : "justify-start",
+              !isCollapsed && "hover:translate-x-0.5"
+            )}
+            onClick={handleSignOut}
+            title={isCollapsed ? "Sign Out" : undefined}>
+            <LogOut className="h-5 w-5" />
+            {!isCollapsed && <span>Sign Out</span>}
+          </Button>
         </div>
       </div>
     </div>
@@ -500,6 +541,7 @@ const APPLICANT_ALLOWED_ROUTES = [
   '/dashboard/pds',
   '/dashboard/applications',
   '/dashboard/positions',
+  '/dashboard/notifications',
   '/dashboard/settings',
 ] as const;
 

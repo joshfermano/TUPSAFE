@@ -16,6 +16,8 @@ import {
   TrendingUp,
   Printer,
   Loader2,
+  XCircle,
+  Trash2,
 } from 'lucide-react';
 
 import {
@@ -34,6 +36,7 @@ import { Separator } from '@/components/ui/separator';
 import { StatusBadge } from '@/components/admin/StatusBadge';
 import { UserAvatar } from '@/components/admin/UserAvatar';
 import { ReviewDialog } from '@/components/admin/ReviewDialog';
+import { DeleteSubmissionDialog } from '@/components/admin/DeleteSubmissionDialog';
 import { LoadingCard } from '@/components/admin/LoadingCard';
 import { ErrorAlert } from '@/components/admin/ErrorAlert';
 import { EmptyState } from '@/components/admin/EmptyState';
@@ -41,6 +44,7 @@ import { EmptyState } from '@/components/admin/EmptyState';
 import { DataSection, PropertyCard, FinancialSummaryCards } from '@/components/saln';
 
 import { useSalnSubmissionsQuery } from '@/hooks/useSalnSubmissionsQuery';
+import { useDeleteSALN } from '@/hooks/useSubmissions';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/formatting-helpers';
@@ -66,10 +70,14 @@ import type { SALNData } from '@/components/saln/pdf';
 export default function SalnSubmissionViewPage() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const submissionId = params.id as string;
+  const canDelete = profile?.role === 'admin' || profile?.role === 'superadmin';
 
   const [isReviewDialogOpen, setIsReviewDialogOpen] = React.useState(false);
+  const [reviewAction, setReviewAction] = React.useState<'approve' | 'reject' | undefined>(undefined);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+  const deleteMutation = useDeleteSALN();
 
   const {
     useCompleteSubmission,
@@ -178,15 +186,26 @@ export default function SalnSubmissionViewPage() {
       return null;
     }
 
-    // Parse spouse info - always shown in 2025 format
+    // Parse spouse info - always shown in 2025 format; prefer split fields, fall back to combined
     let spouseInfo = undefined;
     const spouseNameRaw = (salnData as Record<string, unknown>)?.spouseName as string | undefined;
-    if (spouseNameRaw) {
-      const nameParts = spouseNameRaw.trim().split(/\s+/);
+    const spouseFamilyNameRaw = (salnData as Record<string, unknown>)?.spouseFamilyName as string | undefined;
+    const spouseFirstNameRaw = (salnData as Record<string, unknown>)?.spouseFirstName as string | undefined;
+    const spouseMiddleInitialRaw = (salnData as Record<string, unknown>)?.spouseMiddleInitial as string | undefined;
+    if (spouseFamilyNameRaw || spouseFirstNameRaw || spouseNameRaw) {
+      let fallbackSurname = '';
+      let fallbackFirst = '';
+      let fallbackMi: string | null = null;
+      if (spouseNameRaw) {
+        const nameParts = spouseNameRaw.trim().split(/\s+/);
+        fallbackSurname = nameParts[nameParts.length - 1] || '';
+        fallbackFirst = nameParts[0] || '';
+        fallbackMi = nameParts.length > 2 ? nameParts[1]?.charAt(0) ?? null : null;
+      }
       spouseInfo = {
-        surname: nameParts[nameParts.length - 1] || '',
-        firstName: nameParts[0] || '',
-        middleInitial: nameParts.length > 2 ? nameParts[1]?.charAt(0) : null,
+        surname: spouseFamilyNameRaw || fallbackSurname,
+        firstName: spouseFirstNameRaw || fallbackFirst,
+        middleInitial: spouseMiddleInitialRaw || fallbackMi,
         position: salnData?.spousePosition || '',
         agency: salnData?.spouseAgency || '',
         officeAddress: salnData?.spouseOfficeAddress || employee.officeAddress || '',
@@ -239,6 +258,7 @@ export default function SalnSubmissionViewPage() {
       declarantTin: salnData?.declarantTin,
       spouseTin: salnData?.spouseTin,
       spouseDateOfBirth: salnData?.spouseDateOfBirth,
+      declarationDate: (salnData as Record<string, unknown>)?.declarationDate as string | undefined,
     };
 
     console.log('[SALN PDF] Data transformed successfully:', {
@@ -495,10 +515,42 @@ export default function SalnSubmissionViewPage() {
                 Print PDF
               </Button>
               {canReview && (
+                <>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      setReviewAction('reject');
+                      setIsReviewDialogOpen(true);
+                    }}
+                    disabled={isSubmitting}
+                    className="gap-2">
+                    <XCircle className="h-4 w-4" />
+                    Reject
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => {
+                      setReviewAction('approve');
+                      setIsReviewDialogOpen(true);
+                    }}
+                    disabled={isSubmitting}
+                    className="gap-2">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Approve
+                  </Button>
+                </>
+              )}
+              {canDelete && (
                 <Button
-                  onClick={() => setIsReviewDialogOpen(true)}
-                  className="gap-2 bg-tup-primary hover:bg-tup-primary/90">
-                  Review Submission
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                  disabled={isSubmitting || deleteMutation.isPending}
+                  className="gap-2">
+                  <Trash2 className="h-4 w-4" />
+                  Delete
                 </Button>
               )}
             </div>
@@ -880,12 +932,30 @@ export default function SalnSubmissionViewPage() {
                 <Separator />
                 <div className="space-y-2">
                   {canReview && (
-                    <Button
-                      onClick={() => setIsReviewDialogOpen(true)}
-                      className="w-full bg-emerald-500 hover:bg-emerald-700 gap-2">
-                      <CheckCircle2 className="h-4 w-4" />
-                      Review Submission
-                    </Button>
+                    <>
+                      <Button
+                        variant="default"
+                        onClick={() => {
+                          setReviewAction('approve');
+                          setIsReviewDialogOpen(true);
+                        }}
+                        disabled={isSubmitting}
+                        className="w-full gap-2">
+                        <CheckCircle2 className="h-4 w-4" />
+                        Approve
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          setReviewAction('reject');
+                          setIsReviewDialogOpen(true);
+                        }}
+                        disabled={isSubmitting}
+                        className="w-full gap-2">
+                        <XCircle className="h-4 w-4" />
+                        Reject
+                      </Button>
+                    </>
                   )}
                   <Button
                     variant="outline"
@@ -928,9 +998,31 @@ export default function SalnSubmissionViewPage() {
           submissionType="saln"
           currentStatus={submission.status}
           employeeName={`${employee.firstName} ${employee.lastName}`}
+          defaultAction={reviewAction}
           onApprove={handleApprove}
           onReject={handleReject}
           isSubmitting={isSubmitting}
+        />
+      )}
+
+      {/* Delete Submission Dialog (admin / co_admin only) */}
+      {canDelete && submission && employee && (
+        <DeleteSubmissionDialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+          submissionType="saln"
+          ownerName={`${employee.firstName} ${employee.lastName}`}
+          year={submission.fiscalYear ?? null}
+          status={submission.status}
+          isLoading={deleteMutation.isPending}
+          onConfirm={async (reason) => {
+            await deleteMutation.mutateAsync({
+              id: submissionId,
+              data: { reason },
+            });
+            setIsDeleteDialogOpen(false);
+            router.push('/dashboard/submissions/saln');
+          }}
         />
       )}
     </>

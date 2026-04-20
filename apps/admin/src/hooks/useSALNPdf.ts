@@ -184,24 +184,18 @@ export function useSALNPdf(): UseSALNPdfReturn {
         console.warn('PDF Generation Warnings:', validation.warnings);
       }
 
-      // Dynamically import PDF libraries (deferred from top-level)
-      const [{ pdf }, { SALNDocument, registerSALNFonts }] = await Promise.all([
-        import('@react-pdf/renderer'),
-        import('@/components/saln/pdf'),
-      ]);
+      // Dynamically import pdf-lib template filler via deep subpath
+      // (NOT the barrel — barrel must stay free of pdf-lib transitive imports)
+      const { fillSALN } = await import('@tupsafe/shared-ui/saln-template/saln-filler');
 
-      // Get base URL for font paths and register fonts
       const baseUrl =
         typeof window !== 'undefined' ? window.location.origin : '';
-      registerSALNFonts(baseUrl);
 
-      // Create the PDF document element
-      const document = SALNDocument({ data: salnData });
+      // Fill the government PDF template with data using pdf-lib
+      const pdfBytes = await fillSALN(baseUrl, salnData);
 
-      // Generate the PDF blob using @react-pdf/renderer
-      const blob = await pdf(document).toBlob();
-
-      return blob;
+      // Cast: pdf-lib returns Uint8Array<ArrayBufferLike>, Blob needs ArrayBuffer
+      return new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
     } catch (err) {
       const error =
         err instanceof Error ? err : new Error('Failed to generate PDF');

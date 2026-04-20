@@ -19,6 +19,8 @@ import {
   createServerClient,
 } from '@tupsafe/auth/server';
 
+export const dynamic = 'force-dynamic';
+
 // Rejection validation schema
 const rejectionSchema = z.object({
   userId: z.string().uuid('Invalid user ID'),
@@ -38,7 +40,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user has HR or admin role
-    const allowedRoles = ['hr', 'admin'];
+    const allowedRoles = ['superadmin', 'admin', 'hr'];
     if (!allowedRoles.includes(adminUser.role)) {
       return NextResponse.json(
         { error: 'Unauthorized. HR or Admin role required.' },

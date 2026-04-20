@@ -18,12 +18,13 @@
 import { memo, useMemo } from 'react';
 import { useFormContext, useFieldArray, Controller, useWatch } from 'react-hook-form';
 import { BackpackIcon } from '@radix-ui/react-icons';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Info } from 'lucide-react';
 import { CurrencyInput } from '../../../../../components/forms/shared/CurrencyInput';
 import { Label } from '../../../../../components/ui/label';
 import { Button } from '../../../../../components/ui/button';
 import { Textarea } from '../../../../../components/ui/textarea';
 import { Badge } from '../../../../../components/ui/badge';
+import { Alert, AlertDescription } from '../../../../../components/ui/alert';
 import { formatCurrency } from '../../../../../lib/utils/currency';
 import {
   PROPERTY_OWNER,
@@ -65,7 +66,7 @@ function PersonalPropertyOwnerSelect({ index, control }: { index: number; contro
         <Label
           htmlFor={`personalProperties.${index}.owner`}
           className="text-base font-medium">
-          Property Owner
+          Who owns this?
         </Label>
         <Controller
           name={`personalProperties.${index}.owner`}
@@ -87,7 +88,7 @@ function PersonalPropertyOwnerSelect({ index, control }: { index: number; contro
           )}
         />
         <p className="text-xs text-muted-foreground">
-          Declarant & Joint go to ANNEX A/B. Spouse/Child go to ANNEX C.
+          Declarant or Joint items print on ANNEX A. Spouse or Child-exclusive items print on AS-2 (ANNEX C).
         </p>
       </div>
 
@@ -201,6 +202,13 @@ export const PersonalProperties = memo(function PersonalProperties() {
       <BlurFade delay={0.1}>
         <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm hover:shadow-md transition-shadow duration-200">
           <div className="p-6 sm:p-8">
+          <Alert className="mb-6 border-slate-200/50 dark:border-slate-800/50">
+            <Info className="h-4 w-4" />
+            <AlertDescription className="text-sm text-muted-foreground">
+              Assign an owner to each row. Spouse-exclusive and child-exclusive items automatically flow to the spouse/children additional sheet (AS-2). Joint items stay on the main form.
+            </AlertDescription>
+          </Alert>
+
           {fields.length === 0 ? (
             <div className="space-y-6">
               <div className="text-center py-12 border-2 border-dashed rounded-lg border-slate-200/50 dark:border-slate-800/50">

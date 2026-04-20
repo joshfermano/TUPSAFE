@@ -25,6 +25,7 @@ import {
 import { and, eq, sql } from 'drizzle-orm';
 import type { DepartmentWithStats } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/organization/colleges/[id]/departments
  * Get all departments under a specific college with statistics
@@ -38,7 +39,7 @@ export async function GET(
 
     // Verify admin/HR/supervisor permissions
     const hasPermission = await checkUserRoleFromSupabase(
-      ['admin', 'hr', 'supervisor'],
+      ['superadmin', 'admin', 'hr'],
       'admin'
     );
 

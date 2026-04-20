@@ -42,6 +42,8 @@ import {
   type JobApplicationListItem,
 } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -52,7 +54,7 @@ export async function GET(
     console.log('[Job Applications API] Request received');
 
     // Verify admin/HR permissions
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'co_admin', 'hr'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
 
     if (!hasPermission) {
       console.log('[Job Applications API] Permission denied - returning 403');

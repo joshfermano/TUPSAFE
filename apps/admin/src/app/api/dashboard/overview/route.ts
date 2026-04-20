@@ -12,6 +12,7 @@ import { eq, and, gte, lt, sql, desc, count, avg } from 'drizzle-orm';
 import type { DashboardOverviewResponse } from '@tupsafe/types';
 import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/dashboard/overview
  *
@@ -30,7 +31,7 @@ import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 export async function GET(_request: NextRequest) {
   try {
     // Verify admin/HR permissions
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'co_admin', 'hr'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
 
     if (!hasPermission) {
       return apiError('Unauthorized. Admin, Co-Admin, or HR role required.', 403);
@@ -366,8 +367,8 @@ export async function GET(_request: NextRequest) {
         title: 'Low PDS Compliance',
         message: `Only ${pdsRate.toFixed(1)}% of employees have submitted PDS`,
         action: {
-          label: 'View Report',
-          url: '/dashboard/compliance',
+          label: 'View Submissions',
+          url: '/dashboard/submissions/pds',
         },
       });
     }
@@ -381,8 +382,8 @@ export async function GET(_request: NextRequest) {
           1
         )}% of employees have submitted SALN for ${now.getFullYear()}`,
         action: {
-          label: 'View Report',
-          url: '/dashboard/compliance',
+          label: 'View Submissions',
+          url: '/dashboard/submissions/saln',
         },
       });
     }

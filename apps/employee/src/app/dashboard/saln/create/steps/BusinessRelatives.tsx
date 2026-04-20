@@ -37,6 +37,8 @@ import {
   EnhancedInput,
   BlurFade,
 } from '@tupsafe/shared-ui';
+import { formatDateForInput } from '../../../../../lib/utils/date-utils';
+import { FormDateInput } from '../../../../../components/forms/shared/FormDateInput';
 
 // Helper component to watch individual business interest owner
 function BusinessOwnerSelect({ index, control }: { index: number; control: unknown }) {
@@ -57,7 +59,7 @@ function BusinessOwnerSelect({ index, control }: { index: number; control: unkno
         <Label
           htmlFor={`businessInterests.${index}.owner`}
           className="text-base font-medium">
-          Business Owner
+          Who owns this?
         </Label>
         <Controller
           name={`businessInterests.${index}.owner`}
@@ -79,7 +81,7 @@ function BusinessOwnerSelect({ index, control }: { index: number; control: unkno
           )}
         />
         <p className="text-xs text-muted-foreground">
-          Declarant & Joint go to ANNEX A/B. Spouse/Child go to ANNEX C.
+          Declarant or Joint items print on ANNEX A. Spouse or Child-exclusive items print on AS-2 (ANNEX C).
         </p>
       </div>
 
@@ -197,6 +199,13 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
             <p className="text-sm text-muted-foreground mb-6">
               Disclose any business interests, partnerships, or financial connections
             </p>
+          <Alert className="mb-4 border-slate-200/50 dark:border-slate-800/50">
+            <Info className="h-4 w-4" />
+            <AlertDescription className="text-sm text-muted-foreground">
+              Assign an owner to each row. Spouse-exclusive and child-exclusive items automatically flow to the spouse/children additional sheet (AS-2). Joint items stay on the main form.
+            </AlertDescription>
+          </Alert>
+
           <Alert className="mb-6 border-slate-200/50 dark:border-slate-800/50">
             <Info className="h-4 w-4" />
             <AlertDescription className="text-sm text-muted-foreground">
@@ -328,36 +337,11 @@ export const BusinessRelatives = memo(function BusinessRelatives() {
                               className="text-base font-medium after:content-['*'] after:ml-0.5 after:text-destructive">
                               Date of Acquisition
                             </Label>
-                            <Controller
-                              name={`businessInterests.${index}.dateOfAcquisition`}
+                            <FormDateInput
                               control={control}
-                              render={({ field }) => {
-                                // Normalize value to YYYY-MM-DD string format
-                                let displayValue = '';
-                                if (field.value instanceof Date) {
-                                  displayValue = field.value.toISOString().split('T')[0];
-                                } else if (typeof field.value === 'string' && field.value) {
-                                  // Handle ISO string from localStorage
-                                  try {
-                                    displayValue = new Date(field.value).toISOString().split('T')[0];
-                                  } catch {
-                                    displayValue = field.value;
-                                  }
-                                }
-
-                                return (
-                                  <EnhancedInput
-                                    type="date"
-                                    value={displayValue}
-                                    onChange={(e) => {
-                                      const dateStr = e.target.value;
-                                      // Store as Date object for consistency with form state
-                                      field.onChange(dateStr ? new Date(dateStr) : null);
-                                    }}
-                                    max={new Date().toISOString().split('T')[0]}
-                                  />
-                                );
-                              }}
+                              name={`businessInterests.${index}.dateOfAcquisition`}
+                              variant="enhanced"
+                              max={formatDateForInput(new Date())}
                             />
                           </div>
 

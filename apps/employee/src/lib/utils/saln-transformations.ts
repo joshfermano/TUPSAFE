@@ -25,6 +25,7 @@
  */
 
 import type { CompleteSalnData } from '../validations/saln-schema';
+import { formatDateForInput } from './date-utils';
 
 // ============================================================================
 // Internal type aliases for data flowing across serialization boundaries
@@ -174,6 +175,22 @@ function transformFlatPayload(data: Record<string, unknown>): Record<string, unk
   if (data.salnFormatVersion !== undefined) {
     result.salnFormatVersion = data.salnFormatVersion;
   }
+  if (data.declarationDate !== undefined) {
+    const dd = data.declarationDate;
+    result.declarationDate = dd instanceof Date ? formatDateForInput(dd) : dd;
+  }
+  // Split spouse name fields
+  if (data.spouseFamilyName !== undefined) {
+    result.spouseFamilyName = data.spouseFamilyName;
+  }
+  if (data.spouseFirstName !== undefined) {
+    result.spouseFirstName = data.spouseFirstName;
+  }
+  if (data.spouseMiddleInitial !== undefined) {
+    result.spouseMiddleInitial = data.spouseMiddleInitial;
+  }
+  // Declarant name override fields (form-only, not persisted to DB)
+  // These are resolved in transformSALNToData and not forwarded to the API.
 
   // Transform arrays if present (ensure proper DB formatting)
   if (data.realProperties !== undefined) {
@@ -308,6 +325,8 @@ export function transformSalnForSubmission(data: Partial<CompleteSalnData>): Rec
         owner: prop.owner || 'declarant',
         childName: prop.childName ?? null,
       }))
+      // Filter out incomplete entries - description, kind, exactLocation, acquisitionMode are NOT NULL in DB
+      .filter((prop) => prop.description && prop.kind && prop.exactLocation && prop.acquisitionMode)
     : undefined;
 
   // ========================================================================
@@ -322,6 +341,8 @@ export function transformSalnForSubmission(data: Partial<CompleteSalnData>): Rec
         owner: prop.owner || 'declarant',
         childName: prop.childName ?? null,
       }))
+      // Filter out incomplete entries - description, yearAcquired are NOT NULL in DB
+      .filter((prop) => prop.description && prop.yearAcquired)
     : undefined;
 
   // ========================================================================
@@ -336,6 +357,8 @@ export function transformSalnForSubmission(data: Partial<CompleteSalnData>): Rec
         owner: liability.owner || 'declarant',
         childName: liability.childName ?? null,
       }))
+      // Filter out incomplete entries - nature, creditorName are NOT NULL in DB
+      .filter((l) => l.nature && l.creditorName)
     : undefined;
 
   // ========================================================================
@@ -355,6 +378,8 @@ export function transformSalnForSubmission(data: Partial<CompleteSalnData>): Rec
           childName: interest.childName ?? null,
         };
       })
+      // Filter out incomplete entries - entityName, businessAddress, natureOfBusiness, dateOfAcquisition are NOT NULL in DB
+      .filter((b) => b.entityName && b.businessAddress && b.natureOfBusiness && b.dateOfAcquisition)
     : undefined;
 
   // ========================================================================
@@ -367,6 +392,8 @@ export function transformSalnForSubmission(data: Partial<CompleteSalnData>): Rec
         position: relative.position,
         agencyAddress: relative.agencyAddress,
       }))
+      // Filter out incomplete entries - name, relationship, position, agencyAddress are NOT NULL in DB
+      .filter((r) => r.name && r.relationship && r.position && r.agencyAddress)
     : undefined;
 
   // ========================================================================
@@ -479,6 +506,29 @@ export function transformSalnForSubmission(data: Partial<CompleteSalnData>): Rec
   if (sub.salnFormatVersion !== undefined) {
     result.salnFormatVersion = sub.salnFormatVersion;
   }
+  if (sub.declarationDate !== undefined) {
+    const dd = sub.declarationDate;
+    result.declarationDate = dd instanceof Date ? formatDateForInput(dd) : dd;
+  }
+  // Split spouse name fields — also derive combined spouse_name for back-compat
+  if (sub.spouseFamilyName !== undefined) {
+    result.spouseFamilyName = sub.spouseFamilyName;
+  }
+  if (sub.spouseFirstName !== undefined) {
+    result.spouseFirstName = sub.spouseFirstName;
+  }
+  if (sub.spouseMiddleInitial !== undefined) {
+    result.spouseMiddleInitial = sub.spouseMiddleInitial;
+  }
+  // Derive combined spouse_name when split fields are present (back-compat)
+  if (sub.spouseFirstName !== undefined || sub.spouseFamilyName !== undefined) {
+    const fn = (sub.spouseFirstName as string) || '';
+    const mi = (sub.spouseMiddleInitial as string) || '';
+    const ln = (sub.spouseFamilyName as string) || '';
+    const parts = [fn, mi ? mi + '.' : '', ln].filter(Boolean);
+    result.spouseName = parts.join(' ').trim() || null;
+  }
+  // Declarant name override fields are form-only — do NOT forward to the DB API
 
   // Only add section arrays if they were explicitly provided
   if (realProperties !== undefined) result.realProperties = realProperties;
@@ -541,6 +591,33 @@ export function transformSalnFromBackend<T extends object>(backendInput: T): Par
     governmentIdNumber2: (backendData.governmentIdNumber2 as string | null) ?? null,
     governmentIdDateIssued2: backendData.governmentIdDateIssued2 ? new Date(backendData.governmentIdDateIssued2 as string) : null,
     salnFormatVersion: (backendData.salnFormatVersion as number) ?? 2025,
+    // Declaration date — DB stores as date (YYYY-MM-DD string); form wants a Date object
+    declarationDate: backendData.declarationDate
+      ? new Date(backendData.declarationDate as string)
+      : null,
+    // Split spouse name fields — fall back to parsing legacy combined field if new ones are null
+    spouseFamilyName: (() => {
+      const v = backendData.spouseFamilyName as string | null;
+      if (v) return v;
+      // Conservative fallback: last token of combined spouse_name
+      const combined = backendData.spouseName as string | null;
+      if (!combined) return null;
+      const parts = combined.trim().split(/\s+/);
+      return parts.length >= 1 ? parts[parts.length - 1] : null;
+    })(),
+    spouseFirstName: (() => {
+      const v = backendData.spouseFirstName as string | null;
+      if (v) return v;
+      const combined = backendData.spouseName as string | null;
+      if (!combined) return null;
+      const parts = combined.trim().split(/\s+/);
+      return parts.length >= 1 ? parts[0] : null;
+    })(),
+    spouseMiddleInitial: (backendData.spouseMiddleInitial as string | null) ?? null,
+    // Declarant name override fields — DB has no columns, form-only. Initialize null.
+    declarantFirstName: null,
+    declarantLastName: null,
+    declarantMiddleInitial: null,
   };
 
   // ========================================================================

@@ -126,11 +126,11 @@ function ApplicationCard({ application }: { application: Application }) {
                 </span>
               </div>
 
-              {/* Employment Category */}
+              {/* Submitted Document */}
               <div className="flex items-center gap-2 text-sm">
                 <FileText className="h-4 w-4 text-[#8B1538]" />
                 <span className="text-slate-700 dark:text-slate-300">
-                  {application.position.employmentCategory}
+                  Personal Data Sheet 2026
                 </span>
               </div>
 

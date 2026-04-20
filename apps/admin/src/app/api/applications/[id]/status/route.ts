@@ -42,6 +42,7 @@ import {
   EMAIL_TRIGGER_STATUSES,
 } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -60,7 +61,7 @@ export async function POST(
     }
 
     // Verify admin/HR permissions
-    const allowedRoles = ['admin', 'co_admin', 'hr'];
+    const allowedRoles = ['superadmin', 'admin', 'hr'];
     if (!allowedRoles.includes(currentUser.role)) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin, Co-Admin, or HR role required.' },

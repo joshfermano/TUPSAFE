@@ -205,12 +205,47 @@ export const declarantInfoSchema = z
       required_error: 'Filing type is required',
     }),
 
-    // Spouse information (required if filingType is 'joint')
+    // Spouse information (required if filingType is 'joint' or 'separate')
+    // Legacy combined field — kept for backwards-compatible DB reads; derived in transform layer
     spouseName: z
       .string()
       .max(150, 'Spouse name must not exceed 150 characters')
       .nullable()
       .optional(),
+    // Split spouse name fields (CSC 2025 form has separate Family / First / MI slots)
+    spouseFamilyName: z
+      .string()
+      .max(100, 'Spouse family name must not exceed 100 characters')
+      .optional()
+      .nullable(),
+    spouseFirstName: z
+      .string()
+      .max(100, 'Spouse first name must not exceed 100 characters')
+      .optional()
+      .nullable(),
+    spouseMiddleInitial: z
+      .string()
+      .max(5, 'Spouse middle initial must not exceed 5 characters')
+      .optional()
+      .nullable(),
+
+    // Declarant name override (Task 3) — form-only, no new DB columns needed.
+    // Values here take precedence over profile name in the transform layer.
+    declarantFirstName: z
+      .string()
+      .max(100, 'Declarant first name override must not exceed 100 characters')
+      .optional()
+      .nullable(),
+    declarantLastName: z
+      .string()
+      .max(100, 'Declarant last name override must not exceed 100 characters')
+      .optional()
+      .nullable(),
+    declarantMiddleInitial: z
+      .string()
+      .max(5, 'Declarant middle initial override must not exceed 5 characters')
+      .optional()
+      .nullable(),
 
     // Employment information (from user profile, displayed for context)
     position: z
@@ -311,6 +346,9 @@ export const declarantInfoSchema = z
     // SALN format version
     salnFormatVersion: z.literal(2025).default(2025),
 
+    // Declaration date — stamped on ANNEX A page 2 "Date:" line
+    declarationDate: z.date().optional().nullable(),
+
     // ============================================================================
     // END 2025 SALN FORMAT - NEW FIELDS
     // ============================================================================
@@ -327,15 +365,19 @@ export const declarantInfoSchema = z
   })
   .refine(
     (data) => {
-      // If filing type is 'joint' or 'separate', spouse name must be provided
+      // If filing type is 'joint' or 'separate', at least one of the name fields must be provided
       if (data.filingType === 'joint' || data.filingType === 'separate') {
-        return !!data.spouseName && data.spouseName.trim().length > 0;
+        const hasNewFields =
+          (!!data.spouseFamilyName && data.spouseFamilyName.trim().length > 0) ||
+          (!!data.spouseFirstName && data.spouseFirstName.trim().length > 0);
+        const hasLegacyField = !!data.spouseName && data.spouseName.trim().length > 0;
+        return hasNewFields || hasLegacyField;
       }
       return true;
     },
     {
-      message: 'Spouse name is required for joint or separate filing',
-      path: ['spouseName'],
+      message: 'Spouse family name and first name are required for joint or separate filing',
+      path: ['spouseFamilyName'],
     }
   )
   .refine(

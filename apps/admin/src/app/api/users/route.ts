@@ -28,10 +28,11 @@ import {
   type UserListItem,
 } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     // Verify admin/HR/supervisor permissions (using Supabase session)
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'co_admin', 'hr', 'supervisor'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
 
     if (!hasPermission) {
       return apiError('Unauthorized. Admin, HR, or Supervisor role required.', 403);

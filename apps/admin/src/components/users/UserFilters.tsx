@@ -40,8 +40,7 @@ const ROLES = [
   { value: 'employee', label: 'Employee' },
   { value: 'hr', label: 'HR Personnel' },
   { value: 'admin', label: 'Admin' },
-  { value: 'supervisor', label: 'Supervisor' },
-  { value: 'auditor', label: 'Auditor' },
+  { value: 'superadmin', label: 'Super Admin' },
 ];
 
 const USER_TYPES = [
@@ -136,7 +135,7 @@ export function UserFilters({ onFilterChange, totalResults: _totalResults }: Use
 
   const handleRoleChange = (value: string) => {
     setRole(value);
-    updateFilters({ role: (value === 'all' ? undefined : value) as 'employee' | 'hr' | 'admin' | 'supervisor' | 'auditor' | undefined });
+    updateFilters({ role: (value === 'all' ? undefined : value) as 'superadmin' | 'admin' | 'hr' | 'employee' | undefined });
   };
 
   const handleUserTypeChange = (value: string) => {

@@ -10,8 +10,8 @@
  * - Professional color scheme (TUP Blue primary)
  */
 
-import { memo, useCallback, startTransition, useRef } from 'react';
-import { Heart, BookOpen, Plus, GraduationCap } from 'lucide-react';
+import { memo, useCallback, useEffect, startTransition, useRef, useState } from 'react';
+import { Heart, BookOpen, Plus, GraduationCap, Download, Info, X } from 'lucide-react';
 import { useFormContext, useFieldArray } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -21,10 +21,28 @@ import { VoluntaryWorkItem, TrainingItem } from '../../../../../components/pds/a
 import { type CompletePdsData } from '../../../../../lib/validations/pds-schema';
 import { autoSortWithNotification } from '../../../../../lib/utils/pds-sort';
 import { usePdsContextSafe } from '../../../../../context/PdsContext';
+import { ImportCertificationsModal } from '../../../../../components/pds/ImportCertificationsModal';
+import type { ProfileCertificationData } from '@tupsafe/types';
+import { useCertificationsByYear } from '../../../../../hooks/useCertifications';
 
 export const SectionV = memo(function SectionV() {
   const form = useFormContext<CompletePdsData>();
   const pdsContext = usePdsContextSafe();
+
+  // Import from Profile modal state
+  const [showImportModal, setShowImportModal] = useState(false);
+
+  // Auto-import state
+  const hasAutoImported = useRef(false);
+  const [showAutoImportBanner, setShowAutoImportBanner] = useState(false);
+
+  // Pending file copies: certs imported before draft was saved
+  // Each entry maps a certificationId to the generated trainingId
+  const pendingFileCopies = useRef<Array<{ certificationId: string; trainingId: string }>>([]);
+
+  // Fetch certifications for the PDS filing year
+  const pdsYear = pdsContext?.pdsYear ?? new Date().getFullYear();
+  const { data: yearCertifications } = useCertificationsByYear(pdsYear);
 
   // Refs for virtualization
   const trainingParentRef = useRef<HTMLDivElement>(null);
@@ -89,6 +107,114 @@ export const SectionV = memo(function SectionV() {
   }, [form, replaceTraining]);
 
   /**
+   * Copy certification files to PDS training attachments.
+   * If pdsSubmissionId is available, fires immediately.
+   * If not (draft not saved yet), queues for later flush.
+   */
+  const copyCertFilesToPds = useCallback(
+    (mappings: Array<{ certificationId: string; trainingId: string }>) => {
+      const submissionId = pdsContext?.pdsSubmissionId;
+      if (!submissionId) {
+        // Queue — will be flushed when pdsSubmissionId becomes available
+        pendingFileCopies.current.push(...mappings);
+        return;
+      }
+
+      // Fire copy requests (non-blocking)
+      mappings.forEach(async ({ certificationId, trainingId }) => {
+        try {
+          const res = await fetch('/api/pds/attachments/copy-from-certification', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              certificationId,
+              pdsSubmissionId: submissionId,
+              trainingId,
+            }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.copiedCount > 0) {
+              console.log(
+                `[SectionV] Copied ${data.copiedCount} file(s) from cert ${certificationId} to training ${trainingId}`
+              );
+            }
+          }
+        } catch (err) {
+          console.error('[SectionV] Failed to copy cert files:', err);
+        }
+      });
+    },
+    [pdsContext?.pdsSubmissionId]
+  );
+
+  // Flush pending file copies when pdsSubmissionId becomes available
+  useEffect(() => {
+    const submissionId = pdsContext?.pdsSubmissionId;
+    if (!submissionId || pendingFileCopies.current.length === 0) return;
+
+    const queued = [...pendingFileCopies.current];
+    pendingFileCopies.current = [];
+    copyCertFilesToPds(queued);
+  }, [pdsContext?.pdsSubmissionId, copyCertFilesToPds]);
+
+  // Auto-import certifications from profile for the PDS year
+  useEffect(() => {
+    if (
+      hasAutoImported.current ||
+      !yearCertifications ||
+      yearCertifications.length === 0 ||
+      trainingFields.length > 0
+    ) {
+      return;
+    }
+
+    // Filter out rejected certifications
+    const eligibleCerts = yearCertifications.filter(
+      (cert) => cert.verificationStatus !== 'rejected'
+    );
+
+    if (eligibleCerts.length === 0) return;
+
+    hasAutoImported.current = true;
+
+    // Convert certifications to training entries, tracking cert→training mapping
+    const fileCopyMappings: Array<{ certificationId: string; trainingId: string }> = [];
+    const entries = eligibleCerts.map((cert) => {
+      const trainingId = uuidv4();
+      if (cert.files.length > 0) {
+        fileCopyMappings.push({ certificationId: cert.id, trainingId });
+      }
+      return {
+        id: trainingId,
+        title: cert.title,
+        dateFrom: new Date(cert.dateFrom),
+        dateTo: new Date(cert.dateTo),
+        hours: cert.hours,
+        typeOfLd: cert.typeOfLd || '',
+        conductedBy: cert.conductedBy || '',
+      };
+    });
+
+    replaceTraining(entries);
+    setShowAutoImportBanner(true);
+
+    // Trigger file copy (queues if draft not saved yet)
+    if (fileCopyMappings.length > 0) {
+      copyCertFilesToPds(fileCopyMappings);
+    }
+
+    startTransition(() => {
+      sortTrainingEntries();
+    });
+
+    toast.success(
+      `Auto-imported ${eligibleCerts.length} certification${eligibleCerts.length > 1 ? 's' : ''} from your profile for ${pdsYear}`
+    );
+  }, [yearCertifications, trainingFields.length, pdsYear, replaceTraining, sortTrainingEntries, copyCertFilesToPds]);
+
+  /**
    * Handle adding new voluntary work with auto-sort
    */
   const handleAddVoluntaryWork = useCallback(() => {
@@ -137,6 +263,48 @@ export const SectionV = memo(function SectionV() {
   const handleTrainingDateBlur = useCallback(() => {
     sortTrainingEntries();
   }, [sortTrainingEntries]);
+
+  /**
+   * Handle importing certifications from the profile wallet into the
+   * Learning & Development section. Each imported cert becomes a new
+   * training entry with a stable UUID for attachment linking.
+   */
+  const handleImportCertifications = useCallback(
+    (certs: ProfileCertificationData[]) => {
+      const fileCopyMappings: Array<{ certificationId: string; trainingId: string }> = [];
+
+      certs.forEach((cert) => {
+        const trainingId = uuidv4();
+        if (cert.files.length > 0) {
+          fileCopyMappings.push({ certificationId: cert.id, trainingId });
+        }
+        appendTraining({
+          id: trainingId,
+          title: cert.title,
+          dateFrom: new Date(cert.dateFrom),
+          dateTo: new Date(cert.dateTo),
+          hours: cert.hours,
+          typeOfLd: cert.typeOfLd || '',
+          conductedBy: cert.conductedBy || '',
+        });
+      });
+
+      // Trigger file copy (queues if draft not saved yet)
+      if (fileCopyMappings.length > 0) {
+        copyCertFilesToPds(fileCopyMappings);
+      }
+
+      startTransition(() => {
+        sortTrainingEntries();
+      });
+
+      toast.success(
+        `Imported ${certs.length} certification${certs.length > 1 ? 's' : ''} from profile`
+      );
+      setShowImportModal(false);
+    },
+    [appendTraining, sortTrainingEntries, copyCertFilesToPds]
+  );
 
   /**
    * Handle removing training with attachment cleanup
@@ -261,16 +429,46 @@ export const SectionV = memo(function SectionV() {
                 </p>
               </div>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleAddTraining}
-              className="border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Training
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowImportModal(true)}
+                className="border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950">
+                <Download className="h-4 w-4 mr-2" />
+                Import from Profile
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddTraining}
+                className="border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Training
+              </Button>
+            </div>
           </div>
+
+          {/* Auto-import info banner */}
+          {showAutoImportBanner && (
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 mb-4">
+              <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  Certifications from your profile for {pdsYear} have been automatically added. You can remove any or add more manually.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAutoImportBanner(false)}
+                className="shrink-0 rounded p-1 text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
 
           {trainingFields.length === 0 ? (
             <div className="text-center py-12 border border-dashed border-slate-200 dark:border-slate-800 rounded-lg">
@@ -344,6 +542,22 @@ export const SectionV = memo(function SectionV() {
           </p>
         </div>
       </div>
+
+      {/* Import from Profile Modal */}
+      <ImportCertificationsModal
+        open={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={handleImportCertifications}
+        pdsYear={pdsYear}
+        existingTrainings={trainingFields.map((field, index) => {
+          const values = form.getValues(`learningDevelopment.${index}`);
+          return {
+            title: values?.title ?? '',
+            dateFrom: values?.dateFrom ?? null,
+            dateTo: values?.dateTo ?? null,
+          };
+        })}
+      />
     </div>
   );
 });

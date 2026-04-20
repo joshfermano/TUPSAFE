@@ -17,6 +17,10 @@ export { ErrorAlert } from './ErrorAlert';
 // Dialog Components
 export { ReviewDialog, type ReviewDialogProps } from './ReviewDialog';
 export { ConfirmationDialog, type ConfirmationDialogProps } from './ConfirmationDialog';
+export {
+  DeleteSubmissionDialog,
+  type DeleteSubmissionDialogProps,
+} from './DeleteSubmissionDialog';
 
 // Section Components
 export {
@@ -31,3 +35,7 @@ export { Timeline, type TimelineEvent } from './Timeline';
 
 // PDS Attachments Viewer
 export { PdsAttachmentsViewer } from './PdsAttachmentsViewer';
+
+// Certification Components
+export { CertificationCard } from './CertificationCard';
+export { CertificationVerifyDialog } from './CertificationVerifyDialog';

@@ -70,21 +70,22 @@ function getPasswordStrength(password: string): string {
 }
 
 /**
- * Checks if any admin users already exist in the system
+ * Checks if any superadmin users already exist in the system.
+ * The bootstrap CLI refuses to run when a superadmin already exists unless --force is passed.
  */
-async function checkExistingAdmins(): Promise<number> {
-  const spinner = ora('Checking for existing administrators...').start();
+async function checkExistingSuperadmins(): Promise<number> {
+  const spinner = ora('Checking for existing superadministrators...').start();
 
   try {
-    const existingAdmins = await db
+    const existing = await db
       .select()
       .from(profiles)
-      .where(eq(profiles.role, 'admin'));
+      .where(eq(profiles.role, 'superadmin'));
 
-    spinner.succeed(`Found ${existingAdmins.length} existing administrator(s)`);
-    return existingAdmins.length;
+    spinner.succeed(`Found ${existing.length} existing superadmin(s)`);
+    return existing.length;
   } catch (error) {
-    spinner.fail('Failed to check for existing administrators');
+    spinner.fail('Failed to check for existing superadministrators');
     throw error;
   }
 }
@@ -128,19 +129,19 @@ async function createAuditLog(
   try {
     await db.insert(auditLogs).values({
       userId,
-      action: 'super_admin_created',
-      entityType: 'profiles',
+      action: 'bootstrap_superadmin',
+      entityType: 'profile',
       entityId: userId,
       changes: {
         email,
         employeeId,
-        role: 'admin',
+        role: 'superadmin',
         accountStatus: 'active',
         method: 'cli_tool',
         createdAt: new Date().toISOString(),
       },
       ipAddress: '127.0.0.1', // CLI execution is local
-      userAgent: 'TUPSAFE Admin Creation CLI',
+      userAgent: 'TUPSAFE Superadmin Bootstrap CLI',
     });
   } catch (error) {
     console.error(chalk.yellow('Warning: Failed to create audit log'), error);
@@ -216,28 +217,34 @@ async function main() {
 
     envSpinner.succeed('Environment configuration verified');
 
-    // Step 2: Check for existing admins
-    const adminCount = await checkExistingAdmins();
+    // Parse CLI flags (simple --force detection; no external arg-parser needed).
+    const force = process.argv.includes('--force');
 
-    if (adminCount > 0) {
+    // Step 2: Refuse to run if a superadmin already exists (unless --force).
+    const superadminCount = await checkExistingSuperadmins();
+
+    if (superadminCount > 0 && !force) {
       console.log();
-      const { confirmAdditional } = await prompts({
-        type: 'confirm',
-        name: 'confirmAdditional',
-        message: chalk.yellow(
-          `There ${
-            adminCount === 1
-              ? 'is already 1 administrator'
-              : `are already ${adminCount} administrators`
-          } in the system. Create another?`
-        ),
-        initial: false,
-      });
+      console.log(
+        chalk.red.bold(
+          `✗ A superadmin already exists (${superadminCount} total). Bootstrap refused.`
+        )
+      );
+      console.log(
+        chalk.gray(
+          '  Use the admin portal to promote an existing admin to superadmin via the\n' +
+            '  role-change flow, or re-run with --force for disaster recovery.'
+        )
+      );
+      process.exit(1);
+    }
 
-      if (!confirmAdditional) {
-        console.log(chalk.gray('\nOperation cancelled.'));
-        process.exit(0);
-      }
+    if (superadminCount > 0 && force) {
+      console.log(
+        chalk.yellow(
+          `\n⚠  --force active: a superadmin already exists (${superadminCount}); proceeding anyway.`
+        )
+      );
     }
 
     console.log();
@@ -384,7 +391,7 @@ async function main() {
         employeeId,
         firstName: responses.firstName,
         lastName: responses.lastName,
-        role: 'admin',
+        role: 'superadmin',
         accountStatus: 'active',
         emailVerifiedAt: new Date(),
         departmentId,

@@ -22,9 +22,13 @@ import {
   pdsVoluntaryWork,
   pdsTraining,
   pdsOtherInfo,
+  pdsAttachments,
+  approvalWorkflows,
+  jobApplications,
   archives,
 } from '../schema';
 import { eq, and, asc, desc, gte, notInArray, inArray } from 'drizzle-orm';
+import { v7 as uuidv7 } from 'uuid';
 import type {
   PdsSubmission,
   PdsPersonalInfo,
@@ -578,6 +582,36 @@ export async function createPDSSubmission(
     });
   } catch (error) {
     console.error('[createPDSSubmission] Transaction error:', error);
+
+    // Detect PostgreSQL unique constraint violations (error code 23505)
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorDetail = (error as Record<string, unknown>)?.detail as string | undefined;
+    const errorCode = (error as Record<string, unknown>)?.code as string | undefined;
+
+    if (errorCode === '23505' || errorMessage.includes('duplicate key') || errorMessage.includes('unique constraint')) {
+      // Map constraint names to user-friendly field names
+      const constraintFieldMap: Record<string, string> = {
+        'philsys_no': 'PhilSys Number (PSN)',
+        'gsis_no': 'GSIS ID Number',
+        'sss_no': 'SSS Number',
+        'tin_no': 'TIN Number',
+        'philhealth_no': 'PhilHealth Number',
+        'pagibig_no': 'PAG-IBIG Number',
+      };
+
+      let friendlyField = 'a government ID number';
+      for (const [field, label] of Object.entries(constraintFieldMap)) {
+        if (errorMessage.includes(field) || errorDetail?.includes(field)) {
+          friendlyField = label;
+          break;
+        }
+      }
+
+      throw new Error(
+        `The ${friendlyField} you entered is already associated with another account. Please verify and use your own unique ID number.`
+      );
+    }
+
     throw new Error(
       `Failed to create PDS submission for user ${userId}: ${
         error instanceof Error ? error.message : 'Unknown error'
@@ -1513,6 +1547,163 @@ export async function deletePDSSubmission(
     );
   } catch (error) {
     console.error('[deletePDSSubmission] Transaction error:', error);
+    throw new Error(
+      `Failed to delete PDS submission ${id}: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
+    );
+  }
+}
+
+/**
+ * Admin-only hard delete of a PDS submission at ANY status.
+ *
+ * Archives a full snapshot of the submission and all related data to the
+ * archives table before hard-deleting it. Nullifies any job application
+ * references and removes approval workflow records within the same transaction.
+ *
+ * Callers are responsible for post-commit storage cleanup and notifications.
+ *
+ * @param id - PDS submission UUID
+ * @param adminUserId - Admin user UUID performing the deletion
+ * @param reason - Deletion reason (10-500 chars) for audit trail
+ * @returns Owner user ID, PDF file path (or null), attachment paths, and snapshot
+ * @throws Error if submission not found or transaction fails
+ */
+export async function deletePDSSubmissionAsAdmin(
+  id: string,
+  adminUserId: string,
+  reason: string
+): Promise<{
+  ownerUserId: string;
+  pdfFilePath: string | null;
+  attachmentPaths: string[];
+  snapshot: Record<string, unknown>;
+}> {
+  try {
+    return await db.transaction(async (tx) => {
+      // 1. Fetch the main submission (no ownership filter — admin bypass)
+      const [submission] = await tx
+        .select()
+        .from(pdsSubmissions)
+        .where(eq(pdsSubmissions.id, id))
+        .limit(1);
+
+      if (!submission) {
+        throw new Error('PDS submission not found');
+      }
+
+      // 2. Fetch all related records in parallel for snapshot
+      const [
+        personalInfoRows,
+        familyBackgroundRows,
+        childrenRows,
+        educationRows,
+        civilServiceRows,
+        workExperienceRows,
+        voluntaryWorkRows,
+        trainingRows,
+        otherInfoRows,
+        attachmentRows,
+        workflowRows,
+        jobApplicationRows,
+      ] = await Promise.all([
+        tx.select().from(pdsPersonalInfo).where(eq(pdsPersonalInfo.pdsSubmissionId, id)),
+        tx.select().from(pdsFamilyBackground).where(eq(pdsFamilyBackground.pdsSubmissionId, id)),
+        tx.select().from(pdsChildren).where(eq(pdsChildren.pdsSubmissionId, id)),
+        tx.select().from(pdsEducation).where(eq(pdsEducation.pdsSubmissionId, id)),
+        tx.select().from(pdsCivilService).where(eq(pdsCivilService.pdsSubmissionId, id)),
+        tx.select().from(pdsWorkExperience).where(eq(pdsWorkExperience.pdsSubmissionId, id)),
+        tx.select().from(pdsVoluntaryWork).where(eq(pdsVoluntaryWork.pdsSubmissionId, id)),
+        tx.select().from(pdsTraining).where(eq(pdsTraining.pdsSubmissionId, id)),
+        tx.select().from(pdsOtherInfo).where(eq(pdsOtherInfo.pdsSubmissionId, id)),
+        tx.select().from(pdsAttachments).where(eq(pdsAttachments.pdsSubmissionId, id)),
+        tx.select().from(approvalWorkflows).where(
+          and(
+            eq(approvalWorkflows.submissionId, id),
+            eq(approvalWorkflows.submissionType, 'pds')
+          )
+        ),
+        tx.select().from(jobApplications).where(eq(jobApplications.pdsSubmissionId, id)),
+      ]);
+
+      // 3. Build snapshot
+      const snapshot: Record<string, unknown> = {
+        submission,
+        personalInfo: personalInfoRows,
+        familyBackground: familyBackgroundRows,
+        children: childrenRows,
+        education: educationRows,
+        civilService: civilServiceRows,
+        workExperience: workExperienceRows,
+        voluntaryWork: voluntaryWorkRows,
+        training: trainingRows,
+        otherInfo: otherInfoRows,
+        attachments: attachmentRows,
+        approvalWorkflows: workflowRows,
+        jobApplications: jobApplicationRows,
+        deletedBy: adminUserId,
+        deletedAt: new Date().toISOString(),
+        reason,
+      };
+
+      // 4. Insert into archives
+      await tx.insert(archives).values({
+        id: uuidv7(),
+        originalTable: 'pds_submissions',
+        originalId: id,
+        data: snapshot,
+        archivedBy: adminUserId,
+      });
+
+      // 5. Nullify pdsSubmissionId on any linked job applications
+      await tx
+        .update(jobApplications)
+        .set({ pdsSubmissionId: null, updatedAt: new Date() })
+        .where(eq(jobApplications.pdsSubmissionId, id));
+
+      // 6. Delete approval workflows for this submission
+      await tx
+        .delete(approvalWorkflows)
+        .where(
+          and(
+            eq(approvalWorkflows.submissionId, id),
+            eq(approvalWorkflows.submissionType, 'pds')
+          )
+        );
+
+      // 7. Delete PDS child tables in dependency-safe order
+      // One-to-many (array sections) — must go before one-to-one
+      await tx.delete(pdsAttachments).where(eq(pdsAttachments.pdsSubmissionId, id));
+      await tx.delete(pdsChildren).where(eq(pdsChildren.pdsSubmissionId, id));
+      await tx.delete(pdsEducation).where(eq(pdsEducation.pdsSubmissionId, id));
+      await tx.delete(pdsCivilService).where(eq(pdsCivilService.pdsSubmissionId, id));
+      await tx.delete(pdsWorkExperience).where(eq(pdsWorkExperience.pdsSubmissionId, id));
+      await tx.delete(pdsVoluntaryWork).where(eq(pdsVoluntaryWork.pdsSubmissionId, id));
+      await tx.delete(pdsTraining).where(eq(pdsTraining.pdsSubmissionId, id));
+      // One-to-one relations
+      await tx.delete(pdsPersonalInfo).where(eq(pdsPersonalInfo.pdsSubmissionId, id));
+      await tx.delete(pdsFamilyBackground).where(eq(pdsFamilyBackground.pdsSubmissionId, id));
+      await tx.delete(pdsOtherInfo).where(eq(pdsOtherInfo.pdsSubmissionId, id));
+
+      // 8. Delete the main submission
+      await tx.delete(pdsSubmissions).where(eq(pdsSubmissions.id, id));
+
+      // 9. Collect file paths for post-commit storage cleanup
+      const pdfFilePath = submission.pdfFilePath ?? null;
+      const attachmentPaths = attachmentRows
+        .map((a) => a.filePath)
+        .filter((p): p is string => Boolean(p));
+
+      return {
+        ownerUserId: submission.userId,
+        pdfFilePath,
+        attachmentPaths,
+        snapshot,
+      };
+    });
+  } catch (error) {
+    console.error('[deletePDSSubmissionAsAdmin] Transaction error:', error);
     throw new Error(
       `Failed to delete PDS submission ${id}: ${
         error instanceof Error ? error.message : 'Unknown error'

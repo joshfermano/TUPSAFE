@@ -22,10 +22,11 @@ import { eq, and, gte, sql, count } from 'drizzle-orm';
 import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 import type { RegistrationStats, ApiResponse } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
 export async function GET(_request: NextRequest) {
   try {
     // Authorization check - HR or Admin only (using Supabase session)
-    const hasPermission = await checkUserRoleFromSupabase(['hr', 'admin'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(

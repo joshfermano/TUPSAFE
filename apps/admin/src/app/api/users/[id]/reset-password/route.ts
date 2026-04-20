@@ -24,6 +24,7 @@ import { eq } from 'drizzle-orm';
 import { passwordResetSchema, ROLE_HIERARCHY } from '@tupsafe/types';
 import crypto from 'crypto';
 
+export const dynamic = 'force-dynamic';
 /**
  * Generate a secure random password
  * @param length - Password length (default: 16)
@@ -68,7 +69,7 @@ export async function POST(
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'co_admin', 'hr'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
     if (!hasPermission) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin, Co-Admin, or HR role required.' },

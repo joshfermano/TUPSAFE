@@ -61,16 +61,12 @@ export async function GET(request: NextRequest) {
 
     const userId = user.id;
 
-    // Parse and validate query parameters
+    // Parse and validate query parameters (filter out nulls so Zod defaults work)
     const { searchParams } = new URL(request.url);
-    const queryParams = {
-      page: searchParams.get('page'),
-      limit: searchParams.get('limit'),
-      isRead: searchParams.get('isRead'),
-      type: searchParams.get('type'),
-      dateFrom: searchParams.get('dateFrom'),
-      dateTo: searchParams.get('dateTo'),
-    };
+    const queryParams: Record<string, string> = {};
+    for (const [key, value] of searchParams.entries()) {
+      if (value) queryParams[key] = value;
+    }
 
     const validationResult = notificationsQuerySchema.safeParse(queryParams);
 

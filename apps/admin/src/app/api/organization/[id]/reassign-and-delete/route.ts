@@ -31,6 +31,7 @@ import {
 import { z } from 'zod';
 import { ZodError } from 'zod';
 
+export const dynamic = 'force-dynamic';
 /**
  * Validation schema for reassign and delete request body
  *
@@ -114,7 +115,7 @@ export async function POST(
     // Verify admin or HR permissions
     // This is a critical operation that permanently affects organizational structure
     const hasPermission = await checkUserRoleFromSupabase(
-      ['admin', 'co_admin', 'hr'],
+      ['superadmin', 'admin', 'hr'],
       'admin'
     );
 

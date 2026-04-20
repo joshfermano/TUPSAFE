@@ -11,6 +11,7 @@ import { eq, and, sql, isNull, gte, lt } from 'drizzle-orm';
 import type { DashboardComplianceResponse } from '@tupsafe/types';
 import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/dashboard/compliance
  *
@@ -29,7 +30,7 @@ import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 export async function GET() {
   try {
     // Verify admin/HR permissions
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'co_admin', 'hr'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(

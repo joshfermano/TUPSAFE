@@ -70,6 +70,9 @@ packages/*/dist/**/*.d.ts
 packages/*/dist/**/*.map
 
 # Environment Variables
+env.local
+env
+env.example
 .env
 .env.*
 !.env.example

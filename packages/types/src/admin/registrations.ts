@@ -11,7 +11,7 @@ import type { PaginationMeta } from './common';
  * Allows optional role, department, and position assignment
  */
 export const approveRegistrationSchema = z.object({
-  assignedRole: z.enum(['employee', 'hr', 'admin', 'co_admin', 'supervisor', 'auditor']).optional(),
+  assignedRole: z.enum(['superadmin', 'admin', 'hr', 'employee']).optional(),
   departmentId: z.string().uuid('Invalid department ID').optional(),
   positionId: z.string().uuid('Invalid position ID').optional(),
   notes: z.string().max(500, 'Notes must not exceed 500 characters').optional(),
@@ -85,7 +85,7 @@ export interface RegistrationListItem {
     id: string;
     title: string;
   } | null;
-  requestedRole?: 'employee' | 'hr' | 'admin' | 'co_admin' | 'supervisor' | 'auditor';
+  requestedRole?: 'superadmin' | 'admin' | 'hr' | 'employee';
   registrationDate: Date;
   phoneNumber: string | null;
   academicRank: string | null;

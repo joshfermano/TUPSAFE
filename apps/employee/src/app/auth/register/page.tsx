@@ -58,7 +58,7 @@ function loadDraft(): RegistrationDraft | null {
     if (!raw) return null;
 
     const draft: RegistrationDraft = JSON.parse(raw);
-    
+
     // Check if draft is expired
     if (Date.now() > draft.expiresAt) {
       clearDraft();
@@ -117,7 +117,7 @@ export default function RegisterPage() {
   const [registrationEmail, setRegistrationEmail] = useState<string | null>(
     null
   );
-  
+
   // Continue registration state
   const [showContinueForm, setShowContinueForm] = useState(false);
   const [continueEmail, setContinueEmail] = useState('');
@@ -147,7 +147,7 @@ export default function RegisterPage() {
   const handleUserCreated = useCallback((userId: string, email: string) => {
     setRegistrationUserId(userId);
     setRegistrationEmail(email);
-    
+
     // Save draft with 15-minute expiry (aligned with OTP expiry)
     const expiresAt = Date.now() + 15 * 60 * 1000;
     saveDraft({
@@ -172,7 +172,7 @@ export default function RegisterPage() {
   // Handle continue registration form submission
   const handleContinueRegistration = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!continueEmail.trim()) {
       setContinueError('Please enter your email address');
       return;
@@ -206,7 +206,7 @@ export default function RegisterPage() {
 
       // Success - restore state and jump to OTP
       const { userId, email, userType, employmentCategory } = result.data;
-      
+
       // Map API response to userTypeSelection
       let mappedUserType: UserTypeSelection;
       if (userType === 'applicant') {
@@ -261,7 +261,7 @@ export default function RegisterPage() {
       password: '[REDACTED]',
       confirmPassword: '[REDACTED]',
     });
-    
+
     if (!registrationUserId) {
       console.error('Registration user ID not found');
       return;
@@ -319,7 +319,7 @@ export default function RegisterPage() {
       password: '[REDACTED]',
       confirmPassword: '[REDACTED]',
     });
-    
+
     if (!registrationUserId) {
       console.error('Registration user ID not found');
       return;
@@ -408,34 +408,42 @@ export default function RegisterPage() {
 
                 <div className="space-y-2">
                   <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                    Registration Submitted
+                    {isApplicant ? 'Your account has been created' : 'Registration Submitted'}
                   </h1>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Your account is pending verification
-                  </p>
+                  {!isApplicant ? (
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      Your account is pending verification
+                    </p>
+                  ) : (
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      Redirecting to the login portal.
+                    </p>
+                  )}
                 </div>
 
-                <div className="w-full space-y-3 text-left pt-4">
-                  <div className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#8B1538] dark:bg-red-400 mt-2 flex-shrink-0" />
-                    <span>Processing time: 1-3 business days</span>
+                {!isApplicant && (
+                  <div className="w-full space-y-3 text-left pt-4">
+                    <div className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#8B1538] dark:bg-red-400 mt-2 flex-shrink-0" />
+                      <span>Processing time: 1-3 business days</span>
+                    </div>
+                    <div className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#8B1538] dark:bg-red-400 mt-2 flex-shrink-0" />
+                      <span>
+                        Verification email sent to your{' '}
+                        {isEmployee ? 'TUP Manila email' : 'email'} address
+                      </span>
+                    </div>
+                    <div className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#8B1538] dark:bg-red-400 mt-2 flex-shrink-0" />
+                      <span>
+                        {isEmployee
+                          ? 'HR department will verify your employment'
+                          : 'HR will review your application'}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#8B1538] dark:bg-red-400 mt-2 flex-shrink-0" />
-                    <span>
-                      Verification email sent to your{' '}
-                      {isEmployee ? 'TUP Manila email' : 'email'} address
-                    </span>
-                  </div>
-                  <div className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#8B1538] dark:bg-red-400 mt-2 flex-shrink-0" />
-                    <span>
-                      {isEmployee
-                        ? 'HR department will verify your employment'
-                        : 'HR will review your application'}
-                    </span>
-                  </div>
-                </div>
+                )}
 
                 <Button
                   asChild
@@ -505,15 +513,15 @@ export default function RegisterPage() {
               {isEmployee
                 ? 'Employee Registration'
                 : isApplicant
-                ? 'Applicant Registration'
-                : 'Registration Portal'}
+                  ? 'Applicant Registration'
+                  : 'Registration Portal'}
             </h2>
             <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 max-w-lg mx-auto lg:mx-0">
               {isEmployee
                 ? 'Secure digital platform for TUP Manila employees managing PDS and SALN submissions'
                 : isApplicant
-                ? 'Apply for open positions at TUP Manila with complete application tracking'
-                : 'Choose your registration type to get started with TUPSAFE'}
+                  ? 'Apply for open positions at TUP Manila with complete application tracking'
+                  : 'Choose your registration type to get started with TUPSAFE'}
             </p>
           </div>
 
@@ -599,7 +607,7 @@ export default function RegisterPage() {
                             : undefined
                         }
                       />
-                      
+
                       {/* Continue Registration Link */}
                       <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/60">
                         <button

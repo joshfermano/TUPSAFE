@@ -5,3 +5,5 @@
  */
 
 export { AvatarUpload } from './AvatarUpload';
+export { CertificationsDisplay } from './CertificationsDisplay';
+export { CertificationsSection } from './CertificationsSection';

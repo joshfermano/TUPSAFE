@@ -24,7 +24,7 @@
  */
 
 import type { CompletePdsData } from '../validations/pds-schema';
-import type { PDSData } from '@tupsafe/shared-ui/pds-pdf';
+import type { PDSData } from '@tupsafe/shared-ui/pds-template';
 
 // ============================================================================
 // Internal type aliases for data flowing across serialization boundaries
@@ -174,10 +174,13 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): Recor
   // Convert Family Background - Children dateOfBirth
   // NOTE: dateOfBirth is converted to YYYY-MM-DD string to prevent timezone issues
   if (transformedData.family?.children) {
-    transformedData.family.children = transformedData.family.children.map((child) => ({
-      ...child,
-      dateOfBirth: toDateOnlyString(child.dateOfBirth) as unknown as Date | null | undefined,
-    }));
+    transformedData.family = {
+      ...transformedData.family,
+      children: transformedData.family.children.map((child) => ({
+        ...child,
+        dateOfBirth: toDateOnlyString(child.dateOfBirth) as unknown as Date | null | undefined,
+      })),
+    } as CompletePdsData['family'];
   }
 
   // Convert Civil Service Eligibility dates and rating
@@ -376,9 +379,11 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): Recor
   // STEP 1: Filter out empty references
   // ========================================================================
 
-  if (transformedData.otherInfo?.references) {
-    transformedData.otherInfo.references =
-      transformedData.otherInfo.references.filter(
+  let otherInfoRef = transformedData.otherInfo ? { ...transformedData.otherInfo } : undefined;
+
+  if (otherInfoRef?.references) {
+    otherInfoRef.references =
+      otherInfoRef.references.filter(
         (ref) =>
           ref.name && ref.name.trim() !== '' &&
           ref.address && ref.address.trim() !== '' &&
@@ -388,17 +393,17 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): Recor
 
   // Ensure otherInfo has required structure even if no references
   if (
-    !transformedData.otherInfo?.references ||
-    transformedData.otherInfo.references.length === 0
+    !otherInfoRef?.references ||
+    otherInfoRef.references.length === 0
   ) {
-    if (transformedData.otherInfo) {
-      transformedData.otherInfo = {
-        ...transformedData.otherInfo,
+    if (otherInfoRef) {
+      otherInfoRef = {
+        ...otherInfoRef,
         references: [],
-        skills: transformedData.otherInfo.skills || [],
-        recognitions: transformedData.otherInfo.recognitions || [],
-        associations: transformedData.otherInfo.associations || [],
-        questions: transformedData.otherInfo.questions || {
+        skills: otherInfoRef.skills || [],
+        recognitions: otherInfoRef.recognitions || [],
+        associations: otherInfoRef.associations || [],
+        questions: otherInfoRef.questions || {
           Q34_related_to_authority: false,
           Q35a_admin_offense: false,
           Q35b_criminal_charged: false,
@@ -414,6 +419,19 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): Recor
       };
     }
   }
+
+  // Format dateIssued for Government ID (Item 42)
+  if (otherInfoRef?.governmentId) {
+    otherInfoRef = {
+      ...otherInfoRef,
+      governmentId: {
+        ...otherInfoRef.governmentId,
+        dateIssued: toDateOnlyString(otherInfoRef.governmentId.dateIssued) as unknown as Date | null | undefined,
+      },
+    };
+  }
+  
+  transformedData.otherInfo = otherInfoRef;
 
   // ========================================================================
   // STEP 2: Transform education from object to array format
@@ -483,7 +501,12 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): Recor
           honorsReceived: levelData.honors || null, // Map honors to honorsReceived
         };
       })
-      .filter(Boolean) as Record<string, unknown>[]; // Remove null entries
+      .filter((entry) => {
+        if (!entry) return false;
+        const e = entry as Record<string, unknown>;
+        // schoolName is NOT NULL in DB - filter out entries with empty schoolName
+        return e.schoolName && (e.schoolName as string).trim() !== '';
+      }) as Record<string, unknown>[];
   }
 
   // ========================================================================
@@ -514,7 +537,11 @@ export function transformPdsForSubmission(data: Partial<CompletePdsData>): Recor
       motherMiddleName: transformedData.family.motherMiddleName ?? null,
     } : undefined,
     // Extract children as separate array for backend API
-    children: transformedData.family?.children || [],
+    // Filter out incomplete entries (fullName and dateOfBirth are NOT NULL in DB)
+    // Strip DB-only fields (id, pdsSubmissionId) that leak from transformPdsFromBackend
+    children: (transformedData.family?.children || [])
+      .filter((child) => child.fullName && child.fullName.trim() !== '' && child.dateOfBirth != null)
+      .map(({ fullName, dateOfBirth }) => ({ fullName, dateOfBirth })),
     education: educationArray, // Use transformed education array
     civilService: transformedData.eligibility, // Map 'eligibility' to 'civilService'
     training: transformedData.learningDevelopment, // Map 'learningDevelopment' to 'training'
@@ -680,7 +707,22 @@ export function transformPdsFromBackend<T extends object>(backendInput: T): Part
     workExperience: workExperience as unknown as CompletePdsData['workExperience'],
     voluntaryWork: voluntaryWork as unknown as CompletePdsData['voluntaryWork'],
     learningDevelopment: learningDevelopment as unknown as CompletePdsData['learningDevelopment'],
-    otherInfo: backendData.otherInfo as unknown as CompletePdsData['otherInfo'],
+    otherInfo: (() => {
+      const oi = backendData.otherInfo as Record<string, unknown> | undefined;
+      if (!oi) return undefined;
+      // Convert governmentId.dateIssued from string to Date
+      const govId = oi.governmentId as Record<string, unknown> | undefined;
+      if (govId && govId.dateIssued) {
+        return {
+          ...oi,
+          governmentId: {
+            ...govId,
+            dateIssued: stringToDate(govId.dateIssued as DateLike),
+          },
+        } as unknown as CompletePdsData['otherInfo'];
+      }
+      return oi as unknown as CompletePdsData['otherInfo'];
+    })(),
   };
 
   return frontendData;
@@ -886,7 +928,23 @@ export function transformPdsForPdf<T extends object>(dataInput: T): PDSData {
       tinNo: (personalInfo.tinNo as string | null) ?? null,
       agencyEmployeeNo: (personalInfo.agencyEmployeeNo as string | null) ?? null,
       philsysNo: (personalInfo.philsysNo as string | null) ?? null,
-      citizenship: (personalInfo.citizenship as { type: 'Filipino' | 'Dual'; details?: string }) || { type: 'Filipino' },
+      citizenship: (() => {
+        const c = personalInfo.citizenship as Record<string, unknown> | null;
+        if (!c) return { type: 'Filipino' };
+        
+        // Map "by birth" -> "byBirth", "by naturalization" -> "byNaturalization"
+        let acqMethod;
+        if (c.acquisitionMethod === 'by birth') acqMethod = 'byBirth';
+        else if (c.acquisitionMethod === 'by naturalization') acqMethod = 'byNaturalization';
+        else acqMethod = c.acquisitionMethod;
+
+        return {
+          type: c.type || 'Filipino',
+          acquisitionMethod: acqMethod,
+          country: c.country,
+          details: c.country || c.details || '',
+        };
+      })() as any,
       residentialAddress: transformAddress(personalInfo.residentialAddress as Record<string, unknown> | null | undefined),
       permanentAddress: transformAddress(personalInfo.permanentAddress as Record<string, unknown> | null | undefined),
       telephoneNo: (personalInfo.telephoneNo as string | null) ?? null,
@@ -992,7 +1050,7 @@ export function transformPdsForPdf<T extends object>(dataInput: T): PDSData {
         }))
       : [],
 
-    governmentId: (data.governmentId as PDSData['governmentId']) ?? undefined,
+    governmentId: (otherInfo.governmentId || data.governmentId) as PDSData['governmentId'] ?? undefined,
     photoUrl: (data.photoUrl as string | null) ?? null,
   };
 

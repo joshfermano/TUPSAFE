@@ -12,9 +12,11 @@ import { exportQuerySchema } from '@tupsafe/types';
 import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
 import { generateExcelReport } from '@/lib/excel/report-excel';
 import { pdf } from '@react-pdf/renderer';
-import { ReportDocument, ensureReportFontsRegistered } from '@tupsafe/shared-ui';
+import { ReportDocument } from '@tupsafe/shared-ui/report-pdf';
+import { ensureReportFontsRegistered } from '@tupsafe/shared-ui/report-pdf';
 import React from 'react';
 
+export const dynamic = 'force-dynamic';
 /**
  * GET /api/dashboard/export
  *
@@ -39,7 +41,7 @@ import React from 'react';
 export async function GET(request: NextRequest) {
   try {
     // Verify admin/HR permissions
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'co_admin', 'hr'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
 
     if (!hasPermission) {
       return NextResponse.json(

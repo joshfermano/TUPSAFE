@@ -28,7 +28,7 @@ pnpm exec drizzle-kit push       # Push migrations to database
 pnpm exec drizzle-kit studio     # Visual database browser
 ```
 
-No test framework is configured yet. Verify changes via `pnpm build:employee && pnpm lint`.
+No test framework is configured yet. After implementation changes, run `pnpm lint` to check for errors. Only run `pnpm build:employee` or `pnpm build:admin` before committing — do NOT run builds after every implementation step.
 
 ```bash
 # Docker (local development)
@@ -171,7 +171,8 @@ Single EC2 instance (t2.micro, 1 vCPU, 1GB RAM + 4GB swap) running all services 
 **Live URLs:**
 
 - Employee: `https://tupsafe.tech` (Nginx HTTPS, Let's Encrypt SSL)
-- Admin: `http://18.139.182.61:9443` (Nginx HTTP, IP-restricted via Security Group)
+- Admin: `https://tupsafe-admin.duckdns.org` (Nginx HTTPS, Let's Encrypt SSL)
+- Admin (legacy): `http://18.139.182.61:9443` (Nginx HTTP, IP-restricted via Security Group)
 - AI Agent: internal Docker network only (`http://ai-agent:8000`)
 
 **Infrastructure:**

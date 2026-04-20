@@ -24,6 +24,7 @@ import { db, profiles } from '@tupsafe/database/server';
 import { eq, and, gte, ne, sql, count } from 'drizzle-orm';
 import type { UserStatsResponse } from '@tupsafe/types';
 
+export const dynamic = 'force-dynamic';
 export async function GET(_request: NextRequest) {
   const startTime = Date.now();
   try {
@@ -31,7 +32,7 @@ export async function GET(_request: NextRequest) {
 
     // Verify permissions (using Supabase session)
     const authStartTime = Date.now();
-    const hasPermission = await checkUserRoleFromSupabase(['admin', 'co_admin', 'hr', 'supervisor'], 'admin');
+    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
     const authDuration = Date.now() - authStartTime;
     console.log(`[Stats API] Permission check completed in ${authDuration}ms - result:`, hasPermission);
 
@@ -190,12 +191,10 @@ export async function GET(_request: NextRequest) {
 
     // Transform role distribution into keyed object
     const roleDistributionMap = {
-      employee: 0,
-      hr: 0,
+      superadmin: 0,
       admin: 0,
-      co_admin: 0,
-      supervisor: 0,
-      auditor: 0,
+      hr: 0,
+      employee: 0,
     };
 
     roleDistribution.forEach((item) => {
