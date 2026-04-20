@@ -52,6 +52,51 @@ export function formatDateMMDDYYYY(value: unknown): string {
 }
 
 /**
+ * Format a date value to M/D/YYYY (no leading zeros)
+ *
+ * Used for education period fields following the official CSC PDS format
+ * where dates appear as 6/1/1996, 3/1/2002, etc.
+ * This shorter format helps fit the narrow Period of Attendance columns.
+ */
+export function formatDateMDYYYY(value: unknown): string {
+  if (!value) return '';
+
+  let date: Date;
+
+  if (value instanceof Date) {
+    date = value;
+  } else if (typeof value === 'string') {
+    const dateOnlyMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (dateOnlyMatch) {
+      date = new Date(
+        parseInt(dateOnlyMatch[1]),
+        parseInt(dateOnlyMatch[2]) - 1,
+        parseInt(dateOnlyMatch[3])
+      );
+    } else {
+      const isoDatetimeMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})T/);
+      if (isoDatetimeMatch) {
+        date = new Date(
+          parseInt(isoDatetimeMatch[1]),
+          parseInt(isoDatetimeMatch[2]) - 1,
+          parseInt(isoDatetimeMatch[3])
+        );
+      } else {
+        date = new Date(value);
+      }
+    }
+  } else {
+    return '';
+  }
+
+  if (isNaN(date.getTime())) return String(value);
+  const m = date.getMonth() + 1;
+  const d = date.getDate();
+  const yyyy = date.getFullYear();
+  return `${m}/${d}/${yyyy}`;
+}
+
+/**
  * Format a date value to YYYY (year only)
  */
 export function formatYear(value: unknown): string {

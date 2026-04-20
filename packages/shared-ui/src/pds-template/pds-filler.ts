@@ -14,7 +14,7 @@
 import type { PDSData, Child, WorkExperience, CivilServiceEligibility, VoluntaryWork, Training } from './types';
 import { FormFiller } from '../pdf-template/FormFiller';
 import { loadAllFonts } from '../pdf-template/FontManager';
-import { displayOrEmpty, formatDateMMDDYYYY, formatCurrency } from '../pdf-template/utils';
+import { displayOrEmpty, formatDateMMDDYYYY, formatDateMDYYYY, formatCurrency } from '../pdf-template/utils';
 import { addOverflowPages } from './pds-overflow';
 import type { OverflowSection } from './pds-overflow';
 import {
@@ -290,7 +290,9 @@ function formatEducationPeriod(value: Date | string | null | undefined): string 
   if (typeof value === 'string' && !/^\d{4}-/.test(value)) {
     return value; // Already a plain string like "2010"
   }
-  return formatDateMMDDYYYY(value);
+  // Use M/D/YYYY (no leading zeros) per CSC PDS standard, e.g. 6/1/1996
+  // This shorter format fits better in the narrow ~29pt Period columns
+  return formatDateMDYYYY(value);
 }
 
 // ---------------------------------------------------------------------------
@@ -325,6 +327,9 @@ function fillPersonalInfo(filler: FormFiller, data: PDSData): void {
   const addressFit = { alignment: 'center' as const, minFontSize: 5 };
   const ra = pi.residentialAddress;
   if (ra) {
+    if (!ra.province) {
+      console.warn('[PDS PDF] Residential address province is empty. Address data:', JSON.stringify(ra));
+    }
     filler.setTextWithFit('personalInfo.residentialAddress.houseNumber', displayOrEmpty(ra.houseNumber), addressFit);
     filler.setTextWithFit('personalInfo.residentialAddress.street', displayOrEmpty(ra.street), addressFit);
     filler.setTextWithFit('personalInfo.residentialAddress.subdivision', displayOrEmpty(ra.subdivision), addressFit);
@@ -378,9 +383,20 @@ function fillFamilyBackground(filler: FormFiller, data: PDSData): void {
 
 function fillEducation(filler: FormFiller, data: PDSData): void {
   const levels = ['elementary', 'secondary', 'vocational', 'college', 'graduate'] as const;
-  const eduFit = { minFontSize: 4 };
-  // Date fields are only ~30pt wide — need small font to fit MM/DD/YYYY
-  const dateFit = { minFontSize: 4, alignment: 'center' as const };
+  const eduFit = { minFontSize: 3 };
+  // Centered fit for fields that should be centered in their columns
+  const centeredFit = { minFontSize: 3, alignment: 'center' as const };
+
+  // Widen narrow education field widgets to prevent text clipping after flatten.
+  // The template's tight column widths cause pdf-lib's appearance stream to clip
+  // text at the edges, especially for centered text and long dates/values.
+  // Only widen the narrow centered columns — leave schoolName/degreeCourse untouched.
+  const narrowFields = ['periodFrom', 'periodTo', 'highestLevelEarned', 'yearGraduated', 'honorsReceived'];
+  for (const level of levels) {
+    for (const f of narrowFields) {
+      filler.widenField(`education.${level}.${f}`, 4);
+    }
+  }
 
   for (const level of levels) {
     const edu = data.education[level];
@@ -389,11 +405,11 @@ function fillEducation(filler: FormFiller, data: PDSData): void {
     const prefix = `education.${level}`;
     filler.setTextWithFit(`${prefix}.schoolName`, displayOrEmpty(edu.schoolName), eduFit);
     filler.setTextWithFit(`${prefix}.degreeCourse`, displayOrEmpty(edu.degreeCourse), eduFit);
-    filler.setTextWithFit(`${prefix}.periodFrom`, formatEducationPeriod(edu.periodFrom), dateFit);
-    filler.setTextWithFit(`${prefix}.periodTo`, formatEducationPeriod(edu.periodTo), dateFit);
-    filler.setTextWithFit(`${prefix}.highestLevelEarned`, displayOrEmpty(edu.highestLevelEarned), eduFit);
-    filler.setTextWithFit(`${prefix}.yearGraduated`, edu.yearGraduated != null ? String(edu.yearGraduated) : '', dateFit);
-    filler.setTextWithFit(`${prefix}.honorsReceived`, displayOrEmpty(edu.honorsReceived), eduFit);
+    filler.setTextWithFit(`${prefix}.periodFrom`, formatEducationPeriod(edu.periodFrom), centeredFit);
+    filler.setTextWithFit(`${prefix}.periodTo`, formatEducationPeriod(edu.periodTo), centeredFit);
+    filler.setTextWithFit(`${prefix}.highestLevelEarned`, displayOrEmpty(edu.highestLevelEarned), centeredFit);
+    filler.setTextWithFit(`${prefix}.yearGraduated`, edu.yearGraduated != null ? String(edu.yearGraduated) : '', centeredFit);
+    filler.setTextWithFit(`${prefix}.honorsReceived`, displayOrEmpty(edu.honorsReceived), centeredFit);
   }
 }
 

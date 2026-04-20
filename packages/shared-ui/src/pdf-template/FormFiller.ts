@@ -155,6 +155,13 @@ export class FormFiller {
       }
       fontSize = Math.max(fontSize, minSize);
 
+      // Safety margin: if text fills >90% of field width, shrink one extra step
+      // to prevent edge clipping from pdf-lib's internal appearance rendering
+      const textWidth = font.widthOfTextAtSize(value, fontSize);
+      if (textWidth > fieldWidth * 0.9 && fontSize > minSize) {
+        fontSize = Math.max(fontSize - 0.5, minSize);
+      }
+
       // If still overflows at minSize, truncate
       let displayText = value;
       if (font.widthOfTextAtSize(displayText, fontSize) > fieldWidth) {
@@ -275,6 +282,29 @@ export class FormFiller {
   }
 
   /**
+   * Widen a field's widget rectangle by a given amount (split evenly left/right).
+   * Useful for education table fields where the template's narrow columns
+   * cause text clipping after pdf-lib flattens the appearance stream.
+   */
+  widenField(fieldName: string, extraWidth: number): void {
+    try {
+      const field = this.form.getTextField(fieldName);
+      const widgets = field.acroField.getWidgets();
+      for (const w of widgets) {
+        const rect = w.getRectangle();
+        w.setRectangle({
+          x: rect.x - extraWidth / 2,
+          y: rect.y,
+          width: rect.width + extraWidth,
+          height: rect.height,
+        });
+      }
+    } catch {
+      // Field not in template — skip silently
+    }
+  }
+
+  /**
    * Get the usable text width from a text field's first widget rectangle.
    * Returns 0 if the field has no widgets.
    */
@@ -283,8 +313,8 @@ export class FormFiller {
       const widgets = field.acroField.getWidgets();
       if (widgets.length === 0) return 0;
       const rect = widgets[0].getRectangle();
-      // Minimal padding deduction — pdf-lib handles its own internal padding
-      return Math.max(rect.width - 2, 0);
+      // AcroForm text fields have internal padding (~2pt each side)
+      return Math.max(rect.width - 4, 0);
     } catch {
       return 0;
     }
