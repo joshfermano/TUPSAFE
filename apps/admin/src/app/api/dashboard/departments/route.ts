@@ -183,7 +183,7 @@ export async function GET(_request: NextRequest) {
         return {
           id: dept.departmentId,
           name: dept.departmentName,
-          code: dept.departmentCode ?? pending?.deptCode ?? null,
+          code: dept.departmentCode ?? pending?.deptCode ?? '',
           users: { total: totalUsers, active: activeUsers },
           submissions: {
             pdsCompliance: roundRate(pdsCompliance, 2),
