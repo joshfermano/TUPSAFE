@@ -96,8 +96,21 @@ export function UserGrowthChart() {
     );
   }
 
+  // Null-safe formatters for possibly-null/undefined summary fields.
+  const fmt = (v: number | null | undefined) =>
+    v != null && Number.isFinite(v) ? v.toLocaleString() : '—';
+  const fixed = (v: number | null | undefined, digits = 1) =>
+    v != null && Number.isFinite(v) ? v.toFixed(digits) : '0';
+
   // Transform data for chart (with breakdown if available)
   const trendPoints = data?.data ?? [];
+  const summary = data?.summary ?? {
+    total: 0,
+    average: 0,
+    peak: { value: 0, date: new Date() },
+    trend: 'stable' as const,
+    percentageChange: 0,
+  };
   const chartData = trendPoints.map((point) => ({
     date:
       typeof point.date === 'string'
@@ -115,13 +128,12 @@ export function UserGrowthChart() {
           <div>
             <CardTitle>User Growth</CardTitle>
             <CardDescription>
-              {data.summary.trend === 'up'
+              {summary.trend === 'up'
                 ? '↑'
-                : data.summary.trend === 'down'
+                : summary.trend === 'down'
                 ? '↓'
                 : '→'}{' '}
-              {Math.abs(data.summary.percentageChange).toFixed(1)}% vs previous
-              period
+              {fixed(Math.abs(summary.percentageChange ?? 0))}% vs previous period
             </CardDescription>
           </div>
           <Select value={period} onValueChange={handlePeriodChange}>
@@ -188,7 +200,11 @@ export function UserGrowthChart() {
             <YAxis
               tickLine={false}
               axisLine={false}
-              tickFormatter={(value) => value.toLocaleString()}
+              tickFormatter={(value) =>
+                value != null && Number.isFinite(value)
+                  ? Number(value).toLocaleString()
+                  : '0'
+              }
               width={40}
             />
             <ChartTooltip content={<ChartTooltipContent />} />
@@ -221,21 +237,19 @@ export function UserGrowthChart() {
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 border-t pt-4">
           <div>
             <p className="text-sm text-muted-foreground">Total</p>
-            <p className="text-xl font-bold">
-              {data.summary.total.toLocaleString()}
-            </p>
+            <p className="text-xl font-bold">{fmt(summary.total)}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Average</p>
             <p className="text-xl font-bold">
-              {Math.round(data.summary.average).toLocaleString()}
+              {summary.average != null && Number.isFinite(summary.average)
+                ? Math.round(summary.average).toLocaleString()
+                : '—'}
             </p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Peak</p>
-            <p className="text-xl font-bold">
-              {data.summary.peak.value.toLocaleString()}
-            </p>
+            <p className="text-xl font-bold">{fmt(summary.peak?.value)}</p>
           </div>
         </div>
       </CardContent>

@@ -11,8 +11,48 @@ import {
 import { eq, and, gte, lt, sql, desc, count, avg } from 'drizzle-orm';
 import type { DashboardOverviewResponse } from '@tupsafe/types';
 import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
+import { computeComplianceRates } from '../../../../lib/compliance';
 
 export const dynamic = 'force-dynamic';
+
+/** Overall handler timeout (ms) — returns a structured JSON error before
+ *  Nginx's default 60s proxy_read_timeout fires. */
+const HANDLER_TIMEOUT_MS = 30_000;
+
+/** Zeroed skeleton used when the DB is slow/flaky so the dashboard still
+ *  renders "—" rather than white-screening. */
+function buildFallbackOverview(): DashboardOverviewResponse {
+  return {
+    users: {
+      total: 0,
+      employees: 0,
+      applicants: 0,
+      activeLastMonth: 0,
+      newThisWeek: 0,
+      newThisMonth: 0,
+      growth: { value: 0, trend: 'stable' },
+    },
+    registrations: {
+      pending: 0,
+      approvedThisWeek: 0,
+      approvedThisMonth: 0,
+      rejectedThisMonth: 0,
+      averageApprovalTime: '0.0 hours',
+    },
+    submissions: {
+      pending: { pds: 0, saln: 0, total: 0 },
+      approvedThisWeek: 0,
+      approvedThisMonth: 0,
+      complianceRate: 0,
+    },
+    compliance: {
+      pds: { submitted: 0, expected: 0, rate: 0, overdue: 0 },
+      saln: { submitted: 0, expected: 0, rate: 0, overdue: 0 },
+    },
+    recentActivity: [],
+    alerts: [],
+  };
+}
 /**
  * GET /api/dashboard/overview
  *
@@ -43,26 +83,10 @@ export async function GET(_request: NextRequest) {
     const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     const twoMonthsAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
 
-    // Execute all queries in parallel for performance
-    const [
-      userStats,
-      activeUsers,
-      newUsersWeek,
-      newUsersMonth,
-      previousMonthUsers,
-      pendingRegs,
-      approvedRegsWeek,
-      approvedRegsMonth,
-      rejectedRegsMonth,
-      avgApprovalTime,
-      pendingPDS,
-      pendingSALN,
-      approvedSubmissionsWeek,
-      approvedSubmissionsMonth,
-      pdsCompliance,
-      salnCompliance,
-      recentActivity,
-    ] = await Promise.all([
+    // Execute all queries in parallel for performance, racing against a
+    // handler-level timeout so one slow query cannot hold the whole response
+    // past Nginx's proxy_read_timeout.
+    const workPromise = Promise.all([
       // Total users by type
       db
         .select({
@@ -212,58 +236,8 @@ export async function GET(_request: NextRequest) {
           ),
       ]),
 
-      // PDS compliance (active employees only)
-      Promise.all([
-        db
-          .select({ count: count() })
-          .from(profiles)
-          .where(
-            and(
-              eq(profiles.userType, 'employee'),
-              eq(profiles.isActive, true),
-              eq(profiles.accountStatus, 'active')
-            )
-          ),
-        db
-          .select({ count: count() })
-          .from(pdsSubmissions)
-          .innerJoin(profiles, eq(pdsSubmissions.userId, profiles.id))
-          .where(
-            and(
-              eq(profiles.userType, 'employee'),
-              eq(profiles.isActive, true),
-              eq(profiles.accountStatus, 'active'),
-              eq(pdsSubmissions.status, 'approved')
-            )
-          ),
-      ]),
-
-      // SALN compliance (active employees only, current fiscal year)
-      Promise.all([
-        db
-          .select({ count: count() })
-          .from(profiles)
-          .where(
-            and(
-              eq(profiles.userType, 'employee'),
-              eq(profiles.isActive, true),
-              eq(profiles.accountStatus, 'active')
-            )
-          ),
-        db
-          .select({ count: count() })
-          .from(salnSubmissions)
-          .innerJoin(profiles, eq(salnSubmissions.userId, profiles.id))
-          .where(
-            and(
-              eq(profiles.userType, 'employee'),
-              eq(profiles.isActive, true),
-              eq(profiles.accountStatus, 'active'),
-              eq(salnSubmissions.year, now.getFullYear()),
-              eq(salnSubmissions.status, 'approved')
-            )
-          ),
-      ]),
+      // Centralized compliance rates — see apps/admin/src/lib/compliance.ts
+      computeComplianceRates(undefined, now),
 
       // Recent activity (last 10 events)
       db
@@ -280,6 +254,41 @@ export async function GET(_request: NextRequest) {
         .orderBy(desc(auditLogs.createdAt))
         .limit(10),
     ]);
+
+    const timeoutPromise = new Promise<'timeout'>((resolve) =>
+      setTimeout(() => resolve('timeout'), HANDLER_TIMEOUT_MS)
+    );
+
+    const raced = await Promise.race([workPromise, timeoutPromise]);
+    if (raced === 'timeout') {
+      console.error(
+        '[Dashboard Overview] handler timed out after %dms',
+        HANDLER_TIMEOUT_MS
+      );
+      return NextResponse.json(buildFallbackOverview(), {
+        status: 200,
+        headers: { 'Cache-Control': 'no-store', 'X-Partial-Data': '1' },
+      });
+    }
+
+    const [
+      userStats,
+      activeUsers,
+      newUsersWeek,
+      newUsersMonth,
+      previousMonthUsers,
+      pendingRegs,
+      approvedRegsWeek,
+      approvedRegsMonth,
+      rejectedRegsMonth,
+      avgApprovalTime,
+      pendingPDS,
+      pendingSALN,
+      approvedSubmissionsWeek,
+      approvedSubmissionsMonth,
+      complianceRates,
+      recentActivity,
+    ] = raced;
 
     // Process user statistics
     const usersByType = userStats.reduce(
@@ -306,17 +315,20 @@ export async function GET(_request: NextRequest) {
         ? `${avgHours.toFixed(1)} hours`
         : `${avgDays.toFixed(1)} days`;
 
-    // Calculate compliance rates
-    const [expectedPDS, submittedPDS] = pdsCompliance;
-    const [expectedSALN, submittedSALN] = salnCompliance;
-
-    const pdsExpected = expectedPDS[0]?.count ?? 1;
-    const pdsSubmitted = submittedPDS[0]?.count ?? 0;
-    const pdsRate = (pdsSubmitted / pdsExpected) * 100;
-
-    const salnExpected = expectedSALN[0]?.count ?? 1;
-    const salnSubmittedCount = submittedSALN[0]?.count ?? 0;
-    const salnRate = (salnSubmittedCount / salnExpected) * 100;
+    // Pull canonical compliance rates from the centralized helper. Both PDS and
+    // SALN share the same denominator (active, non-applicant employees), so
+    // expose it under both `pdsExpected` and `salnExpected` for the response
+    // shape that downstream widgets already consume.
+    const {
+      expected: complianceExpected,
+      pdsSubmitted,
+      salnSubmitted: salnSubmittedCount,
+      pdsRate,
+      salnRate,
+      overallRate: overallComplianceRate,
+    } = complianceRates;
+    const pdsExpected = complianceExpected;
+    const salnExpected = complianceExpected;
 
     // Calculate overall compliance
     const totalPendingSubmissions =
@@ -327,7 +339,6 @@ export async function GET(_request: NextRequest) {
     const totalApprovedMonth =
       (approvedSubmissionsMonth[0][0]?.count ?? 0) +
       (approvedSubmissionsMonth[1][0]?.count ?? 0);
-    const overallComplianceRate = (pdsRate + salnRate) / 2;
 
     // Generate alerts based on metrics
     const alerts: DashboardOverviewResponse['alerts'] = [];
@@ -453,7 +464,14 @@ export async function GET(_request: NextRequest) {
     });
   } catch (error) {
     console.error('[Dashboard Overview] Error:', error);
-    return apiError('Failed to fetch dashboard overview', 500);
+    // Return a zeroed skeleton so the dashboard shows "—" rather than an
+    // "Application error" white screen. The unused apiError helper import is
+    // retained for future non-dashboard routes.
+    void apiError;
+    return NextResponse.json(buildFallbackOverview(), {
+      status: 200,
+      headers: { 'Cache-Control': 'no-store', 'X-Partial-Data': '1' },
+    });
   }
 }
 

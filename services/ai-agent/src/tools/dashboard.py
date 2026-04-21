@@ -102,14 +102,37 @@ class GetDashboardOverviewTool(TUPSAFETool):
             pending_registrations = len(pending_reg_response.data or [])
 
             # Get submission statistics
+            # Canonical compliance definitions (mirror apps/admin/src/lib/compliance.ts):
+            #   denominator = ACTIVE employees (user_type='employee' AND
+            #                  is_active=true AND account_status='active')
+            #   numerator   = DISTINCT user_id WHERE status IN ('submitted','approved')
+            active_employee_ids = {
+                e["id"] for e in employees_data
+                if e.get("is_active") and e.get("account_status") == "active"
+            }
+
             # PDS submissions
-            pds_response = self._query("pds_submissions", "id,status").execute()
+            pds_response = self._query(
+                "pds_submissions", "id,status,user_id"
+            ).execute()
 
             pds_data = pds_response.data or []
             pds_total = len(pds_data)
             pds_approved = len([p for p in pds_data if p.get("status") == "approved"])
-            pds_pending = len([p for p in pds_data if p.get("status") in ["pending", "reviewing"]])
-            pds_compliance_rate = (pds_approved / total_employees * 100) if total_employees > 0 else 0.0
+            pds_pending = len(
+                [p for p in pds_data if p.get("status") in ("submitted", "reviewing")]
+            )
+            pds_compliant_user_ids = {
+                p["user_id"]
+                for p in pds_data
+                if p.get("status") in ("submitted", "approved")
+                and p.get("user_id") in active_employee_ids
+            }
+            pds_compliance_rate = (
+                (len(pds_compliant_user_ids) / active_employees * 100)
+                if active_employees > 0
+                else 0.0
+            )
 
             # SALN submissions for current year
             saln_response = (
@@ -121,8 +144,20 @@ class GetDashboardOverviewTool(TUPSAFETool):
             saln_data = saln_response.data or []
             saln_total = len(saln_data)
             saln_approved = len([s for s in saln_data if s.get("status") == "approved"])
-            saln_pending = len([s for s in saln_data if s.get("status") in ["pending", "reviewing"]])
-            saln_compliance_rate = (saln_approved / total_employees * 100) if total_employees > 0 else 0.0
+            saln_pending = len(
+                [s for s in saln_data if s.get("status") in ("submitted", "reviewing")]
+            )
+            saln_compliant_user_ids = {
+                s["user_id"]
+                for s in saln_data
+                if s.get("status") in ("submitted", "approved")
+                and s.get("user_id") in active_employee_ids
+            }
+            saln_compliance_rate = (
+                (len(saln_compliant_user_ids) / active_employees * 100)
+                if active_employees > 0
+                else 0.0
+            )
 
             # Recent submissions (last 7 days)
             seven_days_ago = (datetime.now() - timedelta(days=7)).isoformat()
@@ -173,13 +208,11 @@ class GetDashboardOverviewTool(TUPSAFETool):
                 if a.get("created_at") and a["created_at"] >= seven_days_ago
             ])
 
-            # Get compliance overview
-            employees_with_saln = len(set(s.get("user_id") for s in saln_data if s.get("user_id")))
-            employees_compliant = employees_with_saln
-            employees_non_compliant = total_employees - employees_compliant
-            overall_compliance_rate = (
-                (employees_compliant / total_employees * 100) if total_employees > 0 else 0.0
-            )
+            # Overall compliance = (pds_rate + saln_rate) / 2
+            # (matches TUPSAFE admin portal's computeComplianceRates helper)
+            employees_compliant = len(saln_compliant_user_ids)
+            employees_non_compliant = max(active_employees - employees_compliant, 0)
+            overall_compliance_rate = (pds_compliance_rate + saln_compliance_rate) / 2
 
             # Get recent activity (last 10 audit logs)
             recent_activity_response = (
@@ -327,18 +360,25 @@ class GetQuickStatsTool(TUPSAFETool):
 
             pending_registrations = len(pending_reg_response.data or [])
 
-            # Compliance rate (SALN for current year)
+            # Compliance rate (SALN for current year) — canonical definition
+            # (submitted OR approved) so numbers match the admin dashboard.
             current_year = datetime.now().year
-            saln_approved_response = (
-                self._query("saln_submissions", "id")
+            active_ids = {e["id"] for e in (employees_response.data or [])}
+            saln_compliant_response = (
+                self._query("saln_submissions", "user_id,status")
                 .eq("year", current_year)
-                .eq("status", "approved")
+                .in_("status", ["submitted", "approved"])
                 .execute()
             )
-
-            saln_approved = len(saln_approved_response.data or [])
+            saln_compliant_ids = {
+                s["user_id"]
+                for s in (saln_compliant_response.data or [])
+                if s.get("user_id") in active_ids
+            }
             compliance_rate = (
-                (saln_approved / total_active_employees * 100) if total_active_employees > 0 else 0.0
+                (len(saln_compliant_ids) / total_active_employees * 100)
+                if total_active_employees > 0
+                else 0.0
             )
 
             stats_data = {

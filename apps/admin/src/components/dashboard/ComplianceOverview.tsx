@@ -56,8 +56,34 @@ export function ComplianceOverview() {
     );
   }
 
-  const { overall } = data;
-  const isImproving = overall.comparison.percentageChange > 0;
+  // Null-safe accessors so a partial/empty API payload does not crash the page.
+  const fixed = (v: number | null | undefined, digits = 1) =>
+    v != null && Number.isFinite(v) ? v.toFixed(digits) : '0';
+  const overall = data.overall ?? {
+    complianceRate: 0,
+    grade: 'F' as const,
+    comparison: { lastMonth: 0, percentageChange: 0 },
+  };
+  const deadlines = data.deadlines ?? {
+    pds: {
+      next: null,
+      daysRemaining: 0,
+      submitted: 0,
+      expected: 0,
+      status: 'overdue' as const,
+    },
+    saln: {
+      next: null,
+      fiscalYear: new Date().getFullYear(),
+      deadline: new Date(),
+      daysRemaining: 0,
+      submitted: 0,
+      expected: 0,
+      status: 'overdue' as const,
+    },
+  };
+  const percentageChange = overall.comparison?.percentageChange ?? 0;
+  const isImproving = percentageChange > 0;
 
   return (
     <Card>
@@ -84,17 +110,17 @@ export function ComplianceOverview() {
 
             <div className="flex-1">
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-2xl font-bold">{overall.complianceRate.toFixed(1)}%</p>
+                <p className="text-2xl font-bold">{fixed(overall.complianceRate)}%</p>
                 <Badge variant={isImproving ? 'default' : 'secondary'}>
                   {isImproving ? (
                     <TrendingUp className="mr-1 h-3 w-3" />
                   ) : (
                     <TrendingDown className="mr-1 h-3 w-3" />
                   )}
-                  {Math.abs(overall.comparison.percentageChange).toFixed(1)}%
+                  {fixed(Math.abs(percentageChange))}%
                 </Badge>
               </div>
-              <Progress value={overall.complianceRate} className="h-2" />
+              <Progress value={overall.complianceRate ?? 0} className="h-2" />
               <p className="mt-2 text-sm text-muted-foreground">
                 Overall compliance rate across all departments
               </p>
@@ -114,9 +140,9 @@ export function ComplianceOverview() {
                   {isImproving ? 'Improving!' : 'Needs Attention'}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {overall.comparison.lastMonth.toFixed(1)}% last month •{' '}
+                  {fixed(overall.comparison?.lastMonth)}% last month •{' '}
                   {isImproving ? '+' : ''}
-                  {overall.comparison.percentageChange.toFixed(1)}% change
+                  {fixed(percentageChange)}% change
                 </p>
               </div>
             </div>
@@ -126,16 +152,16 @@ export function ComplianceOverview() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">PDS Compliance</p>
-              <p className="text-xl font-bold">{data.deadlines.pds.submitted}</p>
+              <p className="text-xl font-bold">{deadlines.pds?.submitted ?? 0}</p>
               <p className="text-xs text-muted-foreground">
-                of {data.deadlines.pds.expected} employees
+                of {deadlines.pds?.expected ?? 0} employees
               </p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">SALN Compliance</p>
-              <p className="text-xl font-bold">{data.deadlines.saln.submitted}</p>
+              <p className="text-xl font-bold">{deadlines.saln?.submitted ?? 0}</p>
               <p className="text-xs text-muted-foreground">
-                of {data.deadlines.saln.expected} employees
+                of {deadlines.saln?.expected ?? 0} employees
               </p>
             </div>
           </div>

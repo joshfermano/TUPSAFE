@@ -6,30 +6,52 @@ import {
   pdsSubmissions,
   salnSubmissions,
 } from '@tupsafe/database/schema';
-import { eq, and, sql } from 'drizzle-orm';
-import type { DashboardDepartmentsResponse, DepartmentMetrics } from '@tupsafe/types';
+import { and, eq, sql } from 'drizzle-orm';
+import type {
+  DashboardDepartmentsResponse,
+  DepartmentMetrics,
+} from '@tupsafe/types';
 import { checkUserRoleFromSupabase } from '@tupsafe/auth/server';
+import {
+  computeDepartmentCompliance,
+  currentReportingYear,
+  roundRate,
+  safeRate,
+} from '../../../../lib/compliance';
 
 export const dynamic = 'force-dynamic';
+
+const HANDLER_TIMEOUT_MS = 30_000;
+
+function buildFallbackResponse(): DashboardDepartmentsResponse {
+  return {
+    departments: [],
+    summary: {
+      totalDepartments: 0,
+      averageCompliance: 0,
+      bestPerforming: { name: 'N/A', compliance: 0 },
+      needsAttention: [],
+    },
+  };
+}
+
 /**
  * GET /api/dashboard/departments
  *
- * Department-level performance and compliance analytics
+ * Department-level performance and compliance analytics.
  *
- * Features:
- * - User count per department
- * - Submission compliance per department
- * - Pending reviews per department
- * - Department rankings by compliance
- * - Trend analysis (improving/declining/stable)
- *
- * Caching: 10 minutes
+ * Compliance numbers are produced by the centralized `computeDepartmentCompliance`
+ * helper (correlated subqueries) so they remain consistent with the overview
+ * and compliance endpoints. Pending/active user counts come from a separate
+ * single aggregation query — that join can be widened without inflating
+ * DISTINCT compliance counts because the two datasets are independent.
  */
 export async function GET(_request: NextRequest) {
   try {
-    // Verify admin/HR permissions
-    const hasPermission = await checkUserRoleFromSupabase(['superadmin', 'admin', 'hr'], 'admin');
-
+    const hasPermission = await checkUserRoleFromSupabase(
+      ['superadmin', 'admin', 'hr'],
+      'admin'
+    );
     if (!hasPermission) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin, Co-Admin, or HR role required.' },
@@ -38,168 +60,200 @@ export async function GET(_request: NextRequest) {
     }
 
     const now = new Date();
-    const currentYear = now.getFullYear();
+    const currentYear = currentReportingYear(now);
     const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-    // Get all departments with their metrics
-    const departmentData = await db
-      .select({
-        deptId: departments.id,
-        deptName: departments.name,
-        deptCode: departments.code,
-        totalUsers: sql<number>`COUNT(DISTINCT ${profiles.id})`,
-        activeUsers: sql<number>`COUNT(DISTINCT CASE WHEN ${profiles.accountStatus} = 'active' THEN ${profiles.id} END)`,
-        pdsSubmitted: sql<number>`COUNT(DISTINCT CASE WHEN ${pdsSubmissions.status} = 'approved' THEN ${pdsSubmissions.userId} END)`,
-        salnSubmitted: sql<number>`COUNT(DISTINCT CASE WHEN ${salnSubmissions.status} = 'approved' AND ${salnSubmissions.year} = ${currentYear} THEN ${salnSubmissions.userId} END)`,
-        pdsPending: sql<number>`COUNT(DISTINCT CASE WHEN ${pdsSubmissions.status} IN ('submitted', 'reviewing') THEN ${pdsSubmissions.userId} END)`,
-        salnPending: sql<number>`COUNT(DISTINCT CASE WHEN ${salnSubmissions.status} IN ('submitted', 'reviewing') THEN ${salnSubmissions.userId} END)`,
-      })
-      .from(departments)
-      .leftJoin(profiles, and(
-        eq(profiles.departmentId, departments.id),
-        eq(profiles.userType, 'employee'),
-        eq(profiles.accountStatus, 'active'),
-        eq(profiles.isActive, true)
-      ))
-      .leftJoin(pdsSubmissions, eq(pdsSubmissions.userId, profiles.id))
-      .leftJoin(salnSubmissions, eq(salnSubmissions.userId, profiles.id))
-      .groupBy(departments.id, departments.name, departments.code)
-      .orderBy(departments.name);
-
-    // Calculate previous month compliance for trend analysis
     const twoMonthsAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
 
-    const previousMonthCompliance = await db
-      .select({
-        deptId: departments.id,
-        previousPdsCount: sql<number>`COUNT(DISTINCT CASE WHEN ${pdsSubmissions.status} = 'approved' AND ${pdsSubmissions.approvedAt} >= ${twoMonthsAgo.toISOString()} AND ${pdsSubmissions.approvedAt} < ${oneMonthAgo.toISOString()} THEN ${pdsSubmissions.userId} END)`,
-        previousSalnCount: sql<number>`COUNT(DISTINCT CASE WHEN ${salnSubmissions.status} = 'approved' AND ${salnSubmissions.year} = ${currentYear} AND ${salnSubmissions.approvedAt} >= ${twoMonthsAgo.toISOString()} AND ${salnSubmissions.approvedAt} < ${oneMonthAgo.toISOString()} THEN ${salnSubmissions.userId} END)`,
-      })
-      .from(departments)
-      .leftJoin(profiles, and(
-        eq(profiles.departmentId, departments.id),
-        eq(profiles.userType, 'employee'),
-        eq(profiles.accountStatus, 'active'),
-        eq(profiles.isActive, true)
-      ))
-      .leftJoin(pdsSubmissions, eq(pdsSubmissions.userId, profiles.id))
-      .leftJoin(salnSubmissions, eq(salnSubmissions.userId, profiles.id))
-      .groupBy(departments.id);
+    const workPromise = Promise.all([
+      // Canonical per-department compliance (single query w/ correlated subqueries).
+      computeDepartmentCompliance(now),
 
-    // Map previous month data for easy lookup
-    const previousComplianceMap = new Map(
-      previousMonthCompliance.map((row) => [
-        row.deptId,
+      // Pending submission counts + user counts per department — run in parallel
+      // and keyed on department_id, NOT per-department N+1.
+      db
+        .select({
+          deptId: departments.id,
+          deptCode: departments.code,
+          totalUsers: sql<number>`COUNT(DISTINCT ${profiles.id})`,
+          activeUsers: sql<number>`COUNT(DISTINCT CASE WHEN ${profiles.accountStatus} = 'active' THEN ${profiles.id} END)`,
+          pdsPending: sql<number>`COUNT(DISTINCT CASE WHEN ${pdsSubmissions.status} IN ('submitted', 'reviewing') THEN ${pdsSubmissions.userId} END)`,
+          salnPending: sql<number>`COUNT(DISTINCT CASE WHEN ${salnSubmissions.status} IN ('submitted', 'reviewing') THEN ${salnSubmissions.userId} END)`,
+        })
+        .from(departments)
+        .leftJoin(
+          profiles,
+          and(
+            eq(profiles.departmentId, departments.id),
+            eq(profiles.userType, 'employee'),
+            eq(profiles.accountStatus, 'active'),
+            eq(profiles.isActive, true)
+          )
+        )
+        .leftJoin(pdsSubmissions, eq(pdsSubmissions.userId, profiles.id))
+        .leftJoin(salnSubmissions, eq(salnSubmissions.userId, profiles.id))
+        .groupBy(departments.id, departments.code),
+
+      // Previous-month-ish compliance baseline (for trend).
+      db
+        .select({
+          deptId: departments.id,
+          previousPdsCount: sql<number>`COUNT(DISTINCT CASE WHEN ${pdsSubmissions.status} IN ('submitted','approved') AND ${pdsSubmissions.approvedAt} >= ${twoMonthsAgo.toISOString()} AND ${pdsSubmissions.approvedAt} < ${oneMonthAgo.toISOString()} THEN ${pdsSubmissions.userId} END)`,
+          previousSalnCount: sql<number>`COUNT(DISTINCT CASE WHEN ${salnSubmissions.status} IN ('submitted','approved') AND ${salnSubmissions.year} = ${currentYear} AND ${salnSubmissions.approvedAt} >= ${twoMonthsAgo.toISOString()} AND ${salnSubmissions.approvedAt} < ${oneMonthAgo.toISOString()} THEN ${salnSubmissions.userId} END)`,
+        })
+        .from(departments)
+        .leftJoin(
+          profiles,
+          and(
+            eq(profiles.departmentId, departments.id),
+            eq(profiles.userType, 'employee'),
+            eq(profiles.accountStatus, 'active'),
+            eq(profiles.isActive, true)
+          )
+        )
+        .leftJoin(pdsSubmissions, eq(pdsSubmissions.userId, profiles.id))
+        .leftJoin(salnSubmissions, eq(salnSubmissions.userId, profiles.id))
+        .groupBy(departments.id),
+    ]);
+
+    const timeoutPromise = new Promise<'timeout'>((resolve) =>
+      setTimeout(() => resolve('timeout'), HANDLER_TIMEOUT_MS)
+    );
+
+    const raced = await Promise.race([workPromise, timeoutPromise]);
+    if (raced === 'timeout') {
+      console.error(
+        '[Dashboard Departments] handler timed out after %dms',
+        HANDLER_TIMEOUT_MS
+      );
+      return NextResponse.json(buildFallbackResponse(), {
+        status: 200,
+        headers: { 'Cache-Control': 'no-store', 'X-Partial-Data': '1' },
+      });
+    }
+
+    const [complianceRows, pendingRows, previousMonthCompliance] = raced;
+
+    const pendingMap = new Map(
+      pendingRows.map((r) => [
+        r.deptId,
         {
-          pdsCount: Number(row.previousPdsCount),
-          salnCount: Number(row.previousSalnCount),
+          totalUsers: Number(r.totalUsers ?? 0),
+          activeUsers: Number(r.activeUsers ?? 0),
+          pdsPending: Number(r.pdsPending ?? 0),
+          salnPending: Number(r.salnPending ?? 0),
+          deptCode: r.deptCode ?? null,
         },
       ])
     );
 
-    // Process department metrics
-    const departmentMetrics: DepartmentMetrics[] = departmentData.map((dept) => {
-      const totalUsers = Number(dept.totalUsers);
-      const activeUsers = Number(dept.activeUsers);
-      const pdsSubmitted = Number(dept.pdsSubmitted);
-      const salnSubmitted = Number(dept.salnSubmitted);
-      const pdsPending = Number(dept.pdsPending);
-      const salnPending = Number(dept.salnPending);
+    const previousComplianceMap = new Map(
+      previousMonthCompliance.map((r) => [
+        r.deptId,
+        {
+          pdsCount: Number(r.previousPdsCount ?? 0),
+          salnCount: Number(r.previousSalnCount ?? 0),
+        },
+      ])
+    );
 
-      // Calculate compliance rates
-      const pdsCompliance = totalUsers > 0 ? (pdsSubmitted / totalUsers) * 100 : 0;
-      const salnCompliance = totalUsers > 0 ? (salnSubmitted / totalUsers) * 100 : 0;
-      const overallCompliance = (pdsCompliance + salnCompliance) / 2;
+    const departmentMetrics: DepartmentMetrics[] = complianceRows.map(
+      (dept) => {
+        const pending = pendingMap.get(dept.departmentId);
+        const totalUsers = pending?.totalUsers ?? dept.expected;
+        const activeUsers = pending?.activeUsers ?? dept.expected;
+        const pdsPending = pending?.pdsPending ?? 0;
+        const salnPending = pending?.salnPending ?? 0;
 
-      // Calculate trend
-      const previous = previousComplianceMap.get(dept.deptId);
-      let trend: 'improving' | 'declining' | 'stable' = 'stable';
+        const pdsCompliance = dept.pdsRate;
+        const salnCompliance = dept.salnRate;
+        const overallCompliance = dept.overallRate;
 
-      if (previous && totalUsers > 0) {
-        const previousPdsRate = (previous.pdsCount / totalUsers) * 100;
-        const previousSalnRate = (previous.salnCount / totalUsers) * 100;
-        const previousOverall = (previousPdsRate + previousSalnRate) / 2;
-
-        const difference = overallCompliance - previousOverall;
-        if (difference > 5) {
-          trend = 'improving';
-        } else if (difference < -5) {
-          trend = 'declining';
+        // Trend
+        const previous = previousComplianceMap.get(dept.departmentId);
+        let trend: 'improving' | 'declining' | 'stable' = 'stable';
+        if (previous && dept.expected > 0) {
+          const prevPds = safeRate(previous.pdsCount, dept.expected);
+          const prevSaln = safeRate(previous.salnCount, dept.expected);
+          const previousOverall = (prevPds + prevSaln) / 2;
+          const difference = overallCompliance - previousOverall;
+          if (difference > 5) trend = 'improving';
+          else if (difference < -5) trend = 'declining';
         }
+
+        return {
+          id: dept.departmentId,
+          name: dept.departmentName,
+          code: dept.departmentCode ?? pending?.deptCode ?? null,
+          users: { total: totalUsers, active: activeUsers },
+          submissions: {
+            pdsCompliance: roundRate(pdsCompliance, 2),
+            salnCompliance: roundRate(salnCompliance, 2),
+            pending: pdsPending + salnPending,
+            overdue:
+              Math.max(0, dept.expected - dept.pdsSubmitted) +
+              Math.max(0, dept.expected - dept.salnSubmitted),
+          },
+          rank: 0,
+          trend,
+        };
       }
+    );
 
-      return {
-        id: dept.deptId,
-        name: dept.deptName,
-        code: dept.deptCode,
-        users: {
-          total: totalUsers,
-          active: activeUsers,
-        },
-        submissions: {
-          pdsCompliance: Number(pdsCompliance.toFixed(2)),
-          salnCompliance: Number(salnCompliance.toFixed(2)),
-          pending: pdsPending + salnPending,
-          overdue: Math.max(0, totalUsers - pdsSubmitted) + Math.max(0, totalUsers - salnSubmitted),
-        },
-        rank: 0, // Will be set after sorting
-        trend,
-      };
-    });
-
-    // Rank departments by compliance
     const sortedDepartments = [...departmentMetrics].sort((a, b) => {
-      const aCompliance = (a.submissions.pdsCompliance + a.submissions.salnCompliance) / 2;
-      const bCompliance = (b.submissions.pdsCompliance + b.submissions.salnCompliance) / 2;
-      return bCompliance - aCompliance;
+      const aComp =
+        (a.submissions.pdsCompliance + a.submissions.salnCompliance) / 2;
+      const bComp =
+        (b.submissions.pdsCompliance + b.submissions.salnCompliance) / 2;
+      return bComp - aComp;
     });
 
-    // Assign ranks
     sortedDepartments.forEach((dept, index) => {
       dept.rank = index + 1;
     });
 
-    // Calculate summary statistics
     const totalDepartments = sortedDepartments.length;
     const averageCompliance =
       totalDepartments > 0
         ? sortedDepartments.reduce((sum, dept) => {
-            const compliance = (dept.submissions.pdsCompliance + dept.submissions.salnCompliance) / 2;
-            return sum + compliance;
+            const c =
+              (dept.submissions.pdsCompliance +
+                dept.submissions.salnCompliance) /
+              2;
+            return sum + c;
           }, 0) / totalDepartments
         : 0;
 
-    const bestPerforming = sortedDepartments[0] || {
-      name: 'N/A',
-      submissions: { pdsCompliance: 0, salnCompliance: 0 },
-    };
+    const bestPerforming = sortedDepartments[0];
+    const bestCompliance = bestPerforming
+      ? (bestPerforming.submissions.pdsCompliance +
+          bestPerforming.submissions.salnCompliance) /
+        2
+      : 0;
 
     const needsAttention = sortedDepartments
       .filter((dept) => {
-        const compliance = (dept.submissions.pdsCompliance + dept.submissions.salnCompliance) / 2;
-        return compliance < 70; // Below 70% compliance
+        const c =
+          (dept.submissions.pdsCompliance + dept.submissions.salnCompliance) /
+          2;
+        return c < 70;
       })
       .map((dept) => ({
         name: dept.name,
-        compliance: Number(
-          ((dept.submissions.pdsCompliance + dept.submissions.salnCompliance) / 2).toFixed(2)
+        compliance: roundRate(
+          (dept.submissions.pdsCompliance + dept.submissions.salnCompliance) /
+            2,
+          2
         ),
       }));
 
-    // Construct response
     const response: DashboardDepartmentsResponse = {
       departments: sortedDepartments,
       summary: {
         totalDepartments,
-        averageCompliance: Number(averageCompliance.toFixed(2)),
+        averageCompliance: roundRate(averageCompliance, 2),
         bestPerforming: {
-          name: bestPerforming.name,
-          compliance: Number(
-            (
-              (bestPerforming.submissions.pdsCompliance + bestPerforming.submissions.salnCompliance) /
-              2
-            ).toFixed(2)
-          ),
+          name: bestPerforming?.name ?? 'N/A',
+          compliance: roundRate(bestCompliance, 2),
         },
         needsAttention,
       },
@@ -207,14 +261,14 @@ export async function GET(_request: NextRequest) {
 
     return NextResponse.json(response, {
       headers: {
-        'Cache-Control': 's-maxage=600, stale-while-revalidate=120', // 10 minutes
+        'Cache-Control': 's-maxage=600, stale-while-revalidate=120',
       },
     });
   } catch (error) {
     console.error('[Dashboard Departments] Error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch department analytics' },
-      { status: 500 }
-    );
+    return NextResponse.json(buildFallbackResponse(), {
+      status: 200,
+      headers: { 'Cache-Control': 'no-store', 'X-Partial-Data': '1' },
+    });
   }
 }
