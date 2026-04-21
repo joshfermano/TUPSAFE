@@ -82,14 +82,14 @@ const ComplianceOverviewCard = memo(
     };
 
     const content = (
-      <Card className="bg-gradient-to-br from-[#8B1538]/5 to-transparent">
+      <Card className="h-full flex flex-col bg-gradient-to-br from-[#8B1538]/5 to-transparent">
         <CardHeader>
           <CardTitle className="text-base font-medium">
             Compliance Overview
           </CardTitle>
           <CardDescription>Overall compliance rate</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1">
           <div className="space-y-4">
             <div className="flex items-baseline gap-2">
               <span className="text-4xl font-bold">
@@ -141,6 +141,7 @@ const ComplianceOverviewCard = memo(
 
     return (
       <motion.div
+        className="h-full"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}>
@@ -177,14 +178,14 @@ const SubmissionStatsCard = memo(
     }, []);
 
     const content = (
-      <Card>
+      <Card className="h-full flex flex-col">
         <CardHeader>
           <CardTitle className="text-base font-medium">
             Submission Statistics
           </CardTitle>
           <CardDescription>Total submissions this period</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1">
           <div className="space-y-4">
             {/* PDS Submissions */}
             <div className="flex items-center justify-between">
@@ -232,6 +233,7 @@ const SubmissionStatsCard = memo(
 
     return (
       <motion.div
+        className="h-full"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.1, ease: [0.4, 0, 0.2, 1] }}>
@@ -273,14 +275,14 @@ const DepartmentPerformanceCard = memo(
     };
 
     const content = (
-      <Card>
+      <Card className="h-full flex flex-col">
         <CardHeader>
           <CardTitle className="text-base font-medium">
             Department Performance
           </CardTitle>
           <CardDescription>Compliance by department</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1">
           <ChartContainer config={chartConfig} className="h-[180px]">
             <BarChart data={topDepartments} layout="vertical">
               <XAxis type="number" domain={[0, 100]} hide />
@@ -293,8 +295,14 @@ const DepartmentPerformanceCard = memo(
                 axisLine={false}
               />
               <ChartTooltip
+                cursor={{ fill: 'hsl(var(--muted))', opacity: 0.3 }}
+                allowEscapeViewBox={{ x: false, y: false }}
+                wrapperStyle={{ zIndex: 50, pointerEvents: 'none', outline: 'none' }}
+                position={{ y: 0 }}
+                offset={12}
                 content={
                   <ChartTooltipContent
+                    className="bg-popover text-popover-foreground border rounded-md shadow-md"
                     formatter={(value) => `${Number(value)}%`}
                   />
                 }
@@ -323,6 +331,7 @@ const DepartmentPerformanceCard = memo(
 
     return (
       <motion.div
+        className="h-full"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.2, ease: [0.4, 0, 0.2, 1] }}>
@@ -371,12 +380,12 @@ const RecentActivityCard = memo(({ activities }: RecentActivityCardProps) => {
   };
 
   const content = (
-    <Card>
+    <Card className="h-full flex flex-col">
       <CardHeader>
         <CardTitle className="text-base font-medium">Recent Activity</CardTitle>
         <CardDescription>Latest important activities</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1">
         <div className="space-y-3">
           {activities.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">
@@ -418,6 +427,7 @@ const RecentActivityCard = memo(({ activities }: RecentActivityCardProps) => {
 
   return (
     <motion.div
+      className="h-full"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.3, ease: [0.4, 0, 0.2, 1] }}>
@@ -448,13 +458,13 @@ function ReportsPageSkeleton() {
         </div>
 
         {/* Stats grid skeleton */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 items-stretch">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i}>
+            <Card key={i} className="h-full flex flex-col">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <Skeleton className="h-4 w-32" />
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex-1">
                 <Skeleton className="h-10 w-20 mb-2" />
                 <Skeleton className="h-3 w-40" />
               </CardContent>
@@ -708,7 +718,7 @@ export default function ReportsPage() {
         </div>
 
         {/* Quick Stats Cards Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 items-stretch">
           <ComplianceOverviewCard
             overallRate={complianceOverview.overallRate}
             trendPercentage={complianceOverview.trendPercentage}
