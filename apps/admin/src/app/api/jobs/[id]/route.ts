@@ -5,15 +5,16 @@
  * DELETE /api/jobs/[id] - Soft delete job position (cancel)
  *
  * Security:
- * - GET: Requires admin, hr, or supervisor role
- * - PATCH: Requires admin or hr role
- * - DELETE: Requires admin role only
+ * - GET: Requires superadmin, admin, or hr role
+ * - PATCH: Requires superadmin, admin, or hr role
+ * - DELETE: Requires superadmin or admin role (superadmin is a strict superset of admin)
  * - Comprehensive audit logging
  * - Input validation with Zod
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromSupabase } from '@tupsafe/auth/server';
+import { canManageJobs, canDeleteJobs } from '@/lib/rbac';
 import {
   db,
   openPositions,
@@ -49,10 +50,9 @@ export async function GET(
     }
 
     // Verify permissions
-    const allowedRoles = ['superadmin', 'admin', 'hr'];
-    if (!allowedRoles.includes(sessionUser.role)) {
+    if (!canManageJobs(sessionUser.role)) {
       return NextResponse.json(
-        { error: 'Unauthorized. Admin, HR, or Supervisor role required.' },
+        { error: 'Unauthorized. Superadmin, Admin, or HR role required.' },
         { status: 403 }
       );
     }
@@ -268,10 +268,9 @@ export async function PATCH(
     }
 
     // Verify permissions
-    const allowedRoles = ['superadmin', 'admin', 'hr'];
-    if (!allowedRoles.includes(sessionUser.role)) {
+    if (!canManageJobs(sessionUser.role)) {
       return NextResponse.json(
-        { error: 'Unauthorized. Admin, Co-Admin, or HR role required.' },
+        { error: 'Unauthorized. Superadmin, Admin, or HR role required.' },
         { status: 403 }
       );
     }
@@ -413,11 +412,11 @@ export async function DELETE(
 
     console.log('[DELETE /api/jobs/[id]] User authenticated:', sessionUser.userId, 'Role:', sessionUser.role);
 
-    // Verify permissions - admin only
-    if (sessionUser.role !== 'admin') {
+    // Verify permissions - superadmin or admin only (superadmin is a strict superset of admin)
+    if (!canDeleteJobs(sessionUser.role)) {
       console.error('[DELETE /api/jobs/[id]] Unauthorized - role is', sessionUser.role);
       return NextResponse.json(
-        { error: 'Unauthorized. Admin role required.' },
+        { error: 'Unauthorized. Superadmin or Admin role required.' },
         { status: 403 }
       );
     }

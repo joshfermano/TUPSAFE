@@ -5,10 +5,20 @@ This module provides tools for calculating PDS and SALN compliance rates and ide
 non-compliant employees. These metrics are critical for CSC (Civil Service Commission)
 compliance reporting and tracking organizational adherence to filing requirements.
 
-Key compliance metrics:
-- SALN Compliance Rate: Percentage of employees who filed SALN for a given year
-- PDS Compliance Rate: Percentage of employees with approved PDS on file
-- Pending Review: Submissions awaiting approval by department/office
+Canonical definitions (mirrors apps/admin/src/lib/compliance.ts — keep in sync):
+- Denominator = profiles WHERE user_type='employee'
+                AND account_status='active' AND is_active=true
+- PDS numerator = COUNT(DISTINCT user_id) FROM pds_submissions
+                  WHERE status IN ('submitted','approved')
+- SALN numerator (for year Y) = COUNT(DISTINCT user_id) FROM saln_submissions
+                  WHERE year=Y AND status IN ('submitted','approved')
+- rate = denominator > 0 ? numerator/denominator * 100 : 0
+- overall_rate = (pds_rate + saln_rate) / 2
+
+Each tool below exposes BOTH:
+  - compliance_rate: historical "approved-only" rate (kept for backwards-
+    compat with older AI-agent prompts)
+  - canonical_rate: the definition above used by every admin-portal widget
 """
 
 from typing import Any, Literal, Optional
@@ -179,6 +189,15 @@ class GetSALNComplianceRateTool(TUPSAFETool):
                 else 0.0
             )
 
+            # Canonical rate matches the TUPSAFE admin portal compliance helper
+            # (submitted OR approved counts toward compliance).
+            canonical_numerator = employees_compliant + employees_pending
+            canonical_rate = (
+                (canonical_numerator / total_employees * 100)
+                if total_employees > 0
+                else 0.0
+            )
+
             result = {
                 "year": year,
                 "department_id": department_id or "all",
@@ -188,11 +207,15 @@ class GetSALNComplianceRateTool(TUPSAFETool):
                 "employees_non_compliant": employees_non_compliant,
                 "compliance_rate": round(compliance_rate, 2),
                 "submission_rate": round(submission_rate, 2),
+                "canonical_rate": round(canonical_rate, 2),
+                "canonical_numerator": canonical_numerator,
             }
 
             return self._format_single_response(
                 result,
-                f"SALN compliance rate for {year}: {compliance_rate:.1f}% ({employees_compliant}/{total_employees} employees)"
+                f"SALN compliance rate for {year}: {canonical_rate:.1f}% "
+                f"({canonical_numerator}/{total_employees} employees; "
+                f"canonical submitted+approved definition)"
             )
 
         except Exception as e:
@@ -326,6 +349,13 @@ class GetPDSComplianceRateTool(TUPSAFETool):
                 else 0.0
             )
 
+            canonical_numerator = employees_compliant + employees_pending
+            canonical_rate = (
+                (canonical_numerator / total_employees * 100)
+                if total_employees > 0
+                else 0.0
+            )
+
             result = {
                 "department_id": department_id or "all",
                 "total_employees": total_employees,
@@ -334,11 +364,15 @@ class GetPDSComplianceRateTool(TUPSAFETool):
                 "employees_non_compliant": employees_non_compliant,
                 "compliance_rate": round(compliance_rate, 2),
                 "submission_rate": round(submission_rate, 2),
+                "canonical_rate": round(canonical_rate, 2),
+                "canonical_numerator": canonical_numerator,
             }
 
             return self._format_single_response(
                 result,
-                f"PDS compliance rate: {compliance_rate:.1f}% ({employees_compliant}/{total_employees} employees)"
+                f"PDS compliance rate: {canonical_rate:.1f}% "
+                f"({canonical_numerator}/{total_employees} employees; "
+                f"canonical submitted+approved definition)"
             )
 
         except Exception as e:

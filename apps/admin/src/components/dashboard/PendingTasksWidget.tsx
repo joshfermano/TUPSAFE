@@ -73,66 +73,85 @@ function TaskItem({ icon, label, count, href, urgent, description }: TaskItemPro
 }
 
 export function PendingTasksWidget({ data }: PendingTasksWidgetProps) {
-  const { registrations, submissions, compliance, alerts } = data;
+  // Tolerate partial/empty payloads — a timed-out or partial API response
+  // previously threw here because `compliance.pds` was undefined.
+  const registrations = data?.registrations ?? {
+    pending: 0,
+    approvedThisWeek: 0,
+    approvedThisMonth: 0,
+    rejectedThisMonth: 0,
+    averageApprovalTime: '0.0 hours',
+  };
+  const submissions = data?.submissions ?? {
+    pending: { pds: 0, saln: 0, total: 0 },
+    approvedThisWeek: 0,
+    approvedThisMonth: 0,
+    complianceRate: 0,
+  };
+  const compliance = data?.compliance ?? {
+    pds: { submitted: 0, expected: 0, rate: 0, overdue: 0 },
+    saln: { submitted: 0, expected: 0, rate: 0, overdue: 0 },
+  };
+  const alerts = data?.alerts ?? [];
 
   // Calculate tasks
   const tasks: TaskItemProps[] = [];
 
   // Pending registrations
-  if (registrations.pending > 0) {
+  if ((registrations.pending ?? 0) > 0) {
     tasks.push({
       icon: <Users className="h-4 w-4" />, // removed text-blue-600
       label: 'Review Registrations',
-      count: registrations.pending,
+      count: (registrations.pending ?? 0),
       href: '/dashboard/registrations',
-      urgent: registrations.pending > 10,
-      description: registrations.pending > 10 ? 'High volume of pending requests' : undefined,
+      urgent: (registrations.pending ?? 0) > 10,
+      description: (registrations.pending ?? 0) > 10 ? 'High volume of pending requests' : undefined,
     });
   }
 
   // Pending PDS submissions
-  if (submissions.pending.pds > 0) {
+  if ((submissions.pending?.pds ?? 0) > 0) {
     tasks.push({
       icon: <FileText className="h-4 w-4" />, // removed text-green-600
       label: 'Review PDS Submissions',
-      count: submissions.pending.pds,
+      count: (submissions.pending?.pds ?? 0),
       href: '/dashboard/submissions?type=pds&status=submitted',
-      urgent: submissions.pending.pds > 15,
+      urgent: (submissions.pending?.pds ?? 0) > 15,
     });
   }
 
   // Pending SALN submissions
-  if (submissions.pending.saln > 0) {
+  if ((submissions.pending?.saln ?? 0) > 0) {
     tasks.push({
       icon: <FileText className="h-4 w-4" />, // removed text-purple-600
       label: 'Review SALN Submissions',
-      count: submissions.pending.saln,
+      count: (submissions.pending?.saln ?? 0),
       href: '/dashboard/submissions?type=saln&status=submitted',
-      urgent: submissions.pending.saln > 15,
+      urgent: (submissions.pending?.saln ?? 0) > 15,
     });
   }
 
   // Overdue PDS
-  if (compliance.pds.overdue > 0) {
+  if ((compliance.pds?.overdue ?? 0) > 0) {
     tasks.push({
       icon: <AlertCircle className="h-4 w-4" />, // removed text-red-600, handled by urgent
       label: 'Overdue PDS',
-      count: compliance.pds.overdue,
+      count: (compliance.pds?.overdue ?? 0),
       href: '/dashboard/compliance',
       urgent: true,
-      description: `${compliance.pds.overdue} employees have not submitted PDS`,
+      description: `${(compliance.pds?.overdue ?? 0)} employees have not submitted PDS`,
     });
   }
 
   // Overdue SALN
-  if (compliance.saln.overdue > 0) {
+  if ((compliance.saln?.overdue ?? 0) > 0) {
     tasks.push({
       icon: <AlertCircle className="h-4 w-4" />,
       label: 'Overdue SALN',
-      count: compliance.saln.overdue,
+      count: (compliance.saln?.overdue ?? 0),
       href: '/dashboard/compliance',
       urgent: true,
-      description: `${compliance.saln.overdue} employees have not submitted SALN`,
+      description: `${(compliance.saln?.overdue ?? 0)} employees have not submitted SALN`,
     });
   }
 

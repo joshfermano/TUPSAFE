@@ -75,22 +75,33 @@ export function ComplianceByDeptChart() {
     );
   }
 
+  // Null-safe rounder.
+  const safeRound = (v: number | null | undefined) =>
+    v != null && Number.isFinite(v) ? Math.round(v) : 0;
+
+  const departmentsList = data.departments ?? [];
+  const summary = data.summary ?? {
+    totalDepartments: 0,
+    averageCompliance: 0,
+    bestPerforming: { name: 'N/A', compliance: 0 },
+    needsAttention: [],
+  };
+
   // Calculate average compliance rate for each department
-  const chartData = data.departments
-    .map((dept) => ({
-      name: dept.code || dept.name.substring(0, 20),
-      fullName: dept.name,
-      compliance: Math.round(
-        (dept.submissions.pdsCompliance + dept.submissions.salnCompliance) / 2
-      ),
-      pds: dept.submissions.pdsCompliance,
-      saln: dept.submissions.salnCompliance,
-      fill: getComplianceColor(
-        Math.round(
-          (dept.submissions.pdsCompliance + dept.submissions.salnCompliance) / 2
-        )
-      ),
-    }))
+  const chartData = departmentsList
+    .map((dept) => {
+      const pds = dept.submissions?.pdsCompliance ?? 0;
+      const saln = dept.submissions?.salnCompliance ?? 0;
+      const combined = safeRound((pds + saln) / 2);
+      return {
+        name: dept.code || (dept.name ?? '').substring(0, 20),
+        fullName: dept.name ?? 'Unknown',
+        compliance: combined,
+        pds,
+        saln,
+        fill: getComplianceColor(combined),
+      };
+    })
     .sort((a, b) => b.compliance - a.compliance)
     .slice(0, 10); // Top 10 departments
 
@@ -122,7 +133,7 @@ export function ComplianceByDeptChart() {
             </CardDescription>
           </div>
           <Badge variant="outline">
-            Avg: {Math.round(data.summary.averageCompliance)}%
+            Avg: {safeRound(summary.averageCompliance)}%
           </Badge>
         </div>
       </CardHeader>
@@ -176,19 +187,19 @@ export function ComplianceByDeptChart() {
               Best Performing
             </p>
             <p className="text-sm font-medium">
-              {data.summary.bestPerforming.name}
+              {summary.bestPerforming?.name ?? 'N/A'}
             </p>
             <Badge variant="default" className="mt-1">
-              {Math.round(data.summary.bestPerforming.compliance)}%
+              {safeRound(summary.bestPerforming?.compliance)}%
             </Badge>
           </div>
-          {data.summary.needsAttention.length > 0 && (
+          {(summary.needsAttention?.length ?? 0) > 0 && (
             <div>
               <p className="mb-2 text-sm font-medium text-red-600 dark:text-red-400">
                 Needs Attention
               </p>
               <div className="space-y-1">
-                {data.summary.needsAttention
+                {(summary.needsAttention ?? [])
                   .slice(0, 2)
                   .map((dept, idx) => (
                     <div
@@ -196,7 +207,7 @@ export function ComplianceByDeptChart() {
                       className="flex items-center justify-between">
                       <p className="text-sm">{dept.name}</p>
                       <Badge variant="destructive" className="text-xs">
-                        {Math.round(dept.compliance)}%
+                        {safeRound(dept.compliance)}%
                       </Badge>
                     </div>
                   ))}

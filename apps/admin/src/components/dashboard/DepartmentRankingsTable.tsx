@@ -67,11 +67,22 @@ export function DepartmentRankingsTable() {
     );
   }
 
-  // Top 5 departments
-  const topDepartments = data.departments
+  // Null-safe rounder — protects against null/NaN reaching Math.round.
+  const safeRound = (v: number | null | undefined) =>
+    v != null && Number.isFinite(v) ? Math.round(v) : 0;
+
+  // Top 5 departments — tolerate missing/undefined submission fields.
+  const departmentsList = data.departments ?? [];
+  const topDepartments = [...departmentsList]
     .sort((a, b) => {
-      const aCompliance = (a.submissions.pdsCompliance + a.submissions.salnCompliance) / 2;
-      const bCompliance = (b.submissions.pdsCompliance + b.submissions.salnCompliance) / 2;
+      const aCompliance =
+        ((a.submissions?.pdsCompliance ?? 0) +
+          (a.submissions?.salnCompliance ?? 0)) /
+        2;
+      const bCompliance =
+        ((b.submissions?.pdsCompliance ?? 0) +
+          (b.submissions?.salnCompliance ?? 0)) /
+        2;
       return bCompliance - aCompliance;
     })
     .slice(0, 5);
@@ -112,7 +123,10 @@ export function DepartmentRankingsTable() {
             {topDepartments.map((dept, index) => {
               const rank = index + 1;
               const medal = getMedal(rank);
-              const _overallCompliance = (dept.submissions.pdsCompliance + dept.submissions.salnCompliance) / 2;
+              const _overallCompliance =
+                ((dept.submissions?.pdsCompliance ?? 0) +
+                  (dept.submissions?.salnCompliance ?? 0)) /
+                2;
 
               return (
                 <div
@@ -148,28 +162,28 @@ export function DepartmentRankingsTable() {
                         <span className="text-xs text-muted-foreground">PDS</span>
                         <Badge
                           variant={
-                            dept.submissions.pdsCompliance >= 90
+                            (dept.submissions?.pdsCompliance ?? 0) >= 90
                               ? 'default'
-                              : dept.submissions.pdsCompliance >= 70
+                              : (dept.submissions?.pdsCompliance ?? 0) >= 70
                                 ? 'secondary'
                                 : 'destructive'
                           }
                           className="text-xs">
-                          {Math.round(dept.submissions.pdsCompliance)}%
+                          {safeRound(dept.submissions?.pdsCompliance)}%
                         </Badge>
                       </div>
                       <div className="flex flex-col items-center gap-1 rounded-md bg-muted/30 p-2">
                         <span className="text-xs text-muted-foreground">SALN</span>
                         <Badge
                           variant={
-                            dept.submissions.salnCompliance >= 90
+                            (dept.submissions?.salnCompliance ?? 0) >= 90
                               ? 'default'
-                              : dept.submissions.salnCompliance >= 70
+                              : (dept.submissions?.salnCompliance ?? 0) >= 70
                                 ? 'secondary'
                                 : 'destructive'
                           }
                           className="text-xs">
-                          {Math.round(dept.submissions.salnCompliance)}%
+                          {safeRound(dept.submissions?.salnCompliance)}%
                         </Badge>
                       </div>
                     </div>
@@ -202,14 +216,14 @@ export function DepartmentRankingsTable() {
                     <div className="col-span-2 flex items-center justify-center">
                       <Badge
                         variant={
-                          dept.submissions.pdsCompliance >= 90
+                          (dept.submissions?.pdsCompliance ?? 0) >= 90
                             ? 'default'
-                            : dept.submissions.pdsCompliance >= 70
+                            : (dept.submissions?.pdsCompliance ?? 0) >= 70
                               ? 'secondary'
                               : 'destructive'
                         }
                         className="text-xs">
-                        {Math.round(dept.submissions.pdsCompliance)}%
+                        {safeRound(dept.submissions?.pdsCompliance)}%
                       </Badge>
                     </div>
 
@@ -217,14 +231,14 @@ export function DepartmentRankingsTable() {
                     <div className="col-span-2 flex items-center justify-center">
                       <Badge
                         variant={
-                          dept.submissions.salnCompliance >= 90
+                          (dept.submissions?.salnCompliance ?? 0) >= 90
                             ? 'default'
-                            : dept.submissions.salnCompliance >= 70
+                            : (dept.submissions?.salnCompliance ?? 0) >= 70
                               ? 'secondary'
                               : 'destructive'
                         }
                         className="text-xs">
-                        {Math.round(dept.submissions.salnCompliance)}%
+                        {safeRound(dept.submissions?.salnCompliance)}%
                       </Badge>
                     </div>
                   </div>

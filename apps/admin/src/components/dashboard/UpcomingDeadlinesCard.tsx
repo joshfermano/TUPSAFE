@@ -105,7 +105,25 @@ export function UpcomingDeadlinesCard() {
     );
   }
 
-  const { deadlines } = data;
+  // Tolerate partial/missing payloads from a timed-out compliance endpoint.
+  const deadlines = data.deadlines ?? {
+    pds: {
+      next: null,
+      daysRemaining: 0,
+      submitted: 0,
+      expected: 0,
+      status: 'overdue' as const,
+    },
+    saln: {
+      next: null,
+      fiscalYear: new Date().getFullYear(),
+      deadline: new Date(),
+      daysRemaining: 0,
+      submitted: 0,
+      expected: 0,
+      status: 'overdue' as const,
+    },
+  };
 
   return (
     <Card>
@@ -125,29 +143,31 @@ export function UpcomingDeadlinesCard() {
       <CardContent>
         <div className="space-y-4">
           {/* PDS Deadline */}
-          {deadlines.pds.next && (
+          {deadlines.pds?.next && (
             <DeadlineItem
               type="PDS"
               deadline={deadlines.pds.next}
-              daysRemaining={deadlines.pds.daysRemaining}
-              submitted={deadlines.pds.submitted}
-              expected={deadlines.pds.expected}
-              status={deadlines.pds.status}
+              daysRemaining={deadlines.pds.daysRemaining ?? 0}
+              submitted={deadlines.pds.submitted ?? 0}
+              expected={deadlines.pds.expected ?? 0}
+              status={deadlines.pds.status ?? 'overdue'}
             />
           )}
 
           {/* SALN Deadline */}
-          <DeadlineItem
-            type="SALN"
-            deadline={deadlines.saln.deadline}
-            daysRemaining={deadlines.saln.daysRemaining}
-            submitted={deadlines.saln.submitted}
-            expected={deadlines.saln.expected}
-            status={deadlines.saln.status}
-          />
+          {deadlines.saln?.deadline && (
+            <DeadlineItem
+              type="SALN"
+              deadline={deadlines.saln.deadline}
+              daysRemaining={deadlines.saln.daysRemaining ?? 0}
+              submitted={deadlines.saln.submitted ?? 0}
+              expected={deadlines.saln.expected ?? 0}
+              status={deadlines.saln.status ?? 'overdue'}
+            />
+          )}
 
           {/* No deadlines */}
-          {!deadlines.pds.next && !deadlines.saln.deadline && (
+          {!deadlines.pds?.next && !deadlines.saln?.deadline && (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Calendar className="mb-4 h-12 w-12 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">No upcoming deadlines</p>
