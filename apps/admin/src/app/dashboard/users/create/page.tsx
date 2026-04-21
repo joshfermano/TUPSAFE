@@ -280,6 +280,12 @@ export default function CreateUserPage() {
 
   const onSubmit = useCallback(
     async (values: UserFormValues) => {
+      // Guard: only allow creation from the final Review step.
+      // This prevents accidental submission when pressing Enter inside form
+      // inputs on Steps 1–3.
+      if (currentStep !== totalSteps) {
+        return;
+      }
       try {
         // Prepare data for API - transform 'none' values to undefined
         const userData = {
@@ -338,7 +344,7 @@ export default function CreateUserPage() {
         });
       }
     },
-    [createUserAsync]
+    [createUserAsync, currentStep, totalSteps]
   );
 
   // Check if selected role requires a department
@@ -480,13 +486,19 @@ export default function CreateUserPage() {
 
       {/* Success State - Show after user is created */}
       {isUserCreated && createdUser && (
-        <Card className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
+        <Card
+          className="border"
+          style={{
+            borderColor: "#16a34a",
+            backgroundColor: "rgba(22, 163, 74, 0.08)",
+          }}
+        >
           <CardHeader>
             <div className="flex items-center gap-3">
-              <CheckCircle2 className="h-6 w-6 text-green-600" />
+              <CheckCircle2 className="h-6 w-6" style={{ color: "#16a34a" }} />
               <div>
-                <CardTitle className="text-green-900 dark:text-green-100">User Created Successfully</CardTitle>
-                <CardDescription className="text-green-700 dark:text-green-300">
+                <CardTitle style={{ color: "#14532d" }}>User Created Successfully</CardTitle>
+                <CardDescription style={{ color: "#166534" }}>
                   Copy the credentials below or share them with the new user
                 </CardDescription>
               </div>
@@ -495,7 +507,7 @@ export default function CreateUserPage() {
           <CardContent className="space-y-4">
             {/* Employee ID */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-green-900 dark:text-green-100">Employee ID</label>
+              <label className="text-sm font-medium" style={{ color: "#14532d" }}>Employee ID</label>
               <div className="flex gap-2">
                 <Input
                   value={createdUser.employeeId}
@@ -516,7 +528,7 @@ export default function CreateUserPage() {
             {/* Temporary Password */}
             {createdUser.temporaryPassword && (
               <div className="space-y-2">
-                <label className="text-sm font-medium text-green-900 dark:text-green-100">Temporary Password</label>
+                <label className="text-sm font-medium" style={{ color: "#14532d" }}>Temporary Password</label>
                 <div className="flex gap-2">
                   <Input
                     value={createdUser.temporaryPassword}
@@ -539,15 +551,15 @@ export default function CreateUserPage() {
             <div className="flex items-center gap-2 text-sm">
               {createdUser.emailSent ? (
                 <>
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  <span className="text-green-700 dark:text-green-300">
+                  <CheckCircle2 className="h-4 w-4" style={{ color: "#16a34a" }} />
+                  <span style={{ color: "#166534" }}>
                     Credentials email sent to {createdUser.email}
                   </span>
                 </>
               ) : (
                 <>
-                  <AlertCircle className="h-4 w-4 text-amber-600" />
-                  <span className="text-amber-700 dark:text-amber-300">
+                  <AlertCircle className="h-4 w-4" style={{ color: "#d97706" }} />
+                  <span style={{ color: "#92400e" }}>
                     Email not sent - please share credentials manually
                   </span>
                 </>
@@ -558,8 +570,8 @@ export default function CreateUserPage() {
             {createdUser.linkedApplication && (
               <div className="space-y-2 rounded-lg bg-card p-3">
                 <div className="flex items-center gap-2 text-sm">
-                  <LinkIcon className="h-4 w-4 text-green-600" />
-                  <span className="text-green-700 dark:text-green-300 font-medium">
+                  <LinkIcon className="h-4 w-4" style={{ color: "#16a34a" }} />
+                  <span className="font-medium" style={{ color: "#166534" }}>
                     Linked to application: {createdUser.linkedApplication.applicationNumber}
                   </span>
                 </div>
@@ -567,15 +579,15 @@ export default function CreateUserPage() {
                   <div className="flex items-center gap-2 text-sm pl-6">
                     {createdUser.linkedApplication.applicantEmailSent ? (
                       <>
-                        <CheckCircle2 className="h-4 w-4 text-green-600" />
-                        <span className="text-green-700 dark:text-green-300">
+                        <CheckCircle2 className="h-4 w-4" style={{ color: "#16a34a" }} />
+                        <span style={{ color: "#166534" }}>
                           Credentials also sent to: {createdUser.linkedApplication.applicantPersonalEmail}
                         </span>
                       </>
                     ) : (
                       <>
-                        <AlertCircle className="h-4 w-4 text-amber-600" />
-                        <span className="text-amber-700 dark:text-amber-300">
+                        <AlertCircle className="h-4 w-4" style={{ color: "#d97706" }} />
+                        <span style={{ color: "#92400e" }}>
                           Could not send to applicant email
                         </span>
                       </>
@@ -883,10 +895,10 @@ export default function CreateUserPage() {
                     control={form.control}
                     name="isActive"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border bg-card p-4">
                         <div className="space-y-0.5">
-                          <FormLabel className="text-base">Account Status</FormLabel>
-                          <FormDescription>
+                          <FormLabel className="text-base text-foreground">Account Status</FormLabel>
+                          <FormDescription className="text-muted-foreground">
                             Active users can log in and access the system
                           </FormDescription>
                         </div>
@@ -926,11 +938,11 @@ export default function CreateUserPage() {
                     </AlertDescription>
                   </Alert>
 
-                  <div className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-4">
+                  <div className="rounded-lg border bg-muted/50 p-4">
                     <div className="flex gap-3">
-                      <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                      <Mail className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                       <div className="flex-1 space-y-2">
-                        <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                        <p className="text-sm font-semibold text-foreground">
                           Email Delivery
                         </p>
                         <FormField
@@ -944,13 +956,13 @@ export default function CreateUserPage() {
                                   onCheckedChange={field.onChange}
                                 />
                               </FormControl>
-                              <FormLabel className="text-sm font-normal text-blue-800 dark:text-blue-200">
+                              <FormLabel className="text-sm font-medium text-foreground">
                                 Send credentials via email to {watch('email') || 'user'}
                               </FormLabel>
                             </FormItem>
                           )}
                         />
-                        <p className="text-xs text-blue-700 dark:text-blue-300">
+                        <p className="text-xs text-muted-foreground">
                           If disabled, you&apos;ll need to share the credentials manually after creation
                         </p>
                       </div>
@@ -958,14 +970,14 @@ export default function CreateUserPage() {
                   </div>
 
                   {/* Link to Hired Application */}
-                  <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4">
+                  <div className="rounded-lg border bg-muted/50 p-4">
                     <div className="flex gap-3">
-                      <LinkIcon className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                      <LinkIcon className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                       <div className="flex-1 space-y-3">
-                        <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                        <p className="text-sm font-semibold text-foreground">
                           Link to Hired Application (Optional)
                         </p>
-                        <p className="text-xs text-amber-700 dark:text-amber-300">
+                        <p className="text-xs text-muted-foreground">
                           If this employee was hired from a job application, enter the application number to link them and notify the applicant.
                         </p>
                         <FormField
@@ -977,7 +989,7 @@ export default function CreateUserPage() {
                                 <Input
                                   placeholder="APP-YYYYMMDD-XXXX"
                                   {...field}
-                                  className="font-mono bg-card"
+                                  className="font-mono bg-card text-foreground placeholder:text-muted-foreground"
                                 />
                               </FormControl>
                               <FormMessage />
@@ -996,7 +1008,7 @@ export default function CreateUserPage() {
                                     onCheckedChange={field.onChange}
                                   />
                                 </FormControl>
-                                <FormLabel className="text-sm font-normal text-amber-800 dark:text-amber-200">
+                                <FormLabel className="text-sm font-medium text-foreground">
                                   Also send credentials to applicant&apos;s personal email
                                 </FormLabel>
                               </FormItem>
@@ -1004,7 +1016,7 @@ export default function CreateUserPage() {
                           />
                         )}
                         {applicantNameParam && watch('hiredApplicationNumber') && (
-                          <p className="text-xs text-amber-600 dark:text-amber-400">
+                          <p className="text-xs font-medium text-primary">
                             Linking to: <strong>{applicantNameParam}</strong>
                           </p>
                         )}
